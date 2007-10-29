@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Scripted run,PhotoRec,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Scripted run - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Scripted_run";
+			var wgTitle = "Scripted run";
+			var wgArticleId = 1312;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Scripted run</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p><a href="testdisk.html" title="TestDisk">TestDisk</a> and <a href="photorec.html" title="PhotoRec">PhotoRec</a> can run automatically using their own <i>built-in</i> commands. A script file (such as .cmd or .bat 'Batch files' under MS-DOS/Windows, or some shell under Linux) may also be helpful.
+</p><p>This document describes the command line syntax.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#TestDisk"><span class="tocnumber">1</span> <span class="toctext">TestDisk</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Device_selection"><span class="tocnumber">1.1</span> <span class="toctext">Device selection</span></a></li>
+<li class="toclevel-2"><a href="#Partition_type_selection"><span class="tocnumber">1.2</span> <span class="toctext">Partition type selection</span></a></li>
+<li class="toclevel-2"><a href="#Main_menu"><span class="tocnumber">1.3</span> <span class="toctext">Main menu</span></a></li>
+<li class="toclevel-2"><a href="#Analyse_menu"><span class="tocnumber">1.4</span> <span class="toctext">Analyse menu</span></a></li>
+<li class="toclevel-2"><a href="#Advanced_menu"><span class="tocnumber">1.5</span> <span class="toctext">Advanced menu</span></a>
+<ul>
+<li class="toclevel-3"><a href="#FAT1x_menu"><span class="tocnumber">1.5.1</span> <span class="toctext">FAT1x menu</span></a></li>
+<li class="toclevel-3"><a href="#FAT32_menu"><span class="tocnumber">1.5.2</span> <span class="toctext">FAT32 menu</span></a></li>
+<li class="toclevel-3"><a href="#FAT_rebuild_menu"><span class="tocnumber">1.5.3</span> <span class="toctext">FAT rebuild menu</span></a></li>
+<li class="toclevel-3"><a href="#NTFS_menu"><span class="tocnumber">1.5.4</span> <span class="toctext">NTFS menu</span></a></li>
+<li class="toclevel-3"><a href="#NTFS_rebuild_menu"><span class="tocnumber">1.5.5</span> <span class="toctext">NTFS rebuild menu</span></a></li>
+</ul>
+</li>
+<li class="toclevel-2"><a href="#Geometry_menu"><span class="tocnumber">1.6</span> <span class="toctext">Geometry menu</span></a></li>
+<li class="toclevel-2"><a href="#Some_examples"><span class="tocnumber">1.7</span> <span class="toctext">Some examples</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#PhotoRec"><span class="tocnumber">2</span> <span class="toctext">PhotoRec</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Partition_type_selection_2"><span class="tocnumber">2.1</span> <span class="toctext">Partition type selection</span></a></li>
+<li class="toclevel-2"><a href="#Main_menu_2"><span class="tocnumber">2.2</span> <span class="toctext">Main menu</span></a></li>
+<li class="toclevel-2"><a href="#Options_menu"><span class="tocnumber">2.3</span> <span class="toctext">Options menu</span></a></li>
+<li class="toclevel-2"><a href="#Some_examples_2"><span class="tocnumber">2.4</span> <span class="toctext">Some examples</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="TestDisk"></a><h2> <a href="testdisk.html" title="TestDisk">TestDisk</a></h2>
+<p>Syntax: <code>testdisk /cmd device cmd</code>
+</p>
+<a name="Device_selection"></a><h3> Device selection </h3>
+<p>Use the device name, ie /dev/hda, /dev/hdb, /dev/sda.<br />
+For DOS version, use /dev/sda128 for first disk, /dev/sda129 for the second and so on...
+</p>
+<a name="Partition_type_selection"></a><h3> Partition type selection</h3>
+<ul><li> partition_i386
+</li><li> partition_mac
+</li><li> partition_none
+</li><li> partition_sun
+</li><li> partition_xbox
+</li></ul>
+<a name="Main_menu"></a><h3> Main menu</h3>
+<ul><li> advanced
+</li><li> analyze
+</li><li> delete
+</li><li> geometry
+</li><li> mbr_code
+</li><li> options
+</li><li> list
+</li></ul>
+<a name="Analyse_menu"></a><h3> Analyse menu</h3>
+<ul><li> backup
+</li><li> mode_vista: search for partitions created by Windows Vista Disk Manager
+</li><li> list
+</li><li> search
+</li><li> noconfirm
+</li><li> write
+</li></ul>
+<a name="Advanced_menu"></a><h3> Advanced menu</h3>
+<ul><li> type
+</li><li> boot
+</li><li> superblock
+</li><li> number:       the partition number to select
+</li></ul>
+<a name="FAT1x_menu"></a><h4> FAT1x menu</h4>
+<ul><li> rebuildbs
+</li><li> dump
+</li><li> repairfat
+</li><li> initroot
+</li></ul>
+<a name="FAT32_menu"></a><h4> FAT32 menu</h4>
+<ul><li> rebuildbs
+</li><li> dump
+</li><li> repairfat
+</li><li> originalfat
+</li><li> backupfat
+</li></ul>
+<a name="FAT_rebuild_menu"></a><h4> FAT rebuild menu</h4>
+<ul><li> list
+</li><li> dump
+</li></ul>
+<a name="NTFS_menu"></a><h4> NTFS menu</h4>
+<ul><li> rebuildbs
+</li><li> dump
+</li><li> originalntfs
+</li><li> backupntfs
+</li><li> repairmft
+</li></ul>
+<a name="NTFS_rebuild_menu"></a><h4> NTFS rebuild menu</h4>
+<ul><li> list
+</li><li> dump
+</li></ul>
+<a name="Geometry_menu"></a><h3> Geometry menu</h3>
+<ul><li> C,number of cylinders
+</li><li> H,number of heads
+</li><li> S,number of sectors
+</li><li> N,sector size
+</li></ul>
+<a name="Some_examples"></a><h3> Some examples</h3>
+<pre>
+testdisk /debug /log /cmd /dev/hda analyze,search
+
+testdisk /debug /log /cmd partition.dd options,partition_none,geometry,H,32,analyze,list,advanced,boot,rebuildbs,
+list partition.dd
+</pre>
+<a name="PhotoRec"></a><h2> <a href="photorec.html" title="PhotoRec">PhotoRec</a> </h2>
+<p>Syntax: <code>photorec /cmd device cmd</code>
+</p>
+<a name="Partition_type_selection_2"></a><h3> Partition type selection</h3>
+<ul><li> partition_i386
+</li><li> partition_mac
+</li><li> partition_none
+</li><li> partition_sun
+</li><li> partition_xbox
+</li></ul>
+<a name="Main_menu_2"></a><h3> Main menu</h3>
+<ul><li> number:       the partition number to select
+</li><li> search
+</li><li> options
+</li></ul>
+<a name="Options_menu"></a><h3> Options menu</h3>
+<ul><li> mode_ext2
+</li></ul>
+<a name="Some_examples_2"></a><h3> Some examples</h3>
+<pre>
+photorec /debug /log /cmd /dev/hdb partition_i386,select,search
+photorec /debug /log /cmd /dev/hda partition_i386,options,mode_ext2,5,search
+</pre>
+
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1312-0!1!0!!en!2 and timestamp 20070613154927 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Scripted_run" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 05:59, 12 June 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070613175058 -->
+</html>

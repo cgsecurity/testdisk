@@ -1,0 +1,164 @@
+/*
+
+    File: fat.h
+
+    Copyright (C) 1998-2004,2007 Christophe GRENIER <grenier@cgsecurity.org>
+  
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+  
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+  
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
+
+#ifndef _FAT_H
+#define _FAT_H
+#define FAT1X_PART_NAME 0x2B
+#define FAT32_PART_NAME 0x47
+#define FAT_NAME1       0x36
+#define FAT_NAME2       0x52    /* FAT32 only */
+#define NTFS_NAME       0x03
+#define OS2_NAME        0x03
+
+#define NBR_SECT        8
+
+/*
+ * FAT partition boot sector information, taken from the Linux
+ * kernel sources.
+ */
+
+struct fat_boot_sector {
+	uint8_t	ignored[3];	/* 0x00 Boot strap short or near jump */
+	int8_t	system_id[8];	/* 0x03 Name - can be used to special case
+				   partition manager volumes */
+	uint8_t	sector_size[2];	/* 0x0B bytes per logical sector */
+	uint8_t	cluster_size;	/* 0x0D sectors/cluster */
+	uint16_t	reserved;	/* 0x0E reserved sectors */
+	uint8_t	fats;		/* 0x10 number of FATs */
+	uint8_t	dir_entries[2];	/* 0x11 root directory entries */
+	uint8_t	sectors[2];	/* 0x13 number of sectors */
+	uint8_t	media;		/* 0x15 media code (unused) */
+	uint16_t	fat_length;	/* 0x16 sectors/FAT */
+	uint16_t	secs_track;	/* 0x18 sectors per track */
+	uint16_t	heads;		/* 0x1A number of heads */
+	uint32_t	hidden;		/* 0x1C hidden sectors (unused) */
+	uint32_t	total_sect;	/* 0x20 number of sectors (if sectors == 0) */
+
+	/* The following fields are only used by FAT32 */
+	uint32_t	fat32_length;	/* 0x24=36 sectors/FAT */
+	uint16_t	flags;		/* 0x28 bit 8: fat mirroring, low 4: active fat */
+	uint8_t	version[2];	/* 0x2A major, minor filesystem version */
+	uint32_t	root_cluster;	/* 0x2C first cluster in root directory */
+	uint16_t	info_sector;	/* 0x30 filesystem info sector */
+	uint16_t	backup_boot;	/* 0x32 backup boot sector */
+	uint8_t	BPB_Reserved[12];	/* 0x34 Unused */
+	uint8_t	BS_DrvNum;		/* 0x40 */
+	uint8_t	BS_Reserved1;		/* 0x41 */
+	uint8_t	BS_BootSig;		/* 0x42 */
+	uint8_t	BS_VolID[4];		/* 0x43 */
+	uint8_t	BS_VolLab[11];		/* 0x47 */
+	uint8_t	BS_FilSysType[8];	/* 0x52=82*/
+
+	/* */
+	uint8_t	nothing[420];	/* 0x5A */
+	uint16_t	marker;
+} __attribute__ ((__packed__));
+
+struct msdos_dir_entry {
+	int8_t	name[8],ext[3];	/* name and extension */
+	uint8_t	attr;		/* attribute bits */
+	uint8_t    lcase;		/* Case for base and extension */
+	uint8_t	        ctime_ms;	/* Creation time, milliseconds */
+	uint16_t	ctime;		/* Creation time */
+	uint16_t	cdate;		/* Creation date */
+	uint16_t	adate;		/* Last access date */
+	uint16_t        starthi;	/* High 16 bits of cluster in FAT32 */
+	uint16_t	time;           /* time, date and first cluster */
+        uint16_t        date;
+        uint16_t        start;
+	uint32_t	size;		/* file size (in bytes) */
+};
+
+/* Up to 13 characters of the name */
+struct msdos_dir_slot {
+	uint8_t    id;		/* 00 sequence number for slot */
+	uint8_t    name0_4[10];	/* 01 first 5 characters in name */
+	uint8_t    attr;		/* 0B attribute byte */
+	uint8_t    reserved;	/* 0C always 0 */
+	uint8_t    alias_checksum;	/* 0D checksum for 8.3 alias */
+	uint8_t    name5_10[12];	/* 0E 6 more characters in name */
+	uint16_t   start;		/* starting cluster number, 0 in long slots */
+	uint8_t    name11_12[4];	/* last 2 characters in name */
+};
+
+
+int comp_FAT(disk_t *disk_car,const partition_t *partition, const unsigned long int fat_size, const unsigned long int sect_res);
+int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size);
+
+unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster);
+int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster, const unsigned int next_cluster);
+
+int is_fat(const partition_t *partition);
+int is_fat12(const partition_t *partition);
+int is_fat16(const partition_t *partition);
+int is_fat32(const partition_t *partition);
+int is_part_fat(const partition_t *partition);
+int is_part_fat12(const partition_t *partition);
+int is_part_fat16(const partition_t *partition);
+int is_part_fat32(const partition_t *partition);
+unsigned int get_dir_entries(const struct fat_boot_sector *fat_header);
+int dump_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
+int dump_2fat_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size);
+int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
+unsigned int fat_sector_size(const struct fat_boot_sector *fat_header);
+unsigned int sectors(const struct fat_boot_sector *fat_header);
+unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
+int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
+unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
+unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
+int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose);
+int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose);
+
+#define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
+#define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
+#define ATTR_RO      1  /* read-only */
+#define ATTR_HIDDEN  2  /* hidden */
+#define ATTR_SYS     4  /* system */
+#define ATTR_VOLUME  8  /* volume label */
+#define ATTR_DIR     16 /* directory */
+#define ATTR_ARCH    32 /* archived */
+
+#define ATTR_NONE    0 /* no attribute bits */
+#define ATTR_UNUSED  (ATTR_VOLUME | ATTR_ARCH | ATTR_SYS | ATTR_HIDDEN)
+	/* attribute bits that are copied "as is" */
+#define ATTR_EXT     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
+#define ATTR_EXT_MASK     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME | ATTR_DIR | ATTR_ARCH)
+	/* bits that are used by the Windows 95/Windows NT extended FAT */
+#define FAT12_BAD	0x0FF7
+#define FAT12_EOC	0x0FF8
+#define FAT16_BAD	0xFFF7
+#define FAT16_EOC	0xFFF8
+#define FAT32_BAD	0x0FFFFFF7
+#define FAT32_EOC	0x0FFFFFF8
+#endif
+#define FAT1x_BOOT_SECTOR_SIZE 0x200
+
+int recover_FAT(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup);
+int check_FAT(disk_t *disk_car,partition_t *partition, const int verbose);
+int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
+int check_HPFS(disk_t *disk_car,partition_t *partition, const int verbose);
+int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
+int check_OS2MB(disk_t *disk_car,partition_t *partition, const int verbose);
+int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+

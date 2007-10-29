@@ -1,0 +1,100 @@
+%define ver_progsreiserfs 0.3.1-rc8
+%define ver_ntfsprogs 1.13.1
+
+Summary:	Tool to check and undelete partition
+Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
+Summary(fr.UTF8):	Outil pour vérifier et restorer des partitions
+Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
+Name:		@PACKAGE@
+Version:	@VERSION@
+Release:	1
+License:	GPLv2+
+Group:		Applications/System
+Source0:	http://www.cgsecurity.org/%{name}-%{version}.tar.bz2
+Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
+Source2:	ntfsprogs-%ver_ntfsprogs.tar.gz
+Patch0:		progsreiserfs-journal.patch
+URL:		http://www.cgsecurity.org/wiki/TestDisk
+BuildRequires:	ncurses-devel >= 5.2
+BuildRequires:  e2fsprogs-devel
+BuildRequires:	libjpeg-devel
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+%description
+Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
+NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid, Linux Swap,
+LVM, LVM2, NSS, ReiserFS, UFS, XFS
+
+%description -l pl.UTF8
+Narzędzie sprawdzające i odzyskujące partycje. Pracuje z partycjami:
+FAT12, FAT16, FAT32, NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid,
+Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
+
+%description -l fr.UTF8
+Outil pour vérifier et restorer des partitions. Fonctionne avec
+FAT12, FAT16, FAT32, NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid,
+Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
+
+%description -l ru_RU.UTF8
+Программа для проверки и восстановления разделов диска.
+Поддерживает следующие типы разделов:
+FAT12, FAT16, FAT32, NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid,
+Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
+
+%prep
+%setup -q
+%setup -q -a 1 -D
+%setup -q -a 2 -D
+%patch0
+
+%build
+(
+cd progsreiserfs-%ver_progsreiserfs
+%configure --disable-Werror
+make
+)
+(
+cd ntfsprogs-%ver_ntfsprogs
+%configure
+make libs
+)
+%configure --with-reiserfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libreiserfs/.libs/ --with-reiserfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/include/ --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/ --with-ntfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/libntfs/.libs/ --with-ntfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/include/
+make static
+%install
+rm -rf $RPM_BUILD_ROOT
+make DESTDIR="$RPM_BUILD_ROOT" install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(644,root,root,755)
+%doc AUTHORS COPYING ChangeLog NEWS README THANKS doc
+%{_mandir}/man1/testdisk.1*
+%{_mandir}/man1/photorec.1*
+%attr(755,root,root) %{_sbindir}/testdisk
+%attr(755,root,root) %{_sbindir}/photorec
+%changelog
+* Sun Jan 4 2004 Christophe Grenier <grenier@cgsecurity.org> 5.0
+- 5.0
+
+* Wed Oct 1 2003 Christophe Grenier <grenier@cgsecurity.org> 4.5
+- 4.5
+
+* Wed Apr 23 2003 Christophe Grenier <grenier@cgsecurity.org> 4.4-2
+
+* Sat Mar 29 2003 Pascal Terjan <CMoi@tuxfamily.org> 4.4-1mdk
+- 4.4
+
+* Fri Dec 27 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.2-2mdk
+- rebuild for rpm and glibc
+
+* Sun Oct 06 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.2-1mdk
+- 4.2
+
+* Mon Sep 02 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.1-1mdk 
+- By Pascal Terjan <pascal.terjan@free.fr>
+	- first mdk release, adapted from PLD.
+	- gz to bz2 compression.
+- fix %%tmppath
+- %%make instead %%{__make}

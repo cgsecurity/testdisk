@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Menü MBR-Code,Ausfuehren von TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Menü MBR-Code - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Menü_MBR-Code";
+			var wgTitle = "Menü MBR-Code";
+			var wgArticleId = 1421;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Menü MBR-Code</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<a name="MBR_Code"></a><h4> MBR Code</h4>
+<p>Wenn dieser Befehl verwendest wird, überschreibt TestDisk den Code-Bereich der Platte, der notwendig ist, um das/die Betriebssystem(e) zu booten. Es könnte nützlich sein wenn das System überhaupt nicht bootet, <i>und</i>  alles Mögliche bereits versucht wurde! Siehe unten für Details, wie dieser neue MBR auf deinem System funktioniert.
+</p>
+<a name="IBM_PC.2FIntel-Partition"></a><h3> IBM PC/Intel-Partition</h3>
+<p>Wenn dieser Befehl verwendet wird, überschreibt TestDisk den gegenwärtigen Codebereich vom Master Boot Record (MBR --&gt; Hauptstartroutine) und schreibt die MBR-Signatur (das Hexadezimalzahlwort 0xAA55) auf den MBR-Sektor deines Laufwerks.
+Mit der Version 5,7 von TestDisk beginnend, wurde ein neuer MBR-Code ausdrücklich für TestDisk von Neil Turton erstellt ( Autor von <a href="http://www.chiark.greenend.org.uk/~neilt/mbr/" class="external text" title="http://www.chiark.greenend.org.uk/~neilt/mbr/" rel="nofollow">mbr-install </a>; Version mbr-1.1.8 schließt den Quellcode für TestDisk MBR ein). Diese Änderung bedeutet, dass TestDisk jetzt 100% GPL (offener Quellcode) ist.
+Versionen früher als 5.7, überschreiben den MBR-Code mit einer Kopie des Standard-MBR (ähnlich zu MS-DOS-<b>fdisk</b> mit dem 'undokumentierten' <b>/MBR</b>-Schalter). Für eine vollständig kommentierte Kopie dieses DOS-<i>Standards</i> (oder 'klassischen') MBR-Codes, siehe
+<a href="http://www.cgsecurity.org/testdisk/STDMBR.htm" class="external text" title="http://www.cgsecurity.org/testdisk/STDMBR.htm">An Examination of the Standard MBR </a> (editierte Kopie für CGSecurity.org; France) oder
+<a href="http://mirror.href.com/thestarman/asm/mbr/STDMBR.htm" class="external text" title="http://mirror.href.com/thestarman/asm/mbr/STDMBR.htm" rel="nofollow">An Examination of the Standard MBR </a> (auf der Webseite von The Starman).
+</p>
+<a name="Der_TestDisk-MBR"></a><h2> Der TestDisk-MBR</h2>
+<p>Wenn du TestDisk verwendest, um den TestDisk-MBR-Code auf den ersten Sektor deiner Festplatte zu schreiben, identifiziert es sich sehr kurz dadurch, dass es <code>TestDisk</code> auf der Anzeige beim booten anzeigt. Der Code ist so programmiert, das versucht wird, von welchen Bootsektor auch immer, der sich in der ersten Partition des Laufwerks befindet, zu booten. Wenn dies nicht möglich ist, wirst du auf deiner Anzeige, ein Minimenü wie dieses sehen:<br />
+</p>
+<pre><code>TestDisk<br />
+1234F:</code>
+</pre>
+<p>Drücken der 1, 2, 3 oder 4-Taste auf deiner Tastatur, befiehlt dem MBR, von jeglichem/n Bootsektor(en) zu booten, das es in dem ersten, zweiten, dritten. oder vierten Partitionstabelleneintrag im MBR-Sektor findet. Wenn es erfolglos ist, wiederholt sich das TestDisk-MBR-Menü einfach auf deiner Anzeige, für jedes mal wenn das Booten versagt. Wenn du die F/f-Taste auf deiner Tastatur drückst, wird der MBR zuerst versuchen das System von einer (<code>A:\</code> oder <code>/dev/fd0</code>)-Diskette zu booten.
+</p><p>In den meisten Fällen, sobald du wieder in der Lage bist, vom Original-Betriebssystem deines Laufwerks zu booten, und du würdest den TestDisk-MBR-code zurück wünschen, zudem was auch immer du vorher verwendet hast, bevor du auf das Bootproblem gestoßen bist. <b>Beachte:</b> Sei sicher, dass du genau weißt, wie es gemacht wird, bevor du fortfährst; da du deine Partitionstabelle sicherlich nicht wieder löschen möchtest!
+</p><p>Zurück zu <a href="ausfuehren_von_testdisk.html" title="Ausfuehren von TestDisk">Ausführen von TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1421-0!1!0!!en!2 and timestamp 20070213001127 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Men%C3%BC_MBR-Code" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 16:09, 30 November 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070213004534 -->
+</html>

@@ -1,0 +1,71 @@
+/*
+
+    File: file_dwg.c
+
+    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+  
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+  
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+  
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#include <stdio.h>
+#include "types.h"
+#include "filegen.h"
+
+static void register_header_check_dwg(file_stat_t *file_stat);
+static int header_check_dwg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+
+const file_hint_t file_hint_dwg= {
+  .extension="dwg",
+  .description="AutoCAD",
+  .min_header_distance=0,
+  .max_filesize=10*1024*1024,
+  .recover=1,
+  .header_check=&header_check_dwg,
+  .register_header_check=&register_header_check_dwg
+};
+
+static const unsigned char dwg_header_12[11]= {'A', 'C', '1', '0', '1', '2', 0x00, 0x00, 0x00, 0x00, 0x00};
+static const unsigned char dwg_header_13[11]= {'A', 'C', '1', '0', '1', '3', 0x00, 0x00, 0x00, 0x00, 0x00};
+static const unsigned char dwg_header_14[11]= {'A', 'C', '1', '0', '1', '4', 0x00, 0x00, 0x00, 0x00, 0x00};
+static const unsigned char dwg_header_15[11]= {'A', 'C', '1', '0', '1', '5', 0x00, 0x00, 0x00, 0x00, 0x00};
+
+static void register_header_check_dwg(file_stat_t *file_stat)
+{
+  register_header_check(0, dwg_header_12,sizeof(dwg_header_12), &header_check_dwg, file_stat);
+  register_header_check(0, dwg_header_13,sizeof(dwg_header_13), &header_check_dwg, file_stat);
+  register_header_check(0, dwg_header_14,sizeof(dwg_header_14), &header_check_dwg, file_stat);
+  register_header_check(0, dwg_header_15,sizeof(dwg_header_15), &header_check_dwg, file_stat);
+}
+
+static int header_check_dwg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(memcmp(buffer,dwg_header_12,sizeof(dwg_header_12))==0 ||
+      memcmp(buffer,dwg_header_13,sizeof(dwg_header_13))==0 ||
+      memcmp(buffer,dwg_header_14,sizeof(dwg_header_14))==0 ||
+      memcmp(buffer,dwg_header_15,sizeof(dwg_header_15))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_dwg.extension;
+    return 1;
+  }
+  return 0;
+}

@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Advanced FAT Repair,Running TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Advanced FAT Repair - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Advanced_FAT_Repair";
+			var wgTitle = "Advanced FAT Repair";
+			var wgArticleId = 1389;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Advanced FAT Repair</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>If the FAT boot sector is damaged, data can not be accessed.
+Windows will prompt <code>The drive is not formatted, do you want to format it now?</code>
+Linux mount will display <code>wrong fs type, bad option, bad superblock</code>
+</p><p>TestDisk let you manipulate the boot sector of FAT partitions.
+In the Advanced menu, select the partition you want to modify and choose <b>Boot</b>.
+</p>
+<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63
+
+     Partition                  Start        End    Size in sectors
+ 1 * FAT32                    0   1  1  1010 254 63   16241652 [NO NAME]
+ 2 P Linux                 1011   0  1  1023 254 63     208845 [/boot]
+ 3 E extended LBA          1024   0  1 14592 254 63  217985985
+ 5 L Linux RAID            1024   1  1  3573 254 63   40965687 [md0]
+   X extended              3574   0  1  4210 254 63   10233405
+ 6 L Linux RAID            3574   1  1  4210 254 63   10233342 [md1]
+   X extended              4211   0  1 14592 254 63  166786830
+ 7 L Linux                 4211   1  1 14592 254 63  166786767
+
+
+
+
+
+
+
+
+[  Type  ]  [  Boot  ]  [  Quit  ]
+                              Boot sector recovery
+</pre>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Repair_FAT_boot_sector"><span class="tocnumber">1</span> <span class="toctext">Repair FAT boot sector</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Recover_the_FAT32_boot_sector"><span class="tocnumber">1.1</span> <span class="toctext">Recover the FAT32 boot sector</span></a></li>
+<li class="toclevel-2"><a href="#Rebuild_a_valid_FAT_boot_sector"><span class="tocnumber">1.2</span> <span class="toctext">Rebuild a valid FAT boot sector</span></a></li>
+<li class="toclevel-2"><a href="#Technical_information_about_FAT_boot_sector_rebuild"><span class="tocnumber">1.3</span> <span class="toctext">Technical information about FAT boot sector rebuild</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Repair_FAT_tables"><span class="tocnumber">2</span> <span class="toctext">Repair FAT tables</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Repair_FAT_boot_sector"></a><h2> Repair FAT boot sector </h2>
+<a name="Recover_the_FAT32_boot_sector"></a><h3> Recover the FAT32 boot sector </h3>
+<p>TestDisk can use backup boot sector to fix corrupted FAT32 boot sector.
+The primary boot sector is sector zero of the filesystem, the backup FAT32 boot sector is located at sector 6.
+TestDisk checks the boot sector and the backup boot sector.
+If the boot sector and backup boot sector mismatches, 
+you can overwrite the boot sector with the backup boot sector (<b>Backup BS</b>) or vice versa (<b>Org. BS</b>). <b>Dump</b> can used to display the sector content in both hexadecimal and ascii.
+</p>
+<a name="Rebuild_a_valid_FAT_boot_sector"></a><h3> Rebuild a valid FAT boot sector </h3>
+<p>If there is no backup boot sector (FAT12, FAT16) or if the FAT32 boot sector is also corrupted,
+TestDisk can rebuild FAT boot sector, choose <b>RebuildBS</b> in the menu.
+</p>
+<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63
+     Partition                  Start        End    Size in sectors
+ 1 * FAT32                    0   1  1  1010 254 63   16241652 [NO NAME]
+Boot sector
+OK
+Backup boot sector
+OK
+Sectors are identical.
+
+
+
+
+
+
+
+
+
+
+[  Quit  ]  [Rebuild BS][  Dump  ]  [Repair FAT]
+
+                            Return to Advanced menu
+</pre>
+<a name="Technical_information_about_FAT_boot_sector_rebuild"></a><h3> Technical information about FAT boot sector rebuild </h3>
+<p>To rebuild a FAT boot sector, TestDisk assumes that
+</p>
+<ul><li>filesystem size is equal to partition size
+</li><li>fragmentation is low
+</li></ul>
+<p>The steps are
+</p>
+<ul><li>select which FAT type are compatible with the filesystem size
+</li><li>identify the sectors where begin the two FAT (number of reserved sector, fat length) and the FAT type (FAT12/16/32)
+</li><li>If only one FAT is found:
+</li></ul>
+<p>If FAT12 or FAT16 is found, assumes there is only one reserved sector. If it's the
+second FAT, deduce the the fat length.
+If beginning of FAT32 first fat is found at sector 32 or 33,
+deduce the number of reserved sectors.
+</p>
+<ul><li>If two or more FAT sector beginning has been found:
+</li></ul>
+<p>assumes the first two are the two
+copies of the FAT. Deduce the number of reserved sectors and fat length.
+</p>
+<ul><li>If number of reserved sector or fat length hasn't been found,
+</li></ul>
+<p>use inode of <code>.</code> directory entries to get the cluster size and deduce where the first cluster begin.
+From the number of cluster, deduce if it's a FAT12, FAT16 or FAT32.
+If FAT12 or FAT16, assume there is only one reserved sector.
+Try to find the number of directories entree (512 by default).
+Deduce the FAT length.
+</p>
+<ul><li>If FAT12 or FAT16, find the root directory size
+</li><li>Find the cluster size
+</li><li>If FAT32, find the root cluster
+</li><li>Create a boot sector with this information
+</li><li>ask the user if he want to write this new boot sector or not,
+</li></ul>
+<p>the user can also list the files of the FAT partition
+</p>
+<a name="Repair_FAT_tables"></a><h2> Repair FAT tables </h2>
+<p>File Allocation Tables are maps of the data region, indicating which clusters are used by files and directories.
+To repair FAT, menu <b>Repair FAT</b>, TestDisk compares the two FAT copies.
+If FAT mismatches (sector by sector check) or contains errors, TestDisk uses the FAT copy with less errors and remove the obvious errors.
+This function must only be used on FAT filesystem with correct values in the boot sector.
+It has been used with success when scandisk, chkdsk or fsck.vfat refused to repair the filesystem or crashes.
+</p><p>Back to <a href="running_testdisk.html" title="Running TestDisk">Running the TestDisk Program </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1389-0!1!0!!en!2 and timestamp 20061227211218 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Advanced_FAT_Repair" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 21:03, 27 December 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061227214053 -->
+</html>

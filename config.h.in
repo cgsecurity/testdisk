@@ -1,0 +1,430 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the `atexit' function. */
+#undef HAVE_ATEXIT
+
+/* Define to 1 if you have the `atoll' function. */
+#undef HAVE_ATOLL
+
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* Define to 1 if you have the `chdir' function. */
+#undef HAVE_CHDIR
+
+/* Define to 1 if you have the <curses.h> header file. */
+#undef HAVE_CURSES_H
+
+/* Define to 1 if you have the <cygwin/fs.h> header file. */
+#undef HAVE_CYGWIN_FS_H
+
+/* Define to 1 if you have the <dal/file_dal.h> header file. */
+#undef HAVE_DAL_FILE_DAL_H
+
+/* Define to 1 if you have the <dal/file.h> header file. */
+#undef HAVE_DAL_FILE_H
+
+/* Define to 1 if `block_size' is member of `dal_t'. */
+#undef HAVE_DAL_T_BLOCK_SIZE
+
+/* Define to 1 if `entity' is member of `dal_t'. */
+#undef HAVE_DAL_T_ENTITY
+
+/* Define to 1 if `error' is member of `dal_t'. */
+#undef HAVE_DAL_T_ERROR
+
+/* Define to 1 if `name' is member of `dal_t'. */
+#undef HAVE_DAL_T_NAME
+
+/* Define to 1 if you have the `delscreen' function. */
+#undef HAVE_DELSCREEN
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the `dirname' function. */
+#undef HAVE_DIRNAME
+
+/* Define to 1 if you have the `dup2' function. */
+#undef HAVE_DUP2
+
+/* Define to 1 if you have the <endian.h> header file. */
+#undef HAVE_ENDIAN_H
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
+/* Define to 1 if you have the <ext2fs/ext2fs.h> header file. */
+#undef HAVE_EXT2FS_EXT2FS_H
+
+/* Define to 1 if you have the <ext2fs/ext2_fs.h> header file. */
+#undef HAVE_EXT2FS_EXT2_FS_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <features.h> header file. */
+#undef HAVE_FEATURES_H
+
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `geteuid' function. */
+#undef HAVE_GETEUID
+
+/* Define to 1 if you have the <glob.h> header file. */
+#undef HAVE_GLOB_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <jpeglib.h> header file. */
+#undef HAVE_JPEGLIB_H
+
+/* Define to 1 if you have the `crypto' library (-lcrypto). */
+#undef HAVE_LIBCRYPTO
+
+/* Define to 1 if you have the ewf library (-lewf). */
+#undef HAVE_LIBEWF
+
+/* Define to 1 if you have the <libewf.h> header file. */
+#undef HAVE_LIBEWF_H
+
+/* Define to 1 if you have the ext2fs library (-lext2fs). */
+#undef HAVE_LIBEXT2FS
+
+/* Define to 1 if you have the <libgen.h> header file. */
+#undef HAVE_LIBGEN_H
+
+/* Define to 1 if you have the jpeg library (-ljpeg). */
+#undef HAVE_LIBJPEG
+
+/* Define to 1 if you have the ntfs library (-lntfs). */
+#undef HAVE_LIBNTFS
+
+/* Define to 1 if you have the reiserfs library (-lreiserfs). */
+#undef HAVE_LIBREISERFS
+
+/* Define to 1 if you have the `uuid' library (-luuid). */
+#undef HAVE_LIBUUID
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
+
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <linux/fs.h> header file. */
+#undef HAVE_LINUX_FS_H
+
+/* Define to 1 if you have the <linux/hdreg.h> header file. */
+#undef HAVE_LINUX_HDREG_H
+
+/* Define to 1 if you have the <linux/types.h> header file. */
+#undef HAVE_LINUX_TYPES_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define to 1 if you have the `lstat' function. */
+#undef HAVE_LSTAT
+
+/* Define to 1 if you have the <machine/endian.h> header file. */
+#undef HAVE_MACHINE_ENDIAN_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define to 1 if you have the `mkdir' function. */
+#undef HAVE_MKDIR
+
+/* Define to 1 if you have one of the ncurses/pdcurses/curses library. */
+#undef HAVE_NCURSES
+
+/* Define to 1 if you have the <ncurses/curses.h> header file. */
+#undef HAVE_NCURSES_CURSES_H
+
+/* Define to 1 if you have the <ncurses.h> header file. */
+#undef HAVE_NCURSES_H
+
+/* Define to 1 if you have the <ncurses/ncurses.h> header file. */
+#undef HAVE_NCURSES_NCURSES_H
+
+/* Define to 1 if you have the <ntfs/attrib.h> header file. */
+#undef HAVE_NTFS_ATTRIB_H
+
+/* Define to 1 if you have the `ntfs_libntfs_version' function. */
+#undef HAVE_NTFS_LIBNTFS_VERSION
+
+/* Define to 1 if you have the <ntfs/version.h> header file. */
+#undef HAVE_NTFS_VERSION_H
+
+/* Define to 1 if you have the <ntfs/volume.h> header file. */
+#undef HAVE_NTFS_VOLUME_H
+
+/* Define to 1 if you have the `ntfs_volume_startup' function. */
+#undef HAVE_NTFS_VOLUME_STARTUP
+
+/* Define to 1 if you have the <openssl/md5.h> header file. */
+#undef HAVE_OPENSSL_MD5_H
+
+/* Define to 1 if you have the <openssl/opensslv.h> header file. */
+#undef HAVE_OPENSSL_OPENSSLV_H
+
+/* Define to 1 if you have the `posix_fadvise' function. */
+#undef HAVE_POSIX_FADVISE
+
+/* Define to 1 if you have the `posix_memalign' function. */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define to 1 if you have the `pread' function. */
+#undef HAVE_PREAD
+
+/* Define to 1 if you have the `pwrite' function. */
+#undef HAVE_PWRITE
+
+/* Define to 1 if you have the `readlink' function. */
+#undef HAVE_READLINK
+
+/* Define to 1 if you have the `reiserfs_fs_open_fast' function. */
+#undef HAVE_REISERFS_FS_OPEN_FAST
+
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
+/* Define to 1 if you have the <setjmp.h> header file. */
+#undef HAVE_SETJMP_H
+
+/* Define to 1 if you have the `setlocale' function. */
+#undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the `signal' function. */
+#undef HAVE_SIGNAL
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
+
+/* Define to 1 if you have the `strtol' function. */
+#undef HAVE_STRTOL
+
+/* Define to 1 if `dev' is member of `struct dal_ops'. */
+#undef HAVE_STRUCT_DAL_OPS_DEV
+
+/* Define to 1 if `st_blksize' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BLKSIZE
+
+/* Define to 1 if `st_blocks' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BLOCKS
+
+/* Define to 1 if `st_rdev' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_RDEV
+
+/* Define to 1 if `set_option' is member of `struct struct_io_manager'. */
+#undef HAVE_STRUCT_STRUCT_IO_MANAGER_SET_OPTION
+
+/* Define to 1 if `tm_gmtoff' is member of `struct tm'. */
+#undef HAVE_STRUCT_TM_TM_GMTOFF
+
+/* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
+   `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
+#undef HAVE_ST_BLOCKS
+
+/* Define to 1 if you have the <sys/cygwin.h> header file. */
+#undef HAVE_SYS_CYGWIN_H
+
+/* Define to 1 if you have the <sys/disklabel.h> header file. */
+#undef HAVE_SYS_DISKLABEL_H
+
+/* Define to 1 if you have the <sys/disk.h> header file. */
+#undef HAVE_SYS_DISK_H
+
+/* Define to 1 if you have the <sys/dkio.h> header file. */
+#undef HAVE_SYS_DKIO_H
+
+/* Define to 1 if you have the <sys/endian.h> header file. */
+#undef HAVE_SYS_ENDIAN_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mount.h> header file. */
+#undef HAVE_SYS_MOUNT_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/utsname.h> header file. */
+#undef HAVE_SYS_UTSNAME_H
+
+/* Define to 1 if you have the <sys/uuid.h> header file. */
+#undef HAVE_SYS_UUID_H
+
+/* Define to 1 if you have the <sys/vtoc.h> header file. */
+#undef HAVE_SYS_VTOC_H
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Define to 1 if you have the `touchwin' function. */
+#undef HAVE_TOUCHWIN
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `utime' function. */
+#undef HAVE_UTIME
+
+/* Define to 1 if you have the <utime.h> header file. */
+#undef HAVE_UTIME_H
+
+/* Define to 1 if you have the `uuidgen' function. */
+#undef HAVE_UUIDGEN
+
+/* Define to 1 if you have the `uuid_generate' function. */
+#undef HAVE_UUID_GENERATE
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
+
+/* Define to 1 if you have the <varargs.h> header file. */
+#undef HAVE_VARARGS_H
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the <winbase.h> header file. */
+#undef HAVE_WINBASE_H
+
+/* Define to 1 if you have the <windef.h> header file. */
+#undef HAVE_WINDEF_H
+
+/* Define to 1 if you have the <winioctl.h> header file. */
+#undef HAVE_WINIOCTL_H
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define for BSD target */
+#undef TARGET_BSD
+
+/* Define for LINUX target */
+#undef TARGET_LINUX
+
+/* Define for SOLARIS target */
+#undef TARGET_SOLARIS
+
+/* Date of release */
+#undef TESTDISKDATE
+
+/* Define to 1 if your processor stores words with the least significant byte
+   first (like Intel and VAX, unlike Motorola and SPARC). */
+#undef TESTDISK_LSB
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Enable GNU extensions */
+#undef _GNU_SOURCE
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* Define for freebsd4 target and progsreiserfs compatibility */
+#undef __freebsd__
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `long' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t

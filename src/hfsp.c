@@ -1,0 +1,138 @@
+/*
+
+    File: hfsp.c
+
+    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+  
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+  
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+  
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+ 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#include "types.h"
+#include "common.h"
+#include "hfsp.h"
+#include "fnctdsk.h"
+#include "log.h"
+
+static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh);
+
+int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose)
+{
+  unsigned char *buffer=(unsigned char*)MALLOC(HFSP_BOOT_SECTOR_SIZE);
+  if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer, partition->part_offset+0x400)!=0)
+  {
+    free(buffer);
+    return 1;
+  }
+  if(test_HFSP(disk_car,(struct hfsp_vh *)buffer,partition,verbose,0)!=0)
+  {
+    free(buffer);
+    return 1;
+  }
+  set_HFSP_info(partition,(struct hfsp_vh *)buffer);
+  free(buffer);
+  return 0;
+}
+
+int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind, const int backup)
+{
+  uint64_t part_size;
+  if(test_HFSP(disk_car,vh,partition,verbose,dump_ind)!=0)
+    return 1;
+  part_size=(uint64_t)be32(vh->total_blocks)*be32(vh->blocksize);
+  if(backup>0)
+  {
+    if(partition->part_offset+2*disk_car->sector_size<part_size)
+      return 1;
+    /* backup is at total_blocks-2 */
+    partition->boot_sector=(part_size-0x400)/disk_car->sector_size;
+    partition->part_offset=partition->part_offset+2*disk_car->sector_size-part_size;
+  }
+  partition->part_size=part_size;
+  set_HFSP_info(partition,vh);
+  partition->part_type_i386=P_HFSP;
+  partition->part_type_mac=PMAC_HFS;
+  partition->part_type_gpt=GPT_ENT_TYPE_MAC_HFS;
+  if(verbose>0)
+  {
+    log_info("part_size %lu\n",(long unsigned)(partition->part_size/disk_car->sector_size));
+  }
+  return 0;
+}
+
+int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind)
+{
+  if (vh->signature==be16(HFSP_VOLHEAD_SIG) && be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks))
+  {
+    if(verbose>0 || dump_ind!=0)
+    {
+      log_info("\nHFS+ magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
+    }
+    if(dump_ind!=0)
+    {
+      /* There is a little offset ... */
+      dump_log(vh,DEFAULT_SECTOR_SIZE);
+    }
+    if(verbose>1)
+    {
+      log_info("blocksize %u\n",(unsigned) be32(vh->blocksize));
+      log_info("total_blocks %u\n",(unsigned) be32(vh->total_blocks));
+      log_info("free_blocks  %u\n",(unsigned) be32(vh->free_blocks));
+    }
+    partition->upart_type=UP_HFSP;
+    return 0;
+  }
+  if (vh->signature==be16(HFSX_VOLHEAD_SIG) && be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks))
+  {
+    if(verbose>0 || dump_ind!=0)
+    {
+      log_info("\nHFSX magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
+    }
+    if(dump_ind!=0)
+    {
+      /* There is a little offset ... */
+      dump_log(vh,DEFAULT_SECTOR_SIZE);
+    }
+    if(verbose>1)
+    {
+      log_info("blocksize %u\n",(unsigned) be32(vh->blocksize));
+      log_info("total_blocks %u\n",(unsigned) be32(vh->total_blocks));
+      log_info("free_blocks  %u\n",(unsigned) be32(vh->free_blocks));
+    }
+    partition->upart_type=UP_HFSX;
+    return 0;
+  }
+  return 1;
+}
+
+static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh)
+{
+  partition->fsname[0]='\0';
+  if(partition->upart_type==UP_HFSP)
+    strncpy(partition->info,"HFS+",sizeof(partition->info));
+  else
+    strncpy(partition->info,"HFSX",sizeof(partition->info));
+  return 0;
+}
+

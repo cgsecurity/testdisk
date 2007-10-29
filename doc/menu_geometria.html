@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Menu Geometria,Ejecutando TestDisk,Menu Analizar" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Menu Geometria - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Menu_Geometria";
+			var wgTitle = "Menu Geometria";
+			var wgArticleId = 1818;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Menu Geometria</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63, sector size=512
+
+Because these numbers change the way that TestDisk looks for partitions
+and calculates their sizes, it's important to have the correct disk geometry.
+PC partitionning programs often make partitions end on cylinder boundaries.
+
+A partition's CHS values are based on disk translations which make them
+different than its physical geometry. The most common CHS head values
+are: 255, 240 and sometimes 16.
+
+
+
+
+[ Cylinders ]  [   Heads   ]  [  Sectors  ]  [Sector Size]  [    Ok     ]
+
+
+
+
+
+                          Done with changing geometry
+</pre>
+<p>Cambiar los par&aacute;metros de geometr&iacute;a del disco r&iacute;gido (Clindros, Cabezales, Sectores).
+</p><p>Los programas de particionamiento a menudo (siempre) hacen que las particiones terminen en los l&iacute;mites de los cilindros.
+Los n&uacute;meros de CHS cambian la forma en que TestDisk busca particiones y calcula sus tamaños, etc. No afecta al disco mismo, <i>a menos que</i> usted realmente escriba datos de particiones perdidas en su disco. Elejir el seteo incorrecto de geometr&iacute;a y luego grabar cualquier partici&oacute;n perdida basandos&eacute; en esos seteos puede hacer m&aacute;s dificultosa &oacute; imposible la recuperaci&oacute;n de los datos.
+</p><p><br />
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Informaci.C3.B3n_de_fondo"><span class="tocnumber">1</span> <span class="toctext">Informaci&oacute;n de fondo</span></a></li>
+<li class="toclevel-1"><a href="#.C2.BFC.C3.B3mo_hace_TestDisk_para_obtener_la_geometr.C3.ADa_del_disco.3F"><span class="tocnumber">2</span> <span class="toctext">¿C&oacute;mo hace TestDisk para obtener la geometr&iacute;a del disco?</span></a></li>
+<li class="toclevel-1"><a href="#Algunos_consejos_sobre_la_geometr.C3.ADa"><span class="tocnumber">3</span> <span class="toctext">Algunos consejos sobre la geometr&iacute;a</span></a>
+<ul>
+<li class="toclevel-2"><a href="#.C2.BFC.C3.B3mo_encuentro_la_cantidad_correcta_de_cabezales.3F"><span class="tocnumber">3.1</span> <span class="toctext">¿C&oacute;mo encuentro la cantidad correcta de cabezales?</span></a></li>
+<li class="toclevel-2"><a href="#.C2.BFC.C3.B3mo_encontrar_la_cantidad_correcta_de_sectores.3F"><span class="tocnumber">3.2</span> <span class="toctext">¿C&oacute;mo encontrar la cantidad correcta de sectores?</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Informaci.C3.B3n_de_fondo"></a><h2> Informaci&oacute;n de fondo </h2>
+<p>Para acceder los datos, los sistemas operativos modernos usan logical block adressing (LBA).
+Los sectores est&aacute;n numerados 0,1, 2 hasta N-1 donde N es la cantidad total de sectores.
+</p><p>Pero antes de que los discos mayores a 8GB y SCSI existieran, otro m&eacute;todo era utilizado.
+Para acceder a los datos, el BIOS y el sistema operativo (Dos/Win9x) usaban direccionamiento CHS.
+Los valores CHS est&aacute;n limitados a 1023 cilindros, 255 cabezales y 63 sectores (8GB).
+Un truco com&uacute;n presentado con los discos mayores a 504 MB (1023 cilindros, 16 cabezales, 63 sectores) era usar una geometr&iacute;a (Cilindros / Cabezales / Sectores) distinta a la geometr&iacute;a f&iacute;sica. (Extended CHS &oacute; large mode adressing (LMA)).
+</p><p>Un m&eacute;todo usado por el BIOS es leer la tabla de particiones y adivinar la cantidad de cabezales. Cuando la tabla de particiones est&aacute; limpiada &oacute; corrompida, la geometr&iacute;a f&iacute;sica puede ser utilizada. Se vuelve m&aacute;s dif&iacute;cil para las utilidades de recuperaci&oacute;n encontrar particiones perdidas en el disco r&iacute;gido.
+</p><p>Este problema no est&aacute; limitado a usuarios de DOS. Los usuarios de Linux tambi&eacute;n se ven afectados.
+En Linux, ejecute <b>dmesg</b> y busque <b>Partition check</b>.
+En el siguiente ejemplo, la geometr&iacute;a del disco r&iacute;gido <b>hdc</b> est&aacute; determinada por la tabla de particiones (<b>PTBL</b>).
+</p>
+<pre>
+Partition check:
+ hda: hda1 hda2 hda3 hda4 &lt; hda5 hda6 hda7 hda8 hda9 hda10 hda11 hda12 hda13 &gt;
+ hda3: &lt;bsd: hda14 hda15 hda16 hda17 &gt;
+ hdc: [PTBL] [7476/255/63] hdc1 &lt; hdc5 hdc6 hdc7 hdc8 hdc9 hdc10 hdc11 hdc12 hdc13 &gt;
+</pre>
+<a name=".C2.BFC.C3.B3mo_hace_TestDisk_para_obtener_la_geometr.C3.ADa_del_disco.3F"></a><h2> ¿C&oacute;mo hace TestDisk para obtener la geometr&iacute;a del disco? </h2>
+<ul><li> En DOS, TestDisk obtiene el tamaño del disco usando una funci&oacute;n extendida del BIOS (ah=0x48, int 0x13), y la geometr&iacute;a (cantidad de cabezales y sectores) usando una funci&oacute;n est&aacute;ndar del BIOS (ah=0x08, int 0x13). TestDisk usa el tamaño default del sector de 512 bytes.
+</li></ul>
+<ul><li> En Windows, TestDisk obtiene la cantidad de cilindros, cabezales y sectores, y el tamaño de sector usando la llamada DeviceIoControl, IOCTL_DISK_GET_DRIVE_GEOMETRY.
+</li></ul>
+<ul><li> En Linux, TestDisk obtiene el tamaño de sector usando BLKSSZGET ioctl, y la geometr&iacute;a usando HDIO_GETGEO_BIG &oacute; HDIO_GETGEO ioctl; el tamaño de los discos los saca de BLKGETSIZE64 &oacute; BLKGETSIZE.
+</li></ul>
+<ul><li> En BSD, TestDisk obtiene toda la informaci&oacute;n usando DIOCGDINFO. Si eso falla, TestDisk asume que el tamaño del sector es de 512 bytes, y usa DIOCGFWSECTORS, DIOCGFWHEADS y DIOCGMEDIASIZE para obtener todos los dem&aacute;s par&aacute;metros.
+</li></ul>
+<ul><li> En Sun Solaris, TestDisk usa el tamaño default del sector, de 512 bytes, y obtiene la cantidad de cilindros, cabezales y sectores usando DKIOCGGEOM ioctl.
+</li></ul>
+<a name="Algunos_consejos_sobre_la_geometr.C3.ADa"></a><h2> Algunos consejos sobre la geometr&iacute;a </h2>
+<a name=".C2.BFC.C3.B3mo_encuentro_la_cantidad_correcta_de_cabezales.3F"></a><h3> ¿C&oacute;mo encuentro la cantidad correcta de cabezales? </h3>
+<p>Si la geometr&iacute;a del disco r&iacute;gido no concuerda con la utilizada al crear la tabla de particiones, se muestran mensajes de aviso como&nbsp;: <code>Bad sector count</code>,
+<code>Bad relative sector</code> &oacute; <code>Bad ending head</code> cuando <a href="menu_analizar.html" title="Menu Analizar">Analyse</a>
+est&aacute; seleccionado del men&uacute; principal. Si ve estos errores, puede necesitar utilizar  el men&uacute; <code>Geometry</code> para cambiar la cantidad l&oacute;gica de cabezales.
+Intente 255, 16, 32, 64, 128 y 240 cabezales hasta que TestDisk encuentre sus particiones. 255 y 240 son los valores de cantidad de cabezales m&aacute;s comunes. Si usted instal&oacute; Linux como su &uacute;nico Sistema Operativo en su disco r&iacute;gido, tiende a setearse como default
+en s&oacute;lo 16 cabezales.
+</p>
+<a name=".C2.BFC.C3.B3mo_encontrar_la_cantidad_correcta_de_sectores.3F"></a><h3> ¿C&oacute;mo encontrar la cantidad correcta de sectores? </h3>
+<p>Generalmente la cantidad de sectores por cabezal es siempre 63, pero en algunos dispositivos USB, el valor puede ser 32.
+</p><p>Volver a <a href="ejecutando_testdisk.html" title="Ejecutando TestDisk">Ejecutando el Programa TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1818-0!1!0!!en!2 and timestamp 20061129150720 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Menu_Geometria" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 14:59, 29 November 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061129171701 -->
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Discos Rigidos Rotos,PhotoRec,SMART Monitoring,TestDisk Descargar,TestDisk ES" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Discos Rigidos Rotos - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Discos_Rigidos_Rotos";
+			var wgTitle = "Discos Rigidos Rotos";
+			var wgArticleId = 1786;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Discos Rigidos Rotos</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>Los sectores dañados son la forma m&aacute;s com&uacute;n de daño f&iacute;sico del disco. Son signos tempranos de "crash" del disco a medida que se va deteriorando. Un sector dañado es un sector en el disco que no puede ni leerse ni escribirse debido a un daño f&iacute;sico &oacute; inconsistencias en el checkeo de los bits de paridad en el disco (CRC &oacute; Cyclic Redundancy Check).
+Si hay sectores en mal estado en su disco r&iacute;gido, debe primero copiar los datos en otro disco r&iacute;gido antes de intentar recuperar los datos. 
+</p><p>El nuevo disco debe ser al menos del mismo tamaño (revisar el n&uacute;mero de sectores LBA) &oacute; m&aacute;s grande; si es m&aacute;s grande, no es generalmente un problema ya que la cantidad de cabezales por cilindro y sectores por cabezal ser&aacute; la misma en ambos discos si usan modo LBA.
+Windows puede llegar a tener algunos problemas tratando con sectores corruptos en un disco dañado, as&iacute; que la mejor soluci&oacute;n es usar el sistema operativo Linux para copiar los datos en otro disco r&iacute;gido.<br />
+</p><p>Tambi&eacute;n puede utilizar TestDisk para analizar los sectores copiados desde un disco r&iacute;gido con problemas a nivel f&iacute;sico, en un disco en buenas condiciones.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Iniciando_de_Knoppix.2C_un_Linux_LiveCD"><span class="tocnumber">1</span> <span class="toctext">Iniciando de Knoppix, un Linux LiveCD</span></a></li>
+<li class="toclevel-1"><a href="#Identificando_un_dispositivo_HDD.27s_en_Linux"><span class="tocnumber">2</span> <span class="toctext">Identificando un dispositivo HDD's en Linux</span></a></li>
+<li class="toclevel-1"><a href="#Duplicaci.C3.B3n_de_Disco"><span class="tocnumber">3</span> <span class="toctext">Duplicaci&oacute;n de Disco</span></a>
+<ul>
+<li class="toclevel-2"><a href="#El_viejo_y_lento_m.C3.A9todo_usando_.27dd.27"><span class="tocnumber">3.1</span> <span class="toctext">El viejo y lento m&eacute;todo usando 'dd'</span></a></li>
+<li class="toclevel-2"><a href="#El_.27dd_rescue.27_de_Kurt_Garloff"><span class="tocnumber">3.2</span> <span class="toctext">El 'dd_rescue' de Kurt Garloff</span></a></li>
+<li class="toclevel-2"><a href="#El_mejor_m.C3.A9todo:_.27ddrescue.27_de_Antonio_Diaz"><span class="tocnumber">3.3</span> <span class="toctext">El mejor m&eacute;todo: 'ddrescue' de Antonio Diaz</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Detecci.C3.B3n_temprana_de_sectores_da.C3.B1ados"><span class="tocnumber">4</span> <span class="toctext">Detecci&oacute;n temprana de sectores dañados</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Iniciando_de_Knoppix.2C_un_Linux_LiveCD"></a><h2> Iniciando de Knoppix, un Linux LiveCD </h2>
+<p>Si no tiene un sistema operativo Linux instalado, descargue el <a href="http://www.knopper.net/knoppix/index-en.html" class="external text" title="http://www.knopper.net/knoppix/index-en.html" rel="nofollow">Knoppix LiveCD </a>, ¡Un CD booteable gratuito con un Linux completamente funcional que corre solo en memoria!
+</p>
+<ul><li> Grabar el archivo .iso en el CD
+</li><li> Boot desde el CD-ROM
+</li><li> En el prompt del inicio, escribir <code>knoppix lang=es</code> para un teclado en idioma español.
+</li><li> Ser&aacute; autom&aacute;ticamente logueado como el usuario 'knoppix' en una interfaz gr&aacute;fica.
+</li><li> Inicie una consola de terminal
+</li></ul>
+<p>Knoppix viene con <a href="testdisk_es.html" title="TestDisk ES"> TestDisk</a>, <a href="photorec.html" title="PhotoRec">PhotoRec</a>, dd y dd_rescue. Para acceder a los discos r&iacute;gidos, necesita ejecutar estar utilidades con privilegios de root (Administrador).
+</p>
+<ul><li> Para convertirse en root desde la cuenta del usuario 'knoppix', seleccione la consola y escriba <code>sudo -s</code> y presione la tecla Enter.
+</li><li> Ahora puede iniciar desde esta consola todos los comandos poderosos que necesita para tener acceso completo a los discos.
+</li></ul>
+<p><b>Nota para los usuarios del CD de Knoppix version 4.0.2:</b><br />
+Para usar TestDisk en Knoppix 4.0.2, es necesario resolver un problema con una biblioteca ejecutando:
+</p>
+<pre>
+cp /usr/lib/libntfs.so.7 /usr/lib/libntfs.so.5 
+</pre>
+<p>antes de ejecutar TestDisk. Este problema no deber&iacute;a ocurrir en cualquiera de las otras versiones de Knoppix &oacute; con la versi&oacute;n de Linux disponible de nuestra secci&oacute;n de <a href="testdisk_descargar.html" title="TestDisk Descargar">Descarga</a>.
+</p>
+<a name="Identificando_un_dispositivo_HDD.27s_en_Linux"></a><h2> Identificando un dispositivo HDD's en Linux </h2>
+<p>En Linux, el dispositivo <b>IDE</b> es <b>/dev/hda</b><br /> El dispositivo IDE Primary Slave es <b>/dev/hdb</b><br />El dispositivo IDE Secondary Master es <b>/dev/hdc</b> y as&iacute;.<br />
+Los dispositivos HDD <b>SATA</b> generalmente comienzan con /dev/hde <i>&oacute;</i> /dev/sda<br />
+Los dispositivos HDD <b>SCSI</b> siempre comienzan con <b>/dev/sda</b><br />
+Los dispositivos <b>USB</b> comienzan seguido con nombres de dispositivos SCSI: <b>/dev/sda</b> etc.
+</p><p>Para listar las particiones de un disco r&iacute;gido, como usuario root, ejecutar: <b>fdisk -l <i>device</i></b>.
+</p>
+<a name="Duplicaci.C3.B3n_de_Disco"></a><h2> Duplicaci&oacute;n de Disco </h2>
+<p>Una vez verificado el nombre del dispositivo de su disco dañado y el nuevo disco al que se le copiaran los datos, en el shell de comandos &oacute; consola de terminal, <b>no</b> desde cualquier sistema operativo en el disco dañado, se puede comenzar a duplicar los datos.
+</p>
+<a name="El_viejo_y_lento_m.C3.A9todo_usando_.27dd.27"></a><h3> El viejo y lento m&eacute;todo usando 'dd' </h3>
+<p>Ejecutar
+<code>dd if=/dev/old_disk of=/dev/new_disk conv=noerror,sync</code><br />
+&oacute; para crear un archivo de imagen:<br />
+<code>dd if=/dev/old_disk of=image_file conv=noerror</code><br />
+para copiar los datos.
+</p><p>Para acelerar el proceso de copiado, se puede agregar <code>bs=8k</code>, lo cual har&aacute; que se lea/escriba el disco 16 sectores a la vez.
+</p>
+<a name="El_.27dd_rescue.27_de_Kurt_Garloff"></a><h3> El 'dd_rescue' de Kurt Garloff </h3>
+<p>Si usted cree que hay muchos sectores dañados en el disco, puede intentar usar el comando 'dd_rescue' de Kurt Garloff (<a href="http://www.garloff.de/kurt/linux/ddrescue/" class="external text" title="http://www.garloff.de/kurt/linux/ddrescue/" rel="nofollow">dd_rescue</a>) en vez de 'dd'.
+</p>
+<a name="El_mejor_m.C3.A9todo:_.27ddrescue.27_de_Antonio_Diaz"></a><h3> El mejor m&eacute;todo: 'ddrescue' de Antonio Diaz </h3>
+<p>La mejor soluci&oacute;n, m&aacute;s r&aacute;pida y m&aacute;s eficaz, parece ser la del 'ddrescue' de Antonio Diaz (<a href="http://savannah.gnu.org/projects/ddrescue/" class="external text" title="http://savannah.gnu.org/projects/ddrescue/" rel="nofollow">ddrescue</a>)<br />
+</p>
+<pre>
+# primero, agarrar la mayoria de las areas sin errores:
+ddrescue -B -n /dev/old_disk /dev/new_disk rescued.log
+# luego, tratar de recuperar lo mas que se pueda de las areas dicy:
+ddrescue -B -r 1 /dev/old_disk /dev/new_disk rescued.log
+</pre>
+<a name="Detecci.C3.B3n_temprana_de_sectores_da.C3.B1ados"></a><h2> Detecci&oacute;n temprana de sectores dañados </h2>
+<p>Algunos discos modernos pueden detectar problemas usando <a href="smart_monitoring.html" title="SMART Monitoring">SMART Monitoring</a>.
+</p><p><br />
+Volver a <a href="testdisk_es.html" title="TestDisk ES">TestDisk (Castellano)</a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1786-0!1!0!!en!2 and timestamp 20070117150918 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Discos_Rigidos_Rotos" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 18:06, 24 November 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070117162919 -->
+</html>

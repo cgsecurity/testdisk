@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="After using TestDisk,PhotoRec,ReiserFS File Undelete HOWTO,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>After using TestDisk - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "After_using_TestDisk";
+			var wgTitle = "After using TestDisk";
+			var wgArticleId = 1284;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">After using TestDisk</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>After writing a new partition structure, you have to reboot for the change to take effect.
+Check the filesystems and repair them if necessary.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Writing_the_partition_table"><span class="tocnumber">1</span> <span class="toctext">Writing the partition table</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Mac_OS_X"><span class="tocnumber">1.1</span> <span class="toctext">Mac OS X</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#How_to_check_and_repair_a_filesystem"><span class="tocnumber">2</span> <span class="toctext">How to check and repair a filesystem</span></a>
+<ul>
+<li class="toclevel-2"><a href="#ReiserFS"><span class="tocnumber">2.1</span> <span class="toctext">ReiserFS</span></a></li>
+<li class="toclevel-2"><a href="#To_repair_a_FAT.2FNTFS_filesystem_under_Windows"><span class="tocnumber">2.2</span> <span class="toctext">To repair a FAT/NTFS filesystem under Windows</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#How_to_make_the_system_bootable_again"><span class="tocnumber">3</span> <span class="toctext">How to make the system bootable again</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Dos_-_Win9x"><span class="tocnumber">3.1</span> <span class="toctext">Dos - Win9x</span></a></li>
+<li class="toclevel-2"><a href="#Windows_2000.2FXP.2F2003"><span class="tocnumber">3.2</span> <span class="toctext">Windows 2000/XP/2003</span></a></li>
+<li class="toclevel-2"><a href="#Linux.2FFreeBSD"><span class="tocnumber">3.3</span> <span class="toctext">Linux/FreeBSD</span></a></li>
+<li class="toclevel-2"><a href="#Multiboot"><span class="tocnumber">3.4</span> <span class="toctext">Multiboot</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#How_to_undelete_files"><span class="tocnumber">4</span> <span class="toctext">How to undelete files</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Ext2fs"><span class="tocnumber">4.1</span> <span class="toctext">Ext2fs</span></a></li>
+<li class="toclevel-2"><a href="#ReiserFS_2"><span class="tocnumber">4.2</span> <span class="toctext">ReiserFS</span></a></li>
+<li class="toclevel-2"><a href="#PhotoRec"><span class="tocnumber">4.3</span> <span class="toctext">PhotoRec</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Writing_the_partition_table"></a><h2> Writing the partition table </h2>
+<a name="Mac_OS_X"></a><h3> Mac OS X </h3>
+<p>Use pdisk to recreate the Mac partition map using the values given by TestDisk
+</p>
+<a name="How_to_check_and_repair_a_filesystem"></a><h2> How to check and repair a filesystem </h2>
+<a name="ReiserFS"></a><h3> ReiserFS </h3>
+<p>If the superblock of a reiserfs partition is missing, it can be rebuild
+with <b>reiserfsck --rebuild-sb device</b>.
+</p>
+<a name="To_repair_a_FAT.2FNTFS_filesystem_under_Windows"></a><h3> To repair a FAT/NTFS filesystem under Windows </h3>
+<p>To check a NTFS partition from Windows, run <b>chkdsk /f c:</b>
+</p><p><br />
+</p>
+<a name="How_to_make_the_system_bootable_again"></a><h2> How to make the system bootable again </h2>
+<a name="Dos_-_Win9x"></a><h3> Dos - Win9x </h3>
+<p>If your OS doesn't boot, you can reinstall the system files with <code>sys c:</code>.
+</p>
+<a name="Windows_2000.2FXP.2F2003"></a><h3> Windows 2000/XP/2003 </h3>
+<p>If your Windows doesn't boot, try fixmbr from the Windows Recovery Console and fixboot
+to repair NTFS boot sector.
+</p>
+<a name="Linux.2FFreeBSD"></a><h3> Linux/FreeBSD</h3>
+<p>You may have to update your <b>/etc/fstab</b> to reflect the
+new partition order.
+</p>
+<a name="Multiboot"></a><h3> Multiboot </h3>
+<p>You may have to update your multiboot configuration and reinstall the multiboot in
+the Master Boot Record.
+</p>
+<ul><li>Lilo: <b>/etc/lilo.conf</b>, lilo to re-install
+</li><li>Grub: <b>/boot/grub/grub.conf</b>, grub-install device
+</li><li>Windows (NT/2000/XP/2003/...): <b>c:\boot.ini</b>, run fixmbr from the Recovery Console (ie. fixmbr \Device\HardDisk0)
+</li></ul>
+<a name="How_to_undelete_files"></a><h2> How to undelete files </h2>
+<a name="Ext2fs"></a><h3> Ext2fs </h3>
+<p>To undelete files on linux, you can try <a href="http://e2undel.sourceforge.net/" class="external text" title="http://e2undel.sourceforge.net/" rel="nofollow">e2undel</a>
+</p>
+<a name="ReiserFS_2"></a><h3> ReiserFS </h3>
+<p>Read the <a href="reiserfs_file_undelete_howto.html" title="ReiserFS File Undelete HOWTO">ReiserFS file undelete HOWTO</a>
+</p>
+<a name="PhotoRec"></a><h3> PhotoRec </h3>
+<p>Try <a href="photorec.html" title="PhotoRec">PhotoRec</a> if you want to recover files and the system is too badly damaged to be repaired.
+</p><p>Return to <a href="testdisk.html" title="TestDisk"> TestDisk </a> main page
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1284-0!1!0!!en!2 and timestamp 20061107213954 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=After_using_TestDisk" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 13:46, 3 August 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061107215004 -->
+</html>

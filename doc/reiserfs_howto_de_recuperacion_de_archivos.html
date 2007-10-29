@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="ReiserFS HOWTO de Recuperacion de Archivos,Luego De Usar TestDisk,PhotoRec,TestDisk Livecd,TestDisk y CD de Live rescue" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>ReiserFS HOWTO de Recuperacion de Archivos - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "ReiserFS_HOWTO_de_Recuperacion_de_Archivos";
+			var wgTitle = "ReiserFS HOWTO de Recuperacion de Archivos";
+			var wgArticleId = 1817;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">ReiserFS HOWTO de Recuperacion de Archivos</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>si usted accidentalmente elimin&oacute; algunos archivos de una partici&oacute;n ReiserFS, no pierda toda la esperanza, puede recuperar sus datos siguiendo este HowTo.
+En este ejemplo, el sistema de archivos ReiserFS est&aacute; montado en el directorio /home y el dispositivo ReiserFS es /dev/hda1.
+</p><p>Como root (Administrador), desmontar la partici&oacute;n ReiserFS desde donde se van a recuperar los archivos eliminados
+</p>
+<pre>umount /home</pre>
+<p>Si no puede desmontar la partici&oacute;n (<code>umount: /home: device is busy</code>),
+intente nuevamente en modo de usuario &uacute;nico (single user mode)
+</p>
+<pre>init 1</pre>
+<p>&oacute; mejor a&uacute;n, bootee desde un <a href="testdisk_y_cd_de_live_rescue.html" title="TestDisk y CD de Live rescue">Linux Live CDROM</a> (Como el Knoppix).
+</p><p>Hacer un Backup de la partici&oacute;n.
+</p><p>Es altamente recomendado hacer un backup de la partici&oacute;n actual luego de bootear de una disco <a href="testdisk_livecd.html" title="TestDisk Livecd">Linux Live cd</a>. Esto va a crear un archivo de su disco entero. Es mejor crear este archivo en otro disco, con tamaño mayor &oacute; igual que el disco desde el cual se est&aacute; intentando hacer la recuperaci&oacute;n de los archivos eliminados.
+</p><p>Por ejemplo, si el disco original es de 40 Gb, deber&iacute;a estar creando este archivo en un disco de 40 Gb &oacute; m&aacute;s.
+</p>
+<pre>dd if=/dev/hda1 of=reiserfs.dd bs=4096 conv=noerror</pre>
+<p>Recupere los archivos escaneando la partici&oacute;n entera
+</p>
+<pre>reiserfsck --rebuild-tree --scan-whole-partition reiserfs.dd</pre>
+<p>Cree el punto de montado (mount point)
+</p>
+<pre>mkdir /mnt/recovery</pre>
+<p>Monte la imagen en este directorio
+</p>
+<pre>mount -o loop reiserfs.dd /mnt/recovery</pre>
+<p>Algunos archivos recuperados estar&aacute;n en su ubicaci&oacute;n anterior pero la mayor&iacute;a de los archivos estar&aacute;n en <code>/mnt/recovery/lost+found</code>. Ahora remonte la partici&oacute;n original
+</p>
+<pre>mount /home</pre>
+<p>y copie los archivos recuperados al lugar original.
+</p><p>Para casos desesperados, puede tambi&eacute;n intentar <a href="photorec.html" title="PhotoRec">PhotoRec</a>.
+</p><p>Volver a <a href="luego_de_usar_testdisk.html" title="Luego De Usar TestDisk"> Luego De Usar TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1817-0!1!0!!en!2 and timestamp 20070521131748 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=ReiserFS_HOWTO_de_Recuperacion_de_Archivos" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 13:17, 21 May 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070521193843 -->
+</html>

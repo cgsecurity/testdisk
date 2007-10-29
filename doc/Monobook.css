@@ -1,0 +1,1 @@
+/* CSS placed here will affect users of the Monobook skin */

@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Beschädigte Festplatte,PhotoRec DE,SMART Monitoring DE,TestDisk DE,TestDisk Herunterladen" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Beschädigte Festplatte - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Beschädigte_Festplatte";
+			var wgTitle = "Beschädigte Festplatte";
+			var wgArticleId = 1345;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Beschädigte Festplatte</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>Unbrauchbare Sektoren sind die am weitesten verbreitete Form eines physikalischen Schadens einer Festplatte. Sie sind frühe Anzeichen eines Plattenabsturzes, der sich über die Zeit verschlechtert. Ein unbrauchbarer Sektor ist ein Sektor auf der Platte, auf dem Daten aufgrund eines  physikalischen Schadens oder Inkonsistenzen des Paritätsüberprüfungsbits (CRC oder Cyclic Redundancy error) weder geschrieben noch gelesen werden kann.
+Wenn sich beschädigte Sektoren auf einer Festplatte befinden, sollten die Daten zuerst auf einer anderen Festplatte kopiert werden bevor eine Wiederherstellung der Daten versucht wird.
+</p><p>Die neue Festplatte muß mindestens genau dieselbe Größe haben (überprüfe die Nummer der LBA-Sektoren) oder größer sein.<br />
+Wenn die Festplatte größer ist, sollte es in der Regel kein Problem sein, weil die Nummer von Köpfe pro Cylinder und Sektoren pro Kopf gleich sein sollte, wenn beide Festplatten den LBA-Modus benutzen. Windows könnte einige Probleme haben um mit fehlerhafte Sektoren/beschädigten Festplatten umzugehen, daher ist die beste Lösung die ich habe, Linux zu benutzen um die Daten zu duplizieren.<br />
+</p><p><a href="testdisk_de.html" title="TestDisk DE">TestDisk</a> kann auch als Hilfe verwendet werden, um Sektoren zu analysieren, die von einer Festplatte mit physikalischen Problemen auf einer intakten kopiert wurden.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Booten_von_Knoppix.2C_einer_Linux-LiveCD"><span class="tocnumber">1</span> <span class="toctext">Booten von Knoppix, einer Linux-LiveCD</span></a></li>
+<li class="toclevel-1"><a href="#Identifizieren_von_Linux-Ger.C3.A4ten"><span class="tocnumber">2</span> <span class="toctext">Identifizieren von Linux-Geräten</span></a></li>
+<li class="toclevel-1"><a href="#Festplatte_duplizieren"><span class="tocnumber">3</span> <span class="toctext">Festplatte duplizieren</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Ausf.C3.BChren_der_alten_und_langsamen_Methode_.C3.BCber_dd"><span class="tocnumber">3.1</span> <span class="toctext">Ausführen der alten und langsamen Methode über dd</span></a></li>
+<li class="toclevel-2"><a href="#Kurt_Garloff.27s_.27dd_rescue.27"><span class="tocnumber">3.2</span> <span class="toctext">Kurt Garloff's 'dd_rescue'</span></a></li>
+<li class="toclevel-2"><a href="#Die_beste_Methode:_Antonio_Diaz.27s_.27ddrescue.27"><span class="tocnumber">3.3</span> <span class="toctext">Die beste Methode: Antonio Diaz's 'ddrescue'</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Fr.C3.BChe_Entdeckung_von_unbrauchbaren_Sektoren"><span class="tocnumber">4</span> <span class="toctext">Frühe Entdeckung von unbrauchbaren Sektoren</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Booten_von_Knoppix.2C_einer_Linux-LiveCD"></a><h2> Booten von Knoppix, einer Linux-LiveCD </h2>
+<p>Wenn kein Linux-Betriebssystem installiert ist, kannst du eine <a href="http://www.knopper.net/knoppix/index-en.html" class="external text" title="http://www.knopper.net/knoppix/index-en.html" rel="nofollow">Knoppix LiveCD </a>, als eine freie bootfähige CD mit einem vollständig funktionellen Linux-Betriebssystem, das nur im Speicher läuft, herunterladen!
+</p>
+<ul><li> Brenne die .iso-Datei auf eine CD
+</li><li> Boote von der CD-ROM
+</li><li> An der Boot-Eingabeauffordeung, schreibe <code>knoppix lang=de</code> für eine deutsche Tastatur/Sprache (bei der deutschen Version nicht erforderlich).
+</li><li> Du wirst automatisch als der Benutzer 'knoppix' bei der grafischen Benutzeroberfläche angemeldet.
+</li><li> Starte eine Konsole (Eingabeaufforderung) oder Terminal.
+</li></ul>
+<p>Knoppix kommt mit <a href="testdisk_de.html" title="TestDisk DE">TestDisk</a>, <a href="photorec_de.html" title="PhotoRec DE"> PhotoRec</a>, dd und dd_rescue. Um auf Festplatten zuzugreifen, müssen diese Hilfsprogramme mit root (Administrator)-Berechtigungen ausgeführt werden.
+</p>
+<ul><li> Um root vom Knoppix-Benutzerkonto zu werden, wähle die Konsole aus und gib <code>sudo -s</code> ein und drücke die Eingabetaste.
+</li><li> Jetzt kannst du von der Konsole alle Befehle ausführen, die einen vollständigen Zugriff auf die Platte erfordern. 
+</li></ul>
+<p><b>Hinweis für Benutzer von Knoppix Version 4.0.2 CD:</b><br />
+Um TestDisk unter Knoppix 4.0.2 zu verwenden, musst du zuerst ein Bibliotheksproblem durch Ausführen von
+</p>
+<pre>
+cp /usr/lib/libntfs.so.7 /usr/lib/libntfs.so.5 
+</pre>
+<p>lösen, bevor testdisk ausgeführt wird. Dieses Problem sollte nicht unter anderen Knoppix-Versionen oder mit der verfügbaren Linux-Version aus unserem <a href="testdisk_herunterladen.html" title="TestDisk Herunterladen">Herunterladen</a>-Bereich auftreten.
+</p>
+<a name="Identifizieren_von_Linux-Ger.C3.A4ten"></a><h2> Identifizieren von Linux-Geräten  </h2>
+<p>Unter Linux, das Primäre Master-<b>IDE</b>-Laufwerk ist <b>/dev/hda</b><br /> Das Primäre Slave-IDE-Laufwerk ist <b>/dev/hdb</b><br />Das Sekundäre Master-IDE-Laufwerk ist <b>/dev/hdc</b> und so weiter.<br />
+<b>SATA</b>-Festplatten-Dateinamen beginnen in der Regel mit  /dev/sda <i>oder</i> /dev/hde<br />
+<b>SCSI</b>-Laufwerke-Dateinamen beginnen immer mit <b>/dev/sda</b><br />
+<b>USB</b>-Laufwerke benutzen oft den Namen von SCSI-Laufwerken <b>/dev/sda</b>
+</p><p>Um die Partitionen einer Festplatte aufzulisten, logge dich ein als root und führe <b>fdisk -l <i>device</i></b> aus.
+</p>
+<a name="Festplatte_duplizieren"></a><h2> Festplatte duplizieren </h2>
+<p>Wenn die Gerätenamen der beschädigten und der neuen Festplatte einmal geprüft sind, kann in einer Kommandozeile oder Terminal (im Startmenü als Konsole oder Terminal bezeichnet), das Duplizieren der Daten gestartet werden.<br />Das Duplizieren darf <b>nicht</b> von einem Betriebssystem auf der beschädigten Festplatte ausgeführt werden!
+</p>
+<a name="Ausf.C3.BChren_der_alten_und_langsamen_Methode_.C3.BCber_dd"></a><h3> Ausführen der alten und langsamen Methode über dd </h3>
+<p>Auszuführen über
+<code>dd if=/dev/old_disk of=/dev/new_disk conv=noerror,sync</code><br />
+oder eine Image-Datei erzeugen über:<br />
+<code>dd if=/dev/old_disk of=image_file conv=noerror</code><br />
+um die Daten zu kopieren.
+</p><p>Um das kopieren der Daten zu beschleunigen, kann <code>bs=8k</code> zugefügt werden. Dadurch liest und schreibt die Festplatte 16 Sektoren gleichzeitig.
+</p>
+<a name="Kurt_Garloff.27s_.27dd_rescue.27"></a><h3> Kurt Garloff's 'dd_rescue' </h3>
+<p>Wenn davon ausgegangen wird, das sich auf der Festplatte viele beschädigte Sektoren befinden, kannst du versuchen Kurt Garloff's 'dd_rescue' (<a href="http://www.garloff.de/kurt/linux/ddrescue/" class="external text" title="http://www.garloff.de/kurt/linux/ddrescue/" rel="nofollow">dd_rescue</a>) antatt dd zu verwenden.
+</p>
+<a name="Die_beste_Methode:_Antonio_Diaz.27s_.27ddrescue.27"></a><h3> Die beste Methode: Antonio Diaz's 'ddrescue' </h3>
+<p>Die beste Lösung, schneller und effizienter, scheint Antonio Diaz's 'ddrescue'
+(<a href="http://savannah.gnu.org/projects/ddrescue/" class="external text" title="http://savannah.gnu.org/projects/ddrescue/" rel="nofollow">ddrescue</a>) zu sein.<br />
+</p>
+<pre>
+#Erfasse zuerst die meisten fehlerfreien Bereiche auf die Schnelle:
+ddrescue -B -n /dev/old_disk /dev/new_disk rescued.log
+#Versuche dann soviel wie möglich von den heiklen Bereichen wiederherzustellen:
+ddrescue -B -r 1 /dev/old_disk /dev/new_disk rescued.log
+</pre>
+<a name="Fr.C3.BChe_Entdeckung_von_unbrauchbaren_Sektoren"></a><h2> Frühe Entdeckung von unbrauchbaren Sektoren </h2>
+<p>Moderne Festplatten können physikalische Probleme mit Hilfe von <a href="smart_monitoring_de.html" title="SMART Monitoring DE">SMART Monitoring</a> aufspüren.
+</p><p><br />
+Zurück zu <a href="testdisk_de.html" title="TestDisk DE">TestDisk</a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1345-0!1!0!!en!2 and timestamp 20070308090950 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Besch%C3%A4digte_Festplatte" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 09:09, 8 March 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070308093033 -->
+</html>

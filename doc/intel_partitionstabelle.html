@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Intel-Partitionstabelle,TestDisk DE" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Intel-Partitionstabelle - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Intel-Partitionstabelle";
+			var wgTitle = "Intel-Partitionstabelle";
+			var wgArticleId = 1829;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Intel-Partitionstabelle</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<a name="Wie_ist_die_Partitionstabelle_geschrieben.3F"></a><h2> Wie ist die Partitionstabelle geschrieben? </h2>
+<p>CHS (Cylinder, Head, Sector)-Werte sind von einer eingestellten Anzahl von Bits für jeden Wert in der 16-Byte-Partitionstabelle begrenzt auf: 1023,254,63. Also können LBA und CHS-Werte nicht gleich für Festplatten größer als 8 GB sein.
+</p><p>Es gibt zwei Arten, den CHS-Wert zu speichern:
+</p>
+<ul><li>erste Weg
+</li></ul>
+<pre> konvertiere LBA zu CHS,
+ speichere (cylinder &amp; 0x3FF, head &amp; 0xFF, sector &amp; 0x3F)
+</pre>
+<p>Das ist was Partition Magic (Versionen früher als 8.0?) macht.
+</p>
+<ul><li>zweite Weg
+</li></ul>
+<pre> konvertiere LBA zu CHS
+ if cylinder &lt;= 1023,
+   speichere (cylinder &amp; 0x3FF, head &amp; 0xFF, sector &amp; 0x3F)
+ else
+   speichere (1023, max_head &amp; 0xFF, max_sector &amp; 0x3F)
+</pre>
+<p>Dies ist, was Linux-fdisk und TestDisk tun.
+</p><p><br />
+</p><p>Wenn TestDisk die Partitionstabelle überprüft, berücksichtigt es das beide Wege
+richtig sein können. Aber der zweite Weg ist besser, weil der CHS-Anfang ist immer niedriger oder gleich zum CHS-Ende.
+</p><p><br />
+Beispiel: Die logische Geometrie einer Festplatte sind 255 Köpfe pro Zylinder und 63 Sektoren pro Kopf. Eine Partition beginnt bei LBA=46781280 oder CHS=2912,0,1. Diese Partition endet bei 3072,254,63.
+</p>
+<ul><li>Erste Weg:
+</li></ul>
+<pre> Start:  864,  0, 1
+ Ende:      0,254,63
+</pre>
+<ul><li>Zweite Weg:
+</li></ul>
+<pre> Start: 1023,254,63
+ Ende:   1023,254,63
+</pre>
+<p><br />
+NB: 1023 = 0x3FF
+(1023*255+254)*63+63-1=16450559
+(2912*255+  0)*63+ 1-1=46781280
+</p><p>Partition Magic (vor Version 8,0?) betrachtet den zweiten Weg als ungültig; obwohl es ein vereinbarter Standard ist.
+TestDisk bearbeitet beides, ohne sich zu beschweren.
+</p><p>Zurück zur <a href="testdisk_de.html" title="TestDisk DE"> TestDisk </a> Hauptseite
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1829-0!1!0!!en!2 and timestamp 20070108102515 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Intel-Partitionstabelle" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 09:53, 20 December 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070108103555 -->
+</html>

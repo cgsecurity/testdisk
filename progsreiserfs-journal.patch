@@ -1,0 +1,11 @@
+--- progsreiserfs-0.3.1-rc8/libreiserfs/journal.c	2002-12-12 13:32:35.000000000 +0100
++++ progsreiserfs-0.3.1-rc8/libreiserfs/journal.c	2003-03-29 02:24:01.000000000 +0100
+@@ -482,7 +482,7 @@
+ blk_t reiserfs_journal_boundary_transactions(reiserfs_journal_t *journal,
+     reiserfs_journal_trans_t *oldest, reiserfs_journal_trans_t *newest)
+ {
+-    reiserfs_gauge_t *gauge;
++    reiserfs_gauge_t *gauge=NULL;
+     struct reiserfs_replay_desc desc;
+ 	
+     desc.oldest_id = 0xffffffff; desc.newest_id = 0x0;

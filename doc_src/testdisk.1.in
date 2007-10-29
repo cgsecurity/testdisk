@@ -1,0 +1,55 @@
+.\" May be distributed under the GNU General Public License
+.TH TESTDISK 1 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+testdisk \- Scan and repair disk partitions
+.SH SYNOPSIS
+.BI "testdisk [/log] [/debug] [/dump]
+.sp
+.BI "testdisk /list [/log]
+.SH DESCRIPTION
+   \fBTestDisk\fP checks and recovers lost partitions
+   It works with :
+   - BeFS (BeOS)
+   - BSD disklabel (FreeBSD/OpenBSD/NetBSD)
+   - CramFS, Compressed File System
+   - DOS/Windows FAT12, FAT16 and FAT32
+   - HFS and HFS+, Hierarchical File System
+   - JFS, IBM's Journaled File System
+   - Linux Ext2 and Ext3
+   - Linux Raid
+     RAID 1: mirroring
+     RAID 4: striped array with parity device
+     RAID 5: striped array with distributed parity information
+     RAID 6: striped array with distributed dual redundancy information 
+   - Linux Swap (versions 1 and 2)
+   - LVM and LVM2, Linux Logical Volume Manager
+   - Mac partition map
+   - Novell Storage Services NSS
+   - NTFS (Windows NT/2K/XP/2003/Vista)
+   - ReiserFS 3.5, 3.6 and 4
+   - Sun Solaris i386 disklabel
+   - Unix File System UFS and UFS2 (Sun/BSD/...)
+   - XFS, SGI's Journaled File System 
+.SH OPTIONS
+.TP
+.B /log
+create a testdisk.log file
+.TP
+.B /debug
+add debug information
+.TP
+.B /dump
+dump raw sectors
+.TP
+.B /list
+display current partitions
+.SH SEE ALSO
+.BR fdisk (1),
+.BR photorec(1).
+.BR
+.SH AUTHOR
+TestDisk @VERSION@, Data Recovery Utility, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+http://www.cgsecurity.org

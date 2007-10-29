@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Data Recovery Examples,Menu Analyse,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Data Recovery Examples - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Data_Recovery_Examples";
+			var wgTitle = "Data Recovery Examples";
+			var wgArticleId = 1293;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Data Recovery Examples</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>You can see some complexe examples of data recovery with TestDisk.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#The_type_of_the_file_system_is_RAW_-_Recovery_of_a_damaged_FAT_boot_sector"><span class="tocnumber">1</span> <span class="toctext">The type of the file system is RAW - Recovery of a damaged FAT boot sector</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_a_lost_and_damaged_NTFS"><span class="tocnumber">2</span> <span class="toctext">Recovery of a lost and damaged NTFS</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_a_Dell_computer"><span class="tocnumber">3</span> <span class="toctext">Recovery of a Dell computer</span></a></li>
+<li class="toclevel-1"><a href="#Problem_of_disk_geometry_-_When_all_partitions_are_deleted"><span class="tocnumber">4</span> <span class="toctext">Problem of disk geometry - When all partitions are deleted</span></a></li>
+<li class="toclevel-1"><a href="#Two_FAT32_partitions_to_recover"><span class="tocnumber">5</span> <span class="toctext">Two FAT32 partitions to recover</span></a></li>
+<li class="toclevel-1"><a href="#Lost_partition_after_defrag"><span class="tocnumber">6</span> <span class="toctext">Lost partition after defrag</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_cdrom_session"><span class="tocnumber">7</span> <span class="toctext">Recovery of cdrom session</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_reformated_partition"><span class="tocnumber">8</span> <span class="toctext">Recovery of reformated partition</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="The_type_of_the_file_system_is_RAW_-_Recovery_of_a_damaged_FAT_boot_sector"></a><h2> The type of the file system is RAW - Recovery of a damaged FAT boot sector </h2>
+<pre>
+Analyse Disk 80 - CHS 3737 255 63 - 29313 MB (Enh BIOS mode)
+1 * FAT32                    0   1  1   382 254 63    6152832 [LOKAL DISK]
+2 E extended LBA           383   0  1  3736 254 63   53882010
+Partition sector doesn't have the endmark 0xAA55
+5 L FAT32                  383   1  1  3736 254 63   53881947
+5 L FAT32                  383   1  1  3736 254 63   53881947
+</pre>
+<p>The boot sector of the logical FAT32 partition is damaged.
+(Windows error message is usually <code>The type of the file system is RAW.</code>
+or <code>The disk in drive D is not formatted. Do you want to format it now&nbsp;?</code>)
+In Advanced, select this partition:
+</p>
+<pre>
+Interface Advanced
+1 * FAT32                    0   1  1   382 254 63    6152832 [LOKAL DISK]
+2 E extended LBA           383   0  1  3736 254 63   53882010
+</pre>
+<pre>
+5 L FAT32                  383   1  1  3736 254 63   53881947
+Boot sector
+test_FAT&nbsp;:
+Partition sector doesn't have the endmark 0xAA55
+Backup boot sector
+OK
+First sectors (Boot code and partition information) are not identical.
+Second sectors (cluster information) are not identical.
+Third sectors (Second part of boot code) are not identical.
+</pre>
+<p>The backup boot sector is valid, choose <code>Backup BS</code> to
+copy backup boot sector over boot sector. If <code>Backup BS</code> isn't available,
+choose <code>RebuildBS</code>.
+</p>
+<a name="Recovery_of_a_lost_and_damaged_NTFS"></a><h2> Recovery of a lost and damaged NTFS </h2>
+<pre>
+Analyse Disk 81 - CHS 2434 255 63 - 19092 MB (Enh BIOS mode)
+No partition is bootable
+</pre>
+<p>No partition is available.
+</p>
+<pre>
+Analyse Disk 81 - CHS 2434 255 63 - 19092 MB (Enh BIOS mode)
+L FAT32                 1275   1  1  2433 254 63   18619272 [NO NAME]
+</pre>
+<p>Only the second NTFS partition is found. Select <b>Search!</b>
+to try to find more partitions.
+</p>
+<pre>
+Analyse Disk 81 - CHS 2434 255 63 - 19092 MB (Enh BIOS mode)
+* HPFS - NTFS              0   1  1  1274 254 63   20482812
+L FAT32                 1275   1  1  2433 254 63   18619272 [NO NAME]
+</pre>
+<p>Both partitions have been found, but the first NTFS has been found using backup boot sector,
+we need to restore the boot sector. Choose Write and next choose <code>Backup BS</code> to
+copy backup boot sector over boot sector.
+</p>
+<a name="Recovery_of_a_Dell_computer"></a><h2> Recovery of a Dell computer </h2>
+<p>On Dell computer, there is a special partition called <b>DellUtility</b>.
+It's a FAT16 partition that is not visible from Windows because its partition
+type is <b>DE</b>.
+</p>
+<pre>
+Disk 80 - CHS 4865 255 63 - 38162 MB (Enh BIOS mode)
+* FAT16 &gt;32M               0   1  1     3 254 63      64197 [DellUtility]
+P HPFS - NTFS              4   0  1  4864 254 63   78091965
+</pre>
+<p>After <a href="menu_analyse.html" title="Menu Analyse">Analyse</a>, select the DellUtility partition, use 'T' to change the partition type to <b>DE</b>.
+Use the arrow key to boot on the NTFS partition.
+</p>
+<pre>
+Disk 80 - CHS 4865 255 63 - 38162 MB (Enh BIOS mode)
+P Dell Utility             0   1  1     3 254 63      64197 [DellUtility]
+* HPFS - NTFS              4   0  1  4864 254 63   78091965
+</pre>
+<p><br />
+</p>
+<a name="Problem_of_disk_geometry_-_When_all_partitions_are_deleted"></a><h2> Problem of disk geometry - When all partitions are deleted </h2>
+<p>In this case, all partitions have been deleted.
+TestDisk show no partition!
+The user has run <b>testdisk /debug /log</b>.
+Extract of testdisk.log
+</p>
+<pre>
+Analyse Disk /dev/hdb - CHS 5169 240 63 - 38161 MB
+No partition is bootable
+search_part()
+Disk /dev/hdb - CHS 5169 240 63 - 38161 MB
+FAT32 at 0/1/1
+heads/cylinder 255 (FAT)&nbsp;!= 240 (HD)
+</pre>
+<p>A FAT32 partition has been found but there is a warning about harddisk geometry.
+The BIOS has selected another harddisk geometry because of the content of the
+MBR (empty in this case).
+Under TestDisk, choose geometry, set the number of heads to
+255 instead of 240 and run again Analyse.
+</p>
+<a name="Two_FAT32_partitions_to_recover"></a><h2> Two FAT32 partitions to recover</h2>
+<p>There were two FAT32 on the harddisk but they have been deleted.
+After running Analyze and Search!, TestDisk has found only the second one
+</p>
+<pre>
+Disk 81 - CHS 525 255 63 - 4118 MB
+L FAT32                  384   1  1   524 254 63    2265102
+</pre>
+<p>Using <b>A</b> to add what we think is the missing partition,
+a new partition table have been written with two FAT32:
+</p>
+<pre>
+1 P FAT32                    0   1  1   383 254 63    6168897
+2 E extended               384   0  1   524 254 63    2265165
+5 L FAT32                  384   1  1   524 254 63    2265102
+</pre>
+<p>Using Advanced, Boot, RebuildBS, we have try to rebuild
+the boot sector of the first FAT32. Using <b>List</b>,
+it is possible to see a listing of files from the root directory
+but there is also a lot of garbage... Nothing has been written.
+In the log file (Expert mode can give this information), we can
+see that 4 copies of FAT32 have been found:
+</p>
+<pre>
+FAT32 at 32(0/1/33), nbr=123
+FAT32 at 8221(0/131/32), nbr=123
+FAT32 at 16097(1/1/33), nbr=1234
+FAT32 at 22100(1/96/51), nbr=1234
+</pre>
+<p>Normally only two copies of FAT should be found.
+There are remaining data from two different FAT32 partitions:
+one beginning at 0/1/1, the second at 1/1/1. We have done
+a mistake. This time, we add the correct partition and choose
+to Write
+</p>
+<pre>
+1 E extended                 1   0  1   524 254 63    8418060
+5 L FAT32                    1   1  1   383 254 63    6152832
+6 L FAT32                  384   1  1   524 254 63    2265102
+</pre>
+<p>With RebuildBS (Advanced/Boot), we have been able to successfully
+rebuild the boot sector.
+</p>
+<a name="Lost_partition_after_defrag"></a><h2> Lost partition after defrag </h2>
+<p>After running defrag against the first partition, the second FAT32 drive vanishes.
+When checking the partition table, TestDisk detects a problem with the first
+partition and no logical partition.
+</p>
+<pre>
+Disk 81 - CHS 1245 255 63 - 9766 MB
+check_FAT: Incorrect size of partition
+ 1 * FAT32 LBA                0   1  1   746 254 63   12000492
+ 1 * FAT32 LBA                0   1  1   746 254 63   12000492
+ 2 E extended               747   0  1  1244 254 63    8000370
+</pre>
+<p>TestDisk has been able to find the first partition but this partition is one
+sector bigger than the actual partition entry. Defrag has overwrite the beginning
+of the extended partition, clearing the logical partition entry.
+</p>
+<pre>
+* FAT32                    0   1  1   747 254 63   12016557 [D DRIVE]
+D Linux                 1023   1  1  1244 254 63    3566367
+</pre>
+<p>The user has choose to only recover the FAT32 partition.
+After a backup of its data, he has shrink the FAT32 filesystem to use
+one sector less.
+It's now time to recover the second partition.
+The user has manually add the second partition entry.
+</p>
+<pre>
+ 1 * FAT32                    0   1  1   746 254 63   12000492 [D DRIVE]
+ 2 E extended LBA           747   0  1  1244 254 63    8000370
+ 5 L FAT32                  747   1  1  1244 254 63    8000307
+</pre>
+<p>In Advanced, select the second FAT32 and RebuildBS.
+After a reboot and a little filesystem check, data were again available.
+</p>
+<a name="Recovery_of_cdrom_session"></a><h2> Recovery of cdrom session </h2>
+<p>With multi-session cdrom, it is possible to delete files of previous session.
+Because the files are not really deleted, it is possible to recover them.
+To read files from the first session, run under Linux
+</p>
+<pre>
+mount /dev/cdrom /mnt/cdrom -t iso9660  -o session=0
+</pre>
+<a name="Recovery_of_reformated_partition"></a><h2> Recovery of reformated partition </h2>
+<p>If the partition has been reformated to another filesystem (FAT32 formated as NTFS or vice-versa),
+</p>
+<ul><li> run <a href="testdisk.html" title="TestDisk">TestDisk</a>,
+</li><li> select the harddisk, the partition type
+</li><li> choose Advanced
+</li><li> select the partition
+</li><li> choose Type,
+</li><li> enter the value corresponding to the previous filesystem
+</li><li> choose Boot
+</li><li> choose RebuildBS
+</li><li> List
+</li><li> If you can see your files, choose Write and confirm
+</li><li> In Analyse, choose to rewrite the partition with the correct partition type.
+</li></ul>
+<p>Return to <a href="testdisk.html" title="TestDisk"> TestDisk </a> main page
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1293-0!1!0!!en!2 and timestamp 20070628164532 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Data_Recovery_Examples" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 13:03, 28 June 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070628164558 -->
+</html>

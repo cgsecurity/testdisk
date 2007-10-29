@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Menü Geometrie,Ausfuehren von TestDisk,Menü Analyse" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Menü Geometrie - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Menü_Geometrie";
+			var wgTitle = "Menü Geometrie";
+			var wgArticleId = 1410;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Menü Geometrie</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Platten-Geometrie"><span class="tocnumber">1</span> <span class="toctext">Platten-Geometrie</span></a></li>
+<li class="toclevel-1"><a href="#Einige_Hintergrundinformationen"><span class="tocnumber">2</span> <span class="toctext">Einige Hintergrundinformationen</span></a></li>
+<li class="toclevel-1"><a href="#Wie_die_richtige_Anzahl_von_Heads_.28K.C3.B6pfen.29_gefunden_werden_kann.3F"><span class="tocnumber">3</span> <span class="toctext">Wie die richtige Anzahl von Heads (Köpfen) gefunden werden kann?</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Wie_bekommt_TestDisk_die_Plattengeometrie.3F"><span class="tocnumber">3.1</span> <span class="toctext">Wie bekommt TestDisk die Plattengeometrie?</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Einige_Tipps_zur_Geometrie"><span class="tocnumber">4</span> <span class="toctext">Einige Tipps zur Geometrie</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Wie_kann_die_richtige_Anzahl_von_K.C3.B6pfen_.28Heads.29_gefunden_werden.3F"><span class="tocnumber">4.1</span> <span class="toctext">Wie kann die richtige Anzahl von Köpfen (Heads) gefunden werden?</span></a></li>
+<li class="toclevel-2"><a href="#Wie_wird_die_korrekte_Anzahl_der_Sektoren_gefunden.3F"><span class="tocnumber">4.2</span> <span class="toctext">Wie wird die korrekte Anzahl der Sektoren gefunden?</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Platten-Geometrie"></a><h4> Platten-Geometrie</h4>
+<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63, sector size=512
+
+Because these numbers change the way that TestDisk looks for partitions
+and calculates their sizes, it's important to have the correct disk geometry.
+PC partitionning programs often make partitions end on cylinder boundaries.
+
+A partition's CHS values are based on disk translations which make them
+different than its physical geometry. The most common CHS head values
+are: 255, 240 and sometimes 16.
+
+
+
+
+[ Cylinders ]  [   Heads   ]  [  Sectors  ]  [Sector Size]  [    Ok     ]
+
+
+
+
+
+                          Done with changing geometry
+</pre>
+<p>Ändern der Festplattengeometrieparameter (Cylinders, Heads, Sectors).
+</p><p>PC-Partitionierungsprogramme machen oft (immer) am Partitionsende Zylinderbegrenzungen (cylinder boundaries).
+CHS-Nummern ändern die Art, wie TestDisk Partitionen sucht und ihre Größen berechnet,
+etc. Es wirkt sich nicht selbst auf die Festplatte aus, <i>es sei denn</i>, es werden tatsächlich Daten über verlorene Partitionen auf das Laufwerk geschrieben. Das Wählen der falschen Geometrie-Einstellungen und anschließendes speichern von irgendwelchen verlorenen Partitionen, die auf jenen fehlerhafte Einstellungen basieren, könnte eine Wiederherstellung der Daten schwerer oder unmöglich machen.
+</p>
+<a name="Einige_Hintergrundinformationen"></a><h3> Einige Hintergrundinformationen </h3>
+<p>Um auf Daten zuzugreifen, benutzen moderne Betriebssysteme die Logische Block Adressierung (LBA).
+Festplatten-Sektoren sind von 0, 1, 2, bis zu N 1 nummeriert, wobei N die Gesamtzahl der Sektoren ist.
+</p><p>Aber, bevor IDE-Platten, größer als 8 GB und SCSI-Platten, existierten, wurde eine andere Methode benutzt.
+Um auf Daten zuzugreifen, verwendeten das BIOS und das Betriebssystem (Dos/Win9x) die CHS-Adressierung.
+CHS-Werte sind auf 1023 Zylinder, 255 Köpfe und 63 Sektoren (8 GB) beschränkt.
+Ein verbreiteter Trick mit Festplatten größer als 504 MB (1023 Zylinder, 16 Köpfe, 63 Sektoren) war, eine andere Geometrie  (Zylinder/Köpfe/Sektor) zu verwenden als die physische Geometrie  (Erweiterte CHS oder Large Mode Addressing).
+</p><p>Eine von BIOS verwendete Methode ist die Partitionstabelle zu lesen und 
+die Anzahl von Köpfen zu schätzen. Wenn die Partitionstabelle gelöscht oder beschädigt ist, wird die physische Plattengeometrie stattdessen verwendet. Es wird dann für Partitionswiederherstellungsprogramme schwerer, verlorene Partitionen auf der Festplatte zu finden.
+</p><p>Dieses Problem ist nicht nur auf DOS-Benutzer beschränkt. Linux-Benutzer können auch betroffen sein.
+Unter Linux, führe <b>dmesg</b> aus und suche nach <b>Partition check</b>.
+Im folgenden Beispiel ist die Geometrie der Festplatte <b>hdc</b> durch die Partitionstabelle (<b>PTBL</b>) festgelegt.
+</p>
+<pre>
+Partition check:
+ hda: hda1 hda2 hda3 hda4 &lt; hda5 hda6 hda7 hda8 hda9 hda10 hda11 hda12 hda13 &gt;
+ hda3: &lt;bsd: hda14 hda15 hda16 hda17 &gt;
+ hdc: [PTBL] [7476/255/63] hdc1 &lt; hdc5 hdc6 hdc7 hdc8 hdc9 hdc10 hdc11 hdc12 hdc13 &gt;
+</pre>
+<a name="Wie_die_richtige_Anzahl_von_Heads_.28K.C3.B6pfen.29_gefunden_werden_kann.3F"></a><h3>  Wie die richtige Anzahl von Heads (Köpfen) gefunden werden kann?</h3>
+<p>Wenn die Festplatten-Geometrie zur verwendeten Geometrie während der Erstellung der Partitionstabelle abweicht, werden Warnmeldungen wie:  <code>Bad sector count</code>,
+<code>Bad relative sector</code> oder <code>Bad ending head</code> angezeigt, wenn das Menü
+<a href="mene_analyse.html" title="Menü Analyse">Analyse</a>
+vom Hauptmenü ausgewählt ist. Wenn du solche Fehler siehst, kann es sein, dass du das Geometriemenü verwenden musst, um die logische Anzahl von Heads (Köpfen) zu ändern.
+Versuche 255, 16, 32, 64, 128 und 240 Heads (Köpfe) bis das TestDisk alle deine Partitionen findet.
+255 und 240 sind die am meisten verbreiteten Werte bei Heads. Wenn Linux als einziges Betriebssystem auf deiner Festplatte installiert wurde, tendiert es standardmäßig zu nur 16 Heads.
+</p>
+<a name="Wie_bekommt_TestDisk_die_Plattengeometrie.3F"></a><h4>Wie bekommt TestDisk die Plattengeometrie?</h4>
+<ul><li> Unter DOS, erhält TestDisk die Plattengrößen unter der Verwendung der erweiterten Bios-Funktion (ah=0x48, int 0x13), und die Geometrie (Nummer von Heads und Sectors) unter Verwendung der Standard-BIOS-Funktion (ah=0x08, int 0x13). TestDisk benutzt die Standard-Sektorgröße von 512 Bytes.
+</li></ul>
+<ul><li> Unter Windows, TestDisk erhält die Nummer der Cylinder, Heads und Sectors, und die Sektorgröße unter der Verwendung des DeviceIoControl-Aufrufs, IOCTL_DISK_GET_DRIVE_GEOMETRY.
+</li></ul>
+<ul><li> Unter Linux, TestDisk erhält die Sektorgröße unter Verwendung von BLKSSZGET ioctl, und die Geometrie unter Verwendung von HDIO_GETGEO_BIG oder HDIO_GETGEO ioctl; die Plattengrößen kommen von BLKGETSIZE64 oder BLKGETSIZE.
+</li></ul>
+<ul><li> Unter BSD, TestDisk erhält alle Informationen unter Verwendung von DIOCGDINFO. Wenn dieses fehlschlägt, nimmt TestDisk an, dass die Sektorgröße 512 Byte ist, und verwendet DIOCGFWSECTORS, DIOCGFWHEADS und DIOCGMEDIASIZE, um alle anderen Parameter zu bekommen.
+</li></ul>
+<ul><li> Unter Sun Solaris, TestDisk verwendet die Standardsektorgröße von 512 Byte und erhält die Anzahl von Cylinders, Heads und Sectors unter Verwendung von DKIOCGGEOM ioctl.
+</li></ul>
+<a name="Einige_Tipps_zur_Geometrie"></a><h2> Einige Tipps zur Geometrie </h2>
+<a name="Wie_kann_die_richtige_Anzahl_von_K.C3.B6pfen_.28Heads.29_gefunden_werden.3F"></a><h3> Wie kann die richtige Anzahl von Köpfen (Heads) gefunden werden?</h3>
+<p>Wenn die Festplatten-Geometrie zur verwendeten Geometrie, als die Partitionstabelle erstellt wurde 
+abweicht, werden Warnmeldungen wie:  <code>Bad sector count</code>,
+<code>Bad relative sector</code> oder <code>Bad ending head</code> angezeigt, sowie das Menü
+<a href="mene_analyse.html" title="Menü Analyse">Analyse</a>
+vom Hauptmenü gewählt wurde.  Werden solche Fehler angezeigt, solltest du das Menü
+<code>Geometry</code> benutzen, um die logische Anzahl der Heads (Köpfe) zu ändern.
+Versuche 255, 16, 32, 64, 128 und 240 Heads (Köpfe) bis TestDisk alle Partitionen findet.
+255 and 240 sind die am meisten verbreiteten Head (Kopf)-Werte.  Wenn Linux als einzigstes
+Betriebssystem installiert ist,tendiert es zu den Standard von nur 16 Heads (Köpfe).
+</p>
+<a name="Wie_wird_die_korrekte_Anzahl_der_Sektoren_gefunden.3F"></a><h3> Wie wird die korrekte Anzahl der Sektoren gefunden?</h3>
+<p>Die Anzahl von Sektoren pro Kopf ist normalerweise immer 63, aber bei einigen USB-Geräten kann auch der Wert 32 gefunden werden.
+</p><p>Zurück zu <a href="ausfuehren_von_testdisk.html" title="Ausfuehren von TestDisk">Ausführen von TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1410-0!1!0!!en!2 and timestamp 20070625072058 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Men%C3%BC_Geometrie" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 07:20, 25 June 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070625083319 -->
+</html>

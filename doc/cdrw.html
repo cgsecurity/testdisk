@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="CDRW,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>CDRW - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "CDRW";
+			var wgTitle = "CDRW";
+			var wgArticleId = 1285;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">CDRW</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#CD_layout"><span class="tocnumber">1</span> <span class="toctext">CD layout</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_scratched_CD-R.2FCR-RW.2FDVD"><span class="tocnumber">2</span> <span class="toctext">Recovery of scratched CD-R/CR-RW/DVD</span></a></li>
+<li class="toclevel-1"><a href="#Recovery_of_fast_blanked_CD-RW"><span class="tocnumber">3</span> <span class="toctext">Recovery of fast blanked CD-RW</span></a></li>
+<li class="toclevel-1"><a href="#Read_of_previous_cdrom_session"><span class="tocnumber">4</span> <span class="toctext">Read of previous cdrom session</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="CD_layout"></a><h2> CD layout </h2>
+<p>A CD is composed of several zones
+</p>
+<ul><li> PCA (Power Calibration Area)
+</li><li> PMA (Program Memory Area)
+</li><li> one or more sessions
+</li></ul>
+<p>The SUA (System User Area) is composed of PCA and PMA.
+</p><p>Each session consists of
+</p>
+<ul><li>a Lead-In Area, containing the session's Table of Contents (TOC),
+</li><li> the Program Area in which the individual tracks are located,
+</li><li> and the Lead-Out Area.
+</li></ul>
+<p>A track is composed of
+</p>
+<ul><li> a pre-gap zone
+</li><li> audio/user data area
+</li><li> a pad zone
+</li></ul>
+<p>Each block or sector have an header, the block location is stored in each header.
+</p>
+<a name="Recovery_of_scratched_CD-R.2FCR-RW.2FDVD"></a><h2>Recovery of scratched CD-R/CR-RW/DVD</h2>
+<p>Photorec works well but bad sectors slows the recovery process.
+</p>
+<a name="Recovery_of_fast_blanked_CD-RW"></a><h2>Recovery of fast blanked CD-RW</h2>
+<p>It's possible to recover data from a quick-erased CD-RW disc without modifying it!
+</p><p>When a CD-RW is fast erased, the PMA, TOC, pregap and the first sectors of your CD-RW are erased.
+Because the TOC has been erased, CD-RW appears as blank/empty.
+Because the first sectors has been erased including the headers, sectors 0, 1, 2... can't be located anymore
+but subsequent sectors can still be found.
+Unfortunatly, not each OS allows you to easilly access such sector but it works using Linux.
+</p><p>To recover your lost data, run Linux version of Photorec.
+If CD-RW listed size is 0 or 2048 bytes, the CDROM reader firmware will block further read request, so you have to use another CDROM reader/writer.
+Start of the recovery is really slow because the first sectors are unreadable but usually after sector 300,
+data can be recovered, so be patient.
+</p>
+<a name="Read_of_previous_cdrom_session"></a><h2>Read of previous cdrom session</h2>
+<p>With multi-session cdrom, it is possible to delete files of previous session. Because the files are not really deleted, it is possible to recover them. To read files from the first session, run under Linux
+</p>
+<pre>
+mount /dev/cdrom /mnt/cdrom -t iso9660  -o session=0
+</pre>
+<p><br />
+Return to <a href="testdisk.html" title="TestDisk">TestDisk</a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1285-0!1!0!!en!2 and timestamp 20061107181139 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=CDRW" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 11:48, 19 July 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061107181139 -->
+</html>

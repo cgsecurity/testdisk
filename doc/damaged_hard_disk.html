@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Damaged Hard Disk,PhotoRec,SMART Monitoring,TestDisk,TestDisk Download" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Damaged Hard Disk - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Damaged_Hard_Disk";
+			var wgTitle = "Damaged Hard Disk";
+			var wgArticleId = 1291;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Damaged Hard Disk</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>Bad sectors are the most common form of harddisk physical damage. They are early signs of disk crash as it deteriorates over time. A bad sector is a sector on the disk which data cannot be written or read due to a physical damage or inconsistencies of parity checking bits on disk (CRC or Cyclic Redundancy error).
+To recover your data, the best method is to copy its data to another hard disk before attempting to recover its data.
+</p><p>The new disk must be at least exactly the same size (check the number of LBA sectors) or larger; when larger, it's usually not a problem because the number of heads per cylinder and sectors per head will be the same if both disks use LBA mode. Windows may have some problems in dealing with bad sectors on a damaged hard disk, so the best solution is to use a Linux OS to copy data to another hard disk.<br />
+</p><p>You can also use <a href="testdisk.html" title="TestDisk">TestDisk</a> to help analyze the sectors copied from a hard drive with physical problems onto a good drive.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Booting_from_Knoppix.2C_a_Linux_LiveCD"><span class="tocnumber">1</span> <span class="toctext">Booting from Knoppix, a Linux LiveCD</span></a></li>
+<li class="toclevel-1"><a href="#Identifying_an_HDD.27s_Linux_device"><span class="tocnumber">2</span> <span class="toctext">Identifying an HDD's Linux device</span></a></li>
+<li class="toclevel-1"><a href="#Disk_Duplication"><span class="tocnumber">3</span> <span class="toctext">Disk Duplication</span></a>
+<ul>
+<li class="toclevel-2"><a href="#The_old_and_slow_method_using_.27dd.27"><span class="tocnumber">3.1</span> <span class="toctext">The old and slow method using 'dd'</span></a></li>
+<li class="toclevel-2"><a href="#Kurt_Garloff.27s_.27dd_rescue.27"><span class="tocnumber">3.2</span> <span class="toctext">Kurt Garloff's 'dd_rescue'</span></a></li>
+<li class="toclevel-2"><a href="#The_best_method:_Antonio_Diaz.27s_.27ddrescue.27"><span class="tocnumber">3.3</span> <span class="toctext">The best method: Antonio Diaz's 'ddrescue'</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Early_detection_of_bad_sectors"><span class="tocnumber">4</span> <span class="toctext">Early detection of bad sectors</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Booting_from_Knoppix.2C_a_Linux_LiveCD"></a><h2> Booting from Knoppix, a Linux LiveCD </h2>
+<p>If you don't have a Linux OS installed, download the <a href="http://www.knopper.net/knoppix/index-en.html" class="external text" title="http://www.knopper.net/knoppix/index-en.html" rel="nofollow">Knoppix LiveCD </a>, a free bootable CD with a fully functional Linux OS that runs only in memory!
+</p>
+<ul><li> Burn the .iso file to CD
+</li><li> Boot from the CD-ROM
+</li><li> At the boot prompt, type <code>knoppix lang=us</code> for a US keyboard/language.
+</li><li> You are automatically logged in as the user 'knoppix' on a GUI console.
+</li><li> Launch a Konsole/terminal<br />(Note: Knoppix has a separate 'Konsole as root' choice, but copy/paste functions are deactivated in it, so we always recommend using the method described below for gaining root privileges from the normal user Konsole.)
+</li></ul>
+<p>Knoppix comes with <a href="testdisk.html" title="TestDisk">TestDisk</a>, <a href="photorec.html" title="PhotoRec">PhotoRec</a>, dd and dd_rescue. To access hard disks, you need to run these utilities with root (Administrator) privileges.
+</p>
+<ul><li> To become root from the Knoppix user account, select the Konsole and type <code>sudo -s</code>, then press the Enter key.
+</li><li> Now you can use all the powerful root commands you need for full disk access from this console.
+</li></ul>
+<p><b>Note for users of Knoppix version 4.0.2 CD:</b><br />
+To use TestDisk under Knoppix 4.0.2, you need to resolve a library problem by first executing:
+</p>
+<pre>
+ln -s /usr/lib/libntfs.so.7 /usr/lib/libntfs.so.5 
+</pre>
+<p>before running testdisk.
+</p><p><b>Note for users of Knoppix version 5.1 CD:</b><br />
+To use TestDisk under Knoppix 5.1, you need to resolve a library problem by first executing:
+</p>
+<pre>
+ln -s /usr/lib/libntfs.so.10.0.0 /usr/lib/libntfs.so.9 
+</pre>
+<p>before running testdisk. This problem shouldn't occur under any other Knoppix versions or with the Linux version avaible from our <a href="testdisk_download.html" title="TestDisk Download">Download</a> area.
+</p>
+<a name="Identifying_an_HDD.27s_Linux_device"></a><h2> Identifying an HDD's Linux device </h2>
+<p>Under Linux, the Primary Master <b>IDE</b> disk device is <b>/dev/hda</b><br /> Primary Slave IDE device is <b>/dev/hdb</b><br />Secondary Master IDE device is <b>/dev/hdc</b> and so on.<br />
+<b>SATA</b> HDD device filenames usually begin at /dev/hde <i>or</i> /dev/sda<br />
+<b>SCSI</b> device filenames always begin at <b>/dev/sda</b><br />
+<b>USB</b> devices often use SCSI device names: <b>/dev/sda</b> etc.
+</p><p>To list the partitions of a particular hard disk, as root, run: <b>fdisk -l <i>device</i></b>.
+</p>
+<a name="Disk_Duplication"></a><h2> Disk Duplication </h2>
+<p>Once you have verified the device names for your damaged disk and the new one to copy its data to, in a command-shell (CLI) or terminal console, <b>not</b> from within any OS on the damaged hard disk, you can start to duplicate the data.
+</p>
+<a name="The_old_and_slow_method_using_.27dd.27"></a><h3> The old and slow method using 'dd' </h3>
+<p>As root, run
+<code>dd if=/dev/old_disk of=/dev/new_disk conv=noerror,sync</code><br />
+or to create an image file:<br />
+<code>dd if=/dev/old_disk of=image_file conv=noerror</code><br />
+to copy the data.
+Be carefull, if you are copying a disk, the destination must also be a disk, not a partition.
+If you are copying a partition, the destination partition must be large enough. Copying the whole disk is recommanded.
+</p><p>To speed up the copy process, you can append <code>bs=8k</code>, it will read/write the disk by 16 sectors at a time.
+</p>
+<a name="Kurt_Garloff.27s_.27dd_rescue.27"></a><h3> Kurt Garloff's 'dd_rescue' </h3>
+<p>If you believe there are many damaged sectors on the drive, you can try using either Kurt Garloff's 'dd_rescue' (<a href="http://www.garloff.de/kurt/linux/ddrescue/" class="external text" title="http://www.garloff.de/kurt/linux/ddrescue/" rel="nofollow">dd_rescue</a>) instead of dd.
+</p>
+<a name="The_best_method:_Antonio_Diaz.27s_.27ddrescue.27"></a><h3> The best method: Antonio Diaz's 'ddrescue' </h3>
+<p>The best solution, both faster and more efficient, seems to be Antonio Diaz's 'ddrescue'
+(<a href="http://savannah.gnu.org/projects/ddrescue/" class="external text" title="http://savannah.gnu.org/projects/ddrescue/" rel="nofollow">ddrescue</a>)<br />
+</p>
+<pre>
+# download ddrescue
+wget http://download.savannah.gnu.org/releases/ddrescue/ddrescue-1.3.tar.bz2
+# extract the source code
+tar xjf ddrescue-1.3.tar.bz2
+# compile ddrescue
+cd ddrescue-1.3
+./configure &amp;&amp; make
+# first, grab most of the error-free areas in a hurry:
+./ddrescue -n /dev/old_disk /dev/new_disk rescued.log
+# then try to recover as much of the dicy areas as possible:
+ddrescue -r 1 /dev/old_disk /dev/new_disk rescued.log
+</pre>
+<a name="Early_detection_of_bad_sectors"></a><h2> Early detection of bad sectors </h2>
+<p>Modern hard disks can detect physical problems using <a href="smart_monitoring.html" title="SMART Monitoring">SMART Monitoring</a>.
+</p><p><br />
+Return to <a href="testdisk.html" title="TestDisk">TestDisk</a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1291-0!1!0!!en!2 and timestamp 20070805190011 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Damaged_Hard_Disk" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 21:19, 3 June 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070805190346 -->
+</html>

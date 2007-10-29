@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Reparacion Avanzada del Sector de Booteo y MFT,Ejecutando TestDisk,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Reparacion Avanzada del Sector de Booteo y MFT - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Reparacion_Avanzada_del_Sector_de_Booteo_y_MFT";
+			var wgTitle = "Reparacion Avanzada del Sector de Booteo y MFT";
+			var wgArticleId = 1814;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Reparacion Avanzada del Sector de Booteo y MFT</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Reparaci.C3.B3n_del_Sector_de_Booteo_NTFS"><span class="tocnumber">1</span> <span class="toctext">Reparaci&oacute;n del Sector de Booteo NTFS</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Recuperando_el_sector_de_booteo_NTFS_en_particiones_NTFS_usando_su_copia_de_backup"><span class="tocnumber">1.1</span> <span class="toctext">Recuperando el sector de booteo NTFS en particiones NTFS usando su copia de backup</span></a></li>
+<li class="toclevel-2"><a href="#Reconstruyendo_el_sector_de_booteo_NTFS_en_particiones_NTFS"><span class="tocnumber">1.2</span> <span class="toctext">Reconstruyendo el sector de booteo NTFS en particiones NTFS</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#Repair_NTFS_MFT"><span class="tocnumber">2</span> <span class="toctext">Repair NTFS MFT</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Reparaci.C3.B3n_del_Sector_de_Booteo_NTFS"></a><h2> Reparaci&oacute;n del Sector de Booteo NTFS </h2>
+<p>Si el sector de booteo del NTFS est&aacute; dañado, los datos no se pueden acceder.
+Windows preguntar&aacute; <code>La unidad no tiene formato,¿Desea darle formato ahora?</code>
+El comando mount de Linux mostrar&aacute; <code>wrong fs type, bad option, bad superblock</code>
+</p><p><a href="testdisk.html" title="TestDisk">TestDisk</a> le permite manipular el sector de booteo de las particiones NTFS.
+Seleccione la partici&oacute; que quiera modificar y elija <b>Boot</b>.
+</p>
+<a name="Recuperando_el_sector_de_booteo_NTFS_en_particiones_NTFS_usando_su_copia_de_backup"></a><h3> Recuperando el sector de booteo NTFS en particiones NTFS usando su copia de backup </h3>
+<p>TestDisk puede usar el sector de booteo de backup para arreglar el sector de booteo NTFS. El sector de booteo primario es el sector cero del sistema de archivos, el sector de backup de booteo est&aacute; ubicado cerca del final del sistema de archivos. TestDisk comparar el sector de booteo con el sector de booteo de backup. Si no concuerdan, puede sobreescribir el sector de booteo NTFS con el de backup (<b>Backup BS</b>) &oacute; viceversa (<b>Org. BS</b>).
+<b>Dump</b> puede ser usado para mostrar el contenido del sector de booteo en hexadecimal &oacute; ASCII.
+</p>
+<a name="Reconstruyendo_el_sector_de_booteo_NTFS_en_particiones_NTFS"></a><h3> Reconstruyendo el sector de booteo NTFS en particiones NTFS </h3>
+<p>Si el sector de booteo NTFS y el sector de backup de booteo est&aacute;n dañados, es necesario reconstruir el sector de booteo NTFS.
+TestDisk busca el MFT (Master File Table: $MFT) y su backup ($MFTMirr).
+Lee el tamaño del registro MFT y computa el tamaño del cluster,
+lee el tamaño del Index Allocation Entry en el directorio ra&iacute;z indice, puede proveer un nuevo
+sector de booteo. TestDisk permite al usuario listar los archivos antes de escribir.
+</p>
+<a name="Repair_NTFS_MFT"></a><h2> Repair NTFS MFT </h2>
+<p>The MFT (Master File Table) is sometimes corrupted. If Microsoft Check Disk (chkdsk) failed
+to repair the MFT, run TestDisk and in the Advanced menu, select your NTFS partition and
+choose <b>Repair MFT</b>. TestDisk will try to repair the MFT using MFT mirror, its backup.
+</p><p><br />
+</p><p>Volver a la P&aacute;gina <a href="ejecutando_testdisk.html" title="Ejecutando TestDisk">Ejecutando el Programa TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1814-0!1!0!!en!2 and timestamp 20070117150138 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Reparacion_Avanzada_del_Sector_de_Booteo_y_MFT" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 19:32, 28 November 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070117172727 -->
+</html>

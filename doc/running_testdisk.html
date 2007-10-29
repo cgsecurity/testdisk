@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Running TestDisk,Advanced FAT Repair,Advanced Find EXT2 EXT3 Backup SuperBlock,Advanced NTFS Boot and MFT Repair,Menu Analyse,Menu Delete,Menu Geometry,Menu MBRCode,Menu Options,OS Notes,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Running TestDisk - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Running_TestDisk";
+			var wgTitle = "Running TestDisk";
+			var wgArticleId = 1307;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Running TestDisk</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<a name="TestDisk_Startup"></a><h2> TestDisk Startup</h2>
+<p>When <a href="testdisk.html" title="TestDisk">TestDisk</a> is executed, you may see the phrase <code>Please wait...</code>
+on your screen until it has gathered enough data from the BIOS or OS to get the hard disk list.
+</p>
+<pre>
+TestDisk 6.5-WIP, Data Recovery Utility, October 2006
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+TestDisk is a data recovery designed to help recover lost partitions
+and/or make non-booting disks bootable again when these symptoms
+are caused by faulty software, certain types of viruses or human error.
+It can also be used to repair some filesystem errors.
+
+Information gathered during TestDisk use can be recorded for later
+review. If you choose to create the text file, testdisk.log , it
+will contain TestDisk options, technical information and various
+outputs; including any folder/file names TestDisk was used to find and
+list onscreen.
+
+Use arrow keys to select, then press Enter key:
+[ Create ]  Create a new log file
+[ Append ]  Append information to log file
+[ No Log ]  Don't record anything
+</pre>
+<pre>
+TestDisk 6.5-WIP, Data Recovery Utility, October 2006
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+  TestDisk is free software, and
+comes with ABSOLUTELY NO WARRANTY.
+
+Select a media (use Arrow keys, then press Enter):
+Disk /dev/sda - 120 GB / 111 GiB
+Disk /dev/sdb - 120 GB / 111 GiB
+
+
+
+
+
+
+
+
+[Proceed ]  [  Quit  ]
+
+Note: Disk capacity must be correctly detected for a successful recovery.
+If a disk listed above has incorrect size, check HD jumper settings, BIOS
+detection, and install the latest OS patches and disk drivers.
+</pre>
+<p>If the reported size doesn't match the harddisk size, i.e., a 120 GB harddisk is recognized as only a 32 GB harddisk, check your BIOS harddisk settings and the jumpers on the disk. On most large hard disks, there are jumpers to limit the size to only 32 or 8 GB. If your HD is detected as 130 GB only, LBA48 support may not be avaible in your OS, read <a href="os_notes.html" title="OS Notes">OS notes</a> for more information.
+</p><p>Next step is to select the partition table type
+</p>
+<pre>
+TestDisk 6.6-WIP, Data Recovery Utility, February 2007
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+Disk /dev/sda - 120 GB / 111 GiB
+
+Please select the partition table type, press ENTER when done.
+[ Intel ]  Intel/PC partition
+[ Mac   ]  Apple partition map
+[ None  ]  Non partitioned media
+[ Sun   ]  Sun Solaris partition
+[ XBox  ]  XBox partition
+
+
+
+
+
+
+
+Note: Do NOT select 'None' for media with only a single partition. It's very
+rare for a drive to be 'Non-partitioned'.
+</pre>
+<a name="TestDisk_Menu_Items"></a><h2> TestDisk Menu Items </h2>
+<ul><li> <a href="menu_analyse.html" title="Menu Analyse"> Analyse  </a>  Analyse current partition structure and search for lost partitions
+</li><li> Advanced Filesystem Utils
+<ul><li> <a href="advanced_fat_repair.html" title="Advanced FAT Repair"> FAT: Boot and FAT repair</a>
+</li><li> <a href="advanced_ntfs_boot_and_mft_repair.html" title="Advanced NTFS Boot and MFT Repair"> NTFS: Boot and MFT repair</a>
+</li><li> <a href="advanced_find_ext2_ext3_backup_superblock.html" title="Advanced Find EXT2 EXT3 Backup SuperBlock"> EXT2/EXT3: Find Backup SuperBlock</a>
+</li></ul>
+</li><li> <a href="menu_geometry.html" title="Menu Geometry"> Geometry </a>  Change disk geometry
+</li><li> <a href="menu_options.html" title="Menu Options"> Options  </a>  Modify options
+</li><li> <a href="menu_mbrcode.html" title="Menu MBRCode"> MBR Code </a>  Write TestDisk MBR code to first sector
+</li><li> <a href="menu_delete.html" title="Menu Delete"> Delete   </a>  Delete all data in the partition table
+</li></ul>
+<p>Return to <a href="testdisk.html" title="TestDisk"> TestDisk </a> main page
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1307-0!1!0!!en!2 and timestamp 20070207223010 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Running_TestDisk" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 22:20, 28 November 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070207223135 -->
+</html>

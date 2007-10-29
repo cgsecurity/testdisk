@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Menu Geometry,Menu Analyse,Running TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Menu Geometry - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Menu_Geometry";
+			var wgTitle = "Menu Geometry";
+			var wgArticleId = 1300;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Menu Geometry</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63, sector size=512
+
+Because these numbers change the way that TestDisk looks for partitions
+and calculates their sizes, it's important to have the correct disk geometry.
+PC partitionning programs often make partitions end on cylinder boundaries.
+
+A partition's CHS values are based on disk translations which make them
+different than its physical geometry. The most common CHS head values
+are: 255, 240 and sometimes 16.
+
+
+
+
+[ Cylinders ]  [   Heads   ]  [  Sectors  ]  [Sector Size]  [    Ok     ]
+
+
+
+
+
+                          Done with changing geometry
+</pre>
+<p>Change hard disk geometry parameters (Cylinders, Heads, Sectors).
+</p><p>PC partitionning programs often (always) make partitions end on cylinder boundaries.
+CHS numbers change the way that TestDisk looks for partitions and calculates their sizes,
+etc. It does not affect the hard drive itself, <i>unless</i> you actually write
+data about lost partitions to the drive. Choosing the wrong geometry settings
+and then saving any lost partitions based on those faulty settings might make
+it harder or impossible to recover your data.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Some_information_background"><span class="tocnumber">1</span> <span class="toctext">Some information background</span></a></li>
+<li class="toclevel-1"><a href="#How_does_TestDisk_get_the_disk_geometry.3F"><span class="tocnumber">2</span> <span class="toctext">How does TestDisk get the disk geometry?</span></a></li>
+<li class="toclevel-1"><a href="#Some_hints_about_the_geometry"><span class="tocnumber">3</span> <span class="toctext">Some hints about the geometry</span></a>
+<ul>
+<li class="toclevel-2"><a href="#How_to_find_the_correct_number_of_heads.3F"><span class="tocnumber">3.1</span> <span class="toctext">How to find the correct number of heads?</span></a></li>
+<li class="toclevel-2"><a href="#How_to_find_the_correct_number_of_sectors.3F"><span class="tocnumber">3.2</span> <span class="toctext">How to find the correct number of sectors?</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Some_information_background"></a><h2> Some information background </h2>
+<p>To access data, modern operating systems use logical block adressing.
+HD sectors are numbered 0,1, 2 up to N-1 where N is the total number of sectors.
+</p><p>But before IDE disks larger than 8GB and SCSI disks existed, another method was used.
+To access data, the BIOS and the operating system (Dos/Win9x) used CHS adressing.
+CHS values are limited to 1023 cylinders, 255 heads and 63 sectors (8GB).
+A common trick introduced with HD bigger than 504 MB (1023 cylinders, 16 heads, 63 sectors)
+was to use a geometry (Cylinder/Heads/Sector) different from the physical geometry (Extended CHS
+or large mode adressing).
+</p><p>A method used by BIOS is to read the partition table and to guess
+the number of heads. When the partition table is cleared or corrupted, the
+physical disk geometry may be used instead. It becomes harder for partition
+recovery utilities to find lost partitions on the hard disk.
+</p><p><br />
+This problem is not limited to DOS users. Linux users can also affected.
+Under Linux, run <b>dmesg</b> and search for <b>Partition check</b>.
+In the following exemple, the geometry of harddisk <b>hdc</b> is determined by the partition table (<b>PTBL</b>).
+</p>
+<pre>
+Partition check:
+ hda: hda1 hda2 hda3 hda4 &lt; hda5 hda6 hda7 hda8 hda9 hda10 hda11 hda12 hda13 &gt;
+ hda3: &lt;bsd: hda14 hda15 hda16 hda17 &gt;
+ hdc: [PTBL] [7476/255/63] hdc1 &lt; hdc5 hdc6 hdc7 hdc8 hdc9 hdc10 hdc11 hdc12 hdc13 &gt;
+</pre>
+<a name="How_does_TestDisk_get_the_disk_geometry.3F"></a><h2> How does TestDisk get the disk geometry? </h2>
+<ul><li> Under DOS, TestDisk gets the disk sizes using an extended BIOS function (ah=0x48, int 0x13), and geometry (number of heads and sectors) using a standard BIOS function (ah=0x08, int 0x13). TestDisk uses the default sector size of 512 bytes.
+</li></ul>
+<ul><li> Under Windows, TestDisk gets the numbers of cylinders, heads and sectors, and the sector size using the DeviceIoControl call, IOCTL_DISK_GET_DRIVE_GEOMETRY.
+</li></ul>
+<ul><li> Under Linux, TestDisk gets the sector size using BLKSSZGET ioctl, and the geometry using HDIO_GETGEO_BIG or HDIO_GETGEO ioctl; the disk sizes are from  BLKGETSIZE64 or BLKGETSIZE.
+</li></ul>
+<ul><li> Under BSD, TestDisk gets all information using DIOCGDINFO. If that fails, TestDisk assumes the sector size is 512 bytes, and it uses DIOCGFWSECTORS, DIOCGFWHEADS and DIOCGMEDIASIZE to get all the other paramaters.
+</li></ul>
+<ul><li> Under Sun Solaris, TestDisk uses the default sector size of 512 bytes, and gets the numbers of cylinders, heads and sectors using the DKIOCGGEOM ioctl.
+</li></ul>
+<a name="Some_hints_about_the_geometry"></a><h2> Some hints about the geometry </h2>
+<a name="How_to_find_the_correct_number_of_heads.3F"></a><h3> How to find the correct number of heads?</h3>
+<p>If the HD geometry mismatches the geometry used when creating the
+partition table, warning messages such as:  <code>Bad sector count</code>,
+<code>Bad relative sector</code> or <code>Bad ending head</code> are displayed when
+<a href="menu_analyse.html" title="Menu Analyse">Analyse</a>
+is selected from the main menu.  If you see such errors, you may need
+to use the <code>Geometry</code> menu to change the logical number of heads.
+Try 255, 16, 32, 64, 128 and 240 heads until TestDisk finds all your
+partitions.  255 and 240 are the most common head values.  If you
+installed Linux as the only OS on your hard drive, it tends to default
+to only 16 heads.
+</p>
+<a name="How_to_find_the_correct_number_of_sectors.3F"></a><h3> How to find the correct number of sectors?</h3>
+<p>Usually the number of sectors per head is always 63, but on some USB devices, the value 32 can be found.
+</p><p>Back to <a href="running_testdisk.html" title="Running TestDisk">Running the TestDisk Program </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1300-0!1!0!!en!2 and timestamp 20061107185612 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Menu_Geometry" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 15:18, 27 October 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061107185612 -->
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Linux zu PPC Darwin-Kreuz-Compiler,PhotoRec DE,TestDisk DE" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Linux zu PPC Darwin-Kreuz-Compiler - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Linux_zu_PPC_Darwin-Kreuz-Compiler";
+			var wgTitle = "Linux zu PPC Darwin-Kreuz-Compiler";
+			var wgArticleId = 1853;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Linux zu PPC Darwin-Kreuz-Compiler</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<a name="Linux_zu_PowerPC_Darwin.2FOSX-Kreuz-Compiler"></a><h2> Linux zu PowerPC Darwin/OSX-Kreuz-Compiler </h2>
+<p>Dieses Script wurde entworfen, um als Root ausgeführt zu werden. Das Ziel ist, einen Kreuzcompiler zu installieren, der in der Lage ist, um <a href="testdisk_de.html" title="TestDisk DE">TestDisk</a> und <a href="photorec_de.html" title="PhotoRec DE"> PhotoRec</a> für MacOS X zu erstellen.
+</p>
+<pre>
+#!/bin/sh
+# This script builds and installs a gcc cross compiler from Linux
+# to darwin
+# Copyright Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+# Licence: GPL v2 or any later version
+# Version 2006/02/24
+root=`pwd`
+name=`basename $0`
+WGET=wget
+
+die () {
+        echo &gt;&amp;2 &quot;$1&quot;
+        exit 1
+}
+
+exists () {
+        if [&nbsp;! -r &quot;$1&quot; ]; then
+                die &quot;$1 does not exist&quot;
+        fi
+}
+
+usage () {
+        die &quot;usage: $name [clean]&quot;
+}
+
+case &quot;$#&quot; in
+1)
+        case &quot;$1&quot; in
+        clean)
+                rm -rf build-binutils* build-gcc*
+                exit 0
+       &nbsp;;;
+        *)
+                usage
+       &nbsp;;;
+        esac
+;;
+esac
+
+# You may want to change the installation prefix, which is where the
+# script will install the cross-compiler tools.
+prefix='/usr'
+gccVers='4.0.2'
+odcctoolsVers='20060123'
+GCCSOURCE=&quot;ftp://ftp.uvsq.fr/pub/gcc/releases/gcc-$gccVers&quot;
+DARWINROOTS=&quot;http://darwinsource.opendarwin.org/Roots&quot;
+CCTOOLSSOURCE=&quot;http://www.opendarwin.org/downloads/&quot;
+
+target='powerpc-apple-darwin'
+configureGCCFlags=&quot;--with-as=/usr/bin/$target-as  --with-ld=/usr/bin/$target-ld --with-libtool=/usr/bin/$target-libtool&quot;
+makeGCCFlags=''
+gccTarBz2=&quot;gcc-core-$gccVers.tar.bz2&quot;
+gxxTarBz2=&quot;gcc-g++-$gccVers.tar.bz2&quot;
+
+echo 'Checking that needed files exist.'
+for file in architecture-245.root.tar.gz Csu-57.root.tar.gz dyld-43.root.tar.gz gcc-4061.root.tar.gz gcc_os-1809.root.tar.gz gcc_select-46.root.tar.gz Libc-391.root.tar.gz Libc_headers-391.root.tar.gz Libc_static-391.root.tar.gz libdyld-43.root.tar.gz Libm-93.root.tar.gz Libmx-93.root.tar.gz Libsystem-88.root.tar.gz ncurses-8.1.root.tar.gz SystemStubs-5.root.tar.gz xnu-792.1.5.root.tar.gz zlib-15.root.tar.gz OpenSSL-26.root.tar.gz
+do
+if [&nbsp;! -e $file ];
+then
+  $WGET $DARWINROOTS/$file
+  exists $file
+fi
+done
+
+#$gxxTarBz2
+for file in $gccTarBz2
+do
+if [&nbsp;! -e $file ];
+then
+  $WGET $GCCSOURCE/$file
+  exists $file
+fi
+done
+
+for file in odcctools-$odcctoolsVers.tar.bz2
+do
+if [&nbsp;! -e $file ];
+then
+  $WGET $CCTOOLSSOURCE/$file
+  exists $file
+fi
+done
+
+echo 'Creating the env'
+mkdir -p $prefix/$target || die &quot;Cannot create $prefix/$target.&quot;
+ln -sf $prefix/$target $prefix/$target/usr
+ln -sf $prefix/$target $prefix/$target/local
+ln -sf $prefix/$target/lib/system/ /usr/lib/system
+for file in architecture-245.root.tar.gz Csu-57.root.tar.gz dyld-43.root.tar.gz gcc-4061.root.tar.gz gcc_os-1809.root.tar.gz gcc_select-46.root.tar.gz Libc-391.root.tar.gz Libc_headers-391.root.tar.gz Libc_static-391.root.tar.gz libdyld-43.root.tar.gz Libm-93.root.tar.gz Libmx-93.root.tar.gz Libsystem-88.root.tar.gz ncurses-8.1.root.tar.gz SystemStubs-5.root.tar.gz xnu-792.1.5.root.tar.gz
+do
+  tar xzf $file -C $prefix/$target
+done
+
+echo 'Building odcctools.'
+if [&nbsp;! -d odcctools-$odcctoolsVers ];
+then
+        tar xjf odcctools-$odcctoolsVers.tar.bz2
+fi
+cd odcctools-$odcctoolsVers
+eval    ./configure --target=$target --prefix=/usr 2&gt;&amp;1 | tee $root/configure-odcctools-$target.log || die &quot;Configure of odcctools failed.&quot;
+# Remove ld64 as it doesn't compile
+perl -pi -e  &quot;s,COMPONENTS = ar as include libstuff libmacho ld ld64 man misc otool,COMPONENTS = ar as include libstuff libmacho ld man misc otool,;&quot; Makefile
+eval    make 2&gt;&amp;1 | tee $root/odcctools-$target.log || die &quot;Build of odcctools failed.&quot;
+eval    make install 2&gt;&amp;1 | tee $root/odcctools-$target-install.log
+#|| die &quot;Install of odcctools failed.&quot;
+
+echo 'Building gcc.'
+cd $root
+if [&nbsp;! -d gcc-$gccVers ];
+then
+        tar xjf $gccTarBz2
+#       tar xjf $gxxTarBz2
+fi
+perl -pi -e  &quot;s,/usr/bin/libtool,/usr/bin/$target-libtool,;&quot; gcc-$gccVers/gcc/config/darwin.h
+mkdir -p build-gcc-$target
+cd build-gcc-$target
+#       --enable-languages=c,c++ \
+eval ../gcc-$gccVers/configure -v $configureGCCFlags \
+        --enable-languages=c \
+        --prefix=$prefix \
+        --target=$target \
+        --enable-static --enable-shared  \
+        2&gt;&amp;1 | tee $root/configure-gcc-$target.log ||
+        die &quot;Configure of gcc failed.&quot;
+eval make $makeGCCFlags all install 2&gt;&amp;1 |tee $root/gcc-$target.log ||
+        die &quot;Build of gcc failed.&quot;
+echo 'Success.'
+</pre>
+<p>Sobald der Kreuzcompiler installiert ist, solltest du in der Lage sein, ein Programm zu erstellen, durch Anwenden von
+</p>
+<pre>
+./configure --host=powerpc-apple-darwin &amp;&amp; make
+</pre>
+
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1853-0!1!0!!en!2 and timestamp 20070209204455 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Linux_zu_PPC_Darwin-Kreuz-Compiler" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 17:01, 8 February 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070209204455 -->
+</html>

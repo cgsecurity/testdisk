@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Réparation d'une partition NTFS,Exécuter TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Réparation d'une partition NTFS - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Réparation_d\'une_partition_NTFS";
+			var wgTitle = "Réparation d\'une partition NTFS";
+			var wgArticleId = 1394;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Réparation d'une partition NTFS</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<a name="R.C3.A9paration_du_secteur_de_boot_NTFS"></a><h2> Réparation du secteur de boot NTFS </h2>
+<p>Si le secteur de boot NTFS est endommagé, les données ne sont plus accessibles. Windows affiche: <code>The drive is not formatted, do you want to format it now?</code>
+"Le pilote n'est pas formaté, souhaitez-vous le formater maintenant?" Linux affichera: <code>wrong fs type, bad option, bad superblock</code> "Mauvais type fs, mauvaise option, mauvais superbloc".
+</p><p>TestDisk vous permet de manipuler les secteurs de boot des partitions NTFS. Sélectionnez la partition que vous souhaitez modifier et choisissez <b>Boot</b>. Si le secteur de boot NTFS et le secteur de boot de sauvegarde ne sont pas identiques, vous pourrez recopier le secteur de boot de sauvegarde dans le secteur de boot et vice versa. Vous pouvez aussi reconstruire le secteur de boot NTFS ou vider le contenu du secteur. Pour reconstruire le secteur de boot NTFS, TestDisk essaie de localiser la MFT (Master File Table: $MFTMirr). Il lit la taille de la MFT et calcule la taille du cluster. Il lit la taille de l'Index  Allocation Entry dans l'index du répertoire root. En utilisant toutes ces valeurs, il peut fournir un nouveau secteur de boot. TestDisk laisse l'utilisateur lister les fichiers avant d'écrire.
+</p>
+<a name="R.C3.A9paration_de_la_MFT_d.27une_partition_NTFS"></a><h2> Réparation de la MFT d'une partition NTFS </h2>
+<p>La MFT (Master File Table) se retrouve parfois endommagé et l'utilitaire Microsoft Check Disk (chkdsk) échoue parfois dans sa réparation. TestDisk peut tenter une réparation en utilisant la <code>MFT mirror</code>, la sauvegarde de la MFT.
+Dans le menu Advanced de TestDisk, sélectionnez la partition NTFS et choisissez "Repair MFT".
+</p><p>Retour à <a href="executer_testdisk.html" title="Exécuter TestDisk">Exécuter TestDisk </a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1394-0!1!0!!en!2 and timestamp 20061107182455 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=R%C3%A9paration_d%27une_partition_NTFS" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 13:50, 28 July 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061107182455 -->
+</html>

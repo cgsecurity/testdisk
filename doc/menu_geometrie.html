@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="Menu Géométrie,Exécuter TestDisk,Menu Analyse FR" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>Menu Géométrie - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "Menu_Géométrie";
+			var wgTitle = "Menu Géométrie";
+			var wgArticleId = 1384;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">Menu Géométrie</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<pre>
+TestDisk 6.2-WIP, Data Recovery Utility, November 2005
+Christophe GRENIER &lt;grenier@cgsecurity.org&gt;
+http://www.cgsecurity.org
+
+
+Disk /dev/sda - 120 GB / 111 GiB - CHS 14593 255 63, sector size=512
+
+Because these numbers change the way that TestDisk looks for partitions
+and calculates their sizes, it's important to have the correct disk geometry.
+PC partitionning programs often make partitions end on cylinder boundaries.
+
+A partition's CHS values are based on disk translations which make them
+different than its physical geometry. The most common CHS head values
+are: 255, 240 and sometimes 16.
+
+
+
+
+[ Cylinders ]  [   Heads   ]  [  Sectors  ]  [Sector Size]  [    Ok     ]
+
+
+
+
+
+                          Done with changing geometry
+</pre>
+<p>Changer les paramètres de la géométrie de disque dur (Cylindres, Têtes, Secteurs).
+</p><p>Les programmes de partitionnement de PC font souvent (toujours) finir les partitions aux limites des cylindres.
+Les valeurs CHS changent la manière dont TestDisk recherche les partitions et calcule leurs tailles,
+etc. Cela n'affecte pas le disque dur lui-même, <i>à moins que</i> vous écriviez vraiment des données sur le disque, concernant les partitions perdues. Le choix de paramètres erronés de la géométrie du disque et la sauvegarde de toutes partitions perdues basées sur ces paramètres erronés pourraient rendre la récupération de vos données plus dure voire impossible.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Quelques_informations"><span class="tocnumber">1</span> <span class="toctext">Quelques informations</span></a></li>
+<li class="toclevel-1"><a href="#Comment_TestDisk_obtient-il_la_g.C3.A9om.C3.A9trie_du_disque_.3F"><span class="tocnumber">2</span> <span class="toctext">Comment TestDisk obtient-il la géométrie du disque&nbsp;?</span></a></li>
+<li class="toclevel-1"><a href="#Quelques_astuces_sur_la_g.C3.A9om.C3.A9trie_du_disque"><span class="tocnumber">3</span> <span class="toctext">Quelques astuces sur la géométrie du disque</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Comment_trouver_le_nombre_exact_de_t.C3.AAtes_.3F"><span class="tocnumber">3.1</span> <span class="toctext">Comment trouver le nombre exact de têtes&nbsp;?</span></a></li>
+<li class="toclevel-2"><a href="#Comment_trouver_le_nombre_correct_de_secteurs_.3F"><span class="tocnumber">3.2</span> <span class="toctext">Comment trouver le nombre correct de secteurs&nbsp;?</span></a></li>
+</ul>
+</li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Quelques_informations"></a><h2> Quelques informations </h2>
+<p>Pour accéder aux données, les systèmes d'exploitation modernes utilisent l'adressage de blocs logiques (LBA).
+Les secteurs du disque dur sont numérotés 0,1, 2 jusqu'à N-1 avec N le nombre total de secteurs.
+</p><p>Mais avant l'apparition des disques IDE (plus grand que 8 Go) et des disques SCSI, une autre méthode était utilisée.
+Pour accéder aux données, le BIOS et le système d'exploitation (Dos/Win9x) utilisaient l'adressage CHS.
+Les valeurs CHS sont limitées à 1023 cylindres, 255 têtes et 63 secteurs (8 Go).
+Un contournement connu introduit avec des disques plus grands que 504 Mo (1023 cylindres, 16 Têtes, 63 secteurs) était  d'utiliser une géométrie (Cylindre/Tête/Secteur) différente de la géométrie physique (CHS étendu ou mode d'adressage large).
+</p><p>Une méthode utilisée par le BIOS est de lire la table de partition et de déduire le nombre de têtes. Quand la table de partition est effacée ou corrompue, la géométrie physique du disque peut être utilisée à la place. Il devient alors plus dur pour les outils de récupération de données de retrouver les partitions perdues dans le disque dur.
+</p><p><br />
+Ce problème n'est pas limité qu'aux utilisateurs du DOS. Les utilisateurs de Linux peuvent aussi le rencontrer.
+</p><p>Sous Linux, lancez <b>dmesg</b> et recherchez <b>Partition check</b>.
+Dans l'exemple suivant, la géométrie du disque dur <b>hdc</b> est déterminée par la table de partition (<b>PTBL</b>).
+</p>
+<pre>
+Partition check:
+ hda: hda1 hda2 hda3 hda4 &lt; hda5 hda6 hda7 hda8 hda9 hda10 hda11 hda12 hda13 &gt;
+ hda3: &lt;bsd: hda14 hda15 hda16 hda17 &gt;
+ hdc: [PTBL] [7476/255/63] hdc1 &lt; hdc5 hdc6 hdc7 hdc8 hdc9 hdc10 hdc11 hdc12 hdc13 &gt;
+</pre>
+<a name="Comment_TestDisk_obtient-il_la_g.C3.A9om.C3.A9trie_du_disque_.3F"></a><h2> Comment TestDisk obtient-il la géométrie du disque&nbsp;? </h2>
+<ul><li> Sous DOS, TestDisk obtient les tailles de disque en utilisant une fonction du BIOS étendu  (ah=0x48, int 0x13), et la géométrie (nombre de têtes et de secteurs) en utlisant une fonction du BIOS standard (ah=0x08, int 0x13). TestDisk utilise la taille par défaut de secteur(512 octets).
+</li></ul>
+<ul><li> Sous Windows, TestDisk obtient le nombre de cylindres, têtes et secteurs, et la taille du secteur en utilisant l'appel DeviceIoControl, IOCTL_DISK_GET_DRIVE_GEOMETRY.
+</li></ul>
+<ul><li> Sous Linux, TestDisk obtient la taille du secteur en utilisant BLKSSZGET ioctl, et la géométrie en utilisant HDIO_GETGEO_BIG ou HDIO_GETGEO ioctl; les tailles de disque proviennent de BLKGETSIZE64 ou BLKGETSIZE.
+</li></ul>
+<ul><li> Sous BSD, TestDisk obtient toutes les informations en utilisant DIOCGDINFO. Si cela échoue, TestDisk suppose que la taille de secteur est de 512 octets, et il utilise DIOCGFWSECTORS, DIOCGFWHEADS et DIOCGMEDIASIZE pour obtenir tous les autres paramètres.
+</li></ul>
+<ul><li> Sous Sun Solaris, TestDisk utilise la taille de secteur par défaut, 512 octets, et obtient le nombre de cylindres, têtes et secteurs en utilisant DKIOCGGEOM ioctl.
+</li></ul>
+<a name="Quelques_astuces_sur_la_g.C3.A9om.C3.A9trie_du_disque"></a><h2> Quelques astuces sur la géométrie du disque </h2>
+<a name="Comment_trouver_le_nombre_exact_de_t.C3.AAtes_.3F"></a><h3> Comment trouver le nombre exact de têtes&nbsp;? </h3>
+<p>Si la géométrie du disque dur ne correspond pas à la géométrie utilisée en créant la table de partition, des messages d'avertissement comme&nbsp;:  <code>Bad sector count</code>,
+<code>Bad relative sector</code> ou <code>Bad ending head</code> apparaissent lorsque l'on sélectionne <a href="menu_analyse_fr.html" title="Menu Analyse FR">Analyse</a> dans le menu principal. Si de telles erreurs apparaissent, vous devez utiliser le menu <code>Geometry</code> pour changer le nombre logique de têtes.
+Essayez  les valeurs 255, 16, 32, 64, 128 et 240  pour le nombre de têtes jusqu'à ce que TestDisk trouve toutes vos partitions.  255 et 240 sont les valeurs de têtes les plus communes. Si vous installez Linux comme seul OS sur votre disque dur, la valeur par défaut tend à être de seulement 16 têtes.
+</p>
+<a name="Comment_trouver_le_nombre_correct_de_secteurs_.3F"></a><h3> Comment trouver le nombre correct de secteurs&nbsp;? </h3>
+<p>Habitullement cette valeur est toujours de 63 secteurs, mais pour certains disques ou clés USB, il faut indiquer 32 secteurs par tête.
+</p><p>Retour à <a href="executer_testdisk.html" title="Exécuter TestDisk">Exécuter TestDisk</a>
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1384-0!1!0!!en!2 and timestamp 20061107202444 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=Menu_G%C3%A9om%C3%A9trie" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 15:23, 27 October 2006.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20061107202444 -->
+</html>

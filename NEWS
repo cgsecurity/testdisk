@@ -1,0 +1,239 @@
+Current news
+============
+6.9-WIP
+
+6.8
+Version 6.8 is mainly a bugfix but some small improvements has been made to
+both TestDisk and PhotoRec:
+- Partition type is now autodetected.
+- TestDisk and PhotoRec can now be used under screen, the screen manager with
+VT100/ANSI terminal emulation.
+
+TestDisk
+HFS detection has been improved to avoid false positive.
+TestDisk logs potential NTFS partition location from MFT & MFTMirr location
+while rebuilding NTFS boot sector.
+
+PhotoRec
+Some important bugfixes (false positive problem, implementation bugs) have been
+made in PhotoRec 6.8. JPG bruteforce recovery has been improved a little bit,
+you can use it to recover more fragmented jpeg but it's very time consuming and
+not 100% reliable, so it's still disabled by default.
+.7z, .cab, .rar and .tar recovery have been improved, .dta and .spss file
+formats have been added.
+
+6.7
+Both utilities are faster than previous versions: a better disk caching is
+used in PhotoRec, a better way to handle the sector to scan is used in
+TestDisk. Windows version of TestDisk and PhotoRec doesn't use
+pread()/pwrite() cygwin implementation (A bug seems present).
+
+TestDisk
+TestDisk 6.7 handles partition created under Microsoft Vista.
+Traditionally partitions were created on cylinder boundaries. Under Vista,
+they are now independent of the disk geometry: partitions are aligned to 1
+MB boundary, TestDisk now handles that. It also fixes how the advanced
+menu works.
+
+PhotoRec
+PhotoRec 6.7 uses less CPU. It also adds support for 3ds max, Archive
+.ace, CD Audio .cda, FastTrackerII Extended Module .xm, Linux archive .a,
+Linux/Unix ELF binary, Mac OS .emlx mail format, Macomedia Compressed
+Flash .swc, Macromedia .flv, Macromedia Freehand 5 (.fh5) & 10 (.fh10) and
+InDesign .indd, Matroska .mkv, MP3 with ID3 header, MS cabinet archive
+.cab, MSOffice "Open" XML .docx, .pptx, .xlsx, MS executable (PE), MS
+Windows Metafile .wmf, NJStar .njx, Quickbooks .qbb and .qbw, Real Audio
+.rm, registry config file .reg, RPM package .rpm, Windows registry header
+detection and Event Log .evt 
+
+6.6
+General Improvements
+- Encase Expert Witness Compression Format is now supported, so Computer
+Forensic Experts can use TestDisk and PhotoRec more easily.
+- Under new Vista OS, harddisks are now being reported again. 
+TestDisk
+- If LBA48 support seems missing (HD bigger than 130 GB not supported by
+the OS), TestDisk will warn the user. This problem is common when a user
+reinstalls his OS and forgets to install the latest service patches.
+- NTFS: TestDisk should be able to list files from NTFS partitions even if
+some filesystem corruption has occurred; more importantly, it will allow
+the user to copy whatever file data it can as well.
+- FAT: Improved heuristics to find the first FAT area during boot sector
+rebuild. 
+PhotoRec
+- A new method for handling fragmented data is now used, making recovery
+more reliable and faster.
+- PhotoRec can be set to search for files in FAT16/FAT32 unallocated space
+only; which avoids wasting time recovering files that are still
+accessible, making the recovery of 'lost files' much faster and more
+efficient.
+- New file formats have been added: .3g2 (Mov video family), .aif Apple
+Audio, .all .cpr Cubase Song, .blend Blender, .cam Casio QV Digital Camera
+Image, .flac Free Lossless Audio Codec, .mdf Microsoft SQL, .swf
+Macromedia Flash and .vcf VCard (not confused with .txt anymore) 
+
+6.5
+TestDisk
+- A screen has been added to control the log file creation.
+- It's now possible from TestDisk file listing to copy files from NTFS
+partition to a selected directory.
+- NTFS MFT can also be repaired in more cases.
+- A compilation problem has been fixed with old version of libntfs.
+- Documentation has been fixed, it now displays correctly with IE.
+PhotoRec
+- New file formats have been added: AppleWorks .cwk, DIF Digital Video .dv,
+DjVu .djv, Finale .mus, Incredimail .imm, .imb, iTunes mhbd, MIDI .mid,
+MS Backup, Real Media .rm & .ram, Reason .rns, ruby .rb, .xml 
+- File size detection for .bmp, .pdf, .gif, Office document has been improved.
+- A endless loop bug and a memory leak have been fixed.
+- The I/O cache engine now caches read failure, it will speedup some recovery.
+
+6.4
+Support for ReiserFS 4 has been added in TestDisk
+PhotoRec detects new files formats and better recovery of jpeg, txt/html, zip...
+Fixes numerous bugs.
+
+6.3
+Fix for 64 bits architecture and improved interface.
+Photorec adds support for Quicken, OpenDocument, mp3, ogg,
+StarOffice, Encapsulated PostScript, PostScript, gif, gz, mov file format
+or better detection.
+
+6.2
+New User Interface
+Disk cache and read ahead to improve performance
+Endianess portability fix
+
+6.1
+TestDisk
+Fix for Mac version
+Remove an erroneous message after writing a partition without logical partition
+
+6.0
+TestDisk
+Fix for Dos version and some cosmetic change
+
+5.9
+TestDisk
+- User Interface has been improved
+- Mac partition map is now supported
+- FAT: better check for directory attribut
+- FAT: fix a bug in expert mode
+- FAT: fix directory listing time using timezone
+- Linux Raid: fix regression from 5.8, Raid 1 is again detected.
+- NTFS boot sector: copy boot sector over backup boot sector now works
+Photorec
+- Photorec now works on ext2/ext3 filesystem (Check Options)
+- add support for Papyrus, 7zip, text file, OGG audio files, RAR archive recovery
+- add a default file size limit of 2GB
+- add support for ZIP files starting with PK00 (packed to removable disk)
+
+5.8
+TestDisk
+- Add support for HFS+, UFS2 filesystem and Intel Solaris superblock
+- Linux Raid: Add some code to detect Raid 5 earlier
+- FAT: Update the cleaning FAT function to repair FAT table (Expert mode only)
+- EXT2: e2fsprogs-1.36 parses the device name given in ext2fs_open, give a string instead of the io_channel.
+- NTFS: Fix a bug in NTFS rebuilding introduced in 5.7
+- Fix a memory freed problem when detecting if a partition can be Primary, Logical...
+Photorec
+- Recognize php header
+- MPG format is using streaming
+
+5.7
+TestDisk
+- Replace standard MBR i386 boot sector code by a GPL one
+- HFS detection has been improved to avoid false positive
+- FAT: add support for one FAT only (instead of usual 2) in directory listing
+  and boot sector rebuilding (need expert mode)
+- FAT: Support for FAT without FAT12 (ie DOS 3.30), FAT16 or FAT32 mark.
+- FAT12/16: Add the possibility to initialize FAT root directory (Delete everything,
+  Expert mode only)
+- FAT: fix for directory listing in boot sector rebuilding.
+- FAT32: Fix for last FAT sector while cleaning the FAT (Expert mode only)
+- EXT2/EXT3: while listing filename permit to list file where inode information is unavaible.
+- Doesn't halt if TestDisk can't create the log file
+- configure.ac, compile.sh: remove --enable-debug option
+- Modify Linux RPM spec file to get non-empty debug-info rpm
+- Directory listing: little UI modification
+- Dos version: fix read/write error message
+Photorec 5.7
+- add support for a bunch of other file format
+- incremental directory name for recovery
+- a lot of code cleaning
+
+5.6
+TestDisk
+New features:
+- Can list files from NTFS partition found using backup boot sector
+- Display a warning if TestDisk think the logical geometry (CHS) is wrong
+- Handle filesystem image (In Options, Partition type: None)
+- Filesystem: HFS (minimal testing) and LVM2 support
+- NetBSD and FreeBSD support
+
+Improvements:
+- Win32: Windows version is now as fast as other version.
+  Using FileRead() instead of read() is about 10 times faster.
+
+Fixs:
+- HD Geometry: the number of cylinders can be bigger than 65535
+- BSD slice: display content even if crc is wrong
+- FAT boot sector rebuilding: better support for FAT16 converted to FAT32
+- NTFS boot sector rebuilding: better handle copy of MFT
+- Win32: Windows version always creates a log file (was introduced in 5.3 but
+  boggus since 5.4)
+
+Photorec 5.6
+- Use libjpeg for a better recovery of lost jpeg files.
+- Konica/Minolta raw (MRW) pictures recovery
+- Canon raw (CRW) pictures recovery
+- Minimal support for Sigma/Foveon: .X3F, Rollei (RDC), Fuji (RAF)
+
+5.5
+Fix FAT32 recovery using backup boot sector
+Remove some debugging code
+Upgrade to libntfs 1.9.4
+Fix RPM spec file to get a working reiserfs support
+
+5.4
+New features:
+- Option to backup unknown partition header.
+- Save/Load current partition list
+- handle sector size != 512
+- XFS and CramFS support
+
+Improvements:
+- Interface has been improved.
+- log libreiserfs errors in the log file
+- can choose to minimize or maximize the extended partition before writing
+- FAT32 root cluster rebuild improved (use first free cluster, mark it as used or/and EOC)
+
+Fixs:
+- ReiserFS and EXT2/EXT3 directory listing fix
+- fix a bug with BeFS partition recovery
+
+5.3
+New features:
+- When rebuilding FAT boot sector in expert mode, lets the user choose FAT locations.
+
+Improvements:
+- Exit if TestDisk can't create log file.
+- Windows version always create log file.
+
+Bug corrections:
+- Fix superblock number displayed when telling the user to use e2fsck.
+- Fix extended partition creation.
+
+
+5.2
+TestDisk now compiles and run under NT 4 and Windows 2000.
+New features:
+- can rebuild NTFS boot sector
+- can recover JFS partition
+- some advanced FAT32 functions have been added (Expert mode only)
+                                                                                                                             
+Improvements:
+- Can align partition to cylinder boundary or to head boundary.
+- Doesn't abort while writing partitions if read failed.
+- Doesn't let the user write an empty partition table.
+

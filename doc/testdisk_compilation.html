@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" dir="ltr">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="keywords" content="TestDisk Compilation,Compile DOS,Compile Linux,Compile MacOSX,Compile Win,Linux to PPC Darwin Cross Compiler,TestDisk" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="search" type="application/opensearchdescription+xml" href="opensearch_desc.php" title="CGSecurity (English)" />
+
+<link rel="copyright" href="http://www.gnu.org/copyleft/fdl.html" />
+		<title>TestDisk Compilation - CGSecurity</title>
+		<style type="text/css" media="screen,projection">/*<![CDATA[*/ @import "main.css"; /*]]>*/</style>
+		<link rel="stylesheet" type="text/css" media="print" href="commonprint.css" />
+		<!--[if lt IE 5.5000]><style type="text/css">@import "ie50fixes.css";</style><![endif]-->
+		<!--[if IE 5.5000]><style type="text/css">@import "ie55fixes.css";</style><![endif]-->
+		<!--[if IE 6]><style type="text/css">@import "ie60fixes.css";</style><![endif]-->
+		<!--[if IE 7]><style type="text/css">@import "ie70fixes.css";</style><![endif]-->
+		<!--[if lt IE 7]><script type="text/javascript" src="iefixes.js"></script>
+		<meta http-equiv="imagetoolbar" content="no" /><![endif]-->
+		
+		<script type= "text/javascript">
+			var skin = "monobook";
+			var stylepath = "/mw/skins";
+
+			var wgArticlePath = "/wiki/$1";
+			var wgScriptPath = "/mw";
+			var wgServer = "http://www.cgsecurity.org";
+                        
+			var wgCanonicalNamespace = "";
+			var wgNamespaceNumber = 0;
+			var wgPageName = "TestDisk_Compilation";
+			var wgTitle = "TestDisk Compilation";
+			var wgArticleId = 1313;
+			var wgIsArticle = true;
+                        
+			var wgUserName = null;
+			var wgUserLanguage = "en";
+			var wgContentLanguage = "en";
+		</script>
+		                
+		<script type="text/javascript" src="wikibits.js"><!-- wikibits js --></script>
+		<script type="text/javascript" src="dyn.js"><!-- site js --></script>
+		<style type="text/css">/*<![CDATA[*/
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Common.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "http://www.cgsecurity.org/mw/index.php?title=MediaWiki:Monobook.css&usemsgcache=yes&action=raw&ctype=text/css&smaxage=18000";
+@import "dyn.css";
+/*]]>*/</style>
+		<!-- Head Scripts -->
+			</head>
+<body  class="mediawiki ns-0 ltr">
+	<div id="globalWrapper">
+		<div id="column-content">
+	<div id="content">
+		<a name="top" id="top"></a>
+				<h1 class="firstHeading">TestDisk Compilation</h1>
+		<div id="bodyContent">
+			<h3 id="siteSub">From CGSecurity</h3>
+			<div id="contentSub"></div>
+									<div id="jump-to-nav">Jump to: <a href="#column-one">navigation</a>, <a href="#searchInput">search</a></div>			<!-- start content -->
+			<p>This document explains how to compile TestDisk and PhotoRec.
+</p>
+<table id="toc" class="toc" summary="Contents"><tr><td><div id="toctitle"><h2>Contents</h2></div>
+<ul>
+<li class="toclevel-1"><a href="#Libraries"><span class="tocnumber">1</span> <span class="toctext">Libraries</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Ext2fs_Library"><span class="tocnumber">1.1</span> <span class="toctext">Ext2fs Library</span></a></li>
+<li class="toclevel-2"><a href="#EWF_library"><span class="tocnumber">1.2</span> <span class="toctext">EWF library</span></a></li>
+<li class="toclevel-2"><a href="#Jpeg_library"><span class="tocnumber">1.3</span> <span class="toctext">Jpeg library</span></a></li>
+<li class="toclevel-2"><a href="#How_to_compile_ntfsprogs"><span class="tocnumber">1.4</span> <span class="toctext">How to compile ntfsprogs</span></a></li>
+<li class="toclevel-2"><a href="#ReiserFS_Library"><span class="tocnumber">1.5</span> <span class="toctext">ReiserFS Library</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#How_to_compile_TestDisk"><span class="tocnumber">2</span> <span class="toctext">How to compile TestDisk</span></a>
+<ul>
+<li class="toclevel-2"><a href="#Standard_method"><span class="tocnumber">2.1</span> <span class="toctext">Standard method</span></a></li>
+<li class="toclevel-2"><a href="#Static_version"><span class="tocnumber">2.2</span> <span class="toctext">Static version</span></a></li>
+<li class="toclevel-2"><a href="#Static_compressed_binary"><span class="tocnumber">2.3</span> <span class="toctext">Static compressed binary</span></a></li>
+</ul>
+</li>
+<li class="toclevel-1"><a href="#OS_Notes"><span class="tocnumber">3</span> <span class="toctext">OS Notes</span></a></li>
+<li class="toclevel-1"><a href="#Cross-compilation"><span class="tocnumber">4</span> <span class="toctext">Cross-compilation</span></a></li>
+</ul>
+</td></tr></table><script type="text/javascript"> if (window.showTocToggle) { var tocShowText = "show"; var tocHideText = "hide"; showTocToggle(); } </script>
+<a name="Libraries"></a><h2> Libraries </h2>
+<ul><li> libncurses - Required, TestDisk and PhotoRec use a text user interface, Ncurses library and development files must be available.
+</li><li> Ext2fs library - Optional, used by TestDisk to list files from ext2/ext3 partition
+</li><li> EWF library - Optional, TestDisk and PhotoRec use it to access Expert Witness Compression Format files (ie Encase files)
+</li><li> Jpeg library - Optional, used by PhotoRec to improved JPEG recovery rate
+</li><li> NTFS library - Optional, used by TestDisk to list files from NTFS partition
+</li><li> Reiserfs library - Optional, used by TestDisk to list files from reiserfs partition
+</li></ul>
+<a name="Ext2fs_Library"></a><h3> Ext2fs Library</h3>
+<p>Ext2fs library is usually installed with your OS, so you don't need to compile it yourself.
+Otherwise get latest version of e2fsprogs at <a href="http://e2fsprogs.sourceforge.net" class="external free" title="http://e2fsprogs.sourceforge.net" rel="nofollow">http://e2fsprogs.sourceforge.net</a>
+</p>
+<pre>
+tar xzf e2fsprogs-1.38.tgz
+cd e2fsprogs-1.38
+./configure --with-cc=gcc
+make libs
+make install
+</pre>
+<a name="EWF_library"></a><h3> EWF library </h3>
+<p>EWF library source code can be downloaded from <a href="https://www.uitwisselplatform.nl/projects/libewf/" class="external free" title="https://www.uitwisselplatform.nl/projects/libewf/" rel="nofollow">https://www.uitwisselplatform.nl/projects/libewf/</a>. Note that it requires openssl and zlib to compile and run sucessfully.
+</p>
+<pre>
+tar xzf libewf-beta-20070408.tar.gz
+cd libewf-20070408
+./configure
+make lib
+make install
+</pre>
+<a name="Jpeg_library"></a><h3> Jpeg library </h3>
+<p>Libjpeg library is usually installed with your OS, so you don't need to compile it yourself.
+Otherwise download libjpeg source from <a href="ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz" class="external free" title="ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz" rel="nofollow">ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz</a><br />
+</p>
+<pre>
+tar xzf jpegsrc.v6b.tar.gz
+cd jpeg-6b
+./configure --enable-shared --enable-static
+make
+sudo make install
+</pre>
+<p>Mac OS X 10.3 ships with GNU libtool, albeit under a slightly different name, glibtool. You may have
+to run
+</p>
+<pre>
+ln -s `which glibtool` ./libtool
+</pre>
+<a name="How_to_compile_ntfsprogs"></a><h3> How to compile ntfsprogs </h3>
+<p>Get the latest version of ntfsprogs from <a href="http://linux-ntfs.sf.net/" class="external free" title="http://linux-ntfs.sf.net/" rel="nofollow">http://linux-ntfs.sf.net/</a>
+</p>
+<pre>
+tar xzf ntfsprogs-1.13.0.tar.gz
+cd ntfsprogs-1.13.0
+./configure
+make libs
+make install
+</pre>
+<p>To get a working version under NT 4, use <code>configure --disable-default-device-io-ops</code>
+because SetFilePointerEx used by win32_io.c is not exported by NT 4 DLL.
+</p>
+<a name="ReiserFS_Library"></a><h3> ReiserFS Library</h3>
+<p>Get progsreiserfs-0.3.1-rc8.tar.gz at <a href="http://reiserfs.osdn.org.ua/" class="external free" title="http://reiserfs.osdn.org.ua/" rel="nofollow">http://reiserfs.osdn.org.ua/</a>
+</p>
+<pre>
+tar xzf progsreiserfs-*.tar.gz
+cd progreiserfs-0.3.1-rc8
+./configure --disable-nls
+make
+make install
+</pre>
+<a name="How_to_compile_TestDisk"></a><h2> How to compile TestDisk</h2>
+<a name="Standard_method"></a><h3> Standard method </h3>
+<p>To compile TestDisk and PhotoRec, run
+</p>
+<pre>
+./configure
+make
+</pre>
+<p>You may need to specify parameters to configure, see <b>configure --help</b>.<br />
+Example:
+</p>
+<pre>
+./configure
+--with-reiserfs-lib=/home/kmaster/perso/testdisk-5.2/progsreiserfs-0.3.1-rc8/libreiserfs/.libs/
+--with-reiserfs-includes=/home/kmaster/perso/testdisk-5.2/progsreiserfs-0.3.1-rc8/include/
+--with-ntfs-lib=/home/kmaster/perso/testdisk-5.2/ntfsprogs-1.8.5/libntfs/.libs/
+--with-ntfs-includes=/home/kmaster/perso/testdisk-5.2/ntfsprogs-1.8.5/include/
+--with-ext2fs-lib=/home/kmaster/perso/testdisk-5.2/e2fsprogs-1.34/lib
+--with-ext2fs-includes=/home/kmaster/perso/testdisk-5.2/e2fsprogs-1.34/lib
+</pre>
+<a name="Static_version"></a><h3> Static version </h3>
+<p>If you need to run the binary on systems that lack one of the previous libraries,
+create a static binary with
+</p>
+<pre>
+make static
+</pre>
+<a name="Static_compressed_binary"></a><h3> Static compressed binary </h3>
+<p>If you need a small binary for binary distribution,
+get the UPX packer at <a href="http://upx.sourceforge.net/" class="external text" title="http://upx.sourceforge.net/" rel="nofollow">http://upx.sourceforge.net/ </a>
+and run
+</p>
+<pre>
+strip src/testdisk src/photorec
+upx src/testdisk src/photorec
+</pre>
+<p>Note that Linux UPX needs to decompress program files before running, and it will request some space on /tmp to do this. The running executable must be allowed in this directory (mount -o remount,exec /tmp).
+</p>
+<a name="OS_Notes"></a><h2> OS Notes </h2>
+<p>Please read notes about your OS:
+</p>
+<ul><li><a href="compile_dos.html" title="Compile DOS">DOS</a>
+</li><li><a href="compile_linux.html" title="Compile Linux">GNU/Linux</a>
+</li><li><a href="compile_win.html" title="Compile Win">Win</a>
+</li><li><a href="compile_macosx.html" title="Compile MacOSX">MacOSX</a>
+</li></ul>
+<a name="Cross-compilation"></a><h2> Cross-compilation </h2>
+<ul><li>Linux to <a href="linux_to_ppc_darwin_cross_compiler.html" title="Linux to PPC Darwin Cross Compiler">PowerPC Darwin/MacOSX</a> cross-compiler
+</li></ul>
+<p>Return to <a href="testdisk.html" title="TestDisk"> TestDisk </a> page
+</p>
+<!-- Saved in parser cache with key cg_mw-mw_:pcache:idhash:1313-0!1!0!!en!2 and timestamp 20070813063956 -->
+			<div id="catlinks"><p class='catlinks'><a href="http://www.cgsecurity.org/mw/index.php?title=Special:Categories&amp;article=TestDisk_Compilation" title="Special:Categories">Category</a>: <span dir='ltr'><a href="http://www.cgsecurity.org/wiki/Category:Data_Recovery" title="Category:Data Recovery">Data Recovery</a></span></p></div>			<!-- end content -->
+			<div class="visualClear"></div>
+		</div>
+	</div>
+		</div>
+		<div id="column-one">
+	
+	<div class="portlet" id="p-logo">
+		<a style="background-image: url(logo.png);" href="http://www.cgsecurity.org/" title="Main Page"></a>
+	</div>
+	<script type="text/javascript"> if (window.isMSIE55) fixalpha(); </script>
+		<div class='portlet' id='p-DataRecovery'>
+		<h5>Data Recovery</h5>
+		<div class='pBody'>
+			<ul>
+				<li id="n-TestDisk"><a href="testdisk.html">TestDisk</a></li>
+				<li id="n-PhotoRec"><a href="photorec.html">PhotoRec</a></li>
+				<li id="n-Download"><a href="testdisk_download.html">download</a></li>
+			</ul>
+		</div>
+	</div>
+		</div><!-- end of the left (by default at least) column -->
+			<div class="visualClear"></div>
+			<div id="footer">
+				<div id="f-copyrightico"><a href="http://www.gnu.org/copyleft/fdl.html"><img src="gnu_fdl.png" alt='GNU Free Documentation License 1.2' /></a></div>
+			<ul id="f-list">
+				<li id="lastmod"> This page was last modified 06:30, 12 April 2007.</li>
+				<li id="copyright">Content is available under <a href="http://www.gnu.org/copyleft/fdl.html" class="external " title="http://www.gnu.org/copyleft/fdl.html" rel="nofollow">GNU Free Documentation License 1.2</a>.</li>
+			</ul>
+		</div>
+		
+	
+		<script type="text/javascript">if (window.runOnloadHook) runOnloadHook();</script>
+</div>
+</body><!-- Cached 20070813064520 -->
+</html>
