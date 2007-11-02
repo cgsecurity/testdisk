@@ -254,7 +254,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
     wbkgdset(window,' ' | COLOR_PAIR(0));
   waddstr(window," to quit");
   wmove(window,6,0);
-  wdoprintf(window,"Directory %s\n",dir_data->current_directory);
+  wprintw(window,"Directory %s\n",dir_data->current_directory);
   do
   {
     int i;
@@ -281,29 +281,29 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	strncpy(datestr, "                 ",sizeof(datestr));
       }
       mode_string(current_file->filestat.st_mode,str);
-      wdoprintf(window, "%s %5u %5u   ", 
+      wprintw(window, "%s %5u %5u   ", 
 	  str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-      wdoprintf(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+      wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
       /* screen may overlap due to long filename */
-      wdoprintf(window, " %s %s", datestr, current_file->name);
+      wprintw(window, " %s %s", datestr, current_file->name);
       if(current_file==pos)
 	wattroff(window, A_REVERSE);
     }
     wmove(window, 8-1, 51);
     wclrtoeol(window);
     if(offset>0)
-      wdoprintf(window, "Previous");
+      wprintw(window, "Previous");
     /* Clear the last line, useful if overlapping */
     wmove(window,8+i-offset,0);
     wclrtoeol(window);
     wmove(window, 8+INTER_DIR, 51);
     wclrtoeol(window);
     if(current_file!=NULL)
-      wdoprintf(window, "Next");
+      wprintw(window, "Next");
     if(dir_list==NULL)
     {
       wmove(window,8,0);
-      wdoprintf(window,"No file found, filesystem seems damaged.");
+      wprintw(window,"No file found, filesystem seems damaged.");
     }
     wrefresh(window);
     /* Using gnome terminal under FC3, TERM=xterm, the screen is not always correct */
@@ -421,7 +421,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 		wclrtoeol(window);
 		if(has_colors())
 		  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
-		wdoprintf(window,"Copying, please wait...");
+		wprintw(window,"Copying, please wait...");
 		if(has_colors())
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 		wrefresh(window);
@@ -439,16 +439,16 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 		{
 		  if(has_colors())
 		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
-		  wdoprintf(window,"Copy failed!");
+		  wprintw(window,"Copy failed!");
 		}
 		else
 		{
 		  if(has_colors())
 		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
 		  if(res < 0)
-		    wdoprintf(window,"Copy done! (Failed to copy some files)");
+		    wprintw(window,"Copy done! (Failed to copy some files)");
 		  else
-		    wdoprintf(window,"Copy done!");
+		    wprintw(window,"Copy done!");
 		}
 		if(has_colors())
 		  wbkgdset(window,' ' | COLOR_PAIR(0));

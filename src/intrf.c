@@ -151,7 +151,7 @@ int aff_buffer(const buffer_cmd_t cmd, const char *_format, ...)
         {
           wmove(stdscr,DUMP_Y+1+i-pos,DUMP_X);
           wclrtoeol(stdscr);
-          wdoprintf(stdscr,"%s",intr_buffer_screen[i]);
+          wprintw(stdscr,"%s",intr_buffer_screen[i]);
         }
         wrefresh(stdscr);
       }
@@ -494,7 +494,7 @@ int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuIte
   /*
      if( ( menuType & ( MENU_HORIZ | MENU_VERT ) )==0 )    
      {
-     wdoprintf(window,"Menu without direction. Defaulting horizontal.");
+     wprintw(window,"Menu without direction. Defaulting horizontal.");
      menuType |= MENU_HORIZ;
      }
    */
@@ -599,7 +599,7 @@ int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuIte
     if( key )
     {
       wmove(window,5,0);
-      wdoprintf(window,"key %03X",key);
+      wprintw(window,"key %03X",key);
       putchar( BELL );
     }
 #endif
@@ -711,32 +711,32 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
       wclrtoeol(window);
-      wdoprintf(window,"%04X ",i*0x10);
+      wprintw(window,"%04X ",i*0x10);
       for(j=0; j< 0x10;j++)
       {
         if(i*0x10+j<lng)
         {
           car=*((const unsigned char*)nom_dump+i*0x10+j);
-          wdoprintf(window,"%02x", car);
+          wprintw(window,"%02x", car);
         }
         else
-          wdoprintf(window,"  ");
+          wprintw(window,"  ");
         if(j%4==(4-1))
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
-      wdoprintf(window,"  ");
+      wprintw(window,"  ");
       for(j=0; j< 0x10;j++)
       {
         if(i*0x10+j<lng)
         {
           car=*((const unsigned char*)nom_dump+i*0x10+j);
           if ((car<32)||(car >= 127))
-            wdoprintf(window,".");
+            wprintw(window,".");
           else
-            wdoprintf(window,"%c",  car);
+            wprintw(window,"%c",  car);
         }
         else
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
     }
     switch (wmenuSelect(window,INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
@@ -817,7 +817,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
       wclrtoeol(window);
-      wdoprintf(window,"%04X ",i*0x08);
+      wprintw(window,"%04X ",i*0x08);
       for(j=0; j<0x08;j++)
       {
         if(i*0x08+j<lng)
@@ -826,16 +826,16 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           unsigned char car2=*((const unsigned char*)dump_2+i*0x08+j);
           if(car1!=car2)
             wattrset(window, A_REVERSE);
-          wdoprintf(window,"%02x", car1);
+          wprintw(window,"%02x", car1);
           if(car1!=car2)
             wattroff(window, A_REVERSE);
         }
         else
-          wdoprintf(window," ");
+          wprintw(window," ");
         if(j%4==(4-1))
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
-      wdoprintf(window,"  ");
+      wprintw(window,"  ");
       for(j=0; j<0x08;j++)
       {
         if(i*0x08+j<lng)
@@ -845,16 +845,16 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           if(car1!=car2)
             wattrset(window, A_REVERSE);
           if ((car1<32)||(car1 >= 127))
-            wdoprintf(window,".");
+            wprintw(window,".");
           else
-            wdoprintf(window,"%c",  car1);
+            wprintw(window,"%c",  car1);
           if(car1!=car2)
             wattroff(window, A_REVERSE);
         }
         else
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
-      wdoprintf(window,"  ");
+      wprintw(window,"  ");
       for(j=0; j<0x08;j++)
       {
         if(i*0x08+j<lng)
@@ -863,16 +863,16 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           unsigned char car2=*((const unsigned char*)dump_2+i*0x08+j);
           if(car1!=car2)
             wattrset(window, A_REVERSE);
-          wdoprintf(window,"%02x", car2);
+          wprintw(window,"%02x", car2);
           if(car1!=car2)
             wattroff(window, A_REVERSE);
           if(j%4==(4-1))
-            wdoprintf(window," ");
+            wprintw(window," ");
         }
         else
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
-      wdoprintf(window,"  ");
+      wprintw(window,"  ");
       for(j=0; j<0x08;j++)
       {
         if(i*0x08+j<lng)
@@ -882,14 +882,14 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           if(car1!=car2)
             wattrset(window, A_REVERSE);
           if ((car2<32)||(car2 >= 127))
-            wdoprintf(window,".");
+            wprintw(window,".");
           else
-            wdoprintf(window,"%c",  car2);
+            wprintw(window,"%c",  car2);
           if(car1!=car2)
             wattroff(window, A_REVERSE);
         }
         else
-          wdoprintf(window," ");
+          wprintw(window," ");
       }
     }
     switch (wmenuSelect(window,INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
@@ -976,21 +976,21 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
     wmove(window, INTER_ANALYSE_Y-1, INTER_ANALYSE_X+4);
     wclrtoeol(window);
     if(first_line_to_display>0)
-      wdoprintf(window, "Previous");
+      wprintw(window, "Previous");
     for (i=first_line_to_display; (i<intr_nbr_line)&&((i-first_line_to_display)<INTER_MAX_LINES); i++)
     {
       wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
       wclrtoeol(window);
       if(i==current_line && intr_nbr_line>INTER_MAX_LINES && has_colors())
         wattrset(window, A_REVERSE);
-      wdoprintf(window,"%s",intr_buffer_screen[i]);
+      wprintw(window,"%s",intr_buffer_screen[i]);
       if(i==current_line && intr_nbr_line>INTER_MAX_LINES && has_colors())
         wattroff(window, A_REVERSE);
     }
     wmove(window, INTER_ANALYSE_Y+INTER_MAX_LINES, INTER_ANALYSE_X+4);
     wclrtoeol(window);
     if(i<intr_nbr_line)
-      wdoprintf(window, "Next");
+      wprintw(window, "Next");
     key=wmenuSelect_ext(window,INTER_ANALYSE_MENU_Y, INTER_ANALYSE_MENU_X, (menuItems!=NULL?menuItems:menuDefault),
         itemLength, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu,NULL);
     switch (key)
@@ -1043,7 +1043,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
 
 void aff_CHS(const CHS_t * CHS)
 {
-  wdoprintf(stdscr,"%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
+  wprintw(stdscr,"%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
 }
 
 void aff_CHS_buffer(const CHS_t * CHS)
@@ -1055,7 +1055,7 @@ void aff_part(WINDOW *window,const aff_part_type_t newline,const disk_t *disk_ca
 {
   const char *msg;
   msg=aff_part_aux(newline, disk_car, partition);
-  wdoprintf(window,"%s",msg);
+  wprintw(window,"%s",msg);
 }
 
 void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA)
@@ -1067,7 +1067,7 @@ void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA)
   tmp=pos_LBA/tmp;
   cylinder=tmp/(disk_car->CHS.head+1);
   head=tmp%(disk_car->CHS.head+1);
-  wdoprintf(stdscr,"%lu/%lu/%lu", cylinder,head,sector);
+  wprintw(stdscr,"%lu/%lu/%lu", cylinder,head,sector);
 }
 
 int ask_YN(WINDOW *window)
@@ -1080,7 +1080,7 @@ int ask_YN(WINDOW *window)
     res=toupper(wgetch(window));
   } while((res!=c_NO)&&(res!=c_YES));
   curs_set(0);
-  wdoprintf(window,"%c\n",res);
+  wprintw(window,"%c\n",res);
   return (res==c_YES);
 }
 
@@ -1100,27 +1100,6 @@ int ask_confirmation(const char*_format, ...)
   touchwin(stdscr);
 #endif
   return res;
-}
-
-int wdoprintf(WINDOW *window, const char *_format, ...)
-{
-  char res[800];
-  va_list ap;
-  va_start(ap,_format);
-  vsnprintf(res,sizeof(res),_format,ap);
-  va_end(ap);
-  res[sizeof(res)-1]='\0';
-#ifdef __MINGW32__
-  {
-    int len=strlen(res);
-    if(res[len-1]=='\n' && len<sizeof(res)-1)
-    {
-      res[len]='\r';
-      res[len+1]=0;
-    }
-  }
-#endif
-  return waddstr(window,res);
 }
 
 static int display_message_ncurses(const char*msg)
@@ -1148,11 +1127,11 @@ void not_implemented(const char *msg)
   WINDOW *window=newwin(0,0,0,0);	/* full screen */
   aff_copy(window);
   wmove(window,7,0);
-  wdoprintf(window,"Function %s not implemented",msg);
+  wprintw(window,"Function %s not implemented",msg);
   log_warning("Function %s not implemented\n",msg);
   wmove(window,22,0);
   wattrset(window, A_REVERSE);
-  wdoprintf(window,"[ Abort ]");
+  wprintw(window,"[ Abort ]");
   wattroff(window, A_REVERSE);
   wrefresh(window);
   while(wgetch(window)==ERR);
@@ -1273,12 +1252,12 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
       {
         aff_copy(stdscr);
         wmove(stdscr,4,0);
-        wdoprintf(stdscr,"%s need 25 lines to work.", prog_name);
+        wprintw(stdscr,"%s need 25 lines to work.", prog_name);
         wmove(stdscr,5,0);
-        wdoprintf(stdscr,"Please enlarge the terminal.");
+        wprintw(stdscr,"Please enlarge the terminal.");
         wmove(stdscr,LINES-2,0);
         wattrset(stdscr, A_REVERSE);
-        wdoprintf(stdscr,"[ Quit ]");
+        wprintw(stdscr,"[ Quit ]");
         wattroff(stdscr, A_REVERSE);
         wrefresh(stdscr);
         switch(wgetch(stdscr))
@@ -1325,16 +1304,16 @@ char *ask_log_location(const char*filename)
   static char response[LINE_LENGTH];
   aff_copy(stdscr);
   wmove(stdscr,6,0);
-  wdoprintf(stdscr,"Cannot open %s: %s\n",filename, strerror(errno));
+  wprintw(stdscr,"Cannot open %s: %s\n",filename, strerror(errno));
   wmove(stdscr,8,0);
-  wdoprintf(stdscr,"Please enter the full log filename or press ");
+  wprintw(stdscr,"Please enter the full log filename or press ");
   if(has_colors())
     wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
-  wdoprintf(stdscr,"Enter");
+  wprintw(stdscr,"Enter");
   if(has_colors())
     wbkgdset(stdscr,' ' | COLOR_PAIR(0));
   wmove(stdscr,9,0);
-  wdoprintf(stdscr,"to abort log file creation.\n");
+  wprintw(stdscr,"to abort log file creation.\n");
   if (get_string(response, LINE_LENGTH, NULL) > 0)
     return response;
   return NULL;
@@ -1358,31 +1337,31 @@ int ask_log_creation()
   };
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wdoprintf(stdscr,"TestDisk is a data recovery designed to help recover lost partitions");
+  wprintw(stdscr,"TestDisk is a data recovery designed to help recover lost partitions");
   wmove(stdscr,6,0);
-  wdoprintf(stdscr,"and/or make non-booting disks bootable again when these symptoms");
+  wprintw(stdscr,"and/or make non-booting disks bootable again when these symptoms");
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"are caused by faulty software, certain types of viruses or human error.");
+  wprintw(stdscr,"are caused by faulty software, certain types of viruses or human error.");
   wmove(stdscr,8,0);
-  wdoprintf(stdscr,"It can also be used to repair some filesystem errors.");
+  wprintw(stdscr,"It can also be used to repair some filesystem errors.");
   wmove(stdscr,10,0);
-  wdoprintf(stdscr,"Information gathered during TestDisk use can be recorded for later");
+  wprintw(stdscr,"Information gathered during TestDisk use can be recorded for later");
   wmove(stdscr,11,0);
-  wdoprintf(stdscr,"review. If you choose to create the text file, ");
+  wprintw(stdscr,"review. If you choose to create the text file, ");
   if(has_colors())
     wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
-  wdoprintf(stdscr,"testdisk.log");
+  wprintw(stdscr,"testdisk.log");
   if(has_colors())
     wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-  wdoprintf(stdscr," , it");
+  wprintw(stdscr," , it");
   wmove(stdscr,12,0);
-  wdoprintf(stdscr,"will contain TestDisk options, technical information and various");
+  wprintw(stdscr,"will contain TestDisk options, technical information and various");
   wmove(stdscr,13,0);
-  wdoprintf(stdscr,"outputs; including any folder/file names TestDisk was used to find and");
+  wprintw(stdscr,"outputs; including any folder/file names TestDisk was used to find and");
   wmove(stdscr,14,0);
-  wdoprintf(stdscr,"list onscreen.");
+  wprintw(stdscr,"list onscreen.");
   wmove(stdscr,16,0);
-  wdoprintf(stdscr,"Use arrow keys to select, then press Enter key:");
+  wprintw(stdscr,"Use arrow keys to select, then press Enter key:");
   while(1)
   {
     command = wmenuSelect_ext(stdscr,17, 0, menuLogCreation, 8,
@@ -1408,27 +1387,27 @@ static void intrf_no_disk_ncurses(const char *prog_name)
 {
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"  %s is free software, and",prog_name);
+  wprintw(stdscr,"  %s is free software, and",prog_name);
   wmove(stdscr,5,0);
-  wdoprintf(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
+  wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"No harddisk found\n");
+  wprintw(stdscr,"No harddisk found\n");
   wmove(stdscr,8,0);
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-  wdoprintf(stdscr,"You need to be administrator to use %s.\n", prog_name);
+  wprintw(stdscr,"You need to be administrator to use %s.\n", prog_name);
   wmove(stdscr,9,0);
-  wdoprintf(stdscr,"Under Win9x, use the DOS version instead.\n");
+  wprintw(stdscr,"Under Win9x, use the DOS version instead.\n");
   wmove(stdscr,10,0);
-  wdoprintf(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
+  wprintw(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
 #else
 #ifndef DJGPP
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
-    wdoprintf(stdscr,"You need to be root to use %s.\n", prog_name);
+    wprintw(stdscr,"You need to be root to use %s.\n", prog_name);
 #if defined(__APPLE__)
     wmove(stdscr,9,0);
-    wdoprintf(stdscr,"Use the sudo command to launch %s.\n", prog_name);
+    wprintw(stdscr,"Use the sudo command to launch %s.\n", prog_name);
 #endif
   }
 #endif
@@ -1436,7 +1415,7 @@ static void intrf_no_disk_ncurses(const char *prog_name)
 #endif
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);
-  wdoprintf(stdscr,"[ Quit ]");
+  wprintw(stdscr,"[ Quit ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   while(wgetch(stdscr)==ERR);
@@ -1487,13 +1466,13 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
     };
     aff_copy(stdscr);
     wmove(stdscr,5,0);
-    wdoprintf(stdscr,"%s\n",disk_car->description_short(disk_car));
+    wprintw(stdscr,"%s\n",disk_car->description_short(disk_car));
     wmove(stdscr,INTER_PARTITION_Y-1,0);
-    wdoprintf(stdscr,"Please select the partition table type, press Enter when done.");
+    wprintw(stdscr,"Please select the partition table type, press Enter when done.");
     wmove(stdscr,20,0);
-    wdoprintf(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
+    wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
     wmove(stdscr,21,0);
-    wdoprintf(stdscr,"rare for a drive to be 'Non-partitioned'.");
+    wprintw(stdscr,"rare for a drive to be 'Non-partitioned'.");
     car=wmenuSelect_ext(stdscr,INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
     switch(car)
     {
@@ -1649,17 +1628,17 @@ char *ask_location(const char*msg, const char *src_dir)
 #ifdef PATH_DRIVE_LENGTH
 #ifdef __CYGWIN__
         if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
-          wdoprintf(window,"To select a drive, use the arrow keys.");
+          wprintw(window,"To select a drive, use the arrow keys.");
         else
-          wdoprintf(window,"To select another directory, use the arrow keys.");
+          wprintw(window,"To select another directory, use the arrow keys.");
 #else
         if(strlen(dst_directory)<PATH_DRIVE_LENGTH)
-          wdoprintf(window,"To select a drive, use the arrow keys.");
+          wprintw(window,"To select a drive, use the arrow keys.");
         else
-          wdoprintf(window,"To select another directory, use the arrow keys.");
+          wprintw(window,"To select another directory, use the arrow keys.");
 #endif
 #else
-        wdoprintf(window,"To select another directory, use the arrow keys.");
+        wprintw(window,"To select another directory, use the arrow keys.");
 #endif
         {
           struct td_list_head *dir_walker = NULL;
@@ -1907,11 +1886,11 @@ static void dir_aff_entry(WINDOW *window, struct file_info *dir_info)
     strncpy(datestr, "                 ",sizeof(datestr));
   }
   mode_string(dir_info->stat.st_mode,str);
-  wdoprintf(window, "%s %5u %5u   ", 
+  wprintw(window, "%s %5u %5u   ", 
       str, (unsigned int)dir_info->stat.st_uid, (unsigned int)dir_info->stat.st_gid);
-  wdoprintf(window, "%7llu", (long long unsigned int)dir_info->stat.st_size);
+  wprintw(window, "%7llu", (long long unsigned int)dir_info->stat.st_size);
   /* screen may overlap due to long filename */
-  wdoprintf(window, " %s %s", datestr, dir_info->name);
+  wprintw(window, " %s %s", datestr, dir_info->name);
 }
 #else
 int ask_log_creation()

@@ -68,7 +68,7 @@ static void ntfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, co
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "     Rebuild Boot sector           Boot sector");
@@ -171,7 +171,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
   {
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -180,7 +180,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     {
       options="DLWQ";
       ncurses_ntfs2_info(ntfs_header, org_ntfs_header);
-      wdoprintf(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
+      wprintw(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
       log_ntfs2_info(ntfs_header, org_ntfs_header);
       if(error)
 	log_error("Warning: Extrapolated boot sector have incorrect values.\n");
@@ -189,7 +189,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     {
       log_ntfs_info(ntfs_header);
       ncurses_ntfs_info(ntfs_header);
-      wdoprintf(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
+      wprintw(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
     }
     command=wmenuSelect(stdscr,INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ | MENU_BUTTON, 1);
     switch(command)
@@ -218,7 +218,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	  keypad(window, TRUE); /* Need it to get arrow key */
 	  aff_copy(window);
 	  wmove(window,4,0);
-	  wdoprintf(window,"%s",disk_car->description(disk_car));
+	  wprintw(window,"%s",disk_car->description(disk_car));
 	  wmove(window,5,0);
 	  aff_part(window,AFF_PART_ORDER,disk_car,partition);
 	  log_info("     Rebuild Boot sector           Boot sector\n");
@@ -439,7 +439,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   {
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -492,7 +492,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
-      wdoprintf(stdscr,"Search mft %10lu/%lu", (long unsigned)sector,
+      wprintw(stdscr,"Search mft %10lu/%lu", (long unsigned)sector,
 	  (long unsigned)(partition->part_size/disk_car->sector_size));
       wrefresh(stdscr);
       if(check_enter_key_or_s(stdscr))
@@ -663,29 +663,29 @@ static int testdisk_ffs(int x)
 #ifdef HAVE_NCURSES
 static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header)
 {
-  wdoprintf(stdscr,"filesystem size           %llu\n", (long long unsigned)(le64(ntfs_header->sectors_nbr)+1));
-  wdoprintf(stdscr,"sectors_per_cluster       %u\n",ntfs_header->sectors_per_cluster);
-  wdoprintf(stdscr,"mft_lcn                   %lu\n",(long unsigned int)le64(ntfs_header->mft_lcn));
-  wdoprintf(stdscr,"mftmirr_lcn               %lu\n",(long unsigned int)le64(ntfs_header->mftmirr_lcn));
-  wdoprintf(stdscr,"clusters_per_mft_record   %d\n",ntfs_header->clusters_per_mft_record);
-  wdoprintf(stdscr,"clusters_per_index_record %d\n",ntfs_header->clusters_per_index_record);
+  wprintw(stdscr,"filesystem size           %llu\n", (long long unsigned)(le64(ntfs_header->sectors_nbr)+1));
+  wprintw(stdscr,"sectors_per_cluster       %u\n",ntfs_header->sectors_per_cluster);
+  wprintw(stdscr,"mft_lcn                   %lu\n",(long unsigned int)le64(ntfs_header->mft_lcn));
+  wprintw(stdscr,"mftmirr_lcn               %lu\n",(long unsigned int)le64(ntfs_header->mftmirr_lcn));
+  wprintw(stdscr,"clusters_per_mft_record   %d\n",ntfs_header->clusters_per_mft_record);
+  wprintw(stdscr,"clusters_per_index_record %d\n",ntfs_header->clusters_per_index_record);
   return 0;
 }
 
 static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2)
 {
-  wdoprintf(stdscr,"filesystem size           %llu %llu\n",
+  wprintw(stdscr,"filesystem size           %llu %llu\n",
       (long long unsigned)(le64(nh1->sectors_nbr)+1),
       (long long unsigned)(le64(nh2->sectors_nbr)+1));
-  wdoprintf(stdscr,"sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
-  wdoprintf(stdscr,"mft_lcn                   %lu %lu\n",
+  wprintw(stdscr,"sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
+  wprintw(stdscr,"mft_lcn                   %lu %lu\n",
       (long unsigned int)le64(nh1->mft_lcn),
       (long unsigned int)le64(nh2->mft_lcn));
-  wdoprintf(stdscr,"mftmirr_lcn               %lu %lu\n",
+  wprintw(stdscr,"mftmirr_lcn               %lu %lu\n",
       (long unsigned int)le64(nh1->mftmirr_lcn),
       (long unsigned int)le64(nh2->mftmirr_lcn));
-  wdoprintf(stdscr,"clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
-  wdoprintf(stdscr,"clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
+  wprintw(stdscr,"clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
+  wprintw(stdscr,"clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
   return 0;
 }
 #endif

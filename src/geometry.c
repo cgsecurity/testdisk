@@ -162,19 +162,19 @@ static void change_geometry_ncurses(disk_t *disk_car)
     };
     aff_copy(stdscr);
     wmove(stdscr,5,0);
-    wdoprintf(stdscr,"%s, sector size=%u\n",disk_car->description(disk_car),disk_car->sector_size);
+    wprintw(stdscr,"%s, sector size=%u\n",disk_car->description(disk_car),disk_car->sector_size);
     wmove(stdscr,7,0);
-    wdoprintf(stdscr,"Because these numbers change the way that TestDisk looks for partitions");
+    wprintw(stdscr,"Because these numbers change the way that TestDisk looks for partitions");
     wmove(stdscr,8,0);
-    wdoprintf(stdscr,"and calculates their sizes, it's important to have the correct disk geometry.");
+    wprintw(stdscr,"and calculates their sizes, it's important to have the correct disk geometry.");
     wmove(stdscr,9,0);
-    wdoprintf(stdscr,"PC partitioning programs often make partitions end on cylinder boundaries.");
+    wprintw(stdscr,"PC partitioning programs often make partitions end on cylinder boundaries.");
     wmove(stdscr,11,0);
-    wdoprintf(stdscr,"A partition's CHS values are based on disk translations which make them");
+    wprintw(stdscr,"A partition's CHS values are based on disk translations which make them");
     wmove(stdscr,12,0);
-    wdoprintf(stdscr,"different than its physical geometry. The most common CHS head values");
+    wprintw(stdscr,"different than its physical geometry. The most common CHS head values");
     wmove(stdscr,13,0);
-    wdoprintf(stdscr,"are: 255, 240 and sometimes 16.");
+    wprintw(stdscr,"are: 255, 240 and sometimes 16.");
     wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
     wclrtoeol(stdscr);
     wrefresh(stdscr);
@@ -192,7 +192,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
               cyl_modified=1;
               geo_modified=1;
             } else
-              wdoprintf(stdscr,"Illegal cylinders value");
+              wprintw(stdscr,"Illegal cylinders value");
           }
         }
         default_option=1;
@@ -212,7 +212,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
                 disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
               }
             } else
-              wdoprintf(stdscr,"Illegal heads value");
+              wprintw(stdscr,"Illegal heads value");
           }
         }
         default_option=2;
@@ -235,7 +235,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
                 disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
               }
             } else
-              wdoprintf(stdscr,"Illegal sectors value");
+              wprintw(stdscr,"Illegal sectors value");
           }
         }
         default_option=3;
@@ -256,7 +256,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
                 disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
               }
             } else
-              wdoprintf(stdscr,"Illegal sector size");
+              wprintw(stdscr,"Illegal sector size");
           }
         }
         default_option=4;

@@ -208,15 +208,15 @@ static void write_part_mac_warning_ncurses(void)
   WINDOW *window=newwin(0,0,0,0);	/* full screen */
   aff_copy(window);
   wmove(window,7,0);
-  wdoprintf(window,"Function write_part_mac not implemented");
+  wprintw(window,"Function write_part_mac not implemented");
   log_warning("Function write_part_mac not implemented\n");
   wmove(window,8,0);
-  wdoprintf(window,"Use pdisk to recreate the missing partition");
+  wprintw(window,"Use pdisk to recreate the missing partition");
   wmove(window,9,0);
-  wdoprintf(window,"using values displayed by TestDisk");
+  wprintw(window,"using values displayed by TestDisk");
   wmove(window,22,0);
   wattrset(window, A_REVERSE);
-  wdoprintf(window,"[ Abort ]");
+  wprintw(window,"[ Abort ]");
   wattroff(window, A_REVERSE);
   wrefresh(window);
   while(wgetch(window)==ERR);
@@ -327,7 +327,7 @@ static list_part_t *add_partition_mac_ncurses(disk_t *disk_car,list_part_t *list
     };
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,10, 0);
     wclrtoeol(stdscr);
     aff_part(stdscr,AFF_PART_SHORT,disk_car,new_partition);

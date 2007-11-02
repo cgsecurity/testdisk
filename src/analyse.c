@@ -279,7 +279,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
   {
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -298,7 +298,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
-      wdoprintf(stdscr,"Search EXT2/EXT3 superblock %10lu/%lu %lu%%", (long unsigned)(hd_offset/disk_car->sector_size),
+      wprintw(stdscr,"Search EXT2/EXT3 superblock %10lu/%lu %lu%%", (long unsigned)(hd_offset/disk_car->sector_size),
 	  (long unsigned)(partition->part_size/disk_car->sector_size),percent);
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
@@ -339,7 +339,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
 		EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
 #ifdef HAVE_NCURSES
 	    wmove(stdscr,10+nbr_sb,0);
-	    wdoprintf(stdscr,"Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)        \n",
+	    wprintw(stdscr,"Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)        \n",
 		(long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
 		(long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
                 EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));

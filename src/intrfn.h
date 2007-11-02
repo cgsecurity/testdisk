@@ -41,7 +41,6 @@ void dump(WINDOW *window,const void *nom_dump,unsigned int lng);
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu);
 int screen_buffer_display(WINDOW *window, const char *options_org, const struct MenuItem *menuItems);
 int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap);
-int wdoprintf(WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 2, 3)));
 int wgetch_nodelay(WINDOW *window);
 int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key);
 int wmenuSelect(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault);

@@ -77,11 +77,11 @@ static void interface_editor_ncurses(disk_t *disk_car)
 	  {
 	    wmove(stdscr,4,0);
 	    wclrtoeol(stdscr);
-	    wdoprintf(stdscr,"%lu ", (unsigned long)(hd_offset/disk_car->sector_size));
+	    wprintw(stdscr,"%lu ", (unsigned long)(hd_offset/disk_car->sector_size));
 	    aff_LBA2CHS(disk_car,hd_offset/disk_car->sector_size);
 	    if(disk_car->read(disk_car,disk_car->sector_size, buffer, hd_offset))
 	    {
-	      wdoprintf(stdscr,msg_PART_RD_ERR);
+	      wprintw(stdscr,msg_PART_RD_ERR);
 	    }
 	    {
 	      menu_pos=dump_editor(buffer,disk_car->sector_size,menu_pos);
@@ -152,7 +152,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		  if (tmp_val <= disk_car->CHS.cylinder) {
 			position.cylinder = tmp_val;
 		  } else
-			wdoprintf(stdscr,"Illegal cylinders value");
+			wprintw(stdscr,"Illegal cylinders value");
 		}
 		break;
 	  case 'h':
@@ -164,7 +164,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		  if (tmp_val <= disk_car->CHS.head) {
 			position.head = tmp_val;
 		  } else
-			wdoprintf(stdscr,"Illegal heads value");
+			wprintw(stdscr,"Illegal heads value");
 		}
 		break;
 	  case 's':
@@ -176,7 +176,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		  if (tmp_val > 0 && tmp_val <= disk_car->CHS.sector ) {
 			position.sector = tmp_val;
 		  } else
-			wdoprintf(stdscr,"Illegal sectors value");
+			wprintw(stdscr,"Illegal sectors value");
 		}
 		break;
 	  case key_ESC:
@@ -215,22 +215,22 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 	{
 	  wmove(stdscr,DUMP_Y+i-pos,DUMP_X);
 	  wclrtoeol(stdscr);
-	  wdoprintf(stdscr,"%04X ",i*0x10);
+	  wprintw(stdscr,"%04X ",i*0x10);
 	  for(j=0; j< 0x10;j++)
 	  {
 		car=*(nom_dump+i*0x10+j);
-		wdoprintf(stdscr,"%02x", car);
+		wprintw(stdscr,"%02x", car);
 		if(j%4==(4-1))
-		  wdoprintf(stdscr," ");
+		  wprintw(stdscr," ");
 	  }
-	  wdoprintf(stdscr,"  ");
+	  wprintw(stdscr,"  ");
 	  for(j=0; j< 0x10;j++)
 	  {
 		car=*(nom_dump+i*0x10+j);
 		if ((car<32)||(car >= 127))
-		  wdoprintf(stdscr,".");
+		  wprintw(stdscr,".");
 		else
-		  wdoprintf(stdscr,"%c",  car);
+		  wprintw(stdscr,"%c",  car);
 	  }
 	}
 	switch (wmenuSelect(stdscr,INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, "PNQ", MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))

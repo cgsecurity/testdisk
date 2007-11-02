@@ -184,7 +184,7 @@ static void photorec_info(WINDOW *window, const file_stat_t *file_stats)
     {
       wmove(window,11+i,0);
       wclrtoeol(window);
-      wdoprintf(window, "%s: %u recovered\n",
+      wprintw(window, "%s: %u recovered\n",
           (new_file_stats[i].file_hint->extension!=NULL?
            new_file_stats[i].file_hint->extension:""),
           new_file_stats[i].recovered);
@@ -196,7 +196,7 @@ static void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   {
     wmove(window,11+10,0);
     wclrtoeol(window);
-    wdoprintf(window, "others: %u recovered\n", others);
+    wprintw(window, "others: %u recovered\n", others);
   }
   free(new_file_stats);
 }
@@ -207,30 +207,30 @@ static int photorec_progressbar(WINDOW *window, const unsigned int pass, const p
   wclrtoeol(window);
   if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
   {
-    wdoprintf(window,"Bruteforce %10lu sectors remaining (test %u), %u files found\n",
+    wprintw(window,"Bruteforce %10lu sectors remaining (test %u), %u files found\n",
         (unsigned long)((offset-partition->part_offset)/disk_car->sector_size), pass, file_nbr);
   }
   else
   {
-    wdoprintf(window, "Pass %u - ", pass);
+    wprintw(window, "Pass %u - ", pass);
     if(status==STATUS_FIND_OFFSET)
-      wdoprintf(window,"Reading sector %10lu/%lu, %u/10 headers found\n",
+      wprintw(window,"Reading sector %10lu/%lu, %u/10 headers found\n",
           (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
           (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
     else
-      wdoprintf(window,"Reading sector %10lu/%lu, %u files found\n",
+      wprintw(window,"Reading sector %10lu/%lu, %u files found\n",
           (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
           (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
   }
   wmove(window,10,0);
   wclrtoeol(window);
-  wdoprintf(window,"Elapsed time %uh%02um%02us",
+  wprintw(window,"Elapsed time %uh%02um%02us",
       (unsigned)(elapsed_time/60/60),
       (unsigned)(elapsed_time/60%60),
       (unsigned)(elapsed_time%60));
   if(offset-partition->part_offset!=0 && (status!=STATUS_EXT2_ON_BF && status!=STATUS_EXT2_OFF_BF))
   {
-    wdoprintf(window," - Estimated time for achievement %uh%02um%02u\n",
+    wprintw(window," - Estimated time for achievement %uh%02um%02u\n",
         (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
         (unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
         (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
@@ -245,11 +245,11 @@ void aff_copy(WINDOW *window)
   wclear(window);
   keypad(window, TRUE); /* Need it to get arrow key */
   wmove(window,0,0);
-  wdoprintf(window, "PhotoRec %s, Data Recovery Utility, %s\n",VERSION,TESTDISKDATE);
+  wprintw(window, "PhotoRec %s, Data Recovery Utility, %s\n",VERSION,TESTDISKDATE);
   wmove(window,1,0);
-  wdoprintf(window, "Christophe GRENIER <grenier@cgsecurity.org>");
+  wprintw(window, "Christophe GRENIER <grenier@cgsecurity.org>");
   wmove(window,2,0);
-  wdoprintf(window, "http://www.cgsecurity.org");
+  wprintw(window, "http://www.cgsecurity.org");
 }
 
 static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned int *mode_ext2, unsigned int *carve_free_space_only)
@@ -390,7 +390,7 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
   }
   aff_copy(stdscr);
   wmove(stdscr,INTER_PARTITION_Y-1,0);
-  wdoprintf(stdscr,"Please select the block size, press Enter when done.");
+  wprintw(stdscr,"Please select the block size, press Enter when done.");
   command = wmenuSelect_ext(stdscr,INTER_PARTITION_Y, INTER_PARTITION_X, menuBlocksize, 7,
       optionsBlocksize, MENU_VERT| MENU_BUTTON|MENU_VERT_WARN, &menu,NULL);
   switch(command)
@@ -411,14 +411,14 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
     unsigned int quit=0;
     aff_copy(stdscr);
     wmove(stdscr,INTER_PARTITION_Y-2,0);
-    wdoprintf(stdscr,"Please select the offset (0 - %u). Press Up/Down to increase/decrease it,",blocksize-sector_size);
+    wprintw(stdscr,"Please select the offset (0 - %u). Press Up/Down to increase/decrease it,",blocksize-sector_size);
     wmove(stdscr,INTER_PARTITION_Y-1,0);
-    wdoprintf(stdscr,"Enter when done.");
+    wprintw(stdscr,"Enter when done.");
     do
     {
       wmove(stdscr,INTER_PARTITION_Y,0);
       wclrtoeol(stdscr);
-      wdoprintf(stdscr,"Offset %u",(unsigned int)(*offset));
+      wprintw(stdscr,"Offset %u",(unsigned int)(*offset));
       switch(wgetch(stdscr))
       {
 	case KEY_ENTER:
@@ -1073,7 +1073,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         {
           wmove(stdscr,11,0);
           wclrtoeol(stdscr);
-          wdoprintf(stdscr,"Error reading sector %10lu\n",
+          wprintw(stdscr,"Error reading sector %10lu\n",
               (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
         }
 #endif
@@ -1115,28 +1115,28 @@ static void recovery_finished(const unsigned int file_nbr, const char *recup_dir
 {
   wmove(stdscr,9,0);
   wclrtoeol(stdscr);
-  wdoprintf(stdscr,"%u files saved in %s directory.\n",file_nbr,recup_dir);
+  wprintw(stdscr,"%u files saved in %s directory.\n",file_nbr,recup_dir);
   wmove(stdscr,10,0);
   wclrtoeol(stdscr);
   switch(ind_stop)
   {
     case 0:
-      wdoprintf(stdscr,"Recovery completed.");
+      wprintw(stdscr,"Recovery completed.");
       break;
     case 1:
-      wdoprintf(stdscr,"Recovery aborted by the user.");
+      wprintw(stdscr,"Recovery aborted by the user.");
       break;
     case 2:
-      wdoprintf(stdscr,"Cannot create file in current directory.");
+      wprintw(stdscr,"Cannot create file in current directory.");
       break;
     case 3:
-      wdoprintf(stdscr,"Cannot write file, no space left.");
+      wprintw(stdscr,"Cannot write file, no space left.");
       break;
   }
   wmove(stdscr,22,0);
   wclrtoeol(stdscr);
   wattrset(stdscr, A_REVERSE);
-  wdoprintf(stdscr,"[ Quit ]");
+  wprintw(stdscr,"[ Quit ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   while(1)
@@ -1267,7 +1267,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description_short(disk_car));
+      wprintw(stdscr,"%s",disk_car->description_short(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
       aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -1539,7 +1539,7 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
     unsigned int i;
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description_short(disk_car));
+    wprintw(stdscr,"%s",disk_car->description_short(disk_car));
     mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
     for(i=0,element=list_part;(element!=NULL) && (i<offset);element=element->next,i++);
     for(i=offset;(element!=NULL) && ((i-offset)<INTER_SELECT);i++,element=element->next)
@@ -1701,21 +1701,21 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
     int i;
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"  PhotoRec is free software, and");
+    wprintw(stdscr,"  PhotoRec is free software, and");
     wmove(stdscr,5,0);
-    wdoprintf(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
+    wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
     wmove(stdscr,7,0);
-    wdoprintf(stdscr,"Select a media (use Arrow keys, then press Enter):");
+    wprintw(stdscr,"Select a media (use Arrow keys, then press Enter):");
     for(i=0,element_disk=list_disk;(element_disk!=NULL) && (i<offset);element_disk=element_disk->next,i++);
     for(;element_disk!=NULL && (i-offset)<10;i++,element_disk=element_disk->next)
     {
       wmove(stdscr,8+i-offset,0);
       if(element_disk!=current_disk)
-	wdoprintf(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
       else
       {
 	wattrset(stdscr, A_REVERSE);
-	wdoprintf(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
 	wattroff(stdscr, A_REVERSE);
       }
     }
@@ -1732,20 +1732,20 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
       if(geteuid()!=0)
       {
 	wmove(stdscr,line++,0);
-	wdoprintf(stdscr,"Note: Some disks won't appear unless you're root user.");
+	wprintw(stdscr,"Note: Some disks won't appear unless you're root user.");
       }
 #endif
 #endif
 #endif
       wmove(stdscr,line++,0);
       if(line==22)
-	wdoprintf(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
+	wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       else
-	wdoprintf(stdscr,"Note: Disk capacity must be correctly detected for a successful recovery.");
+	wprintw(stdscr,"Note: Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
-      wdoprintf(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
+      wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
       wmove(stdscr,line++,0);
-      wdoprintf(stdscr,"detection, and install the latest OS patches and disk drivers."); 
+      wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
     command = wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
@@ -2018,13 +2018,13 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     {
       aff_copy(stdscr);
       wmove(stdscr,5,0);
-      wdoprintf(stdscr,"PhotoRec will try to locate the following files");
+      wprintw(stdscr,"PhotoRec will try to locate the following files");
       rewrite=0;
     }
     wmove(stdscr,5+1,4);
     wclrtoeol(stdscr);
     if(offset>0)
-      wdoprintf(stdscr,"Previous");
+      wprintw(stdscr,"Previous");
     for(i=offset;files_enable[i].file_hint!=NULL && ((i-offset)<INTER_SELECT);i++)
     {
       wmove(stdscr,5+2+i-offset,0);
@@ -2032,14 +2032,14 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       if(i==current_element_num)
       {
 	wattrset(stdscr, A_REVERSE);
-	wdoprintf(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+	wprintw(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
 	    (files_enable[i].file_hint->extension!=NULL?
 	     files_enable[i].file_hint->extension:""),
 	    files_enable[i].file_hint->description);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
-	wdoprintf(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+	wprintw(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
 	    (files_enable[i].file_hint->extension!=NULL?
 	     files_enable[i].file_hint->extension:""),
 	    files_enable[i].file_hint->description);
@@ -2048,7 +2048,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     wmove(stdscr,5+2+INTER_SELECT,4);
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     if(files_enable[i].file_hint!=NULL)
-      wdoprintf(stdscr,"Next");
+      wprintw(stdscr,"Next");
     command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
     switch(command)

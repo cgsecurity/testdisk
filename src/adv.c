@@ -188,7 +188,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       if(list_part!=NULL)
 	mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
       rewrite=0;
@@ -216,7 +216,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 #ifdef HAVE_NCURSES
       wmove(stdscr,5+2,0);
       wattrset(stdscr, A_REVERSE);
-      wdoprintf(stdscr,"No partition available.");
+      wprintw(stdscr,"No partition available.");
       wattroff(stdscr, A_REVERSE);
 #endif
     }
@@ -424,7 +424,7 @@ static void dump_fat1x_ncurses(disk_t *disk_car, partition_t *partition, const u
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector");
@@ -473,7 +473,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
       aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -580,7 +580,7 @@ static void dump_fat32_ncurses(disk_t *disk_car, const partition_t *partition, c
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector                        Backup boot sector");
@@ -637,7 +637,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
       aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -836,7 +836,7 @@ static void dump_NTFS_ncurses(disk_t *disk_car, const partition_t *partition, co
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector                        Backup boot sector");
@@ -895,7 +895,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
       aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -1079,7 +1079,7 @@ static void hfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, con
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "Superblock                        Backup superblock");
@@ -1133,7 +1133,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
       aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);

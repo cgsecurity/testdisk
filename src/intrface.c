@@ -116,14 +116,14 @@ static int write_MBR_code(disk_t *disk_car)
 {
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   wmove(stdscr,INTER_DISK_Y,INTER_DISK_X);
   if(disk_car->arch->write_MBR_code==NULL)
   {
     display_message("Function to write a new MBR code not implemented for this partition type.\n");
     return 1;
   }
-  wdoprintf(stdscr,msg_WRITE_MBR_CODE);
+  wprintw(stdscr,msg_WRITE_MBR_CODE);
   if(ask_YN(stdscr)!=0 && ask_confirmation("Write a new copy of MBR code, confirm ? (Y/N)")!=0)
   {
     if(disk_car->arch->write_MBR_code(disk_car))
@@ -141,14 +141,14 @@ static int write_clean_table(disk_t *disk_car)
 {
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   wmove(stdscr,INTER_DISK_Y,INTER_DISK_X);
   if(disk_car->arch->erase_list_part==NULL)
   {
     display_message("Clear partition table not implemented for this partition type.\n");
     return 1;
   }
-  wdoprintf(stdscr,msg_WRITE_CLEAN_TABLE);
+  wprintw(stdscr,msg_WRITE_CLEAN_TABLE);
   if(ask_YN(stdscr)!=0 && ask_confirmation("Clear partition table, confirm ? (Y/N)")!=0)
   {
     if(disk_car->arch->erase_list_part(disk_car))
@@ -310,11 +310,11 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
   {
     aff_copy(stdscr);
     wmove(stdscr,5,0);
-    wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+    wprintw(stdscr,"%s\n",disk_car->description(disk_car));
     wmove(stdscr,20,0);
-    wdoprintf(stdscr,"Note: Correct disk geometry is required for a successful recovery. 'Analyse'");
+    wprintw(stdscr,"Note: Correct disk geometry is required for a successful recovery. 'Analyse'");
     wmove(stdscr,21,0);
-    wdoprintf(stdscr,"process may give some warnings if it thinks the logical geometry is mismatched.");
+    wprintw(stdscr,"process may give some warnings if it thinks the logical geometry is mismatched.");
     command = wmenuSelect_ext(stdscr,INTER_DISK_Y, INTER_DISK_X, menuMain, 10,
 	options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
     /* e for editor will be added when the editor will be better */
@@ -468,22 +468,22 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"  TestDisk is free software, and");
+    wprintw(stdscr,"  TestDisk is free software, and");
     wmove(stdscr,5,0);
-    wdoprintf(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
+    wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
     wmove(stdscr,7,0);
-    wdoprintf(stdscr,"Select a media (use Arrow keys, then press Enter):");
+    wprintw(stdscr,"Select a media (use Arrow keys, then press Enter):");
 #endif
     for(i=0,element_disk=list_disk;(element_disk!=NULL) && (i<offset);element_disk=element_disk->next,i++);
     for(;element_disk!=NULL && (i-offset)<10;i++,element_disk=element_disk->next)
     {
       wmove(stdscr,8+i-offset,0);
       if(element_disk!=current_disk)
-	wdoprintf(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
       else
       {
 	wattrset(stdscr, A_REVERSE);
-	wdoprintf(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
 	wattroff(stdscr, A_REVERSE);
       }
     }
@@ -510,9 +510,9 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 #endif
       waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
-      wdoprintf(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
+      wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
       wmove(stdscr,line++,0);
-      wdoprintf(stdscr,"detection, and install the latest OS patches and disk drivers."); 
+      wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
     command = wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,NULL);
@@ -602,16 +602,16 @@ static int interface_check_disk_capacity_ncurses(disk_t *disk_car)
   int car;
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   wmove(stdscr,6,0);
-  wdoprintf(stdscr,"The Harddisk size seems to be 137GB.");
+  wprintw(stdscr,"The Harddisk size seems to be 137GB.");
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"Support for 48-bit Logical Block Addressing (LBA) is needed to access");
+  wprintw(stdscr,"Support for 48-bit Logical Block Addressing (LBA) is needed to access");
   wmove(stdscr,8,0);
-  wdoprintf(stdscr,"hard disks larger than 137 GB.");
+  wprintw(stdscr,"hard disks larger than 137 GB.");
   wmove(stdscr,9,0);
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-  wdoprintf(stdscr,"Update Windows to support LBA48 (minimum: W2K SP4 or XP SP1)");
+  wprintw(stdscr,"Update Windows to support LBA48 (minimum: W2K SP4 or XP SP1)");
 #endif
   car= wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
@@ -650,40 +650,40 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
   int line=9;
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   wmove(stdscr,6,0);
-  wdoprintf(stdscr,"Write access for this media is not available.");
+  wprintw(stdscr,"Write access for this media is not available.");
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"TestDisk won't be able to modify it.");
+  wprintw(stdscr,"TestDisk won't be able to modify it.");
 #ifdef DJGPP
 #elif defined(__CYGWIN__) || defined(__MINGW32__)
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"- You may need to be administrator to have write access.\n");
+  wprintw(stdscr,"- You may need to be administrator to have write access.\n");
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
+  wprintw(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
 #elif defined HAVE_GETEUID
   if(geteuid()!=0)
   {
     wmove(stdscr,line++,0);
-    wdoprintf(stdscr,"- You may need to be root to have write access.\n");
+    wprintw(stdscr,"- You may need to be root to have write access.\n");
 #if defined(__APPLE__)
     wmove(stdscr,line++,0);
-    wdoprintf(stdscr,"Use the sudo command to launch %s.\n", prog_name);
+    wprintw(stdscr,"Use the sudo command to launch %s.\n", prog_name);
 #endif
     wmove(stdscr,line++,0);
-    wdoprintf(stdscr,"- Check the OS permission for this file or device.\n");
+    wprintw(stdscr,"- Check the OS permission for this file or device.\n");
   }
 #endif
 #if defined(__APPLE__)
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"- No partition from this disk must be mounted:\n");
+  wprintw(stdscr,"- No partition from this disk must be mounted:\n");
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"Open the Disk Utility (In Finder -> Application -> Utility folder)\n");
+  wprintw(stdscr,"Open the Disk Utility (In Finder -> Application -> Utility folder)\n");
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"and press Umount button for each volume from this disk\n");
+  wprintw(stdscr,"and press Umount button for each volume from this disk\n");
 #endif
   wmove(stdscr,line++,0);
-  wdoprintf(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
+  wprintw(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
   car= wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuDiskAccess, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
@@ -726,11 +726,11 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
   if(disk_car->arch->msg_part_type!=NULL)
     mvwaddstr(stdscr,22,0,disk_car->arch->msg_part_type);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   mvwaddstr(stdscr,5,0,"Checking current partition structure");
   wmove(stdscr,6,0);
   wrefresh(stdscr);
-  wdoprintf(stdscr,msg_PART_HEADER_LONG);
+  wprintw(stdscr,msg_PART_HEADER_LONG);
 #endif
   list_part=disk_car->arch->read_part(disk_car,verbose,saveheader);
   log_info("Current partition structure:\n");
@@ -796,7 +796,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
   wmove(stdscr,5,0);
   mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
 #endif
@@ -1007,7 +1007,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER);
       rewrite=0;
     }
@@ -1034,9 +1034,9 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
 	if(parts->part->info[0]!='\0')
 	{
-	  wdoprintf(stdscr,"%s, ",parts->part->info);
+	  wprintw(stdscr,"%s, ",parts->part->info);
 	}
-	wdoprintf(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
+	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
       }
     }
     if(structure_status==0)
@@ -1333,11 +1333,11 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
 	if(backup_walker==backup_current)
 	{
 	  wattrset(stdscr, A_REVERSE);
-	  wdoprintf(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
+	  wprintw(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
 	  wattroff(stdscr, A_REVERSE);
 	} else
 	{
-	  wdoprintf(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
+	  wprintw(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
 	}
       }
       if(i<=INTER_STRUCTURE && backup==NULL)
@@ -1473,7 +1473,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
   wmove(stdscr,5,0);
   mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
 #endif

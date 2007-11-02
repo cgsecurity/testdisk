@@ -203,7 +203,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
   wmove(window,4,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   wmove(window,6,0);
-  wdoprintf(window,"Answer Y(es), N(o) or A(bort interactive mode). N or A if not sure.");
+  wprintw(window,"Answer Y(es), N(o) or A(bort interactive mode). N or A if not sure.");
   curs_set(1);
   do
   {
@@ -229,11 +229,11 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	strncpy(datestr, "                 ",sizeof(datestr));
       }
       mode_string(current_file->filestat.st_mode,str);
-      wdoprintf(window, "%s %5u %5u   ", 
+      wprintw(window, "%s %5u %5u   ", 
 	  str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-      wdoprintf(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+      wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
       /* FIXME: screen overlaps due to long filename */
-      wdoprintf(window, " %s %s\n", datestr, current_file->name);
+      wprintw(window, " %s %s\n", datestr, current_file->name);
       if(current_file==pos)
 	wattroff(window, A_REVERSE);
     }
@@ -243,7 +243,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
     /* print the cluster in the loop, so */
     /* the visible cursor will be at the end */
     wmove(window,5,0);
-    wdoprintf(window,"Cluster %lu, Directory / found ? ", cluster);
+    wprintw(window,"Cluster %lu, Directory / found ? ", cluster);
     wrefresh(window);
     car=wgetch(window);
     switch(car)
@@ -301,7 +301,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
     }
   } while(quit==0);
   curs_set(0);
-  wdoprintf(window,"%c\n",car);
+  wprintw(window,"%c\n",car);
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN
@@ -344,7 +344,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
       {
         wmove(stdscr,9,0);
         wclrtoeol(stdscr);
-        wdoprintf(stdscr,"Search root cluster %10lu/%lu %lu%%",root_cluster,2+no_of_cluster,percent);
+        wprintw(stdscr,"Search root cluster %10lu/%lu %lu%%",root_cluster,2+no_of_cluster,percent);
         wrefresh(stdscr);
         ind_stop|=check_enter_key_or_s(stdscr);
       }
@@ -861,7 +861,7 @@ static void fat32_dump_ncurses(disk_t *disk_car, const partition_t *partition, c
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
-  wdoprintf(window,"%s",disk_car->description(disk_car));
+  wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
   aff_part(window,AFF_PART_ORDER,disk_car,partition);
   mvwaddstr(window,6,0, "     Rebuild Boot sector           Boot sector");
@@ -906,7 +906,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -916,9 +916,9 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     {
       dump_2fat_info(fat_header, org_fat_header, upart_type,disk_car->sector_size);
 #ifdef HAVE_NCURSES
-      wdoprintf(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
+      wprintw(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
       if(error)
-	wdoprintf(stdscr,"Warning: Extrapolated boot sector have incorrect values.\n");
+	wprintw(stdscr,"Warning: Extrapolated boot sector have incorrect values.\n");
 #endif
       if(error)
 	log_error("Warning: Extrapolated boot sector have incorrect values.\n");
@@ -928,7 +928,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     {
       dump_fat_info(fat_header, upart_type,disk_car->sector_size);
 #ifdef HAVE_NCURSES
-      wdoprintf(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
+      wprintw(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
 #endif
     }
     if(*current_cmd!=NULL)
@@ -1529,7 +1529,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
   if(interface)
   {
       wmove(stdscr,8,0);
-      wdoprintf(stdscr,"FAT : %s%s%s?\n",p_fat12?"12 ":"", p_fat16?"16 ":"", p_fat32?"32 ":"");
+      wprintw(stdscr,"FAT : %s%s%s?\n",p_fat12?"12 ":"", p_fat16?"16 ":"", p_fat32?"32 ":"");
       wmove(stdscr,22,0);
       wattrset(stdscr, A_REVERSE);
       waddstr(stdscr,"  Stop  ");
@@ -1546,7 +1546,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
     {
       wmove(stdscr,8,30);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
-      wdoprintf(stdscr,"Searching for FAT table %lu%%",percent);
+      wprintw(stdscr,"Searching for FAT table %lu%%",percent);
       old_percent=percent;
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
@@ -1883,7 +1883,7 @@ static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int
       {
         wmove(stdscr,9,0);
         wclrtoeol(stdscr);
-        wdoprintf(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size),nbr_subdir);
+        wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size),nbr_subdir);
         wrefresh(stdscr);
         ind_stop|=check_enter_key_or_s(stdscr);
       }
@@ -2101,7 +2101,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
   {
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -2114,7 +2114,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
   {
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
     aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
@@ -2510,7 +2510,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
           if(percent!=old_percent)
           {
             wmove(window,4,0);
-            wdoprintf(window,"Checking FAT %lu%%",percent);
+            wprintw(window,"Checking FAT %lu%%",percent);
             wrefresh(window);
             old_percent=percent;
           }

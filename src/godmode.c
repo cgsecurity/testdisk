@@ -127,34 +127,34 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
   }
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
   wmove(stdscr,6,0);
   {
     char buffer_disk_size[100];
     char buffer_disk_size_found[100];
-    wdoprintf(stdscr,"The harddisk (%s) seems too small! (< %s)",
+    wprintw(stdscr,"The harddisk (%s) seems too small! (< %s)",
 	size_to_unit(disk_car->disk_size,buffer_disk_size), size_to_unit(disk_size,buffer_disk_size_found));
   }
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"Check the harddisk size: HD jumpers settings, BIOS detection...");
+  wprintw(stdscr,"Check the harddisk size: HD jumpers settings, BIOS detection...");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(disk_car->disk_size<=((uint64_t)1<<(28-1)) && disk_size>=((uint64_t)1<<(28-1)))
   {
     wmove(stdscr,8,0);
-    wdoprintf(stdscr,"Hint: update Windows to support LBA48 (minimum: W2K SP4 or XP SP1)");
+    wprintw(stdscr,"Hint: update Windows to support LBA48 (minimum: W2K SP4 or XP SP1)");
   }
 #endif
   wmove(stdscr,9,0);
   if(list_part->next==NULL)
   {
-    wdoprintf(stdscr,"The following partition can't be recovered:");
+    wprintw(stdscr,"The following partition can't be recovered:");
   } else {
-    wdoprintf(stdscr,"The following partitions can't be recovered:");
+    wprintw(stdscr,"The following partitions can't be recovered:");
   }
   mvwaddstr(stdscr,10,0,msg_PART_HEADER);
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);
-  wdoprintf(stdscr,"[ Continue ]");
+  wprintw(stdscr,"[ Continue ]");
   wattroff(stdscr, A_REVERSE);
   do
   {
@@ -176,9 +176,9 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
 	if(parts->part->info[0]!='\0')
 	{
-	  wdoprintf(stdscr,"%s, ",parts->part->info);
+	  wprintw(stdscr,"%s, ",parts->part->info);
 	}
-	wdoprintf(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
+	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
       } else
       {
 	aff_part(stdscr,AFF_PART_NONL,disk_car,parts->part);
@@ -300,22 +300,22 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
 {
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
   wmove(stdscr,6,0);
-  wdoprintf(stdscr,"Warning: the current number of heads per cylinder is %u",disk_car->CHS.head+1);
+  wprintw(stdscr,"Warning: the current number of heads per cylinder is %u",disk_car->CHS.head+1);
   wmove(stdscr,7,0);
-  wdoprintf(stdscr,"but the correct value may be %u.",recommanded_heads_per_cylinder);
+  wprintw(stdscr,"but the correct value may be %u.",recommanded_heads_per_cylinder);
   wmove(stdscr,8,0);
-  wdoprintf(stdscr,"You can use the Geometry menu to change this value.");
+  wprintw(stdscr,"You can use the Geometry menu to change this value.");
   wmove(stdscr,9,0);
-  wdoprintf(stdscr,"It's something to try if");
+  wprintw(stdscr,"It's something to try if");
   wmove(stdscr,10,0);
-  wdoprintf(stdscr,"- some partitions are not found by TestDisk");
+  wprintw(stdscr,"- some partitions are not found by TestDisk");
   wmove(stdscr,11,0);
-  wdoprintf(stdscr,"- or the partition table can not be written because partitions overlaps.");
+  wprintw(stdscr,"- or the partition table can not be written because partitions overlaps.");
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);
-  wdoprintf(stdscr,"[ Continue ]");
+  wprintw(stdscr,"[ Continue ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   while(wgetch(stdscr)==ERR);
@@ -452,7 +452,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       old_cylinder=start.cylinder;
       wmove(stdscr,ANALYSE_Y,ANALYSE_X);
       wclrtoeol(stdscr);
-      wdoprintf(stdscr,"Analyse cylinder %5u/%u: %02u%%",start.cylinder,disk_car->CHS.cylinder,(unsigned int)((uint64_t)start.cylinder*100/(disk_car->CHS.cylinder+1)));
+      wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",start.cylinder,disk_car->CHS.cylinder,(unsigned int)((uint64_t)start.cylinder*100/(disk_car->CHS.cylinder+1)));
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
     }
@@ -646,7 +646,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           {
             wmove(stdscr,ANALYSE_Y+1,ANALYSE_X);
             wclrtoeol(stdscr);
-            wdoprintf(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
+            wprintw(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
           }
 #endif
         }
@@ -834,7 +834,7 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
   /* Initialisation */
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
   mvwaddstr(stdscr,5,0,msg_MBR_ORDER);
   mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
   for(element=list_part;element!=NULL;element=element->next)
@@ -880,9 +880,9 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
     }
     wmove(stdscr,20,0);
     if(res)
-      wdoprintf(stdscr,msg_MBR_ORDER_BAD);
+      wprintw(stdscr,msg_MBR_ORDER_BAD);
     else
-      wdoprintf(stdscr,msg_MBR_ORDER_GOOD);
+      wprintw(stdscr,msg_MBR_ORDER_GOOD);
     wrefresh(stdscr);
     car=wgetch(stdscr);
     quit=0;
@@ -1163,7 +1163,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,5,0);
 #endif
     res_interface_write=0;

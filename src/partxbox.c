@@ -231,7 +231,7 @@ static list_part_t *add_partition_xbox_ncurses(disk_t *disk_car,list_part_t *lis
     };
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+    wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,10, 0);
     wclrtoeol(stdscr);
     aff_part(stdscr,AFF_PART_SHORT,disk_car,new_partition);

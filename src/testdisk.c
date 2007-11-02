@@ -80,11 +80,11 @@ void aff_copy(WINDOW *window)
   wclear(window);
   keypad(window, TRUE); /* Need it to get arrow key */
   wmove(window,0,0);
-  wdoprintf(window, "TestDisk %s, Data Recovery Utility, %s",VERSION,TESTDISKDATE);
+  wprintw(window, "TestDisk %s, Data Recovery Utility, %s",VERSION,TESTDISKDATE);
   wmove(window,1,0);
-  wdoprintf(window,"Christophe GRENIER <grenier@cgsecurity.org>");
+  wprintw(window,"Christophe GRENIER <grenier@cgsecurity.org>");
   wmove(window,2,0);
-  wdoprintf(window,"http://www.cgsecurity.org");
+  wprintw(window,"http://www.cgsecurity.org");
 }
 #endif
 
@@ -291,7 +291,7 @@ int main( int argc, char **argv )
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wdoprintf(stdscr, "Please wait...\n");
+  wprintw(stdscr, "Please wait...\n");
 #endif
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
@@ -303,7 +303,7 @@ int main( int argc, char **argv )
   wmove(stdscr,6,0);
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
-    wdoprintf(stdscr,"%s\n",element_disk->disk->description(element_disk->disk));
+    wprintw(stdscr,"%s\n",element_disk->disk->description(element_disk->disk));
   }
   wrefresh(stdscr);
 #endif

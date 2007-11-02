@@ -1276,7 +1276,7 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
       };
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wdoprintf(stdscr,"%s",disk_car->description(disk_car));
+      wprintw(stdscr,"%s",disk_car->description(disk_car));
       new_partition->part_offset=CHS2offset(disk_car,&start);
       new_partition->part_size=CHS2offset(disk_car,&end) - new_partition->part_offset + disk_car->sector_size;
       wmove(stdscr,10, 0);

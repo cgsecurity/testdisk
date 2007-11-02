@@ -103,44 +103,44 @@ static int dump_fat_info_ncurses(const struct fat_boot_sector*fh1, const upart_t
   switch(upart_type)
   {
     case UP_FAT12:
-      wdoprintf(stdscr,"FAT : 12\n");
+      wprintw(stdscr,"FAT : 12\n");
       break;
     case UP_FAT16:
-      wdoprintf(stdscr,"FAT : 16\n");
+      wprintw(stdscr,"FAT : 16\n");
       break;
     case UP_FAT32:
-      wdoprintf(stdscr,"FAT : 32\n");
+      wprintw(stdscr,"FAT : 32\n");
       break;
     default:
-      wdoprintf(stdscr,"Not a FAT\n");
+      wprintw(stdscr,"Not a FAT\n");
       return 0;
   }
-  wdoprintf(stdscr,"cluster_size %u\n", fh1->cluster_size);
-  wdoprintf(stdscr,"reserved     %u\n", le16(fh1->reserved));
+  wprintw(stdscr,"cluster_size %u\n", fh1->cluster_size);
+  wprintw(stdscr,"reserved     %u\n", le16(fh1->reserved));
   if(sectors(fh1)!=0)
-    wdoprintf(stdscr,"sectors      %u\n", sectors(fh1));
+    wprintw(stdscr,"sectors      %u\n", sectors(fh1));
   if(le32(fh1->total_sect)!=0)
-    wdoprintf(stdscr,"total_sect   %u\n", (unsigned int)le32(fh1->total_sect));
+    wprintw(stdscr,"total_sect   %u\n", (unsigned int)le32(fh1->total_sect));
   if(upart_type==UP_FAT32)
   {
-    wdoprintf(stdscr,"fat32_length %u\n", (unsigned int)le32(fh1->fat32_length));
-    wdoprintf(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
-    wdoprintf(stdscr,"flags        %04X\n", le16(fh1->flags));
-    wdoprintf(stdscr,"version      %u.%u\n", fh1->version[0], fh1->version[1]);
-    wdoprintf(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
-    wdoprintf(stdscr,"info_sector  %u\n", le16(fh1->info_sector));
-    wdoprintf(stdscr,"backup_boot  %u\n", le16(fh1->backup_boot));
+    wprintw(stdscr,"fat32_length %u\n", (unsigned int)le32(fh1->fat32_length));
+    wprintw(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
+    wprintw(stdscr,"flags        %04X\n", le16(fh1->flags));
+    wprintw(stdscr,"version      %u.%u\n", fh1->version[0], fh1->version[1]);
+    wprintw(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
+    wprintw(stdscr,"info_sector  %u\n", le16(fh1->info_sector));
+    wprintw(stdscr,"backup_boot  %u\n", le16(fh1->backup_boot));
     if(fat32_get_free_count((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"free_count   uninitialised\n");
+      wprintw(stdscr,"free_count   uninitialised\n");
     else
-      wdoprintf(stdscr,"free_count   %lu\n",fat32_get_free_count((const unsigned char*)fh1,sector_size));
+      wprintw(stdscr,"free_count   %lu\n",fat32_get_free_count((const unsigned char*)fh1,sector_size));
     if(fat32_get_next_free((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"next_free    uninitialised\n");
+      wprintw(stdscr,"next_free    uninitialised\n");
     else
-      wdoprintf(stdscr,"next_free    %lu\n",fat32_get_next_free((const unsigned char*)fh1,sector_size));
+      wprintw(stdscr,"next_free    %lu\n",fat32_get_next_free((const unsigned char*)fh1,sector_size));
   } else {
-    wdoprintf(stdscr,"fat_length   %u\n", le16(fh1->fat_length));
-    wdoprintf(stdscr,"dir_entries  %u\n", get_dir_entries(fh1));
+    wprintw(stdscr,"fat_length   %u\n", le16(fh1->fat_length));
+    wprintw(stdscr,"dir_entries  %u\n", get_dir_entries(fh1));
   }
   return 0;
 }
@@ -161,49 +161,49 @@ static int dump_2fat_info_ncurses(const struct fat_boot_sector*fh1, const struct
   switch(upart_type)
   {
     case UP_FAT12:
-      wdoprintf(stdscr,"FAT : 12\n");
+      wprintw(stdscr,"FAT : 12\n");
       break;
     case UP_FAT16:
-      wdoprintf(stdscr,"FAT : 16\n");
+      wprintw(stdscr,"FAT : 16\n");
       break;
     case UP_FAT32:
-      wdoprintf(stdscr,"FAT : 32\n");
+      wprintw(stdscr,"FAT : 32\n");
       break;
     default:
-      wdoprintf(stdscr,"Not a FAT\n");
+      wprintw(stdscr,"Not a FAT\n");
       return 1;
   }
-  wdoprintf(stdscr,"cluster_size %u %u\n", fh1->cluster_size, fh2->cluster_size);
-  wdoprintf(stdscr,"reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
+  wprintw(stdscr,"cluster_size %u %u\n", fh1->cluster_size, fh2->cluster_size);
+  wprintw(stdscr,"reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
   if(sectors(fh1)!=0 || sectors(fh2)!=0)
-    wdoprintf(stdscr,"sectors      %u %u\n", sectors(fh1), sectors(fh2));
+    wprintw(stdscr,"sectors      %u %u\n", sectors(fh1), sectors(fh2));
   if(le32(fh1->total_sect)!=0 || le32(fh2->total_sect)!=0)
-    wdoprintf(stdscr,"total_sect   %u %u\n", (unsigned int)le32(fh1->total_sect), (unsigned int)le32(fh2->total_sect));
+    wprintw(stdscr,"total_sect   %u %u\n", (unsigned int)le32(fh1->total_sect), (unsigned int)le32(fh2->total_sect));
   if(upart_type==UP_FAT32)
   {
-    wdoprintf(stdscr,"fat32_length %u %u\n", (unsigned int)le32(fh1->fat32_length), (unsigned int)le32(fh2->fat32_length));
-    wdoprintf(stdscr,"root_cluster %u %u\n", (unsigned int)le32(fh1->root_cluster), (unsigned int)le32(fh2->root_cluster));
-    wdoprintf(stdscr,"free_count   ");
+    wprintw(stdscr,"fat32_length %u %u\n", (unsigned int)le32(fh1->fat32_length), (unsigned int)le32(fh2->fat32_length));
+    wprintw(stdscr,"root_cluster %u %u\n", (unsigned int)le32(fh1->root_cluster), (unsigned int)le32(fh2->root_cluster));
+    wprintw(stdscr,"free_count   ");
     if(fat32_get_free_count((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"uninitialised ");
+      wprintw(stdscr,"uninitialised ");
     else
-      wdoprintf(stdscr,"%lu ",fat32_get_free_count((const unsigned char*)fh1,sector_size));
+      wprintw(stdscr,"%lu ",fat32_get_free_count((const unsigned char*)fh1,sector_size));
     if(fat32_get_free_count((const unsigned char*)fh2,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"uninitialised\n");
+      wprintw(stdscr,"uninitialised\n");
     else
-      wdoprintf(stdscr,"%lu\n",fat32_get_free_count((const unsigned char*)fh2,sector_size));
-    wdoprintf(stdscr,"next_free    ");
+      wprintw(stdscr,"%lu\n",fat32_get_free_count((const unsigned char*)fh2,sector_size));
+    wprintw(stdscr,"next_free    ");
     if(fat32_get_next_free((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"uninitialised ");
+      wprintw(stdscr,"uninitialised ");
     else
-      wdoprintf(stdscr,"%lu ",fat32_get_next_free((const unsigned char*)fh1,sector_size));
+      wprintw(stdscr,"%lu ",fat32_get_next_free((const unsigned char*)fh1,sector_size));
     if(fat32_get_next_free((const unsigned char*)fh2,sector_size)==0xFFFFFFFF)
-      wdoprintf(stdscr,"uninitialised\n");
+      wprintw(stdscr,"uninitialised\n");
     else
-      wdoprintf(stdscr,"%lu\n",fat32_get_next_free((const unsigned char*)fh2,sector_size));
+      wprintw(stdscr,"%lu\n",fat32_get_next_free((const unsigned char*)fh2,sector_size));
   } else {
-    wdoprintf(stdscr,"fat_length   %u %u\n", le16(fh1->fat_length), le16(fh2->fat_length));
-    wdoprintf(stdscr,"dir_entries  %u %u\n", get_dir_entries(fh1), get_dir_entries(fh2));
+    wprintw(stdscr,"fat_length   %u %u\n", le16(fh1->fat_length), le16(fh2->fat_length));
+    wprintw(stdscr,"dir_entries  %u %u\n", get_dir_entries(fh1), get_dir_entries(fh2));
   }
   return 0;
 }
