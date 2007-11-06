@@ -26,5 +26,8 @@ struct ntfs_dir_struct {
 	ntfs_volume *vol;
 	my_data_t *my_data;
 	unsigned long int inode;
+#ifdef HAVE_ICONV
+        iconv_t cd;
+#endif
 };
 #endif

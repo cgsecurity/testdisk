@@ -1588,6 +1588,8 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case P_FREEBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
+      if(ret!=0)
+      { aff_buffer(BUFFER_ADD,"Invalid BSD disklabel\n"); }
       break;
     case P_HFS:
       ret=check_HFS(disk_car,partition,verbose);

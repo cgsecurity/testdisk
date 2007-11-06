@@ -49,6 +49,9 @@
 #ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
 #endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
 #include <ctype.h>      /* isalpha */
 #include <stdarg.h>
 #include "types.h"
@@ -139,6 +142,31 @@ static time_t ntfs2utc (s64 ntfstime)
   return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
 }
 
+#ifdef HAVE_ICONV
+static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, int ins_len, char **outs, int outs_len)
+{
+    const char *inp;
+    char *outp;
+    size_t inb_left, outb_left;
+    if (cd == (iconv_t)(-1))
+      return -1;
+
+    outp = *outs;
+    inp = (const char *) ins;
+    inb_left = ins_len << 1;    // ntfschar is 16-bit
+    outb_left = outs_len - 1;   // reserve 1 byte for NUL
+
+    if (iconv(cd, &inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
+    {
+      // Regardless of the value of errno
+      log_error("ntfs_ucstoutf8: iconv failed\n");
+      return -1;
+    }
+    *outp = '\0';
+    return 0;
+}
+#endif
+
 /**
  * ntfs_td_list_entry
  * FIXME: Should we print errors as we go along? (AIA)
@@ -156,10 +184,18 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     return -1;
   }
 
+#ifdef HAVE_ICONV
+  if (ntfs_ucstoutf8(ls->cd, name, name_len, &filename, MAX_PATH) < 0 &&
+      ntfs_ucstombs (name, name_len, &filename, MAX_PATH) < 0) {
+    log_error("Cannot represent filename in current locale.\n");
+    goto free;
+  }
+#else
   if (ntfs_ucstombs (name, name_len, &filename, MAX_PATH) < 0) {
     log_error("Cannot represent filename in current locale.\n");
     goto free;
   }
+#endif
 
   result = 0;					/* These are successful */
   if (filename[0] == '$')			/* system */
@@ -204,7 +240,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 
     {
       file_data_t *new_file=MALLOC(sizeof(*new_file));
-      filename_cpy(new_file->name,filename,(MAX_PATH<sizeof(new_file->name)?MAX_PATH:sizeof(new_file->name)));
+      memcpy(new_file->name,filename,(MAX_PATH<sizeof(new_file->name)?MAX_PATH:sizeof(new_file->name)));
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       new_file->filestat.st_dev=0;
@@ -319,7 +355,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       int l1=strlen(dir_data->local_dir);
       int l2=strlen(dir_data->current_directory);
       new_file=MALLOC(l1+l2+1);
-      memcpy(new_file,dir_data->local_dir,l1);
+      l1=filename_convert(new_file,dir_data->local_dir,l1+1);
       filename_convert(new_file+l1,dir_data->current_directory,l2+1);
     }
     f_out=create_file(new_file);
@@ -378,6 +414,10 @@ static void dir_partition_ntfs_close(dir_data_t *dir_data)
   free(ls->my_data);
   if(partition->boot_sector!=0)
     io_redir_del_redir(disk_car,partition->part_offset);
+#ifdef HAVE_ICONV
+  if (ls->cd != (iconv_t)(-1))
+    iconv_close(ls->cd);
+#endif
   free(ls);
 }
 #endif
@@ -439,6 +479,12 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
     ls->current_file=NULL;
     ls->vol=vol;
     ls->my_data=my_data;
+#ifdef HAVE_ICONV
+    if ((ls->cd = iconv_open("UTF-8", "UTF-16LE")) == (iconv_t)(-1))
+    {
+      log_error("ntfs_ucstoutf8: iconv_open failed\n");
+    }
+#endif
     strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
     dir_data->current_inode=FILE_root;
     dir_data->verbose=verbose;

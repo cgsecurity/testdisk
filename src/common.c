@@ -219,24 +219,6 @@ static inline unsigned char convert_char(unsigned char car)
   /* 'y' */
   if(car>=253)
     return 'y';
-#endif
-  return car;
-}
-
-void filename_convert(char *dst, const char*src, const unsigned int n)
-{
-  unsigned int i;
-  for(i=0;i<n-1 && src[i]!='\0';i++)
-    dst[i]=convert_char(src[i]);
-  dst[i]='\0';
-#if defined(DJGPP) || defined(__CYGWIN__) || defined(__MINGW32__)
-  while(i>0 && (dst[i]==' '||dst[i]=='.'))
-    dst[i--]='\0';
-#endif
-}
-
-static inline unsigned char filter_char(unsigned char car)
-{
   /* Chars allowed under msdos, a-z is stored as upercase by the OS itself */
   if((car>='A' && car<='Z') || (car>='a' && car<='z')|| (car>='0' && car<='9'))
     return car;
@@ -265,19 +247,34 @@ static inline unsigned char filter_char(unsigned char car)
     case '=':
     case '[':
     case ']':
+    case '/':   /* without it, no subdirectory */
       return car;
   }
   if(car>=224)
     return car;
   return '_';
+#endif
+  return car;
 }
 
-void filename_cpy(char *dst, const char*src, const unsigned int n)
+unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
 {
   unsigned int i;
   for(i=0;i<n-1 && src[i]!='\0';i++)
-    dst[i]=filter_char(src[i]);
+  {
+    if(i==1 && src[i]==':')
+      dst[i]=src[i];
+    else
+      dst[i]=convert_char(src[i]);
+  }
+#if defined(DJGPP) || defined(__CYGWIN__) || defined(__MINGW32__)
+  while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
+    i--;
+  if(i==0 && (dst[i]==' '||dst[i]=='.'))
+    dst[i++]='_';
+#endif
   dst[i]='\0';
+  return i;
 }
 
 void create_dir(const char *dir_name, const unsigned int is_dir_name)

@@ -252,20 +252,6 @@ int main( int argc, char **argv )
     delete_list_disk(list_disk);
     return 0;
   }
-#ifdef HAVE_NCURSES
-  if(start_ncurses("TestDisk",argv[0]))
-    return 1;
-#endif
-  if(argc==1)
-  {
-    verbose=1;
-    create_log=ask_log_creation();
-    if(create_log>0)
-      log_open("testdisk.log",(create_log==1?"a":"w"),"TestDisk",argc,argv);
-  }
-  log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
-  log_info(TESTDISK_OS);
-  log_info(" (ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s)\n",td_ext2fs_version(),td_ntfs_version(),td_reiserfs_version(), td_ewf_version());
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {
@@ -279,6 +265,21 @@ int main( int argc, char **argv )
     }
   }
 #endif
+#ifdef HAVE_NCURSES
+  /* ncurses need locale for correct unicode support */
+  if(start_ncurses("TestDisk",argv[0]))
+    return 1;
+#endif
+  if(argc==1)
+  {
+    verbose=1;
+    create_log=ask_log_creation();
+    if(create_log>0)
+      log_open("testdisk.log",(create_log==1?"a":"w"),"TestDisk",argc,argv);
+  }
+  log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  log_info(TESTDISK_OS);
+  log_info(" (ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s)\n",td_ext2fs_version(),td_ntfs_version(),td_reiserfs_version(), td_ewf_version());
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID

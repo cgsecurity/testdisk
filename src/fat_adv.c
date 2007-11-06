@@ -1918,7 +1918,7 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
   unsigned int nbr_sol=0;
   if(nbr_sector_cluster<2)
     return 0;
-  cluster_offset=MALLOC(nbr_sector_cluster*nbr_sector_cluster*sizeof(cluster_offset_t));
+  cluster_offset=(cluster_offset_t *)MALLOC(nbr_sector_cluster*nbr_sector_cluster*sizeof(cluster_offset_t));
   log_info("find_cluster_size_aux\n");
   for(i=0;i<nbr_sector_cluster-1;i++)
   {
@@ -1942,7 +1942,7 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
               unsigned int sol_cur;
               unsigned int found=0;
               unsigned int offset_tmp=sector_cluster[i].sector-(sector_cluster[i].cluster-2)*cluster_size_tmp;
-              for(sol_cur=0;(sol_cur<nbr_sol)&&!found;sol_cur++)
+              for(sol_cur=0;sol_cur<nbr_sol && !found;sol_cur++)
               {
                 if(cluster_offset[sol_cur].cluster_size==cluster_size_tmp &&
                     cluster_offset[sol_cur].offset==offset_tmp)
@@ -1976,7 +1976,10 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
     {
       if(verbose>0)
       {
-        log_verbose("cluster_size=%u offset=%lu nbr=%u ",cluster_offset[i].cluster_size,cluster_offset[i].offset,cluster_offset[i].nbr);
+        log_verbose("cluster_size=%u offset=%lu nbr=%u ",
+            cluster_offset[i].cluster_size,
+            cluster_offset[i].offset,
+            cluster_offset[i].nbr);
         switch(no_of_cluster2part_type((part_size_in_sectors-cluster_offset[i].offset)/cluster_offset[i].cluster_size))
         {
           case UP_FAT12:

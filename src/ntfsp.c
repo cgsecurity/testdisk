@@ -30,6 +30,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_ICONV_H
+#include <iconv.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "list.h"

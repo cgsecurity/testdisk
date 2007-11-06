@@ -992,7 +992,21 @@ int main( int argc, char **argv )
         "If you have problems with PhotoRec or bug reports, please contact me.\n");
     return 0;
   }
+#ifdef HAVE_SETLOCALE
+  if(run_setlocale>0)
+  {
+    const char *locale;
+    locale = setlocale (LC_ALL, "");
+    if (locale==NULL) {
+      locale = setlocale (LC_ALL, NULL);
+      log_error("Failed to set locale, using default '%s'.\n", locale);
+    } else {
+      log_info("Using locale '%s'.\n", locale);
+    }
+  }
+#endif
 #ifdef HAVE_NCURSES
+  /* ncurses need locale for correct unicode support */
   if(start_ncurses("PhotoRec", argv[0]))
     return 1;
 #endif
@@ -1010,19 +1024,6 @@ int main( int argc, char **argv )
 #endif
   log_info("\n");
   printf("Please wait...\n");
-#ifdef HAVE_SETLOCALE
-  if(run_setlocale>0)
-  {
-    const char *locale;
-    locale = setlocale (LC_ALL, "");
-    if (locale==NULL) {
-      locale = setlocale (LC_ALL, NULL);
-      log_error("Failed to set locale, using default '%s'.\n", locale);
-    } else {
-      log_info("Using locale '%s'.\n", locale);
-    }
-  }
-#endif
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID

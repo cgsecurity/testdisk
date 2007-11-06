@@ -29,62 +29,101 @@ if test "x$nonopt" != "xNONE"; then
 fi
 
 # Command-line options.
-AC_ARG_WITH([ext2fs], AS_HELP_STRING(--without-ext2fs,disabled use of the ext2fs library (default is NO)),
+AC_ARG_WITH([ext2fs],
+    AS_HELP_STRING(--without-ext2fs,disabled use of the ext2fs library (default is NO)),
 	      [	use_ext2fs="n" ])
 
-AC_ARG_WITH(ext2fs-lib,[  --with-ext2fs-lib=DIR         location of the ext2fs library],
+AC_ARG_WITH(ext2fs-lib,
+    AS_HELP_STRING(--with-ext2fs-lib=DIR,location of the ext2fs library),
     [ ext2fs_lib_a="${withval}/libext2fs.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH(ext2fs-includes,[  --with-ext2fs-includes=DIR       location of the ext2fs includes files],
+AC_ARG_WITH(ext2fs-includes,
+    AS_HELP_STRING(--with-ext2fs-includes=DIR,location of the ext2fs includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([jpeg], AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
+AC_ARG_WITH([jpeg],
+    AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
 	      [	use_jpeg="n" ])
 
-AC_ARG_WITH(jpegmmx-lib,[  --with-jpegmmx-lib=DIR         location of the jpeg library],
-      [ jpegmmx_lib_a="${withval}/libjpeg-mmx.a"
-      LDFLAGS="${LDFLAGS} -L${withval}" ])
+#AC_ARG_WITH(jpegmmx-lib,
+#    AS_HELP_STRING(--with-jpegmmx-lib=DIR,location of the jpeg library),
+#    [ jpegmmx_lib_a="${withval}/libjpeg-mmx.a"
+#    LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH(jpeg-lib,[  --with-jpeg-lib=DIR         location of the jpeg library],
+AC_ARG_WITH(jpeg-lib,
+    AS_HELP_STRING(--with-jpeg-lib=DIR,location of the jpeg library),
       [ jpeg_lib_a="${withval}/libjpeg.a"
       LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH(jpeg-includes,[  --with-jpeg-includes=DIR       location of the jpeg includes files],
+AC_ARG_WITH(jpeg-includes,
+    AS_HELP_STRING(--with-jpeg-includes=DIR,location of the jpeg includes files),
       [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([ntfs], AS_HELP_STRING(--without-ntfs,disabled use of the ntfs library (default is NO)),
+AC_ARG_WITH([ntfs], 
+    AS_HELP_STRING(--without-ntfs,disabled use of the ntfs library (default is NO)),
 	      [	use_ntfs="n" ])
 
-AC_ARG_WITH(ntfs-lib,[  --with-ntfs-lib=DIR         location of the ntfs library],
+AC_ARG_WITH(ntfs-lib,
+    AS_HELP_STRING(--with-ntfs-lib=DIR,location of the ntfs library),
     [ ntfs_lib_a="${withval}/libntfs.a"
       LDFLAGS="${LDFLAGS} -L${withval}"
     ])
 
-AC_ARG_WITH(ntfs-includes,[  --with-ntfs-includes=DIR       location of the ntfs includes files],
+AC_ARG_WITH(ntfs-includes,
+    AS_HELP_STRING(--with-ntfs-includes=DIR,location of the ntfs includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH(dal-lib,[  --with-dal-lib=DIR         location of the dal library],
+AC_ARG_WITH(dal-lib,
+    AS_HELP_STRING(--with-dal-lib=DIR,location of the dal library),
     [ LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH([reiserfs], AS_HELP_STRING(--without-reiserfs,disabled use of the reiserfs library (default is NO)),
+AC_ARG_WITH([reiserfs], 
+    AS_HELP_STRING(--without-reiserfs,disabled use of the reiserfs library (default is NO)),
 	      [	use_reiserfs="n" ])
 
-AC_ARG_WITH(reiserfs-lib,[  --with-reiserfs-lib=DIR         location of the reiserfs library],
+AC_ARG_WITH(reiserfs-lib,
+    AS_HELP_STRING(--with-reiserfs-lib=DIR,location of the reiserfs library),
     [ reiserfs_lib_a="${withval}/libreiserfs.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH(reiserfs-includes,[  --with-reiserfs-includes=DIR       location of the reiserfs includes files],
+AC_ARG_WITH(reiserfs-includes,
+    AS_HELP_STRING(--with-reiserfs-includes=DIR,location of the reiserfs includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([ewf], AS_HELP_STRING(--without-ewf,disabled use of the ewf library (default is NO)),
+AC_ARG_WITH([ewf], 
+    AS_HELP_STRING(--without-ewf,disabled use of the ewf library (default is NO)),
 	      [	use_ewf="n" ])
 
-AC_ARG_WITH(ewf-lib,[  --with-ewf-lib=DIR         location of the ewf library],
+AC_ARG_WITH(ewf-lib,
+    AS_HELP_STRING(--with-ewf-lib=DIR,location of the ewf library),
     [ ewf_lib_a="${withval}/libewf.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH(ewf-includes,[  --with-ewf-includes=DIR       location of the ewf includes files],
+AC_ARG_WITH(ewf-includes,
+    AS_HELP_STRING(--with-ewf-includes=DIR,location of the ewf includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
+AC_ARG_WITH([iconv], 
+    AS_HELP_STRING(--without-iconv,disabled use of the iconv library (default is NO)),
+    [	use_iconv="n" ])
+
+AC_ARG_WITH(iconv-lib,
+    AS_HELP_STRING(--with-iconv-lib=DIR,location of the iconv library),
+    [ iconv_lib_a="${withval}/libiconv.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
+
+AC_ARG_WITH(iconv-includes,
+    AS_HELP_STRING(--with-iconv-includes=DIR,location of the iconv includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
+AC_ARG_WITH(giconv-lib,
+    AS_HELP_STRING(--with-giconv-lib=DIR,location of the giconv library),
+    [ iconv_lib_a="${withval}/libgiconv.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
+
+AC_ARG_WITH(giconv-includes,
+    AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 use_icon=no
@@ -139,7 +178,81 @@ AC_SYS_LARGEFILE
 AC_HEADER_STDC
 #AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h stdint.h unistd.h])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h glob.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h windef.h varargs.h utime.h zlib.h])
+AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h windef.h varargs.h utime.h zlib.h])
+
+#--------------------------------------------------------------------
+# Check for iconv support (for Unicode conversion).
+#--------------------------------------------------------------------
+#
+# We need to find an iconv library that matches the installed iconv.h header
+# (if any). It is important to check header/library compatibility. It's
+# fairly common to have iconv support both in libc and from libiconv. In that
+# case, a naive check that iconv() is in libc will succeed, but if we use
+# libiconv's iconv.h, it will redefine iconv() to functions that exist
+# only in libiconv, and we'll get link errors.
+#
+# First, check if there's a working iconv in libc (ie. if the test program
+# compiles and links without any extra flags).
+if test -z "${use_iconv}"; then
+AC_MSG_CHECKING(iconv support)
+AC_LINK_IFELSE([[#include <iconv.h>
+int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+,
+  # libc has a working iconv.
+  AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
+  AC_MSG_RESULT([[yes, in libc]])
+  found_iconv=yes
+,
+  found_iconv=no
+)
+
+if test $found_iconv = no ; then
+  # libc doesn't have a working iconv. Try adding -liconv and any user
+  # supplied directory.
+
+  old_LIBS="$LIBS"
+  if test "${iconv_lib_a}" = ""; then
+    LIBS="$LIBS -liconv"
+  else
+    LIBS="$LIBS ${iconv_lib_a}"
+  fi
+  AC_LINK_IFELSE([[#include <iconv.h>
+  int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+  ,
+    # -liconv works.
+    AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
+    AC_MSG_RESULT([[yes, -liconv]])
+    found_iconv=yes
+  ,
+    found_iconv=no
+    LIBS="$old_LIBS"
+  )
+fi
+
+if test $found_iconv = no ; then
+  # -liconv didn't work. Try giconv.h and -lgiconv.
+  # BSDs install this lib as libgiconv.
+  old_LIBS="$LIBS"
+  if test "${giconv_lib_a}" = ""; then
+    LIBS="$LIBS -lgiconv"
+  else
+    LIBS="$LIBS ${giconv_lib_a}"
+  fi
+  AC_LINK_IFELSE([[#include <giconv.h>
+  int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+  ,
+    AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
+    AC_DEFINE(HAVE_GICONV,1, [Define if you have this function])
+    AC_MSG_RESULT([[yes, -lgiconv]])
+  ,
+    AC_MSG_RESULT([[no]])
+    LIBS="$old_LIBS"
+  )
+fi
+else
+  AC_MSG_WARN(Use of iconv function disabled)
+fi
+
 
 AC_CHECK_HEADERS(sys/mount.h,,,
 [[
@@ -212,9 +325,9 @@ AC_PROG_GCC_TRADITIONAL
 
 # Checks for libraries.
 if test -z "${use_ncurses}"; then
-  AC_SEARCH_LIBS(initscr, ncurses pdcurses curses,
+  AC_SEARCH_LIBS(initscr, ncursesw ncurses pdcurses curses,
       [
-        AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncurses/pdcurses/curses library.])
+        AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncursesw/ncurses/pdcurses/curses library.])
       ],AC_MSG_ERROR(No ncurses library detected))
 else
   AC_MSG_WARN(Use of ncurses library disabled)

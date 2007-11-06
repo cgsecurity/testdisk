@@ -403,8 +403,7 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int strncasecmp(const char * s1, const char * s2, size_t len);
 #endif
 void create_dir(const char *dir_name, const unsigned int is_dir_name);
-void filename_convert(char *dst, const char*src, const unsigned int n);
-void filename_cpy(char *dst, const char*src, const unsigned int n);
+unsigned int filename_convert(char *dst, const char*src, const unsigned int n);
 
 #ifdef DJGPP
     #define TESTDISK_OS "Dos version"
