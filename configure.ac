@@ -31,7 +31,7 @@ fi
 # Command-line options.
 AC_ARG_WITH([ext2fs],
     AS_HELP_STRING(--without-ext2fs,disabled use of the ext2fs library (default is NO)),
-	      [	use_ext2fs="n" ])
+    [	use_ext2fs="n" ])
 
 AC_ARG_WITH(ext2fs-lib,
     AS_HELP_STRING(--with-ext2fs-lib=DIR,location of the ext2fs library),
@@ -44,7 +44,7 @@ AC_ARG_WITH(ext2fs-includes,
 
 AC_ARG_WITH([jpeg],
     AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
-	      [	use_jpeg="n" ])
+    [	use_jpeg="n" ])
 
 #AC_ARG_WITH(jpegmmx-lib,
 #    AS_HELP_STRING(--with-jpegmmx-lib=DIR,location of the jpeg library),
@@ -53,16 +53,16 @@ AC_ARG_WITH([jpeg],
 
 AC_ARG_WITH(jpeg-lib,
     AS_HELP_STRING(--with-jpeg-lib=DIR,location of the jpeg library),
-      [ jpeg_lib_a="${withval}/libjpeg.a"
-      LDFLAGS="${LDFLAGS} -L${withval}" ])
+    [ jpeg_lib_a="${withval}/libjpeg.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(jpeg-includes,
     AS_HELP_STRING(--with-jpeg-includes=DIR,location of the jpeg includes files),
-      [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH([ntfs], 
     AS_HELP_STRING(--without-ntfs,disabled use of the ntfs library (default is NO)),
-	      [	use_ntfs="n" ])
+    [	use_ntfs="n" ])
 
 AC_ARG_WITH(ntfs-lib,
     AS_HELP_STRING(--with-ntfs-lib=DIR,location of the ntfs library),
@@ -80,7 +80,7 @@ AC_ARG_WITH(dal-lib,
 
 AC_ARG_WITH([reiserfs], 
     AS_HELP_STRING(--without-reiserfs,disabled use of the reiserfs library (default is NO)),
-	      [	use_reiserfs="n" ])
+    [	use_reiserfs="n" ])
 
 AC_ARG_WITH(reiserfs-lib,
     AS_HELP_STRING(--with-reiserfs-lib=DIR,location of the reiserfs library),
@@ -93,7 +93,7 @@ AC_ARG_WITH(reiserfs-includes,
 
 AC_ARG_WITH([ewf], 
     AS_HELP_STRING(--without-ewf,disabled use of the ewf library (default is NO)),
-	      [	use_ewf="n" ])
+    [	use_ewf="n" ])
 
 AC_ARG_WITH(ewf-lib,
     AS_HELP_STRING(--with-ewf-lib=DIR,location of the ewf library),

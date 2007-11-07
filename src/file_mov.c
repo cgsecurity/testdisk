@@ -192,28 +192,28 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
     atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
 #ifdef DEBUG_MOV
     log_trace("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
-	buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
-	buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
-	atom_size,
-	(long long unsigned)file_recovery->calculated_file_size);
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
+        atom_size,
+        (long long unsigned)file_recovery->calculated_file_size);
 #endif
     if(atom_size>=8 && atom_size<1024*1024*1024 &&
-	((buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
-	 (buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
-	 (buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e') ||
-	 (buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
-	 (buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-	 (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
-	 (buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
-	 (buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
-	 (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
-	 (buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
-	 (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-	 (buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
-	 (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
-	 (buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
-	 (buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T')
-	)
+        ((buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
+         (buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
+         (buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e') ||
+         (buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
+         (buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
+         (buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
+         (buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
+         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
+         (buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
+         (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+         (buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
+         (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
+         (buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
+         (buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T')
+        )
       )
     {
       file_recovery->calculated_file_size+=(uint64_t)atom_size;
@@ -221,9 +221,9 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
     else
     {
       if(!(buffer[i+4]==0 && buffer[i+5]==0 && buffer[i+6]==0 && buffer[i+7]==0))
-	log_warning("file_mov.c: unknown atom 0x%02x%02x%02x%02x at %llu\n",
-	    buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
-	    (long long unsigned)file_recovery->calculated_file_size);
+        log_warning("file_mov.c: unknown atom 0x%02x%02x%02x%02x at %llu\n",
+            buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
+            (long long unsigned)file_recovery->calculated_file_size);
       return 2;
     }
   }

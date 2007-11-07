@@ -44,11 +44,7 @@
 #include "log.h"
 
 //#define DEBUG_REPAIR_MFT 1
-/*
-dd if=/mnt/data/data_for_testdisk/ntfs.dd skip=127759 count=1 bs=512|hexdump -C
-dd if=/dev/zero of=/mnt/data/data_for_testdisk/ntfs_bad_mft.dd seek=85184 count=1 bs=512 conv=notrunc
-dd if=/dev/zero of=/mnt/data/data_for_testdisk/ntfs_bad_mftmirr.dd seek=127759 count=1 bs=512 conv=notrunc
-*/
+
 int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
 {
   struct ntfs_boot_sector *ntfs_header;
@@ -60,6 +56,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
   unsigned int mftmirr_size_bytes;
   uint64_t mft_pos;
   uint64_t mftmirr_pos;
+  log_trace("repair_MFT\n");
   if(check_NTFS(disk_car, partition, verbose, 0)!=0)
   {
     display_message("Boot sector not valid, can't repair MFT.\n");
@@ -100,6 +97,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
   if(disk_car->read(disk_car, mftmirr_size_bytes, buffer_mft, mft_pos)!=0)
   {
     display_message("Can't read NTFS MFT.\n");
+    log_error("Can't read NTFS MFT.\n");
     free(buffer_mft);
     free(ntfs_header);
     return -1;
@@ -108,6 +106,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
   if(disk_car->read(disk_car, mftmirr_size_bytes, buffer_mftmirr, mftmirr_pos)!=0)
   {
     display_message("Can't read NTFS MFT mirror.\n");
+    log_error("Can't read NTFS MFT mirror.\n");
     free(buffer_mftmirr);
     free(buffer_mft);
     free(ntfs_header);
@@ -115,6 +114,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
   }
   if(memcmp(buffer_mft, buffer_mftmirr, mftmirr_size_bytes)==0)
   {
+    log_info("MFT and MFT mirror matches perfectly.\n");
     display_message("MFT and MFT mirror matches perfectly.\n");
     free(buffer_mftmirr);
     free(buffer_mft);
@@ -142,6 +142,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
     if(res1==-2)
     {
 	display_message("Can't determine which MFT is correct, ntfslib is missing.\n");
+	log_error("Can't determine which MFT is correct, ntfslib is missing.\n");
 	free(buffer_mftmirr);
 	free(buffer_mft);
 	free(ntfs_header);
@@ -186,9 +187,15 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
       if(ask_confirmation("Fix MFT mirror ? (Y/N)")!=0)
       {
 	if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mft, mftmirr_pos)!=0)
+        {
+	  log_error("Failed to fix MFT mirror: write error.\n");
 	  display_message("Failed to fix MFT mirror: write error.\n");
+        }
 	else
+        {
+	  log_info("MFT mirror fixed.\n");
 	  display_message("MFT mirror fixed.\n");
+        }
       }
       else
       {
@@ -201,9 +208,15 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
       if(ask_confirmation("Fix MFT ? (Y/N)")!=0)
       {
 	if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mftmirr, mft_pos)!=0)
+        {
+	  log_error("Failed to fix MFT: write error.\n");
 	  display_message("Failed to fix MFT: write error.\n");
+        }
 	else
+        {
+	  log_info("MFT fixed.\n");
 	  display_message("MFT fixed.\n");
+        }
       }
       else
       {
@@ -213,11 +226,13 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
     else if(res1<0)
     {
       /* Both are bad */
+      log_error("MFT and MFT mirror are bad. Failed to repair them.\n");
       display_message("MFT and MFT mirror are bad. Failed to repair them.\n");
     }
     else
     {
       /* Use chkdsk */
+      log_error("Both MFT seems ok but they don't match, use chkdsk.\n");
       display_message("Both MFT seems ok but they don't match, use chkdsk.\n");
     }
   }
