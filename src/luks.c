@@ -77,7 +77,8 @@ int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *parti
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
   partition->part_size=(uint64_t)be32(sb->payloadOffset)*disk_car->sector_size;
   partition->blocksize=0;
-  partition->boot_sector=0;
+  partition->sborg_offset=0;
+  partition->sb_offset=0;
   /* sb->uuid is bigger than part_uuid */
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->uuid);
   if(verbose>0)

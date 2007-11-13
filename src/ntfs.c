@@ -79,6 +79,8 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
     log_ntfs_info(ntfs_header);
   }
   part_size=(uint64_t)(le64(ntfs_header->sectors_nbr)+1)*ntfs_sector_size(ntfs_header);
+  partition->sborg_offset=0;
+  partition->sb_size=512;
   if(backup>0)
   {
     if(partition->part_offset+disk_car->sector_size<part_size)
@@ -93,8 +95,8 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
       log_info("NTFS part_offset=%llu, part_size=%llu, sector_size=%u\n",
 	  (long long unsigned)partition->part_offset, (long long unsigned)part_size,
 	  disk_car->sector_size);
-    partition->boot_sector=part_size/disk_car->sector_size-1;
-    partition->part_offset=partition->part_offset+disk_car->sector_size-part_size;
+    partition->sb_offset=part_size-disk_car->sector_size;
+    partition->part_offset-=partition->sb_offset;
     if(verbose>1)
       log_info("part_offset=%llu\n",(long long unsigned)partition->part_offset);
   }
@@ -108,7 +110,7 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
 int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind)
 {
   partition->fsname[0]='\0';
-  if(partition->boot_sector==0)
+  if(partition->sb_offset==0)
     strncpy(partition->info, "NTFS", sizeof(partition->info));
   else
     strncpy(partition->info, "NTFS found using backup sector!", sizeof(partition->info));

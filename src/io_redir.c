@@ -65,7 +65,11 @@ int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsign
     struct info_io_redir*data=MALLOC(sizeof(*data));
     disk_t *old_disk_car=MALLOC(sizeof(*old_disk_car));
 #ifdef DEBUG_IO_REDIR
-    log_trace("io_redir_add_redir: install functions\n");
+    log_trace("io_redir_add_redir: install functions org_offset=%llu, size=%u, new_offset=%llu, mem=%p\n",
+        (long long unsigned)org_offset,
+        size,
+        (long long unsigned)new_offset,
+        mem);
 #endif
     memcpy(old_disk_car,disk_car,sizeof(*old_disk_car));
     data->disk_car=old_disk_car;
@@ -142,7 +146,7 @@ int io_redir_del_redir(disk_t *disk_car, uint64_t org_offset)
       }
       return 0;
     }
-    log_trace("io_redir_del_redir: redirection not found\n");
+    log_critical("io_redir_del_redir: redirection not found\n");
     return 1;
   }
 }

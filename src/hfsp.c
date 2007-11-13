@@ -61,13 +61,15 @@ int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partiti
   if(test_HFSP(disk_car,vh,partition,verbose,dump_ind)!=0)
     return 1;
   part_size=(uint64_t)be32(vh->total_blocks)*be32(vh->blocksize);
+  partition->sborg_offset=0x400;
+  partition->sb_size=HFSP_BOOT_SECTOR_SIZE;
   if(backup>0)
   {
     if(partition->part_offset+2*disk_car->sector_size<part_size)
       return 1;
     /* backup is at total_blocks-2 */
-    partition->boot_sector=(part_size-0x400)/disk_car->sector_size;
-    partition->part_offset=partition->part_offset+2*disk_car->sector_size-part_size;
+    partition->sb_offset=part_size-0x400;
+    partition->part_offset-=partition->sb_offset;
   }
   partition->part_size=part_size;
   set_HFSP_info(partition,vh);

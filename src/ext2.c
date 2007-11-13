@@ -107,28 +107,33 @@ int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t
   {
     log_info("\n");
   }
+  partition->sborg_offset=0x400;
+  partition->sb_size=EXT2_SUPERBLOCK_SIZE;
   if(le16(sb->s_block_group_nr)>0)
   {
-    unsigned long int boot_sector=(le32(sb->s_first_data_block)+le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group));
-    if(partition->part_offset<(uint64_t)boot_sector*((EXT2_MIN_BLOCK_SIZE/disk_car->sector_size)<<le32(sb->s_log_block_size))*disk_car->sector_size)
+    unsigned long int block_nr=(le32(sb->s_first_data_block)+le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group));
+    if(partition->part_offset< (uint64_t)block_nr * (EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
     {
       log_error("recover_EXT2: part_offset problem\n");
       return 1;
     }
-    partition->boot_sector=boot_sector;
-    partition->part_offset-=(uint64_t)boot_sector*((EXT2_MIN_BLOCK_SIZE/disk_car->sector_size)<<le32(sb->s_log_block_size))*disk_car->sector_size;
-    log_warning("recover_EXT2: \"e2fsck -b %lu -B %lu device\" may be needed\n",
-        partition->boot_sector, partition->blocksize);
+    partition->sb_offset=(uint64_t)block_nr * (EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
+    partition->part_offset-=partition->sb_offset;
+    log_warning("recover_EXT2: \"e2fsck -b %u -B %lu device\" may be needed\n",
+        block_nr, partition->blocksize);
   }
   else
   {
-    partition->boot_sector=0;
+    partition->sb_offset=0;
   }
   if(verbose>0)
   {
     log_info("recover_EXT2: s_block_group_nr=%u/%u, s_mnt_count=%u/%u, s_blocks_per_group=%u\n",
-    le16(sb->s_block_group_nr), (unsigned int)(le32(sb->s_blocks_count)/le32(sb->s_blocks_per_group)), le16(sb->s_mnt_count),le16(sb->s_max_mnt_count),(unsigned int)le32(sb->s_blocks_per_group));
-    log_info("recover_EXT2: boot_sector=%lu, s_blocksize=%lu\n",partition->boot_sector,partition->blocksize);
+        le16(sb->s_block_group_nr),
+        (unsigned int)(le32(sb->s_blocks_count)/le32(sb->s_blocks_per_group)),
+        le16(sb->s_mnt_count), le16(sb->s_max_mnt_count),
+        (unsigned int)le32(sb->s_blocks_per_group));
+    log_info("recover_EXT2: s_blocksize=%u\n", partition->blocksize);
     log_info("recover_EXT2: s_blocks_count %u\n",(unsigned int)le32(sb->s_blocks_count));
     log_info("recover_EXT2: part_size %lu\n",(long unsigned)(partition->part_size/disk_car->sector_size));
   }

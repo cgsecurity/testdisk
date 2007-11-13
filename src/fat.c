@@ -840,6 +840,9 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
   partition->part_size=(uint64_t)(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect)) *
     fat_sector_size(fat_header);
   /* test_FAT has set partition->upart_type */
+  partition->sborg_offset=0;
+  partition->sb_size=512;
+  partition->sb_offset=0;
   switch(partition->upart_type)
   {
     case UP_FAT12:
@@ -885,8 +888,8 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
       partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
       if(backup)
       {
-        partition->boot_sector=6;
-        partition->part_offset-=6*512;  /* backup sector */
+        partition->sb_offset=6*512;
+        partition->part_offset-=partition->sb_offset;  /* backup sector */
       }
       break;
     default:

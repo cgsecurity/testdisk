@@ -67,6 +67,7 @@
 #include "log.h"
 #include "guid_cmp.h"
 #include "hdaccess.h"
+#include "io_redir.h"
 
 #define INTER_DISK_X	0
 #define INTER_DISK_Y	7
@@ -985,7 +986,21 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
   {
     (*current_cmd)+=4;
     if(pos!=NULL)
-      dir_partition(disk_car,pos->part,verbose,current_cmd);
+    {
+      partition_t *partition=pos->part;
+      if(partition->sb_offset==0 || partition->sb_size==0)
+        dir_partition(disk_car,partition,verbose, current_cmd);
+      else
+      {
+        io_redir_add_redir(disk_car,
+            partition->part_offset+partition->sborg_offset,
+            partition->sb_size,
+            partition->part_offset+partition->sb_offset,
+            NULL);
+        dir_partition(disk_car,partition,verbose, current_cmd);
+        io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
+      }
+    }
   }
   return list_part;
 }
@@ -1232,7 +1247,21 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       case 'p':
       case 'P':
 	if(list_part!=NULL)
-	  dir_partition(disk_car,pos->part,verbose, current_cmd);
+        {
+          partition_t *partition=pos->part;
+          if(partition->sb_offset==0 || partition->sb_size==0)
+            dir_partition(disk_car,partition,verbose, current_cmd);
+          else
+          {
+            io_redir_add_redir(disk_car,
+                partition->part_offset+partition->sborg_offset,
+                partition->sb_size,
+                partition->part_offset+partition->sb_offset,
+                NULL);
+            dir_partition(disk_car,partition,verbose, current_cmd);
+            io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
+          }
+        }
 	break;
       case 'l':
       case 'L':
@@ -1492,7 +1521,10 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
       aff_part_buffer(AFF_PART_SHORT,disk_car,partition);
       old_part=partition;
     }
-    aff_buffer(BUFFER_ADD,"superblock %u, blocksize=%u\n", partition->boot_sector, partition->blocksize);
+    if(partition->blocksize!=0)
+      aff_buffer(BUFFER_ADD,"superblock %lu, blocksize=%u\n",
+          (long unsigned)(partition->sb_offset/partition->blocksize),
+          partition->blocksize);
   }
   screen_buffer_to_log();
   if(*current_cmd==NULL)

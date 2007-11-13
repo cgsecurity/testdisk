@@ -69,7 +69,6 @@
 #include "ntfs.h"
 #include "dir.h"
 #include "ntfs_dir.h"
-#include "io_redir.h"
 #include "ntfs_utl.h"
 #include "ntfs_inc.h"
 #include "log.h"
@@ -412,8 +411,6 @@ static void dir_partition_ntfs_close(dir_data_t *dir_data)
   partition=ls->my_data->partition;
   ntfs_umount(ls->vol, FALSE);
   free(ls->my_data);
-  if(partition->boot_sector!=0)
-    io_redir_del_redir(disk_car,partition->part_offset);
 #ifdef HAVE_ICONV
   if (ls->cd != (iconv_t)(-1))
     iconv_close(ls->cd);
@@ -428,8 +425,6 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
   struct ntfs_device *dev;
   my_data_t *my_data=NULL;
   ntfs_volume *vol=NULL;
-  if(partition->boot_sector!=0)
-    io_redir_add_redir(disk_car,partition->part_offset,DEFAULT_SECTOR_SIZE,partition->part_offset+(uint64_t)partition->boot_sector*disk_car->sector_size,NULL);
 #ifdef NTFS_LOG_LEVEL_VERBOSE
   ntfs_log_set_levels(NTFS_LOG_LEVEL_VERBOSE);
   ntfs_log_set_handler(ntfs_log_handler_stderr);
@@ -464,8 +459,6 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
 #endif
   }
   if (!vol) {
-    if(partition->boot_sector!=0)
-      io_redir_del_redir(disk_car,partition->part_offset);
     free(my_data);
     ntfs_device_free(dev);
     return -1;

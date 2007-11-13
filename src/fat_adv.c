@@ -981,8 +981,6 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
       case 'l':
       case 'L':
 	{
-	  /* TODO: use redirector and dir_partition_fat */
-	  //dir_partition_fat_aux(stdscr,disk_car, partition, verbose, fat_header,upart_type,current_cmd);
 	  const upart_type_t old_upart_type=upart_type;
 	  partition->upart_type=upart_type;
 	  io_redir_add_redir(disk_car,partition->part_offset,3*disk_car->sector_size,0,newboot);

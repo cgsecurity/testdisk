@@ -306,8 +306,10 @@ struct partition_struct
 {
   uint64_t part_offset;
   uint64_t part_size;
-  unsigned long int boot_sector;
-  unsigned long int blocksize;
+  uint64_t      sborg_offset;
+  uint64_t      sb_offset;
+  unsigned int  sb_size;
+  unsigned int  blocksize;
   unsigned int  part_type_i386;
   unsigned int  part_type_sun;
   unsigned int  part_type_mac;

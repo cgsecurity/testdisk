@@ -774,7 +774,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     const list_part_t *element;
     for(element=list_part;element!=NULL;element=element->next)
     {
-      if(element->part->upart_type==UP_NTFS && element->part->boot_sector!=0)
+      if(element->part->upart_type==UP_NTFS && element->part->sb_offset!=0)
       {
         unsigned int i;
         for(i=32;i>0;i--)
@@ -1124,7 +1124,7 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
   }
   for(element=list_part;element!=NULL;element=element->next)
   {
-    if(element->part->boot_sector!=0)
+    if(element->part->sb_offset!=0)
     {
       switch(element->part->upart_type)
       {

@@ -85,6 +85,7 @@ void dup_partition_t(partition_t *dst, const partition_t *src)
   dst->part_offset=src->part_offset;
   dst->part_size=src->part_size;
   dst->boot_sector=src->boot_sector;
+  dst->boot_sector_size=src->boot_sector_size;
   dst->blocksize=src->blocksize;
   dst->part_type_i386=src->part_type_i386;
   dst->part_type_sun=src->part_type_sun;
@@ -151,7 +152,7 @@ list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, con
       (part->part_offset<next->part->part_offset) ||
       (part->part_offset==next->part->part_offset &&
        ((part->part_size<next->part->part_size) ||
-	(part->part_size==next->part->part_size && (force_insert==0 || part->boot_sector<next->part->boot_sector)))))
+	(part->part_size==next->part->part_size && (force_insert==0 || part->sb_offset < next->part->sb_offset)))))
     {
       if(force_insert==0 &&
 	(next!=NULL) &&
@@ -336,7 +337,9 @@ void  partition_reset(partition_t *partition, const arch_fnct_t *arch)
 {
 /* partition->lba=0; Don't reset lba, used by search_part */
   partition->part_size=(uint64_t)0;
-  partition->boot_sector=0;
+  partition->sborg_offset=0;
+  partition->sb_offset=0;
+  partition->sb_size=0;
   partition->blocksize=0;
   partition->part_type_i386=P_NO_OS;
   partition->part_type_sun=PSUN_UNK;

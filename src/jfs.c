@@ -82,13 +82,15 @@ int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *p
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
   partition->part_size=(uint64_t)le32(sb->s_pbsize) * le64(sb->s_size) +
     le32(sb->s_bsize) * (le24(sb->s_fsckpxd.len)+le24(sb->s_logpxd.len));
-  partition->boot_sector=0;
+  partition->sborg_offset=64*512;
+  partition->sb_size=JFS_SUPERBLOCK_SIZE;
+  partition->sb_offset=0;
   partition->blocksize=le32(sb->s_bsize);
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->s_uuid);
   if(verbose>0)
   {
     log_info("\n");
-    log_info("recover_JFS: s_blocksize=%lu\n",partition->blocksize);
+    log_info("recover_JFS: s_blocksize=%u\n",partition->blocksize);
     log_info("recover_JFS: s_size %lu\n",(long unsigned int)le64(sb->s_size));
     log_info("recover_JFS: s_fsckpxd.len:%d\n", (int)le24(sb->s_fsckpxd.len));
     log_info("recover_JFS: s_logpxd.len:%d\n", (int)le24(sb->s_logpxd.len));

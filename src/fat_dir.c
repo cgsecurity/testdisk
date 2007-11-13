@@ -424,7 +424,7 @@ int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_d
   static unsigned char *buffer;
   static struct fat_dir_struct *ls;
   buffer=(unsigned char*)MALLOC(0x200);
-  if(disk_car->read(disk_car,0x200, buffer, partition->part_offset+(uint64_t)partition->boot_sector*disk_car->sector_size))
+  if(disk_car->read(disk_car,0x200, buffer, partition->part_offset))
   {
     free(buffer);
     return -1;

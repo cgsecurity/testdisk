@@ -62,11 +62,13 @@ int recover_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partitio
     return 1;
   /* The extra 0x400 bytes are for the backup MDB */
   part_size=(uint64_t)be16(hfs_mdb->drNmAlBlks)*be32(hfs_mdb->drAlBlkSiz)+be16(hfs_mdb->drAlBlSt)*512+0x400;
+  partition->sborg_offset=0x400;
+  partition->sb_size=HFS_SUPERBLOCK_SIZE;
   if(backup>0)
   {
     if(partition->part_offset+2*disk_car->sector_size<part_size)
       return 1;
-    partition->boot_sector=(part_size-0x400)/disk_car->sector_size;
+    partition->sb_offset=part_size-0x400;
     partition->part_offset=partition->part_offset+2*disk_car->sector_size-part_size;
   }
   partition->part_size=part_size;

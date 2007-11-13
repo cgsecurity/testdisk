@@ -281,7 +281,8 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   my_data->disk_car=disk_car;
   ioch=alloc_io_channel(disk_car,my_data);
   shared_ioch=&ioch;
-  if(ext2fs_open ("/dev/testdisk", 0, partition->boot_sector, partition->blocksize, my_io_manager, &ls->current_fs)!=0)
+  /* An alternate superblock may be used if the calling function has set an IO redirection */
+  if(ext2fs_open ("/dev/testdisk", 0, 0, 0, my_io_manager, &ls->current_fs)!=0)
   {
     free(ls);
     return -1;
