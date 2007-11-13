@@ -1558,6 +1558,25 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
           break;
       }
     }
+    else
+    {
+#ifdef BLKROGET
+      int readonly;
+      /* If the device can be opened read-write, then
+       * check whether BKROGET says that it is read-only.
+       * read-only loop devices may be openend read-write,
+       * use BKROGET to detect the problem
+       */
+      if (ioctl(hd_h, BLKROGET, &readonly) >= 0)
+      {
+        if(readonly>0)
+        {
+          try_readonly=1;
+          close(hd_h);
+        }
+      }
+#endif
+    }
   }
   if(try_readonly>0)
   {
