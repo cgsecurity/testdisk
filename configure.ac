@@ -29,6 +29,19 @@ if test "x$nonopt" != "xNONE"; then
 fi
 
 # Command-line options.
+AC_ARG_WITH([ncurses],
+    AS_HELP_STRING(--without-ncurses,disabled use of the curses/ncurses/pdcurses/curses library (default is NO)),
+    [	use_ncurses="n" ])
+
+AC_ARG_WITH(ncurses-lib,
+    AS_HELP_STRING(--with-ncurses-lib=DIR,location of the ncurses library),
+    [ ncurses_lib_a="${withval}/libncurses.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
+
+AC_ARG_WITH(ncurses-includes,
+    AS_HELP_STRING(--with-ncurses-includes=DIR,location of the ncurses includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
 AC_ARG_WITH([ext2fs],
     AS_HELP_STRING(--without-ext2fs,disabled use of the ext2fs library (default is NO)),
     [	use_ext2fs="n" ])
@@ -458,6 +471,9 @@ case "$target" in
 esac
 
 AC_CHECK_FUNCS([atexit atoll chdir delscreen dirname dup2 ftruncate getcwd geteuid lstat memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
+if test $ac_cv_func_mkdir = no; then
+  AC_MSG_ERROR(No mkdir function detected)
+fi
 #reiserfs_fs_open_fast may not been detected because of lack of -ldal
 OLDLIBS="$LIBS"
 LIBS="$LIBS $testdisk_LDADD -ldal"

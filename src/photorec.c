@@ -475,7 +475,7 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
       if(mkdir(working_recup_dir, 0775)!=0 && errno==EEXIST)
 #endif
 #else
-#error You need a mkdir function!
+#warn You need a mkdir function!
 #endif
       {
 	dir_num++;
@@ -680,55 +680,6 @@ struct info_cluster_offset
   unsigned int nbr;
 };
 
-unsigned int find_blocksize_cluster(list_cluster_t *list_cluster, const unsigned int default_blocksize, uint64_t *offset)
-{
-  unsigned int cluster_size;
-  unsigned int cluster_size_best=default_blocksize;
-  unsigned int nbr_max=0;
-  for(cluster_size=default_blocksize;cluster_size<=128*512;cluster_size*=2)
-  {
-    struct td_list_head *dir_walker = NULL;
-    cluster_offset_t cluster_offset[1000];
-    unsigned int nbr_sol=0;
-    td_list_for_each(dir_walker,&list_cluster->list)
-    {
-      list_cluster_t *info;
-      info=td_list_entry(dir_walker, list_cluster_t, list);
-      if(info->cluster>=2 && (info->cluster-2)*cluster_size<info->offset)
-      {
-        unsigned int sol_cur;
-        unsigned int found=0;
-        unsigned int offset_tmp;
-        offset_tmp=info->offset-(info->cluster-2)*cluster_size;
-        for(sol_cur=0;sol_cur<nbr_sol && !found;sol_cur++)
-        {
-          if(cluster_offset[sol_cur].offset==offset_tmp)
-          {
-            cluster_offset[sol_cur].nbr++;
-            found=1;
-          }
-        }
-        if(!found && nbr_sol<1000)
-        {
-          cluster_offset[nbr_sol].offset=offset_tmp;
-          cluster_offset[nbr_sol].nbr=1;
-          nbr_sol++;
-        }
-      }
-    }
-    {
-      unsigned int sol_cur;
-      for(sol_cur=0;sol_cur<nbr_sol;sol_cur++)
-        if(nbr_max<cluster_offset[sol_cur].nbr)
-        {
-          nbr_max=cluster_offset[sol_cur].nbr;
-          cluster_size_best=cluster_size;
-          *offset=cluster_offset[sol_cur].offset;
-        }
-    }
-  }
-  return cluster_size_best;
-}
 
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset)
 {

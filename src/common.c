@@ -303,7 +303,7 @@ void create_dir(const char *dir_name, const unsigned int is_dir_name)
       mkdir(path, 0775);
 #endif
 #else
-#error You need a mkdir function!
+#warn You need a mkdir function!
 #endif
     }
   } while(pos!=NULL);

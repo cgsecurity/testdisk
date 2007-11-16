@@ -27,7 +27,6 @@ partition_t *new_whole_disk(const disk_t *disk_car);
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset);
 alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
 void list_cluster_free(list_cluster_t *list_cluster);
-unsigned int find_blocksize_cluster(list_cluster_t *list_cluster, const unsigned int default_blocksize, uint64_t *offset);
 void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space);
 alloc_data_t *init_search_space(const partition_t *partition, const disk_t *disk_car);
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space);
