@@ -67,13 +67,13 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
     if(le16(p16[offset_o])!=0)
     {
       /* Not free */
-      if(end_free+1==partition->part_offset+(uint64_t)(start_data+(prev_cluster-2)*cluster_size)*sector_size)
+      if(end_free+1==partition->part_offset+(start_data+(uint64_t)(prev_cluster-2)*cluster_size)*sector_size)
 	end_free+=cluster_size*sector_size;
       else
       {
 	if(start_free != end_free)
 	  del_search_space(list_search_space, start_free, end_free);
-	start_free=partition->part_offset+(uint64_t)(start_data+(prev_cluster-2)*cluster_size)*sector_size;
+	start_free=partition->part_offset+(start_data+(uint64_t)(prev_cluster-2)*cluster_size)*sector_size;
 	end_free=start_free+(uint64_t)cluster_size*sector_size-1;
       }
     }
@@ -118,8 +118,8 @@ static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partitio
       {
 	if(start_free != end_free)
 	  del_search_space(list_search_space, start_free, end_free);
-	start_free=partition->part_offset+(uint64_t)(start_data+(prev_cluster-2)*cluster_size)*sector_size;
-	end_free=partition->part_offset+(uint64_t)(start_data+(prev_cluster-2+1)*cluster_size)*sector_size-1;
+	start_free=partition->part_offset+(start_data+(uint64_t)(prev_cluster-2)*cluster_size)*sector_size;
+	end_free=start_free+(uint64_t)cluster_size*sector_size-1;
       }
     }
   }

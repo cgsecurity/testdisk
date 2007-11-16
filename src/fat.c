@@ -521,7 +521,8 @@ static unsigned int get_prev_cluster(disk_t *disk_car,const partition_t *partiti
 int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
   upart_type_t upart_type=UP_UNK;
-  unsigned long int start_fat1,start_fat2,start_rootdir,start_data,no_of_cluster,fat_length,fat_length_calc,part_size,end_data;
+  uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
+  unsigned long int no_of_cluster,fat_length,fat_length_calc;
   const char *buffer=(const char*)fat_header;
   if(!(le16(fat_header->marker)==0xAA55
         && (fat_header->ignored[0]==0xeb || fat_header->ignored[0]==0xe9)
@@ -709,7 +710,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
       log_error("Bad root_cluster\n");
       return 1;
     }
-    start_rootdir=start_data+(le32(fat_header->root_cluster)-2)*fat_header->cluster_size;
+    start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->cluster_size;
     fat_length_calc=((no_of_cluster+2+disk_car->sector_size/4-1)*4/disk_car->sector_size);
     partition->upart_type=UP_FAT32;
     if(memcmp(buffer+FAT_NAME2,"FAT32   ",8)!=0)
@@ -722,7 +723,9 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   {
     if(part_size > partition->part_size/disk_car->sector_size)
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SIZE);
+      aff_buffer(BUFFER_ADD, "Error: size boot_sector %lu > partition %lu\n",
+          (long unsigned)part_size,
+          (long unsigned)(partition->part_size/disk_car->sector_size));
       log_error("test_FAT size boot_sector %lu > partition %lu\n",
           (long unsigned)part_size,
           (long unsigned)(partition->part_size/disk_car->sector_size));
@@ -731,20 +734,20 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     else
     {
       if(verbose>0 && part_size!=partition->part_size)
-        log_warning("test_FAT size boot_sector %lu, partition %lu\n",
+        log_info("Info: size boot_sector %lu, partition %lu\n",
             (long unsigned)part_size,
             (long unsigned)(partition->part_size/disk_car->sector_size));
     }
   }
   if(verbose>0)
   {
-    log_info("FAT1 : %lu-%lu\n",start_fat1,start_fat1+fat_length-1);
-    log_info("FAT2 : %lu-%lu\n",start_fat2,start_fat2+fat_length-1);
-    log_info("start_rootdir : %lu",start_rootdir);
+    log_info("FAT1 : %lu-%lu\n", (long unsigned)start_fat1, (long unsigned)(start_fat1+fat_length-1));
+    log_info("FAT2 : %lu-%lu\n", (long unsigned)start_fat2, (long unsigned)(start_fat2+fat_length-1));
+    log_info("start_rootdir : %lu", (long unsigned)start_rootdir);
     if(partition->upart_type==UP_FAT32)
       log_info(" root cluster : %u",(unsigned int)le32(fat_header->root_cluster));
-    log_info("\nData : %lu-%lu\n",start_data,end_data);
-    log_info("sectors : %lu\n",part_size);
+    log_info("\nData : %lu-%lu\n", (long unsigned)start_data, (long unsigned)end_data);
+    log_info("sectors : %lu\n", (long unsigned)part_size);
     log_info("cluster_size : %u\n",fat_header->cluster_size);
     log_info("no_of_cluster : %lu (2 - %lu)\n", no_of_cluster,no_of_cluster+1);
     log_info("fat_length %lu calculated %lu\n",fat_length,fat_length_calc);
@@ -906,7 +909,11 @@ int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct f
   if((fat_header->cluster_size>0)&&(fat_header->cluster_size<=128))
   {
     unsigned char *buffer=(unsigned char*)MALLOC(fat_header->cluster_size*disk_car->sector_size);
-    if(disk_car->read(disk_car,fat_header->cluster_size*disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(le32(fat_header->root_cluster)-2)*fat_header->cluster_size)*disk_car->sector_size))
+    if(disk_car->read(disk_car,
+          fat_header->cluster_size*disk_car->sector_size,
+          buffer,
+          partition->part_offset +
+          (le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->cluster_size) * disk_car->sector_size))
     {
       log_error("fat32_set_part_name() cannot read FAT32 root cluster.\n");
     }

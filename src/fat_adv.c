@@ -93,9 +93,9 @@ static upart_type_t no_of_cluster2part_type(const unsigned long int no_of_cluste
 static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int cluster_size, const unsigned int fat_length,const int interface, const upart_type_t upart_type, const unsigned int fats, char **current_cmd);
 static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int cluster_size, const unsigned long int no_of_cluster, const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats);
 static int write_FAT_boot_code_aux(unsigned char *buffer);
-static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *cluster_size, unsigned long int *offset);
+static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *cluster_size, uint64_t *offset);
 static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset,const int verbose);
-static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *cluster_size, unsigned long int *offset, const int verbose, const unsigned long int part_size_in_sectors);
+static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *cluster_size, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors);
 static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset, const int verbose);
 static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length,const int verbose, unsigned int root_size_max,const upart_type_t upart_type, const unsigned int fats);
 static int calcul_cluster_size(const upart_type_t upart_type, const unsigned long int data_size, const unsigned int fat_length, const unsigned int sector_size);
@@ -314,7 +314,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int cluster_size, const unsigned long int no_of_cluster,const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats)
 {
   unsigned long int root_cluster=0;
-  const unsigned int start_data=reserved+fats*fat_length;
+  const uint64_t start_data=reserved+fats*fat_length;
   if(verbose>0)
     log_trace("fat32_find_root_cluster(cluster_size=%u,no_of_cluster=%lu,reserved=%u,fat_length=%u,expert=%u,first_free_cluster=%u)\n",cluster_size,no_of_cluster,reserved,fat_length,expert,first_free_cluster);
   if(cluster_size==0)
@@ -349,7 +349,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
         ind_stop|=check_enter_key_or_s(stdscr);
       }
 #endif
-      if(disk_car->read(disk_car,cluster_size*disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(start_data+(root_cluster-2)*cluster_size)*disk_car->sector_size)==0)
+      if(disk_car->read(disk_car,cluster_size*disk_car->sector_size, buffer,
+            partition->part_offset+(start_data+(uint64_t)(root_cluster-2)*cluster_size)*disk_car->sector_size)==0)
       {
         if(verbose>1)
         {
@@ -425,10 +426,13 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
           {
             if((buffer[i*0x20]!=DELETED_FLAG) && (buffer[i*0x20+0xB]!= ATTR_EXT && (buffer[i*0x20+0xB]&ATTR_DIR)!=0)) /* Test directory */
             {
-              unsigned long int cluster=(buffer[i*0x20+0x15]<<24)+(buffer[i*0x20+0x14]<<16)+
+              unsigned int cluster=(buffer[i*0x20+0x15]<<24)+(buffer[i*0x20+0x14]<<16)+
                 (buffer[i*0x20+0x1B]<<8)+buffer[i*0x20+0x1A];
-              /*	  log_debug("cluster %ld\n",cluster); */
-              if((cluster>2+no_of_cluster)||(get_subdirectory(disk_car,partition->part_offset+(uint64_t)(start_data+(cluster-2)*cluster_size)*disk_car->sector_size,cluster)!=0))
+              /*	  log_debug("cluster %u\n",cluster); */
+              if(cluster>2+no_of_cluster ||
+                  get_subdirectory(disk_car,
+                    partition->part_offset+(start_data+(uint64_t)(cluster-2)*cluster_size) * disk_car->sector_size,
+                    cluster)!=0)
               {
                 /*	    if(verbose) */
                 /*	      log_debug("failed with %s\n",&buffer[i*0x20]); */
@@ -464,7 +468,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
                     return new_root_cluster;
                   }
                   /* Read the cluster */
-                  if(disk_car->read(disk_car,cluster_size*disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(start_data+(tmp-2)*cluster_size)*disk_car->sector_size)!=0)
+                  if(disk_car->read(disk_car,cluster_size*disk_car->sector_size, buffer,
+                        partition->part_offset+(start_data+(uint64_t)(tmp-2)*cluster_size)*disk_car->sector_size)!=0)
                   {
                     log_critical("cluster can't be read\n");
                     free(buffer);
@@ -620,7 +625,7 @@ static int file2entry(struct msdos_dir_entry *de, const file_data_t *current_fil
 
 static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int cluster_size, const int verbose, file_data_t *rootdir_list, const unsigned int fats)
 {
-  const unsigned int start_data=reserved+fats*fat_length;
+  const uint64_t start_data=reserved+fats*fat_length;
   unsigned int current_entry=0;
   unsigned int cluster;
   unsigned char *buffer;
@@ -638,7 +643,8 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
     if(++current_entry==(disk_car->sector_size*cluster_size/sizeof(struct msdos_dir_entry)))
     {
       unsigned int next_cluster;
-      if(disk_car->write(disk_car,disk_car->sector_size*cluster_size, buffer, partition->part_offset+(uint64_t)(start_data+(cluster-2)*cluster_size)*disk_car->sector_size)!=0)
+      if(disk_car->write(disk_car,disk_car->sector_size*cluster_size, buffer,
+            partition->part_offset+(start_data+(uint64_t)(cluster-2)*cluster_size)*disk_car->sector_size)!=0)
       {
 	display_message("Write error: Can't create FAT32 root cluster.\n");
       }
@@ -651,7 +657,8 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
       cluster=next_cluster;
     }
   }
-  if(disk_car->write(disk_car,disk_car->sector_size*cluster_size, buffer, partition->part_offset+(uint64_t)(start_data+(cluster-2)*cluster_size)*disk_car->sector_size)!=0)
+  if(disk_car->write(disk_car,disk_car->sector_size*cluster_size, buffer,
+        partition->part_offset+(start_data+(uint64_t)(cluster-2)*cluster_size)*disk_car->sector_size)!=0)
   {
     display_message("Write error: Can't create FAT32 root cluster.\n");
   }
@@ -798,7 +805,7 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
     return 0;
   }
   {
-    unsigned long int start_data=reserved+fats*fat_length+(root_size_max+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
+    uint64_t start_data=reserved+fats*fat_length+(root_size_max+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
     unsigned int cluster_size=calcul_cluster_size(upart_type,partition->part_size/disk_car->sector_size-start_data,fat_length,disk_car->sector_size);
     dir_list=dir_fat_aux(buffer_dir,disk_car->sector_size*nbr_sector,cluster_size);
   }
@@ -817,13 +824,14 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
     }
     for(dir_entries=(disk_car->sector_size/32);dir_entries<=root_size_max;dir_entries+=(disk_car->sector_size/32))
     {
-      unsigned long int start_data=reserved+fats*fat_length+(dir_entries+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
+      uint64_t start_data=reserved+fats*fat_length+(dir_entries+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
       unsigned int cluster_size=calcul_cluster_size(upart_type,partition->part_size/disk_car->sector_size-start_data,fat_length,disk_car->sector_size);
       if(verbose>1)
       {
         log_verbose("dir_entries %u, cluster_size %u\n",dir_entries,cluster_size);
       }
-      if(disk_car->read(disk_car, disk_car->sector_size, buffer_dir, partition->part_offset+(uint64_t)(start_data+(new_inode-2)*cluster_size)*disk_car->sector_size)==0)
+      if(disk_car->read(disk_car, disk_car->sector_size, buffer_dir,
+            partition->part_offset+(start_data+(uint64_t)(new_inode-2)*cluster_size)*disk_car->sector_size)==0)
       {
         if((memcmp(&buffer_dir[0],".          ",8+3)==0)&&(memcmp(&buffer_dir[0x20],"..         ",8+3)==0))
         {
@@ -1848,7 +1856,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
 
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
-static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *cluster_size, unsigned long int *offset_org)
+static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *cluster_size, uint64_t *offset_org)
 {
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
@@ -1909,7 +1917,7 @@ static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int
   return find_cluster_size_aux(sector_cluster,nbr_subdir,cluster_size,offset_org,verbose,partition->part_size/disk_car->sector_size);
 }
 
-static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *cluster_size, unsigned long int *offset, const int verbose, const unsigned long int part_size_in_sectors)
+static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *cluster_size, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors)
 {
   cluster_offset_t *cluster_offset;
   unsigned int i,j;
@@ -1935,11 +1943,12 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
           case 32:
           case 64:
           case 128:
-            if(sector_cluster[i].sector>(sector_cluster[i].cluster-2)*(*cluster_size))
+            /* FIXME BUG */
+            if(sector_cluster[i].sector > (uint64_t)(sector_cluster[i].cluster-2) * (*cluster_size))
             {
               unsigned int sol_cur;
               unsigned int found=0;
-              unsigned int offset_tmp=sector_cluster[i].sector-(sector_cluster[i].cluster-2)*cluster_size_tmp;
+              uint64_t offset_tmp=sector_cluster[i].sector-(uint64_t)(sector_cluster[i].cluster-2)*cluster_size_tmp;
               for(sol_cur=0;sol_cur<nbr_sol && !found;sol_cur++)
               {
                 if(cluster_offset[sol_cur].cluster_size==cluster_size_tmp &&
@@ -2003,7 +2012,8 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
     free(cluster_offset);
     if(nbr_max==0)
       return 0;
-    log_info("Selected: cluster_size=%u offset=%lu nbr=%u\n",*cluster_size, *offset,nbr_max);
+    log_info("Selected: cluster_size=%u offset=%lu nbr=%u\n", *cluster_size,
+        (long unsigned int)(*offset),nbr_max);
     return 1;
   }
 }
@@ -2160,7 +2170,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
   if((upart_type!=UP_FAT12 && upart_type!=UP_FAT16 && upart_type!=UP_FAT32)||
       (fat_length==0)||(reserved==0))
   {
-    unsigned long int start_data=0;
+    uint64_t start_data=0;
     if(find_cluster_size(disk_car, partition, verbose, dump_ind, interface,&cluster_size,&start_data)==0)
     {
       display_message("Can't find cluster size\n");
@@ -2235,7 +2245,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
     unsigned int first_free_cluster=0;
     /* Initialized by fat32_find_root_cluster */
     unsigned long int root_cluster=0;
-    unsigned long int start_data=reserved+fats*fat_length;
+    uint64_t start_data=reserved+fats*fat_length;
     /* FAT1x: Find size of root directory */
     if((upart_type==UP_FAT12) || (upart_type==UP_FAT16))
     {
@@ -2261,7 +2271,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
     if(partition->part_size/disk_car->sector_size<=start_data)
     {
       log_error("Error part_size=%lu <= start_data=%lu\n",
-          (unsigned long)(partition->part_size/disk_car->sector_size), start_data);
+          (unsigned long)(partition->part_size/disk_car->sector_size), (unsigned long)start_data);
       return 0;
     }
     data_size=partition->part_size/disk_car->sector_size-start_data;
@@ -2349,7 +2359,8 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
 
 int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose)
 {
-  unsigned long int start_rootdir,start_data,fat_length,sector;
+  unsigned long int fat_length,sector;
+  uint64_t start_rootdir,start_data;
   unsigned int error=0;
   struct fat_boot_sector *fat_header;
   unsigned char *buffer;
@@ -2440,7 +2451,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
 #endif
     {
       struct fat_boot_sector *fat_header;
-      unsigned long int part_size,start_data;
+      uint64_t part_size,start_data;
       unsigned char *buffer;
       buffer=MALLOC(disk_car->sector_size);
       fat_header=(struct fat_boot_sector *)buffer;

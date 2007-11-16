@@ -255,7 +255,7 @@ static file_data_t *fat12_dir(disk_t *disk_car, const partition_t *partition, di
 	((cluster&0x0ff8)!=(unsigned)FAT12_EOC) && (cluster>=2) && (nbr_cluster<10) && (stop==0);
 	cluster=get_next_cluster(disk_car,partition, UP_FAT12,le16(fat_header->reserved), cluster), nbr_cluster++)
     {
-      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header)+(cluster-2)*cluster_size)*fat_sector_size(fat_header);
+      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header)+(uint64_t)(cluster-2)*cluster_size)*fat_sector_size(fat_header);
       if(dir_data->verbose>0)
       {
         log_info("FAT12: cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/fat_sector_size(fat_header)));
@@ -301,7 +301,7 @@ static file_data_t *fat16_dir(disk_t *disk_car, const partition_t *partition, di
         ((cluster&0xfff8)!=(unsigned)FAT16_EOC) && (cluster>=2) && (nbr_cluster<10)&&(stop==0);
         cluster=get_next_cluster(disk_car,partition, UP_FAT16,le16(fat_header->reserved), cluster), nbr_cluster++)
     {
-      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size+(cluster-2)*cluster_size)*disk_car->sector_size;
+      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size+(uint64_t)(cluster-2)*cluster_size)*disk_car->sector_size;
       if(dir_data->verbose>0)
       {
         log_info("FAT16 cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/disk_car->sector_size));
@@ -350,7 +350,7 @@ static file_data_t *fat32_dir(disk_t *disk_car, const partition_t *partition, di
         ((cluster&0xffffff8)!=(unsigned)FAT32_EOC) && (cluster>=2) && (nbr_cluster<10) && (stop==0);
         cluster=get_next_cluster(disk_car,partition, UP_FAT32,le16(fat_header->reserved), cluster), nbr_cluster++)
     {
-      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(cluster-2)*cluster_size)*fat_sector_size(fat_header);
+      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(uint64_t)(cluster-2)*cluster_size)*fat_sector_size(fat_header);
       if(dir_data->verbose>0)
       {
         log_verbose("FAT32 cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/fat_sector_size(fat_header)));
