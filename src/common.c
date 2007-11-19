@@ -187,6 +187,7 @@ static inline unsigned char convert_char(unsigned char car)
   switch(car)
   {
     case ' ':
+    case '*':
     case '+':
     case ',':
     case '.':

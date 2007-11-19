@@ -99,7 +99,7 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
 static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset, const int verbose);
 static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length,const int verbose, unsigned int root_size_max,const upart_type_t upart_type, const unsigned int fats);
 static int calcul_cluster_size(const upart_type_t upart_type, const unsigned long int data_size, const unsigned int fat_length, const unsigned int sector_size);
-static int check_entree(const unsigned char *entree);
+static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int entry_nr);
 static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int cluster_size, const int verbose, file_data_t *rootdir_list, const unsigned int fats);
 
 static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate);
@@ -107,53 +107,56 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
 static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_offset, const unsigned long int i);
 
 /*
- * 0 entree is free
- * 1 entree is used
+ * 0 entry is free
+ * 1 entry is used
  * 2 not an entry
  * */
-static int check_entree(const unsigned char *entree)
+static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int entry_nr)
 {
   int i;
-  if((entree[0xB]&ATTR_EXT_MASK)==ATTR_EXT)
+  if((entry[0xB]&ATTR_EXT_MASK)==ATTR_EXT)
     return 1;
-/* log_trace("check_entree %02x\n",*(entree+0)); */
-  if(entree[0]==0)
+/* log_trace("check_FAT_dir_entry %02x\n",*(entry+0)); */
+  if(entry[0]==0)
   {
     for(i=0;i<0x20;i++)
-      if(*(entree+i)!='\0')
+      if(*(entry+i)!='\0')
         return 2;
     return 0;
   }
-  if(entree[0]==0x20)
+  if(entry[0]==0x20)
     return 2;
-  if(entree[0]==0xE5)
+  if(entry[0]==0xE5)
+    return 1;
+  if(entry_nr<10 && (entry[0xB]&ATTR_VOLUME)==ATTR_VOLUME)
     return 1;
   for(i=0;i<8+3;i++)
   {
-    if((*(entree+i)>=0x06 && *(entree+i)<=0x1f)||
-      (*(entree+i)>=0x3a && *(entree+i)<=0x3f)||
-      (*(entree+i)>='a' && *(entree+i)<='z'))
+    const unsigned char car=*(entry+i);
+    if((car>=0x06 && car<=0x1f)||
+      (car>=0x3a && car<=0x3f)||
+      (car>='a' && car<='z'))
       return 2;
-    switch(*(entree+i))
+    switch(car)
     {
       case 0x1:
       case 0x2:
       case 0x3:
       case 0x4:
-      case 0x22:
-      case 0x2A:
-      case 0x2B:
-      case 0x2C:
-      case 0x2E:
-      case 0x2F:
-      case 0x5B:
-      case 0x5C:
-      case 0x5D:
-      case 0x7C:
-/*log_trace("check_entree bad  %c (%02x)\n",*(entree+i),*(entree+i)); */
+      case '"':
+      case '*':
+      case '+':
+      case ',':
+      case '.':
+      case '/':
+      case '[':
+      case '\\':
+      case ']':
+      case '|':
+/*log_trace("check_FAT_dir_entry bad  %c (%02x)\n",car,car); */
 	return 2;
       default:
-/*log_trace("check_entree good %c (%02x)\n",*(entree+i),*(entree+i)); */
+/*log_trace("check_FAT_dir_entry good %c (%02x)\n",car,car); */
 	break;
     }
   }
@@ -397,7 +400,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
           int etat=0,nb_subdir=0,nb_subdir_ok=0;
           for(i=0;found && (i<cluster_size*disk_car->sector_size/0x20);i++)
           {
-            int res=check_entree(&buffer[i*0x20]);
+            int res=check_FAT_dir_entry(&buffer[i*0x20],i);
             if(verbose>2)
               log_verbose("fat32_find_root_cluster root_cluster=%lu i=%u etat=%d res=%d\n",root_cluster,i,etat,res);
             switch(res)
@@ -478,7 +481,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
                   /* Check if this cluster is a directory structure. FAT can be damaged */
                   for(i=0;i<16*cluster_size;i++)
                   {
-                    if(check_entree(&buffer[i*0x20])!=1)
+                    if(check_FAT_dir_entry(&buffer[i*0x20],i)!=1)
                     {
                       log_error("cluster data is not a directory structure\n");
                       free(buffer);
@@ -698,11 +701,11 @@ static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const
       {
         if(verbose>1)
         {
-          log_verbose("find_dir_entries sector=%u entree=%d dir_entry_found=%d\n",offset-i,j,dir_entry_found);
+          log_verbose("find_dir_entries sector=%u entry=%d dir_entry_found=%d\n",offset-i,j,dir_entry_found);
         }
         if(dir_entry_found==0)
         { /* Should be between the last directory entries and the first cluster */
-          switch(check_entree(&buffer[j*32]))
+          switch(check_FAT_dir_entry(&buffer[j*32],j))
           {
             case 0:	/* Empty entry */
               break;
@@ -716,7 +719,7 @@ static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const
         }
         else
         {
-          if(check_entree(&buffer[j*32])!=1)
+          if(check_FAT_dir_entry(&buffer[j*32],j)!=1)
           { /* Must be in the FAT table */
             free(buffer);
             return (i-1)*(disk_car->sector_size/32);
@@ -748,7 +751,7 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
     {
       for(j=0;j<(disk_car->sector_size/32);j++)
       {
-        if(check_entree(&buffer[j*0x20])==0)
+        if(check_FAT_dir_entry(&buffer[j*0x20],j)==0)
         { /* Empty entry */
           if(etat==0)
           {
@@ -2393,7 +2396,7 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
       unsigned int i;
       for(i=0;error==0 && (i<disk_car->sector_size/0x20);i++)
       {
-	if(check_entree(&buffer[i*0x20])==2)
+	if(check_FAT_dir_entry(&buffer[i*0x20],i)==2)
 	{
 	  error=1;
 	}
