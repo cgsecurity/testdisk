@@ -73,16 +73,16 @@ struct sector_cluster_struct
 struct info_offset_struct
 {
   unsigned long int offset;
-  unsigned int nbr;
-  unsigned int fat_type;
+  unsigned int  nbr;
+  unsigned int  fat_type;
 };
 
 struct cluster_offset_struct
 {
-  unsigned int cluster_size;
+  unsigned int  cluster_size;
   unsigned long int offset;
-  unsigned int nbr;
-  unsigned int first_sol;
+  unsigned int  nbr;
+  unsigned int  first_sol;
 };
 static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface, const unsigned int expert, unsigned int *fats);
 static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface,unsigned int *nbr_offset,info_offset_t *info_offset, const unsigned int max_nbr_offset);

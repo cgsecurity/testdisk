@@ -43,6 +43,8 @@
 #include "lang.h"
 #include "log.h"
 /* #include "guid_cmp.h" */
+extern const arch_fnct_t arch_i386;
+extern const arch_fnct_t arch_mac;
 
 static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header,const int my_type,const int verbose, const int dump_ind);
 static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find);
@@ -431,18 +433,24 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
 
 int is_part_ntfs(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
+  if(partition->arch==&arch_i386)
   {
-    case P_NTFS:
-    case P_NTFSH:
-      return 1;
-    default:
-      break;
+    switch(partition->part_type_i386)
+    {
+      case P_NTFS:
+      case P_NTFSH:
+        return 1;
+      default:
+        break;
+    }
   }
   /*
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-    return 1;
-    */
+  else if(partition->arch==&arch_gpt)
+  {
+    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
+      return 1;
+  }
+  */
   return 0;
 }
 

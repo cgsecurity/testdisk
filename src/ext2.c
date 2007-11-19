@@ -134,8 +134,8 @@ int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t
         le16(sb->s_mnt_count), le16(sb->s_max_mnt_count),
         (unsigned int)le32(sb->s_blocks_per_group));
     log_info("recover_EXT2: s_blocksize=%u\n", partition->blocksize);
-    log_info("recover_EXT2: s_blocks_count %u\n",(unsigned int)le32(sb->s_blocks_count));
-    log_info("recover_EXT2: part_size %lu\n",(long unsigned)(partition->part_size/disk_car->sector_size));
+    log_info("recover_EXT2: s_blocks_count %u\n", (unsigned int)le32(sb->s_blocks_count));
+    log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size/disk_car->sector_size));
   }
   return 0;
 }

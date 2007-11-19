@@ -48,6 +48,8 @@
 #endif
 #include "log.h"
 /* #include "guid_cmp.h" */
+extern const arch_fnct_t arch_i386;
+extern const arch_fnct_t arch_mac;
 
 static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose);
 static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size);
@@ -1072,18 +1074,24 @@ int is_part_fat(const partition_t *partition)
 
 int is_part_fat12(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
+  if(partition->arch==&arch_i386)
   {
-    case P_12FAT:
-    case P_12FATH:
-      return 1;
-    default:
-      break;
+    switch(partition->part_type_i386)
+    {
+      case P_12FAT:
+      case P_12FATH:
+        return 1;
+      default:
+        break;
+    }
   }
   /*
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-    return 1;
-    */
+  else if(partition->arch==&arch_gpt)
+  {
+     if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
+     return 1;
+  }
+  */
   return 0;
 }
 
@@ -1094,22 +1102,28 @@ int is_fat12(const partition_t *partition)
 
 int is_part_fat16(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
+  if(partition->arch==&arch_i386)
   {
-    case P_16FAT:
-    case P_16FATH:
-    case P_16FATBD_LBA:
-    case P_16FATBD:
-    case P_16FATBDH:
-    case P_16FATBD_LBAH:
-      return 1;
-    default:
-      break;
+    switch(partition->part_type_i386)
+    {
+      case P_16FAT:
+      case P_16FATH:
+      case P_16FATBD_LBA:
+      case P_16FATBD:
+      case P_16FATBDH:
+      case P_16FATBD_LBAH:
+        return 1;
+      default:
+        break;
+    }
   }
   /*
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-    return 1;
-    */
+  else if(partition->arch==&arch_gpt)
+  {
+    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
+      return 1;
+  }
+   */
   return 0;
 }
 
@@ -1120,22 +1134,31 @@ int is_fat16(const partition_t *partition)
 
 int is_part_fat32(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
+  if(partition->arch==&arch_i386)
   {
-    case P_32FAT:
-    case P_32FAT_LBA:
-    case P_32FATH:
-    case P_32FAT_LBAH:
-      return 1;
-    default:
-      break;
+    switch(partition->part_type_i386)
+    {
+      case P_32FAT:
+      case P_32FAT_LBA:
+      case P_32FATH:
+      case P_32FAT_LBAH:
+        return 1;
+      default:
+        break;
+    }
   }
-  if(partition->part_type_mac==PMAC_FAT32)
-    return 1;
+  else if(partition->arch==&arch_mac)
+  {
+    if(partition->part_type_mac==PMAC_FAT32)
+      return 1;
+  }
   /*
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-    return 1;
-    */
+  else if(partition->arch==&arch_gpt)
+  {
+    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
+      return 1;
+  }
+   */
   return 0;
 }
 

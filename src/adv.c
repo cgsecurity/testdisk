@@ -51,6 +51,13 @@
 #include "log.h"
 #include "guid_cmp.h"
 
+extern const arch_fnct_t arch_gpt;
+extern const arch_fnct_t arch_i386;
+extern const arch_fnct_t arch_mac;
+extern const arch_fnct_t arch_none;
+extern const arch_fnct_t arch_sun;
+extern const arch_fnct_t arch_xbox;
+
 #define INTER_ADV_X	0
 #define INTER_ADV_Y	23
 #define INTER_ADV	15
@@ -132,23 +139,28 @@ static int is_part_hfsp(const partition_t *partition)
 
 int is_part_linux(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
+  if(partition->arch==&arch_i386)
   {
-    case P_LINUX:
+    if(partition->part_type_i386==P_LINUX)
       return 1;
   }
-  switch(partition->part_type_sun)
+  else if(partition->arch==&arch_sun)
   {
-    case PSUN_LINUX:
+    if(partition->part_type_sun==PSUN_LINUX)
       return 1;
   }
-  switch(partition->part_type_mac)
+  else if(partition->arch==&arch_mac)
   {
-    case PMAC_LINUX:
+    if(partition->part_type_mac==PMAC_LINUX)
       return 1;
   }
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0)
-    return 1;
+  /*
+  else if(partition->arch==&arch_gpt)
+  {
+    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0)
+      return 1;
+  }
+  */
   return 0;
 }
 

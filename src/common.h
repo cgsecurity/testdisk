@@ -304,8 +304,8 @@ struct param_disk_struct
 
 struct partition_struct
 {
-  uint64_t part_offset;
-  uint64_t part_size;
+  uint64_t      part_offset;
+  uint64_t      part_size;
   uint64_t      sborg_offset;
   uint64_t      sb_offset;
   unsigned int  sb_size;
@@ -320,9 +320,9 @@ struct partition_struct
   status_type_t status;
   unsigned int  order;
   errcode_type_t errcode;
-  char fsname[80];
-  char partname[80];
-  char info[80];
+  char          fsname[80];
+  char          partname[80];
+  char          info[80];
   const arch_fnct_t *arch;
 };
 
