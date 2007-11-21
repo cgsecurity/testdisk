@@ -120,7 +120,7 @@ static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int en
   if(entry[0]==0)
   {
     for(i=0;i<0x20;i++)
-      if(*(entry+i)!='\0')
+      if(entry[i]!='\0')
         return 2;
     return 0;
   }
@@ -132,7 +132,7 @@ static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int en
     return 1;
   for(i=0;i<8+3;i++)
   {
-    const unsigned char car=*(entry+i);
+    const unsigned char car=entry[i];
     if((car>=0x06 && car<=0x1f)||
       (car>=0x3a && car<=0x3f)||
       (car>='a' && car<='z'))
@@ -1621,39 +1621,19 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
   info_offset_t info_offset[0x400];
   upart_type_t upart_type=UP_UNK;
   fat_find_type(disk_car, partition,max_offset,p_fat12,p_fat16,p_fat32,verbose,dump_ind,interface,&nbr_offset,&info_offset[0], 0x400);
-  /*
-  info_offset[0].fat_type=32;
-  info_offset[0].offset=32;
-  info_offset[0].nbr=1;
-  info_offset[1].fat_type=32;
-  info_offset[1].offset=40;
-  info_offset[1].nbr=921;
-  info_offset[2].fat_type=32;
-  info_offset[2].offset=565;
-  info_offset[2].nbr=1;
-  info_offset[3].fat_type=32;
-  info_offset[3].offset=3064;
-  info_offset[3].nbr=921;
-  info_offset[4].fat_type=32;
-  info_offset[4].offset=3589;
-  info_offset[4].nbr=1;
-  info_offset[5].fat_type=32;
-  info_offset[5].offset=35190;
-  info_offset[5].nbr=1;
-  nbr_offset=6;
-  */
   for(i=0;i<nbr_offset;i++)
   {
+    const uint64_t end=partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size;
     log_info("FAT%u at %lu(%u/%u/%u), nbr=%u\n",info_offset[i].fat_type,info_offset[i].offset,
-	offset2cylinder(disk_car,partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size),
-	offset2head(disk_car,partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size),
-	offset2sector(disk_car,partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size),
+	offset2cylinder(disk_car, end),
+	offset2head(disk_car,end),
+	offset2sector(disk_car,end),
 	info_offset[i].nbr);
 #ifdef HAVE_NCURSES
     if(dump_ind>0 && interface>0)
     {
       unsigned char *buffer=MALLOC(disk_car->sector_size);
-      if(disk_car->read(disk_car,disk_car->sector_size, &buffer, partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size)==0)
+      if(disk_car->read(disk_car,disk_car->sector_size, &buffer, end)==0)
       {
 	dump_ncurses(buffer,disk_car->sector_size);
       }
@@ -1933,7 +1913,7 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
   {
     for(j=i+1;j<nbr_sector_cluster;j++)
     {
-      if(sector_cluster[j].cluster>sector_cluster[i].cluster)
+      if(sector_cluster[j].cluster > sector_cluster[i].cluster)
       {
         unsigned int cluster_size_tmp=(sector_cluster[j].sector-sector_cluster[i].sector)/(sector_cluster[j].cluster-sector_cluster[i].cluster);
         switch(cluster_size_tmp)
@@ -1946,8 +1926,7 @@ static int find_cluster_size_aux(const sector_cluster_t *sector_cluster, const u
           case 32:
           case 64:
           case 128:
-            /* FIXME BUG */
-            if(sector_cluster[i].sector > (uint64_t)(sector_cluster[i].cluster-2) * (*cluster_size))
+            if(sector_cluster[i].sector > (uint64_t)(sector_cluster[i].cluster-2) * cluster_size_tmp)
             {
               unsigned int sol_cur;
               unsigned int found=0;

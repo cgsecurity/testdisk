@@ -491,7 +491,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
     offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
-      if(disk_car->read(disk_car,disk_car->sector_size, &buffer, hd_offset)!=0)
+      if(disk_car->read(disk_car,disk_car->sector_size, buffer, hd_offset)!=0)
       {
         log_error("fat32_get_prev_cluster error\n"); return 0;
       }
