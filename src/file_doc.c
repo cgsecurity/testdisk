@@ -118,6 +118,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="xlr";
     }
+    else if(find_in_mem(buffer,buffer_size,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)!=NULL)
+    { /* HP Photosmart Photo Printing Album */
+      file_recovery_new->extension="albm";
+    }
     else if(find_in_mem(buffer,buffer_size,"Worksheet",9)!=NULL ||
 	find_in_mem(buffer,buffer_size,"Book",4)!=NULL || 
 	find_in_mem(buffer,buffer_size,"Workbook",8)!=NULL || 
