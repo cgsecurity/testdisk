@@ -417,8 +417,7 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
     current_disk=list_disk;
   if(current_disk==NULL)
   {
-    intrf_no_disk("TestDisk");
-    return 0;
+    return intrf_no_disk("TestDisk");
   }
   if(*current_cmd!=NULL)
   {
@@ -458,8 +457,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   current_disk=list_disk;
   if(current_disk==NULL)
   {
-    intrf_no_disk("TestDisk");
-    return 0;
+    return intrf_no_disk("TestDisk");
   }
     /* ncurses interface */
   while(1)

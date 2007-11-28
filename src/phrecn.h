@@ -19,5 +19,5 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-void do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char**cmd_run);
+int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char**cmd_run);
 

@@ -92,7 +92,7 @@ int get_string(char *str, int len, char *def);
 void not_implemented(const char *msg);
 void screen_buffer_to_log(void);
 int interface_partition_type(disk_t *disk_car, const int verbose, char**current_cmd);
-void intrf_no_disk(const char *prog_name);
+int intrf_no_disk(const char *prog_name);
 char *ask_log_location(const char*filename);
 int ask_log_creation(void);
 char *ask_location(const char*msg, const char *src_dir);

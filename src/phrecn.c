@@ -1807,7 +1807,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 }
 #endif
 
-void do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
+int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
 {
   const list_disk_t *current_disk=list_disk;
   static alloc_data_t list_search_space={
@@ -1842,8 +1842,7 @@ void do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *l
   }
   if(current_disk==NULL)
   {
-    intrf_no_disk("PhotoRec");
-    return;
+    return intrf_no_disk("PhotoRec");
   }
   if(*current_cmd!=NULL)
   {
@@ -1859,6 +1858,7 @@ void do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *l
 #endif
   }
   log_info("\n");
+  return 0;
 }
 
 #ifdef HAVE_NCURSES

@@ -91,6 +91,7 @@ void aff_copy(WINDOW *window)
 int main( int argc, char **argv )
 {
   int i;
+  int use_sudo=0;
   int help=0, verbose=0, dump_ind=0;
   int create_log=0;     /* 0: no_log, 1: append, 2 create */
   int do_list=0;
@@ -315,7 +316,7 @@ int main( int argc, char **argv )
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     log_info("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
   log_info("\n");
-  do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
+  use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
@@ -366,5 +367,9 @@ int main( int argc, char **argv )
   {
     printf("You have to reboot for the change to take effect.\n");
   }
+#ifdef SUDO_BIN
+  if(use_sudo>0)
+    run_sudo(argc, argv);
+#endif
   return 0;
 }

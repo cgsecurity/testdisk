@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.9-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="October 2007"
+TESTDISKDATE="November 2007"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -138,6 +138,15 @@ AC_ARG_WITH(giconv-lib,
 AC_ARG_WITH(giconv-includes,
     AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
+AC_ARG_ENABLE([sudo], 
+    AS_HELP_STRING(--enable-sudo,enable use of sudo (default is NO)),
+    [	use_sudo="yes" ],
+    [	use_sudo="no" ])
+
+AC_ARG_WITH(sudo-bin,
+    AS_HELP_STRING(--with-sudo-bin=PROG,location of the sudo binary),
+    [SUDO_BIN="${withval}"])
 
 use_icon=no
 
@@ -470,18 +479,26 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([atexit atoll chdir delscreen dirname dup2 ftruncate getcwd geteuid lstat memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
-if test $ac_cv_func_mkdir = no; then
+AC_CHECK_FUNCS([atexit atoll chdir delscreen dirname dup2 execv ftruncate getcwd geteuid lstat memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
+if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
+
+if test "$ac_cv_func_execv" = "yes" -a "$use_sudo" = "yes";
+then
+    if test -z "$SUDO_BIN"; then
+        AC_PATH_PROG([SUDO], [sudo], [AC_MSG_ERROR([sudo requested but not found])])
+	SUDO_BIN="$SUDO"
+    fi
+    AC_DEFINE_UNQUOTED([SUDO_BIN], "$SUDO_BIN", [Path to sudo for privileged operations])
+fi
+
 #reiserfs_fs_open_fast may not been detected because of lack of -ldal
 OLDLIBS="$LIBS"
-LIBS="$LIBS $testdisk_LDADD -ldal"
+LIBS="$OLDLIBS $testdisk_LDADD -ldal"
 AC_CHECK_FUNCS([reiserfs_fs_open_fast])
-LIBS="$LIBS $testdisk_LDADD"
-AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 LIBS="$OLDLIBS"
-
+AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)

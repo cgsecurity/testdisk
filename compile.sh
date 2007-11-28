@@ -216,13 +216,21 @@ then
   if [ ! -e $compiledir/Makefile ];
   then
   	cd $compiledir
-	if [ "X$crosscompile_target" = 'Xpowerpc-apple-darwin' ];
-	then
+        case "$crosscompile_target" in
+          powerpc-apple-darwin)
 # libewf should work under MacOSX but it hasn't been tested
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf
-	else
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo
+                ;;
+          i586-pc-msdosdjgpp)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv
+                ;;
+          i386-pc-cygwin)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv
+                ;;
+          *)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT
-	fi
+                ;;
+	esac
 	cd $pwd_saved
   fi
   if [ -e $compiledir/Makefile ];

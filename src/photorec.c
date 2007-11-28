@@ -735,6 +735,7 @@ alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_searc
 int main( int argc, char **argv )
 {
   int i;
+  int use_sudo=0;
   int help=0, create_log=0, verbose=0;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -1011,7 +1012,7 @@ int main( int argc, char **argv )
   }
   printf("\n");
   log_info("\n");
-  do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
+  use_sudo=do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
@@ -1025,6 +1026,10 @@ int main( int argc, char **argv )
   {
     printf("PhotoRec exited normally.\n");
   }
+#ifdef SUDO_BIN
+  if(use_sudo>0)
+    run_sudo(argc, argv);
+#endif
   return 0;
 }
 

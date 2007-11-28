@@ -1326,7 +1326,6 @@ char *ask_log_location(const char*filename)
 */
 int ask_log_creation()
 {
-  int command;
   unsigned int menu=0;
   static struct MenuItem menuLogCreation[]=
   {
@@ -1364,6 +1363,7 @@ int ask_log_creation()
   wprintw(stdscr,"Use arrow keys to select, then press Enter key:");
   while(1)
   {
+    int command;
     command = wmenuSelect_ext(stdscr,17, 0, menuLogCreation, 8,
         "CAQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
     switch(command)
@@ -1383,7 +1383,7 @@ int ask_log_creation()
   }
 }
 
-static void intrf_no_disk_ncurses(const char *prog_name)
+static int intrf_no_disk_ncurses(const char *prog_name)
 {
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -1399,18 +1399,28 @@ static void intrf_no_disk_ncurses(const char *prog_name)
   wprintw(stdscr,"Under Win9x, use the DOS version instead.\n");
   wmove(stdscr,10,0);
   wprintw(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
+#elif defined(DJGPP)
 #else
-#ifndef DJGPP
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
+    static const struct MenuItem menuSudo[]=
+    {
+      {'S',"Sudo","Use the sudo command to restart as root"},
+      {'Q',"Quit",""},
+      {0,NULL,NULL}
+    };
+    unsigned int menu=0;
+    int command;
     wprintw(stdscr,"You need to be root to use %s.\n", prog_name);
-#if defined(__APPLE__)
-    wmove(stdscr,9,0);
-    wprintw(stdscr,"Use the sudo command to launch %s.\n", prog_name);
+#ifdef SUDO_BIN
+    command = wmenuSelect_ext(stdscr,21, 0, menuSudo, 8,
+        "SQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
+    if(command=='s' || command=='S')
+      return 1;
+    return 0;
 #endif
   }
-#endif
 #endif
 #endif
   wmove(stdscr,22,0);
@@ -1419,6 +1429,7 @@ static void intrf_no_disk_ncurses(const char *prog_name)
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   while(wgetch(stdscr)==ERR);
+  return 0;
 }
 
 int check_enter_key_or_s(WINDOW *window)
@@ -1995,13 +2006,14 @@ int display_message(const char*msg)
 #endif
 }
 
-void intrf_no_disk(const char *prog_name)
+int intrf_no_disk(const char *prog_name)
 {
   log_critical("No disk found\n");
 #ifdef HAVE_NCURSES
-  intrf_no_disk_ncurses(prog_name);
+  return intrf_no_disk_ncurses(prog_name);
 #else
   printf("No disk found\n");
+  return 0;
 #endif
 }
 
