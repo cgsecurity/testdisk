@@ -178,156 +178,107 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, int
 {
   const unsigned char *p; 	/* pointers to actual position in source buffer */
   unsigned char *q;	/* pointers to actual position in destination buffer */
-  unsigned char bufU[8]; /* buffer for UTF8 character read from source */
-  int i, l; /* counter of remaining bytes available in destination buffer, UTF8 character's length */
+  int i; /* counter of remaining bytes available in destination buffer */
   for (i = buf_len, p = buffer, q = buffer_lower; p-buffer<buf_len && i > 0 && *p!='\0';) 
   {
-    if ((*p & 0x80)!=0x80)
-    {
-      *q = tolower(*p++);
-      if (filtre(*q)==1)
+    const unsigned char *p_org=p;
+    if((*p & 0xf0)==0xe0 && (*(p+1) & 0xa0)==0x80 && (*(p+2) & 0xa0)==0x80)
+    { /* UTF8 l=3 */
+      *q = '\0';
+      switch (*p)
       {
-        q++;
-        i--;
+        case 0xE2 : 
+          switch (*(p+1))
+          { 
+            case 0x80 : 
+              switch (*(p+2))
+              { 
+                case 0x93 : (*q) = 150; break;
+                case 0x94 : (*q) = 151; break;
+                case 0x98 : (*q) = 145; break;
+                /* case 0x99 : (*q) = 146; break; */
+                case 0x99 : (*q) = '\''; break;
+                case 0x9A : (*q) = 130; break;
+                case 0x9C : (*q) = 147; break;
+                case 0x9D : (*q) = 148; break;
+                case 0x9E : (*q) = 132; break;
+                case 0xA0 : (*q) = 134; break;
+                case 0xA1 : (*q) = 135; break;
+                case 0xA2 : (*q) = 149; break;
+                case 0xA6 : (*q) = 133; break;
+                case 0xB0 : (*q) = 137; break;
+                case 0xB9 : (*q) = 139; break;
+                case 0xBA : (*q) = 155; break;
+              }
+              break;
+            case 0x82 : 
+              switch (*(p+2))
+              { 
+                case 0xAC : (*q) = 128; break;
+              }
+              break;
+            case 0x84 : 
+              switch (*(p+2))
+              { 
+                case 0xA2 : (*q) = 153; break;
+              }
+              break;
+          }
+          break;
       }
-      else
+      p+=3;
+    }
+    else if((*p & 0xe0)==0xc0 && (*(p+1) & 0xa0)==0x80)
+    { /* UTF8 l=2 */
+      *q = '\0';
+      switch (*p)
       {
-        *q = '\0';
-        return(p-buffer);
+        case 0xC2 : 
+          (*q) = ((*(p+1)) | 0x80) & 0xBF; /* A0-BF and a few 80-9F */
+          if((*q)==0xA0)
+            (*q)=' ';
+          break;
+        case 0xC3 : 
+          (*q) = (*(p+1)) | 0xC0; /* C0-FF */
+          break;
+        case 0xC5 : 
+          switch (*(p+1)) { 
+            case 0x92 : (*q) = 140; break;
+            case 0x93 : (*q) = 156; break;
+            case 0xA0 : (*q) = 138; break;
+            case 0xA1 : (*q) = 154; break;
+            case 0xB8 : (*q) = 143; break;
+            case 0xBD : (*q) = 142; break;
+            case 0xBE : (*q) = 158; break;
+          }
+          break;
+        case 0xC6: 
+          switch (*(p+1)) { 
+            case 0x92 : (*q) = 131; break;
+          }
+          break;
+        case 0xCB : 
+          switch (*(p+1)) { 
+            case 0x86 : (*q) = 136; break;
+            case 0x9C : (*q) = 152; break;
+          }
+          break;
       }
+      p+=2;
     }
     else
-    {
-      const unsigned char *p_org=p;
-      l = 0;
-      bufU[l++] = *p++;
-      while (*p >> 6 == 2) /* 2nd-6th bytes in UTF8 character have the most significant bits set to "10" */
-      {
-        if (l < 7)
-          bufU[l] = *p;
-        l++;
-        p++;
-      }
-      bufU[l > 7 ? 7 : l] = '\0';
-      if (l > 1 && l < 7 && bufU[0] >> 6 == 3) /* the 1st byte in UTF8 character has the most significant bits set to "11" */
-      {
-        *q = '\0'; /* mark that character has not been converted yet */
-        switch (strlen(bufU)) {
-          case 2: 
-            switch (bufU[0]) {
-              case 0xC2 : 
-                (*q) = ((bufU[1]) | 0x80) & 0xBF; /* A0-BF and a few 80-9F */
-                if((*q)==0xA0)
-                  (*q)=' ';
-                break;
-              case 0xC3 : 
-                (*q) = (bufU[1]) | 0xC0; /* C0-FF */
-                break;
-              case 0xC5 : 
-                switch (bufU[1]) { 
-                  case 0x92 : (*q) = 140; break;
-                  case 0x93 : (*q) = 156; break;
-                  case 0xA0 : (*q) = 138; break;
-                  case 0xA1 : (*q) = 154; break;
-                  case 0xB8 : (*q) = 143; break;
-                  case 0xBD : (*q) = 142; break;
-                  case 0xBE : (*q) = 158; break;
-                }
-                break;
-              case 0xC6: 
-                switch (bufU[1]) { 
-                  case 0x92 : (*q) = 131; break;
-                }
-                break;
-              case 0xCB : 
-                switch (bufU[1]) { 
-                  case 0x86 : (*q) = 136; break;
-                  case 0x9C : (*q) = 152; break;
-                }
-                break;
-            }
-            break;
-          case 3:
-            switch (bufU[0]) {
-              case 0xE2 : 
-                switch (bufU[1]) { 
-                  case 0x80 : 
-                    switch (bufU[2]) { 
-                      case 0x93 : (*q) = 150; break;
-                      case 0x94 : (*q) = 151; break;
-                      case 0x98 : (*q) = 145; break;
-                                  // case 0x99 : (*q) = 146; break;
-                      case 0x99 : (*q) = '\''; break;
-                      case 0x9A : (*q) = 130; break;
-                      case 0x9C : (*q) = 147; break;
-                      case 0x9D : (*q) = 148; break;
-                      case 0x9E : (*q) = 132; break;
-                      case 0xA0 : (*q) = 134; break;
-                      case 0xA1 : (*q) = 135; break;
-                      case 0xA2 : (*q) = 149; break;
-                      case 0xA6 : (*q) = 133; break;
-                      case 0xB0 : (*q) = 137; break;
-                      case 0xB9 : (*q) = 139; break;
-                      case 0xBA : (*q) = 155; break;
-                    }
-                    break;
-                  case 0x82 : 
-                    switch (bufU[2]) { 
-                      case 0xAC : (*q) = 128; break;
-                    }
-                    break;
-                  case 0x84 : 
-                    switch (bufU[2]) { 
-                      case 0xA2 : (*q) = 153; break;
-                    }
-                    break;
-                }
-                break;
-            }
-            break;
-        }
-
-        if (*q!='\0' && filtre(*q)==1)
-        {
-          q++;
-          i--;
-        }
-        else
-        {
-#ifdef DEBUG_FILETXT
-          log_trace("UTF2Lat: UTF character [%s] absent in Latin1 - dropped (%c, 0x%x)\n", bufU,*q,*q);
-#endif
-          /* There is already a null but don't care */
-          *q = '\0';
-          return(p_org-buffer);
-        }
-      }
-      else
-      {
-        if(l==1 && filtre(bufU[0])==1)
-        { /* Windows uses forbidden chars ie 0x85 */
-          i--;
-          *q=bufU[0];
-          q++;
-        }
-        else
-        {
-#ifdef DEBUG_FILETXT
-          log_trace( "UTF2Lat: non-UTF character [%s](0x%x) - dropped\n", bufU,bufU[0]);
-#endif
-          *q = '\0';
-          return(p_org-buffer);
-        }
-      }
+    { /* Ascii UCS */
+      *q = tolower(*p++);
     }
+    if (*q=='\0' || filtre(*q)==0)
+    {
+      *q = '\0';
+      return(p_org-buffer);
+    }
+    q++;
+    i--;
   }
   *q = '\0';
-  /*
-     if (*p)
-     {
-     log_trace("UTF2Lat: buffer too small - string had to be truncated\n");
-     }
-   */
   return(p-buffer);
 }
 
@@ -361,9 +312,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
         file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
         strcmp(file_recovery->extension,"imm")==0)
-    {
       return 0;
-    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=NULL;
     file_recovery_new->extension="imm";
@@ -462,7 +411,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     unsigned int tmp=0;
     for(i=0;i<10 && isdigit(buffer[i]);i++)
       tmp=tmp*10+buffer[i]-'0';
-    if(buffer[i]==0x0a && memcmp(buffer+i+1, header_imm2, sizeof(header_imm2))==0)
+    if(buffer[i]==0x0a && memcmp(buffer+i+1, header_imm2, sizeof(header_imm2))==0 &&
+        !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+          file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+          strcmp(file_recovery->extension,"imm")==0))
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->calculated_file_size=tmp+i+1;
@@ -742,13 +694,7 @@ static void file_check_emlx(file_recovery_t *file_recovery)
 
 static void file_check_xml(file_recovery_t *file_recovery)
 {
-  if(file_recovery->file_size < file_recovery->calculated_file_size)
-    file_recovery->file_size=0;
-  else
-  {
-    const unsigned char xml_footer[1]= { '>'};
-    file_recovery->file_size=file_recovery->calculated_file_size;
-    file_search_footer(file_recovery, xml_footer, sizeof(xml_footer));
-    file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
-  }
+  const unsigned char xml_footer[1]= { '>'};
+  file_search_footer(file_recovery, xml_footer, sizeof(xml_footer));
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
