@@ -141,6 +141,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
 	{
 	  display_message("Write error: Can't write new NTFS backup boot sector\n");
 	}
+        disk_car->sync(disk_car);
       }
       return ;
     }
@@ -208,6 +209,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	  {
 	    display_message("Write error: Can't write new NTFS backup boot sector\n");
 	  }
+          disk_car->sync(disk_car);
 	}
 	return;
       case 'd':

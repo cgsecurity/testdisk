@@ -119,9 +119,8 @@ static s64 ntfs_device_testdisk_io_write(struct ntfs_device *dev, const void *bu
 
 static int ntfs_device_testdisk_io_sync(struct ntfs_device *dev)
 {
-	log_warning("ntfs_device_testdisk_io_sync() unimplemented\n");
-	errno = ENOTSUP;
-	return -1;
+  my_data_t *my_data=(my_data_t*)dev->d_private;
+  return my_data->disk_car->sync(my_data->disk_car);
 }
 
 static int ntfs_device_testdisk_io_stat(struct ntfs_device *dev, struct stat *buf)

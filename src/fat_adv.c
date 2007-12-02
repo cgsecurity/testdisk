@@ -1022,6 +1022,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
       if(disk_car->write(disk_car,DEFAULT_SECTOR_SIZE, newboot, partition->part_offset)!=0)
 	err=1;
     }
+    disk_car->sync(disk_car);
     if(err==1)
     {
       display_message("Write error: Can't write new FAT boot sector\n");
@@ -2916,6 +2917,10 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
     if(fat_damaged==0)
     {
       display_message("FATs seems Ok, nothing to do.\n");
+    }
+    else
+    {
+      disk_car->sync(disk_car);
     }
 #ifdef HAVE_NCURSES
     delwin(window);

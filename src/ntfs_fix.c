@@ -193,6 +193,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
         }
 	else
         {
+          disk_car->sync(disk_car);
 	  log_info("MFT mirror fixed.\n");
 	  display_message("MFT mirror fixed.\n");
         }
@@ -214,6 +215,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
         }
 	else
         {
+          disk_car->sync(disk_car);
 	  log_info("MFT fixed.\n");
 	  display_message("MFT fixed.\n");
         }

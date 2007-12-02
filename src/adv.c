@@ -803,6 +803,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	  {
 	    display_message("Write error: Can't overwrite FAT32 backup boot sector\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
@@ -814,6 +815,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	  {
 	    display_message("Write error: Can't overwrite FAT32 boot sector\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
@@ -1039,6 +1041,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	  {
 	    display_message("Write error: Can't overwrite NTFS backup boot sector\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
@@ -1050,6 +1053,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	  {
 	    display_message("Write error: Can't overwrite NTFS boot sector\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
@@ -1260,6 +1264,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 	  {
 	    display_message("Write error: Can't overwrite HFS/HFS+ backup superblock\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
@@ -1271,6 +1276,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 	  {
 	    display_message("Write error: Can't overwrite HFS/HFS+ main superblock\n");
 	  }
+          disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;

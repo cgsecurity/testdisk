@@ -626,6 +626,7 @@ int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro
   int res=0;
   res+=write_mbr_i386(disk_car,list_part,ro,verbose);
   res+=write_all_log_i386(disk_car,list_part,ro,verbose,align);
+  disk_car->sync(disk_car);
   return res;
 }
 
@@ -890,6 +891,7 @@ static int write_MBR_code_i386(disk_t *disk_car)
   {
     return 1;
   }
+  disk_car->sync(disk_car);
   return 0;
 }
 
@@ -1559,6 +1561,7 @@ static int erase_list_part_i386(disk_t *disk_car)
   {
     return 1;
   }
+  disk_car->sync(disk_car);
   return 0;
 }
 

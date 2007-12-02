@@ -511,6 +511,7 @@ static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const 
   free(gpt);
   free(gpt_entries);
   write_part_gpt_i386(disk_car, list_part);
+  disk_car->sync(disk_car);
   return 0;
 }
 
