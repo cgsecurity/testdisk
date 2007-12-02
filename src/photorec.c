@@ -148,6 +148,7 @@ extern const file_hint_t file_hint_mus;
 extern const file_hint_t file_hint_mysql;
 extern const file_hint_t file_hint_njx;
 extern const file_hint_t file_hint_ogg;
+extern const file_hint_t file_hint_one;
 extern const file_hint_t file_hint_orf;
 extern const file_hint_t file_hint_pap;
 extern const file_hint_t file_hint_pcx;
@@ -815,6 +816,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_mysql },
     { .enable=1, .file_hint=&file_hint_njx  },
     { .enable=1, .file_hint=&file_hint_ogg  },
+    { .enable=1, .file_hint=&file_hint_one  },
     { .enable=1, .file_hint=&file_hint_orf  },
     { .enable=1, .file_hint=&file_hint_pap  },
     { .enable=1, .file_hint=&file_hint_pcx  },

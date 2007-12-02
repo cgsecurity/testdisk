@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.9-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="November 2007"
+TESTDISKDATE="December 2007"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
