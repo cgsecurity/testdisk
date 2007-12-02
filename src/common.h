@@ -294,12 +294,18 @@ struct param_disk_struct
   char description_short_txt[DISKDESCRIPTION_MAX];
   const char *(*description)(disk_t *disk_car);
   const char *(*description_short)(disk_t *disk_car);
-  int (*read)(disk_t *disk_car,const unsigned int nbr_sector, void *nom_buffer, const uint64_t offset);
-  int (*write)(disk_t *disk_car,const unsigned int nbr_sector, const void *nom_buffer, const uint64_t offset);
+  int (*read)(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset);
+  int (*write)(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
+  int (*sync)(disk_t *disk_car);
   int (*clean)(disk_t *disk_car);
   const arch_fnct_t *arch;
   void *data;
   uint64_t disk_real_size;
+  uint64_t offset;      /* offset to first sector, may be modified in the futur to handle broken raid */
+  void *rbuffer;
+  void *wbuffer;
+  unsigned int rbuffer_size;
+  unsigned int wbuffer_size;
 };
 
 struct partition_struct

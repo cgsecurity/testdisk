@@ -109,20 +109,17 @@ extern const arch_fnct_t arch_mac;
 struct info_file_struct
 {
   int handle;
-  uint64_t offset;
   char file_name[DISKNAME_MAX];
   int mode;
-  void *buffer;
-  unsigned int buffer_size;
 };
 
 static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, const int verbose);
 static const char *file_description(disk_t *disk_car);
 static const char *file_description_short(disk_t *disk_car);
 static int file_clean(disk_t *disk_car);
-static int file_read(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t offset);
-static int file_write(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
-static int file_nowrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
+static int file_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
+static int file_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
 #ifndef DJGPP
 static disk_t *disk_get_geometry(const int hd_h, const char *device, const int verbose);
 #endif
@@ -132,50 +129,120 @@ static disk_t *disk_get_geometry_win32(HANDLE handle, const char *device, const 
 
 static void compute_device_size(disk_t *disk_car);
 
+static int align_read(int (*fnct_read)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+           disk_t *disk_car, void*buf, const unsigned int count, const uint64_t offset)
+{
+  const uint64_t offset_new=offset+disk_car->offset;
+  const unsigned int count_new=((offset_new%disk_car->sector_size)+count+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
+  if(count!=count_new ||
+      ((disk_car->access_mode&TESTDISK_O_DIRECT)!=0 &&
+       (((size_t)(buf) & (disk_car->sector_size-1))!=0) &&
+       (buf!=disk_car->rbuffer || disk_car->rbuffer_size<count_new))
+    )
+  {
+    if(disk_car->rbuffer==NULL)
+      disk_car->rbuffer_size=128*512;
+    while(disk_car->rbuffer_size < count_new)
+    {
+      free(disk_car->rbuffer);
+      disk_car->rbuffer=NULL;
+      disk_car->rbuffer_size*=2;
+    }
+    if(disk_car->rbuffer==NULL)
+      disk_car->rbuffer=(char*)MALLOC(disk_car->rbuffer_size);
+    if(fnct_read(disk_car, disk_car->rbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size))
+      return -1;
+    memcpy(buf,(char*)disk_car->rbuffer+(offset_new%disk_car->sector_size),count);
+    return 0;
+  }
+  return fnct_read(disk_car, buf, count_new, offset_new);
+}
+
+static int align_write(int (*fnct_read)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+    int (*fnct_write)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset),
+    disk_t *disk_car, const void*buf, const unsigned int count, const uint64_t offset)
+{
+  const uint64_t offset_new=offset+disk_car->offset;
+  const unsigned int count_new=((offset_new%disk_car->sector_size)+count+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
+  if(count!=count_new ||
+      ((disk_car->access_mode&TESTDISK_O_DIRECT)!=0 &&
+       (((size_t)(buf) & (disk_car->sector_size-1))!=0))
+    )
+  {
+    if(disk_car->wbuffer==NULL)
+      disk_car->wbuffer_size=128*512;
+    while(disk_car->wbuffer_size < count_new)
+    {
+      free(disk_car->wbuffer);
+      disk_car->wbuffer=NULL;
+      disk_car->wbuffer_size*=2;
+    }
+    if(disk_car->wbuffer==NULL)
+      disk_car->wbuffer=(char*)MALLOC(disk_car->wbuffer_size);
+    if(fnct_read(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size))
+    {
+      log_error("read failed but try to write anyway");
+      memset(disk_car->wbuffer,0, disk_car->wbuffer_size);
+    }
+    memcpy((char*)disk_car->wbuffer+(offset_new%disk_car->sector_size),buf,count);
+    return fnct_write(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
+  }
+  return fnct_write(disk_car, buf, count_new, offset_new);
+}
+
+static int generic_clean(disk_t *disk_car)
+{
+  free(disk_car->data);
+  disk_car->data=NULL;
+  free(disk_car->rbuffer);
+  free(disk_car->wbuffer);
+  disk_car->rbuffer=NULL;
+  disk_car->wbuffer=NULL;
+  return 0;
+}
+
 #ifdef DJGPP
 #define HD_RW_BUF_SIZ 0x10
 #define HDPARM_BUF_SIZ 0x1A
 #define MAX_IO_NBR 3
 #define MAX_HD_ERR 100
-#define PARA_CMD         8
 static void free_dos_buffer(void);
-static int alloc_dos_buffer(void);
-static int hd_super(int cmd, disk_t *disk_car, unsigned long int hd_offset, int nsects, void *buffer);
+static int alloc_cmd_dos_buffer(void);
 static disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode);
 static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int nbr_sector, const int rc);
 static const char *disk_description(disk_t *disk_car);
 static const char *disk_description_short(disk_t *disk_car);
-static int disk_read(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t hd_offset);
-static int disk_write(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t hd_offset);
-static int disk_nowrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
+static int disk_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t hd_offset);
+static int disk_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t hd_offset);
+static int disk_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int disk_sync(disk_t *disk_car);
 static int disk_clean(disk_t *disk_car);
 struct info_disk_struct
 {
   unsigned int disk;
   CHS_t CHSR;	/* CHS low level */
   int mode_enh;
-  unsigned int nbr_err;
   int bad_geometry;
 };
 
-static int dos_segment = 0;
-static int dos_selector = 0;
+static int cmd_dos_segment = 0;
+static int cmd_dos_selector = 0;
 
 static void free_dos_buffer(void)
 {
-  __dpmi_free_dos_memory(dos_selector);
-  dos_segment = dos_selector = 0;
+  __dpmi_free_dos_memory(cmd_dos_selector);
+  cmd_dos_segment = cmd_dos_selector = 0;
 }
 
-static int alloc_dos_buffer(void)
+static int alloc_cmd_dos_buffer(void)
 {
-  if (dos_segment)
+  if (cmd_dos_segment)
     return 0;
-  if ((dos_segment = __dpmi_allocate_dos_memory(18*DEFAULT_SECTOR_SIZE/16, &dos_selector))== -1)
+  if ((cmd_dos_segment = __dpmi_allocate_dos_memory(18*DEFAULT_SECTOR_SIZE/16, &cmd_dos_selector))== -1)
   {
-    dos_segment = 0;
+    cmd_dos_segment = 0;
     return 1;
   }
 #ifdef HAVE_ATEXIT
@@ -184,19 +251,28 @@ static int alloc_dos_buffer(void)
   return 0;
 }
 
-static int hd_super(int cmd, disk_t *disk_car, unsigned long int hd_offset, int nsects, void *buffer)
+static void disk_reset_error(disk_t *disk_car)
+{
+  struct info_disk_struct*data=disk_car->data;
+  biosdisk(0, data->disk, 0, 0, 1, 1, NULL);
+}
+
+static int hd_read(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   __dpmi_regs r;
-  unsigned char buf[HD_RW_BUF_SIZ];
-  int dos_segment2, dos_selector2, xfer2=nsects*DEFAULT_SECTOR_SIZE;
+  unsigned char buf_cmd[HD_RW_BUF_SIZ];
+  int xfer_dos_segment, xfer_dos_selector;
+  int nsects;
+  unsigned long int hd_offset;
   struct info_disk_struct*data=disk_car->data;
-
-  if((data->mode_enh==0)||(cmd==0))
+  nsects=count/disk_car->sector_size;
+  hd_offset=offset/disk_car->sector_size;
+  if(data->mode_enh==0)
   { /* Limite CHS = 1023,255,63 = 8,064Mo ~= 7.8 Go */
     int head, track, sector;
     if(data->CHSR.sector==0)
     {
-      log_critical("hd_super: BUG CHSR.sector=0 !\n");
+      log_critical("hd_read: BUG CHSR.sector=0 !\n");
       return 1;
     }
     sector=(hd_offset%data->CHSR.sector)+1;
@@ -204,41 +280,77 @@ static int hd_super(int cmd, disk_t *disk_car, unsigned long int hd_offset, int 
     head=hd_offset%(data->CHSR.head+1);
     track=hd_offset/(data->CHSR.head+1);
     if(track<1024)
-      return biosdisk(cmd, data->disk, head, track, sector, nsects, buffer);
+      return biosdisk(2, data->disk, head, track, sector, nsects, buf);
     return 1;
   }
-  if(dos_segment==0)
-    if(alloc_dos_buffer())
+  if(cmd_dos_segment==0)
+    if(alloc_cmd_dos_buffer())
       return 1;
-  if ( (dos_segment2=__dpmi_allocate_dos_memory((xfer2 + 15) >> 4, &dos_selector2)) == -1 )
+  if ( (xfer_dos_segment=__dpmi_allocate_dos_memory((count + 15) >> 4, &xfer_dos_selector)) == -1 )
     return 1;
-  *(uint16_t*)&buf[0]=HD_RW_BUF_SIZ;
-  *(uint16_t*)&buf[2]=nsects;
-  *(uint32_t*)&buf[0x4]=dos_segment2<<16;
-  *(uint32_t*)&buf[0x8]=hd_offset;
-  *(uint32_t*)&buf[0xC]=0;
+  *(uint16_t*)&buf_cmd[0]=HD_RW_BUF_SIZ;
+  *(uint16_t*)&buf_cmd[2]=nsects;
+  *(uint32_t*)&buf_cmd[0x4]=xfer_dos_segment<<16;
+  *(uint32_t*)&buf_cmd[0x8]=hd_offset;
+  *(uint32_t*)&buf_cmd[0xC]=0;
 
-  r.x.ds = dos_segment;
+  r.x.ds = cmd_dos_segment;
   r.x.si = 0;
   r.h.dl = data->disk;
-  switch(cmd)
-  {
-    case 2:
-      r.h.ah = 0x42;
-      break;
-    case 3:
-      r.x.ax = 0x4300;
-      dosmemput(buffer,xfer2,dos_segment2<<4);
-      break;
-	case 0x0C:
-	  r.h.ah = 0x47;
-	  break;
-  }
-  dosmemput(&buf, HD_RW_BUF_SIZ, dos_segment<<4);
+  r.h.ah = 0x42;        /* Extended read */
+  dosmemput(&buf_cmd, HD_RW_BUF_SIZ, cmd_dos_segment<<4);
   __dpmi_int(0x13, &r);
-  if(cmd==2)
-    dosmemget(dos_segment2<<4, xfer2, buffer);
-  __dpmi_free_dos_memory(dos_selector2);
+  dosmemget(xfer_dos_segment<<4, count, buf);
+  __dpmi_free_dos_memory(xfer_dos_selector);
+  return r.h.ah;
+}
+
+static int hd_write(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+{
+  __dpmi_regs r;
+  unsigned char buf_cmd[HD_RW_BUF_SIZ];
+  int xfer_dos_segment, xfer_dos_selector;
+  int nsects;
+  unsigned long int hd_offset;
+  struct info_disk_struct*data=disk_car->data;
+  nsects=count/disk_car->sector_size;
+  hd_offset=offset/disk_car->sector_size;
+
+  if(data->mode_enh==0)
+  { /* Limite CHS = 1023,255,63 = 8,064Mo ~= 7.8 Go */
+    int head, track, sector;
+    if(data->CHSR.sector==0)
+    {
+      log_critical("hd_write: BUG CHSR.sector=0 !\n");
+      return 1;
+    }
+    sector=(hd_offset%data->CHSR.sector)+1;
+    hd_offset/=data->CHSR.sector;
+    head=hd_offset%(data->CHSR.head+1);
+    track=hd_offset/(data->CHSR.head+1);
+    if(track<1024)
+      return biosdisk(3, data->disk, head, track, sector, nsects, buf);
+    return 1;
+  }
+  if(cmd_dos_segment==0)
+    if(alloc_cmd_dos_buffer())
+      return 1;
+  if ( (xfer_dos_segment=__dpmi_allocate_dos_memory((count + 15) >> 4, &xfer_dos_selector)) == -1 )
+    return 1;
+  *(uint16_t*)&buf_cmd[0]=HD_RW_BUF_SIZ;
+  *(uint16_t*)&buf_cmd[2]=nsects;
+  *(uint32_t*)&buf_cmd[0x4]=xfer_dos_segment<<16;
+  *(uint32_t*)&buf_cmd[0x8]=hd_offset;
+  *(uint32_t*)&buf_cmd[0xC]=0;
+
+  r.x.ds = cmd_dos_segment;
+  r.x.si = 0;
+  r.h.dl = data->disk;
+  r.x.ax = 0x4300;
+  dosmemput(buf, count, xfer_dos_segment<<4);
+  dosmemput(&buf_cmd, HD_RW_BUF_SIZ, cmd_dos_segment<<4);
+  __dpmi_int(0x13, &r);
+  __dpmi_free_dos_memory(xfer_dos_selector);
   return r.h.ah;
 }
 
@@ -291,18 +403,18 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   __dpmi_regs r;
   unsigned char buf[0x200];	/* Don't change it! */
   struct info_disk_struct*data=disk_car->data;
+  if(cmd_dos_segment==0)
+    if(alloc_cmd_dos_buffer())
+      return 1;
   buf[0]=HDPARM_BUF_SIZ;
   buf[1]=0;
-  if(dos_segment==0)
-    if(alloc_dos_buffer())
-      return 1;
   r.h.ah = 0x48;
-  r.x.ds = dos_segment;
+  r.x.ds = cmd_dos_segment;
   r.x.si = 0;
   r.h.dl = data->disk;
-  dosmemput(&buf, HDPARM_BUF_SIZ, dos_segment<<4);
+  dosmemput(&buf, HDPARM_BUF_SIZ, cmd_dos_segment<<4);
   __dpmi_int(0x13, &r);
-  dosmemget(dos_segment<<4, HDPARM_BUF_SIZ, &buf);
+  dosmemget(cmd_dos_segment<<4, HDPARM_BUF_SIZ, &buf);
   if(r.h.ah)
     return 1;
   disk_car->CHS.cylinder=*(uint16_t*)&buf[0x04];
@@ -396,7 +508,7 @@ static disk_t *hd_identify(const int verbose, const unsigned int disk, const arc
   unsigned char buf[0x200];
   memset(buf,0,sizeof(buf));
   /* standard BIOS access */
-  if(biosdisk(PARA_CMD,disk,0,0,1,1,buf))
+  if(biosdisk(8,disk,0,0,1,1,buf))
     return NULL;
   if(verbose>1)
     log_verbose("Disk %02X %u max %02X\n",disk,buf[2],(0x80+buf[2]-1));
@@ -409,7 +521,6 @@ static disk_t *hd_identify(const int verbose, const unsigned int disk, const arc
     data->disk=disk;
     data->bad_geometry=0;
     data->mode_enh=0;
-    data->nbr_err=0;
     disk_car->arch=arch;
     snprintf(device,sizeof(device),"/dev/sda%u",disk);
     disk_car->device=strdup(device);
@@ -420,6 +531,7 @@ static disk_t *hd_identify(const int verbose, const unsigned int disk, const arc
     disk_car->description_short=disk_description_short;
     disk_car->read=disk_read;
     disk_car->write=((testdisk_mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR?disk_write:disk_nowrite);
+    disk_car->sync=disk_sync;
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=disk_clean;
     disk_car->data=data;
@@ -488,85 +600,72 @@ static const char *disk_description_short(disk_t *disk_car)
   return disk_car->description_short_txt;
 }
 
-static int disk_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t hd_offset)
+static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  if(count%disk_car->sector_size!=0 || hd_offset%disk_car->sector_size!=0)
+  struct info_disk_struct*data=disk_car->data;
+  if(data->CHSR.cylinder>0 && offset+count>disk_car->disk_size)
   {
-    char*buffer=(char*)MALLOC((count/disk_car->sector_size+2)*disk_car->sector_size);
-    /* log_debug("disk_read handle unaligned data\n"); */
-    if(disk_read(disk_car,(unsigned)(((count/disk_car->sector_size)+2)*disk_car->sector_size),buffer,hd_offset/disk_car->sector_size*disk_car->sector_size))
-    {
-      free(buffer);
-      return -1;
-    }
-    memcpy(nom_buffer,buffer+(hd_offset%disk_car->sector_size),count);
-    free(buffer);
-    return 0;
+    log_error("disk_read_aux: Don't read after the end of the disk\n");
+    return -1;
   }
-  else
   {
-    struct info_disk_struct*data=disk_car->data;
-    if(hd_offset==0)
+    unsigned int read_size;
+    uint64_t read_offset=0;
+    do
     {
-      /* CHS=(0,0,1) */
-      data->nbr_err=0;
-    }
-    if((data->CHSR.cylinder==0) || (hd_offset+count<=disk_car->disk_size))
-    {
-      int rc=0;
-      unsigned int sector_offset=0;
-      unsigned int read_size;
-      for(sector_offset=0;(rc==0) && (sector_offset<count/disk_car->sector_size);sector_offset+=read_size)
+      int i;
+      int rc=4; /* sector not found/read error */
+      read_size=count-read_offset>16*512?16*512:count-read_offset;
+      for(i=0;(rc!=0) && (rc!=1) && (i<MAX_IO_NBR);i++)
       {
-	int i;
-	read_size=count/disk_car->sector_size-sector_offset>16?16:count/disk_car->sector_size-sector_offset;
-	rc=4; /* sector not found/read error */
-	for(i=0;(rc!=0) && (rc!=1) && (i<MAX_IO_NBR);i++)
-	{
-	  rc=hd_super(2, disk_car, hd_offset/disk_car->sector_size+sector_offset, read_size, (char*)nom_buffer+sector_offset*disk_car->sector_size);
-	  if(rc!=0)
-	  {
-	    hd_super(0, disk_car, 0, 1, NULL);
-	  }
-	}
+        rc=hd_read(disk_car, (char*)buf+read_offset, read_size, offset+read_offset);
+        if(rc!=0)
+          disk_reset_error(disk_car);
       }
       if(rc!=0)
       {
-	log_error("disk_read");
-	hd_report_error(disk_car,hd_offset,count/disk_car->sector_size,rc);
+        log_error("disk_read_aux failed ");
+        hd_report_error(disk_car,offset,count/disk_car->sector_size,rc);
+        return rc;
       }
-      return rc;
-    }
+      read_offset+=read_size;
+    } while(read_offset<count);
   }
-  return 1;
+  return 0;
 }
 
-static int disk_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t hd_offset)
+static int disk_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset)
 {
-  if(count%disk_car->sector_size!=0 || hd_offset%disk_car->sector_size!=0)
-  {
-    log_warning("disk_write unaligned data not supported\n");
-    return 1;
-  }
-  else
-  {
-    struct info_disk_struct*data=disk_car->data;
-    int i,rc=4; /* sector not found/read error */
-    disk_car->write_used=1;
-    for(i=0;(rc==4)&&(i<MAX_IO_NBR);i++)
-    {
-      rc=hd_super(3, disk_car, hd_offset/disk_car->sector_size, count/disk_car->sector_size, nom_buffer);
-    }
-    if(rc)
-    {
-      log_error("disk_write");
-      hd_report_error(disk_car,hd_offset,count/disk_car->sector_size,rc);
-    }
-    return rc;
-  }
+  return align_read(&disk_read_aux, disk_car, buf, count, offset);
 }
 
-static int disk_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
+{
+
+  struct info_disk_struct*data=disk_car->data;
+  int i,rc=4; /* sector not found/read error */
+  disk_car->write_used=1;
+  for(i=0;(rc==4)&&(i<MAX_IO_NBR);i++)
+  {
+    rc=hd_write(disk_car, buf, count/disk_car->sector_size, hd_offset/disk_car->sector_size);
+    if(rc!=0)
+      disk_reset_error(disk_car);
+  }
+  if(rc!=0)
+  {
+    log_error("disk_write error\n");
+    hd_report_error(disk_car,hd_offset,count/disk_car->sector_size,rc);
+    return -rc;
+  }
+  return 0;
+}
+
+static int disk_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
+{
+  return align_write(&disk_read_aux, &disk_write_aux, disk_car, buf, count, offset);
+}
+
+static int disk_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
   struct info_disk_struct *data=disk_car->data;
   log_warning("disk_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->disk,
@@ -575,29 +674,26 @@ static int disk_nowrite(disk_t *disk_car,const unsigned int count, const void *n
   return -1;
 }
 
-#if 0
 static int disk_sync(disk_t *disk_car)
 {
   errno=EINVAL;
   return -1;
 }
-#endif
 
 static int disk_clean(disk_t *disk_car)
 {
+  /*
   if(disk_car->data!=NULL)
   {
     struct info_disk_struct *data=disk_car->data;
-    free(disk_car->data);
-    disk_car->data=NULL;
   }
-  return 0;
+  */
+  return generic_clean(disk_car);
 }
 
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int nbr_sector, const int rc)
 {
   struct info_disk_struct*data=disk_car->data;
-  data->nbr_err++;
   log_error(" lba=%lu(%u/%u/%u) nbr_sector=%u, rc=%d\n",(long unsigned int)(hd_offset/disk_car->sector_size),
       offset2cylinder(disk_car,hd_offset),offset2head(disk_car,hd_offset),offset2sector(disk_car,hd_offset),
       nbr_sector,rc);
@@ -1248,194 +1344,124 @@ static int file_clean(disk_t *disk_car)
 #endif
     */
     close(data->handle);
-    if(data->buffer!=NULL)
-    {
-      free(data->buffer);
-      data->buffer=NULL;
-    }
-    free(disk_car->data);
-    disk_car->data=NULL;
   }
-  return 0;
+  return generic_clean(disk_car);
 }
 
-static int file_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
+static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  struct info_file_struct *data=disk_car->data;
-  if(count%disk_car->sector_size!=0 || offset%disk_car->sector_size!=0
-#ifdef O_DIRECT
-      || ((data->mode&O_DIRECT)!=0 &&
-	(nom_buffer!=data->buffer ||
-	 data->buffer_size<((offset%disk_car->sector_size+count+disk_car->sector_size-1) / disk_car->sector_size * disk_car->sector_size))
-	&& (((size_t)(nom_buffer)) && (disk_car->sector_size-1)!=0))
+  long int ret=-1;
+  int fd=((struct info_file_struct *)disk_car->data)->handle;
+#if defined(HAVE_PREAD) && !defined(__CYGWIN__)
+  ret=pread(fd,buf,count,offset);
+  if(ret<0 && errno == ENOSYS)
 #endif
-    )
   {
-    if(data->buffer==NULL)
+#ifdef __MINGW32__
+    if(_lseeki64(fd,offset,SEEK_SET)==-1)
     {
-      data->buffer_size=128*512;
-    }
-    while(data->buffer_size<((offset%disk_car->sector_size+count+disk_car->sector_size-1)
-	  / disk_car->sector_size * disk_car->sector_size))
-    {
-      if(data->buffer!=NULL)
-      {
-	free(data->buffer);
-	data->buffer=NULL;
-      }
-      data->buffer_size*=2;
-    }
-    if(data->buffer==NULL)
-    {
-      data->buffer=(char*)MALLOC(data->buffer_size);
-    }
-    /*
-    log_debug("file_read handle unaligned data\n");
-     */
-    if(file_read(disk_car,(offset%disk_car->sector_size+count+disk_car->sector_size-1)
-      / disk_car->sector_size * disk_car->sector_size, data->buffer,
-      offset/disk_car->sector_size*disk_car->sector_size))
-    {
+      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
+          (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
+          strerror(errno));
       return -1;
     }
-    memcpy(nom_buffer,(char*)data->buffer+(offset%disk_car->sector_size),count);
-#ifdef DEBUG
-    log_trace("memcpy\n");
-#endif
-    return 0;
-  }
-  {
-    long int ret=-1;
-#ifdef DEBUG
-    log_debug("file_read(%d,%u,buffer,%lu(%u/%u/%u))\n", data->handle,
-        (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-        offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
-#endif
-#if defined(HAVE_PREAD) && !defined(__CYGWIN__)
-    ret=pread(data->handle,nom_buffer,count,offset+data->offset);
-    if(ret<0 && errno == ENOSYS)
-#endif
-    {
-#ifdef __MINGW32__
-      if(_lseeki64(data->handle,offset+data->offset,SEEK_SET)==-1)
-      {
-        log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", data->handle,
-            (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-            offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
-            strerror(errno));
-        return -1;
-      }
 #else
-      if(lseek(data->handle,offset+data->offset,SEEK_SET)==(off_t)-1)
-      {
-        log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n", data->handle,
-            (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-            offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
-            strerror(errno));
-        return -1;
-      }
+    if(lseek(fd,offset,SEEK_SET)==(off_t)-1)
+    {
+      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n", fd,
+          (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
+          strerror(errno));
+      return -1;
+    }
 #endif
 #if defined(__CYGWIN__)
-      {
-        /* November 28, 2004, CGR: cygwin read function is about 10 times slower
-           because it reads 60k each time, so lets call ReadFile directly */
-        DWORD dwByteRead;
-        HANDLE handle=(HANDLE)get_osfhandle(data->handle);
-        ret=ReadFile(handle, nom_buffer,count,&dwByteRead,NULL);
-        if(ret==0)
-          ret=-1;
-        else
-          ret=dwByteRead;
-      }
-#else
-      ret=read(data->handle, nom_buffer, count);
-#endif
-    }
-    /* Test only */
-    /*
-       if(!(offset+count<=120*512 || offset>=(120+1)*512))
-       {
-       log_warning("Simulated read failure\n");
-       return -1;
-       }
-     */
-    if(ret!=count)
     {
-      if(offset+count <= disk_car->disk_size && offset+count <= disk_car->disk_real_size)
-      {
-        log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", data->handle,
-            (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
-            offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
-        if(ret<0)
-          log_error("%s\n", strerror(errno));
-        else if(ret==0)
-          log_error("read after end of file\n");
-        else
-          log_error("Partial read\n");
-      }
-      if(ret<=0)
-        return -1;
-      memset((char*)nom_buffer+ret,0,count-ret);
+      /* November 28, 2004, CGR: cygwin read function is about 10 times slower
+         because it reads 60k each time, so lets call ReadFile directly */
+      DWORD dwByteRead;
+      HANDLE handle=(HANDLE)get_osfhandle(fd);
+      ret=ReadFile(handle, buf,count,&dwByteRead,NULL);
+      if(ret==0)
+        ret=-1;
+      else
+        ret=dwByteRead;
     }
+#else
+    ret=read(fd, buf, count);
+#endif
+  }
+  if(ret!=count)
+  {
+    if(offset+count <= disk_car->disk_size && offset+count <= disk_car->disk_real_size)
+    {
+      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", fd,
+          (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
+      if(ret<0)
+        log_error("%s\n", strerror(errno));
+      else if(ret==0)
+        log_error("read after end of file\n");
+      else
+        log_error("Partial read\n");
+    }
+    if(ret<=0)
+      return -1;
+    memset((char*)buf+ret,0,count-ret);
   }
   return 0;
 }
 
-static int file_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int file_read(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
 {
-  if(count%disk_car->sector_size!=0 || offset%disk_car->sector_size!=0)
-  {
-    int ret;
-    char*buffer=(char*)MALLOC((count/disk_car->sector_size+2)*disk_car->sector_size);
-    if(file_read(disk_car,(unsigned)(((count/disk_car->sector_size)+2)*disk_car->sector_size),buffer,offset/disk_car->sector_size*disk_car->sector_size))
-    {
-      log_error("read failed but try to write anyway");
-      memset(buffer,0,(count/disk_car->sector_size+2)*disk_car->sector_size);
-    }
-    memcpy(buffer+(offset%disk_car->sector_size),nom_buffer,count);
-    ret=file_write(disk_car,(unsigned)(((count/disk_car->sector_size)+2)*disk_car->sector_size),buffer,offset/disk_car->sector_size*disk_car->sector_size);
-    free(buffer);
-    return ret;
-  }
-  else
-  {
-    long int ret=-1;
-    struct info_file_struct *data=disk_car->data;
-/*    log_debug("file_write offset=%lu data->offset=%lu\n",(long unsigned)offset,(long unsigned)data->offset); */
-#if defined(HAVE_PWRITE) && !defined(__CYGWIN__)
-      ret=pwrite(data->handle,nom_buffer,count,offset+data->offset);
-      if(ret<0 && errno == ENOSYS)
-#endif
-      {
-#ifdef __MINGW32__
-	if(_lseeki64(data->handle,offset+data->offset,SEEK_SET)==-1)
-	{
-	  log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", data->handle,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
-	      offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
-	  return -1;
-	}
-#else
-	if(lseek(data->handle,offset+data->offset,SEEK_SET)==-1)
-	{
-	  log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", data->handle,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
-	      offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
-	  return -1;
-	}
-#endif
-	ret=write(data->handle, nom_buffer, count);
-      }
-    disk_car->write_used=1;
-    if(ret!=count)
-    {
-      log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) write err %s\n", data->handle,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
-	  offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),(ret<0?strerror(errno):"File truncated"));
-      return -1;
-    }
-    return 0;
-  }
+  return align_read(&file_read_aux, disk_car, buf, count, offset);
 }
 
-static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int file_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+{
+  int fd=((struct info_file_struct *)disk_car->data)->handle;
+  long int ret=-1;
+#if defined(HAVE_PWRITE) && !defined(__CYGWIN__)
+  ret=pwrite(fd,buf,count,offset);
+  if(ret<0 && errno == ENOSYS)
+#endif
+  {
+#ifdef __MINGW32__
+    if(_lseeki64(fd,offset,SEEK_SET)==-1)
+    {
+      log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
+          (unsigned)(count/disk_car->sector_size),
+          (long unsigned)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
+      return -1;
+    }
+#else
+    if(lseek(fd,offset,SEEK_SET)==-1)
+    {
+      log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
+      return -1;
+    }
+#endif
+    ret=write(fd, buf, count);
+  }
+  disk_car->write_used=1;
+  if(ret!=count)
+  {
+    log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) write err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
+        offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),(ret<0?strerror(errno):"File truncated"));
+    return -1;
+  }
+  return 0;
+}
+
+static int file_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
+{
+  return align_write(&file_read_aux, &file_write_aux, disk_car, buf, count, offset);
+}
+
+static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
   struct info_file_struct *data=disk_car->data;
   log_warning("file_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->handle,
@@ -1444,13 +1470,11 @@ static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *n
   return -1;
 }
 
-#if 0
 static int file_sync(disk_t *disk_car)
 {
   struct info_file_struct *data=disk_car->data;
   return fsync(data->handle);
 }
-#endif
 
 static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, const int verbose)
 {
@@ -1695,8 +1719,6 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     {
       struct info_file_struct *data;
       data=MALLOC(sizeof(*data));
-      /* Note, some Raid reserves the first 1024 512-sectors */
-      data->offset=offset;
       strncpy(data->file_name,device,sizeof(data->file_name));
       data->file_name[sizeof(data->file_name)-1]='\0';
       data->handle=hd_h;
@@ -1704,7 +1726,10 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       posix_fadvise(hd_h,0,0,POSIX_FADV_SEQUENTIAL);
 #endif
       data->mode=mode;
-      data->buffer=NULL;
+      disk_car->rbuffer=NULL;
+      disk_car->wbuffer=NULL;
+      disk_car->rbuffer_size=0;
+      disk_car->wbuffer_size=0;
       disk_car->device=strdup(device);
       disk_car->write_used=0;
       disk_car->description_txt[0]='\0';
@@ -1712,6 +1737,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       disk_car->description_short=file_description_short;
       disk_car->read=file_read;
       disk_car->write=((mode&O_RDWR)==O_RDWR?file_write:file_nowrite);
+      disk_car->sync=file_sync;
       disk_car->access_mode=((mode&O_RDWR)==O_RDWR?TESTDISK_O_RDWR:TESTDISK_O_RDONLY);
 #ifdef O_DIRECT
       if((mode&O_DIRECT)==O_DIRECT)
@@ -1719,6 +1745,8 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 #endif
       disk_car->clean=file_clean;
       disk_car->data=data;
+      /* Note, some Raid reserves the first 1024 512-sectors */
+      disk_car->offset=offset;
       if(disk_car->disk_size==0)
       {
         /* Handle Mac */
@@ -1850,20 +1878,18 @@ static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
 static int file_win32_clean(disk_t *disk_car);
 static unsigned int file_win32_compute_sector_size(HANDLE handle, const unsigned int sector_size_default);
-static int file_win32_read(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t offset);
-static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset);
-static int file_win32_nowrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
+static int file_win32_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
+static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
+static int file_win32_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_win32_sync(disk_t *disk_car);
 uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 uint64_t filewin32_setfilepointer(HANDLE handle, const char *device);
 
 struct info_file_win32_struct
 {
   HANDLE handle;
-  uint64_t offset;
   char file_name[DISKNAME_MAX];
   int mode;
-  void *buffer;
-  unsigned int buffer_size;
 };
 
 uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
@@ -1919,7 +1945,6 @@ uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
 disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, int testdisk_mode)
 {
   disk_t *disk_car=NULL;
-  unsigned int offset=0;
   HANDLE handle=INVALID_HANDLE_VALUE;
   int mode=0;
   int try_readonly=1;
@@ -2023,12 +2048,14 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     }
     disk_car->arch=arch;
     data=MALLOC(sizeof(*data));
-    data->offset=offset;
     strncpy(data->file_name,device,sizeof(data->file_name));
     data->file_name[sizeof(data->file_name)-1]='\0';
     data->handle=handle;
     data->mode=mode;
-    data->buffer=NULL;
+    disk_car->rbuffer=NULL;
+    disk_car->wbuffer=NULL;
+    disk_car->rbuffer_size=0;
+    disk_car->wbuffer_size=0;
     disk_car->device=strdup(device);
     disk_car->write_used=0;
     disk_car->description_txt[0]='\0';
@@ -2036,9 +2063,11 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->description_short=file_win32_description_short;
     disk_car->read=file_win32_read;
     disk_car->write=((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?file_win32_write:file_win32_nowrite);
+    disk_car->sync=file_win32_sync;
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=file_win32_clean;
     disk_car->data=data;
+    disk_car->offset=0;
     if(disk_car->disk_size==0)
     {
       compute_device_size(disk_car);
@@ -2100,15 +2129,8 @@ static int file_win32_clean(disk_t *disk_car)
   {
     struct info_file_win32_struct *data=disk_car->data;
     CloseHandle(data->handle);
-    if(data->buffer!=NULL)
-    {
-      free(data->buffer);
-      data->buffer=NULL;
-    }
-    free(disk_car->data);
-    disk_car->data=NULL;
   }
-  return 0;
+  return generic_clean(disk_car);
 }
 
 static unsigned int file_win32_compute_sector_size(HANDLE handle, const unsigned int sector_size_default)
@@ -2130,181 +2152,126 @@ static unsigned int file_win32_compute_sector_size(HANDLE handle, const unsigned
   return sector_size_default;
 }
 
-static int file_win32_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
+static int file_win32_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  struct info_file_win32_struct *data=disk_car->data;
-  if(count%disk_car->sector_size!=0 || offset%disk_car->sector_size!=0
-#ifdef O_DIRECT
-      || ((data->mode&O_DIRECT)!=0 && nom_buffer!=data->buffer)
-#endif
-    )
+  long int ret;
+  HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
+  LARGE_INTEGER li;
+  li.QuadPart = offset;
+  li.LowPart = SetFilePointer(fd, li.LowPart, &li.HighPart, FILE_BEGIN);
+  if (li.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
   {
-    if(data->buffer==NULL)
-    {
-      data->buffer_size=128*512;
-    }
-    while(data->buffer_size<((offset%disk_car->sector_size+count+disk_car->sector_size-1)
-	  / disk_car->sector_size * disk_car->sector_size))
-    {
-      if(data->buffer!=NULL)
-      {
-	free(data->buffer);
-	data->buffer=NULL;
-      }
-      data->buffer_size*=2;
-    }
-    if(data->buffer==NULL)
-    {
-      data->buffer=(char*)MALLOC(data->buffer_size);
-    }
-    /*
-    log_debug("file_win32_read handle unaligned data\n");
-     */
-    if(file_win32_read(disk_car,(offset%disk_car->sector_size+count+disk_car->sector_size-1)
-      / disk_car->sector_size * disk_car->sector_size, data->buffer,
-      offset/disk_car->sector_size*disk_car->sector_size))
-    {
-      return -1;
-    }
-    memcpy(nom_buffer,(char*)data->buffer+(offset%disk_car->sector_size),count);
-    return 0;
+    LPVOID lpMsgBuf;
+    DWORD dw = GetLastError(); 
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &lpMsgBuf,
+        0, NULL );
+    log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
+        (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
+        offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
+        (char*)lpMsgBuf);
+    LocalFree(lpMsgBuf);
+    return -1;
   }
   {
-    long int ret;
-    LARGE_INTEGER li;
-#ifdef DEBUG
-    log_debug("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u))\n", (unsigned int)data->handle,
-        (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-        offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
-#endif
-    li.QuadPart = offset+data->offset;
-    li.LowPart = SetFilePointer(data->handle, li.LowPart, &li.HighPart, FILE_BEGIN);
-    if (li.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+    DWORD dwByteRead;
+    ret=ReadFile(fd, buf,count,&dwByteRead,NULL);
+    if(ret)
+      ret=dwByteRead;
+  }
+  if(ret!=count)
+  {
+    if(ret>0 || offset<disk_car->disk_size)
     {
-      LPVOID lpMsgBuf;
-      DWORD dw = GetLastError(); 
-      FormatMessage(
-	  FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	  FORMAT_MESSAGE_FROM_SYSTEM,
-	  NULL,
-	  dw,
-	  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	  (LPTSTR) &lpMsgBuf,
-	  0, NULL );
-      log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (unsigned int)data->handle,
-	  (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-	  offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
-	  (char*)lpMsgBuf);
-      LocalFree(lpMsgBuf);
-      return -1;
-    }
-    {
-      DWORD dwByteRead;
-      ret=ReadFile(data->handle, nom_buffer,count,&dwByteRead,NULL);
-      if(ret)
-	ret=dwByteRead;
-    }
-    if(ret!=count)
-    {
-      if(ret>0 || offset<disk_car->disk_size)
+      log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", (int)fd,
+          (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
+          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
+      if(ret<0)
       {
-	log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", (unsigned int)data->handle,
-	    (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
-	    offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
-	if(ret<0)
-	{
-	  LPVOID lpMsgBuf;
-	  DWORD dw = GetLastError(); 
-	  FormatMessage(
-	      FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	      FORMAT_MESSAGE_FROM_SYSTEM,
-	      NULL,
-	      dw,
-	      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	      (LPTSTR) &lpMsgBuf,
-	      0, NULL );
-	  log_error("%s\n", (char*)lpMsgBuf);
-	  LocalFree(lpMsgBuf);
-	}
-	else if(ret==0)
-	  log_error("read after end of file\n");
-	else
-	  log_error("Partial read\n");
+        LPVOID lpMsgBuf;
+        DWORD dw = GetLastError(); 
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+            FORMAT_MESSAGE_FROM_SYSTEM,
+            NULL,
+            dw,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+        log_error("%s\n", (char*)lpMsgBuf);
+        LocalFree(lpMsgBuf);
       }
-      if(ret<=0)
-	return -1;
-      memset((char*)nom_buffer+ret,0,count-ret);
+      else if(ret==0)
+        log_error("read after end of file\n");
+      else
+        log_error("Partial read\n");
     }
+    if(ret<=0)
+      return -1;
+    memset((char*)buf+ret,0,count-ret);
   }
   return 0;
 }
 
-static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int file_win32_read(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
 {
-  if(count%disk_car->sector_size!=0 || offset%disk_car->sector_size!=0)
-  {
-    int ret;
-    char*buffer=(char*)MALLOC((count/disk_car->sector_size+2)*disk_car->sector_size);
-    if(file_read(disk_car,(unsigned)(((count/disk_car->sector_size)+2)*disk_car->sector_size),buffer,offset/disk_car->sector_size*disk_car->sector_size))
-    {
-      log_error("read failed but try to write anyway");
-      memset(buffer,0,(count/disk_car->sector_size+2)*disk_car->sector_size);
-    }
-    memcpy(buffer+(offset%disk_car->sector_size),nom_buffer,count);
-    ret=file_win32_write(disk_car,(unsigned)(((count/disk_car->sector_size)+2)*disk_car->sector_size),buffer,offset/disk_car->sector_size*disk_car->sector_size);
-    free(buffer);
-    return ret;
-  }
-  else
-  {
-    long int ret;
-    LARGE_INTEGER li;
-    struct info_file_win32_struct *data=disk_car->data;
-#ifdef DEBUG
-    log_error("file_win32_write(%d,%u,buffer,%lu(%u/%u/%u))\n", (unsigned int)data->handle,
-	(unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-	offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
-#endif
-    li.QuadPart = offset+data->offset;
-    li.LowPart = SetFilePointer(data->handle, li.LowPart, &li.HighPart, FILE_BEGIN);
-    if (li.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
-    {
-      LPVOID lpMsgBuf;
-      DWORD dw = GetLastError(); 
-      FormatMessage(
-	  FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	  FORMAT_MESSAGE_FROM_SYSTEM,
-	  NULL,
-	  dw,
-	  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	  (LPTSTR) &lpMsgBuf,
-	  0, NULL );
-      log_error("file_win32_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (unsigned int)data->handle,
-	  (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-	  offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
-	  (char*)lpMsgBuf);
-      LocalFree(lpMsgBuf);
-      return -1;
-    }
-    {
-      DWORD dwByteRead;
-      ret=WriteFile(data->handle, nom_buffer,count,&dwByteRead,NULL);
-      if(ret)
-	ret=dwByteRead;
-    }
-    disk_car->write_used=1;
-    if(ret!=count)
-    {
-      log_error("file_win32_write(%u,buffer,%lu(%u/%u/%u)) write err\n", 
-	  (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
-	  offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
-      return -1;
-    }
-    return 0;
-  }
+  return align_read(&file_win32_read_aux, disk_car, buf, count, offset);
 }
 
-static int file_win32_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int file_win32_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+{
+  long int ret;
+  HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
+  LARGE_INTEGER li;
+  li.QuadPart = offset;
+  li.LowPart = SetFilePointer(fd, li.LowPart, &li.HighPart, FILE_BEGIN);
+  if (li.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
+  {
+    LPVOID lpMsgBuf;
+    DWORD dw = GetLastError(); 
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &lpMsgBuf,
+        0, NULL );
+    log_error("file_win32_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
+        (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
+        offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
+        (char*)lpMsgBuf);
+    LocalFree(lpMsgBuf);
+    return -1;
+  }
+  {
+    DWORD dwByteRead;
+    ret=WriteFile(fd, buf,count,&dwByteRead,NULL);
+    if(ret)
+      ret=dwByteRead;
+  }
+  disk_car->write_used=1;
+  if(ret!=count)
+  {
+    log_error("file_win32_write(%u,%u,buffer,%lu(%u/%u/%u)) write err\n", (int)fd,
+        (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
+        offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
+    return -1;
+  }
+  return 0;
+}
+
+static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+{
+  return align_write(&file_win32_read_aux, &file_win32_write_aux, disk_car, buf, count, offset);
+}
+
+static int file_win32_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
   const struct info_file_win32_struct *data=disk_car->data;
   log_warning("file_win32_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", (unsigned int)data->handle,
@@ -2313,7 +2280,6 @@ static int file_win32_nowrite(disk_t *disk_car,const unsigned int count, const v
   return -1;
 }
 
-#if 0
 static int file_win32_sync(disk_t *disk_car)
 {
   const struct info_file_win32_struct *data=disk_car->data;
@@ -2325,5 +2291,4 @@ static int file_win32_sync(disk_t *disk_car)
   errno=0;
   return 0;
 }
-#endif
 #endif
