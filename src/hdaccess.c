@@ -120,6 +120,7 @@ static int file_clean(disk_t *disk_car);
 static int file_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
 static int file_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
 static int file_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_sync(disk_t *disk_car);
 #ifndef DJGPP
 static disk_t *disk_get_geometry(const int hd_h, const char *device, const int verbose);
 #endif
@@ -150,7 +151,7 @@ static int align_read(int (*fnct_read)(disk_t *disk_car, void *buf, const unsign
     }
     if(disk_car->rbuffer==NULL)
       disk_car->rbuffer=(char*)MALLOC(disk_car->rbuffer_size);
-    if(fnct_read(disk_car, disk_car->rbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size))
+    if(fnct_read(disk_car, disk_car->rbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
       return -1;
     memcpy(buf,(char*)disk_car->rbuffer+(offset_new%disk_car->sector_size),count);
     return 0;
@@ -179,7 +180,7 @@ static int align_write(int (*fnct_read)(disk_t *disk_car, void *buf, const unsig
     }
     if(disk_car->wbuffer==NULL)
       disk_car->wbuffer=(char*)MALLOC(disk_car->wbuffer_size);
-    if(fnct_read(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size))
+    if(fnct_read(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
     {
       log_error("read failed but try to write anyway");
       memset(disk_car->wbuffer,0, disk_car->wbuffer_size);
@@ -613,20 +614,22 @@ static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
     uint64_t read_offset=0;
     do
     {
-      int i;
-      int rc=4; /* sector not found/read error */
+      int i=0;
+      int rc;
       read_size=count-read_offset>16*512?16*512:count-read_offset;
-      for(i=0;(rc!=0) && (rc!=1) && (i<MAX_IO_NBR);i++)
+      do
       {
         rc=hd_read(disk_car, (char*)buf+read_offset, read_size, offset+read_offset);
         if(rc!=0)
           disk_reset_error(disk_car);
-      }
+      } while(rc!=0 && rc!=1 && ++i<MAX_IO_NBR);
+      // 0=successful completion
+      // 1=invalid function in AH or invalid parameter
       if(rc!=0)
       {
         log_error("disk_read_aux failed ");
         hd_report_error(disk_car,offset,count/disk_car->sector_size,rc);
-        return rc;
+        return -rc;
       }
       read_offset+=read_size;
     } while(read_offset<count);
@@ -643,14 +646,15 @@ static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
 {
 
   struct info_disk_struct*data=disk_car->data;
-  int i,rc=4; /* sector not found/read error */
+  int i=0;
+  int rc;
   disk_car->write_used=1;
-  for(i=0;(rc==4)&&(i<MAX_IO_NBR);i++)
   {
     rc=hd_write(disk_car, buf, count/disk_car->sector_size, hd_offset/disk_car->sector_size);
     if(rc!=0)
       disk_reset_error(disk_car);
-  }
+  } while(rc==4 && ++i<MAX_IO_NBR);
+  /* 4=sector not found/read error */
   if(rc!=0)
   {
     log_error("disk_write error\n");

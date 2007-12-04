@@ -60,6 +60,7 @@ struct cache_struct
 
 static int cache_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset);
 static int cache_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset);
+static int cache_sync(disk_t *clean);
 static int cache_clean(disk_t *clean);
 static const char *cache_description(disk_t *disk_car);
 static const char *cache_description_short(disk_t *disk_car);
@@ -229,6 +230,12 @@ static int cache_clean(disk_t *disk_car)
   return 0;
 }
 
+static int cache_sync(disk_t *disk_car)
+{
+  struct cache_struct *data=disk_car->data;
+  data->disk_car->sync(data->disk_car);
+}
+
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
 {
   unsigned int i;
@@ -255,6 +262,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   new_disk_car->data=data;
   new_disk_car->read=cache_read;
   new_disk_car->write=cache_write;
+  new_disk_car->sync=cache_sync;
   new_disk_car->clean=cache_clean;
   new_disk_car->description=cache_description;
   new_disk_car->description_short=cache_description_short;
