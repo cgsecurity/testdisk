@@ -44,6 +44,7 @@
 #include "savehdr.h"
 #include "cramfs.h"
 #include "ext2.h"
+#include "fat.h"
 #include "hfs.h"
 #include "hfsp.h"
 #include "jfs_superblock.h"
@@ -126,8 +127,9 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
     mac_Block0 *maclabel=(mac_Block0*)&buffer;
     if (be16(maclabel->sbSig) != BLOCK0_SIGNATURE)
     {
-      aff_buffer(BUFFER_ADD,"\nBad MAC partition, invalid block0 signature\n");
-      return NULL;
+      aff_buffer(BUFFER_ADD,"Bad MAC partition, invalid block0 signature\n");
+      /* continue, even if the first sector have been overwritten by an Intel
+	 partition, the following sectors may be intact */
     }
   }
   for(i=1;i<=limit;i++)
@@ -137,7 +139,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
       return new_list_part;
     if(be16(dpme->dpme_signature) != DPME_SIGNATURE)
     {
-      aff_buffer(BUFFER_ADD,"\nread_part_mac: bad DPME signature");
+      aff_buffer(BUFFER_ADD,"read_part_mac: bad DPME signature\n");
       return new_list_part;
     }
     {
