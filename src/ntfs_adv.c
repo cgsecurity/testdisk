@@ -133,11 +133,11 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
       {
 	log_info("Write new boot!\n");
 	/* Write boot sector and backup boot sector */
-	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, &newboot, partition->part_offset))
+	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset))
 	{
 	  display_message("Write error: Can't write new NTFS boot sector\n");
 	}
-	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, &newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
 	{
 	  display_message("Write error: Can't write new NTFS backup boot sector\n");
 	}
@@ -201,11 +201,11 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	{
 	  log_info("Write new boot!\n");
 	  /* Write boot sector and backup boot sector */
-	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, &newboot, partition->part_offset))
+	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset))
 	  {
 	    display_message("Write error: Can't write new NTFS boot sector\n");
 	  }
-	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, &newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
 	  {
 	    display_message("Write error: Can't write new NTFS backup boot sector\n");
 	  }

@@ -386,8 +386,7 @@ static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition
     if(disk_car->read(disk_car, root_size, buffer_dir, start))
     {
       log_error("FAT 1x: Can't read root directory\n");
-      free(buffer_dir);
-      return NULL;
+      /* Don't return yet, it may have been a partial read */
     }
     res=dir_fat_aux(buffer_dir,root_size,fat_header->cluster_size);
     free(buffer_dir);

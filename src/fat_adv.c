@@ -791,17 +791,17 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
 
 static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length,const int verbose, unsigned int root_size_max,const upart_type_t upart_type, const unsigned int fats)
 {
-  file_data_t *current_file;
   file_data_t *dir_list=NULL;
-  unsigned int nbr_sector;
+  file_data_t *current_file;
   unsigned char *buffer_dir;
+  unsigned int root_dir_size;
   if(root_size_max==0)
   {
     root_size_max=4096;
   }
-  nbr_sector=(root_size_max+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
-  buffer_dir=(unsigned char *)MALLOC(disk_car->sector_size*nbr_sector);
-  if(disk_car->read(disk_car, nbr_sector*disk_car->sector_size, buffer_dir, partition->part_offset+(uint64_t)(reserved+fats*fat_length)*disk_car->sector_size)!=0)
+  root_dir_size=(root_size_max*32+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
+  buffer_dir=(unsigned char *)MALLOC(root_dir_size);
+  if(disk_car->read(disk_car, root_dir_size, buffer_dir, partition->part_offset+(uint64_t)(reserved+fats*fat_length)*disk_car->sector_size)!=0)
   {
     log_error("FAT 1x can't read root directory\n");
     free(buffer_dir);
@@ -810,7 +810,7 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
   {
     uint64_t start_data=reserved+fats*fat_length+(root_size_max+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
     unsigned int cluster_size=calcul_cluster_size(upart_type,partition->part_size/disk_car->sector_size-start_data,fat_length,disk_car->sector_size);
-    dir_list=dir_fat_aux(buffer_dir,disk_car->sector_size*nbr_sector,cluster_size);
+    dir_list=dir_fat_aux(buffer_dir, root_dir_size, cluster_size);
   }
   if(verbose>1)
   {
@@ -2863,7 +2863,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
               }
               if(allow_write[fat_nbr]==FAT_REPAIR_YES)
               {
-                if(disk_car->write(disk_car, rw_size, &buffer_fat[fat_nbr], 
+                if(disk_car->write(disk_car, rw_size, buffer_fat[fat_nbr], 
                       partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
                 {
                   display_message("repair_FAT_table: write failed.\n");

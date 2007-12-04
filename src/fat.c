@@ -466,7 +466,7 @@ int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_
     default:	/* Avoid compiler warning */
       break;
   }
-  if(disk_car->write(disk_car,buffer_size, &buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
+  if(disk_car->write(disk_car,buffer_size, buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
   {
     display_message("Write error: set_next_cluster write error\n");
     free(buffer);
