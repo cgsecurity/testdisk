@@ -35,9 +35,7 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
-
-/* Allow a small memory leak */
-#define OPT_MALLOC
+#include "fnd_mem.h"
 
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
@@ -52,8 +50,6 @@ static void register_header_check_fasttxt(file_stat_t *file_stat);
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static inline const unsigned char *find_in_mem(const unsigned char *haystack, const unsigned char * haystack_end,
-    const unsigned char *needle, const unsigned int needle_length);
 static void file_check_html(file_recovery_t *file_recovery);
 static void file_check_emlx(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
@@ -282,24 +278,6 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, int
   return(p-buffer);
 }
 
-static inline const unsigned char *find_in_mem(const unsigned char *haystack, const unsigned char * haystack_end,
-    const unsigned char *needle, const unsigned int needle_length)
-{
-  while(haystack!=NULL)
-  {
-    haystack=memchr(haystack,needle[0],haystack_end-haystack);
-    if(haystack!=NULL && haystack<=(haystack_end-needle_length))
-    {
-      if(memcmp(haystack,needle,needle_length)==0)
-        return haystack;
-      haystack++;
-    }
-    else
-      haystack=NULL;
-  };
-  return NULL;
-}
-
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const char sign_grisbi[]		= "Version_grisbi";
@@ -371,11 +349,11 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
-    if(strstr(buffer,sign_grisbi)!=NULL)
+    if(find_in_mem(buffer, buffer_size, sign_grisbi, sizeof(sign_grisbi))!=NULL)
       file_recovery_new->extension="gsb";
-    else if(strstr(buffer,sign_fst)!=NULL)
+    else if(find_in_mem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
       file_recovery_new->extension="fst";
-    else if(strstr(buffer,sign_html)!=NULL)
+    else if(find_in_mem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
     {
       file_recovery_new->extension="html";
       file_recovery_new->file_check=&file_check_html;
@@ -406,7 +384,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_jsp2[]		= "<%=";
   const char sign_php[]			= "<?php";
   const char sign_tex[]			= "\\begin{";
-  const unsigned char *haystack_end;
   {
     unsigned int tmp=0;
     for(i=0;i<10 && isdigit(buffer[i]);i++)
@@ -435,7 +412,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     buffer_lower_size=buffer_size+16;
     buffer_lower=MALLOC(buffer_lower_size);
   }
-  haystack_end=buffer_lower+buffer_size;
   i=UTF2Lat(buffer_lower,buffer,buffer_size);
   /* strncasecmp */
   if(memcmp(buffer_lower,header_bat,sizeof(header_bat))==0)
@@ -464,14 +440,13 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(buffer[0]=='#' && buffer[1]=='!')
   {
-    unsigned int haystack_size;
+    unsigned int l=buffer_size;
     const unsigned char *haystack=buffer_lower+2;
     const unsigned char *res;
-    haystack_size=buffer_size-2;
-    res=memchr(haystack,'\n',haystack_size);
+    res=memchr(haystack,'\n',l);
     if(res!=NULL)
-      haystack_end=res;
-    if(find_in_mem(haystack,haystack_end,header_sig_perl,sizeof(header_sig_perl)) != NULL)
+      l=res-haystack;
+    if(find_in_mem(haystack, l, header_sig_perl, sizeof(header_sig_perl)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -479,7 +454,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="pl";
       return 1;
     }
-    if(find_in_mem(haystack,haystack_end,header_sig_python,sizeof(header_sig_python)) != NULL)
+    if(find_in_mem(haystack, l, header_sig_python, sizeof(header_sig_python)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -487,7 +462,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="py";
       return 1;
     }
-    if(find_in_mem(haystack,haystack_end,header_sig_ruby,sizeof(header_sig_ruby)) != NULL)
+    if(find_in_mem(haystack, l, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -532,8 +507,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       unsigned int stats[256];
       unsigned int j;
       double ind=0;
-      for(j=0;j<256;j++)
-        stats[j]=0;
+      memset(&stats, 0, sizeof(stats));
       for(j=0;j<i;j++)
         stats[buffer[j]]++;
       for(j=0;j<256;j++)
@@ -595,10 +569,10 @@ Doc: \r (0xD)
             strstr(file_recovery->filename,".html")!=NULL) ||
           /* Text should not be found in JPEG */
           (file_recovery->file_stat->file_hint==&file_hint_jpg &&
-           find_in_mem(buffer,buffer+buffer_size,"8BIM",4)==NULL &&
-           find_in_mem(buffer,buffer+buffer_size,"adobe",5)==NULL) ||
+           find_in_mem(buffer, buffer_size, "8BIM", 4)==NULL &&
+           find_in_mem(buffer, buffer_size, "adobe", 5)==NULL) ||
           /* Text should not be found in zip because of compression */
-          (file_recovery->file_stat->file_hint==&file_hint_zip && find_in_mem(buffer,buffer+buffer_size,zip_header,4)==NULL))
+          (file_recovery->file_stat->file_hint==&file_hint_zip && find_in_mem(buffer, buffer_size, zip_header, 4)==NULL))
       {
         reset_file_recovery(file_recovery_new);
         file_recovery_new->data_check=&data_check_txt;
@@ -655,27 +629,27 @@ static void file_check_html(file_recovery_t *file_recovery)
   {
     const int read_size=1024;
     int taille;
-    char *buffer;
+    char *buffer_lower;
     int i;
     if(fseek(file_recovery->handle,0,SEEK_SET)<0)
       return;
-    buffer=MALLOC(read_size);
-    taille=fread(buffer,1,read_size,file_recovery->handle);
+    buffer_lower=MALLOC(read_size);
+    taille=fread(buffer_lower,1,read_size,file_recovery->handle);
     if(taille<0)
     {
-      free(buffer);
+      free(buffer_lower);
       return;
     }
-    buffer[taille<read_size?taille:read_size-1]='\0';
+    buffer_lower[taille<read_size?taille:read_size-1]='\0';
     /* TODO: use strcasestr if available */
     for(i=0;i<taille;i++)
-      buffer[i]=tolower(buffer[i]);
-    if(strstr(buffer, sign_html)==NULL)
+      buffer_lower[i]=tolower(buffer_lower[i]);
+    if(strstr(buffer_lower, sign_html)==NULL)
     {
       log_warning("%s: no header\n",file_recovery->filename);
       file_recovery->file_size=0;
     }
-    free(buffer);
+    free(buffer_lower);
   }
 }
 

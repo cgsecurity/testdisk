@@ -29,9 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-
-static inline const unsigned char *find_in_mem(const unsigned char *haystack, const unsigned char * haystack_end,
-    const unsigned char *needle, const unsigned int needle_length);
+#include "fnd_mem.h"
 
 static void register_header_check_pdf(file_stat_t *file_stat);
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -55,24 +53,6 @@ static void register_header_check_pdf(file_stat_t *file_stat)
   register_header_check(0, pdf_header,sizeof(pdf_header), &header_check_pdf, file_stat);
 }
 
-static inline const unsigned char *find_in_mem(const unsigned char *haystack, const unsigned char * haystack_end,
-    const unsigned char *needle, const unsigned int needle_length)
-{
-  while(haystack!=NULL)
-  {
-    haystack=memchr(haystack,needle[0],haystack_end-haystack);
-    if(haystack!=NULL && haystack<=(haystack_end-needle_length))
-    {
-      if(memcmp(haystack,needle,needle_length)==0)
-	return haystack;
-      haystack++;
-    }
-    else
-      haystack=NULL;
-  };
-  return NULL;
-}
-
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,pdf_header,sizeof(pdf_header))==0)
@@ -81,11 +61,11 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
     const unsigned char *linearized;
     reset_file_recovery(file_recovery_new);
-    if(find_in_mem(buffer, buffer+512, sig_illustrator,sizeof(sig_illustrator)) != NULL)
+    if(find_in_mem(buffer, 512, sig_illustrator,sizeof(sig_illustrator)) != NULL)
       file_recovery_new->extension="ai";
     else
       file_recovery_new->extension=file_hint_pdf.extension;
-    if((linearized=find_in_mem(buffer, buffer+512, sig_linearized,sizeof(sig_linearized))) != NULL)
+    if((linearized=find_in_mem(buffer, 512, sig_linearized,sizeof(sig_linearized))) != NULL)
     {
       linearized+=sizeof(sig_linearized);
       while(*linearized!='>' && linearized<=buffer+512)

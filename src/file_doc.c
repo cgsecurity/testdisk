@@ -35,11 +35,11 @@
 #include "filegen.h"
 #include "ole.h"
 #include "log.h"
+#include "fnd_mem.h"
 
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static const unsigned char * find_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
 static uint64_t test_OLE(FILE *file);
 
 const file_hint_t file_hint_doc= {
@@ -57,15 +57,6 @@ static const unsigned char doc_header[]= { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0
 static void register_header_check_doc(file_stat_t *file_stat)
 {
   register_header_check(0, doc_header,sizeof(doc_header), &header_check_doc, file_stat);
-}
-
-static const unsigned char * find_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size)
-{
-  unsigned int i;
-  for(i=0;i<haystack_size-needle_size;i++)
-    if(memcmp(&haystack[i],needle,needle_size)==0)
-      return &haystack[i];
-  return NULL;
 }
 
 static void file_check_doc(file_recovery_t *file_recovery)

@@ -31,6 +31,7 @@
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
+#include "fnd_mem.h"
 
 static void register_header_check_mov(file_stat_t *file_stat);
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -49,17 +50,6 @@ const file_hint_t file_hint_mov= {
 static void register_header_check_mov(file_stat_t *file_stat)
 {
   register_header_check(0, NULL,0, &header_check_mov, file_stat);
-}
-
-static const unsigned char * find_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
-
-static const unsigned char * find_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size)
-{
-  unsigned int i;
-  for(i=0;i<haystack_size-needle_size;i++)
-    if(memcmp(&haystack[i],needle,needle_size)==0)
-      return &haystack[i];
-  return NULL;
 }
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
