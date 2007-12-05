@@ -317,7 +317,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
         fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
-        if(check_volume_name(partition->fsname,11))
+        if(check_VFAT_volume_name(partition->fsname, 11))
           partition->fsname[0]='\0';
       }
       break;
@@ -326,7 +326,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
         fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
-        if(check_volume_name(partition->fsname,11))
+        if(check_VFAT_volume_name(partition->fsname, 11))
           partition->fsname[0]='\0';
       }
       break;
@@ -929,7 +929,7 @@ int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct f
         {
           /*      dump_ncurses(&buffer[i*0x20],0x20); */
           fat_set_part_name(partition,&buffer[i*0x20],11);
-          if(check_volume_name(partition->fsname,11))
+          if(check_VFAT_volume_name(partition->fsname, 11))
             partition->fsname[0]='\0';
         }
         if(buffer[i*0x20]==0)
@@ -944,7 +944,7 @@ int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct f
   {
     log_info("set_FAT_info: name from BS used\n");
     fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT32_PART_NAME,11);
-    if(check_volume_name(partition->fsname,11))
+    if(check_VFAT_volume_name(partition->fsname, 11))
       partition->fsname[0]='\0';
   }
   return 0;
@@ -1207,3 +1207,26 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
   return 0;
 }
 
+int check_VFAT_volume_name(const char *name, const unsigned int max_size)
+{
+  unsigned int i;
+  for(i=0;name[i]!='\0' && i<max_size;i++)
+  {
+    if(name[i] < 0x20)
+      return 1;
+    switch(name[i])
+    {
+      case '<':
+      case '>':
+      case ':':
+      case '"':
+      case '/':
+      case '\\':
+      case '|':
+      case '?':
+      case '*':
+	return 1;
+    }
+  }
+  return 0; /* Ok */
+}

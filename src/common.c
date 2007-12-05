@@ -142,37 +142,6 @@ static unsigned int up2power_aux(const unsigned int number)
 	return(1+up2power_aux(number/2));
 }
 
-int check_volume_name(const char *name,const unsigned int max_size)
-{
-  unsigned int i;
-  for(i=0;name[i]!='\0' && i<max_size;i++)
-  {
-    if((name[i]>=0x6 && name[i]<=0x1f)||
-	(name[i]>=0x3A && name[i]<=0x3f))
-      return 1;
-    switch(name[i])
-    {
-      case 0x1:
-      case 0x2:
-      case 0x3:
-      case 0x4:
-      case 0x22:
-      case 0x2A:
-      case 0x2B:
-      case 0x2C:
-/*     case 0x2E: Pas sur */
-      case 0x2F:
-      case 0x5B:
-      case 0x5C:
-      case 0x5D:
-      case 0x7C:
-/*     case 'a' ... 'z': */
-	return 1;
-    }
-  }
-  return 0; /* Ok */
-}
-
 void set_part_name(partition_t *partition,const char *src,const int max_size)
 {
   int i;
@@ -184,16 +153,27 @@ void set_part_name(partition_t *partition,const char *src,const int max_size)
 static inline unsigned char convert_char(unsigned char car)
 {
 #ifdef DJGPP
+  if(car<0x20)
+    return '_';
   switch(car)
   {
-    case ' ':
+    /* Forbidden */
+    case '<':
+    case '>':
+    case ':':
+    case '"':
+    /* case '/': subdirectory */
+    case '\\':
+    case '|':
+    case '?':
     case '*':
-    case '+':
-    case ',':
-    case '.':
-    case '=':
+    /* Not recommanded */
     case '[':
     case ']':
+    case ';':
+    case ',':
+    case '+':
+    case '=':
       return '_';
   }
   /* 'a' */
@@ -220,40 +200,30 @@ static inline unsigned char convert_char(unsigned char car)
   /* 'y' */
   if(car>=253)
     return 'y';
-  /* Chars allowed under msdos, a-z is stored as upercase by the OS itself */
-  if((car>='A' && car<='Z') || (car>='a' && car<='z')|| (car>='0' && car<='9'))
-    return car;
+#elif defined(__CYGWIN__) || defined(__MINGW32__)
+  if(car<0x20)
+    return '_';
   switch(car)
   {
-    case '$':
-    case '%':
-    case '\'':
-    case '`':
-    case '-':
-    case '@':
-    case '{':
-    case '}':
-    case '~':
-    case '!':
-    case '#':
-    case '(':
-    case ')':
-    case '&':
-    case '_':
-    case '^':
-    case ' ':
-    case '+':
-    case ',':
-    case '.':
-    case '=':
+    /* Forbidden */
+    case '<':
+    case '>':
+    case ':':
+    case '"':
+    /* case '/': subdirectory */
+    case '\\':
+    case '|':
+    case '?':
+    case '*':
+    /* Not recommanded */
     case '[':
     case ']':
-    case '/':   /* without it, no subdirectory */
-      return car;
+    case ';':
+    case ',':
+    case '+':
+    case '=':
+      return '_';
   }
-  if(car>=224)
-    return car;
-  return '_';
 #endif
   return car;
 }

@@ -49,8 +49,6 @@ int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const u
     return 1;
   }
   set_part_name(partition,((const struct disklabel*)buffer)->d_packname,16);
-  if(check_volume_name(partition->fsname,16))
-    partition->fsname[0]='\0';
   free(buffer);
   return 0;
 }
@@ -154,8 +152,6 @@ int recover_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t 
       partition->part_size=0;
     partition->part_type_i386=P_FREEBSD;
     set_part_name(partition,bsd_header->d_packname,16);
-    if(check_volume_name(partition->fsname,16))
-      partition->fsname[0]='\0';
     partition->info[0]='\0';
     return 0;
   }
@@ -176,8 +172,6 @@ int recover_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t 
       partition->part_size=0;
     partition->part_type_i386=P_OPENBSD;
     set_part_name(partition,bsd_header->d_packname,16);
-    if(check_volume_name(partition->fsname,16))
-      partition->fsname[0]='\0';
     partition->info[0]='\0';
     return 0;
   }

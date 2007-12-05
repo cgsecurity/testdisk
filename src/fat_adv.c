@@ -1127,7 +1127,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       fat_header->fat_length=le16(fat_length);
       fat_header->dir_entries[1]=dir_entries>>8;
       fat_header->dir_entries[0]=dir_entries;
-      if(check_volume_name((const char*)&newboot[FAT1X_PART_NAME],11))
+      if(check_VFAT_volume_name((const char*)&newboot[FAT1X_PART_NAME],11))
 	newboot[FAT1X_PART_NAME]='\0';
       break;
     case UP_FAT16:
@@ -1143,7 +1143,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       fat_header->fat_length=le16(fat_length);
       fat_header->dir_entries[1]=dir_entries>>8;
       fat_header->dir_entries[0]=dir_entries;
-      if(check_volume_name((const char*)&newboot[FAT1X_PART_NAME],11))
+      if(check_VFAT_volume_name((const char*)&newboot[FAT1X_PART_NAME],11))
 	newboot[FAT1X_PART_NAME]='\0';
       break;
     case UP_FAT32:
@@ -1205,7 +1205,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       newboot[2*disk_car->sector_size+0x1FD]=0x00;
       newboot[2*disk_car->sector_size+0x1FE]=0x55;
       newboot[2*disk_car->sector_size+0x1FF]=0xAA;
-      if(check_volume_name((const char*)&newboot[FAT32_PART_NAME],11))
+      if(check_VFAT_volume_name((const char*)&newboot[FAT32_PART_NAME],11))
 	newboot[FAT32_PART_NAME]='\0';
       break;
     default:

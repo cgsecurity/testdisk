@@ -354,7 +354,6 @@ char read_key(void);
 char test_key(void);
 unsigned int up2power(const unsigned int number);
 void my_sort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
-int check_volume_name(const char *name,const unsigned int max_size);
 void set_part_name(partition_t *partition,const char *src,const int max_size);
 int rebuild_FAT_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind,const int interface, const unsigned int expert, char**current_cmd);
 #ifndef BSD_MAXPARTITIONS
