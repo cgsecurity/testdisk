@@ -78,6 +78,7 @@
 #include "log.h"
 #include "phrecn.h"
 #include "hdaccess.h"
+#include "sudo.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */

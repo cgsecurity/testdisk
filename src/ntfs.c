@@ -409,6 +409,11 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
   log_debug("NTFS MFT_record_size = %u\n",mft_record_size);
   log_debug("NTFS sector size= %u\n", ntfs_sector_size(ntfs_header));
 #endif
+  if(mft_size==0)
+  {
+    log_error("Invalid MFT record size or NTFS sector size\n");
+    return 1;
+  }
   buffer=(unsigned char *)MALLOC(mft_size);
   if(disk_car->read(disk_car,mft_size, buffer, mft_pos)!=0)
   {

@@ -92,6 +92,13 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char
   log_debug("ntfs_sector_size   %u\n", ntfs_sector_size(ntfs_header));
   log_debug("mftmirr_size_bytes %u\n", mftmirr_size_bytes);
 #endif
+  if(mftmirr_size_bytes==0)
+  {
+    display_message("Invalid NTFS MFT size.\n");
+    log_error("Invalid NTFS MFT size.\n");
+    free(ntfs_header);
+    return -1;
+  }
   /* Check if MFT mirror is identical to the beginning of MFT */
   buffer_mft=(unsigned char *)MALLOC(mftmirr_size_bytes);
   if(disk_car->read(disk_car, mftmirr_size_bytes, buffer_mft, mft_pos)!=0)
