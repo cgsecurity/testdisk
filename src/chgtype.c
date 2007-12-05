@@ -109,7 +109,7 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
   /* Ask for the new partition type*/
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   screen_buffer_display(stdscr,"",menuType);
   wmove(stdscr,23,0);
   wprintw(stdscr,"New partition type [current %02x] ? ",partition->arch->get_part_type(partition));

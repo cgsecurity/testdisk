@@ -170,7 +170,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
       {
 	char buffer_part_size[100];
 	wattrset(stdscr, A_REVERSE);
-	aff_part(stdscr,AFF_PART_NONL,disk_car,parts->part);
+	aff_part(stdscr, AFF_PART_BASE, disk_car, parts->part);
 	wattroff(stdscr, A_REVERSE);
 	wmove(stdscr,24,0);
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
@@ -181,7 +181,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
       } else
       {
-	aff_part(stdscr,AFF_PART_NONL,disk_car,parts->part);
+	aff_part(stdscr, AFF_PART_BASE, disk_car, parts->part);
       }
     }
     wrefresh(stdscr);
@@ -654,7 +654,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         {
           partition->status=STATUS_DELETED;
           log_partition(disk_car,partition);
-          aff_part_buffer(AFF_PART_SHORT,disk_car,partition);
+          aff_part_buffer(AFF_PART_BASE, disk_car,partition);
           if(interface)
           {
             aff_buffer(BUFFER_SHOW,"Q");
@@ -874,7 +874,7 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
       wclrtoeol(stdscr);
       if(i==pos)
 	standout();
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,table2[i]);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,table2[i]);
       if(i==pos)
 	standend();
     }

@@ -29,6 +29,6 @@ int do_curses_testdisk(int verbose, int dump_ind, const list_disk_t *list_disk, 
 int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search_deeper, const int can_ask_minmax_ext, int *no_confirm, char **current_cmd, unsigned int *menu);
 
 list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
-void interface_list(disk_t *disk_car, const int verbose,const int test_recovery, const int saveheader, const int backup, char **current_cmd);
+void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd);
 int interface_superblock(disk_t *disk_car,list_part_t *list_part,char**current_cmd);
 

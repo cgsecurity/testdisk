@@ -221,7 +221,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
   WINDOW *window=(WINDOW*)dir_data->display;
   aff_copy(window);
   wmove(window,4,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,5,0,"Use ");
   if(first_time==0)
   {

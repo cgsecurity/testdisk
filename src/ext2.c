@@ -119,7 +119,7 @@ int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t
     }
     partition->sb_offset=(uint64_t)block_nr * (EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
     partition->part_offset-=partition->sb_offset;
-    log_warning("recover_EXT2: \"e2fsck -b %u -B %lu device\" may be needed\n",
+    log_warning("recover_EXT2: \"e2fsck -b %lu -B %u device\" may be needed\n",
         block_nr, partition->blocksize);
   }
   else

@@ -303,7 +303,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
       UCSle2str(new_partition->partname, (const uint16_t *)&gpt_entry->ent_name, sizeof(gpt_entry->ent_name)/2);
       new_partition->arch->check_part(disk_car,verbose,new_partition,saveheader);
       /* log_debug("%u ent_attr %08llx\n", new_partition->order, (long long unsigned)le64(gpt_entry->ent_attr)); */
-      aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
       new_list_part=insert_new_partition(new_list_part, new_partition, 0, &insert_error);
       if(insert_error>0)
         free(new_partition);
@@ -614,7 +614,7 @@ static list_part_t *add_partition_gpt_ncurses(disk_t *disk_car,list_part_t *list
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,10, 0);
     wclrtoeol(stdscr);
-    aff_part(stdscr,AFF_PART_SHORT,disk_car,new_partition);
+    aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
     wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
     wclrtoeol(stdscr);
     wrefresh(stdscr);
@@ -799,7 +799,7 @@ static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partit
   if(ret!=0)
   {
     log_error("check_part_gpt failed for partition\n");
-    aff_part_buffer(AFF_PART_ORDER,disk_car,partition);
+    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     if(saveheader>0)
     {
       save_header(disk_car,partition,verbose);

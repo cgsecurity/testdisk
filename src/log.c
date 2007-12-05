@@ -239,7 +239,7 @@ void log_partition(const disk_t *disk_car,const partition_t *partition)
 {
   const char *msg;
   char buffer_part_size[100];
-  msg=aff_part_aux(AFF_PART_ORDER, disk_car, partition);
+  msg=aff_part_aux(AFF_PART_ORDER|AFF_PART_STATUS, disk_car, partition);
   log_info("%s",msg);
   if(partition->info[0]!='\0')
     log_info("\n     %s, %s",partition->info,size_to_unit(partition->part_size,buffer_part_size));

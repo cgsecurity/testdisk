@@ -114,7 +114,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
-      aff_part(window,AFF_PART_ORDER,disk_car,partition);
+      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_partition(disk_car,partition);
       aff_buffer(BUFFER_ADD,"Support for this filesystem hasn't been enable during compilation.\n");
@@ -131,7 +131,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
-      aff_part(window,AFF_PART_ORDER,disk_car,partition);
+      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_partition(disk_car,partition);
       aff_buffer(BUFFER_ADD,"Can't open filesystem. Filesystem seems damaged.\n");

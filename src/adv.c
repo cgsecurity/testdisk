@@ -213,11 +213,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       if(element==current_element)
       {
 	wattrset(stdscr, A_REVERSE);
-	aff_part(stdscr,AFF_PART_ORDER,disk_car,element->part);
+	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
-	aff_part(stdscr,AFF_PART_ORDER,disk_car,element->part);
+	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
       }
     }
 #endif
@@ -438,7 +438,7 @@ static void dump_fat1x_ncurses(disk_t *disk_car, partition_t *partition, const u
   wmove(window,4,0);
   wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector");
   dump(window,buffer_bs,FAT1x_BOOT_SECTOR_SIZE);
   delwin(window);
@@ -488,7 +488,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_info("\nfat1x_boot_sector\n");
       log_partition(disk_car,partition);
@@ -594,7 +594,7 @@ static void dump_fat32_ncurses(disk_t *disk_car, const partition_t *partition, c
   wmove(window,4,0);
   wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector                        Backup boot sector");
   dump2(window, buffer_bs, buffer_backup_bs, 3*disk_car->sector_size);
   delwin(window);
@@ -652,7 +652,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_info("\nfat32_boot_sector\n");
       log_partition(disk_car,partition);
@@ -852,7 +852,7 @@ static void dump_NTFS_ncurses(disk_t *disk_car, const partition_t *partition, co
   wmove(window,4,0);
   wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,6,0, "Boot sector                        Backup boot sector");
   dump2(window, buffer_bs, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE);
   delwin(window);
@@ -912,7 +912,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_info("\nntfs_boot_sector\n");
       log_partition(disk_car,partition);
@@ -1097,7 +1097,7 @@ static void hfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, con
   wmove(window,4,0);
   wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,6,0, "Superblock                        Backup superblock");
   dump2(window, buffer_bs, buffer_backup_bs, HFSP_BOOT_SECTOR_SIZE);
   delwin(window);
@@ -1152,7 +1152,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
       wprintw(stdscr,"%s",disk_car->description(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_info("\nHFS_HFSP_boot_sector\n");
       log_partition(disk_car,partition);

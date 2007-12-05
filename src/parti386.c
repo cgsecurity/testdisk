@@ -383,7 +383,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
 	  i386_entry2partition(disk_car, (uint64_t)0, new_partition, p, status,i+1,verbose,saveheader);
 	  if(verbose>1)
 	    log_dos_entry(disk_car,p);
-	  aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	  if(new_partition->errcode!=BAD_NOERR)
 	  {
 	    aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
@@ -536,7 +536,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	  {
 	    partition_next_ext=new_partition;
 	    i386_entry2partition(disk_car, partition_main_ext->part_offset, new_partition, p, STATUS_EXT_IN_EXT,order,verbose,saveheader);
-	    aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
 	      aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
@@ -548,8 +548,8 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	      {	/* Must be IN partition_main_ext */
 		res=1;
 		aff_buffer(BUFFER_ADD,"Must be in extended partition\n");
-		aff_part_buffer(AFF_PART_ORDER,disk_car,partition_main_ext);
-		aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
+		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	      }
 	      else
 	      {
@@ -563,8 +563,8 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 		    { /* New Partition start or end mustn't been in partition */
 		      res=1;
 		      aff_buffer(BUFFER_ADD, "Logical partition must be in its own extended partition\n");
-		      aff_part_buffer(AFF_PART_ORDER,disk_car,partition);
-		      aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 		    }
 		  }
 		}
@@ -577,7 +577,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    order++;
 	    if(verbose>1)
 	      log_dos_entry(disk_car,p);
-	    aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
 	      aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
@@ -589,8 +589,8 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	      {	/* Must be IN partition_main_ext */
 		res=1;
 		aff_buffer(BUFFER_ADD, msg_SAME_SPACE);
-		aff_part_buffer(AFF_PART_ORDER,disk_car,partition_main_ext);
-		aff_part_buffer(AFF_PART_ORDER,disk_car,new_partition);
+		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
+		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	      }
 	    }
 	  }
@@ -615,8 +615,8 @@ static int test_MBR_over(disk_t *disk_car,list_part_t *list_part)
     {
       res=1;
       aff_buffer(BUFFER_ADD, msg_SAME_SPACE);
-      aff_part_buffer(AFF_PART_ORDER,disk_car,element->part);
-      aff_part_buffer(AFF_PART_ORDER,disk_car,element->next->part);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->next->part);
     }
   return res;
 }
@@ -1283,7 +1283,7 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
       new_partition->part_size=CHS2offset(disk_car,&end) - new_partition->part_offset + disk_car->sector_size;
       wmove(stdscr,10, 0);
       wclrtoeol(stdscr);
-      aff_part(stdscr,AFF_PART_SHORT,disk_car,new_partition);
+      aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
       wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
       wclrtoeol(stdscr);
       wrefresh(stdscr);
@@ -1673,7 +1673,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
   if(ret!=0)
   {
     log_error("check_part_i386 failed for partition type %02X\n", partition->part_type_i386);
-    aff_part_buffer(AFF_PART_ORDER,disk_car,partition);
+    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     if(saveheader>0)
     {
       save_header(disk_car,partition,verbose);

@@ -233,7 +233,7 @@ static int cache_clean(disk_t *disk_car)
 static int cache_sync(disk_t *disk_car)
 {
   struct cache_struct *data=disk_car->data;
-  data->disk_car->sync(data->disk_car);
+  return data->disk_car->sync(data->disk_car);
 }
 
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
@@ -257,7 +257,6 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   dup_CHS(&new_disk_car->CHS,&disk_car->CHS);
   new_disk_car->disk_size=disk_car->disk_size;
   new_disk_car->disk_real_size=disk_car->disk_real_size;
-  new_disk_car->halt_on_errors=0;
   new_disk_car->write_used=0;
   new_disk_car->data=data;
   new_disk_car->read=cache_read;
@@ -266,6 +265,10 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   new_disk_car->clean=cache_clean;
   new_disk_car->description=cache_description;
   new_disk_car->description_short=cache_description_short;
+  new_disk_car->rbuffer=NULL;
+  new_disk_car->wbuffer=NULL;
+  new_disk_car->rbuffer_size=0;
+  new_disk_car->wbuffer_size=0;
   for(i=0;i<CACHE_BUFFER_NBR;i++)
     data->cache[i].buffer=NULL;
   return new_disk_car;

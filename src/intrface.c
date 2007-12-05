@@ -83,7 +83,7 @@ static int interface_check_disk_access(disk_t *disk_car, char **current_cmd);
 static list_part_t *interface_analyse(disk_t *disk_car, const int verbose, const int saveheader, char**current_cmd);
 static int menu_disk(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd);
 
-void interface_list(disk_t *disk_car, const int verbose,const int test_recovery, const int saveheader, const int backup, char **current_cmd)
+void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd)
 {
   list_part_t *list_part;
   log_info("\nAnalyse ");
@@ -96,22 +96,9 @@ void interface_list(disk_t *disk_car, const int verbose,const int test_recovery,
   {
     partition_save(disk_car,list_part,verbose);
   }
-  if(test_recovery>0)
-  {
-    list_part_t *element;
-    log_info("rebuild_FAT_BS()\n");
-    for(element=list_part;element!=NULL;element=element->next)
-    {
-      if(is_fat(element->part))
-      {
-	log_partition(disk_car,element->part);
-	rebuild_FAT_BS(disk_car,element->part,verbose,0,0,0, current_cmd);	/* dump_ind */
-      }
-      /* TODO ntfs */
-    }
-  }
   part_free_list(list_part);
 }
+
 #ifdef HAVE_NCURSES
 static int write_MBR_code(disk_t *disk_car)
 {
@@ -426,6 +413,7 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
     {
       disk_t *disk=current_disk->disk;
       autodetect_arch(disk);
+      autoset_unit(disk);
       if(interface_check_disk_capacity(disk)==0 &&
           interface_check_disk_access(disk, current_cmd)==0 &&
           interface_partition_type(disk, verbose, current_cmd)==0)
@@ -560,6 +548,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	{
 	  disk_t *disk=current_disk->disk;
 	  autodetect_arch(disk);
+	  autoset_unit(disk);
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
 	      interface_partition_type(disk, verbose, current_cmd)==0)
@@ -801,10 +790,10 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
 #endif
   for(parts=list_part;parts!=NULL;parts=parts->next)
     if(parts->part->status!=STATUS_LOG)
-      aff_part_buffer(AFF_PART_ORDER,disk_car,parts->part);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,parts->part);
   for(parts=list_part;parts!=NULL;parts=parts->next)
     if(parts->part->status==STATUS_LOG)
-      aff_part_buffer(AFF_PART_ORDER,disk_car,parts->part);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,parts->part);
   command='Q';
   if(list_part==NULL)
   {
@@ -1036,7 +1025,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       }
       if(structure_status==0 && parts->part->status!=STATUS_DELETED && has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(2));
-      aff_part(stdscr,AFF_PART_NONL,disk_car,parts->part);
+      aff_part(stdscr, AFF_PART_STATUS, disk_car, parts->part);
       if(structure_status==0 && parts->part->status!=STATUS_DELETED && has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
       if(parts==pos)
@@ -1516,7 +1505,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
       old_part->part_type_mac!=partition->part_type_mac 	||
       old_part->upart_type!=partition->upart_type)
     {
-      aff_part_buffer(AFF_PART_SHORT,disk_car,partition);
+      aff_part_buffer(AFF_PART_BASE, disk_car, partition);
       old_part=partition;
     }
     if(partition->blocksize!=0)

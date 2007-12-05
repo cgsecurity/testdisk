@@ -70,7 +70,7 @@ static void ntfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, co
   wmove(window,4,0);
   wprintw(window,"%s",disk_car->description(disk_car));
   wmove(window,5,0);
-  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   mvwaddstr(window,6,0, "     Rebuild Boot sector           Boot sector");
   dump2(window, newboot, orgboot, NTFS_SECTOR_SIZE);
   delwin(window);
@@ -175,7 +175,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     wmove(stdscr,8,0);
     if(memcmp(newboot,orgboot,NTFS_SECTOR_SIZE))
     {
@@ -222,7 +222,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	  wmove(window,4,0);
 	  wprintw(window,"%s",disk_car->description(disk_car));
 	  wmove(window,5,0);
-	  aff_part(window,AFF_PART_ORDER,disk_car,partition);
+	  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 	  log_info("     Rebuild Boot sector           Boot sector\n");
 	  mvwaddstr(window,6,0, "     Rebuild Boot sector           Boot sector");
 	  dump2(window, newboot, orgboot, NTFS_SECTOR_SIZE);
@@ -444,7 +444,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     wmove(stdscr,22,0);
     wattrset(stdscr, A_REVERSE);
     waddstr(stdscr,"  Stop  ");

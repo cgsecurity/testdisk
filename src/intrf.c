@@ -184,7 +184,7 @@ void screen_buffer_to_log()
     log_info("%s\n",intr_buffer_screen[i]);
 }
 
-const char *aff_part_aux(const aff_part_type_t newline, const disk_t *disk_car, const partition_t *partition)
+const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition)
 {
   char status=' ';
   static char msg[200];
@@ -196,19 +196,14 @@ const char *aff_part_aux(const aff_part_type_t newline, const disk_t *disk_car, 
     log_error("BUG: No arch for a partition\n");
   }
   msg[sizeof(msg)-1]=0;
-  switch(newline)
+  if((newline&AFF_PART_ORDER)==AFF_PART_ORDER)
   {
-    case AFF_PART_ORDER:
-      if((partition->status!=STATUS_EXT_IN_EXT) && (partition->order!=NO_ORDER))
-        pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%2d ", partition->order);
-      else
-        pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"   ");
-      break;
-    case AFF_PART_NONL:
-    case AFF_PART_SHORT:
-      break;
+    if((partition->status!=STATUS_EXT_IN_EXT) && (partition->order!=NO_ORDER))
+      pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%2d ", partition->order);
+    else
+      pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"   ");
   }
-  if(newline!=AFF_PART_SHORT)
+  if((newline&AFF_PART_STATUS)==AFF_PART_STATUS)
   {
     switch(partition->status)
     {
@@ -229,9 +224,7 @@ const char *aff_part_aux(const aff_part_type_t newline, const disk_t *disk_car, 
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " Sys=%02X               ", arch->get_part_type(partition));
   else
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " Unknown              ");
-  if(disk_car->arch==&arch_mac || 
-      disk_car->arch==&arch_gpt || 
-      (disk_car->CHS.head==0 && disk_car->CHS.sector==1))
+  if(disk_car->unit==UNIT_SECTOR)
   {
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " %10lu %10lu ",
         (long unsigned)(partition->part_offset/disk_car->sector_size),
@@ -1051,7 +1044,7 @@ void aff_CHS_buffer(const CHS_t * CHS)
   aff_buffer(BUFFER_ADD,"%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
 }
 
-void aff_part(WINDOW *window,const aff_part_type_t newline,const disk_t *disk_car,const partition_t *partition)
+void aff_part(WINDOW *window,const unsigned int newline,const disk_t *disk_car,const partition_t *partition)
 {
   const char *msg;
   msg=aff_part_aux(newline, disk_car, partition);
@@ -1977,7 +1970,7 @@ unsigned long long int ask_number_cli(char **current_cmd, const unsigned long lo
   return val_cur;
 }
 
-void aff_part_buffer(const aff_part_type_t newline,const disk_t *disk_car,const partition_t *partition)
+void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const partition_t *partition)
 {
   const char *msg;
   msg=aff_part_aux(newline, disk_car, partition);
@@ -2050,4 +2043,3 @@ int interface_partition_type(disk_t *disk_car, const int verbose, char**current_
   hd_update_geometry(disk_car, 0,verbose);
   return 0;
 }
-

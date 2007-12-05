@@ -199,7 +199,7 @@ list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveh
   partition->status=STATUS_PRIM;
   aff_buffer(BUFFER_RESET,"Q");
   disk_car->arch->check_part(disk_car,verbose,partition,saveheader);
-  aff_part_buffer(AFF_PART_ORDER,disk_car,partition);
+  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
   if(insert_error>0)
     free(partition);

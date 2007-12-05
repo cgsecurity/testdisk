@@ -60,6 +60,8 @@
 #include "ewf.h"
 #include "log.h"
 #include "hdaccess.h"
+#include "sudo.h"
+#include "partauto.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
@@ -95,6 +97,7 @@ int main( int argc, char **argv )
   int help=0, verbose=0, dump_ind=0;
   int create_log=0;     /* 0: no_log, 1: append, 2 create */
   int do_list=0;
+  int unit=UNIT_DEFAULT;
   int write_used;
   int saveheader=0;
   int create_backup=0;
@@ -158,8 +161,15 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/help")==0) || (strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"--help")==0) ||
       (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0))
       help=1;
-    else if((strcmp(argv[i],"/list")==0) || (strcmp(argv[i],"-list")==0))
+    else if(strcmp(argv[i],"/list")==0 || strcmp(argv[i],"-list")==0 || strcmp(argv[i],"-l")==0)
+    {
       do_list=1;
+    }
+    else if(strcmp(argv[i],"-lu")==0)
+    {
+      do_list=1;
+      unit=UNIT_SECTOR;
+    }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
     else if((strcmp(argv[i],"/safe")==0) || (strcmp(argv[i],"-safe")==0))
@@ -248,7 +258,12 @@ int main( int argc, char **argv )
 
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
-      interface_list(element_disk->disk,verbose,0,saveheader,create_backup, &cmd_run);
+      autodetect_arch(element_disk->disk);
+      if(unit==UNIT_DEFAULT)
+	autoset_unit(element_disk->disk);
+      else
+	element_disk->disk->unit=unit;
+      interface_list(element_disk->disk, verbose, saveheader, create_backup, &cmd_run);
     }
     delete_list_disk(list_disk);
     return 0;
@@ -343,7 +358,7 @@ int main( int argc, char **argv )
     {
       case 'L':
 	for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-	  interface_list(element_disk->disk,verbose,0, saveheader, create_backup, &cmd_run);
+	  interface_list(element_disk->disk, verbose, saveheader, create_backup, &cmd_run);
 	break;
       case 'q':
       case 'Q':

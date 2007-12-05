@@ -218,8 +218,14 @@ enum status_type { STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG, ST
 typedef enum status_type status_type_t;
 enum errcode_type {BAD_NOERR, BAD_SS, BAD_ES, BAD_SH, BAD_EH, BAD_EBS, BAD_RS, BAD_SC, BAD_EC, BAD_SCOUNT};
 typedef enum errcode_type errcode_type_t;
-enum aff_part_type {AFF_PART_NONL, AFF_PART_ORDER, AFF_PART_SHORT};
-typedef enum aff_part_type aff_part_type_t;
+
+#define AFF_PART_BASE	0
+#define AFF_PART_ORDER	1
+#define AFF_PART_STATUS	2
+
+#define UNIT_DEFAULT	0
+#define UNIT_SECTOR	1
+#define UNIT_CHS	2
 
 typedef struct param_disk_struct disk_t;
 typedef struct partition_struct partition_t;
@@ -284,10 +290,10 @@ struct param_disk_struct
 {
   uint64_t disk_size;
   CHS_t CHS;	/* logical CHS */
-  int halt_on_errors;
   int write_used;
   int autodetect;
   int access_mode;
+  int unit;
   unsigned int sector_size;
   char *device;
   char description_txt[DISKDESCRIPTION_MAX];

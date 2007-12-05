@@ -80,8 +80,8 @@ void aff_CHS(const CHS_t * CHS);
 void aff_CHS_buffer(const CHS_t * CHS);
 void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
 void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA);
-const char *aff_part_aux(const aff_part_type_t newline, const disk_t *disk_car, const partition_t *partition);
-void aff_part_buffer(const aff_part_type_t newline,const disk_t *disk_car,const partition_t *partition);
+const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
+void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const partition_t *partition);
 
 int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
 unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));

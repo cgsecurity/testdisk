@@ -5,4 +5,4 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
 #endif
-
+void autoset_unit(disk_t *disk_car);

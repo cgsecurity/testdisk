@@ -282,7 +282,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
     wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     wmove(stdscr,22,0);
     wattrset(stdscr, A_REVERSE);
     waddstr(stdscr,"  Stop  ");

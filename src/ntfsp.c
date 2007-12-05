@@ -65,7 +65,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	window=newwin(0,0,0,0);	/* full screen */
 	aff_copy(window);
 	wmove(window,4,0);
-	aff_part(window,AFF_PART_ORDER,disk_car,partition);
+	aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
 	log_partition(disk_car,partition);
 	aff_buffer(BUFFER_ADD,"Can't open filesystem. Filesystem seems damaged.\n");

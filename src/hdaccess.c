@@ -104,6 +104,7 @@
 #include "log.h"
 #include "hdaccess.h"
 
+extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_mac;
 
 struct info_file_struct
@@ -577,6 +578,7 @@ static disk_t *hd_identify(const int verbose, const unsigned int disk, const arc
 	data->mode_enh=0;
       free(param_disk_enh);
     }
+    disk_car->unit=UNIT_CHS;
     return disk_car;
   }
 }
@@ -1774,6 +1776,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 	close(hd_h);
 	return NULL;
       }
+      disk_car->unit=UNIT_CHS;
       return disk_car;
     }
     close(hd_h);
@@ -2090,6 +2093,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
       return NULL;
     }
     disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
+    disk_car->unit=UNIT_CHS;
     return disk_car;
   }
   return NULL;
@@ -2296,3 +2300,15 @@ static int file_win32_sync(disk_t *disk_car)
   return 0;
 }
 #endif
+
+void autoset_unit(disk_t *disk_car)
+{
+  if(disk_car==NULL)
+    return ;
+  if(disk_car->arch==&arch_mac || 
+      disk_car->arch==&arch_gpt || 
+      (disk_car->CHS.head==0 && disk_car->CHS.sector==1))
+    disk_car->unit=UNIT_SECTOR;
+  else
+    disk_car->unit=UNIT_CHS;
+}

@@ -296,7 +296,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   window=newwin(0,0,0,0);	/* full screen */
   aff_copy(window);
   wmove(window,4,0);
-  aff_part(window, AFF_PART_ORDER,disk_car,partition);
+  aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   wmove(window,6,0);
   waddstr(window,"To recover lost files, PhotoRec need to know the filesystem type where the");
   wmove(window,7,0);
@@ -1270,7 +1270,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
       wprintw(stdscr,"%s",disk_car->description_short(disk_car));
       mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
       wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER,disk_car,partition);
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
       wmove(stdscr,22,0);
       wattrset(stdscr, A_REVERSE);
       waddstr(stdscr,"  Stop  ");
@@ -1549,11 +1549,11 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
       if(element==current_element)
       {
 	wattrset(stdscr, A_REVERSE);
-	aff_part(stdscr,AFF_PART_ORDER,disk_car,element->part);
+	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
-	aff_part(stdscr,AFF_PART_ORDER,disk_car,element->part);
+	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
       }
     }
     command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,

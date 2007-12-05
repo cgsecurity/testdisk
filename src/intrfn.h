@@ -32,7 +32,7 @@
 #endif
 
 void aff_copy(WINDOW *window);
-void aff_part(WINDOW *window,const aff_part_type_t newline,const disk_t *disk_car,const partition_t *partition);
+void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
 int aff_txt(int line, WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 3, 4)));
 int ask_YN(WINDOW *window);
 int check_enter_key_or_s(WINDOW *window);
