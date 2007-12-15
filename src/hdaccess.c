@@ -213,7 +213,7 @@ static int alloc_cmd_dos_buffer(void);
 static disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode);
 static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
-static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int nbr_sector, const int rc);
+static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description(disk_t *disk_car);
 static const char *disk_description_short(disk_t *disk_car);
 static int disk_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t hd_offset);
@@ -630,7 +630,7 @@ static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
       if(rc!=0)
       {
         log_error("disk_read_aux failed ");
-        hd_report_error(disk_car,offset,count/disk_car->sector_size,rc);
+        hd_report_error(disk_car, offset, count, rc);
         return -rc;
       }
       read_offset+=read_size;
@@ -652,7 +652,7 @@ static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
   int rc;
   disk_car->write_used=1;
   {
-    rc=hd_write(disk_car, buf, count/disk_car->sector_size, hd_offset/disk_car->sector_size);
+    rc=hd_write(disk_car, buf, count, hd_offset);
     if(rc!=0)
       disk_reset_error(disk_car);
   } while(rc==4 && ++i<MAX_IO_NBR);
@@ -660,7 +660,7 @@ static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
   if(rc!=0)
   {
     log_error("disk_write error\n");
-    hd_report_error(disk_car,hd_offset,count/disk_car->sector_size,rc);
+    hd_report_error(disk_car, hd_offset, count, rc);
     return -rc;
   }
   return 0;
@@ -697,12 +697,12 @@ static int disk_clean(disk_t *disk_car)
   return generic_clean(disk_car);
 }
 
-static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int nbr_sector, const int rc)
+static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc)
 {
   struct info_disk_struct*data=disk_car->data;
   log_error(" lba=%lu(%u/%u/%u) nbr_sector=%u, rc=%d\n",(long unsigned int)(hd_offset/disk_car->sector_size),
       offset2cylinder(disk_car,hd_offset),offset2head(disk_car,hd_offset),offset2sector(disk_car,hd_offset),
-      nbr_sector,rc);
+      count/disk_car->sector_size,rc);
   switch(rc)
   {
     case 0x00: log_error("successful completion"); break;
