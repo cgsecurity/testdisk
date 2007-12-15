@@ -1603,6 +1603,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
         {
           try_readonly=1;
           close(hd_h);
+	  hd_h=-1;
         }
       }
 #endif
