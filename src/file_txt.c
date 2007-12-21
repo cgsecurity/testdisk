@@ -43,6 +43,7 @@ extern const file_hint_t file_hint_pdf;
 extern const file_hint_t file_hint_zip;
 
 static inline int filtre(unsigned char car);
+static inline int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len);
 
 static void register_header_check_txt(file_stat_t *file_stat);
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -74,6 +75,7 @@ file_hint_t file_hint_txt= {
   .register_header_check=&register_header_check_txt
 };
 
+static const unsigned char header_cls[24]	= {'V','E','R','S','I','O','N',' ','1','.','0',' ','C','L','A','S','S','\r','\n','B','E','G','I','N'};
 static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
 static const unsigned char header_imm2[13]	= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
@@ -93,6 +95,7 @@ static void register_header_check_txt(file_stat_t *file_stat)
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
+  register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm2,sizeof(header_imm2), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
@@ -170,7 +173,7 @@ static int filtre(unsigned char car)
 
 /* destination should have an extra byte available for null terminator
    return read size */
-static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, int buf_len)
+static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
 {
   const unsigned char *p; 	/* pointers to actual position in source buffer */
   unsigned char *q;	/* pointers to actual position in destination buffer */
@@ -282,6 +285,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 {
   const char sign_grisbi[]		= "Version_grisbi";
   const char sign_fst[]                 = "QBFSD";
+  if(memcmp(buffer,header_cls,sizeof(header_cls))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="cls";
+    return 1;
+  }
   /* Incredimail has .imm extension but this extension isn't frequent */
   if(memcmp(buffer,header_imm,sizeof(header_imm))==0 ||
       memcmp(buffer,header_imm2,sizeof(header_imm2))==0 ||

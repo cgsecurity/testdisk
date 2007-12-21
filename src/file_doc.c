@@ -154,6 +154,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="mws";
     }
+    else if(find_in_mem(buffer,buffer_size,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)!=NULL)
+    { /* Outlook */
+      file_recovery_new->extension="msg";
+    }
     else
       file_recovery_new->extension=file_hint_doc.extension;
     return 1;

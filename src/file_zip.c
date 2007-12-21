@@ -48,7 +48,7 @@ static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int
 
 const file_hint_t file_hint_zip= {
   .extension="zip",
-  .description="zip archive",
+  .description="zip archive including OpenOffice and MSOffice 2007",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
