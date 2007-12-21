@@ -402,7 +402,7 @@ int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, 
     {
       log_critical("\nBUG: %s\n",mi);
     }
-    if(lenName > itemLength)
+    if(lenName >= itemLength)
     {
       if( menuType & MENU_BUTTON )
         snprintf(buff, sizeof(buff),"[%s]",mi);

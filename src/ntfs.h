@@ -67,5 +67,5 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
 #define NTFS_GETU64(p)     (le64(*(const uint64_t*)(p)))
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header);
 int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind,const int interface, const unsigned int expert, char**current_cmd);
-int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd);
+int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd);
 int repair_MFT_Vol(disk_t *disk_car, partition_t *partition, const int verbose);
