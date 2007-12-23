@@ -39,7 +39,6 @@ const file_hint_t file_hint_ctg= {
   .min_header_distance=0,
   .max_filesize=4634,
   .recover=0,
-  .header_check=&header_check_ctg,
   .register_header_check=&register_header_check_ctg
 };
 

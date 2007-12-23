@@ -44,7 +44,6 @@ const file_hint_t file_hint_tiff= {
   .min_header_distance=0,
   .max_filesize=200*1024*1024,
   .recover=1,
-  .header_check=&header_check_tiff,
   .register_header_check=&register_header_check_tiff
 };
 

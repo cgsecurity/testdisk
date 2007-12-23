@@ -1,6 +1,6 @@
 /*
 
-    File: file_stuffit.c
+    File: file_res.c
 
     Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
   
@@ -30,32 +30,31 @@
 #include "types.h"
 #include "filegen.h"
 
+static void register_header_check_res(file_stat_t *file_stat);
+static int header_check_res(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
-static void register_header_check_stuffit(file_stat_t *file_stat);
-static int header_check_stuffit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-
-const file_hint_t file_hint_stuffit= {
-  .extension="sit",
-  .description="StuffIt Archive",
+const file_hint_t file_hint_res= {
+  .extension="res",
+  .description="Microsoft Visual Studio Resource file",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .register_header_check=&register_header_check_stuffit
+  .register_header_check=&register_header_check_res
 };
 
-static const unsigned char stuffit_header[7] = { 'S', 't', 'u', 'f', 'f', 'I', 't'};
+static const unsigned char MS_res_header[9]= {0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0xFF};
 
-static void register_header_check_stuffit(file_stat_t *file_stat)
+static void register_header_check_res(file_stat_t *file_stat)
 {
-  register_header_check(0, stuffit_header,sizeof(stuffit_header), &header_check_stuffit, file_stat);
+  register_header_check(0, MS_res_header,sizeof(MS_res_header), &header_check_res, file_stat);
 }
 
-static int header_check_stuffit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_res(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,stuffit_header,sizeof(stuffit_header))==0)
+  if(memcmp(buffer,MS_res_header,sizeof(MS_res_header))==0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_stuffit.extension;
+    file_recovery_new->extension=file_hint_res.extension;
     return 1;
   }
   return 0;

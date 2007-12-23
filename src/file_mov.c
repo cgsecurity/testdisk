@@ -43,7 +43,6 @@ const file_hint_t file_hint_mov= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .header_check=&header_check_mov,
   .register_header_check=&register_header_check_mov
 };
 

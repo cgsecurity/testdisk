@@ -41,7 +41,6 @@ const file_hint_t file_hint_wmf= {
   .min_header_distance=0,
   .max_filesize=50*1024*1024,
   .recover=1,
-  .header_check=&header_check_wmf,
 	.register_header_check=&register_header_check_wmf
 };
 

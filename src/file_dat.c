@@ -39,7 +39,6 @@ const file_hint_t file_hint_dat= {
   .min_header_distance=0,
   .max_filesize=2*1024*1024,
   .recover=1,
-  .header_check=&header_check_dat,
   .register_header_check=&register_header_check_dat
 };
 

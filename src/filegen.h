@@ -84,8 +84,6 @@ struct file_hint_struct
   const uint64_t max_filesize;
   const int recover;
   void (*register_header_check)(file_stat_t *file_stat);
-  int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
-      const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 };
 
 struct alloc_data_struct

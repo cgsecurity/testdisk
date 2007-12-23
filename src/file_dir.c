@@ -39,7 +39,6 @@ const file_hint_t file_hint_dir= {
   .min_header_distance=0,
   .max_filesize=1,
   .recover=0,
-  .header_check=&header_check_dir,
   .register_header_check=&register_header_check_dir
 };
 

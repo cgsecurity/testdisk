@@ -170,6 +170,7 @@ extern const file_hint_t file_hint_rar;
 extern const file_hint_t file_hint_raw;
 extern const file_hint_t file_hint_rdc;
 extern const file_hint_t file_hint_reg;
+extern const file_hint_t file_hint_res;
 extern const file_hint_t file_hint_riff;
 extern const file_hint_t file_hint_rm;
 extern const file_hint_t file_hint_rns;
@@ -839,6 +840,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_raw  },
     { .enable=1, .file_hint=&file_hint_rdc  },
     { .enable=1, .file_hint=&file_hint_reg  },
+    { .enable=1, .file_hint=&file_hint_res  },
     { .enable=1, .file_hint=&file_hint_riff },
     { .enable=1, .file_hint=&file_hint_rm   },
     { .enable=1, .file_hint=&file_hint_rns  },

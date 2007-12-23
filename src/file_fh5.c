@@ -49,7 +49,6 @@ const file_hint_t file_hint_fh5= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .header_check=&header_check_fh5,
   .register_header_check=&register_header_check_fh5
 };
 

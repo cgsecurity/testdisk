@@ -50,7 +50,6 @@ const file_hint_t file_hint_jpg= {
   .min_header_distance=0,
   .max_filesize=50*1024*1024,
   .recover=1,
-  .header_check=&header_check_jpg,
   .register_header_check=&register_header_check_jpg
 };
 

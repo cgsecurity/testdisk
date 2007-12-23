@@ -41,7 +41,6 @@ const file_hint_t file_hint_dump= {
   .min_header_distance=0,
   .max_filesize=(((uint64_t)1<<33)-1),
   .recover=1,
-  .header_check=&header_check_dump,
   .register_header_check=&register_header_check_dump
 };
 

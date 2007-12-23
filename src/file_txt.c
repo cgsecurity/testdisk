@@ -61,7 +61,6 @@ file_hint_t file_hint_fasttxt= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .header_check=&header_check_fasttxt,
   .register_header_check=&register_header_check_fasttxt
 };
 
@@ -71,7 +70,6 @@ file_hint_t file_hint_txt= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .header_check=&header_check_txt,
   .register_header_check=&register_header_check_txt
 };
 
@@ -86,7 +84,7 @@ static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
-static const char sign_html[]	= "<html";
+static const char sign_html[5]	= "<html";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -283,8 +281,8 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
 
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char sign_grisbi[]		= "Version_grisbi";
-  const char sign_fst[]                 = "QBFSD";
+  const char sign_grisbi[14]		= "Version_grisbi";
+  const char sign_fst[5]                 = "QBFSD";
   if(memcmp(buffer,header_cls,sizeof(header_cls))==0)
   {
     reset_file_recovery(file_recovery_new);
