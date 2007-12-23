@@ -137,6 +137,7 @@ extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
 extern const file_hint_t file_hint_max;
+extern const file_hint_t file_hint_mb;
 extern const file_hint_t file_hint_mdb;
 extern const file_hint_t file_hint_mdf;
 extern const file_hint_t file_hint_mid;
@@ -805,6 +806,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_kdb  },
     { .enable=1, .file_hint=&file_hint_jpg  },
     { .enable=1, .file_hint=&file_hint_max  },
+    { .enable=1, .file_hint=&file_hint_mb   },
     { .enable=1, .file_hint=&file_hint_mdb  },
     { .enable=1, .file_hint=&file_hint_mdf  },
     { .enable=1, .file_hint=&file_hint_mid  },

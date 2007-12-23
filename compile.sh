@@ -236,12 +236,7 @@ then
   if [ -e $compiledir/Makefile ];
   then
   	cd $compiledir
-if [ "X$crosscompile_target" = "Xpowerpc-apple-darwin" ];
-then
         make
-else
-        make static
-fi
 	cd $pwd_saved
   fi
 fi

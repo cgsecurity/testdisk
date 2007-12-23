@@ -31,7 +31,7 @@
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
-#include "fnd_mem.h"
+#include "memmem.h"
 
 static void register_header_check_mov(file_stat_t *file_stat);
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -101,13 +101,13 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       unsigned int search_size=atom_size;
       if(search_size>buffer_size-i)
 	search_size=buffer_size-i;
-      if(find_in_mem(&buffer[i+8], search_size-8, "isom", 4)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "mp41", 4)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "mp42", 4)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "mmp4", 4)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "M4A", 3)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "M4B", 3)!=NULL ||
-	  find_in_mem(&buffer[i+8], search_size-8, "M4P", 3)!=NULL)
+      if(td_memmem(&buffer[i+8], search_size-8, "isom", 4)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "mp41", 4)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "mp42", 4)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "mmp4", 4)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "M4A", 3)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "M4B", 3)!=NULL ||
+	  td_memmem(&buffer[i+8], search_size-8, "M4P", 3)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mp4";
@@ -116,7 +116,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(find_in_mem(&buffer[i+8], search_size-8, "3gp", 3)!=NULL)
+      else if(td_memmem(&buffer[i+8], search_size-8, "3gp", 3)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3gp";
@@ -125,7 +125,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(find_in_mem(&buffer[i+8], search_size-8, "3g2", 3)!=NULL)
+      else if(td_memmem(&buffer[i+8], search_size-8, "3g2", 3)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3g2";
@@ -134,7 +134,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(find_in_mem(&buffer[i+8], search_size-8, "jp2", 3)!=NULL)
+      else if(td_memmem(&buffer[i+8], search_size-8, "jp2", 3)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="jp2";
@@ -143,7 +143,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(find_in_mem(&buffer[i+8], search_size-8, "qt", 2)!=NULL)
+      else if(td_memmem(&buffer[i+8], search_size-8, "qt", 2)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mov";

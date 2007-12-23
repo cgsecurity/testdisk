@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-#include "fnd_mem.h"
+#include "memmem.h"
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -71,16 +71,16 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
     if(buffer[8]=='C' && buffer[9]=='R' && buffer[10]==2)
       file_recovery_new->extension="cr2";
     /* Pentax RAW */
-    else if(find_in_mem(buffer, buffer_size, pentax_sig, sizeof(pentax_sig))!=NULL)
+    else if(td_memmem(buffer, buffer_size, pentax_sig, sizeof(pentax_sig))!=NULL)
       file_recovery_new->extension="pef";
     /* Nikon RAW */
-    else if(find_in_mem(buffer, buffer_size, nikon_sig, sizeof(nikon_sig))!=NULL)
+    else if(td_memmem(buffer, buffer_size, nikon_sig, sizeof(nikon_sig))!=NULL)
       file_recovery_new->extension="nef";
     /* Kodak RAW */
-    else if(find_in_mem(buffer, buffer_size, dcr_sig, sizeof(dcr_sig))!=NULL)
+    else if(td_memmem(buffer, buffer_size, dcr_sig, sizeof(dcr_sig))!=NULL)
       file_recovery_new->extension="dcr";
     /* Sony RAW */
-    else if(find_in_mem(buffer, buffer_size, sony_sig, sizeof(sony_sig))!=NULL)
+    else if(td_memmem(buffer, buffer_size, sony_sig, sizeof(sony_sig))!=NULL)
       file_recovery_new->extension="sr2";
     else
       file_recovery_new->extension=file_hint_tiff.extension;

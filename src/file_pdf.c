@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-#include "fnd_mem.h"
+#include "memmem.h"
 
 static void register_header_check_pdf(file_stat_t *file_stat);
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -61,11 +61,11 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
     const unsigned char *linearized;
     reset_file_recovery(file_recovery_new);
-    if(find_in_mem(buffer, 512, sig_illustrator,sizeof(sig_illustrator)) != NULL)
+    if(td_memmem(buffer, 512, sig_illustrator,sizeof(sig_illustrator)) != NULL)
       file_recovery_new->extension="ai";
     else
       file_recovery_new->extension=file_hint_pdf.extension;
-    if((linearized=find_in_mem(buffer, 512, sig_linearized,sizeof(sig_linearized))) != NULL)
+    if((linearized=td_memmem(buffer, 512, sig_linearized,sizeof(sig_linearized))) != NULL)
     {
       linearized+=sizeof(sig_linearized);
       while(*linearized!='>' && linearized<=buffer+512)

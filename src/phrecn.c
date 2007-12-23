@@ -60,6 +60,7 @@
 #include "partauto.h"
 #include "log.h"
 #include "hdaccess.h"
+#include "file_tar.h"
 
 /* #define DEBUG */
 /* #define DEBUG_GET_NEXT_SECTOR */
@@ -69,7 +70,6 @@
 
 extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_dir;
-extern const file_hint_t file_hint_txt;
 extern file_check_t *file_check_list;
 
 #ifdef HAVE_NCURSES
@@ -859,7 +859,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       {
       }
       else if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
-          file_hint_tar.header_check(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
+          header_check_tar(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
       { /* Currently saving a tar, do not check the data for know header */
         if(verbose>1)
         {

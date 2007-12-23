@@ -29,9 +29,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "file_tar.h"
 
 static void register_header_check_tar(file_stat_t *file_stat);
-static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_tar= {
   .extension="tar",
@@ -52,7 +52,7 @@ static void register_header_check_tar(file_stat_t *file_stat)
   register_header_check(0x101, tar_header_posix,sizeof(tar_header_posix), &header_check_tar, file_stat);
 }
 
-static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
     return 0;

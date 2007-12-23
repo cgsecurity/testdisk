@@ -35,7 +35,7 @@
 #include "filegen.h"
 #include "ole.h"
 #include "log.h"
-#include "fnd_mem.h"
+#include "memmem.h"
 
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
@@ -85,76 +85,76 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     /* TODO read the Root Directory */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_doc;
-    if(find_in_mem(buffer,buffer_size,"S\0c\0e\0n\0e\0",10)!=NULL)
+    if(td_memmem(buffer,buffer_size,"S\0c\0e\0n\0e\0",10)!=NULL)
     {
       file_recovery_new->extension="max";
     }
-    else if(find_in_mem(buffer,buffer_size,"WordDocument",12)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
     {
       file_recovery_new->extension="doc";
     }
-    else if(find_in_mem(buffer,buffer_size,"StarDraw",8)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
     {
       file_recovery_new->extension="sda";
     }
-    else if(find_in_mem(buffer,buffer_size,"StarCalc",8)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
     {
       file_recovery_new->extension="sdc";
     }
-    else if(find_in_mem(buffer,buffer_size,"StarImpress",11)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
     {
       file_recovery_new->extension="sdd";
     }
-    else if(find_in_mem(buffer,buffer_size,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)!=NULL)
     {
       file_recovery_new->extension="xlr";
     }
-    else if(find_in_mem(buffer,buffer_size,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)!=NULL)
     { /* HP Photosmart Photo Printing Album */
       file_recovery_new->extension="albm";
     }
-    else if(find_in_mem(buffer,buffer_size,"Worksheet",9)!=NULL ||
-	find_in_mem(buffer,buffer_size,"Book",4)!=NULL || 
-	find_in_mem(buffer,buffer_size,"Workbook",8)!=NULL || 
-	find_in_mem(buffer,buffer_size,"W\0o\0r\0k\0b\0o\0o\0k\0",16)!=NULL || 
-	find_in_mem(buffer,buffer_size,"Calc",4)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
+	td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
+	td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
+	td_memmem(buffer,buffer_size,"W\0o\0r\0k\0b\0o\0o\0k\0",16)!=NULL || 
+	td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
     {
       file_recovery_new->extension="xls";
     }
-    else if(find_in_mem(buffer,buffer_size,"Power",5)!=NULL ||
-        find_in_mem(buffer,buffer_size,"P\0o\0w\0e\0r\0",10)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL ||
+        td_memmem(buffer,buffer_size,"P\0o\0w\0e\0r\0",10)!=NULL)
     {
       file_recovery_new->extension="ppt";
     }
-    else if(find_in_mem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
     {
       file_recovery_new->extension="mdb";
     }
-    else if(find_in_mem(buffer,buffer_size,"Visio",5)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
     {
       file_recovery_new->extension="vis";
     }
-    else if(find_in_mem(buffer,buffer_size,"Sfx",3)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Sfx",3)!=NULL)
     {
       file_recovery_new->extension="sdw";
     }
-    else if(find_in_mem(buffer,buffer_size,"CPicPage",8)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
     {	/* Flash */
       file_recovery_new->extension="fla";
     }
-    else if(find_in_mem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
     {
       file_recovery_new->extension="pub";
     }
-    else if(find_in_mem(buffer,buffer_size,"C\0O\0N\0T\0E\0N\0T\0S\0",16)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"C\0O\0N\0T\0E\0N\0T\0S\0",16)!=NULL)
     {
       file_recovery_new->extension="wps";
     }
-    else if(find_in_mem(buffer,buffer_size,"MetaStock",9)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
     {
       file_recovery_new->extension="mws";
     }
-    else if(find_in_mem(buffer,buffer_size,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)!=NULL)
     { /* Outlook */
       file_recovery_new->extension="msg";
     }

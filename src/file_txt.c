@@ -35,7 +35,7 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
-#include "fnd_mem.h"
+#include "memmem.h"
 
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
@@ -360,11 +360,11 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
-    if(find_in_mem(buffer, buffer_size, sign_grisbi, sizeof(sign_grisbi))!=NULL)
+    if(td_memmem(buffer, buffer_size, sign_grisbi, sizeof(sign_grisbi))!=NULL)
       file_recovery_new->extension="gsb";
-    else if(find_in_mem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
+    else if(td_memmem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
       file_recovery_new->extension="fst";
-    else if(find_in_mem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
+    else if(td_memmem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
     {
       file_recovery_new->extension="html";
       file_recovery_new->file_check=&file_check_html;
@@ -451,13 +451,13 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(buffer[0]=='#' && buffer[1]=='!')
   {
-    unsigned int l=buffer_size;
+    unsigned int l=i-2;
     const unsigned char *haystack=buffer_lower+2;
     const unsigned char *res;
     res=memchr(haystack,'\n',l);
     if(res!=NULL)
       l=res-haystack;
-    if(find_in_mem(haystack, l, header_sig_perl, sizeof(header_sig_perl)) != NULL)
+    if(td_memmem(haystack, l, header_sig_perl, sizeof(header_sig_perl)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -465,7 +465,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="pl";
       return 1;
     }
-    if(find_in_mem(haystack, l, header_sig_python, sizeof(header_sig_python)) != NULL)
+    if(td_memmem(haystack, l, header_sig_python, sizeof(header_sig_python)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -473,7 +473,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="py";
       return 1;
     }
-    if(find_in_mem(haystack, l, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
+    if(td_memmem(haystack, l, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -580,10 +580,10 @@ Doc: \r (0xD)
             strstr(file_recovery->filename,".html")!=NULL) ||
           /* Text should not be found in JPEG */
           (file_recovery->file_stat->file_hint==&file_hint_jpg &&
-           find_in_mem(buffer, buffer_size, "8BIM", 4)==NULL &&
-           find_in_mem(buffer, buffer_size, "adobe", 5)==NULL) ||
+           td_memmem(buffer, buffer_size, "8BIM", 4)==NULL &&
+           td_memmem(buffer, buffer_size, "adobe", 5)==NULL) ||
           /* Text should not be found in zip because of compression */
-          (file_recovery->file_stat->file_hint==&file_hint_zip && find_in_mem(buffer, buffer_size, zip_header, 4)==NULL))
+          (file_recovery->file_stat->file_hint==&file_hint_zip && td_memmem(buffer, buffer_size, zip_header, 4)==NULL))
       {
         reset_file_recovery(file_recovery_new);
         file_recovery_new->data_check=&data_check_txt;
