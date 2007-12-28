@@ -72,7 +72,9 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
    * 0x000001B5 visual object start code				*/
 
   if(buffer[0]==0x00 && buffer[1]==0x00 && buffer[2]==0x01 &&
-      (buffer[3]==0xB0 || buffer[3]==0xB3 || buffer[3]==0xB5 || buffer[3]==0xBA || buffer[3]==0xBB))
+      (buffer[3]==0xB0 ||
+       (buffer[3]==0xB3 && ((buffer[4]<<8)+(buffer[5]>>8)>0) && ((buffer[5]<<8)+buffer[6]>0)) ||
+       buffer[3]==0xB5 || buffer[3]==0xBA || buffer[3]==0xBB))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;

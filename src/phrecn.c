@@ -2119,32 +2119,59 @@ static void interface_file_select(file_enable_t *files_enable, char**current_cmd
     int keep_asking;
     do
     {
-      unsigned int cmd_length=0;
-      int i;
+      file_enable_t *file_enable;
       keep_asking=0;
       while(*current_cmd[0]==',')
 	(*current_cmd)++;
+      if(strncmp(*current_cmd,"everything",10)==0)
+      {
+	int enable_status;
+	keep_asking=1;
+	(*current_cmd)+=10;
+	while(*current_cmd[0]==',')
+	  (*current_cmd)++;
+	if(strncmp(*current_cmd,"enable",6)==0)
+	{
+	  (*current_cmd)+=6;
+	  enable_status=1;
+	}
+	else if(strncmp(*current_cmd,"disable",7)==0)
+	{
+	  (*current_cmd)+=7;
+	  enable_status=0;
+	}
+	else
+	{
+	  log_critical("Syntax error %s\n",*current_cmd);
+	  return;
+	}
+	for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
+	  file_enable->enable=enable_status;
+      }
+      else
+      {
+	unsigned int cmd_length=0;
       while((*current_cmd)[cmd_length]!='\0' && (*current_cmd)[cmd_length]!=',')
 	cmd_length++;
-      for(i=0;files_enable[i].file_hint!=NULL;i++)
+	for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
       {
-	if(files_enable[i].file_hint->extension!=NULL &&
-	    strncmp(files_enable[i].file_hint->extension,*current_cmd,cmd_length)==0)
+	  if(file_enable->file_hint->extension!=NULL &&
+	      strlen(file_enable->file_hint->extension)==cmd_length &&
+	      memcmp(file_enable->file_hint->extension,*current_cmd,cmd_length)==0)
 	{
 	  keep_asking=1;
-	  while(*current_cmd[0]!='\0' && *current_cmd[0]!=',')
-	    (*current_cmd)++;
+	    (*current_cmd)+=cmd_length;
 	  while(*current_cmd[0]==',')
 	    (*current_cmd)++;
 	  if(strncmp(*current_cmd,"enable",6)==0)
 	  {
 	    (*current_cmd)+=6;
-	    files_enable[i].enable=1;
+	      file_enable->enable=1;
 	  }
 	  else if(strncmp(*current_cmd,"disable",7)==0)
 	  {
 	    (*current_cmd)+=7;
-	    files_enable[i].enable=0;
+	      file_enable->enable=0;
 	  }
 	  else
 	  {
@@ -2152,6 +2179,7 @@ static void interface_file_select(file_enable_t *files_enable, char**current_cmd
 	    return;
 	  }
 	}
+      }
       }
     } while(keep_asking>0);
     return;
