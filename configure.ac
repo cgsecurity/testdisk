@@ -55,6 +55,15 @@ AC_ARG_WITH(ext2fs-includes,
     AS_HELP_STRING(--with-ext2fs-includes=DIR,location of the ext2fs includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
+AC_ARG_WITH(com_err-lib,
+    AS_HELP_STRING(--with-com_err-lib=DIR,location of the com_err library),
+    [ com_err_lib_a="${withval}/libcom_err.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
+
+AC_ARG_WITH(com_err-includes,
+    AS_HELP_STRING(--with-com_err-includes=DIR,location of the com_err includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
 AC_ARG_WITH([jpeg],
     AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
     [	use_jpeg="n" ])
@@ -364,6 +373,14 @@ if test -z "${use_ext2fs}"; then
         LIBS="$LIBS ${ext2fs_lib_a}"
       fi
       ],AC_MSG_WARN(No ext2fs library detected))
+  AC_CHECK_LIB(ext2fs,ext2fs_open,[
+  AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
+      if test "${com_err_lib_a}" = ""; then
+        LIBS="$LIBS -lcom_err"
+      else
+        LIBS="$LIBS ${com_err_lib_a}"
+      fi
+      ],AC_MSG_WARN(No com_err library detected))
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
 fi
