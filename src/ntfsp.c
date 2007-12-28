@@ -50,6 +50,8 @@
 #include "log.h"
 
 #ifdef HAVE_LIBNTFS
+#define SIZEOF_BUFFER ((const unsigned int)512)
+
 unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space)
 {
   dir_data_t dir_data;
@@ -82,7 +84,6 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
       return 0;
   }
   {
-    const unsigned int sizeof_buffer=512;
     struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data.private_dir_data;
     unsigned char *buffer;
     uint64_t start_free=0;
@@ -92,7 +93,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     unsigned int cluster_size;
     unsigned int sector_size;
     log_trace("ntfs_remove_used_space\n");
-    buffer=(unsigned char *)MALLOC(sizeof_buffer);
+    buffer=(unsigned char *)MALLOC(SIZEOF_BUFFER);
     {
       const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
       if(disk_car->read(disk_car,512, buffer, partition->part_offset)!=0)
@@ -107,18 +108,18 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     }
     for(lcn=0;lcn<no_of_cluster;lcn++)
     {
-      static long long bmplcn = -sizeof_buffer - 1;	/* Which bit of $Bitmap is in the buffer */
+      static long long int bmplcn = -SIZEOF_BUFFER - 1;	/* Which bit of $Bitmap is in the buffer */
       int byte, bit;
-      if ((lcn < bmplcn) || (lcn >= (bmplcn + (sizeof_buffer << 3))))
+      if ((lcn < bmplcn) || (lcn >= (bmplcn + (SIZEOF_BUFFER << 3))))
       {
 	ntfs_attr *attr;
 	/* Mark the buffer as not in use, in case the read is shorter. */
-	memset(buffer, 0x00, sizeof_buffer);
-	bmplcn = lcn & (~((sizeof_buffer << 3) - 1));
+	memset(buffer, 0x00, SIZEOF_BUFFER);
+	bmplcn = lcn & (~((SIZEOF_BUFFER << 3) - 1));
 	attr = ntfs_attr_open(ls->vol->lcnbmp_ni, AT_DATA, AT_UNNAMED, 0);
 	if(attr)
 	{
-	  if (ntfs_attr_pread(attr, (bmplcn>>3), sizeof_buffer, buffer) < 0)
+	  if (ntfs_attr_pread(attr, (bmplcn>>3), SIZEOF_BUFFER, buffer) < 0)
 	  {
 	    log_error("Couldn't read $Bitmap\n");
 	  }
@@ -131,7 +132,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
       }
 
       bit  = 1 << (lcn & 7);
-      byte = (lcn >> 3) & (sizeof_buffer - 1);
+      byte = (lcn >> 3) & (SIZEOF_BUFFER - 1);
       if((buffer[byte] & bit)!=0)
       {
 	/* Not free */
