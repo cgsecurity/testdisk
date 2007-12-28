@@ -61,6 +61,7 @@ static file_data_t *fat12_dir(disk_t *disk_car, const partition_t *partition, di
 static file_data_t *fat16_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster);
 static file_data_t *fat32_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster);
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
+static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
 static void dir_partition_fat_close(dir_data_t *dir_data);
 
 static int32_t secwest;
@@ -434,7 +435,7 @@ int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_d
   strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
   dir_data->current_inode=0;
   dir_data->verbose=verbose;
-  dir_data->copy_file=NULL;
+  dir_data->copy_file=fat_copy;
   dir_data->close=dir_partition_fat_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
@@ -464,4 +465,94 @@ static void dir_partition_fat_close(dir_data_t *dir_data)
   struct fat_dir_struct *ls=(struct fat_dir_struct*)dir_data->private_dir_data;
   free(ls->boot_sector);
   free(ls);
+}
+
+static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+{
+  char *new_file;	
+  FILE *f_out;
+  const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
+  const struct fat_boot_sector *fat_header=ls->boot_sector;
+  file_data_t *dir_list;
+  unsigned int cluster_size=fat_header->cluster_size;
+  const unsigned int block_size=fat_sector_size(fat_header)*cluster_size;
+  unsigned char *buffer_file=MALLOC(block_size);
+  unsigned int cluster;
+  unsigned int file_size=file->filestat.st_size;
+
+  new_file=MALLOC(strlen(dir_data->local_dir)+strlen(dir_data->current_directory)+1);
+  strcpy(new_file,dir_data->local_dir);
+  strcat(new_file,dir_data->current_directory);
+  f_out=create_file(new_file);
+  if(!f_out)
+  {
+    log_critical("Can't create file %s: \n",new_file);
+    free(new_file);
+    free(buffer_file);
+    return -1;
+  }
+  log_trace("fat_copy newfile=%s first_cluster=%lu size=%lu\n", new_file,
+      (long unsigned)file->filestat.st_ino, (long unsigned)file_size);
+  if(partition->upart_type==UP_FAT12)
+  {
+    for(cluster = file->filestat.st_ino;
+	((cluster&0xff8)!=(unsigned)FAT12_EOC) && cluster>=2 && file_size>0;
+	cluster=get_next_cluster(disk_car, partition, UP_FAT12, le16(fat_header->reserved), cluster))
+    {
+      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header)+(uint64_t)(cluster-2)*cluster_size)*fat_sector_size(fat_header);
+      unsigned int toread = block_size;
+      if (toread > file_size)
+	toread = file_size;
+      if(disk_car->read(disk_car, toread, buffer_file, start)<0)
+      {
+	log_error("FAT12: Can't read cluster %u\n", cluster);
+      }
+      fwrite(buffer_file, 1, toread, f_out);
+      file_size -= toread;
+    }
+  }
+  else if(partition->upart_type==UP_FAT16)
+  {
+    for(cluster = file->filestat.st_ino;
+	((cluster&0xfff8)!=(unsigned)FAT16_EOC) && cluster>=2 && file_size>0;
+	cluster=get_next_cluster(disk_car, partition, UP_FAT16, le16(fat_header->reserved), cluster))
+    {
+      uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size+(uint64_t)(cluster-2)*cluster_size)*disk_car->sector_size;
+      unsigned int toread = block_size;
+      if (toread > file_size)
+	toread = file_size;
+      if(disk_car->read(disk_car, toread, buffer_file, start)<0)
+      {
+	log_error("FAT16: Can't read cluster %u\n", cluster);
+      }
+      fwrite(buffer_file, 1, toread, f_out);
+      file_size -= toread;
+    }
+  }
+  else
+  {
+    for(cluster = file->filestat.st_ino;
+	((cluster&0xffffff8)!=(unsigned)FAT32_EOC) && cluster>=2 && file_size>0;
+	cluster=get_next_cluster(disk_car,partition, UP_FAT32,le16(fat_header->reserved), cluster))
+    {
+      uint64_t start = partition->part_offset+
+	(uint64_t)(le16(fat_header->reserved)+
+	    fat_header->fats*le32(fat_header->fat32_length)+
+	    (cluster-2)*cluster_size)*fat_sector_size(fat_header);
+      unsigned int toread = block_size;
+      if (toread > file_size)
+	toread = file_size;
+      if(disk_car->read(disk_car, toread, buffer_file, start)<0)
+      {
+	log_error("FAT32: Can't read cluster %u\n", cluster);
+      }
+      fwrite(buffer_file, 1, toread, f_out);
+      file_size -= toread;
+    }
+  }
+  fclose(f_out);
+  set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+  free(new_file);
+  free(buffer_file);
+  return 0;
 }
