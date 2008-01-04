@@ -306,7 +306,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   *mode_ext2=(command=='E' || command=='e');
   if(*mode_ext2>0)
   {
-    log_info("Mode EXT/EXT3 activated.\n");
+    log_info("EXT/EXT3 mode activated.\n");
   }
   *carve_free_space_only=0;
   /*
@@ -1512,7 +1512,7 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
   int paranoid=1;
   unsigned int menu=0;
   int keep_corrupted_file=0;
-  int current_element_num=0;
+  int current_element_num;
   unsigned int mode_ext2=0;
   unsigned int blocksize=0;
   unsigned int expert=0;
@@ -1529,9 +1529,15 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
   };
   list_part_t *current_element;
   if(list_part!=NULL && list_part->next!=NULL)
+  {
+    current_element_num=1;
     current_element=list_part->next;
+  }
   else
+  {
+    current_element_num=0;
     current_element=list_part;
+  }
   /* ncurses interface */
   while(done==0)
   {
@@ -1894,8 +1900,8 @@ static void interface_options_photorec_ncurses(int *paranoid, int *allow_partial
     }
     menuOptions[1].name=*allow_partial_last_cylinder?"Allow partial last cylinder : Yes":"Allow partial last cylinder : No";
     menuOptions[2].name=*keep_corrupted_file?"Keep corrupted files : Yes":"Keep corrupted files : No";
-    menuOptions[3].name=*mode_ext2?"Mode ext2/ext3 : Yes":"Mode ext2/ext3 : No";
-    menuOptions[4].name=*expert?"Mode expert : Yes":"Mode expert : No";
+    menuOptions[3].name=*mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
+    menuOptions[4].name=*expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[5].name=*lowmem?"Low memory: Yes":"Low memory: No";
     /* Jpg
        Mov
@@ -1990,7 +1996,7 @@ static void interface_options_photorec(int *paranoid, int *allow_partial_last_cy
   /* write new options to log file */
   log_info("New options :\n Paranoid : %s\n", *paranoid?"Yes":"No");
   log_info(" Brute force : %s\n", ((*paranoid)>1?"Yes":"No"));
-  log_info(" Allow partial last cylinder : %s\n Keep corrupted files : %s\n Mode ext2/ext3 : %s\n Mode expert : %s\n Low memory : %s\n",
+  log_info(" Allow partial last cylinder : %s\n Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n",
       *allow_partial_last_cylinder?"Yes":"No",
       *keep_corrupted_file?"Yes":"No",
       *mode_ext2?"Yes":"No",

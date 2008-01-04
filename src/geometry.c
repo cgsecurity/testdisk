@@ -95,8 +95,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	disk_car->CHS.sector = tmp_val;
 	geo_modified=1;
 	if(cyl_modified==0)
-	{
-	  disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
+	{	/* Round up */
+	  disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
 	}
       } else
 	log_error("Illegal sectors value\n");
@@ -113,8 +113,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       {
 	disk_car->sector_size = tmp_val;
 	if(cyl_modified==0)
-	{
-	  disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
+	{	/* Round up */
+	  disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
 	}
       }
       else
@@ -231,8 +231,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
               disk_car->CHS.sector = tmp_val;
               geo_modified=1;
               if(cyl_modified==0)
-              {
-                disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
+	      {	/* Round up */
+		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
               }
             } else
               wprintw(stdscr,"Illegal sectors value");
@@ -252,8 +252,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             if (tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512) {
               disk_car->sector_size = tmp_val;
               if(cyl_modified==0)
-              {
-                disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size/(disk_car->CHS.head+1))/disk_car->CHS.sector-1;
+	      {	/* Round up */
+		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
               }
             } else
               wprintw(stdscr,"Illegal sector size");
@@ -272,6 +272,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
   }
   if(geo_modified!=0)
   {
+    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
 #ifdef __APPLE__
     /* On MacOSX if HD contains some bad sectors, the disk size may not be correctly detected */
     disk_car->disk_real_size=disk_car->disk_size;

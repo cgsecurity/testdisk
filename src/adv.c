@@ -478,6 +478,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   buffer_bs=(unsigned char*)MALLOC(FAT1x_BOOT_SECTOR_SIZE);
   while(1)
   {
+    unsigned int menu=0;
     int command;
     aff_buffer(BUFFER_RESET,"Q");
     if(rescan==1)
@@ -555,7 +556,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     {
       log_flush();
 #ifdef HAVE_NCURSES
-      command=screen_buffer_display(stdscr,options,menu_fat1x);
+      command=screen_buffer_display_ext(stdscr, options, menu_fat1x, &menu);
 #else
       command=0;
 #endif
@@ -638,6 +639,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   buffer_backup_bs=(unsigned char*)MALLOC(3*disk_car->sector_size);
   while(1)
   {
+    unsigned int menu=0;
     int command;
     aff_buffer(BUFFER_RESET,"Q");
     if(rescan==1)
@@ -726,9 +728,15 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	if(opt_B!=0 && opt_O!=0)
 	  options="DOBRL";
 	else if(opt_B!=0)
+	{
+	  menu=5;
 	  options="DBRL";
+	}
 	else if(opt_O!=0)
+	{
+	  menu=4;
 	  options="DORL";
+      }
       }
       else
       {
@@ -784,7 +792,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     {
       log_flush();
 #ifdef HAVE_NCURSES
-      command=screen_buffer_display(stdscr,options,menu_fat32);
+      command=screen_buffer_display_ext(stdscr, options, menu_fat32, &menu);
 #else
       command=0;
 #endif
@@ -899,6 +907,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 
   while(1)
   {
+    unsigned int menu=0;
     int command;
     aff_buffer(BUFFER_RESET,"Q");
     if(rescan==1)
@@ -971,9 +980,15 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	  options="DRML";
       }
       else if(opt_B!=0)
+      {
+	menu=5;
 	options="DBRL";
+      }
       else if(opt_O!=0)
+      {
+	menu=4;
 	options="DORL";
+      }
       else
 	options="DR";
       rescan=0;
@@ -1022,7 +1037,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
     {
       log_flush();
 #ifdef HAVE_NCURSES
-      command=screen_buffer_display(stdscr,options,menu_ntfs);
+      command=screen_buffer_display_ext(stdscr, options, menu_ntfs, &menu);
 #else
       command=0;
 #endif
@@ -1138,6 +1153,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 
   while(1)
   {
+    unsigned int menu=0;
     int command;
     aff_buffer(BUFFER_RESET,"Q");
     if(rescan==1)
@@ -1245,7 +1261,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
     {
       log_flush();
 #ifdef HAVE_NCURSES
-      command=screen_buffer_display(stdscr,options,menu_hfsp);
+      command=screen_buffer_display_ext(stdscr, options, menu_hfsp, &menu);
 #else
       command=0;
 #endif

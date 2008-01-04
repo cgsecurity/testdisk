@@ -1665,6 +1665,10 @@ char *ask_location(const char*msg, const char *src_dir)
             if(offset+INTER_DIR<=i)
               break;
           }
+	  wmove(window, 8+INTER_DIR, 4);
+	  wclrtoeol(window);
+	  if(dir_walker!=&dir_list.list && dir_walker->next!=&dir_list.list)
+	    wprintw(window, "Next");
         }
         {
           int line=4;
