@@ -94,6 +94,5 @@ void screen_buffer_to_log(void);
 int interface_partition_type(disk_t *disk_car, const int verbose, char**current_cmd);
 int intrf_no_disk(const char *prog_name);
 char *ask_log_location(const char*filename);
-int ask_log_creation(void);
 char *ask_location(const char*msg, const char *src_dir);
 void dump_ncurses(const void *nom_dump, unsigned int lng);

@@ -740,7 +740,8 @@ int main( int argc, char **argv )
 {
   int i;
   int use_sudo=0;
-  int help=0, create_log=0, verbose=0;
+  int help=0, verbose=0;
+  int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   const char *recup_dir=NULL;
@@ -881,11 +882,15 @@ int main( int argc, char **argv )
   for(i=1;i<argc;i++)
   {
     if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
-      create_log=1;
+    {
+      if(create_log==TD_LOG_NONE)
+        create_log=log_open("photorec.log", TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
+    }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
-      create_log=1;
+      if(create_log==TD_LOG_NONE)
+        create_log=log_open("photorec.log", TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
     }
     else if(((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)) &&(i+1<argc))
     {
@@ -973,8 +978,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
     return 1;
 #endif
-  if(create_log>0)
-    log_open("photorec.log",(create_log==1?"a":"w"),"PhotoRec",argc,argv);
+  create_log=log_open("photorec.log", create_log, 1, "PhotoRec", argc, argv);
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   log_info(TESTDISK_OS);
   log_info(" (ewf lib: %s)\n", td_ewf_version());

@@ -22,7 +22,7 @@
 #ifndef _LOG_H
 #define _LOG_H
 int log_set_levels(const unsigned int levels);
-int log_open(const char*default_filename, const char *mode, const char *prog_name, int argc, char**argv);
+int log_open(const char*default_filename, const int mode, const int interface, const char *prog_name, int argc, char**argv);
 int log_flush(void);
 int log_close(void);
 int log_redirect(unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
@@ -31,6 +31,12 @@ void dump2_log(const void *dump_1, const void *dump_2,const unsigned int lng);
 #ifdef _COMMON_H
 void log_partition(const disk_t *disk_car,const partition_t *partition);
 #endif
+
+#define TD_LOG_NONE	0
+#define TD_LOG_CREATE	1
+#define TD_LOG_APPEND	2
+#define TD_LOG_DONE	3
+#define TD_LOG_REFUSED	4
 
 #define LOG_LEVEL_DEBUG    (1 <<  0) /* x = 42 */
 #define LOG_LEVEL_TRACE    (1 <<  1) /* Entering function x() */

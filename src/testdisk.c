@@ -95,7 +95,7 @@ int main( int argc, char **argv )
   int i;
   int use_sudo=0;
   int help=0, verbose=0, dump_ind=0;
-  int create_log=0;     /* 0: no_log, 1: append, 2 create */
+  int create_log=TD_LOG_NONE;
   int do_list=0;
   int unit=UNIT_DEFAULT;
   int write_used;
@@ -131,26 +131,21 @@ int main( int argc, char **argv )
     return -1;
   }
 #endif
+  printf("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   for(i=1;i<argc;i++)
   {
     if((strcmp(argv[i],"/dump")==0) || (strcmp(argv[i],"-dump")==0))
       dump_ind=1;
     else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
-      if(create_log==0)
-      {
-        create_log=1;
-        log_open("testdisk.log","a","TestDisk",argc,argv);
-      }
+      if(create_log==TD_LOG_NONE)
+        create_log=log_open("testdisk.log", TD_LOG_APPEND, 0, "TestDisk", argc, argv);
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
-      if(create_log==0)
-      {
-        create_log=1;
-        log_open("testdisk.log","a","TestDisk",argc,argv);
-      }
+      if(create_log==TD_LOG_NONE)
+        create_log=log_open("testdisk.log", TD_LOG_APPEND, 0, "TestDisk", argc, argv);
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
       testdisk_mode|=TESTDISK_O_ALL;
@@ -207,7 +202,6 @@ int main( int argc, char **argv )
 	list_disk=insert_new_disk(list_disk,disk_car);
     }
   }
-  printf("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   if(help!=0)
   {
     printf("\n" \
@@ -286,13 +280,12 @@ int main( int argc, char **argv )
   if(start_ncurses("TestDisk",argv[0]))
     return 1;
 #endif
-  if(argc==1)
+  if(argc==1 && create_log==TD_LOG_NONE)
   {
     verbose=1;
-    create_log=ask_log_creation();
-    if(create_log>0)
-      log_open("testdisk.log",(create_log==1?"a":"w"),"TestDisk",argc,argv);
+    create_log=ask_testdisk_log_creation();
   }
+  create_log=log_open("testdisk.log", create_log, 1, "TestDisk", argc, argv);
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   log_info(TESTDISK_OS);
   log_info(" (ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s)\n",td_ext2fs_version(),td_ntfs_version(),td_reiserfs_version(), td_ewf_version());

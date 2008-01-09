@@ -52,16 +52,26 @@ int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
-int log_open(const char*default_filename, const char *mode, const char *prog_name, int argc, char**argv)
+int log_open(const char*default_filename, const int mode, const int interface, const char *prog_name, int argc, char**argv)
 {
   const char*filename=default_filename;
+  if(mode!=TD_LOG_CREATE && mode!=TD_LOG_APPEND)
+    return mode;
   do
   {
-    log_handle=fopen(filename,mode);
+    log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
     if(log_handle==NULL)
+    {
+      if(interface==0)
+      {
+	printf("Can't create %s file\n", default_filename);
+	return mode;
+      }
       filename=ask_log_location(filename);
-  } while(log_handle==NULL && filename!=NULL);
-  if(log_handle!=NULL)
+      if(filename==NULL)
+	return TD_LOG_REFUSED;
+    }
+  } while(log_handle==NULL);
   {
     int i;
     time_t my_time;
@@ -76,7 +86,7 @@ int log_open(const char*default_filename, const char *mode, const char *prog_nam
     fprintf(log_handle,"\n\n");
     fflush(log_handle);
   }
-  return (log_handle==NULL);
+  return TD_LOG_DONE;
 }
 
 int log_flush(void)
