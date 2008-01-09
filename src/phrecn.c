@@ -306,7 +306,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   *mode_ext2=(command=='E' || command=='e');
   if(*mode_ext2>0)
   {
-    log_info("EXT/EXT3 mode activated.\n");
+    log_info("EXT2/EXT3 mode activated.\n");
   }
   *carve_free_space_only=0;
   /*
