@@ -50,6 +50,7 @@
 #include "io_redir.h"
 #include "log.h"
 #include "guid_cmp.h"
+#include "dimage.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -61,6 +62,7 @@ extern const arch_fnct_t arch_xbox;
 #define INTER_ADV_X	0
 #define INTER_ADV_Y	23
 #define INTER_ADV	15
+#define DEFAULT_IMAGE_NAME "image.dd"
 
 static int is_hfs(const partition_t *partition);
 static int is_hfsp(const partition_t *partition);
@@ -188,6 +190,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'t',"Type","Change type, this setting will not be saved on disk"},
       {'b',"Boot","Boot sector recovery"},
       {'s',"Superblock",NULL},
+      {'c',"Copy", "Create an image"},
 //      {'a',"Add", "Add temporary partition (Expert only)"},
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}
@@ -237,41 +240,41 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       if(is_part_fat(current_element->part) ||
 	  is_part_ntfs(current_element->part))
       {
-	options="tbq";
+	options="tbcq";
 	menu=1;
       }
       else if(is_part_linux(current_element->part))
       {
-	options="tsq";
+	options="tscq";
 	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
 	menu=1;
       }
       else if(is_part_hfs(current_element->part) || is_part_hfsp(current_element->part))
       {
-	options="tsq";
+	options="tscq";
 	menuAdv[2].desc="Locate HFS/HFS+ backup superblock";
 	menu=1;
       }
       else if(is_fat(current_element->part) ||
 	  is_ntfs(current_element->part))
       {
-	options="tbq";
+	options="tbcq";
 	menu=1;
       }
       else if(is_linux(current_element->part))
       {
-	options="tsq";
+	options="tscq";
 	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
 	menu=1;
       }
       else if(is_hfs(current_element->part) || is_hfsp(current_element->part))
       {
-	options="tsq";
+	options="tscq";
 	menuAdv[2].desc="Locate HFS/HFS+ backup superblock";
 	menu=1;
       }
       else
-	options="tq";
+	options="tcq";
     }
     quit=0;
     if(*current_cmd!=NULL)
@@ -292,6 +295,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	{
 	  (*current_cmd)+=4;
 	  command='b';
+	}
+	else if(strncmp(*current_cmd,"copy",4)==0)
+	{
+	  (*current_cmd)+=4;
+	  command='c';
 	}
 	else if(strncmp(*current_cmd,"superblock",10)==0)
 	{
@@ -396,6 +404,29 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  {
 	    ntfs_boot_sector(disk_car, partition, verbose, dump_ind, expert, current_cmd);
 	    rewrite=1;
+	  }
+	}
+	break;
+      case 'c':
+      case 'C':
+	if(current_element!=NULL)
+	{
+	  char *image_dd;
+	  menu=0;
+	  image_dd=ask_location("Do you want to save disk file image.dd in %s%s ? [Y/N]","");
+	  if(image_dd!=NULL)
+	  {
+	    char *new_recup_dir=MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);
+	    strcpy(new_recup_dir,image_dd);
+	    strcat(new_recup_dir,"/");
+	    strcat(new_recup_dir,DEFAULT_IMAGE_NAME);
+	    free(image_dd);
+	    image_dd=new_recup_dir;
+	  }
+	  if(image_dd!=NULL)
+	  {
+	    disk_image(disk_car, current_element->part, image_dd);
+	    free(image_dd);
 	  }
 	}
 	break;
