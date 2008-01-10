@@ -116,6 +116,7 @@ extern const file_hint_t file_hint_djv;
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_dpx;
 extern const file_hint_t file_hint_dsc;
+extern const file_hint_t file_hint_dss;
 extern const file_hint_t file_hint_dta;
 extern const file_hint_t file_hint_dump;
 extern const file_hint_t file_hint_dv;
@@ -787,6 +788,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_doc  },
     { .enable=1, .file_hint=&file_hint_dpx  },
     { .enable=1, .file_hint=&file_hint_dsc  },
+    { .enable=1, .file_hint=&file_hint_dss  },
     { .enable=0, .file_hint=&file_hint_dta  },
     { .enable=1, .file_hint=&file_hint_dump },
     { .enable=1, .file_hint=&file_hint_dv   },
