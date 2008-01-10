@@ -63,7 +63,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   f_session=fopen(SESSION_FILENAME,"rb");
   if(!f_session)
   {
-    log_info("Can't read photorec.ses file: %s\n",strerror(errno));
+    log_info("Can't open photorec.ses file: %s\n",strerror(errno));
     session_save(NULL, NULL, NULL, NULL, 0, 0);
     return -1;
   }
