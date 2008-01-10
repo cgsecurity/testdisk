@@ -52,7 +52,7 @@ int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
-int log_open(const char*default_filename, const int mode, const int interface, const char *prog_name, int argc, char**argv)
+int log_open(const char*default_filename, const int mode, const int ncurses_interface, const char *prog_name, int argc, char**argv)
 {
   const char*filename=default_filename;
   if(mode!=TD_LOG_CREATE && mode!=TD_LOG_APPEND)
@@ -62,7 +62,7 @@ int log_open(const char*default_filename, const int mode, const int interface, c
     log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
     if(log_handle==NULL)
     {
-      if(interface==0)
+      if(ncurses_interface==0)
       {
 	printf("Can't create %s file\n", default_filename);
 	return mode;

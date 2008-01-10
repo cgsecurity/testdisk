@@ -22,7 +22,7 @@
 #ifndef _LOG_H
 #define _LOG_H
 int log_set_levels(const unsigned int levels);
-int log_open(const char*default_filename, const int mode, const int interface, const char *prog_name, int argc, char**argv);
+int log_open(const char*default_filename, const int mode, const int ncurses_interface, const char *prog_name, int argc, char**argv);
 int log_flush(void);
 int log_close(void);
 int log_redirect(unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
