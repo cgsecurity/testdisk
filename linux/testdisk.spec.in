@@ -1,5 +1,5 @@
 %define ver_progsreiserfs 0.3.1-rc8
-%define ver_ntfsprogs 1.13.1
+%define ver_ntfsprogs 2.0.0
 
 Summary:	Tool to check and undelete partition
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje

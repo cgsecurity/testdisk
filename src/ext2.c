@@ -161,7 +161,7 @@ static int test_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partiti
       (le16(sb->s_errors) != EXT2_ERRORS_CONTINUE) &&
       (le16(sb->s_errors) != EXT2_ERRORS_RO) &&
       (le16(sb->s_errors) != EXT2_ERRORS_PANIC))
-    return 5;
+    return 4;
   if ((le16(sb->s_state) & ~(EXT2_VALID_FS | EXT2_ERROR_FS))!=0)
     return 5;
   if (le32(sb->s_blocks_count) == 0) /* reject empty filesystem */

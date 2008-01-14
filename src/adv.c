@@ -767,7 +767,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	{
 	  menu=4;
 	  options="DORL";
-      }
+	}
       }
       else
       {

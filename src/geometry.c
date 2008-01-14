@@ -233,7 +233,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
               if(cyl_modified==0)
 	      {	/* Round up */
 		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-              }
+	      }
             } else
               wprintw(stdscr,"Illegal sectors value");
           }
@@ -254,7 +254,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
               if(cyl_modified==0)
 	      {	/* Round up */
 		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-              }
+	      }
             } else
               wprintw(stdscr,"Illegal sector size");
           }

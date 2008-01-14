@@ -58,6 +58,30 @@ static void register_header_check_pst(file_stat_t *file_stat)
 #define INDEX_TYPE_OFFSET 0x0A
 #define FILE_SIZE_POINTER 0xA8
 #define FILE_SIZE_POINTER_64 0xB8
+/*
+   Outlook 2000
+   0x0000 uchar signature[4];
+   0x000a uchar indexType;
+   0x00a8 uint32_t total_file_size;
+   0x00b8 uint32_t backPointer2;
+   0x00bc uint32_t offsetIndex2;
+   0x00c0 uint32_t backPointer1;
+   0x00c4 uint32_t offsetIndex1;
+   0x01cd uchar encryptionType;
+
+   Outlook 2003
+   0x0000 uchar signature[4];
+   0x000a uchar indexType;
+   0x00b8 uint64_t total_file_size;
+   0x00d8 uint64_t backPointer2;
+   0x00e0 uint64_t offsetIndex2;
+   0x00e8 uint64_t backPointer1;
+   0x00f0 uint64_t offsetIndex1;
+   0x0201 uchar encryptionType;
+
+   More information about the file structure can be found at
+   http://www.ﬁve-ten-sg.com/libpst/
+*/
 
 static int header_check_pst(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -75,18 +99,23 @@ static int header_check_pst(const unsigned char *buffer, const unsigned int buff
   }
   if(memcmp(buffer,pst_header,sizeof(pst_header))==0)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_pst.extension;
     if(buffer[INDEX_TYPE_OFFSET]==0x0e)
     {
       /* Outlook 2000 and older versions */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_pst.extension;
       file_recovery_new->calculated_file_size=(uint64_t)buffer[FILE_SIZE_POINTER] +
 	(((uint64_t)buffer[FILE_SIZE_POINTER+1])<<8) +
 	(((uint64_t)buffer[FILE_SIZE_POINTER+2])<<16) +
 	(((uint64_t)buffer[FILE_SIZE_POINTER+3])<<24);
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+      return 1;
     }
-    else
+    else if(buffer[INDEX_TYPE_OFFSET]==0x17)
     { /* Outlook 2003 */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_pst.extension;
       file_recovery_new->calculated_file_size=(uint64_t)buffer[FILE_SIZE_POINTER_64] +
 	(((uint64_t)buffer[FILE_SIZE_POINTER_64+1])<<8) +
 	(((uint64_t)buffer[FILE_SIZE_POINTER_64+2])<<16) +
@@ -95,10 +124,10 @@ static int header_check_pst(const unsigned char *buffer, const unsigned int buff
 	(((uint64_t)buffer[FILE_SIZE_POINTER_64+5])<<40) +
 	(((uint64_t)buffer[FILE_SIZE_POINTER_64+6])<<48) +
 	(((uint64_t)buffer[FILE_SIZE_POINTER_64+7])<<56);
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+      return 1;
     }
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-  return 1;
   }
   return 0;
 }

@@ -205,21 +205,21 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	log_info("Don't fix MFT mirror.\n");
     }
     else if(res1<res2)
-      {
+    {
       /* Use MFT mirror */
       if(ask_confirmation("Fix MFT ? (Y/N)")!=0)
 	use_MFT=2;
       else
 	log_info("Don't fix MFT.\n");
-        }
-	else
+    }
+    else
     { /* res1==res2 */
       if(res1<0)
 	log_error("MFT and MFT mirror are bad. Failed to repair them.\n");
       else
 	log_error("Both MFT seems ok but they don't match, use chkdsk.\n");
       if(expert==0)
-        {
+      {
 	if(res1<0)
 	  display_message("MFT and MFT mirror are bad. Failed to repair them.\n");
 	else
@@ -264,27 +264,27 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	  default:
 	    use_MFT=0;
 	    break;
-      }
+	}
 #endif
-    }
+      }
     }
   }
   if(use_MFT==2)
-      {
-	if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mftmirr, mft_pos)!=0)
-        {
-	  log_error("Failed to fix MFT: write error.\n");
-	  display_message("Failed to fix MFT: write error.\n");
-        }
-	else
-        {
-          disk_car->sync(disk_car);
-	  log_info("MFT fixed.\n");
-	  display_message("MFT fixed.\n");
-        }
-      }
+  {
+    if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mftmirr, mft_pos)!=0)
+    {
+      log_error("Failed to fix MFT: write error.\n");
+      display_message("Failed to fix MFT: write error.\n");
+    }
+    else
+    {
+      disk_car->sync(disk_car);
+      log_info("MFT fixed.\n");
+      display_message("MFT fixed.\n");
+    }
+  }
   else if(use_MFT==1)
-      {
+  {
     if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mft, mftmirr_pos)!=0)
     {
       log_error("Failed to fix MFT mirror: write error.\n");

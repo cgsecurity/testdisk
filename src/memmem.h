@@ -35,7 +35,7 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
   /* Sanity check, otherwise the loop might search through the whole
      memory.  */
   if (haystack_len < needle_len)
-      return NULL;
+    return NULL;
 
   for (begin = (const char *) haystack; begin <= last_possible; ++begin)
     if (begin[0] == ((const char *) needle)[0] &&

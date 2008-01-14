@@ -1102,6 +1102,8 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 #endif
     update_blocksize(*blocksize,list_search_space, start_offset);
     free_list_search_space(&list_file);
+    /* An expert can stop and manually set the blocksize without stopping the recovery */
+    ind_stop=0;
   }
   free(buffer_start);
 #ifdef HAVE_NCURSES
@@ -2157,35 +2159,35 @@ static void interface_file_select(file_enable_t *files_enable, char**current_cmd
       else
       {
 	unsigned int cmd_length=0;
-      while((*current_cmd)[cmd_length]!='\0' && (*current_cmd)[cmd_length]!=',')
-	cmd_length++;
+	while((*current_cmd)[cmd_length]!='\0' && (*current_cmd)[cmd_length]!=',')
+	  cmd_length++;
 	for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
-      {
+	{
 	  if(file_enable->file_hint->extension!=NULL &&
 	      strlen(file_enable->file_hint->extension)==cmd_length &&
 	      memcmp(file_enable->file_hint->extension,*current_cmd,cmd_length)==0)
-	{
-	  keep_asking=1;
+	  {
+	    keep_asking=1;
 	    (*current_cmd)+=cmd_length;
-	  while(*current_cmd[0]==',')
-	    (*current_cmd)++;
-	  if(strncmp(*current_cmd,"enable",6)==0)
-	  {
-	    (*current_cmd)+=6;
+	    while(*current_cmd[0]==',')
+	      (*current_cmd)++;
+	    if(strncmp(*current_cmd,"enable",6)==0)
+	    {
+	      (*current_cmd)+=6;
 	      file_enable->enable=1;
-	  }
-	  else if(strncmp(*current_cmd,"disable",7)==0)
-	  {
-	    (*current_cmd)+=7;
+	    }
+	    else if(strncmp(*current_cmd,"disable",7)==0)
+	    {
+	      (*current_cmd)+=7;
 	      file_enable->enable=0;
-	  }
-	  else
-	  {
-	    log_critical("Syntax error %s\n",*current_cmd);
-	    return;
+	    }
+	    else
+	    {
+	      log_critical("Syntax error %s\n",*current_cmd);
+	      return;
+	    }
 	  }
 	}
-      }
       }
     } while(keep_asking>0);
     return;

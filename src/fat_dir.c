@@ -254,7 +254,7 @@ static file_data_t *fat12_dir(disk_t *disk_car, const partition_t *partition, di
     memset(buffer_dir,0,fat_sector_size(fat_header)*cluster_size*10);
     for(cluster=first_cluster, nbr_cluster=0;
 	((cluster&0x0ff8)!=(unsigned)FAT12_EOC) && (cluster>=2) && (nbr_cluster<10) && (stop==0);
-	cluster=get_next_cluster(disk_car,partition, UP_FAT12,le16(fat_header->reserved), cluster), nbr_cluster++)
+	cluster=get_next_cluster(disk_car, partition, UP_FAT12, le16(fat_header->reserved), cluster), nbr_cluster++)
     {
       uint64_t start=partition->part_offset+(uint64_t)(le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length)+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header)+(uint64_t)(cluster-2)*cluster_size)*fat_sector_size(fat_header);
       if(dir_data->verbose>0)
