@@ -1,5 +1,6 @@
 %define ver_progsreiserfs 0.3.1-rc8
 %define ver_ntfsprogs 2.0.0
+%define ver_libewf 20070512
 
 Summary:	Tool to check and undelete partition
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
@@ -13,11 +14,14 @@ Group:		Applications/System
 Source0:	http://www.cgsecurity.org/%{name}-%{version}.tar.bz2
 Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Source2:	ntfsprogs-%ver_ntfsprogs.tar.gz
+Source3:	libewf-%ver_libewf.tar.gz
 Patch0:		progsreiserfs-journal.patch
 URL:		http://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:  e2fsprogs-devel
 BuildRequires:	libjpeg-devel
+BuildRequires:	zlib-devel
+BuildRequires:	openssl-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
@@ -45,6 +49,7 @@ Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 %setup -q
 %setup -q -a 1 -D
 %setup -q -a 2 -D
+%setup -q -a 3 -D
 %patch0
 
 %build
@@ -58,7 +63,19 @@ cd ntfsprogs-%ver_ntfsprogs
 %configure
 make libs
 )
-%configure --with-reiserfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libreiserfs/.libs/ --with-reiserfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/include/ --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/ --with-ntfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/libntfs/.libs/ --with-ntfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/include/
+(
+cd libewf-%ver_libewf
+%configure
+make lib
+)
+%configure \
+ --with-reiserfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libreiserfs/.libs/ 	\
+ --with-reiserfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/include/ 	\
+ --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/ 		\
+ --with-ntfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/libntfs/.libs/ 			\
+ --with-ntfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/include/			\
+ --with-ewf-lib=${RPM_BUILD_DIR}/%{name}-%{version}/libewf-%{ver_libewf}/libewf/.libs/				\
+ --with-ewf-includes=${RPM_BUILD_DIR}/%{name}-%{version}/libewf-%{ver_libewf}/include/
 make static
 %install
 rm -rf $RPM_BUILD_ROOT

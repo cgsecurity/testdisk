@@ -4,7 +4,7 @@ SUBDIRS = src
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh progsreiserfs-journal.patch \
 	darwin/readme.txt \
 	doc_src/testdisk.1.in doc_src/photorec.1.in doc \
-	dos/readme.txt dos/testdisk.bat \
+	dos/readme.txt \
 	linux/testdisk.spec.in \
 	src/icon_ph.rc src/icon_tst.rc \
 	win/readme.txt
