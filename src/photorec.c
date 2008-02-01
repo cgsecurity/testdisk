@@ -138,6 +138,7 @@ extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
+extern const file_hint_t file_hint_lnk;
 extern const file_hint_t file_hint_max;
 extern const file_hint_t file_hint_mb;
 extern const file_hint_t file_hint_mdb;
@@ -194,6 +195,7 @@ extern const file_hint_t file_hint_wmf;
 extern const file_hint_t file_hint_x3f;
 extern const file_hint_t file_hint_xcf;
 extern const file_hint_t file_hint_xm;
+extern const file_hint_t file_hint_xsv;
 extern const file_hint_t file_hint_zip;
 
 static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
@@ -810,6 +812,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_indd  },
     { .enable=1, .file_hint=&file_hint_itunes  },
     { .enable=1, .file_hint=&file_hint_kdb  },
+    { .enable=1, .file_hint=&file_hint_lnk  },
     { .enable=1, .file_hint=&file_hint_jpg  },
     { .enable=1, .file_hint=&file_hint_max  },
     { .enable=1, .file_hint=&file_hint_mb   },
@@ -867,6 +870,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_x3f  },
     { .enable=1, .file_hint=&file_hint_xcf  },
     { .enable=1, .file_hint=&file_hint_xm   },
+    { .enable=1, .file_hint=&file_hint_xsv  },
     { .enable=1, .file_hint=&file_hint_zip  },
     { .enable=0, .file_hint=NULL }
   };
