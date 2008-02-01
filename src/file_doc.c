@@ -77,6 +77,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       return 0;
     if(le16(header->uMiniSectorShift)!=6 || le16(header->uSectorShift)!=9)
       return 0;
+    /*
+       num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
+       maximum file size is 512+(num_FAT_blocks*128)*512, about 1.6GB
+     */
     if(le32(header->num_FAT_blocks)==0 ||
 	le32(header->num_extra_FAT_blocks)>50 ||
 	le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))

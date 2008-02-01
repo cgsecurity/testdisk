@@ -122,7 +122,7 @@ static const char *get_partition_typename_i386_aux(const unsigned int part_type_
 static unsigned int get_part_type_i386(const partition_t *partition);
 
 static const struct systypes i386_sys_types[] = {
-  {P_NO_OS,		"empty"},
+  {P_NO_OS,		"No partition"},
   {P_12FAT,		"FAT12"},
   {0x02,		"XENIX root"},
   {0x03,		"XENIX /usr"},
