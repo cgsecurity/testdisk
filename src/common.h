@@ -296,6 +296,7 @@ struct param_disk_struct
   int unit;
   unsigned int sector_size;
   char *device;
+  char *model;
   char description_txt[DISKDESCRIPTION_MAX];
   char description_short_txt[DISKDESCRIPTION_MAX];
   const char *(*description)(disk_t *disk_car);

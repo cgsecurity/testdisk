@@ -302,6 +302,7 @@ int main( int argc, char **argv )
   aff_copy(stdscr);
   wmove(stdscr,5,0);
   wprintw(stdscr, "Please wait...\n");
+  wrefresh(stdscr);
 #endif
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
@@ -322,7 +323,15 @@ int main( int argc, char **argv )
   /* save disk parameters to rapport */
   log_info("Hard disk list\n");
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-    log_info("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
+  {
+    disk_t *disk=element_disk->disk;
+    if(disk->model==NULL)
+      log_info("%s, sector size=%u\n",
+	  disk->description(disk), disk->sector_size);
+    else
+      log_info("%s, sector size=%u - %s\n",
+	  disk->description(disk), disk->sector_size, disk->model);
+  }
   log_info("\n");
   use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
 #ifdef HAVE_NCURSES

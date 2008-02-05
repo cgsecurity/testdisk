@@ -972,6 +972,7 @@ int main( int argc, char **argv )
         "If you have problems with PhotoRec or bug reports, please contact me.\n");
     return 0;
   }
+  aff_buffer(BUFFER_RESET,"Q");
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {
@@ -1002,7 +1003,6 @@ int main( int argc, char **argv )
 #endif
 #endif
   log_info("\n");
-  printf("Please wait...\n");
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID
@@ -1012,16 +1012,15 @@ int main( int argc, char **argv )
   }
 #endif
 #endif
-  aff_buffer(BUFFER_RESET,"Q");
+#ifdef HAVE_NCURSES
+  aff_copy(stdscr);
+  wmove(stdscr,5,0);
+  wprintw(stdscr, "Please wait...\n");
+  wrefresh(stdscr);
+#endif
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
     list_disk=hd_parse(list_disk,verbose,arch,testdisk_mode);
-#ifdef DJGPP
-  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-  {
-    printf("%s\n",element_disk->disk->description(element_disk->disk));
-  }
-#endif
   hd_update_all_geometry(list_disk,0,verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
@@ -1030,10 +1029,14 @@ int main( int argc, char **argv )
   log_info("Hard disk list\n");
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
-    printf("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
-    log_info("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
+    disk_t *disk=element_disk->disk;
+    if(disk->model==NULL)
+      log_info("%s, sector size=%u\n",
+	  disk->description(disk), disk->sector_size);
+    else
+      log_info("%s, sector size=%u - %s\n",
+	  disk->description(disk), disk->sector_size, disk->model);
   }
-  printf("\n");
   log_info("\n");
   use_sudo=do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
 #ifdef HAVE_NCURSES

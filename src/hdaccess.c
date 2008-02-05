@@ -89,7 +89,7 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>     /* atexit, posix_memalign */
 #endif
-
+#include <ctype.h>	/* isspace */
 #ifdef DJGPP
 #include <go32.h>       /* dosmemget/put */
 #include <dpmi.h>
@@ -124,6 +124,7 @@ static int file_nowrite(disk_t *disk_car, const unsigned int count, const void *
 static int file_sync(disk_t *disk_car);
 #ifndef DJGPP
 static disk_t *disk_get_geometry(const int hd_h, const char *device, const int verbose);
+static void disk_get_info(const int hd_h, disk_t *disk_car, const int verbose);
 #endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 static disk_t *disk_get_geometry_win32(HANDLE handle, const char *device, const int verbose);
@@ -526,6 +527,7 @@ static disk_t *hd_identify(const int verbose, const unsigned int disk, const arc
     disk_car->arch=arch;
     snprintf(device,sizeof(device),"/dev/sda%u",disk);
     disk_car->device=strdup(device);
+    disk_car->model=NULL;
     disk_car->write_used=0;
     disk_car->autodetect=0;
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
@@ -767,6 +769,7 @@ list_disk_t *insert_new_disk_nodup(list_disk_t *list_disk, disk_t *disk_car, con
       if(disk_car->clean!=NULL)
         disk_car->clean(disk_car);
       free(disk_car->device);
+      free(disk_car->model);
       free(disk_car);
       return list_disk;
     }
@@ -796,7 +799,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
 #if defined(__CYGWIN__)
     char device_scsi[]="/dev/sda";
     /* Disk */
-    for(i=0;i<8;i++)
+    for(i=0;i<16;i++)
     {
       device_scsi[strlen(device_scsi)-1]='a'+i;
       list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi,verbose,arch,testdisk_mode));
@@ -806,7 +809,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     if(list_disk==NULL)
       do_insert=1;
     {
-      for(i=0;i<8;i++)
+      for(i=0;i<16;i++)
       {
 	disk_t *disk_car;
 	device_hd[strlen(device_hd)-1]='0'+i;
@@ -996,49 +999,76 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
 static disk_t *disk_get_geometry_win32(HANDLE handle, const char *device, const int verbose)
 {
   disk_t *disk_car=NULL;
-  DISK_GEOMETRY geometry;
   DWORD gotbytes;
-  if (DeviceIoControl( handle
-        , IOCTL_DISK_GET_DRIVE_GEOMETRY
-        , NULL
-        , 0
-        , &geometry
-        , sizeof(geometry)
-        , &gotbytes
-        , NULL
-        )) {
-    disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
-    disk_car->CHS.cylinder= geometry.Cylinders.QuadPart-1;
-    disk_car->CHS.head=geometry.TracksPerCylinder-1;
-    disk_car->CHS.sector= geometry.SectorsPerTrack;
-    disk_car->sector_size=geometry.BytesPerSector;
-    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
-    disk_car->disk_real_size=disk_car->disk_size;
-    if(verbose>1)
+  {
+    DISK_GEOMETRY_EX geometry_ex;
+    if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
+	  &geometry_ex, sizeof(geometry_ex), &gotbytes, NULL))
     {
-      log_verbose("disk_get_geometry_win32(%s) ok\n",device);
-      log_verbose("CHS (%u, %u, %u), sector_size=%u\n", disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector, disk_car->sector_size);
+      disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
+      disk_car->CHS.cylinder= geometry_ex.Geometry.Cylinders.QuadPart-1;
+      disk_car->CHS.head=geometry_ex.Geometry.TracksPerCylinder-1;
+      disk_car->CHS.sector= geometry_ex.Geometry.SectorsPerTrack;
+      disk_car->sector_size=geometry_ex.Geometry.BytesPerSector;
+      disk_car->disk_size=(uint64_t)geometry_ex.DiskSize.QuadPart;
+      disk_car->disk_real_size=disk_car->disk_size;
+      if(verbose>1)
+      {
+	log_verbose("disk_get_geometry_win32(%s) IOCTL_DISK_GET_DRIVE_GEOMETRY_EX ok\n",device);
+	log_verbose("CHS (%u, %u, %u), sector_size=%u\n", disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector, disk_car->sector_size);
+      }
+    }
+    else
+    {
+      if(verbose>1)
+      {
+#ifdef __MINGW32__
+	log_error("DeviceIoControl IOCTL_DISK_GET_DRIVE_GEOMETRY_EX failed\n");
+#else
+	LPVOID buf;
+	FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+	    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	    (LPTSTR)&buf, 0, NULL );
+	log_error("DeviceIoControl IOCTL_DISK_GET_DRIVE_GEOMETRY_EX failed: %s: %s\n", device,(const char*)buf);
+	LocalFree(buf);
+#endif
+      }
     }
   }
-  else
+  if(disk_car==NULL)
   {
-    if(verbose>1)
+    DISK_GEOMETRY geometry;
+    if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
+	  &geometry, sizeof(geometry), &gotbytes, NULL))
     {
+      disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
+      disk_car->CHS.cylinder= geometry.Cylinders.QuadPart-1;
+      disk_car->CHS.head=geometry.TracksPerCylinder-1;
+      disk_car->CHS.sector= geometry.SectorsPerTrack;
+      disk_car->sector_size=geometry.BytesPerSector;
+      disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_real_size=disk_car->disk_size;
+      if(verbose>1)
+      {
+	log_verbose("disk_get_geometry_win32(%s) IOCTL_DISK_GET_DRIVE_GEOMETRY ok\n",device);
+	log_verbose("CHS (%u, %u, %u), sector_size=%u\n", disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector, disk_car->sector_size);
+      }
+    }
+    else
+    {
+      if(verbose>1)
+      {
 #ifdef __MINGW32__
-      log_error("DeviceIoControl failed\n");
+	log_error("DeviceIoControl IOCTL_DISK_GET_DRIVE_GEOMETRY failed\n");
 #else
-      LPVOID buf;
-      FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-          , NULL
-          , GetLastError()
-          , MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT)
-          , (LPTSTR)&buf
-          , 0
-          , NULL 
-          );
-      log_error("DeviceIoControl failed: %s: %s\n", device,(const char*)buf);
-      LocalFree(buf);
+	LPVOID buf;
+	FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+	    NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	    (LPTSTR)&buf, 0, NULL );
+	log_error("DeviceIoControl IOCTL_DISK_GET_DRIVE_GEOMETRY failed: %s: %s\n", device,(const char*)buf);
+	LocalFree(buf);
 #endif
+      }
     }
   }
   return disk_car;
@@ -1316,13 +1346,201 @@ static disk_t *disk_get_geometry(const int hd_h, const char *device, const int v
 }
 #endif
 
+#ifdef TARGET_LINUX
+static char* strip_name(char* str)
+{
+  int     i;
+  int     end = 0;
+
+  for (i = 0; str[i] != 0; i++) {
+    if (!isspace (str[i])
+	|| (isspace (str[i]) && !isspace (str[i+1]) && str[i+1])) {
+      str [end] = str[i];
+      end++;
+    }
+  }
+  str[end] = 0;
+  return strdup (str);
+}
+
+/* This function reads the /sys entry named "file" for device "disk_car". */
+static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
+{
+        FILE *f;
+        char name_buf[128];
+        char buf[256];
+
+        snprintf (name_buf, 127, "/sys/block/%s/device/%s",
+                  basename (disk_car->device), file);
+
+        if ((f = fopen (name_buf, "r")) == NULL)
+                return NULL;
+
+        if (fgets (buf, 255, f) == NULL)
+                return NULL;
+
+        fclose (f);
+        return strip_name (buf);
+}
+#endif
+
+/* This function sends a query to a SCSI device for vendor and product
+ * information.  It uses the deprecated SCSI_IOCTL_SEND_COMMAND to
+ * issue this query.
+ */
+#ifdef TARGET_LINUX
+#ifdef HAVE_SCSI_SCSI_H
+#include <scsi/scsi.h>
+#endif
+#ifdef HAVE_SCSI_SCSI_IOCTL_H
+#include <scsi/scsi_ioctl.h>
+#endif
+#endif
+
+#if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
+static int scsi_query_product_info (const int hd_h, char **vendor, char **product)
+{
+  /* The following are defined by the SCSI-2 specification. */
+  typedef struct _scsi_inquiry_cmd
+  {
+    uint8_t op;
+    uint8_t lun;          /* bits 5-7 denote the LUN */
+    uint8_t page_code;
+    uint8_t reserved;
+    uint8_t alloc_length;
+    uint8_t control;
+  } __attribute__((packed)) scsi_inquiry_cmd_t;
+
+  typedef struct _scsi_inquiry_data
+  {
+    uint8_t peripheral_info;
+    uint8_t device_info;
+    uint8_t version_info;
+    uint8_t _field1;
+    uint8_t additional_length;
+    uint8_t _reserved1;
+    uint8_t _reserved2;
+    uint8_t _field2;
+    uint8_t vendor_id[8];
+    uint8_t product_id[16];
+    uint8_t product_revision[4];
+    uint8_t vendor_specific[20];
+    uint8_t _reserved3[40];
+  } __attribute__((packed)) scsi_inquiry_data_t;
+
+  struct scsi_arg
+  {
+    unsigned int inlen;
+    unsigned int outlen;
+
+    union arg_data
+    {
+      scsi_inquiry_data_t out;
+      scsi_inquiry_cmd_t  in;
+    } data;
+  } arg;
+
+  struct scsi_idlun
+  {
+    uint32_t dev_id;
+    uint32_t host_unique_id;
+  } idlun;
+
+  char    buf[32];
+
+  *vendor = NULL;
+  *product = NULL;
+
+  if (ioctl (hd_h, SCSI_IOCTL_GET_IDLUN, &idlun) < 0)
+    return -1;
+
+
+  memset (&arg, 0x00, sizeof(struct scsi_arg));
+  arg.inlen  = 0;
+  arg.outlen = sizeof(scsi_inquiry_data_t);
+  arg.data.in.op  = INQUIRY;
+  arg.data.in.lun = idlun.host_unique_id << 5;
+  arg.data.in.alloc_length = sizeof(scsi_inquiry_data_t);
+  arg.data.in.page_code = 0;
+  arg.data.in.reserved = 0;
+  arg.data.in.control = 0;
+
+  if (ioctl (hd_h, SCSI_IOCTL_SEND_COMMAND, &arg) < 0)
+    return -1;
+
+  memcpy (buf, arg.data.out.vendor_id, 8);
+  buf[8] = '\0';
+  *vendor = strip_name (buf);
+
+  memcpy (buf, arg.data.out.product_id, 16);
+  buf[16] = '\0';
+  *product = strip_name (buf);
+
+  return 0;
+}
+#endif
+
+#ifndef DJGPP
+static void disk_get_info(const int hd_h, disk_t *dev, const int verbose)
+{
+#ifdef TARGET_LINUX
+  if(dev->model==NULL)
+  {
+    /* Use modern /sys interface for SCSI device */
+    char *vendor;
+    char *product;
+    vendor = read_device_sysfs_file (dev, "vendor");
+    product = read_device_sysfs_file (dev, "model");
+    if (vendor && product)
+    {
+      dev->model = (char*) MALLOC(8 + 16 + 2);
+      sprintf (dev->model, "%.8s %.16s", vendor, product);
+    }
+    free(vendor);
+    free(product);
+  }
+#endif
+#ifdef HDIO_GET_IDENTITY
+  if(dev->model==NULL)
+  {
+    struct hd_driveid       hdi;
+    if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
+    {
+      char hdi_buf[41];
+      memcpy (hdi_buf, hdi.model, 40);
+      hdi_buf[40] = '\0';
+      if(dev!=NULL)
+	dev->model=strdup(hdi_buf);
+    }
+  }
+#endif
+#if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
+  if(dev->model==NULL)
+  {
+    /* Uses direct queries via the deprecated ioctl SCSI_IOCTL_SEND_COMMAND */
+    char *vendor=NULL;
+    char *product=NULL;
+    scsi_query_product_info (hd_h, &vendor, &product);
+    if (vendor && product)
+    {
+      dev->model = (char*) MALLOC (8 + 16 + 2);
+      sprintf (dev->model, "%.8s %.16s", vendor, product);
+    }
+    free(vendor);
+    free(product);
+  }
+#endif
+}
+#endif
+
 static const char *file_description(disk_t *disk_car)
 {
   const struct info_file_struct *data=disk_car->data;
   char buffer_disk_size[100];
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
       data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
-      disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+      disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,
+      ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk_car->description_txt;
 }
 
@@ -1330,8 +1548,15 @@ static const char *file_description_short(disk_t *disk_car)
 {
   const struct info_file_struct *data=disk_car->data;
   char buffer_disk_size[100];
-  snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s",
-      data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+  if(disk_car->model==NULL)
+    snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s",
+      data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+  else
+    snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s - %s",
+      data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"),
+      disk_car->model);
   return disk_car->description_short_txt;
 }
 
@@ -1738,6 +1963,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       disk_car->rbuffer_size=0;
       disk_car->wbuffer_size=0;
       disk_car->device=strdup(device);
+      disk_car->model=NULL;
       disk_car->write_used=0;
       disk_car->description_txt[0]='\0';
       disk_car->description=file_description;
@@ -1768,11 +1994,15 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
         else
           disk_car->CHS.cylinder=(disk_car->disk_size/disk_car->sector_size+(uint64_t)disk_car->CHS.sector*(disk_car->CHS.head+1)-1)/disk_car->CHS.sector/(disk_car->CHS.head+1)-1;
       }
+#ifndef DJGPP
+      disk_get_info(hd_h, disk_car, verbose);
+#endif
       if(disk_car->disk_size==0)
       {
 	log_warning("Warning: can't get size for %s\n",device);
 	free(data);
 	free(disk_car->device);
+	free(disk_car->model);
 	free(disk_car);
 	close(hd_h);
 	return NULL;
@@ -2065,6 +2295,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->rbuffer_size=0;
     disk_car->wbuffer_size=0;
     disk_car->device=strdup(device);
+    disk_car->model=NULL;
     disk_car->write_used=0;
     disk_car->description_txt[0]='\0';
     disk_car->description=file_win32_description;
@@ -2089,6 +2320,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
       log_warning("Warning: can't get size for %s\n",device);
       free(data);
       free(disk_car->device);
+      free(disk_car->model);
       free(disk_car);
       CloseHandle(handle);
       return NULL;
