@@ -52,6 +52,8 @@ static const unsigned char dss_header[4]= { 0x02, 'd','s','s'};
    0x32 char complete_date[12];
    0x3e char length[6];
    0x31e char comments[100];
+
+   Filesize is always a multiple of 512
 */
 
 static void register_header_check_dss(file_stat_t *file_stat)
