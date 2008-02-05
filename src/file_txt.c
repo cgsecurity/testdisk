@@ -36,6 +36,7 @@
 #include "filegen.h"
 #include "log.h"
 #include "memmem.h"
+#include "log.h"
 
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
@@ -179,8 +180,11 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
   for (i = buf_len, p = buffer, q = buffer_lower; p-buffer<buf_len && i > 0 && *p!='\0';) 
   {
     const unsigned char *p_org=p;
-    if((*p & 0xf0)==0xe0 && (*(p+1) & 0xa0)==0x80 && (*(p+2) & 0xa0)==0x80)
+    if((*p & 0xf0)==0xe0 && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
     { /* UTF8 l=3 */
+#ifdef DEBUG_TXT
+      log_info("UTF8 l=3 0x%02x 0x%02x 0x02x\n", *p, *(p+1),*(p+2));
+#endif
       *q = '\0';
       switch (*p)
       {
@@ -225,7 +229,7 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
       }
       p+=3;
     }
-    else if((*p & 0xe0)==0xc0 && (*(p+1) & 0xa0)==0x80)
+    else if((*p & 0xe0)==0xc0 && (*(p+1) & 0xc0)==0x80)
     { /* UTF8 l=2 */
       *q = '\0';
       switch (*p)
@@ -236,7 +240,13 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
             (*q)=' ';
           break;
         case 0xC3 : 
-          (*q) = (*(p+1)) | 0xC0; /* C0-FF */
+          switch (*(p+1))
+	  { 
+	    case 0xB3 : (*q) = 162; break;
+	    default:
+			(*q) = (*(p+1)) | 0xC0; /* C0-FF */
+			break;
+	  }
           break;
         case 0xC5 : 
           switch (*(p+1)) { 
@@ -265,10 +275,16 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
     }
     else
     { /* Ascii UCS */
+#ifdef DEBUG_TXT
+      log_info("UTF8 Ascii UCS 0x%02x\n", *p);
+#endif
       *q = tolower(*p++);
     }
     if (*q=='\0' || filtre(*q)==0)
     {
+#ifdef DEBUG_TXT
+      log_warning("UTF2Lat reject 0x%x\n",*q);
+#endif
       *q = '\0';
       return(p_org-buffer);
     }

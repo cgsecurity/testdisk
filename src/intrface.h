@@ -31,4 +31,4 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
 list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd);
 int interface_superblock(disk_t *disk_car,list_part_t *list_part,char**current_cmd);
-int ask_testdisklog_creation(void);
+int ask_testdisk_log_creation(void);
