@@ -123,6 +123,7 @@ extern const file_hint_t file_hint_dump;
 extern const file_hint_t file_hint_dv;
 extern const file_hint_t file_hint_dwg;
 extern const file_hint_t file_hint_elf;
+extern const file_hint_t file_hint_emf;
 extern const file_hint_t file_hint_evt;
 extern const file_hint_t file_hint_exe;
 extern const file_hint_t file_hint_ext2_sb;
@@ -800,6 +801,7 @@ int main( int argc, char **argv )
     { .enable=1, .file_hint=&file_hint_dv   },
     { .enable=1, .file_hint=&file_hint_dwg  },
     { .enable=1, .file_hint=&file_hint_elf  },
+    { .enable=1, .file_hint=&file_hint_emf  },
     { .enable=1, .file_hint=&file_hint_evt  },
     { .enable=1, .file_hint=&file_hint_exe  },
     { .enable=1, .file_hint=&file_hint_ext2_sb },
