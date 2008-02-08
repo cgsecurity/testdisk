@@ -1948,12 +1948,14 @@ int intrf_no_disk(const char *prog_name)
 int interface_partition_type(disk_t *disk_car, const int verbose, char**current_cmd)
 {
   const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_none, &arch_sun, &arch_mac, NULL};
+  int ask_user=1;
   if(*current_cmd!=NULL)
   {
     int keep_asking;
     do
     {
       int i;
+      ask_user=0;
       keep_asking=0;
       while(*current_cmd[0]==',')
         (*current_cmd)++;
@@ -1964,9 +1966,14 @@ int interface_partition_type(disk_t *disk_car, const int verbose, char**current_
           disk_car->arch=arch_list[i];
           keep_asking=1;
         }
+      if(strncmp(*current_cmd, "ask_type", 8)==0)
+      {
+	(*current_cmd)+=8;
+	ask_user=1;
+      }
     } while(keep_asking>0);
   }
-  else
+  if(ask_user>0)
   {
 #ifdef HAVE_NCURSES
     if(interface_partition_type_ncurses(disk_car))

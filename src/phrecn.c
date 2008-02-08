@@ -1412,107 +1412,17 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   return 0;
 }
 
-static void menu_photorec_cli(disk_t *disk_car, int verbose, const char *recup_dir, file_enable_t *file_enable, alloc_data_t*list_search_space, list_part_t *list_part, char **current_cmd)
-{
-  int allow_partial_last_cylinder=0;
-  int paranoid=1;
-  unsigned int menu=0;
-  int keep_corrupted_file=0;
-  unsigned int mode_ext2=0;
-  unsigned int blocksize=0;
-  unsigned int expert=0;
-  unsigned int lowmem=0;
-  unsigned int carve_free_space_only=0;
-  list_part_t *current_element;
-  current_element=list_part;
-  while(1)
-  {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(*current_cmd[0]=='\0')
-      return;
-    if(strncmp(*current_cmd,"search",6)==0)
-    {
-      char *res;
-      (*current_cmd)+=6;
-      menu=0;
-      if(recup_dir!=NULL)
-	res=recup_dir;
-      else
-      {
-	res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
-	if(res!=NULL)
-	{
-	  char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	  strcpy(new_recup_dir,res);
-	  strcat(new_recup_dir,"/");
-	  strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-	  if(res!=recup_dir)
-	    free(res);
-	  res=new_recup_dir;
-	}
-      }
-      if(res!=NULL)
-	photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2,current_cmd,list_search_space,blocksize,expert, lowmem, carve_free_space_only);
-      if(res!=recup_dir)
-	free(res);
-    }
-    else if(strncmp(*current_cmd,"options",7)==0)
-    {
-      int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
-      (*current_cmd)+=7;
-      interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
-	  &keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
-      if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
-    }
-    else if(strncmp(*current_cmd,"fileopt",7)==0)
-    {
-      (*current_cmd)+=7;
-      interface_file_select(file_enable,current_cmd);
-    }
-    else if(strncmp(*current_cmd,"blocksize,",10)==0)
-    {
-      (*current_cmd)+=10;
-      blocksize=atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
-    }
-    else if(strncmp(*current_cmd,"geometry,",9)==0)
-    {
-      (*current_cmd)+=9;
-      change_geometry(disk_car,current_cmd);
-    }
-    else if(isdigit(*current_cmd[0]))
-    {
-      list_part_t *element;
-      unsigned int order;
-      order= atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
-      for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
-      if(element!=NULL)
-	current_element=element;
-    }
-    else
-    {
-      log_critical("error >%s<\n",*current_cmd);
-      while(*current_cmd[0]!='\0')
-	(*current_cmd)++;
-      return;
-    }
-  }
-}
 
-#ifdef HAVE_NCURSES
-static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *recup_dir, file_enable_t *file_enable, alloc_data_t*list_search_space, list_part_t *list_part, char **current_cmd)
+
+static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
 {
-  int command;
-  int done=0;
-  int offset=0;
+  int insert_error=0;
+  list_part_t *list_part;
+  list_part_t *element;
+  partition_t *partition_wd;
+  list_part_t *current_element;
   int allow_partial_last_cylinder=0;
   int paranoid=1;
-  unsigned int menu=0;
   int keep_corrupted_file=0;
   int current_element_num;
   unsigned int mode_ext2=0;
@@ -1520,6 +1430,11 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
   unsigned int expert=0;
   unsigned int lowmem=0;
   unsigned int carve_free_space_only=0;
+  int done=0;
+#ifdef HAVE_NCURSES
+  int command;
+  int offset=0;
+  unsigned int menu=0;
   static struct MenuItem menuMain[]=
   {
 	{'S',"Search","Start file recovery"},
@@ -1529,133 +1444,7 @@ static void menu_photorec_ncurses(disk_t *disk_car, int verbose, const char *rec
 	{'Q',"Quit","Return to disk selection"},
 	{0,NULL,NULL}
   };
-  list_part_t *current_element;
-  if(list_part!=NULL && list_part->next!=NULL)
-  {
-    current_element_num=1;
-    current_element=list_part->next;
-  }
-  else
-  {
-    current_element_num=0;
-    current_element=list_part;
-  }
-  /* ncurses interface */
-  while(done==0)
-  {
-    list_part_t *element;
-    unsigned int i;
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description_short(disk_car));
-    mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
-    for(i=0,element=list_part;(element!=NULL) && (i<offset);element=element->next,i++);
-    for(i=offset;(element!=NULL) && ((i-offset)<INTER_SELECT);i++,element=element->next)
-    {
-      wmove(stdscr,5+2+i-offset,0);
-      wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
-      if(element==current_element)
-      {
-	wattrset(stdscr, A_REVERSE);
-	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
-	wattroff(stdscr, A_REVERSE);
-      } else
-      {
-	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
-      }
-    }
-    command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
-	(expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
-    switch(command)
-    {
-      case KEY_UP:
-	if(current_element!=NULL)
-	{
-	  if(current_element->prev!=NULL)
-	  {
-	    current_element=current_element->prev;
-	    current_element_num--;
-	  }
-	  if(current_element_num<offset)
-	    offset--;
-	}
-	break;
-      case KEY_DOWN:
-	if(current_element!=NULL)
-	{
-	  if(current_element->next!=NULL)
-	  {
-	    current_element=current_element->next;
-	    current_element_num++;
-	  }
-	  if(current_element_num>=offset+INTER_SELECT)
-	    offset++;
-	}
-	break;
-      case 's':
-      case 'S':
-	ask_mode_ext2(disk_car, current_element->part, &mode_ext2, &carve_free_space_only);
-	{
-	  char *res;
-	  menu=0;
-	  if(recup_dir!=NULL)
-	    res=recup_dir;
-	  else
-	  {
-	    res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
-	    if(res!=NULL)
-	    {
-	      char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	      strcpy(new_recup_dir,res);
-	      strcat(new_recup_dir,"/");
-	      strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-	      if(res!=recup_dir)
-		free(res);
-	      res=new_recup_dir;
-	    }
-	  }
-	  if(res!=NULL)
-	    photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
-	  if(res!=recup_dir)
-	    free(res);
-	}
-	break;
-      case 'o':
-      case 'O':
-	{
-	  int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
-	  interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
-	      &keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
-	  if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	    hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
-	  menu=1;
-	}
-	break;
-      case 'f':
-      case 'F':
-	interface_file_select(file_enable, current_cmd);
-	menu=2;
-	break;
-      case 'g':
-      case 'G':
-	if(expert!=0)
-	  change_geometry(disk_car, current_cmd);
-	break;
-      case 'q':
-      case 'Q':
-	done = 1;
-	break;
-    }
-  }
-}
 #endif
-
-static void menu_photorec(disk_t *disk_car, int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
-{
-  int insert_error=0;
-  list_part_t *list_part;
-  list_part_t *element;
-  partition_t *partition_wd;
   list_part=disk_car->arch->read_part(disk_car,verbose,0);
   partition_wd=new_whole_disk(disk_car);
   list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
@@ -1667,12 +1456,203 @@ static void menu_photorec(disk_t *disk_car, int verbose, const char *recup_dir, 
   {
     log_partition(disk_car,element->part);
   }
-  if(*current_cmd!=NULL)
-    menu_photorec_cli(disk_car, verbose, recup_dir, file_enable, list_search_space, list_part, current_cmd);
+  if(list_part!=NULL && list_part->next!=NULL)
+  {
+    current_element_num=1;
+    current_element=list_part->next;
+  }
   else
   {
+    current_element_num=0;
+    current_element=list_part;
+  }
+  while(done==0)
+  {
+    if(*current_cmd!=NULL)
+    {
+      while(*current_cmd[0]==',')
+	(*current_cmd)++;
+      if(*current_cmd[0]=='\0')
+	return;
+      if(strncmp(*current_cmd,"search",6)==0)
+      {
+	char *res;
+	(*current_cmd)+=6;
+	if(recup_dir!=NULL)
+	  res=recup_dir;
+	else
+	{
+	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+	  if(res!=NULL)
+	  {
+	    char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	    strcpy(new_recup_dir,res);
+	    strcat(new_recup_dir,"/");
+	    strcat(new_recup_dir,DEFAULT_RECUP_DIR);
+	    if(res!=recup_dir)
+	      free(res);
+	    res=new_recup_dir;
+	  }
+	}
+	if(res!=NULL)
+	  photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2,current_cmd,list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	if(res!=recup_dir)
+	  free(res);
+      }
+      else if(strncmp(*current_cmd,"options",7)==0)
+      {
+	int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
+	(*current_cmd)+=7;
+	interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
+	    &keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
+	if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
+	  hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+      }
+      else if(strncmp(*current_cmd,"fileopt",7)==0)
+      {
+	(*current_cmd)+=7;
+	interface_file_select(file_enable,current_cmd);
+      }
+      else if(strncmp(*current_cmd,"blocksize,",10)==0)
+      {
+	(*current_cmd)+=10;
+	blocksize=atoi(*current_cmd);
+	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+	  (*current_cmd)++;
+      }
+      else if(strncmp(*current_cmd,"geometry,",9)==0)
+      {
+	(*current_cmd)+=9;
+	change_geometry(disk_car,current_cmd);
+      }
+      else if(strncmp(*current_cmd,"inter",5)==0)
+      {	/* Start interactive mode */
+	*current_cmd=NULL;
+      }
+      else if(isdigit(*current_cmd[0]))
+      {
+	unsigned int order;
+	order= atoi(*current_cmd);
+	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+	  (*current_cmd)++;
+	for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
+	if(element!=NULL)
+	  current_element=element;
+      }
+      else
+      {
+	log_critical("error >%s<\n",*current_cmd);
+	while(*current_cmd[0]!='\0')
+	  (*current_cmd)++;
+	return;
+      }
+    }
 #ifdef HAVE_NCURSES
-    menu_photorec_ncurses(disk_car, verbose, recup_dir, file_enable, list_search_space, list_part, current_cmd);
+    else
+    { /* ncurses interface */
+      unsigned int i;
+      aff_copy(stdscr);
+      wmove(stdscr,4,0);
+      wprintw(stdscr,"%s",disk_car->description_short(disk_car));
+      mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
+      for(i=0,element=list_part;(element!=NULL) && (i<offset);element=element->next,i++);
+      for(i=offset;(element!=NULL) && ((i-offset)<INTER_SELECT);i++,element=element->next)
+      {
+	wmove(stdscr,5+2+i-offset,0);
+	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
+	if(element==current_element)
+	{
+	  wattrset(stdscr, A_REVERSE);
+	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
+	  wattroff(stdscr, A_REVERSE);
+	} else
+	{
+	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
+	}
+      }
+      command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
+	  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+      switch(command)
+      {
+	case KEY_UP:
+	  if(current_element!=NULL)
+	  {
+	    if(current_element->prev!=NULL)
+	    {
+	      current_element=current_element->prev;
+	      current_element_num--;
+	    }
+	    if(current_element_num<offset)
+	      offset--;
+	  }
+	  break;
+	case KEY_DOWN:
+	  if(current_element!=NULL)
+	  {
+	    if(current_element->next!=NULL)
+	    {
+	      current_element=current_element->next;
+	      current_element_num++;
+	    }
+	    if(current_element_num>=offset+INTER_SELECT)
+	      offset++;
+	  }
+	  break;
+	case 's':
+	case 'S':
+	  ask_mode_ext2(disk_car, current_element->part, &mode_ext2, &carve_free_space_only);
+	  {
+	    char *res;
+	    menu=0;
+	    if(recup_dir!=NULL)
+	      res=recup_dir;
+	    else
+	    {
+	      res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+	      if(res!=NULL)
+	      {
+		char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+		strcpy(new_recup_dir,res);
+		strcat(new_recup_dir,"/");
+		strcat(new_recup_dir,DEFAULT_RECUP_DIR);
+		if(res!=recup_dir)
+		  free(res);
+		res=new_recup_dir;
+	      }
+	    }
+	    if(res!=NULL)
+	      photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	    if(res!=recup_dir)
+	      free(res);
+	  }
+	  break;
+	case 'o':
+	case 'O':
+	  {
+	    int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
+	    interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
+		&keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
+	    if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
+	      hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+	    menu=1;
+	  }
+	  break;
+	case 'f':
+	case 'F':
+	  interface_file_select(file_enable, current_cmd);
+	  menu=2;
+	  break;
+	case 'g':
+	case 'G':
+	  if(expert!=0)
+	    change_geometry(disk_car, current_cmd);
+	  break;
+	case 'q':
+	case 'Q':
+	  done = 1;
+	  break;
+      }
+    }
 #endif
   }
   log_info("\n");
