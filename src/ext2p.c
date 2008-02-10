@@ -88,6 +88,7 @@ unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partitio
     uint64_t start_free=0;
     uint64_t end_free=0;
     unsigned long int block;
+    unsigned long int start,end;
     const unsigned int blocksize=ls->current_fs->blocksize;
     ext2fs_block_bitmap bitmap;
     if(ext2fs_read_block_bitmap(ls->current_fs))
@@ -98,13 +99,22 @@ unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partitio
     bitmap=ls->current_fs->block_map;
     if(bitmap==NULL)
       return 0;
-    log_trace("ext2_remove_used_space %llu-%llu\n", 
-        (long long unsigned)bitmap->start,
-        (long long unsigned)bitmap->end);
+#ifdef HAVE_EXT2FS_GET_GENERIC_BITMAP_START
+    start=ext2fs_get_generic_bitmap_start(bitmap);
+    end=ext2fs_get_generic_bitmap_end(bitmap);
+#else
+    start=bitmap->start;
+    end=bitmap->end;
+#endif
+    log_trace("ext2_remove_used_space %lu-%lu\n", start, end);
     buffer=(unsigned char *)MALLOC(sizeof_buffer);
-    for(block=bitmap->start;block<=bitmap->end;block++)
+    for(block=start;block<=end;block++)
     {
+#ifdef HAVE_EXT2FS_GET_GENERIC_BITMAP_START
+      if(ext2fs_test_generic_bitmap(bitmap,block)!=0)
+#else
       if(ext2fs_test_bit(block - bitmap->start, bitmap->bitmap)!=0)
+#endif
       {
 	/* Not free */
 	if(end_free+1==partition->part_offset+(uint64_t)block*blocksize)

@@ -103,8 +103,10 @@ static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int en
 static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int cluster_size, const int verbose, file_data_t *rootdir_list, const unsigned int fats);
 
 static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate);
-static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsigned int nbr_offset,unsigned int*reserved, unsigned int*fat_length, const unsigned long int max_sector_offset, unsigned int *fats);
 static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_offset, const unsigned long int i);
+#ifdef HAVE_NCURSES
+static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsigned int nbr_offset,unsigned int*reserved, unsigned int*fat_length, const unsigned long int max_sector_offset, unsigned int *fats);
+#endif
 
 /*
  * 0 entry is free

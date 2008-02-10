@@ -4,7 +4,6 @@
 # Comment the version definition to not compile the library
 VER_E2FSPROGS=
 VER_PROGSREISERFS=0.3.1-rc8
-#VER_NTFSPROGS=1.13.1
 VER_NTFSPROGS=2.0.0
 VER_LIBEWF=20070512
 #VER_LIBEWF=
@@ -21,6 +20,7 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
+#    VER_E2FSPROGS=1.40.6
     VER_E2FSPROGS=1.40.2
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc

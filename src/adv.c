@@ -190,7 +190,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'t',"Type","Change type, this setting will not be saved on disk"},
       {'b',"Boot","Boot sector recovery"},
       {'s',"Superblock",NULL},
-      {'c',"Copy", "Create an image"},
+      {'c',"Image creation", "Create an image"},
 //      {'a',"Add", "Add temporary partition (Expert only)"},
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}

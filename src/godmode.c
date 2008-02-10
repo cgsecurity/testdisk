@@ -60,10 +60,12 @@ extern const arch_fnct_t arch_xbox;
 static void align_structure(const disk_t *disk_car, list_part_t *list_part,const unsigned int location_boundary);
 static list_part_t *reduce_structure(list_part_t *list_part);
 static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
-static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part_bad);
 static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
+#ifdef HAVE_NCURSES
+static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part_bad);
 static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recommanded_heads_per_cylinder);
 static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
+#endif
 static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int align,const int verbose);
 static unsigned int tab_insert(uint64_t *tab, uint64_t offset, unsigned int tab_nbr);
 /* Optimization */

@@ -381,6 +381,7 @@ if test -z "${use_ext2fs}"; then
         LIBS="$LIBS ${com_err_lib_a}"
       fi
       ],AC_MSG_WARN(No com_err library detected))
+  AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
 fi

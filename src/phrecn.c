@@ -74,10 +74,10 @@ extern file_check_t *file_check_list;
 
 #ifdef HAVE_NCURSES
 static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats);
-#endif
-
 static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop, char **current_cmd);
 static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned int *mode_ext2, unsigned int *carve_free_space_only);
+#endif
+
 static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int expert, const unsigned int lowmem);
 static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int expert, const unsigned int lowmem);
 static int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, char *recup_dir, const int keep_corrupted_file, const int interface, file_enable_t *file_enable, const unsigned int mode_ext2, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only);

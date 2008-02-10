@@ -135,15 +135,25 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
     }
   }
   close(disk_dst);
+#ifdef HAVE_NCURSES
   delwin(window);
   (void) clearok(window, TRUE);
 #ifdef HAVE_TOUCHWIN
   touchwin(window);
 #endif
+#endif
   if(ind_stop==2)
   {
     display_message("No space left for the file image.\n");
     return -2;
+  }
+  if(ind_stop)
+  {
+    if(nbr_read_error==0)
+      display_message("Incomplete image created.\n");
+    else
+      display_message("Incomplete image created: read errors have occured.\n");
+    return 0;
   }
   if(nbr_read_error==0)
     display_message("Image created successfully.\n");
