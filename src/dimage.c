@@ -137,9 +137,9 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
   close(disk_dst);
 #ifdef HAVE_NCURSES
   delwin(window);
-  (void) clearok(window, TRUE);
+  (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN
-  touchwin(window);
+  touchwin(stdscr);
 #endif
 #endif
   if(ind_stop==2)
