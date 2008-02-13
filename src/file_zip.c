@@ -111,6 +111,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, unsigned int size)
     {
       if (memcmp(buffer+count, needle, size)==0)
       {
+	free(buffer);
         if(fseek(f, count-read_size, SEEK_CUR)<0)
           return -1;
         return total;
@@ -120,8 +121,12 @@ static int64_t file_get_pos(FILE *f, const void* needle, unsigned int size)
       left--;
     }
     if(feof(f) || fseek(f, -size, SEEK_CUR)<0)
+    {
+      free(buffer);
       return -1;
+    }
   }
+  free(buffer);
   return -1;
 }
 

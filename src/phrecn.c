@@ -828,11 +828,11 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
   start_time=time(NULL);
   previous_time=start_time;
   memset(buffer_olddata,0,(*blocksize));
-  if(verbose>0)
-    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
   if(current_search_space!=list_search_space)
     offset=current_search_space->start;
+  if(verbose>0)
+    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
   disk_car->read(disk_car,READ_SIZE, buffer, offset);
   while(current_search_space!=list_search_space)
   {
@@ -1473,7 +1473,10 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
       while(*current_cmd[0]==',')
 	(*current_cmd)++;
       if(*current_cmd[0]=='\0')
+      {
+	part_free_list(list_part);
 	return;
+      }
       if(strncmp(*current_cmd,"search",6)==0)
       {
 	char *res;
@@ -1544,6 +1547,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	log_critical("error >%s<\n",*current_cmd);
 	while(*current_cmd[0]!='\0')
 	  (*current_cmd)++;
+	part_free_list(list_part);
 	return;
       }
     }
