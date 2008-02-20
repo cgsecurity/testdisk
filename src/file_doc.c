@@ -179,7 +179,8 @@ static uint64_t test_OLE(FILE *IN)
   if(!IN)
     return 0;
   fseek(IN,0,SEEK_SET);
-  fread(&buffer_header,sizeof(buffer_header),1,IN);	/*reads first sector including OLE header */
+  if(fread(&buffer_header,sizeof(buffer_header),1,IN)<0)	/*reads first sector including OLE header */
+    return 0;
   /*
   log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
   log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
@@ -204,7 +205,11 @@ static uint64_t test_OLE(FILE *IN)
 	free(dif);
 	return 0;
       }
-      fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN);
+      if(fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN)<0)
+      {
+	free(dif);
+	return 0;
+      }
       dif_pos+=(((1<<le16(header->uSectorShift))/4)-1);
       block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)+127]);
     }
@@ -220,7 +225,12 @@ static uint64_t test_OLE(FILE *IN)
 	free(fat);
 	return 0;
       }
-      fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN);
+      if(fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN)<0)
+      {
+	free(dif);
+	free(fat);
+	return 0;
+      }
     }
   }
   { /* Search how many entries are not used at the end of the FAT */

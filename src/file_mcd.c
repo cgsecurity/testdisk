@@ -1,6 +1,6 @@
 /*
 
-    File: file_fcp.c
+    File: file_mcd.c
 
     Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
   
@@ -30,36 +30,32 @@
 #include "filegen.h"
 #include "log.h"
 
-static void register_header_check_fcp(file_stat_t *file_stat);
-static int header_check_fcp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void register_header_check_mcd(file_stat_t *file_stat);
+static int header_check_mcd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
-const file_hint_t file_hint_fcp= {
-  .extension="fcp",
-  .description="Final Cut Pro",
+const file_hint_t file_hint_mcd= {
+  .extension="mcd",
+  .description="VectorWorks",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .register_header_check=&register_header_check_fcp
+  .register_header_check=&register_header_check_mcd
 };
 
-static const unsigned char fcp_header[5]= { 0xA2, 'K','e','y','G'};
-/* 
-   Final Cut Pro is a professional non-linear editing system
-   developed by Apple Inc.
-   Mac Creator code: KeyG 
-*/
+static const unsigned char mcd_header[11]= { 'V', 'e','c','t','o','r','W','o','r','k','s'};
 
-static void register_header_check_fcp(file_stat_t *file_stat)
+static void register_header_check_mcd(file_stat_t *file_stat)
 {
-  register_header_check(0, fcp_header,sizeof(fcp_header), &header_check_fcp, file_stat);
+  register_header_check(0x0e, mcd_header,sizeof(mcd_header), &header_check_mcd, file_stat);
 }
 
-static int header_check_fcp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_mcd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,fcp_header,sizeof(fcp_header))==0)
+  if(buffer[0]==0x00 && buffer[1]==0x00 &&
+      memcmp(buffer+0x0e,mcd_header,sizeof(mcd_header))==0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fcp.extension;
+    file_recovery_new->extension=file_hint_mcd.extension;
     return 1;
   }
   return 0;
