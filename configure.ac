@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([testdisk],[6.9-WIP],[grenier@cgsecurity.org])
+AC_INIT([testdisk],[6.10-WIP],[grenier@cgsecurity.org])
 TESTDISKDATE="February 2008"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])

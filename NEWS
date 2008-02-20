@@ -1,6 +1,8 @@
 Current news
 ============
-6.9-WIP
+6.10-WIP
+
+6.9
 TestDisk & PhotoRec 6.9 comes with numerous improvements:
 - They are compatible with ntfsprogs 2.0, the latest library version for
 accessing NTFS partitions, e2fsprogs 1.40.6, the latest library for accessing
