@@ -2,7 +2,7 @@
 
     File: rfs_dir.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
     Some code from Yury Umanets <torque@ukrpost.net>
   
     This software is free software; you can redistribute it and/or modify
@@ -438,6 +438,7 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
       memcpy(new_file->name,entry.de_name,thislen);
       new_file->name[thislen-1]='\0';
 
+      new_file->status=0;
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       new_file->filestat.st_size=entity->stat.st_size;

@@ -1,7 +1,7 @@
 /**
  * ntfs_dir.c - Part of the TestDisk project.
  *
- * Copyright (c) 2004-2007 Christophe Grenier
+ * Copyright (c) 2004-2008 Christophe Grenier
  *
  * Original version comes from the Linux-NTFS project.
  * Copyright (c) 2003 Lode Leroy
@@ -240,6 +240,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     {
       file_data_t *new_file=MALLOC(sizeof(*new_file));
       memcpy(new_file->name,filename,(MAX_PATH<sizeof(new_file->name)?MAX_PATH:sizeof(new_file->name)));
+      new_file->status=0;
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       new_file->filestat.st_dev=0;

@@ -2,7 +2,7 @@
 
     File: fat_dir.h
 
-    Copyright (C) 2004-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2004-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,6 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size);
+file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param);
 int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 

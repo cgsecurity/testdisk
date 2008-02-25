@@ -179,6 +179,10 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
     struct tm		*tm_p;
     char		datestr[80];
     char str[11];
+    if((current_file->status&FILE_STATUS_DELETED)!=0)
+      log_info("X");
+    else
+      log_info(" ");
     if(current_file->filestat.st_mtime)
     {
       tm_p = localtime(&current_file->filestat.st_mtime);
@@ -269,6 +273,8 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
       wclrtoeol(window);	/* before addstr for BSD compatibility */
       if(current_file==pos)
 	wattrset(window, A_REVERSE);
+      if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(1));
       if(current_file->filestat.st_mtime!=0)
       {
 	tm_p = localtime(&current_file->filestat.st_mtime);
@@ -286,6 +292,8 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
       wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
       /* screen may overlap due to long filename */
       wprintw(window, " %s %s", datestr, current_file->name);
+      if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(0));
       if(current_file==pos)
 	wattroff(window, A_REVERSE);
     }
@@ -486,32 +494,51 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
 {
   file_data_t *dir_list;
   long int new_inode=-1;
+#define MAX_DIR_NBR 256
+  static unsigned int dir_nbr=0;
+  static unsigned long int inode_known[MAX_DIR_NBR];
+  if(dir_nbr==MAX_DIR_NBR)
+    return 1;	/* subdirectories depth is too high => Back */
   if(dir_data->verbose>0)
-    log_info("\ndir_partition inode=%ld\n",inode);
+    log_info("\ndir_partition inode=%lu\n",inode);
   dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
   dir_aff_log(disk_car, partition, dir_data, dir_list);
-  do
+  if(*current_cmd!=NULL)
+  {
+    delete_list_file(dir_list);
+    return -1;
+  }
+  /* Not perfect for FAT32 root cluster */
+  inode_known[dir_nbr++]=inode;
+  while(1)
   {
     unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-    if(*current_cmd==NULL)
-    {
+    unsigned int new_inode_ok=1;
+    unsigned int i;
 #ifdef HAVE_NCURSES
-      new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,first_time);
+    new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,first_time);
 #endif
+    if(new_inode<0 || new_inode==1) /* Quit or Back */
+    {
+      delete_list_file(dir_list);
+      dir_nbr--;
+      return new_inode;
     }
-    if(new_inode==0 || new_inode>1)
+    for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
+      if(new_inode==inode_known[i]) /* Avoid loop */
+	new_inode_ok=0;
+    if(new_inode_ok>0)
     {
       if(dir_partition_aux(disk_car, partition, dir_data, (unsigned long int)new_inode,0,current_cmd)<0)
       { /* quit */
 	delete_list_file(dir_list);
+	dir_nbr--;
 	return -1;
       }
-      /* back */
+      /* restore current_directory name */
       dir_data->current_directory[current_directory_namelength]='\0';
     }
-  } while(new_inode==0 || new_inode>1);
-  delete_list_file(dir_list);
-  return new_inode;
+  }
 }
 
 /*

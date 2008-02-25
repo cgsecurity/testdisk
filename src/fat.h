@@ -74,30 +74,30 @@ struct fat_boot_sector {
 } __attribute__ ((__packed__));
 
 struct msdos_dir_entry {
-	int8_t	name[8],ext[3];	/* name and extension */
-	uint8_t	attr;		/* attribute bits */
-	uint8_t    lcase;		/* Case for base and extension */
-	uint8_t	        ctime_ms;	/* Creation time, milliseconds */
-	uint16_t	ctime;		/* Creation time */
-	uint16_t	cdate;		/* Creation date */
-	uint16_t	adate;		/* Last access date */
-	uint16_t        starthi;	/* High 16 bits of cluster in FAT32 */
-	uint16_t	time;           /* time, date and first cluster */
-        uint16_t        date;
-        uint16_t        start;
-	uint32_t	size;		/* file size (in bytes) */
+	int8_t	name[8],ext[3];		/* 00 name and extension */
+	uint8_t	attr;			/* 0B attribute bits */
+	uint8_t    lcase;		/* 0C Case for base and extension */
+	uint8_t	        ctime_ms;	/* 0D Creation time, milliseconds */
+	uint16_t	ctime;		/* 0E Creation time */
+	uint16_t	cdate;		/* 10 Creation date */
+	uint16_t	adate;		/* 12 Last access date */
+	uint16_t        starthi;	/* 14 High 16 bits of cluster in FAT32 */
+	uint16_t	time;           /* 16 time, date and first cluster */
+        uint16_t        date;		/* 18 */
+        uint16_t        start;		/* 1A */
+	uint32_t	size;		/* 1C file size (in bytes) */
 };
 
 /* Up to 13 characters of the name */
 struct msdos_dir_slot {
-	uint8_t    id;		/* 00 sequence number for slot */
-	uint8_t    name0_4[10];	/* 01 first 5 characters in name */
+	uint8_t    id;			/* 00 sequence number for slot */
+	uint8_t    name0_4[10];		/* 01 first 5 characters in name */
 	uint8_t    attr;		/* 0B attribute byte */
-	uint8_t    reserved;	/* 0C always 0 */
+	uint8_t    reserved;		/* 0C always 0 */
 	uint8_t    alias_checksum;	/* 0D checksum for 8.3 alias */
 	uint8_t    name5_10[12];	/* 0E 6 more characters in name */
-	uint16_t   start;		/* starting cluster number, 0 in long slots */
-	uint8_t    name11_12[4];	/* last 2 characters in name */
+	uint16_t   start;		/* 1A starting cluster number, 0 in long slots */
+	uint8_t    name11_12[4];	/* 1C last 2 characters in name */
 };
 
 

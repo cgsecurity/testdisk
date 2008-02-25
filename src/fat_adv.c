@@ -2,7 +2,7 @@
 
     File: fat_adv.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -376,7 +376,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
             file_data_t *dir_list;
             log_info("First-level directory found at cluster %lu\n",root_cluster);
             /*    dump_ncurses(buffer,cluster_size*disk_car->sector_size); */
-            dir_list=dir_fat_aux(buffer,cluster_size*disk_car->sector_size,cluster_size);
+            dir_list=dir_fat_aux(buffer,cluster_size*disk_car->sector_size,cluster_size,0);
             if(verbose>0)
             {
               dir_aff_log(disk_car, partition, NULL, dir_list);
@@ -505,7 +505,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
             }
             {
               file_data_t *dir_list;
-              dir_list=dir_fat_aux(buffer,cluster_size*disk_car->sector_size,cluster_size);
+              dir_list=dir_fat_aux(buffer,cluster_size*disk_car->sector_size,cluster_size,0);
               if(dir_list!=NULL && (dir_list->next==NULL || dir_list->filestat.st_ino!=dir_list->next->filestat.st_ino))
               {
                 int test_date=1;
@@ -672,7 +672,7 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
 #ifdef DEBUG
   {
     file_data_t *dir_list;
-    dir_list=dir_fat_aux(buffer,disk_car->sector_size*cluster_size,cluster_size);
+    dir_list=dir_fat_aux(buffer,disk_car->sector_size*cluster_size,cluster_size,0);
     dir_aff_log(disk_car, partition, NULL, dir_list);
     delete_list_file(dir_list);
   }
@@ -812,7 +812,8 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
   {
     uint64_t start_data=reserved+fats*fat_length+(root_size_max+(disk_car->sector_size/32)-1)/(disk_car->sector_size/32);
     unsigned int cluster_size=calcul_cluster_size(upart_type,partition->part_size/disk_car->sector_size-start_data,fat_length,disk_car->sector_size);
-    dir_list=dir_fat_aux(buffer_dir, root_dir_size, cluster_size);
+    dir_list=dir_fat_aux(buffer_dir, root_dir_size, cluster_size,
+	(partition->upart_type==UP_FAT12?FLAG_LIST_MASK12:FLAG_LIST_MASK16));
   }
   if(verbose>1)
   {

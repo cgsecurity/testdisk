@@ -2,7 +2,7 @@
 
     File: ext2_dir.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -199,6 +199,7 @@ static int list_dir_proc2(ext2_ino_t dir,
   unsigned int		thislen;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *) private;
   file_data_t *new_file=MALLOC(sizeof(*new_file));
+  new_file->status=0;
   new_file->prev=ls->current_file;
   new_file->next=NULL;
 

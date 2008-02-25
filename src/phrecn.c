@@ -2,7 +2,7 @@
 
     File: phrecn.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -912,7 +912,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
             if(file_recovery.file_stat->file_hint==&file_hint_dir)
             {
               file_data_t *dir_list;
-              dir_list=dir_fat_aux(buffer,read_size,0);
+              dir_list=dir_fat_aux(buffer,read_size,0,0);
               if(dir_list!=NULL)
               {
                 if(verbose>0)
