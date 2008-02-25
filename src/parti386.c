@@ -2,7 +2,7 @@
 
     File: parti386.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -655,6 +655,12 @@ static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const 
       log_info("Store new MBR code\n");
     write_MBR_code_i386_aux(buffer);
   }
+  /* Remove Mac signature */
+  if(buffer[0]==0x45 && buffer[1]==0x52)
+    buffer[0]=0;
+  /* Remove Sun signature */
+  if(buffer[0x1fc]==0xda && buffer[0x1fd]==0xbe)
+    buffer[0x1fc]=0;
   for(element=list_part;element!=NULL;element=element->next)
   {
     switch(element->part->status)
