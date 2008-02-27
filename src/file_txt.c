@@ -56,21 +56,23 @@ static void file_check_html(file_recovery_t *file_recovery);
 static void file_check_emlx(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
 
-file_hint_t file_hint_fasttxt= {
+const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
   .description="Text files with header: rtf,xml,xhtml,imm,pm,reg,sh,slk,ram",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
+  .enable_by_default=1,
   .register_header_check=&register_header_check_fasttxt
 };
 
-file_hint_t file_hint_txt= {
+const file_hint_t file_hint_txt= {
   .extension="txt",
   .description="Other text files: txt,html,asp,bat,C,jsp,perl,php,py... scripts",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
+  .enable_by_default=1,
   .register_header_check=&register_header_check_txt
 };
 

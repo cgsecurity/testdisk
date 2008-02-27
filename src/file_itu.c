@@ -39,6 +39,7 @@ const file_hint_t file_hint_itunes= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
+  .enable_by_default=1,
   .register_header_check=&register_header_check_itunes
 };
 static const unsigned char itunes_header[8]= {'m', 'h', 'b', 'd', 0x68, 0x00, 0x00, 0x00};

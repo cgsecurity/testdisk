@@ -39,6 +39,7 @@ const file_hint_t file_hint_dv= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
+  .enable_by_default=1,
   .register_header_check=&register_header_check_dv
 };
 static const unsigned char dv_header[3]= {0x1f, 0x07, 0x00};

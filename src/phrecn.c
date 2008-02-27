@@ -1997,6 +1997,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
   int offset=0;
   int rewrite=1;
   unsigned int menu=0;
+  int enable_status=files_enable[0].enable;
   static struct MenuItem menuAdv[]=
   {
     {'q',"Quit","Return to main menu"},
@@ -2009,17 +2010,17 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     if(rewrite!=0)
     {
       aff_copy(stdscr);
-      wmove(stdscr,5,0);
+      wmove(stdscr,4,0);
       wprintw(stdscr,"PhotoRec will try to locate the following files");
       rewrite=0;
     }
-    wmove(stdscr,5+1,4);
+    wmove(stdscr,5,4);
     wclrtoeol(stdscr);
     if(offset>0)
       wprintw(stdscr,"Previous");
     for(i=offset;files_enable[i].file_hint!=NULL && ((i-offset)<INTER_SELECT);i++)
     {
-      wmove(stdscr,5+2+i-offset,0);
+      wmove(stdscr,6+i-offset,0);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
       if(i==current_element_num)
       {
@@ -2037,10 +2038,22 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
 	    files_enable[i].file_hint->description);
       }
     }
-    wmove(stdscr,5+2+INTER_SELECT,4);
+    wmove(stdscr,6+INTER_SELECT,4);
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     if(files_enable[i].file_hint!=NULL)
       wprintw(stdscr,"Next");
+    wmove(stdscr,6+INTER_SELECT+1,0);
+    wclrtoeol(stdscr);
+    wprintw(stdscr,"Press ");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+    wprintw(stdscr,"s");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+    if(enable_status==0)
+      wprintw(stdscr," for default selection");
+    else
+      wprintw(stdscr," to disable all file famillies");
     command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
     switch(command)
@@ -2089,10 +2102,15 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       case 's':
       case 'S':
 	{
-	  file_enable_t *file_enable;
-	  int enable_status=1-files_enable[0].enable;
-	  for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
-	    file_enable->enable=enable_status;
+	  enable_status=1-enable_status;
+	  if(enable_status==0)
+	  {
+	    file_enable_t *file_enable;
+	    for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
+	      file_enable->enable=0;
+	  }
+	  else
+	    reset_list_file_enable(files_enable);
 	}
 	break;
       case 'q':
