@@ -252,7 +252,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       else if(is_part_hfs(current_element->part) || is_part_hfsp(current_element->part))
       {
 	options="tscq";
-	menuAdv[2].desc="Locate HFS/HFS+ backup superblock";
+	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
 	menu=1;
       }
       else if(is_fat(current_element->part) ||
@@ -270,7 +270,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       else if(is_hfs(current_element->part) || is_hfsp(current_element->part))
       {
 	options="tscq";
-	menuAdv[2].desc="Locate HFS/HFS+ backup superblock";
+	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
 	menu=1;
       }
       else
@@ -1203,10 +1203,10 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 #endif
       log_info("\nHFS_HFSP_boot_sector\n");
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Superblock\n");
+      aff_buffer(BUFFER_ADD,"Volum header\n");
       if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+0x400)!=0)
       {
-	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ superblock.\n");
+	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ volume header.\n");
 	memset(buffer_bs,0,HFSP_BOOT_SECTOR_SIZE);
       }
       else if(test_HFSP(disk_car,(const struct hfsp_vh*)buffer_bs,partition,verbose,0)==0)
@@ -1223,10 +1223,10 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
       }
       else
 	aff_buffer(BUFFER_ADD,"Bad\n");
-      aff_buffer(BUFFER_ADD,"\nBackup superblock\n");
+      aff_buffer(BUFFER_ADD,"\nBackup volume header\n");
       if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+partition->part_size-0x400)!=0)
       {
-	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ backup superblock.\n");
+	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ backup volume header.\n");
 	memset(buffer_backup_bs,0,HFSP_BOOT_SECTOR_SIZE);
       }
       else if(test_HFSP(disk_car,(const struct hfsp_vh*)buffer_backup_bs,partition,verbose,0)==0)
@@ -1304,24 +1304,24 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
         free(buffer_backup_bs);
 	return 0;
       case 'O': /* O : copy original superblock over backup boot */
-	if(ask_confirmation("Copy original HFS/HFS+ superblock over backup boot, confirm ? (Y/N)")!=0)
+	if(ask_confirmation("Copy original HFS/HFS+ volume header over backup, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original superblock over backup boot\n");
 	  if(disk_car->write(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+partition->part_size-0x400)!=0)
 	  {
-	    display_message("Write error: Can't overwrite HFS/HFS+ backup superblock\n");
+	    display_message("Write error: Can't overwrite HFS/HFS+ backup volume header\n");
 	  }
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
 	break;
       case 'B': /* B : copy backup superblock over main superblock */
-	if(ask_confirmation("Copy backup HFS/HFS+ superblock over main superblock, confirm ? (Y/N)")!=0)
+	if(ask_confirmation("Copy backup HFS/HFS+ volume header over main volume header, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup superblock over main superblock\n");
 	  if(disk_car->write(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+0x400)!=0)
 	  {
-	    display_message("Write error: Can't overwrite HFS/HFS+ main superblock\n");
+	    display_message("Write error: Can't overwrite HFS/HFS+ main volume header\n");
 	  }
           disk_car->sync(disk_car);
 	  rescan=1;
