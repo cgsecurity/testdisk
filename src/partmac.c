@@ -142,6 +142,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
       aff_buffer(BUFFER_ADD,"read_part_mac: bad DPME signature\n");
       return new_list_part;
     }
+    else
     {
       int insert_error=0;
       partition_t *new_partition=partition_new(&arch_mac);
@@ -194,10 +195,10 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
       new_list_part=insert_new_partition(new_list_part, new_partition, 0, &insert_error);
       if(insert_error>0)
 	free(new_partition);
-    }
-    if(i==1)
-    {
-      limit=be32(dpme->dpme_map_entries);
+      if(i==1)
+      {
+	limit=be32(dpme->dpme_map_entries);
+      }
     }
   }
   return new_list_part;
