@@ -79,6 +79,9 @@
 #define NTFS_DT_DIR               4
 #define NTFS_DT_REG             8
 #define NTFS_TIME_OFFSET ((s64)(369 * 365 + 89) * 24 * 3600 * 10000000)
+#ifndef FILE_first_user
+#define FILE_first_user 16
+#endif
 
 /*
  * This is the "ntfs_filldir" function type, used by ntfs_readdir() to let
@@ -197,8 +200,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 #endif
 
   result = 0;					/* These are successful */
-  if (filename[0] == '$')			/* system */
-    goto free;
+  if (MREF(mref) < FILE_first_user)		/* Hide system file */
+      goto free;
   /* Keep FILE_NAME_WIN32 and FILE_NAME_POSIX */
   if ((name_type & FILE_NAME_WIN32_AND_DOS) == FILE_NAME_DOS)
     goto free;
