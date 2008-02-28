@@ -68,7 +68,6 @@ static int check_part_none(disk_t *disk_car, const int verbose,partition_t *part
 static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHS_t *geometry);
 static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader);
 static list_part_t *init_part_order_none(const disk_t *disk_car, list_part_t *list_part);
-static list_part_t *add_partition_none(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 static void set_next_status_none(const disk_t *disk_car, partition_t *partition);
 static int test_structure_none(list_part_t *list_part);
 static int is_part_known_none(const partition_t *partition);
@@ -128,7 +127,7 @@ arch_fnct_t arch_none=
   .get_geometry_from_mbr=get_geometry_from_nonembr,
   .check_part=check_part_none,
   .write_MBR_code=NULL,
-  .add_partition=add_partition_none,
+  .add_partition=NULL,
   .set_prev_status=set_next_status_none,
   .set_next_status=set_next_status_none,
   .test_structure=test_structure_none,
@@ -211,10 +210,6 @@ static list_part_t *init_part_order_none(const disk_t *disk_car, list_part_t *li
   return list_part;
 }
 
-static list_part_t *add_partition_none(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  return list_part;
-}
 
 static void set_next_status_none(const disk_t *disk_car, partition_t *partition)
 {

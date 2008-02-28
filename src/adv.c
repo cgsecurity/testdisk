@@ -364,6 +364,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	break;
       case 'a':
       case 'A':
+	if(disk_car->arch->add_partition!=NULL)
 	{
 	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
 	  current_element=list_part;

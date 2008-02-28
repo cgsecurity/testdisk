@@ -744,7 +744,9 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
   {
     log_flush();
 #ifdef HAVE_NCURSES
-    command=screen_buffer_display(stdscr,(list_part!=NULL?"QB":"Q"),menuAnalyse);
+    command=screen_buffer_display(stdscr,
+	(list_part!=NULL && disk_car->arch->add_partition!=NULL?"QB":"Q"),
+	menuAnalyse);
 #endif
   }
   if(command=='B')
@@ -1084,19 +1086,22 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
     wmove(stdscr,22,0);
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     waddstr(stdscr,"Keys ");
-    if(has_colors())
-      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(stdscr,"A");
-    if(has_colors())
-      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-    waddstr(stdscr,": add partition, ");
-    if(has_colors())
-      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(stdscr,"L");
-    if(has_colors())
-      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-    waddstr(stdscr,": load backup, ");
-
+    /* If the disk can't be partionned, there is no partition to add and no partition to save */
+    if(disk_car->arch->add_partition!=NULL)
+    {
+      if(has_colors())
+	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(stdscr,"A");
+      if(has_colors())
+	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      waddstr(stdscr,": add partition, ");
+      if(has_colors())
+	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(stdscr,"L");
+      if(has_colors())
+	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      waddstr(stdscr,": load backup, ");
+    }
     if(list_part==NULL)
     {
       waddstr(stdscr,"Enter: to continue");
@@ -1215,6 +1220,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	break;
       case 'a':
       case 'A':
+	if(disk_car->arch->add_partition!=NULL)
 	{
 	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
 	  rewrite=1;
@@ -1252,11 +1258,14 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	break;
       case 'l':
       case 'L':
-        list_part=interface_load(disk_car,list_part,verbose);
-	rewrite=1;
-	offset=0;
-	pos_num=0;
-	pos=list_part;
+	if(disk_car->arch->add_partition!=NULL)
+	{
+	  list_part=interface_load(disk_car,list_part,verbose);
+	  rewrite=1;
+	  offset=0;
+	  pos_num=0;
+	  pos=list_part;
+	}
         break;
       case 'q':
       case '\r':
