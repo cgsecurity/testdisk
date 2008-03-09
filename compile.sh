@@ -20,8 +20,8 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-#    VER_E2FSPROGS=1.40.6
-    VER_E2FSPROGS=1.40.2
+    VER_E2FSPROGS=1.40.7
+#    VER_E2FSPROGS=1.40.2
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
 #    CC="$crosscompile_target-gcc -mno-cygwin"
