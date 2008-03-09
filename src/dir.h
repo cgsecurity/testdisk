@@ -60,6 +60,7 @@ struct file_data
 int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list);
 void delete_list_file(file_data_t *file_list);
 int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd);
+int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);
 void mode_string (const unsigned int mode, char *str);
 FILE *create_file(const char *filename);
 int set_date(const char *pathname, time_t actime, time_t modtime);

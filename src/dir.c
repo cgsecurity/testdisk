@@ -497,6 +497,7 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
 #define MAX_DIR_NBR 256
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
+  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   if(dir_nbr==MAX_DIR_NBR)
     return 1;	/* subdirectories depth is too high => Back */
   if(dir_data->verbose>0)
@@ -512,13 +513,12 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
   inode_known[dir_nbr++]=inode;
   while(1)
   {
-    unsigned int current_directory_namelength=strlen(dir_data->current_directory);
     unsigned int new_inode_ok=1;
     unsigned int i;
 #ifdef HAVE_NCURSES
     new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,first_time);
 #endif
-    if(new_inode<0 || new_inode==1) /* Quit or Back */
+    if(new_inode<=1) /* Quit or Back */
     {
       delete_list_file(dir_list);
       dir_nbr--;
@@ -539,6 +539,53 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
       dir_data->current_directory[current_directory_namelength]='\0';
     }
   }
+}
+
+int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
+{
+  file_data_t *dir_list;
+  file_data_t *current_file;
+#define MAX_DIR_NBR 256
+  static unsigned int dir_nbr=0;
+  static unsigned long int inode_known[MAX_DIR_NBR];
+  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+  if(dir_nbr==MAX_DIR_NBR)
+    return 1;	/* subdirectories depth is too high => Back */
+  if(dir_data->verbose>0)
+    log_info("\ndir_partition inode=%lu\n",inode);
+  dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
+  dir_aff_log(disk_car, partition, dir_data, dir_list);
+  /* Not perfect for FAT32 root cluster */
+  inode_known[dir_nbr++]=inode;
+  for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
+  {
+    if(LINUX_S_ISDIR(current_file->filestat.st_mode)!=0)
+    {
+      const unsigned long int new_inode=current_file->filestat.st_ino;
+      unsigned int new_inode_ok=1;
+      unsigned int i;
+      if(new_inode<2)
+	new_inode_ok=0;
+      for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
+	if(new_inode==inode_known[i]) /* Avoid loop */
+	  new_inode_ok=0;
+      if(new_inode_ok>0)
+      {
+	if(strlen(dir_data->current_directory)+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
+	{
+	  if(strcmp(dir_data->current_directory,"/"))
+	    strcat(dir_data->current_directory,"/");
+	  strcat(dir_data->current_directory,current_file->name);
+	  dir_whole_partition_log(disk_car, partition, dir_data, new_inode);
+	  /* restore current_directory name */
+	  dir_data->current_directory[current_directory_namelength]='\0';
+	}
+      }
+    }
+  }
+  delete_list_file(dir_list);
+  dir_nbr--;
+  return 0;
 }
 
 /*

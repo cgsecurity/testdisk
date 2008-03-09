@@ -144,6 +144,16 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
       }
       break;
     default:
+      if(*current_cmd!=NULL)
+      {
+	while(*current_cmd[0]==',')
+	  (*current_cmd)++;
+	if(strncmp(*current_cmd,"recursive",9)==0)
+	{
+	  (*current_cmd)+=9;
+	  dir_whole_partition_log(disk_car,partition,&dir_data,dir_data.current_inode);
+	}
+      }
       dir_partition_aff(disk_car,partition,&dir_data,dir_data.current_inode,current_cmd);
       dir_data.close(&dir_data);
       break;
