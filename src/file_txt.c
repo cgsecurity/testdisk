@@ -2,7 +2,7 @@
 
     File: file_txt.c
 
-    Copyright (C) 2005-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2005-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
+static const unsigned char header_dc[5]		= "SC V10";
 static const char sign_html[5]	= "<html";
 
 static void register_header_check_txt(file_stat_t *file_stat)
@@ -107,6 +108,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
+  register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -388,6 +390,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     else
       file_recovery_new->extension="xml";
     file_recovery_new->file_check=&file_check_xml;
+    return 1;
+  }
+  if(buffer[0]=='0' && buffer[1]=='0' && memcmp(&buffer[4],header_dc,sizeof(header_dc))==0)
+  { /*
+       TSCe Survey Controller DC v10.0
+     */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="dc";
     return 1;
   }
   return 0;
