@@ -2,7 +2,7 @@
 
     File: photorec.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@
 #include "phrecn.h"
 #include "hdaccess.h"
 #include "sudo.h"
+#include "phcfg.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
@@ -745,13 +746,6 @@ alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_searc
   return list_search_space;
 }
 
-void reset_list_file_enable(file_enable_t *files_enable)
-{
-  file_enable_t *file_enable;
-  for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
-    file_enable->enable=file_enable->file_hint->enable_by_default;
-}
-
 int main( int argc, char **argv )
 {
   int i;
@@ -1051,7 +1045,7 @@ int main( int argc, char **argv )
 	  disk->description(disk), disk->sector_size, disk->model);
   }
   log_info("\n");
-  reset_list_file_enable(list_file_enable);
+  file_options_load(list_file_enable);
   use_sudo=do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
 #ifdef HAVE_NCURSES
   end_ncurses();

@@ -35,4 +35,3 @@ int sorfile_stat_ts(const void *p1, const void *p2);
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num);
 void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
-

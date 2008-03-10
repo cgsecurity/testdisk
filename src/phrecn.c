@@ -61,6 +61,7 @@
 #include "log.h"
 #include "hdaccess.h"
 #include "file_tar.h"
+#include "phcfg.h"
 
 /* #define DEBUG */
 /* #define DEBUG_GET_NEXT_SECTOR */
@@ -2051,9 +2052,15 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     if(has_colors())
       wbkgdset(stdscr,' ' | COLOR_PAIR(0));
     if(enable_status==0)
-      wprintw(stdscr," for default selection");
+      wprintw(stdscr," for default selection, ");
     else
-      wprintw(stdscr," to disable all file famillies");
+      wprintw(stdscr," to disable all file famillies, ");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+    wprintw(stdscr,"b");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+    wprintw(stdscr," to save the settings");
     command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
     switch(command)
@@ -2111,6 +2118,17 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
 	  }
 	  else
 	    reset_list_file_enable(files_enable);
+	}
+	break;
+      case 'b':
+      case 'B':
+	if(file_options_save(files_enable)<0)
+	{
+	  display_message("Failed to save the settings.");
+	}
+	else
+	{
+	  display_message("Settings recorded successfully.");
 	}
 	break;
       case 'q':
