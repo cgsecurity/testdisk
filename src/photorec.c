@@ -136,6 +136,7 @@ extern const file_hint_t file_hint_flac;
 extern const file_hint_t file_hint_flv;
 extern const file_hint_t file_hint_fs;
 extern const file_hint_t file_hint_gif;
+extern const file_hint_t file_hint_gho;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
@@ -815,6 +816,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_flac },
     { .enable=0, .file_hint=&file_hint_flv  },
     { .enable=0, .file_hint=&file_hint_fs   },
+    { .enable=0, .file_hint=&file_hint_gho  },
     { .enable=0, .file_hint=&file_hint_gif  },
     { .enable=0, .file_hint=&file_hint_gz   },
     { .enable=0, .file_hint=&file_hint_imb  },
