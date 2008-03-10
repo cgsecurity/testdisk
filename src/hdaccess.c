@@ -2,7 +2,7 @@
 
     File: hdaccess.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -98,6 +98,9 @@
 #include <io.h>
 #include <windows.h>
 #include <winnt.h>
+#endif
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include "win32.h"
 #endif
 #include "fnctdsk.h"
 #include "ewf.h"
@@ -794,7 +797,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
 #elif defined(__CYGWIN__) || defined(__MINGW32__)
   {
     int do_insert=0;
-    char device_hd[]="\\\\.\\PhysicalDrive0";
+    char device_hd[]="\\\\.\\PhysicalDrive00";
     char device_cdrom[]="\\\\.\\C:";
 #if defined(__CYGWIN__)
     char device_scsi[]="/dev/sda";
@@ -812,7 +815,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       for(i=0;i<16;i++)
       {
 	disk_t *disk_car;
-	device_hd[strlen(device_hd)-1]='0'+i;
+	sprintf(device_hd,"\\\\.\\PhysicalDrive%u", i);
 	disk_car=file_test_availability_win32(device_hd,verbose,arch,testdisk_mode);
 	if(do_insert>0 || (testdisk_mode&TESTDISK_O_ALL)==TESTDISK_O_ALL)
 	  list_disk=insert_new_disk(list_disk,disk_car);
@@ -1530,6 +1533,12 @@ static void disk_get_info(const int hd_h, disk_t *dev, const int verbose)
     free(product);
   }
 #endif
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+  {
+    HANDLE handle=(HANDLE)get_osfhandle(hd_h);
+    file_win32_disk_get_info(handle, dev, verbose);
+  }
+#endif
 }
 #endif
 
@@ -2120,8 +2129,8 @@ static int file_win32_read(disk_t *disk_car, const unsigned int count, void *buf
 static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
 static int file_win32_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
 static int file_win32_sync(disk_t *disk_car);
-uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
-uint64_t filewin32_setfilepointer(HANDLE handle, const char *device);
+static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
+static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device);
 
 struct info_file_win32_struct
 {
@@ -2130,7 +2139,7 @@ struct info_file_win32_struct
   int mode;
 };
 
-uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
+static uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
 {
   DWORD lpFileSizeLow;
   DWORD lpFileSizeHigh;
@@ -2155,7 +2164,7 @@ uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
   return lpFileSizeLow+((uint64_t)lpFileSizeHigh>>32);
 }
 
-uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
+static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
 {
   LARGE_INTEGER li;
   li.QuadPart = 0;
@@ -2307,6 +2316,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->clean=file_win32_clean;
     disk_car->data=data;
     disk_car->offset=0;
+    file_win32_disk_get_info(handle, disk_car, verbose);
     if(disk_car->disk_size==0)
     {
       compute_device_size(disk_car);
@@ -2354,13 +2364,33 @@ static const char *file_win32_description_short(disk_t *disk_car)
   struct info_file_win32_struct *data=disk_car->data;
   char buffer_disk_size[100];
   if(data->file_name[0]=='\\' && data->file_name[1]=='\\' && data->file_name[2]=='.' && data->file_name[3]=='\\' && data->file_name[5]==':')
-    snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Drive %c: - %s%s",
-	data->file_name[4], size_to_unit(disk_car->disk_size,buffer_disk_size),
-	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
+  {
+    if(disk_car->model==NULL)
+      snprintf(disk_car->description_short_txt,
+	  sizeof(disk_car->description_txt), "Drive %c: - %s%s",
+	  data->file_name[4], size_to_unit(disk_car->disk_size,buffer_disk_size),
+	  ((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
+    else
+      snprintf(disk_car->description_short_txt,
+	  sizeof(disk_car->description_txt), "Drive %c: - %s%s - %s",
+	  data->file_name[4], size_to_unit(disk_car->disk_size,buffer_disk_size),
+	  ((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"),
+	  disk_car->model);
+  }
   else
-    snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s",
+  {
+    if(disk_car->model==NULL)
+      snprintf(disk_car->description_short_txt,
+	sizeof(disk_car->description_txt), "Disk %s - %s%s",
 	data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
 	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
+    else
+      snprintf(disk_car->description_short_txt,
+	sizeof(disk_car->description_txt), "Disk %s - %s%s - %s",
+	data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
+	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"),
+	disk_car->model);
+  }
   return disk_car->description_short_txt;
 }
 
