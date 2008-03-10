@@ -199,7 +199,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     if(res1>res2)
     {
       /* Use MFT */
-      if(ask_confirmation("Fix MFT mirror ? (Y/N)")!=0)
+      if(ask_confirmation("Fix MFT mirror %s? (Y/N)", (res1>0?"":"(not recommanded) "))!=0)
 	use_MFT=1;
       else
 	log_info("Don't fix MFT mirror.\n");
@@ -207,7 +207,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     else if(res1<res2)
     {
       /* Use MFT mirror */
-      if(ask_confirmation("Fix MFT ? (Y/N)")!=0)
+      if(ask_confirmation("Fix MFT %s? (Y/N)", (res2>0?"":"(not recommanded) "))!=0)
 	use_MFT=2;
       else
 	log_info("Don't fix MFT.\n");
