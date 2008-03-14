@@ -162,6 +162,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     { /* Outlook */
       file_recovery_new->extension="msg";
     }
+    else if(td_memmem(buffer,buffer_size,"Publisher",9)!=NULL)
+    { /* Publisher */
+      file_recovery_new->extension="pub";
+    }
     else
       file_recovery_new->extension=file_hint_doc.extension;
     return 1;
@@ -180,7 +184,7 @@ static uint64_t test_OLE(FILE *IN)
   if(!IN)
     return 0;
   fseek(IN,0,SEEK_SET);
-  if(fread(&buffer_header,sizeof(buffer_header),1,IN)<0)	/*reads first sector including OLE header */
+  if(fread(&buffer_header,sizeof(buffer_header),1,IN)!=1)	/*reads first sector including OLE header */
     return 0;
   /*
   log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
@@ -206,7 +210,7 @@ static uint64_t test_OLE(FILE *IN)
 	free(dif);
 	return 0;
       }
-      if(fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN)<0)
+      if(fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN)!=4)
       {
 	free(dif);
 	return 0;
@@ -226,7 +230,7 @@ static uint64_t test_OLE(FILE *IN)
 	free(fat);
 	return 0;
       }
-      if(fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN)<0)
+      if(fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN)!=1)
       {
 	free(dif);
 	free(fat);
