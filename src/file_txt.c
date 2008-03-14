@@ -87,7 +87,7 @@ static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
-static const unsigned char header_dc[5]		= "SC V10";
+static const unsigned char header_dc[6]		= "SC V10";
 static const char sign_html[5]	= "<html";
 
 static void register_header_check_txt(file_stat_t *file_stat)
