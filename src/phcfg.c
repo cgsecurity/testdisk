@@ -248,7 +248,9 @@ int file_options_load(file_enable_t *files_enable)
       unsigned int cmd_length=extension_status-extension;
       *extension_status='\0';
       extension_status++;
-      log_info("extension=%s, extension_status=%s\n", extension, extension_status);
+#ifdef DEBUG_PHCFG
+      log_debug("extension=%s, extension_status=%s", extension, extension_status);
+#endif
       for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
       {
 	if(file_enable->file_hint->extension!=NULL &&
