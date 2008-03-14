@@ -456,6 +456,7 @@ void free_list_search_space(alloc_data_t *list_search_space)
 void reset_file_recovery(file_recovery_t *file_recovery)
 {
   file_recovery->filename[0]='\0';
+  file_recovery->time=0;
   file_recovery->file_stat=NULL;
   file_recovery->handle=NULL;
   file_recovery->file_size=0;
@@ -1214,6 +1215,8 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
     if(file_recovery->file_size>0)
     {
+      if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
       if((++(*file_nbr))%MAX_FILES_PER_DIR==0)
       {
         *dir_num=photorec_mkdir(recup_dir,*dir_num+1);

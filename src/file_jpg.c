@@ -26,6 +26,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #ifdef HAVE_SETJMP_H
@@ -57,11 +60,136 @@ const file_hint_t file_hint_jpg= {
 static const unsigned char jpg_header_app0[4]= { 0xff,0xd8,0xff,0xe0};
 static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
 static const unsigned char jpg_footer[2]= { 0xff,0xd9};
+static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
+static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
+
+struct tiff_entry {
+  uint32_t magic;
+  uint32_t ifd0_offset;
+} __attribute__ ((__packed__));
+
+struct ifd_entry {
+  uint16_t tag;
+  uint16_t type;
+  uint32_t count;
+  uint32_t offset;
+} __attribute__ ((__packed__));
+
+struct ifd_header {
+  uint16_t nbr_fields;
+  struct ifd_entry ifd;
+} __attribute__ ((__packed__));
 
 static void register_header_check_jpg(file_stat_t *file_stat)
 {
   register_header_check(0, jpg_header_app0,sizeof(jpg_header_app0), &header_check_jpg, file_stat);
   register_header_check(0, jpg_header_app1,sizeof(jpg_header_app1), &header_check_jpg, file_stat);
+}
+
+static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const unsigned int tiff_size)
+{
+  const char *date_asc=NULL;
+  struct tm tm_time;
+  if(tiff_size < sizeof(struct tiff_entry))
+    return (time_t)0;
+  if(memcmp(&tiff->magic, tiff_header_be, sizeof(tiff_header_be))==0)
+  {
+    if(tiff_size < be32(tiff->ifd0_offset)+sizeof(struct ifd_entry))
+      return (time_t)0;
+    {
+      const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->ifd0_offset));
+      const struct ifd_header *ifd1=NULL;
+      const struct ifd_entry *ifd;
+      unsigned int j;
+      for(j=0, ifd=&ifd0->ifd;
+	  j<be16(ifd0->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	  j++, ifd++)
+      {
+	if(be16(ifd->tag)==0x132)
+	{
+	  if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
+	    date_asc=(const char*)tiff+be32(ifd->offset);
+	}
+	else if(be16(ifd->tag)==0x8769)	/* Exif IFD Pointer */
+	{
+	  ifd1=(const struct ifd_header *)((const char*)tiff + be32(ifd->offset));
+	}
+      }
+      if(ifd1!=NULL)
+      {	/* Exif */
+	for(j=0, ifd=&ifd1->ifd;
+	    j<be16(ifd1->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	    j++, ifd++)
+	{
+	  if(be16(ifd->tag)==0x9003)		/* DateTimeOriginal */
+	  {
+	    if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
+	      date_asc=(const char*)tiff+be32(ifd->offset);
+	  }
+	  else if(be16(ifd->tag)==0x9004)	/* DateTimeDigitalized*/
+	  {
+	    if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
+	      date_asc=(const char*)tiff+be32(ifd->offset);
+	  }
+	}
+      }
+    }
+  }
+  else if(memcmp(&tiff->magic, tiff_header_le, sizeof(tiff_header_le))==0)
+  {
+    if(tiff_size < le32(tiff->ifd0_offset)+sizeof(struct ifd_entry))
+      return (time_t)0;
+      {
+      const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->ifd0_offset));
+      const struct ifd_header *ifd1=NULL;
+      const struct ifd_entry *ifd;
+      unsigned int j;
+      for(j=0, ifd=&ifd0->ifd;
+	  j<le16(ifd0->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	  j++, ifd++)
+      {
+	if(le16(ifd->tag)==0x132)
+	{
+	  if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
+	    date_asc=(const char*)tiff+le32(ifd->offset);
+	}
+	else if(le16(ifd->tag)==0x8769)	/* Exif IFD Pointer */
+	{
+	  ifd1=(const struct ifd_header *)((const char*)tiff + le32(ifd->offset));
+	}
+      }
+      if(ifd1!=NULL)
+      {	/* Exif */
+	for(j=0, ifd=&ifd1->ifd;
+	    j<le16(ifd1->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	    j++, ifd++)
+	{
+	  if(le16(ifd->tag)==0x9003)		/* DateTimeOriginal */
+	  {
+	    if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
+	      date_asc=(const char*)tiff+le32(ifd->offset);
+	  }
+	  else if(le16(ifd->tag)==0x9004)	/* DateTimeDigitalized*/
+	  {
+	    if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
+	      date_asc=(const char*)tiff+le32(ifd->offset);
+	  }
+	}
+      }
+    }
+  }
+  if(date_asc==NULL)
+    return (time_t)0;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds */
+  tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes */
+  tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours */
+  tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month */
+  tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0');        /* month */
+  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+  tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+  return mktime(&tm_time);
 }
 
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -85,6 +213,13 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       }
       else if(buffer[i]==0xff && buffer[i+1]==0xe1)
       { /* APP1 Exif information */
+	if(i+0x0A < buffer_size && 2+(buffer[i+2]<<8)+buffer[i+3] > 0x0A)
+	{
+	  unsigned int tiff_size=2+(buffer[i+2]<<8)+buffer[i+3]-0x0A;
+	  if(buffer_size - (i+0x0A) < tiff_size)
+	    tiff_size=buffer_size - (i+0x0A);
+	  file_recovery_new->time=get_date_from_tiff_header((const struct tiff_entry *)&buffer[i+0x0A], tiff_size);
+	}
 	i+=2+(buffer[i+2]<<8)+buffer[i+3];
       }
       else

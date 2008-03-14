@@ -60,6 +60,7 @@ struct file_recovery_struct
   file_stat_t *file_stat;
   FILE *handle;
   char filename[2048];
+  time_t time;
   uint64_t file_size;
   uint64_t file_size_on_disk;
   alloc_list_t location;
