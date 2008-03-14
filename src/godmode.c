@@ -1298,7 +1298,8 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 		else
 		{
 		  use_backup(disk_car,list_part,verbose,dump_ind,expert,current_cmd);
-		  display_message("You will have to reboot for the change to take effect.\n");
+		  if(no_confirm==0)
+		    display_message("You will have to reboot for the change to take effect.\n");
 		}
 	      }
 	      else
