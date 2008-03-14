@@ -460,6 +460,20 @@ if test -z "${use_ewf}"; then
   else
     LIBS="${ewf_lib_a} $LIBS"
   fi
+  AC_TRY_COMPILE([#include <libewf.h>],
+          [void foo() { libewf_get_bytes_per_sector(NULL,NULL); }],
+	  ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=yes,
+	  ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=no)
+  if test "${ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments}" != "no"; then
+        AC_DEFINE([LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS], 1, [Define if libewf_get_bytes_per_sector takes two parameters.])
+  fi
+  AC_TRY_COMPILE([#include <libewf.h>],
+          [void foo() { libewf_get_media_size(NULL,NULL); }],
+	  ac_cv_c_libewf_get_media_size_have_two_arguments=yes,
+	  ac_cv_c_libewf_get_media_size_have_two_arguments=no)
+  if test "${ac_cv_c_libewf_get_media_size_have_two_arguments}" != "no"; then
+        AC_DEFINE([LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS], 1, [Define if libewf_get_media_size takes two parameters.])
+  fi
   ],[
   AC_MSG_WARN(No ewf library detected)
   LIBS="$OLDLIBS"

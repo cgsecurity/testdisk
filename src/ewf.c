@@ -124,13 +124,33 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
   }
   disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
   disk_car->arch=arch;
+#ifdef LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS
+  {
+    uint32_t bytes_per_sector;
+    if(libewf_get_bytes_per_sector(data->handle, &bytes_per_sector)<0)
+      disk_car->sector_size=DEFAULT_SECTOR_SIZE;
+    else
+      disk_car->sector_size=bytes_per_sector;
+  }
+#else
   disk_car->sector_size=libewf_get_bytes_per_sector(data->handle);
+#endif
 //  printf("libewf_get_bytes_per_sector %u\n",disk_car->sector_size);
   if(disk_car->sector_size==0)
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
+#ifdef LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS
+  {
+    size64_t media_size;
+    if(libewf_get_media_size(data->handle, &media_size)<0)
+      disk_car->disk_size=0;
+    else
+      disk_car->disk_size=media_size;
+  }
+#else
   disk_car->disk_size=libewf_get_media_size(data->handle);
-  disk_car->disk_real_size=disk_car->disk_size;
+#endif
 //  printf("libewf_get_media_size %llu\n",(long long unsigned) (disk_car->sector_size/disk_car->sector_size));
+  disk_car->disk_real_size=disk_car->disk_size;
   disk_car->CHS.head=255-1;
   disk_car->CHS.sector=63;
   disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
