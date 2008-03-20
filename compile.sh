@@ -59,22 +59,21 @@ if [ "$VER_E2FSPROGS" != "" ];
 then
 CONFIGUREOPT="$CONFIGUREOPT --with-ext2fs-lib=${PWDSRC}/e2fsprogs-${VER_E2FSPROGS}/lib --with-ext2fs-includes=${PWDSRC}/e2fsprogs-${VER_E2FSPROGS}/lib"
 
-if [ ! -e e2fsprogs-$VER_E2FSPROGS.tar.gz ];
+if [ ! -e $compiledir/e2fsprogs-$VER_E2FSPROGS/configure ];
 then
+  if [ ! -e e2fsprogs-$VER_E2FSPROGS.tar.gz ];
+  then
         $LYNX http://prdownloads.sourceforge.net/e2fsprogs/e2fsprogs-$VER_E2FSPROGS.tar.gz
-fi
-
-if [ -e e2fsprogs-$VER_E2FSPROGS.tar.gz ];
-then
-  if [ ! -e $compiledir/e2fsprogs-$VER_E2FSPROGS/configure ];
+  fi
+  if [ -e e2fsprogs-$VER_E2FSPROGS.tar.gz ];
   then
         tar xzf e2fsprogs-$VER_E2FSPROGS.tar.gz -C $compiledir
   fi
 fi
 
-if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/configure ];
+if [ ! -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
 then
-  if [ ! -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
+  if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/configure ];
   then
   	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
 	CC=$TESTDISKCC CFLAGS="$CFLAGS -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
@@ -82,9 +81,9 @@ then
   fi
 fi
 
-if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
+if [ ! -e $LIBEXT ];
 then
-  if [ ! -e $LIBEXT ];
+  if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
   then
 	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
 	make libs
@@ -96,22 +95,21 @@ fi
 if [ "$VER_PROGSREISERFS" != "" ];
 then
 CONFIGUREOPT="$CONFIGUREOPT --with-reiserfs-lib=${PWDSRC}/progsreiserfs-${VER_PROGSREISERFS}/libreiserfs/.libs/ --with-reiserfs-includes=${PWDSRC}/progsreiserfs-${VER_PROGSREISERFS}/include/ --with-dal-lib=${PWDSRC}/progsreiserfs-${VER_PROGSREISERFS}/libdal/.libs/"
-if [ ! -e progsreiserfs-$VER_PROGSREISERFS.tar.gz ];
+if [ ! -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/configure ];
 then
+  if [ ! -e progsreiserfs-$VER_PROGSREISERFS.tar.gz ];
+  then
         $LYNX http://reiserfs.osdn.org.ua/snapshots/progsreiserfs-$VER_PROGSREISERFS.tar.gz
-fi
-
-if [ -e progsreiserfs-$VER_PROGSREISERFS.tar.gz ];
-then
-  if [ ! -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/configure ];
+  fi
+  if [ -e progsreiserfs-$VER_PROGSREISERFS.tar.gz ];
   then
         tar xzf progsreiserfs-$VER_PROGSREISERFS.tar.gz -C $compiledir
   fi
 fi
 
-if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/configure ];
+if [ ! -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
 then
-  if [ ! -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
+  if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/configure ];
   then
         cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
         ./configure --host=$crosscompile_target --prefix=$prefix --disable-nls --disable-Werror
@@ -121,9 +119,9 @@ fi
 
 #vim /home/kmaster/src/testdisk/powerpc-apple-darwin/progsreiserfs-0.3.1-rc8/libtool
 #%s/AR="ar"/AR="powerpc-apple-darwin-ar"/
-if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
+if [ ! -e $LIBREISER ];
 then
-  if [ ! -e $LIBREISER ];
+  if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
   then
 	cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
 	make
@@ -135,22 +133,21 @@ fi
 if [ "$VER_NTFSPROGS" != "" ];
 then
 CONFIGUREOPT="$CONFIGUREOPT --with-ntfs-lib=${PWDSRC}/ntfsprogs-${VER_NTFSPROGS}/libntfs/.libs/ --with-ntfs-includes=${PWDSRC}/ntfsprogs-${VER_NTFSPROGS}/include/"
-if [ ! -e ntfsprogs-$VER_NTFSPROGS.tar.gz ];
+if [ ! -e $compiledir/ntfsprogs-$VER_NTFSPROGS/configure ];
 then
+  if [ ! -e ntfsprogs-$VER_NTFSPROGS.tar.gz ];
+  then
 	$LYNX http://prdownloads.sourceforge.net/linux-ntfs/ntfsprogs-$VER_NTFSPROGS.tar.gz
-fi
-
-if [ -e ntfsprogs-$VER_NTFSPROGS.tar.gz ];
-then
-  if [ ! -e $compiledir/ntfsprogs-$VER_NTFSPROGS/configure ];
+  fi
+  if [ -e ntfsprogs-$VER_NTFSPROGS.tar.gz ];
   then
 	tar xzf ntfsprogs-$VER_NTFSPROGS.tar.gz -C $compiledir
   fi
 fi
 
-if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/configure ];
+if [ ! -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
 then
-  if [ ! -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
+  if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/configure ];
   then
         cd $compiledir/ntfsprogs-$VER_NTFSPROGS
 # --disable-default-device-io-ops is need for NT 4
@@ -159,9 +156,9 @@ then
   fi
 fi
 
-if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
+if [ ! -e $LIBNTFS ];
 then
-  if [ ! -e $LIBNTFS ];
+  if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
   then
 	cd $compiledir/ntfsprogs-$VER_NTFSPROGS
 	make libs
@@ -173,22 +170,26 @@ fi
 if [ "$VER_LIBEWF" != "" ];
 then
 CONFIGUREOPT="$CONFIGUREOPT --with-ewf-lib=${PWDSRC}/libewf-${VER_LIBEWF}/libewf/.libs/ --with-ewf-includes=${PWDSRC}/libewf-${VER_LIBEWF}/include/"
-if [ ! -e libewf-$VER_LIBEWF.tar.gz ];
-then
-        $LYNX "https://www.uitwisselplatform.nl/frs/?group_id=53&release_id=262"
-fi
 
-if [ -e libewf-$VER_LIBEWF.tar.gz ];
+if [ ! -e $compiledir/libewf-$VER_LIBEWF/configure ];
 then
-  if [ ! -e $compiledir/libewf-$VER_LIBEWF/configure ];
+  if [ ( ! -e libewf-$VER_LIBEWF.tar.gz ) -a ( ! -e libewf-beta-$VER_LIBEWF.tar.gz ) ];
+  then
+        $LYNX "https://www.uitwisselplatform.nl/frs/?group_id=53&release_id=262"
+  fi
+  if [ -e libewf-$VER_LIBEWF.tar.gz ];
   then
 	tar xzf libewf-$VER_LIBEWF.tar.gz -C $compiledir
   fi
+  if [ -e libewf-beta-$VER_LIBEWF.tar.gz ];
+  then
+	tar xzf libewf-beta-$VER_LIBEWF.tar.gz -C $compiledir
+  fi
 fi
 
-if [ -e $compiledir/libewf-$VER_LIBEWF/configure ];
+if [ ! -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
 then
-  if [ ! -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
+  if [ -e $compiledir/libewf-$VER_LIBEWF/configure ];
   then
 	cd $compiledir/libewf-$VER_LIBEWF
 	CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix
@@ -196,9 +197,9 @@ then
   fi
 fi
 
-if [ -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
+if [ ! -e $LIBEWF ];
 then
-  if [ ! -e $LIBEWF ];
+  if [ -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
   then
 	cd $compiledir/libewf-$VER_LIBEWF
 	make lib
