@@ -57,7 +57,7 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
-static void align_structure(const disk_t *disk_car, list_part_t *list_part,const unsigned int location_boundary);
+static void align_structure(list_part_t *list_part,const unsigned int location_boundary);
 static list_part_t *reduce_structure(list_part_t *list_part);
 static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
 static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
@@ -87,7 +87,7 @@ static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS)
 }
 /* Optimization end */
 
-static void align_structure(const disk_t *disk_car, list_part_t *list_part, const unsigned int location_boundary)
+static void align_structure(list_part_t *list_part, const unsigned int location_boundary)
 {
   list_part_t *element;
   for(element=list_part;element!=NULL;element=element->next)
@@ -382,7 +382,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   int ind_stop=0;
   list_part_t *list_part=NULL;
   list_part_t *list_part_bad=NULL;
-  partition_t *partition=partition_new(disk_car->arch);
+  partition_t *partition;
+  /* It's not a problem to read a little bit more than necessary, 255*63*512 =~ 10000000 */
+  const uint64_t search_location_max=(disk_car->disk_size + 10000000 < disk_car->disk_real_size ?
+      disk_car->disk_size + 10000000:
+      disk_car->disk_real_size);
+  partition=partition_new(disk_car->arch);
   buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
   {
     /* Will search for partition at current known partition location */
@@ -443,7 +448,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   /* Not every sector will be examined */
   search_location_init(disk_car, location_boundary, fast_mode, search_vista_part);
   /* Scan the disk */
-  while(ind_stop==0 && search_location<disk_car->disk_real_size)
+  while(ind_stop==0 && search_location < search_location_max)
   {
     unsigned int sector_inc=0;
     static CHS_t start;
@@ -1225,7 +1230,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
       {	/* arch_none, arch_xbox, arch_gpt */
 	location_boundary=disk_car->sector_size;
       }
-      align_structure(disk_car,list_part,location_boundary);
+      align_structure(list_part, location_boundary);
     }
 
     disk_car->arch->init_structure(disk_car,list_part,verbose);
