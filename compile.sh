@@ -173,9 +173,12 @@ CONFIGUREOPT="$CONFIGUREOPT --with-ewf-lib=${PWDSRC}/libewf-${VER_LIBEWF}/libewf
 
 if [ ! -e $compiledir/libewf-$VER_LIBEWF/configure ];
 then
-  if [ ( ! -e libewf-$VER_LIBEWF.tar.gz ) -a ( ! -e libewf-beta-$VER_LIBEWF.tar.gz ) ];
+  if [ ! -e libewf-$VER_LIBEWF.tar.gz ];
   then
-        $LYNX "https://www.uitwisselplatform.nl/frs/?group_id=53&release_id=262"
+    if [ ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
+    then
+      	$LYNX "https://www.uitwisselplatform.nl/frs/?group_id=53&release_id=262"
+    fi
   fi
   if [ -e libewf-$VER_LIBEWF.tar.gz ];
   then
