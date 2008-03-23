@@ -359,6 +359,10 @@ if test -z "${use_ncurses}"; then
   AC_SEARCH_LIBS(initscr, ncursesw ncurses pdcurses curses,
       [
         AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncursesw/ncurses/pdcurses/curses library.])
+	AC_CHECK_LIB(tinfo,keypad,[
+	  AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
+	  LIBS="$LIBS -ltinfo"
+	  ])
       ],AC_MSG_ERROR(No ncurses library detected))
 else
   AC_MSG_WARN(Use of ncurses library disabled)
