@@ -86,6 +86,7 @@ extern const char *monstr[];
 static char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 static int intr_nbr_line=0;
 static void set_parent_directory(char *dst_directory);
+static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
 struct file_info {
   struct td_list_head list;
   char name[4096];
@@ -1770,7 +1771,7 @@ char *ask_location(const char*msg, const char *src_dir)
   return res;
 }
 
-int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap)
+static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap)
 {
   char buffer[1024];
   int i;
