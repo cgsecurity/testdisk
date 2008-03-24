@@ -1535,7 +1535,12 @@ static void disk_get_info(const int hd_h, disk_t *dev, const int verbose)
 #endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   {
-    HANDLE handle=(HANDLE)get_osfhandle(hd_h);
+    HANDLE handle;
+#if defined(__CYGWIN__)
+    handle=(HANDLE)get_osfhandle(hd_h);
+#else
+    handle=(HANDLE)_get_osfhandle(hd_h);
+#endif
     file_win32_disk_get_info(handle, dev, verbose);
   }
 #endif
@@ -1713,7 +1718,12 @@ static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *b
 static int file_sync(disk_t *disk_car)
 {
   struct info_file_struct *data=disk_car->data;
+#ifdef HAVE_FSYNC
   return fsync(data->handle);
+#else
+  errno=EINVAL;
+  return -1;
+#endif
 }
 
 static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, const int verbose)
