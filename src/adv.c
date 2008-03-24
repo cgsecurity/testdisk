@@ -51,6 +51,7 @@
 #include "log.h"
 #include "guid_cmp.h"
 #include "dimage.h"
+#include "fat_adv.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;

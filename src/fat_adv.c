@@ -54,6 +54,7 @@
 #include "fat_dir.h"
 #include "io_redir.h"
 #include "log.h"
+#include "fat_adv.h"
 
 #define INTER_FAT_ASK_X 0
 #define INTER_FAT_ASK_Y	23

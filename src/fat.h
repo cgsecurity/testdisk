@@ -125,8 +125,6 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
 int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
 unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
-int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose);
-int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose);
 
 #define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
 #define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
