@@ -157,6 +157,11 @@ AC_ARG_WITH(sudo-bin,
     AS_HELP_STRING(--with-sudo-bin=PROG,location of the sudo binary),
     [SUDO_BIN="${withval}"])
 
+AC_ARG_ENABLE([missing-uuid-ok], 
+    AS_HELP_STRING(--enable-missing-uuid-ok, force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)),
+    [	missing_uuid_ok="yes" ],
+    [	missing_uuid_ok="no" ])
+
 use_icon=no
 
 case "$target" in
@@ -209,7 +214,7 @@ AC_SYS_LARGEFILE
 AC_HEADER_STDC
 #AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h stdint.h unistd.h])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h zlib.h])
+AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h mingw/io.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
 
 #--------------------------------------------------------------------
 # Check for iconv support (for Unicode conversion).
@@ -450,7 +455,16 @@ else
 fi
 
 AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h])
-AC_CHECK_FUNCS([uuidgen],,[AC_CHECK_LIB(uuid, uuid_generate, , AC_MSG_ERROR(Missing function: uuid_generate in library libuuid))])
+AC_CHECK_FUNCS([uuidgen],,[AC_CHECK_LIB(uuid, uuid_generate, ,
+      [
+      if test "${missing_uuid_ok}" = "yes";
+      then
+        AC_MSG_WARN(Missing function: uuid_generate in library libuuid)
+      else
+        AC_MSG_ERROR(Missing function: uuid_generate in library libuuid)
+      fi
+      ]
+      )])
 AC_CHECK_FUNCS([uuid_generate])
 
 if test -z "${use_ewf}"; then
@@ -489,7 +503,8 @@ fi
 
 #-Wconversion -Wunreachable-code -Wmissing-noreturn"
 if test "$GCC" = "yes"; then                    
-CFLAGS="$CFLAGS -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline"
+CFLAGS="$CFLAGS -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar"
+
 for option in -Wdeclaration-after-statement; do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
@@ -515,7 +530,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([atexit atoll chdir delscreen dirname dup2 execv ftruncate getcwd geteuid lstat memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
+AC_CHECK_FUNCS([atexit atoll chdir delscreen dirname dup2 execv ftruncate fsync getcwd geteuid lstat memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
