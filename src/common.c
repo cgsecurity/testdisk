@@ -40,6 +40,9 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#ifdef HAVE_MINGW_IO_H
+#include <mingw/io.h>
+#endif
 #include "intrf.h"
 #include "log.h"
 
@@ -274,7 +277,7 @@ void create_dir(const char *dir_name, const unsigned int is_dir_name)
       mkdir(path, 0775);
 #endif
 #else
-#warn You need a mkdir function!
+#warning You need a mkdir function!
 #endif
     }
   } while(pos!=NULL);
