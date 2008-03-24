@@ -273,18 +273,22 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
+#ifdef HAVE_LIBNTFS
   static struct MenuItem menuNTFS[]=
   {
     {'F',"Free", "Scan for file from NTFS unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
+#endif
+#ifdef HAVE_LIBEXT2FS
   static struct MenuItem menuEXT2[]=
   {
     {'F',"Free", "Scan for file from ext2/ext3 unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
+#endif
   const char *options="EO";
   WINDOW *window;
   unsigned int menu;
