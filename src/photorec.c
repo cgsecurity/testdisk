@@ -66,6 +66,9 @@
 #else
 #include <stdio.h>
 #endif
+#ifdef HAVE_JPEGLIB_H
+#include <jpeglib.h>
+#endif
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
@@ -80,6 +83,9 @@
 #include "hdaccess.h"
 #include "sudo.h"
 #include "phcfg.h"
+#include "misc.h"
+#include "ext2_dir.h"
+#include "ntfs_dir.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
@@ -492,7 +498,7 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
       if(mkdir(working_recup_dir, 0775)!=0 && errno==EEXIST)
 #endif
 #else
-#warn You need a mkdir function!
+#warning You need a mkdir function!
 #endif
       {
 	dir_num++;
@@ -1002,15 +1008,18 @@ int main( int argc, char **argv )
     return 1;
 #endif
   create_log=log_open("photorec.log", create_log, 1, "PhotoRec", argc, argv);
-  log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
-  log_info(TESTDISK_OS);
-  log_info(" (ewf lib: %s)\n", td_ewf_version());
-#if 0
-#if defined(HAVE_LIBJPEG) && defined(JPEG_LIB_VERSION)
-  log_info(", libjpeg: %u)\n", JPEG_LIB_VERSION);
+  log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  log_info("OS: %s - Compiler: %s\n", get_os(), get_compiler());
+  log_info("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: ",
+      td_ext2fs_version(), td_ntfs_version(), td_ewf_version());
+#if defined(HAVE_LIBJPEG)
+#if defined(JPEG_LIB_VERSION)
+  log_info("%u", JPEG_LIB_VERSION);
 #else
-  log_info(", libjpeg: none)\n");
+  log_info("yes");
 #endif
+#else
+  log_info("none");
 #endif
   log_info("\n");
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)

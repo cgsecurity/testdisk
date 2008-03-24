@@ -418,21 +418,4 @@ int strncasecmp(const char * s1, const char * s2, size_t len);
 void create_dir(const char *dir_name, const unsigned int is_dir_name);
 unsigned int filename_convert(char *dst, const char*src, const unsigned int n);
 
-#ifdef DJGPP
-    #define TESTDISK_OS "Dos version"
-#elif defined(TARGET_BSD)
-    #define TESTDISK_OS "BSD version"
-#elif defined(TARGET_LINUX)
-    #define TESTDISK_OS "Linux version"
-#elif defined(TARGET_SOLARIS)
-    #define TESTDISK_OS "Solaris version"
-#elif defined(__CYGWIN__) || defined(__MINGW32__)
-    #define TESTDISK_OS "Windows version"
-#elif defined(__APPLE__)
-    #define TESTDISK_OS "Apple version"
-#elif defined(__OS2__)
-    #define TESTDISK_OS "OS2 version"
-#else
-    #define TESTDISK_OS "Undefined OS"
-#endif
 #endif
