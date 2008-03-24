@@ -332,7 +332,7 @@ static void partition_generate_gpt_entry(struct gpt_ent* gpt_entry, const partit
 #elif defined HAVE_UUIDGEN
     uuidgen((struct uuid*)(&gpt_entry->ent_uuid),1);
 #else
-#warn You need a uuid_generate or uuidgen function
+#warning You need a uuid_generate or uuidgen function
 #endif
     swap_uuid_and_efi_guid((efi_guid_t *)(&gpt_entry->ent_uuid));
   }
@@ -472,7 +472,7 @@ static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const 
 #elif defined HAVE_UUIDGEN
     uuidgen((struct uuid*)(&gpt->hdr_guid),1);
 #else
-#warn You need a uuid_generate or uuidgen function
+#warning You need a uuid_generate or uuidgen function
 #endif
   swap_uuid_and_efi_guid((efi_guid_t *)(&gpt->hdr_guid));
   gpt->hdr_crc_table=le32(get_crc32(gpt_entries, gpt_entries_size, 0xFFFFFFFF)^0xFFFFFFFF);
