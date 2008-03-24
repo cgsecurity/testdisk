@@ -419,8 +419,10 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   {
     min_location=disk_car->sector_size;
     location_boundary=disk_car->sector_size;
-    /* sometime users choose Intel instead of GPT */
-    try_offset_nbr=tab_insert(try_offset,2*disk_car->sector_size+16384,try_offset_nbr);
+    /* sometimes users choose Intel instead of GPT */
+    try_offset_nbr=tab_insert(try_offset, 2*disk_car->sector_size+16384, try_offset_nbr);
+    /* sometimes users don't choose Vista by mistake */
+    try_offset_nbr=tab_insert(try_offset, 2048*512, try_offset_nbr);
   }
   else if(disk_car->arch==&arch_mac)
   {
