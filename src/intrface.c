@@ -1546,9 +1546,9 @@ int ask_testdisk_log_creation()
   };
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wprintw(stdscr,"TestDisk is a data recovery designed to help recover lost partitions");
+  wprintw(stdscr,"TestDisk is a free data recovery software designed to help recover lost");
   wmove(stdscr,6,0);
-  wprintw(stdscr,"and/or make non-booting disks bootable again when these symptoms");
+  wprintw(stdscr,"partitions and/or make non-booting disks bootable again when these symptoms");
   wmove(stdscr,7,0);
   wprintw(stdscr,"are caused by faulty software, certain types of viruses or human error.");
   wmove(stdscr,8,0);
