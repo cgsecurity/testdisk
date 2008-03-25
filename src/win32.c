@@ -67,7 +67,7 @@ void file_win32_disk_get_info(HANDLE handle, disk_t *dev, const int verbose)
     const unsigned int offsetProduct=descrip->ProductIdOffset;
     unsigned int lenVendor=0;
     unsigned int lenProduct=0;
-    if(verbose>0)
+    if(verbose>1)
     {
       log_info("IOCTL_STORAGE_QUERY_PROPERTY:\n");
       dump_log(&buffer, cbBytesReturned);
