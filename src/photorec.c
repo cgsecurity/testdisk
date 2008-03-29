@@ -146,6 +146,7 @@ extern const file_hint_t file_hint_gho;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
+extern const file_hint_t file_hint_iso;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
@@ -828,6 +829,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_gz   },
     { .enable=0, .file_hint=&file_hint_imb  },
     { .enable=0, .file_hint=&file_hint_indd  },
+    { .enable=0, .file_hint=&file_hint_iso  },
     { .enable=0, .file_hint=&file_hint_itunes  },
     { .enable=0, .file_hint=&file_hint_kdb  },
     { .enable=0, .file_hint=&file_hint_lnk  },
