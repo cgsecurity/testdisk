@@ -149,6 +149,7 @@ static const struct systypes i386_sys_types[] = {
   {P_16FATBD_LBAH,	"hid. FAT16 LBA"},
   {0x20,		"Willowsoft OFS1"},
   {0x24,		"NEC MS-DOS 3.x"},
+  {0x27,		"Windows RE(store)"},
   {0x38,		"Theos"},
   {0x3c,		"PMagic recovery"},
   {0x40,		"VENIX 80286"},
