@@ -62,9 +62,39 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   /* gzip, deflate */
   if(buffer[0]==0x1F && buffer[1]==0x8B && buffer[2]==0x08 && (buffer[3]&0xe0)==0)
   {
+    /* flags:
+    const unsigned int flags=buffer[3];
+    bit 0   FTEXT
+    bit 1   FHCRC
+    bit 2   FEXTRA
+    bit 3   FNAME
+    bit 4   FCOMMENT
+    bit 5   reserved
+    bit 6   reserved
+    bit 7   reserved
+    4,5,6,7: mtime
+    8: xfl/extra flags
+    9: OS
+    off=10;
+    if((flags&GZ_FEXTRA)!=0)
+    {
+      off=+buffer[10]|(buffer[11]<<8);
+    }
+    if((flags&GZ_FNAME)!=0)
+    {
+      for(;buffer[off]!='\0';off++);
+    }
+    if((flags&GZ_FCOMMENT)!=0)
+    {
+      for(;buffer[off]!='\0';off++);
+    }
+    if((flags&GZ_FHCRC)!=0)
+      off+=2;
+    */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_gz.extension;
     file_recovery_new->min_filesize=22;
+    file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
     return 1;
   }
   return 0;
