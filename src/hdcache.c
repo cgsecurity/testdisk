@@ -2,7 +2,7 @@
 
     File: hdcache.c
 
-    Copyright (C) 2005-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2005-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,12 +35,13 @@
 #include "log.h"
 
 #define CACHE_BUFFER_NBR 128
-#define CACHE_SIZE_MAX 64*512
+#define CACHE_DEFAULT_SIZE 64*512
 //#define DEBUG_CACHE 1
 
 struct cache_buffer_struct
 {
   unsigned char *buffer;
+  unsigned int	buffer_size;
   unsigned int	cache_size;
   uint64_t 	cache_offset;
   int		cache_status;
@@ -80,7 +81,6 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
   data->nbr_fnct_call++;
   {
     unsigned int i;
-    int res=0;
     /* Data is probably in the last two buffers */
     unsigned int cache_buffer_nbr=(data->cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR;
     for(i=0;i<CACHE_BUFFER_NBR;i++,cache_buffer_nbr=(cache_buffer_nbr+1)%CACHE_BUFFER_NBR)
@@ -90,7 +90,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 	  cache->cache_offset <= offset &&
 	  offset < cache->cache_offset +cache->cache_size)
       {
-	unsigned data_available=cache->cache_offset +cache->cache_size-offset;
+	const unsigned data_available=cache->cache_offset +cache->cache_size-offset;
 	/*
 	if(cache_buffer_nbr==data->cache_buffer_nbr)
 	  log_trace("hit\n");
@@ -101,16 +101,16 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 	log_trace("use cache %u count=%u, offset=%llu\n",i,
 	    cache->cache_size, cache->cache_offset);
 #endif
-	res=cache->cache_status;
 	if(count<=data_available)
 	{
 	  data->nbr_fnct_sect+=count;
 	  memcpy(nom_buffer, cache->buffer+offset-cache->cache_offset, count);
-	  return res;
+	  return cache->cache_status;
 	}
 	else
 	{
 	  int newres;
+	  int res=cache->cache_status;
 	  data->nbr_fnct_sect+=data_available;
 	  memcpy(nom_buffer, cache->buffer+offset-cache->cache_offset, data_available);
 	  newres=cache_read_aux(disk_car, count-data_available,
@@ -122,24 +122,10 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
       }
     }
   }
-  if(count>CACHE_SIZE_MAX)
-  {
-    unsigned int i;
-    int res=0;
-    for(i=0;i*CACHE_SIZE_MAX<count;i++)
-    {
-      int newres;
-      newres=cache_read_aux(disk_car, (count>(i+1)*CACHE_SIZE_MAX?CACHE_SIZE_MAX:count-i*CACHE_SIZE_MAX),
-	  (unsigned char*)nom_buffer+i*CACHE_SIZE_MAX, offset+i*CACHE_SIZE_MAX, can_read_more);
-      if(res>=0)
-	res=newres;
-    }
-    return res;
-  }
   {
     struct cache_buffer_struct *cache;
     int res;
-    unsigned int count_new=(can_read_more!=0 && count<data->cache_size_min && (offset+data->cache_size_min<data->disk_car->disk_real_size)?data->cache_size_min:count);
+    const unsigned int count_new=(can_read_more!=0 && count<data->cache_size_min && (offset+data->cache_size_min<data->disk_car->disk_real_size)?data->cache_size_min:count);
     data->nbr_fnct_sect+=count;
     data->nbr_read_call++;
     data->nbr_read_sect+=count_new;
@@ -148,13 +134,31 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 #endif
     data->cache_buffer_nbr=(data->cache_buffer_nbr+1)%CACHE_BUFFER_NBR;
     cache=&data->cache[data->cache_buffer_nbr];
+    if(cache->buffer_size < count_new)
+    {	/* Buffer is too small, drop it */
+      free(cache->buffer);
+      cache->buffer=NULL;
+    }
     if(cache->buffer==NULL)
-      cache->buffer=MALLOC(CACHE_SIZE_MAX);
+    {	/* Allocate buffer */
+      cache->buffer_size=(count_new<CACHE_DEFAULT_SIZE?CACHE_DEFAULT_SIZE:count_new);
+      cache->buffer=MALLOC(cache->buffer_size);
+    }
     res=data->disk_car->read(data->disk_car, count_new, cache->buffer, offset);
     cache->cache_size=count_new;
     cache->cache_offset=offset;
     cache->cache_status=res;
-    if(res<0)
+    if(res>=0)
+    {
+      memcpy(nom_buffer, cache->buffer, count);
+#ifdef DEBUG_CACHE
+      log_trace("cache_read offset=%llu size=%lu, update cache %u, res=%d\n",
+	  (long long unsigned)cache->cache_offset,
+	  (long unsigned)cache->cache_size,
+	  data->cache_buffer_nbr-1, res);
+#endif
+      return res;
+    }
     { /* read failure */
       unsigned int i;
       if(count<=disk_car->sector_size || disk_car->sector_size<=0)
@@ -168,22 +172,13 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
       res=-1;
       for(i=0;i*disk_car->sector_size<count;i++)
       {
-	int newres;
-	newres=cache_read_aux(disk_car, (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size), (unsigned char*)nom_buffer+i*disk_car->sector_size, offset+i*disk_car->sector_size,0);
+	const int newres=cache_read_aux(disk_car, (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size), (unsigned char*)nom_buffer+i*disk_car->sector_size, offset+i*disk_car->sector_size,0);
 	/* If one read succeed, considered that's ok, we are doing data recovery */
 	if(newres>=0)
 	  res=0;
       }
       return res;
     }
-    memcpy(nom_buffer, cache->buffer, count);
-#ifdef DEBUG_CACHE
-    log_trace("cache_read offset=%llu size=%lu, update cache %u, res=%d\n",
-	(long long unsigned)cache->cache_offset,
-	(long unsigned)cache->cache_size,
-	data->cache_buffer_nbr-1, res);
-#endif
-    return res;
   }
 }
 
