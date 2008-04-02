@@ -423,6 +423,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_jsp2[]		= "<%=";
   const char sign_php[]			= "<?php";
   const char sign_tex[]			= "\\begin{";
+  const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int tmp=0;
     for(i=0;i<10 && isdigit(buffer[i]);i++)
@@ -440,7 +441,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       return 1;
     }
   }
-  if(buffer_lower_size<buffer_size+16)
+  if(buffer_lower_size<buffer_size_test+16)
   {
     free(buffer_lower);
     buffer_lower=NULL;
@@ -448,10 +449,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   /* Don't malloc/free memory every time, small memory leak */
   if(buffer_lower==NULL)
   {
-    buffer_lower_size=buffer_size+16;
+    buffer_lower_size=buffer_size_test+16;
     buffer_lower=MALLOC(buffer_lower_size);
   }
-  i=UTF2Lat(buffer_lower,buffer,buffer_size);
+  i=UTF2Lat(buffer_lower,buffer,buffer_size_test);
   /* strncasecmp */
   if(memcmp(buffer_lower,header_bat,sizeof(header_bat))==0)
   {
@@ -608,10 +609,11 @@ Doc: \r (0xD)
             strstr(file_recovery->filename,".html")!=NULL) ||
           /* Text should not be found in JPEG */
           (file_recovery->file_stat->file_hint==&file_hint_jpg &&
-           td_memmem(buffer, buffer_size, "8BIM", 4)==NULL &&
-           td_memmem(buffer, buffer_size, "adobe", 5)==NULL) ||
+           td_memmem(buffer, buffer_size_test, "8BIM", 4)==NULL &&
+           td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL) ||
           /* Text should not be found in zip because of compression */
-          (file_recovery->file_stat->file_hint==&file_hint_zip && td_memmem(buffer, buffer_size, zip_header, 4)==NULL))
+          (file_recovery->file_stat->file_hint==&file_hint_zip &&
+	  td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
       {
         reset_file_recovery(file_recovery_new);
         file_recovery_new->data_check=&data_check_txt;
