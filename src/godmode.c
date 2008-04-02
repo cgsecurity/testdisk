@@ -67,7 +67,7 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
 static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
 #endif
 static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int align,const int verbose);
-static unsigned int tab_insert(uint64_t *tab, uint64_t offset, unsigned int tab_nbr);
+static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr);
 /* Optimization */
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, const int search_vista_part, char **current_cmd);
@@ -324,7 +324,7 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
 }
 #endif
 
-static unsigned int tab_insert(uint64_t *tab, uint64_t offset, unsigned int tab_nbr)
+static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr)
 {
   if(tab_nbr<MAX_SEARCH_LOCATION-1)
   {
