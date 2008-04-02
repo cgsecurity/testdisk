@@ -814,7 +814,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
   time_t previous_time;
   int ind_stop=0;
   unsigned int buffer_size;
-  unsigned int read_size;
+  const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
   static alloc_data_t list_file={
@@ -823,8 +823,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
   static list_cluster_t list_cluster= {
     .list = TD_LIST_HEAD_INIT(list_cluster.list)
   };
-#define READ_SIZE 256*512
-  read_size=((*blocksize)>8192?(*blocksize):8192);
+#define READ_SIZE 1024*512
   buffer_size=(*blocksize)+READ_SIZE;
   buffer_start=MALLOC(buffer_size);
   buffer_olddata=buffer_start;
