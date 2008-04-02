@@ -151,7 +151,7 @@ then
   then
         cd $compiledir/ntfsprogs-$VER_NTFSPROGS
 # --disable-default-device-io-ops is need for NT 4
-        CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops
+        CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
         cd $pwd_saved
   fi
 fi
@@ -230,6 +230,9 @@ then
                 ;;
           i386-pc-cygwin)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv
+                ;;
+          i386-mingw32)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
                 ;;
           *)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT

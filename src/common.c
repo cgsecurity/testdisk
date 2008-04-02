@@ -40,8 +40,10 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#ifdef HAVE_MINGW_IO_H
-#include <mingw/io.h>
+#ifdef __MINGW32__
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #endif
 #include "intrf.h"
 #include "log.h"

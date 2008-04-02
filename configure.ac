@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.10-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="February 2008"
+TESTDISKDATE="April 2008"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -148,19 +148,27 @@ AC_ARG_WITH(giconv-includes,
     AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_ENABLE([sudo], 
+AC_ARG_ENABLE([sudo],
     AS_HELP_STRING(--enable-sudo,enable use of sudo (default is NO)),
-    [	use_sudo="yes" ],
-    [	use_sudo="no" ])
+    [case "${enableval}" in
+       yes) use_sudo=true ;;
+       no)  use_sudo=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-sudo]) ;;
+     esac],
+     [use_sudo=false])
 
 AC_ARG_WITH(sudo-bin,
     AS_HELP_STRING(--with-sudo-bin=PROG,location of the sudo binary),
     [SUDO_BIN="${withval}"])
 
-AC_ARG_ENABLE([missing-uuid-ok], 
+AC_ARG_ENABLE([missing-uuid-ok],
     AS_HELP_STRING(--enable-missing-uuid-ok, force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)),
-    [	missing_uuid_ok="yes" ],
-    [	missing_uuid_ok="no" ])
+    [case "${enableval}" in
+       yes) missing_uuid_ok=true ;;
+       no)  missing_uuid_ok=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-missing_uuid_ok]) ;;
+     esac],
+     [missing_uuid_ok=false])
 
 use_icon=no
 
@@ -214,7 +222,7 @@ AC_SYS_LARGEFILE
 AC_HEADER_STDC
 #AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h stdint.h unistd.h])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h mingw/io.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
+AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h io.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
 
 #--------------------------------------------------------------------
 # Check for iconv support (for Unicode conversion).
@@ -457,7 +465,7 @@ fi
 AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h])
 AC_CHECK_FUNCS([uuidgen],,[AC_CHECK_LIB(uuid, uuid_generate, ,
       [
-      if test "${missing_uuid_ok}" = "yes";
+      if test "${missing_uuid_ok}" = "true";
       then
         AC_MSG_WARN(Missing function: uuid_generate in library libuuid)
       else
@@ -535,7 +543,7 @@ if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
 
-if test "$ac_cv_func_execv" = "yes" -a "$use_sudo" = "yes";
+if test "$ac_cv_func_execv" = "yes" -a "$use_sudo" = "true";
 then
     if test -z "$SUDO_BIN"; then
         AC_PATH_PROG([SUDO], [sudo], [AC_MSG_ERROR([sudo requested but not found])])
