@@ -1,5 +1,4 @@
 %define ver_progsreiserfs 0.3.1-rc8
-%define ver_ntfsprogs 2.0.0
 %define ver_libewf 20070512
 
 Summary:	Tool to check and undelete partition
@@ -13,7 +12,6 @@ License:	GPLv2+
 Group:		Applications/System
 Source0:	http://www.cgsecurity.org/%{name}-%{version}.tar.bz2
 Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
-Source2:	ntfsprogs-%ver_ntfsprogs.tar.gz
 Source3:	libewf-%ver_libewf.tar.gz
 Patch0:		progsreiserfs-journal.patch
 URL:		http://www.cgsecurity.org/wiki/TestDisk
@@ -22,6 +20,7 @@ BuildRequires:  e2fsprogs-devel
 BuildRequires:	libjpeg-devel
 BuildRequires:	zlib-devel
 BuildRequires:	openssl-devel
+BuildRequires:	ntfsprogs-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
@@ -59,11 +58,6 @@ cd progsreiserfs-%ver_progsreiserfs
 make
 )
 (
-cd ntfsprogs-%ver_ntfsprogs
-%configure
-make libs
-)
-(
 cd libewf-%ver_libewf
 %configure
 make lib
@@ -72,11 +66,9 @@ make lib
  --with-reiserfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libreiserfs/.libs/ 	\
  --with-reiserfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/include/ 	\
  --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/ 		\
- --with-ntfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/libntfs/.libs/ 			\
- --with-ntfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/ntfsprogs-%ver_ntfsprogs/include/			\
  --with-ewf-lib=${RPM_BUILD_DIR}/%{name}-%{version}/libewf-%{ver_libewf}/libewf/.libs/				\
  --with-ewf-includes=${RPM_BUILD_DIR}/%{name}-%{version}/libewf-%{ver_libewf}/include/
-make static
+make
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR="$RPM_BUILD_ROOT" install
