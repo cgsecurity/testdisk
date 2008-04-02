@@ -2,7 +2,7 @@
 
     File: partxbox.c
 
-    Copyright (C) 2005-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2005-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveh
 {
   unsigned char buffer[0x800];
   list_part_t *new_list_part=NULL;
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
     return new_list_part;
   {
@@ -106,7 +106,7 @@ list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveh
     struct xbox_partition *xboxlabel=(struct xbox_partition*)&buffer;
     if (memcmp(xboxlabel->magic,"BRFR",4))
     {
-      aff_buffer(BUFFER_ADD,"\nBad XBOX partition, invalid signature\n");
+      screen_buffer_add("\nBad XBOX partition, invalid signature\n");
       return NULL;
     }
     for(i=0;i<sizeof(offsets)/sizeof(uint64_t);i++)
@@ -391,7 +391,7 @@ static int check_part_xbox(disk_t *disk_car,const int verbose,partition_t *parti
     case PXBOX_FATX:
       ret=check_FATX(disk_car,partition,verbose);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid FATX signature\n"); }
+      { screen_buffer_add("Invalid FATX signature\n"); }
       break;
     default:
       if(verbose>0)

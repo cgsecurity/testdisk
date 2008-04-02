@@ -513,7 +513,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   {
     unsigned int menu=0;
     int command;
-    aff_buffer(BUFFER_RESET,"Q");
+    screen_buffer_to_log();
     if(rescan==1)
     {
 #ifdef HAVE_NCURSES
@@ -526,15 +526,15 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #endif
       log_info("\nfat1x_boot_sector\n");
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Boot sector\n");
+      screen_buffer_add("Boot sector\n");
       if(disk_car->read(disk_car,FAT1x_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset)!=0)
       {
-	aff_buffer(BUFFER_ADD,"fat1x_boot_sector: Can't read boot sector.\n");
+	screen_buffer_add("fat1x_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,FAT1x_BOOT_SECTOR_SIZE);
       }
       if(test_FAT(disk_car,(const struct fat_boot_sector *)buffer_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"OK\n");
+	screen_buffer_add("OK\n");
 	if(expert==0)
 	  options="DRCL";
 	else
@@ -542,12 +542,12 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       }
       else
       {
-	aff_buffer(BUFFER_ADD,"Bad\n");
+	screen_buffer_add("Bad\n");
 	options="DRC";
       }
-      aff_buffer(BUFFER_ADD,"\n");
-      aff_buffer(BUFFER_ADD,"A valid FAT Boot sector must be present in order to access\n");
-      aff_buffer(BUFFER_ADD,"any data; even if the partition is not bootable.\n");
+      screen_buffer_add("\n");
+      screen_buffer_add("A valid FAT Boot sector must be present in order to access\n");
+      screen_buffer_add("any data; even if the partition is not bootable.\n");
       rescan=0;
     }
     screen_buffer_to_log();
@@ -674,7 +674,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   {
     unsigned int menu=0;
     int command;
-    aff_buffer(BUFFER_RESET,"Q");
+    screen_buffer_to_log();
     if(rescan==1)
     {
       int opt_over=0;
@@ -691,15 +691,15 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #endif
       log_info("\nfat32_boot_sector\n");
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Boot sector\n");
+      screen_buffer_add("Boot sector\n");
       if(disk_car->read(disk_car,3*disk_car->sector_size, buffer_bs, partition->part_offset)!=0)
       {
-	aff_buffer(BUFFER_ADD,"fat32_boot_sector: Can't read boot sector.\n");
+	screen_buffer_add("fat32_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,3*disk_car->sector_size);
       }
       if(test_FAT(disk_car,(struct fat_boot_sector *)buffer_bs,partition,verbose,0)==0)
       {
-        aff_buffer(BUFFER_ADD,"OK\n");
+        screen_buffer_add("OK\n");
         if(partition->upart_type==UP_FAT32)
         {
           opt_O=1;
@@ -707,22 +707,22 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
         }
         else
         {
-          aff_buffer(BUFFER_ADD,"Warning: valid FAT bootsector but not a FAT32 one!");
+          screen_buffer_add("Warning: valid FAT bootsector but not a FAT32 one!");
         }
       }
       else
       {
-        aff_buffer(BUFFER_ADD,"Bad\n");
+        screen_buffer_add("Bad\n");
       }
-      aff_buffer(BUFFER_ADD,"\nBackup boot sector\n");
+      screen_buffer_add("\nBackup boot sector\n");
       if(disk_car->read(disk_car,3*disk_car->sector_size, buffer_backup_bs, partition->part_offset+6*disk_car->sector_size)!=0)
       {
-	aff_buffer(BUFFER_ADD,"fat32_boot_sector: Can't read backup boot sector.\n");
+	screen_buffer_add("fat32_boot_sector: Can't read backup boot sector.\n");
 	memset(buffer_backup_bs,0,3*disk_car->sector_size);
       }
       if(test_FAT(disk_car,(struct fat_boot_sector *)buffer_backup_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"OK\n");
+	screen_buffer_add("OK\n");
 	if(partition->upart_type==UP_FAT32)
 	{
 	  opt_B=1;
@@ -730,32 +730,32 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	}
 	else
 	{
-	  aff_buffer(BUFFER_ADD,"Warning: valid FAT backup bootsector but not a FAT32 one!");
+	  screen_buffer_add("Warning: valid FAT backup bootsector but not a FAT32 one!");
 	}
       }
       else
       {
-        aff_buffer(BUFFER_ADD,"Bad\n");
+        screen_buffer_add("Bad\n");
       }
-      aff_buffer(BUFFER_ADD,"\n");
+      screen_buffer_add("\n");
       if((memcmp(buffer_bs,buffer_backup_bs,0x3E8)==0)&&(memcmp(buffer_bs+0x3F0,buffer_backup_bs+0x3F0,0x600-0x3F0))==0)
       {
-	aff_buffer(BUFFER_ADD,"Sectors are identical.\n");
+	screen_buffer_add("Sectors are identical.\n");
 	opt_over=0;
       }
       else
       {
 	if(memcmp(buffer_bs,buffer_backup_bs,0x200)!=0)
-	  aff_buffer(BUFFER_ADD,"First sectors (Boot code and partition information) are not identical.\n");
+	  screen_buffer_add("First sectors (Boot code and partition information) are not identical.\n");
 	if((memcmp(buffer_bs+disk_car->sector_size, buffer_backup_bs+disk_car->sector_size,0x1E8)!=0)||
 	    (memcmp(buffer_bs+disk_car->sector_size+0x1F0, buffer_backup_bs+disk_car->sector_size+0x1F0,0x200-0x1F0)!=0))
-	  aff_buffer(BUFFER_ADD,"Second sectors (cluster information) are not identical.\n");
+	  screen_buffer_add("Second sectors (cluster information) are not identical.\n");
 	if(memcmp(buffer_bs+2*disk_car->sector_size, buffer_backup_bs+2*disk_car->sector_size,0x200)!=0)
-	  aff_buffer(BUFFER_ADD,"Third sectors (Second part of boot code) are not identical.\n");
+	  screen_buffer_add("Third sectors (Second part of boot code) are not identical.\n");
       }
-      aff_buffer(BUFFER_ADD,"\n");
-      aff_buffer(BUFFER_ADD,"A valid FAT Boot sector must be present in order to access\n");
-      aff_buffer(BUFFER_ADD,"any data; even if the partition is not bootable.\n");
+      screen_buffer_add("\n");
+      screen_buffer_add("A valid FAT Boot sector must be present in order to access\n");
+      screen_buffer_add("any data; even if the partition is not bootable.\n");
       if(opt_over!=0)
       {
 	if(opt_B!=0 && opt_O!=0)
@@ -942,7 +942,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
   {
     unsigned int menu=0;
     int command;
-    aff_buffer(BUFFER_RESET,"Q");
+    screen_buffer_to_log();
     if(rescan==1)
     {
       int identical_sectors=0;
@@ -958,52 +958,52 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 #endif
       log_info("\nntfs_boot_sector\n");
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Boot sector\n");
+      screen_buffer_add("Boot sector\n");
       if(disk_car->read(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset)!=0)
       {
-	aff_buffer(BUFFER_ADD,"ntfs_boot_sector: Can't read boot sector.\n");
+	screen_buffer_add("ntfs_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,NTFS_BOOT_SECTOR_SIZE);
       }
       if(test_NTFS(disk_car,(struct ntfs_boot_sector*)buffer_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"Status: OK\n");
+	screen_buffer_add("Status: OK\n");
 	opt_O=1;
       }
       else
       {
-	aff_buffer(BUFFER_ADD,"Status: Bad\n");
+	screen_buffer_add("Status: Bad\n");
       }
-      aff_buffer(BUFFER_ADD,"\nBackup boot sector\n");
+      screen_buffer_add("\nBackup boot sector\n");
       if(disk_car->read(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
       {
-	aff_buffer(BUFFER_ADD,"ntfs_boot_sector: Can't read backup boot sector.\n");
+	screen_buffer_add("ntfs_boot_sector: Can't read backup boot sector.\n");
 	memset(buffer_backup_bs,0,NTFS_BOOT_SECTOR_SIZE);
       }
       if(test_NTFS(disk_car,(struct ntfs_boot_sector*)buffer_backup_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"Status: OK\n");
+	screen_buffer_add("Status: OK\n");
 	opt_B=1;
       }
       else
       {
-	aff_buffer(BUFFER_ADD,"Status: Bad\n");
+	screen_buffer_add("Status: Bad\n");
       }
-      aff_buffer(BUFFER_ADD,"\n");
+      screen_buffer_add("\n");
       if(memcmp(buffer_bs,buffer_backup_bs,NTFS_BOOT_SECTOR_SIZE)==0)
       {
 	log_ntfs_info((const struct ntfs_boot_sector *)buffer_bs);
-	aff_buffer(BUFFER_ADD,"Sectors are identical.\n");
+	screen_buffer_add("Sectors are identical.\n");
 	identical_sectors=1;
       }
       else
       {
 	log_ntfs2_info((const struct ntfs_boot_sector *)buffer_bs, (const struct ntfs_boot_sector *)buffer_backup_bs);
-	aff_buffer(BUFFER_ADD,"Sectors are not identical.\n");
+	screen_buffer_add("Sectors are not identical.\n");
 	identical_sectors=0;
       }
-      aff_buffer(BUFFER_ADD,"\n");
-      aff_buffer(BUFFER_ADD,"A valid NTFS Boot sector must be present in order to access\n");
-      aff_buffer(BUFFER_ADD,"any data; even if the partition is not bootable.\n");
+      screen_buffer_add("\n");
+      screen_buffer_add("A valid NTFS Boot sector must be present in order to access\n");
+      screen_buffer_add("any data; even if the partition is not bootable.\n");
       if(opt_B!=0 && opt_O!=0)
       {
 //      options="DRMLU";
@@ -1188,7 +1188,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
   {
     unsigned int menu=0;
     int command;
-    aff_buffer(BUFFER_RESET,"Q");
+    screen_buffer_to_log();
     if(rescan==1)
     {
       int opt_over=0;
@@ -1205,55 +1205,55 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 #endif
       log_info("\nHFS_HFSP_boot_sector\n");
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Volum header\n");
+      screen_buffer_add("Volume header\n");
       if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+0x400)!=0)
       {
-	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ volume header.\n");
+	screen_buffer_add("Bad: can't read HFS/HFS+ volume header.\n");
 	memset(buffer_bs,0,HFSP_BOOT_SECTOR_SIZE);
       }
       else if(test_HFSP(disk_car,(const struct hfsp_vh*)buffer_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"HFS+ OK\n");
+	screen_buffer_add("HFS+ OK\n");
 	opt_O=1;
 	opt_over=1;
       }
       else if(test_HFS(disk_car,(const hfs_mdb_t*)buffer_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"HFS Ok\n");
+	screen_buffer_add("HFS Ok\n");
 	opt_O=1;
 	opt_over=1;
       }
       else
-	aff_buffer(BUFFER_ADD,"Bad\n");
-      aff_buffer(BUFFER_ADD,"\nBackup volume header\n");
+	screen_buffer_add("Bad\n");
+      screen_buffer_add("\nBackup volume header\n");
       if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+partition->part_size-0x400)!=0)
       {
-	aff_buffer(BUFFER_ADD,"Bad: can't read HFS/HFS+ backup volume header.\n");
+	screen_buffer_add("Bad: can't read HFS/HFS+ backup volume header.\n");
 	memset(buffer_backup_bs,0,HFSP_BOOT_SECTOR_SIZE);
       }
       else if(test_HFSP(disk_car,(const struct hfsp_vh*)buffer_backup_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"HFS+ OK\n");
+	screen_buffer_add("HFS+ OK\n");
 	opt_B=1;
 	opt_over=1;
       }
       else if(test_HFS(disk_car,(const hfs_mdb_t*)buffer_backup_bs,partition,verbose,0)==0)
       {
-	aff_buffer(BUFFER_ADD,"HFS Ok\n");
+	screen_buffer_add("HFS Ok\n");
 	opt_B=1;
 	opt_over=1;
       }
       else
-	aff_buffer(BUFFER_ADD,"Bad\n");
-      aff_buffer(BUFFER_ADD,"\n");
+	screen_buffer_add("Bad\n");
+      screen_buffer_add("\n");
       if(memcmp(buffer_bs,buffer_backup_bs,HFSP_BOOT_SECTOR_SIZE)==0)
       {
-	aff_buffer(BUFFER_ADD,"Sectors are identical.\n");
+	screen_buffer_add("Sectors are identical.\n");
 	opt_over=0;
       }
       else
       {
-	aff_buffer(BUFFER_ADD,"Sectors are not identical.\n");
+	screen_buffer_add("Sectors are not identical.\n");
       }
       if(opt_over!=0)
       {

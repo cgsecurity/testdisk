@@ -91,7 +91,7 @@ void interface_list(disk_t *disk_car, const int verbose, const int saveheader, c
   printf("%s\n",disk_car->description(disk_car));
   printf(msg_PART_HEADER_LONG);
   list_part=disk_car->arch->read_part(disk_car,verbose,saveheader);
-  aff_buffer(BUFFER_WRITE,"Q");
+  screen_buffer_to_stdout();
   if(backup>0)
   {
     partition_save(disk_car,list_part,verbose);
@@ -707,7 +707,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
     { 'B', "Backup","Save current partition list to backup.log file and proceed"},
     { 0, NULL, NULL }
   };
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   /* ncurses interface */
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
@@ -782,7 +782,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
   };
   int command;
   log_info("\ninterface_write()\n");
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -799,7 +799,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
   command='Q';
   if(list_part==NULL)
   {
-    aff_buffer(BUFFER_ADD," \nNo partition found or selected for recovery");
+    screen_buffer_add(" \nNo partition found or selected for recovery");
     screen_buffer_to_log();
     if(*current_cmd!=NULL)
     {
@@ -858,7 +858,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
       if(disk_car->arch->write_part!=NULL)
 	strcat(options,"W");
       else
-	aff_buffer(BUFFER_ADD," \nWrite isn't available because the partition table type \"%s\" has been selected.",
+	screen_buffer_add(" \nWrite isn't available because the partition table type \"%s\" has been selected.",
 	    disk_car->arch->part_name);
       if(can_ask_minmax_ext)
 	strcat(options,"E");
@@ -1494,7 +1494,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
     { 'Q',"Quit","Return to Advanced menu"},
     { 0, NULL, NULL }
   };
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -1518,7 +1518,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
       old_part=partition;
     }
     if(partition->blocksize!=0)
-      aff_buffer(BUFFER_ADD,"superblock %lu, blocksize=%u\n",
+      screen_buffer_add("superblock %lu, blocksize=%u\n",
           (long unsigned)(partition->sb_offset/partition->blocksize),
           partition->blocksize);
   }

@@ -66,7 +66,7 @@
 /* #define DEBUG */
 /* #define DEBUG_GET_NEXT_SECTOR */
 /* #define DEBUG_BF */
-#define READ_SIZE 256*512
+#define READ_SIZE 1024*512
 #define INTER_MENU_DISK 10
 
 extern const file_hint_t file_hint_tar;
@@ -823,7 +823,6 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
   static list_cluster_t list_cluster= {
     .list = TD_LIST_HEAD_INIT(list_cluster.list)
   };
-#define READ_SIZE 1024*512
   buffer_size=(*blocksize)+READ_SIZE;
   buffer_start=MALLOC(buffer_size);
   buffer_olddata=buffer_start;
@@ -1188,7 +1187,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   unsigned int pass;
   unsigned int blocksize_is_known=0;
   photorec_status_t status;
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   log_info("\nAnalyse\n");
   log_partition(disk_car,partition);
   if(blocksize==0 || td_list_empty(&list_search_space->list))

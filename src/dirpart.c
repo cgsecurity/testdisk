@@ -2,7 +2,7 @@
 
     File: dirpart.c
 
-    Copyright (C) 1998-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -110,14 +110,14 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   switch(res)
   {
     case -2:
-      aff_buffer(BUFFER_RESET,"Q");
+      screen_buffer_to_log();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
       aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Support for this filesystem hasn't been enable during compilation.\n");
+      screen_buffer_add("Support for this filesystem hasn't been enable during compilation.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
       {
@@ -127,14 +127,14 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
       }
       break;
     case -1:
-      aff_buffer(BUFFER_RESET,"Q");
+      screen_buffer_to_log();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
       aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_partition(disk_car,partition);
-      aff_buffer(BUFFER_ADD,"Can't open filesystem. Filesystem seems damaged.\n");
+      screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
       {

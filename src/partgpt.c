@@ -171,7 +171,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   uint64_t gpt_entries_offset;
 
   gpt=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   if(disk_car->read(disk_car, disk_car->sector_size, gpt, disk_car->sector_size)!=0)
   {
     free(gpt);
@@ -179,7 +179,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   }
   if(memcmp(gpt->hdr_sig, GPT_HDR_SIG, 8)!=0)
   {
-    aff_buffer(BUFFER_ADD,"Bad GPT partition, invalid signature.\n");
+    screen_buffer_add("Bad GPT partition, invalid signature.\n");
     free(gpt);
     return NULL;
   }
@@ -197,7 +197,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   /* Check header size */
   if(le32(gpt->hdr_size)<92 || le32(gpt->hdr_size) > disk_car->sector_size)
   {
-    aff_buffer(BUFFER_ADD,"GPT: invalid header size.\n");
+    screen_buffer_add("GPT: invalid header size.\n");
     free(gpt);
     return NULL;
   }
@@ -209,7 +209,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     crc=get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF;
     if(crc!=origcrc)
     {
-      aff_buffer(BUFFER_ADD,"Bad GPT partition, invalid header checksum.\n");
+      screen_buffer_add("Bad GPT partition, invalid header checksum.\n");
       free(gpt);
       return NULL;
     }
@@ -217,27 +217,27 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   }
   if(le64(gpt->hdr_lba_self)!=1)
   {
-    aff_buffer(BUFFER_ADD,"Bad GPT partition, invalid LBA self location.\n");
+    screen_buffer_add("Bad GPT partition, invalid LBA self location.\n");
     free(gpt);
     return NULL;
   }
   if(le64(gpt->hdr_lba_start) >= le64(gpt->hdr_lba_end))
   {
-    aff_buffer(BUFFER_ADD,"Bad GPT partition, invalid LBA start/end location.\n");
+    screen_buffer_add("Bad GPT partition, invalid LBA start/end location.\n");
     free(gpt);
     return NULL;
   }
   if(le32(gpt->hdr_revision)!=GPT_HDR_REVISION)
   {
-    aff_buffer(BUFFER_ADD,"GPT: Warning - not revision 1.0\n");
+    screen_buffer_add("GPT: Warning - not revision 1.0\n");
   }
   if(le32(gpt->__reserved)!=0)
   {
-    aff_buffer(BUFFER_ADD,"GPT: Warning - __reserved!=0\n");
+    screen_buffer_add("GPT: Warning - __reserved!=0\n");
   }
   if(le32(gpt->hdr_entries)==0 || le32(gpt->hdr_entries)>4096)
   {
-    aff_buffer(BUFFER_ADD,"GPT: invalid number (%u) of partition entries.\n",
+    screen_buffer_add("GPT: invalid number (%u) of partition entries.\n",
         (unsigned int)le32(gpt->hdr_entries));
     free(gpt);
     return NULL;
@@ -245,7 +245,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   /* le32(gpt->hdr_entsz)==128 */
   if(le32(gpt->hdr_entsz)%8!=0 || le32(gpt->hdr_entsz)<128 || le32(gpt->hdr_entsz)>4096)
   {
-    aff_buffer(BUFFER_ADD,"GPT: invalid partition entry size.\n");
+    screen_buffer_add("GPT: invalid partition entry size.\n");
     free(gpt);
     return NULL;
   }
@@ -253,7 +253,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   gpt_entries_size=le32(gpt->hdr_entries) * le32(gpt->hdr_entsz);
   if(gpt_entries_size<16384)
   {
-    aff_buffer(BUFFER_ADD,"GPT: A minimum of 16,384 bytes of space must be reserved for the GUID Partition Entry array.\n");
+    screen_buffer_add("GPT: A minimum of 16,384 bytes of space must be reserved for the GUID Partition Entry array.\n");
     free(gpt);
     return NULL;
   }
@@ -261,7 +261,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   if((uint64_t) le64(gpt->hdr_lba_self) + le32(gpt->hdr_size) - 1 >= gpt_entries_offset ||
       gpt_entries_offset >= le64(gpt->hdr_lba_start) * disk_car->sector_size)
   {
-    aff_buffer(BUFFER_ADD, "GPT: The primary GUID Partition Entry array must be located after the primary GUID Partition Table Header and end before the FirstUsableLBA.\n");
+    screen_buffer_add( "GPT: The primary GUID Partition Entry array must be located after the primary GUID Partition Table Header and end before the FirstUsableLBA.\n");
     free(gpt);
     return NULL;
   }
@@ -278,7 +278,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     crc=get_crc32(gpt_entries, gpt_entries_size, 0xFFFFFFFF)^0xFFFFFFFF;
     if(crc!=le32(gpt->hdr_crc_table))
     {
-      aff_buffer(BUFFER_ADD,"Bad GPT partition entries, invalid checksum.\n");
+      screen_buffer_add("Bad GPT partition entries, invalid checksum.\n");
       free(gpt_entries);
       free(gpt);
       return NULL;
@@ -791,7 +791,7 @@ static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partit
       ret=check_xfs(disk_car,partition,verbose);
     if(ret!=0)
     {
-      aff_buffer(BUFFER_ADD,"No FAT, NTFS, EXT2, JFS, Reiser, cramfs or XFS marker\n"); 
+      screen_buffer_add("No FAT, NTFS, EXT2, JFS, Reiser, cramfs or XFS marker\n"); 
     }
   }
   /* TODO: complete me */

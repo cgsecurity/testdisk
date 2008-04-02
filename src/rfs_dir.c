@@ -419,7 +419,7 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
   ls->dir_list=NULL;
   ls->current_file=NULL;
   if (!(dir = reiserfs_dir_open(ls->current_fs, dir_data->current_directory))) {
-    aff_buffer(BUFFER_ADD,"Couldn't open dir\n");
+    screen_buffer_add("Couldn't open dir\n");
     log_error("Couldn't open dir\n");
     return NULL;
   }

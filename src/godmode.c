@@ -407,7 +407,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     wattroff(stdscr, A_REVERSE);
   }
 #endif
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   log_info("\nsearch_part()\n");
   log_info("%s\n",disk_car->description(disk_car));
   if(disk_car->arch==&arch_gpt)
@@ -666,7 +666,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           aff_part_buffer(AFF_PART_BASE, disk_car,partition);
           if(interface)
           {
-            aff_buffer(BUFFER_SHOW,"Q");
+	    screen_buffer_to_interface();
           }
           if(disk_car->arch->is_part_known(partition)!=0 &&
               partition->part_size>1 &&

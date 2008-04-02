@@ -2,7 +2,7 @@
 
     File: partnone.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -196,7 +196,7 @@ list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveh
   partition->part_size=disk_car->disk_size;
   partition->order=NO_ORDER;
   partition->status=STATUS_PRIM;
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   disk_car->arch->check_part(disk_car,verbose,partition,saveheader);
   aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
@@ -297,7 +297,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_NTFS:
       ret=check_NTFS(disk_car,partition,verbose,0);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid NTFS boot\n"); }
+      { screen_buffer_add("Invalid NTFS boot\n"); }
       break;
     case UP_OPENBSD:
       ret=check_BSD(disk_car,partition,verbose,OPENBSD_MAXPARTITIONS);
@@ -309,7 +309,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_MD1:
       ret=check_MD(disk_car,partition,verbose);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid RAID superblock\n"); }
+      { screen_buffer_add("Invalid RAID superblock\n"); }
       break;
     case UP_RFS:
     case UP_RFS2:

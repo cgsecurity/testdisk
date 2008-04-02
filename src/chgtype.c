@@ -2,7 +2,7 @@
 
     File: chgtype.c
 
-    Copyright (C) 1998-2005 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -91,14 +91,14 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
   free(new_partition);
 
   /* Display the list of partition type in 3 columns */
-  aff_buffer(BUFFER_RESET,"Q");
-  aff_buffer(BUFFER_ADD,"List of partition type\n");
+  screen_buffer_to_log();
+  screen_buffer_add("List of partition type\n");
   for (i = 2; i >= 0; i--)
     last[2 - i] = done += (size + i - done) / (i + 1);
   i = done = 0;
   while (done < last[0])
   {
-    aff_buffer(BUFFER_ADD, "%02x %-20s%c",  part_name[next].index, part_name[next].name,(i==2 ? '\n' : ' '));
+    screen_buffer_add( "%02x %-20s%c",  part_name[next].index, part_name[next].name,(i==2 ? '\n' : ' '));
     next = last[i++] + done;
     if (i > 2 || next >= last[i]) {
       i = 0;

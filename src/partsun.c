@@ -2,7 +2,7 @@
 
     File: partsun.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -143,17 +143,17 @@ list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int savehe
   sun_partition *sunlabel;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=MALLOC(disk_car->sector_size);
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   sunlabel=(sun_partition*)buffer;
   if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
   {
-    aff_buffer(BUFFER_ADD, msg_PART_RD_ERR);
+    screen_buffer_add( msg_PART_RD_ERR);
     free(buffer);
     return NULL;
   }
   if (be16(sunlabel->magic) != SUN_LABEL_MAGIC)
   {
-    aff_buffer(BUFFER_ADD,"Bad SUN partition\n");
+    screen_buffer_add("Bad SUN partition\n");
     free(buffer);
     return NULL;
   }
@@ -474,7 +474,7 @@ static int check_part_sun(disk_t *disk_car,const int verbose,partition_t *partit
 	ret=check_xfs(disk_car,partition,verbose);
       }
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
       break;
 
     case PSUN_LINSWAP:

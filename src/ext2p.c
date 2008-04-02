@@ -2,7 +2,7 @@
 
     File: ext2p.c
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partitio
   {
     case -2:
     case -1:
-      aff_buffer(BUFFER_RESET,"Q");
+      screen_buffer_to_log();
       {
 #ifdef HAVE_NCURSES
 	WINDOW *window;
@@ -68,7 +68,7 @@ unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
 	log_partition(disk_car,partition);
-	aff_buffer(BUFFER_ADD,"Can't open filesystem. Filesystem seems damaged.\n");
+	screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
 	screen_buffer_to_log();
 #ifdef HAVE_NCURSES
 	screen_buffer_display(window,"",NULL);

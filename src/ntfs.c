@@ -142,17 +142,17 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
   }
   if(le16(ntfs_header->heads)!=disk_car->CHS.head+1)
   {
-    aff_buffer(BUFFER_ADD,"Warning: Incorrect number of heads/cylinder %u (NTFS) != %u (HD)\n",le16(ntfs_header->heads),disk_car->CHS.head+1);
+    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (NTFS) != %u (HD)\n",le16(ntfs_header->heads),disk_car->CHS.head+1);
     log_warning("heads/cylinder %u (NTFS) != %u (HD)\n",le16(ntfs_header->heads),disk_car->CHS.head+1);
   }
   if(le16(ntfs_header->secs_track)!=disk_car->CHS.sector)
   {
-    aff_buffer(BUFFER_ADD,"Warning: Incorrect number of sectors per track %u (NTFS) != %u (HD)\n",le16(ntfs_header->secs_track),disk_car->CHS.sector);
+    screen_buffer_add("Warning: Incorrect number of sectors per track %u (NTFS) != %u (HD)\n",le16(ntfs_header->secs_track),disk_car->CHS.sector);
     log_warning("sect/track %u (NTFS) != %u (HD)\n",le16(ntfs_header->secs_track),disk_car->CHS.sector);
   }
   if(ntfs_sector_size(ntfs_header)!=disk_car->sector_size)
   {
-    aff_buffer(BUFFER_ADD,"Warning: Incorrect number of bytes per sector %u (NTFS) != %u (HD)\n",ntfs_sector_size(ntfs_header),disk_car->sector_size);
+    screen_buffer_add("Warning: Incorrect number of bytes per sector %u (NTFS) != %u (HD)\n",ntfs_sector_size(ntfs_header),disk_car->sector_size);
     log_warning("Warning: Incorrect number of bytes per sector %u (NTFS) != %u (HD)\n",ntfs_sector_size(ntfs_header),disk_car->sector_size);
   }
 
@@ -163,7 +163,7 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
 
     if(part_size*ntfs_sector_size(ntfs_header)>partition->part_size)
     {
-      aff_buffer(BUFFER_ADD,"Error: size boot_sector %lu > partition %lu\n",(long unsigned)part_size,(long unsigned)(partition->part_size/disk_car->sector_size));
+      screen_buffer_add("Error: size boot_sector %lu > partition %lu\n",(long unsigned)part_size,(long unsigned)(partition->part_size/disk_car->sector_size));
       log_error("Error: size boot_sector %lu > partition %lu\n",(long unsigned)part_size,(long unsigned)(partition->part_size/disk_car->sector_size));
       return 1;
     }
@@ -186,9 +186,9 @@ int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partit
     return 2;
   if(NTFS_GETU16(mft_record + 0x14)<42)		/* sizeof(MFT_RECORD)>=42 */
     return 2;
-  /*	aff_buffer(BUFFER_ADD,"FILE\n"); */
-  /*	aff_buffer(BUFFER_ADD,"seq nbr %lu ",NTFS_GETU16(mft_record+0x10)); */
-  /*	aff_buffer(BUFFER_ADD,"main MFT record %lu ",NTFS_GETU64(mft_record+0x20)); */
+  /*	screen_buffer_add("FILE\n"); */
+  /*	screen_buffer_add("seq nbr %lu ",NTFS_GETU16(mft_record+0x10)); */
+  /*	screen_buffer_add("main MFT record %lu ",NTFS_GETU64(mft_record+0x20)); */
   /* location of first attribute */
   attr_record= mft_record + NTFS_GETU16(mft_record + 0x14);
   return ntfs_get_attr_aux(attr_record, my_type, partition, end, verbose, dump_ind, file_name_to_find);
@@ -270,7 +270,7 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
               {
                 char file_name[256+1];	/* used size is file_name_length+1 */
                 unsigned int i;
-                /*		aff_buffer(BUFFER_ADD,"MFT record nbr %lu ",NTFS_GETU64(file_name_attr)); */
+                /*		screen_buffer_add("MFT record nbr %lu ",NTFS_GETU64(file_name_attr)); */
                 for(name_it=file_name_attr+0x42,i=0;i<file_name_length; name_it+=2,i++)
                   file_name[i]=*name_it;
                 file_name[i]='\0';
@@ -288,7 +288,7 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
                       return 2;
                   }
                 } else
-                  aff_buffer(BUFFER_ADD,"%s\n",file_name);
+                  screen_buffer_add("%s\n",file_name);
               }
             }
             break;

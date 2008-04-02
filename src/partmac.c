@@ -2,7 +2,7 @@
 
     File: partmac.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -120,14 +120,14 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
   list_part_t *new_list_part=NULL;
   unsigned int i;
   unsigned int limit=1;
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
     return NULL;
   {
     mac_Block0 *maclabel=(mac_Block0*)&buffer;
     if (be16(maclabel->sbSig) != BLOCK0_SIGNATURE)
     {
-      aff_buffer(BUFFER_ADD,"Bad MAC partition, invalid block0 signature\n");
+      screen_buffer_add("Bad MAC partition, invalid block0 signature\n");
       /* continue, even if the first sector have been overwritten by an Intel
 	 partition, the following sectors may be intact */
     }
@@ -139,7 +139,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
       return new_list_part;
     if(be16(dpme->dpme_signature) != DPME_SIGNATURE)
     {
-      aff_buffer(BUFFER_ADD,"read_part_mac: bad DPME signature\n");
+      screen_buffer_add("read_part_mac: bad DPME signature\n");
       return new_list_part;
     }
     else
@@ -520,7 +520,7 @@ static int check_part_mac(disk_t *disk_car,const int verbose,partition_t *partit
 	ret=check_xfs(disk_car,partition,verbose);
       }
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
       break;
     case PMAC_HFS:
       ret=check_HFSP(disk_car,partition,verbose);

@@ -284,7 +284,7 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
   buffer=MALLOC(3*disk_car->sector_size);
   if(disk_car->read(disk_car,3*disk_car->sector_size, buffer, partition->part_offset)!=0)
   {
-    aff_buffer(BUFFER_ADD,"check_FAT: can't read FAT boot sector\n");
+    screen_buffer_add("check_FAT: can't read FAT boot sector\n");
     log_error("check_FAT: can't read FAT boot sector\n");
     free(buffer);
     return 1;
@@ -301,7 +301,7 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
     return 1;
   }
   set_FAT_info(disk_car,(const struct fat_boot_sector *)buffer,partition,verbose);
-  /*  aff_buffer(BUFFER_ADD,"Ok\n"); */
+  /*  screen_buffer_add("Ok\n"); */
   free(buffer);
   return 0;
 }
@@ -541,13 +541,13 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
 #endif
   if(!((fat_header->ignored[0]==0xeb && fat_header->ignored[2]==0x90)||fat_header->ignored[0]==0xe9))
   {
-    aff_buffer(BUFFER_ADD,msg_CHKFAT_BAD_JUMP);
+    screen_buffer_add(msg_CHKFAT_BAD_JUMP);
     log_error(msg_CHKFAT_BAD_JUMP);
     return 1;
   }
   if(fat_sector_size(fat_header)!=disk_car->sector_size)
   {
-    aff_buffer(BUFFER_ADD,"check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
+    screen_buffer_add("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
     log_error("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
     return 1;
   }
@@ -563,32 +563,32 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     case 128:
       break;
     default:
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SECT_CLUSTER);
+      screen_buffer_add(msg_CHKFAT_SECT_CLUSTER);
       log_error(msg_CHKFAT_SECT_CLUSTER);
       return 1;
   }
   switch(fat_header->fats)
   {
     case 1:
-      aff_buffer(BUFFER_ADD,"check_FAT: Unusual, only one FAT\n");
+      screen_buffer_add("check_FAT: Unusual, only one FAT\n");
       log_warning("check_FAT: Unusual, only one FAT\n");
       break;
     case 2:
       break;
     default:
-      aff_buffer(BUFFER_ADD,"check_FAT: Bad number %u of FAT\n", fat_header->fats);
+      screen_buffer_add("check_FAT: Bad number %u of FAT\n", fat_header->fats);
       log_error("check_FAT: Bad number %u of FAT\n", fat_header->fats);
       return 1;
   }
   if(fat_header->media!=0xF0 && fat_header->media<0xF8)
   {	/* Legal values are 0xF0, 0xF8-0xFF */
-    aff_buffer(BUFFER_ADD,"check_FAT: Bad media descriptor (0x%2x!=0xf8)\n",fat_header->media);
+    screen_buffer_add("check_FAT: Bad media descriptor (0x%2x!=0xf8)\n",fat_header->media);
     log_error("check_FAT: Bad media descriptor (0x%2x!=0xf8)\n",fat_header->media);
     return 1;
   }
   if(fat_header->media!=0xF8)
   { /* the only value I have ever seen is 0xF8 */
-    aff_buffer(BUFFER_ADD,"check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
+    screen_buffer_add("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
     log_warning("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
   }
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
@@ -614,23 +614,23 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     }
     if(sectors(fat_header)==0)
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SIZE);
+      screen_buffer_add(msg_CHKFAT_SIZE);
       log_error(msg_CHKFAT_SIZE);
     }
     if(le16(fat_header->reserved)!=1)
     {
-      aff_buffer(BUFFER_ADD,"check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
+      screen_buffer_add("check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
       log_warning("check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
     }
     if((get_dir_entries(fat_header)==0)||(get_dir_entries(fat_header)%16!=0))
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_ENTRY);
+      screen_buffer_add(msg_CHKFAT_ENTRY);
       log_error(msg_CHKFAT_ENTRY);
       return 1;
     }
     if((le16(fat_header->fat_length)>256)||(le16(fat_header->fat_length)==0))
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SECTPFAT);
+      screen_buffer_add(msg_CHKFAT_SECTPFAT);
       log_error(msg_CHKFAT_SECTPFAT);
       return 1;
     }
@@ -639,7 +639,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     partition->upart_type=UP_FAT12;
     if(memcmp(buffer+FAT_NAME1,"FAT12   ",8)!=0) /* 2 Mo max */
     {
-      aff_buffer(BUFFER_ADD,"Should be marked as FAT12\n");
+      screen_buffer_add("Should be marked as FAT12\n");
       log_warning("Should be marked as FAT12\n");
     }
   }
@@ -655,18 +655,18 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     }
     if(le16(fat_header->reserved)!=1)
     {
-      aff_buffer(BUFFER_ADD,"check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
+      screen_buffer_add("check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
       log_warning("check_FAT: Unusual number of reserved sectors %u (FAT), should be 1.\n",le16(fat_header->reserved));
     }
     if(le16(fat_header->fat_length)==0)
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SECTPFAT);
+      screen_buffer_add(msg_CHKFAT_SECTPFAT);
       log_error(msg_CHKFAT_SECTPFAT);
       return 1;
     }
     if((get_dir_entries(fat_header)==0)||(get_dir_entries(fat_header)%16!=0))
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_ENTRY);
+      screen_buffer_add(msg_CHKFAT_ENTRY);
       log_error(msg_CHKFAT_ENTRY);
       return 1;
     }
@@ -675,7 +675,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     partition->upart_type=UP_FAT16;
     if(memcmp(buffer+FAT_NAME1,"FAT16   ",8)!=0)
     {
-      aff_buffer(BUFFER_ADD,"Should be marked as FAT16\n");
+      screen_buffer_add("Should be marked as FAT16\n");
       log_warning("Should be marked as FAT16\n");
     }
   }
@@ -691,24 +691,24 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     }
     if(sectors(fat_header)!=0)
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_SIZE);
+      screen_buffer_add(msg_CHKFAT_SIZE);
       log_error(msg_CHKFAT_SIZE);
       return 1;
     }
     if(get_dir_entries(fat_header)!=0)
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_ENTRY);
+      screen_buffer_add(msg_CHKFAT_ENTRY);
       log_error(msg_CHKFAT_ENTRY);
       return 1;
     }
     if((fat_header->version[0]!=0) || (fat_header->version[1]!=0))
     {
-      aff_buffer(BUFFER_ADD,msg_CHKFAT_BADFAT32VERSION);
+      screen_buffer_add(msg_CHKFAT_BADFAT32VERSION);
       log_error(msg_CHKFAT_BADFAT32VERSION);
     }
     if((le32(fat_header->root_cluster)<2) ||(le32(fat_header->root_cluster)>=2+no_of_cluster))
     {
-      aff_buffer(BUFFER_ADD,"Bad root_cluster\n");
+      screen_buffer_add("Bad root_cluster\n");
       log_error("Bad root_cluster\n");
       return 1;
     }
@@ -717,7 +717,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     partition->upart_type=UP_FAT32;
     if(memcmp(buffer+FAT_NAME2,"FAT32   ",8)!=0)
     {
-      aff_buffer(BUFFER_ADD,"Should be marked as FAT32\n");
+      screen_buffer_add("Should be marked as FAT32\n");
       log_warning("Should be marked as FAT32\n");
     }
   }
@@ -725,7 +725,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   {
     if(part_size > partition->part_size/disk_car->sector_size)
     {
-      aff_buffer(BUFFER_ADD, "Error: size boot_sector %lu > partition %lu\n",
+      screen_buffer_add( "Error: size boot_sector %lu > partition %lu\n",
           (long unsigned)part_size,
           (long unsigned)(partition->part_size/disk_car->sector_size));
       log_error("test_FAT size boot_sector %lu > partition %lu\n",
@@ -756,19 +756,19 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   }
   if(fat_length<fat_length_calc)
   {
-    aff_buffer(BUFFER_ADD,msg_CHKFAT_SECTPFAT);
+    screen_buffer_add(msg_CHKFAT_SECTPFAT);
     return 1;
   }
   if(fat_header->fats>1)
     comp_FAT(disk_car,partition,fat_length,le16(fat_header->reserved));
   if(le16(fat_header->heads)!=disk_car->CHS.head+1)
   {
-    aff_buffer(BUFFER_ADD,"Warning: Incorrect number of heads/cylinder %u (FAT) != %u (HD)\n",le16(fat_header->heads),disk_car->CHS.head+1);
+    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (FAT) != %u (HD)\n",le16(fat_header->heads),disk_car->CHS.head+1);
     log_warning("heads/cylinder %u (FAT) != %u (HD)\n",le16(fat_header->heads),disk_car->CHS.head+1);
   }
   if(le16(fat_header->secs_track)!=disk_car->CHS.sector)
   {
-    aff_buffer(BUFFER_ADD,"Warning: Incorrect number of sectors per track %u (FAT) != %u (HD)\n",le16(fat_header->secs_track),disk_car->CHS.sector);
+    screen_buffer_add("Warning: Incorrect number of sectors per track %u (FAT) != %u (HD)\n",le16(fat_header->secs_track),disk_car->CHS.sector);
     log_warning("sect/track %u (FAT) != %u (HD)\n",le16(fat_header->secs_track),disk_car->CHS.sector);
   }
   return 0;
@@ -955,7 +955,7 @@ int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
   unsigned char buffer[512];
   if(disk_car->read(disk_car,disk_car->sector_size, &buffer, partition->part_offset)!=0)
   {
-    aff_buffer(BUFFER_ADD,"check_HPFS: Read error\n");
+    screen_buffer_add("check_HPFS: Read error\n");
     log_error("check_HPFS: Read error\n");
     return 1;
   }
@@ -1016,7 +1016,7 @@ int check_OS2MB(disk_t *disk_car,partition_t *partition,const int verbose)
   unsigned char buffer[0x200];
   if(disk_car->read(disk_car,disk_car->sector_size, &buffer, partition->part_offset)!=0)
   {
-    aff_buffer(BUFFER_ADD,"check_OS2MB: Read error\n");
+    screen_buffer_add("check_OS2MB: Read error\n");
     log_error("check_OS2MB: Read error\n");
     return 1;
   }

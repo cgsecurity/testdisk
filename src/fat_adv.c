@@ -1774,13 +1774,13 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
     { 'Q', "Proceed","Set FAT table location"},
     { 0, NULL, NULL }
   };
-  aff_buffer(BUFFER_RESET,"Q");
-  aff_buffer(BUFFER_ADD,"Potential FAT location\n");
-  aff_buffer(BUFFER_ADD,"FAT - sector - score\n");
+  screen_buffer_to_log();
+  screen_buffer_add("Potential FAT location\n");
+  screen_buffer_add("FAT - sector - score\n");
   for(i=0;i<nbr_offset;i++)
   {
     if(nbr_offset<30 || info_offset[i].nbr>1)
-      aff_buffer(BUFFER_ADD," %02d %8lu   %u\n",info_offset[i].fat_type,info_offset[i].offset,info_offset[i].nbr);
+      screen_buffer_add(" %02d %8lu   %u\n",info_offset[i].fat_type,info_offset[i].offset,info_offset[i].nbr);
     if(info_offset[i].fat_type<32)
     {
       reserved_can_be_one=1;

@@ -348,10 +348,10 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   CHS_t geometry;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=MALLOC(disk_car->sector_size);
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   if(disk_car->read(disk_car,disk_car->sector_size, buffer, (uint64_t)0))
   {
-    aff_buffer(BUFFER_ADD, msg_PART_RD_ERR);
+    screen_buffer_add( msg_PART_RD_ERR);
     free(buffer);
     return NULL;
   }
@@ -360,7 +360,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   geometry.sector=0;
   if(get_geometry_from_i386mbr(buffer,verbose,&geometry)!=0)
   {
-    aff_buffer(BUFFER_ADD,msg_TBL_NMARK);
+    screen_buffer_add(msg_TBL_NMARK);
     free(buffer);
     return NULL;
   }
@@ -387,7 +387,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
 	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	  if(new_partition->errcode!=BAD_NOERR)
 	  {
-	    aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	    screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
 	    res|=1;
 	  }
 	  new_list_part=insert_new_partition(new_list_part,new_partition, 0, &insert_error);
@@ -443,20 +443,20 @@ static void test_MBR_data(list_part_t *list_part)
     }
   }
   if(nb_dos>1)
-    aff_buffer(BUFFER_ADD,msg_ONLY_ONE_DOS);
+    screen_buffer_add(msg_ONLY_ONE_DOS);
   if(nb_ext>1)
-    aff_buffer(BUFFER_ADD,msg_ONLY_ONE_EXT);
+    screen_buffer_add(msg_ONLY_ONE_EXT);
   /* S'il y a des partitions caches, il faut un MB */
   /* Obsolete
   if(nb_hidden>0 && nb_mb==0)
-    aff_buffer(BUFFER_ADD,msg_NO_OS2MB);
+    screen_buffer_add(msg_NO_OS2MB);
     */
   /* Nombre de partition bootable */
   if(nb_boot==0)
-    aff_buffer(BUFFER_ADD,msg_NO_BOOTABLE);
+    screen_buffer_add(msg_NO_BOOTABLE);
   else
     if(nb_boot>1)
-      aff_buffer(BUFFER_ADD,msg_ONLY1MUSTBOOT);
+      screen_buffer_add(msg_ONLY1MUSTBOOT);
 }
 
 static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader)
@@ -483,7 +483,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	return list_part;
       if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
       {
-	aff_buffer(BUFFER_ADD,"\ntest_logical: " msg_TBL_NMARK);
+	screen_buffer_add("\ntest_logical: " msg_TBL_NMARK);
 	return list_part;
       }
       for(i=0;i<4;i++)
@@ -513,15 +513,15 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	}
       }
       if(nb_hidden>0)
-	aff_buffer(BUFFER_ADD,"Partition must not be hidden\n");
+	screen_buffer_add("Partition must not be hidden\n");
       if(nb_mb>0)
-	aff_buffer(BUFFER_ADD,"Multiboot must be a primary partition, not a logical\n");
+	screen_buffer_add("Multiboot must be a primary partition, not a logical\n");
       if(nb_ext>1)
-	aff_buffer(BUFFER_ADD,"A logical partition must not have more than one link to another logical partition\n");
+	screen_buffer_add("A logical partition must not have more than one link to another logical partition\n");
       if(nb_part>1)
-	aff_buffer(BUFFER_ADD,"A logical partition must contain only one partition\n");
+	screen_buffer_add("A logical partition must contain only one partition\n");
       if(nb_boot>0)
-	aff_buffer(BUFFER_ADD,"Logical partition must not be bootable\n");
+	screen_buffer_add("Logical partition must not be bootable\n");
       partition_next_ext=NULL;
       for(i=0;i<4;i++)
       {
@@ -540,7 +540,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
-	      aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
 	      res=1;
 	    }
 	    {
@@ -548,7 +548,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
 	      {	/* Must be IN partition_main_ext */
 		res=1;
-		aff_buffer(BUFFER_ADD,"Must be in extended partition\n");
+		screen_buffer_add("Must be in extended partition\n");
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	      }
@@ -563,7 +563,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 			((partition->part_offset+partition->part_size-1>=new_partition->part_offset) && (partition->part_offset+partition->part_size-1<=new_partition->part_offset+partition->part_size-1)))
 		    { /* New Partition start or end mustn't been in partition */
 		      res=1;
-		      aff_buffer(BUFFER_ADD, "Logical partition must be in its own extended partition\n");
+		      screen_buffer_add( "Logical partition must be in its own extended partition\n");
 		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 		    }
@@ -581,7 +581,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
-	      aff_buffer(BUFFER_ADD,"%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
 	      res=1;
 	    }
 	    {
@@ -589,7 +589,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
 	      {	/* Must be IN partition_main_ext */
 		res=1;
-		aff_buffer(BUFFER_ADD, msg_SAME_SPACE);
+		screen_buffer_add( msg_SAME_SPACE);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	      }
@@ -615,7 +615,7 @@ static int test_MBR_over(disk_t *disk_car,list_part_t *list_part)
 	element->part->part_offset + element->part->part_size - 1 >= element->next->part->part_offset)
     {
       res=1;
-      aff_buffer(BUFFER_ADD, msg_SAME_SPACE);
+      screen_buffer_add( msg_SAME_SPACE);
       aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
       aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->next->part);
     }
@@ -1594,12 +1594,12 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_16FATBD_LBAH:
       ret=check_FAT(disk_car,partition,verbose);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid FAT boot sector\n"); }
+      { screen_buffer_add("Invalid FAT boot sector\n"); }
       break;
     case P_FREEBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid BSD disklabel\n"); }
+      { screen_buffer_add("Invalid BSD disklabel\n"); }
       break;
     case P_HFS:
       ret=check_HFS(disk_car,partition,verbose);
@@ -1627,7 +1627,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
 	ret=check_xfs(disk_car,partition,verbose);
       }
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
       break;
     case P_LINSWAP:
       ret=check_Linux_SWAP(disk_car,partition,verbose);
@@ -1646,7 +1646,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_NTFSH:
       ret=check_NTFS(disk_car,partition,verbose,0);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid NTFS boot\n"); }
+      { screen_buffer_add("Invalid NTFS boot\n"); }
       break;
     case P_OPENBSD:
       ret=check_BSD(disk_car,partition,verbose,OPENBSD_MAXPARTITIONS);
@@ -1654,7 +1654,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_RAID:
       ret=check_MD(disk_car,partition,verbose);
       if(ret!=0)
-      { aff_buffer(BUFFER_ADD,"Invalid RAID superblock\n"); }
+      { screen_buffer_add("Invalid RAID superblock\n"); }
       break;
     case P_SUN:
       ret=check_sun_i386(disk_car,partition,verbose);

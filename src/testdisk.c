@@ -227,7 +227,7 @@ int main( int argc, char **argv )
 	"If you have problems with TestDisk or bug reports, please contact me.\n");
     return 0;
   }
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
   if(do_list!=0)
   {
     printf("Please wait...\n");

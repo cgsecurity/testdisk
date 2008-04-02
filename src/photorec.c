@@ -990,7 +990,7 @@ int main( int argc, char **argv )
         "If you have problems with PhotoRec or bug reports, please contact me.\n");
     return 0;
   }
-  aff_buffer(BUFFER_RESET,"Q");
+  screen_buffer_to_log();
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {

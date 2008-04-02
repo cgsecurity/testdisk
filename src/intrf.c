@@ -93,86 +93,80 @@ struct file_info {
   struct stat stat;
 };
 
-
-int aff_buffer(const buffer_cmd_t cmd, const char *_format, ...)
+int screen_buffer_add(const char *_format, ...)
 {
-  switch(cmd)
+  char tmp_line[BUFFER_LINE_LENGTH+1];
+  char *pos_in_tmp_line=tmp_line;
+  va_list ap;
+  va_start(ap,_format);
+  memset(tmp_line,'\0',sizeof(tmp_line));
+  vsnprintf(tmp_line,BUFFER_LINE_LENGTH,_format,ap);
+  va_end(ap);
+  while(pos_in_tmp_line!=NULL && (intr_nbr_line<MAX_LINES))
   {
-    case BUFFER_RESET:
-      {
-        int i;
-        intr_nbr_line=0;
-        for(i=0;i<MAX_LINES;i++)
-          memset(intr_buffer_screen[i],0,LINE_LENGTH+1);
-      }
-      break;
-    case BUFFER_ADD:
-      {
-        char tmp_line[BUFFER_LINE_LENGTH+1];
-        char *pos_in_tmp_line=tmp_line;
-        va_list ap;
-        va_start(ap,_format);
-        memset(tmp_line,'\0',sizeof(tmp_line));
-        vsnprintf(tmp_line,BUFFER_LINE_LENGTH,_format,ap);
-        va_end(ap);
-        while(pos_in_tmp_line!=NULL && (intr_nbr_line<MAX_LINES))
-        {
-          unsigned int len=strlen(intr_buffer_screen[intr_nbr_line]);
-          unsigned int nbr=LINE_LENGTH-len;
-          char *ret_ligne= strchr(pos_in_tmp_line,'\n');
-          if(ret_ligne!=NULL && ret_ligne-pos_in_tmp_line < nbr)
-              nbr=ret_ligne-pos_in_tmp_line;
-          memcpy(&intr_buffer_screen[intr_nbr_line][len], pos_in_tmp_line, nbr);
-          intr_buffer_screen[intr_nbr_line][len+nbr]='\0';
-          if(ret_ligne!=NULL)
-          {
-            if(++intr_nbr_line<MAX_LINES)
-              intr_buffer_screen[intr_nbr_line][0]='\0';
-            ret_ligne++;
-          }
-          pos_in_tmp_line=ret_ligne;
-        }
-        /*	log_trace("aff_intr_buffer_screen %d =>%s<=\n",intr_nbr_line,tmp_line); */
-        if(intr_nbr_line==MAX_LINES)
-        {
-          log_warning("Buffer can't store more than %u lines.\n", MAX_LINES);
-          intr_nbr_line++;
-        }
-      }
-      break;
-    case BUFFER_SHOW:
-#ifdef HAVE_NCURSES
-      {
-        int i;
-        int pos=intr_nbr_line-DUMP_MAX_LINES<0?0:intr_nbr_line-DUMP_MAX_LINES;
-        if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
-          intr_nbr_line++;
-        /* curses interface */
-        for (i=pos; i<intr_nbr_line && i<MAX_LINES && (i-pos)<DUMP_MAX_LINES; i++)
-        {
-          wmove(stdscr,DUMP_Y+1+i-pos,DUMP_X);
-          wclrtoeol(stdscr);
-          wprintw(stdscr,"%s",intr_buffer_screen[i]);
-        }
-        wrefresh(stdscr);
-      }
-#endif
-      break;
-    case BUFFER_WRITE:
-      {
-        int i;
-        if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
-          intr_nbr_line++;
-        /* to log file and stdout */
-        for(i=0;i<intr_nbr_line && i<MAX_LINES;i++)
-        {
-          printf("%s\n",intr_buffer_screen[i]);
-          log_info("%s\n",intr_buffer_screen[i]);
-        }
-      }
-      break;
+    unsigned int len=strlen(intr_buffer_screen[intr_nbr_line]);
+    unsigned int nbr=LINE_LENGTH-len;
+    char *ret_ligne= strchr(pos_in_tmp_line,'\n');
+    if(ret_ligne!=NULL && ret_ligne-pos_in_tmp_line < nbr)
+      nbr=ret_ligne-pos_in_tmp_line;
+    memcpy(&intr_buffer_screen[intr_nbr_line][len], pos_in_tmp_line, nbr);
+    intr_buffer_screen[intr_nbr_line][len+nbr]='\0';
+    if(ret_ligne!=NULL)
+    {
+      if(++intr_nbr_line<MAX_LINES)
+	intr_buffer_screen[intr_nbr_line][0]='\0';
+      ret_ligne++;
+    }
+    pos_in_tmp_line=ret_ligne;
+  }
+  /*	log_trace("aff_intr_buffer_screen %d =>%s<=\n",intr_nbr_line,tmp_line); */
+  if(intr_nbr_line==MAX_LINES)
+  {
+    log_warning("Buffer can't store more than %u lines.\n", MAX_LINES);
+    intr_nbr_line++;
   }
   return 0;
+}
+
+void screen_buffer_to_interface()
+{
+#ifdef HAVE_NCURSES
+  {
+    int i;
+    int pos=intr_nbr_line-DUMP_MAX_LINES<0?0:intr_nbr_line-DUMP_MAX_LINES;
+    if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
+      intr_nbr_line++;
+    /* curses interface */
+    for (i=pos; i<intr_nbr_line && i<MAX_LINES && (i-pos)<DUMP_MAX_LINES; i++)
+    {
+      wmove(stdscr,DUMP_Y+1+i-pos,DUMP_X);
+      wclrtoeol(stdscr);
+      wprintw(stdscr,"%s",intr_buffer_screen[i]);
+    }
+    wrefresh(stdscr);
+  }
+#endif
+}
+
+void screen_buffer_to_stdout()
+{
+  int i;
+  if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
+    intr_nbr_line++;
+  /* to log file and stdout */
+  for(i=0;i<intr_nbr_line && i<MAX_LINES;i++)
+  {
+    printf("%s\n",intr_buffer_screen[i]);
+    log_info("%s\n",intr_buffer_screen[i]);
+  }
+}
+
+void screen_buffer_reset()
+{
+  int i;
+  intr_nbr_line=0;
+  for(i=0;i<MAX_LINES;i++)
+    memset(intr_buffer_screen[i],0,LINE_LENGTH+1);
 }
 
 void screen_buffer_to_log()
@@ -1042,7 +1036,7 @@ void aff_CHS(const CHS_t * CHS)
 
 void aff_CHS_buffer(const CHS_t * CHS)
 {
-  aff_buffer(BUFFER_ADD,"%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
+  screen_buffer_add("%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
 }
 
 void aff_part(WINDOW *window,const unsigned int newline,const disk_t *disk_car,const partition_t *partition)
@@ -1286,9 +1280,12 @@ int end_ncurses()
   wrefresh(stdscr);
   nl();
   endwin();
+#if defined(DJGPP) || defined(__MINGW32__)
+#else
 #ifdef HAVE_DELSCREEN
   if(screenp!=NULL)
     delscreen(screenp);
+#endif
 #endif
   return 0;
 }
@@ -1916,7 +1913,7 @@ void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const par
 {
   const char *msg;
   msg=aff_part_aux(newline, disk_car, partition);
-  aff_buffer(BUFFER_ADD,"%s\n", msg);
+  screen_buffer_add("%s\n", msg);
 }
 
 void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA)
