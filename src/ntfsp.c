@@ -60,7 +60,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
   {
     case -2:
     case -1:
-      screen_buffer_to_log();
+      screen_buffer_reset();
       {
 #ifdef HAVE_NCURSES
 	WINDOW *window;

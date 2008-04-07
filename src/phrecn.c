@@ -1187,7 +1187,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   unsigned int pass;
   unsigned int blocksize_is_known=0;
   photorec_status_t status;
-  screen_buffer_to_log();
+  screen_buffer_reset();
   log_info("\nAnalyse\n");
   log_partition(disk_car,partition);
   if(blocksize==0 || td_list_empty(&list_search_space->list))

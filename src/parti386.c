@@ -348,7 +348,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   CHS_t geometry;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=MALLOC(disk_car->sector_size);
-  screen_buffer_to_log();
+  screen_buffer_reset();
   if(disk_car->read(disk_car,disk_car->sector_size, buffer, (uint64_t)0))
   {
     screen_buffer_add( msg_PART_RD_ERR);

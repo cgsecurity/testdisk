@@ -707,7 +707,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
     { 'B', "Backup","Save current partition list to backup.log file and proceed"},
     { 0, NULL, NULL }
   };
-  screen_buffer_to_log();
+  screen_buffer_reset();
   /* ncurses interface */
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
@@ -782,7 +782,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
   };
   int command;
   log_info("\ninterface_write()\n");
-  screen_buffer_to_log();
+  screen_buffer_reset();
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -1494,7 +1494,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
     { 'Q',"Quit","Return to Advanced menu"},
     { 0, NULL, NULL }
   };
-  screen_buffer_to_log();
+  screen_buffer_reset();
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
   wmove(stdscr,4,0);

@@ -97,7 +97,7 @@ list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveh
 {
   unsigned char buffer[0x800];
   list_part_t *new_list_part=NULL;
-  screen_buffer_to_log();
+  screen_buffer_reset();
   if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
     return new_list_part;
   {

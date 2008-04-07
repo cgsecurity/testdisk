@@ -1774,7 +1774,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
     { 'Q', "Proceed","Set FAT table location"},
     { 0, NULL, NULL }
   };
-  screen_buffer_to_log();
+  screen_buffer_reset();
   screen_buffer_add("Potential FAT location\n");
   screen_buffer_add("FAT - sector - score\n");
   for(i=0;i<nbr_offset;i++)

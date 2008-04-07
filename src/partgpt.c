@@ -171,7 +171,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   uint64_t gpt_entries_offset;
 
   gpt=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
-  screen_buffer_to_log();
+  screen_buffer_reset();
   if(disk_car->read(disk_car, disk_car->sector_size, gpt, disk_car->sector_size)!=0)
   {
     free(gpt);

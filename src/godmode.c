@@ -407,7 +407,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     wattroff(stdscr, A_REVERSE);
   }
 #endif
-  screen_buffer_to_log();
+  screen_buffer_reset();
   log_info("\nsearch_part()\n");
   log_info("%s\n",disk_car->description(disk_car));
   if(disk_car->arch==&arch_gpt)

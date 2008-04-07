@@ -120,7 +120,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
   list_part_t *new_list_part=NULL;
   unsigned int i;
   unsigned int limit=1;
-  screen_buffer_to_log();
+  screen_buffer_reset();
   if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
     return NULL;
   {

@@ -513,7 +513,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   {
     unsigned int menu=0;
     int command;
-    screen_buffer_to_log();
+    screen_buffer_reset();
     if(rescan==1)
     {
 #ifdef HAVE_NCURSES
@@ -674,7 +674,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   {
     unsigned int menu=0;
     int command;
-    screen_buffer_to_log();
+    screen_buffer_reset();
     if(rescan==1)
     {
       int opt_over=0;
@@ -942,7 +942,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
   {
     unsigned int menu=0;
     int command;
-    screen_buffer_to_log();
+    screen_buffer_reset();
     if(rescan==1)
     {
       int identical_sectors=0;
@@ -1188,7 +1188,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
   {
     unsigned int menu=0;
     int command;
-    screen_buffer_to_log();
+    screen_buffer_reset();
     if(rescan==1)
     {
       int opt_over=0;

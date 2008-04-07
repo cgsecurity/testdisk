@@ -91,7 +91,7 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
   free(new_partition);
 
   /* Display the list of partition type in 3 columns */
-  screen_buffer_to_log();
+  screen_buffer_reset();
   screen_buffer_add("List of partition type\n");
   for (i = 2; i >= 0; i--)
     last[2 - i] = done += (size + i - done) / (i + 1);

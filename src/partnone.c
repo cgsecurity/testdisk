@@ -196,7 +196,7 @@ list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveh
   partition->part_size=disk_car->disk_size;
   partition->order=NO_ORDER;
   partition->status=STATUS_PRIM;
-  screen_buffer_to_log();
+  screen_buffer_reset();
   disk_car->arch->check_part(disk_car,verbose,partition,saveheader);
   aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);

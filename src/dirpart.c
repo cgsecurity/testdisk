@@ -110,7 +110,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   switch(res)
   {
     case -2:
-      screen_buffer_to_log();
+      screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
@@ -127,7 +127,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
       }
       break;
     case -1:
-      screen_buffer_to_log();
+      screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);

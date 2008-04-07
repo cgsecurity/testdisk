@@ -143,7 +143,7 @@ list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int savehe
   sun_partition *sunlabel;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=MALLOC(disk_car->sector_size);
-  screen_buffer_to_log();
+  screen_buffer_reset();
   sunlabel=(sun_partition*)buffer;
   if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
   {
