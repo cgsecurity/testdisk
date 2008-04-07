@@ -44,6 +44,7 @@ const file_hint_t file_hint_a= {
 };
 
 static const unsigned char a_header[8]  = { '!','<','a','r','c','h','>','\n'};
+static const unsigned char a_header_debian[14]  = { '!','<','a','r','c','h','>','\n','d','e','b','i','a','n'};
 
 static void register_header_check_a(file_stat_t *file_stat)
 {
@@ -52,6 +53,12 @@ static void register_header_check_a(file_stat_t *file_stat)
 
 static int header_check_a(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only,  const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(memcmp(buffer,a_header_debian,sizeof(a_header_debian))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="deb";
+    return 1;
+  }
   if(memcmp(buffer,a_header,sizeof(a_header))==0)
   {
     reset_file_recovery(file_recovery_new);
