@@ -69,17 +69,17 @@ static const unsigned char zip_header2[8]  = { 'P', 'K', '0', '0', 'P', 'K', 0x0
 struct zip_file_entry {
   uint16_t version;                 /** Version needed to extract */
 
-  unsigned is_encrypted:1;          /** File is encrypted? */
-  unsigned compression_info:2;      /** Info about compression method used */
-  unsigned has_descriptor:1;        /** Compressed data followed by descriptor? */
-  unsigned enhanced_deflate:1;      /** Reserved for use with method 8 */
-  unsigned is_patched:1;            /** File is compressed with patched data? */
-  unsigned strong_encrypt:1;        /** Strong encryption (version >= 50) */
-  unsigned unused2:4;               /** Unused */
-  unsigned uses_unicode:1;          /** Filename and comments are in UTF-8 */
-  unsigned unused3:1;               /** Reserved by PKWARE for enhanced compression. */
-  unsigned encrypted_central_dir:1; /** Selected data values in the Local Header are masked */
-  unsigned unused1:2;               /** Unused */
+  uint16_t is_encrypted:1;          /** File is encrypted? */
+  uint16_t compression_info:2;      /** Info about compression method used */
+  uint16_t has_descriptor:1;        /** Compressed data followed by descriptor? */
+  uint16_t enhanced_deflate:1;      /** Reserved for use with method 8 */
+  uint16_t is_patched:1;            /** File is compressed with patched data? */
+  uint16_t strong_encrypt:1;        /** Strong encryption (version >= 50) */
+  uint16_t unused2:4;               /** Unused */
+  uint16_t uses_unicode:1;          /** Filename and comments are in UTF-8 */
+  uint16_t unused3:1;               /** Reserved by PKWARE for enhanced compression. */
+  uint16_t encrypted_central_dir:1; /** Selected data values in the Local Header are masked */
+  uint16_t unused1:2;               /** Unused */
 
   uint16_t compression;             /** Compression method */
   uint32_t last_mod;                /** Last moditication file time */
@@ -93,27 +93,27 @@ typedef struct zip_file_entry zip_file_entry_t;
 
 static uint32_t expected_compressed_size=0;
 
-static int64_t file_get_pos(FILE *f, const void* needle, unsigned int size)
+static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size)
 {
-  char     *buffer = MALLOC(4096+size);
+  char     *buffer = MALLOC(4096);
   int64_t  total   = 0;
 #ifdef DEBUG_ZIP
-  log_trace("zip: file_get_pos()\n");
+  log_trace("zip: file_get_pos(f, needle, %u)\n", size);
 #endif
 
   while (!feof(f))
   {
     int      count = 0;
-    unsigned left;
-    unsigned read_size= fread(buffer, 1, 4096, f);
+    unsigned int left;
+    unsigned int read_size= fread(buffer, 1, 4096, f);
     left  = read_size;
 
-    while (left>size)
+    while (left>=size)
     {
       if (memcmp(buffer+count, needle, size)==0)
       {
 	free(buffer);
-        if(fseek(f, count-read_size, SEEK_CUR)<0)
+        if(fseek(f, (long)count-read_size, SEEK_CUR)<0)
           return -1;
         return total;
       }
@@ -121,7 +121,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, unsigned int size)
       total++;
       left--;
     }
-    if(feof(f) || fseek(f, -size, SEEK_CUR)<0)
+    if(feof(f) || fseek(f, (long)1-size, SEEK_CUR)<0)
     {
       free(buffer);
       return -1;
@@ -209,10 +209,10 @@ static int zip_parse_file_entry(file_recovery_t *fr)
        compressed data.
        Typically used in OOO documents
        Search ZIP_DATA_DESCRIPTOR */
-    static const unsigned char zip_data_desc_header[]= {0x50, 0x4B, 0x07, 0x08};
+    static const unsigned char zip_data_desc_header[4]= {0x50, 0x4B, 0x07, 0x08};
     int64_t pos = file_get_pos(fr->handle, zip_data_desc_header, 4);
 #ifdef DEBUG_ZIP
-    log_trace("Searched footer, got length %lli\n", pos);
+    log_trace("Searched footer, got length %lli\n", (long long int)pos);
 #endif
     if (pos > 0)
     {
@@ -312,12 +312,12 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
-      log_trace("zip: Unexpected EOF in end_central_dir_64: expected %llu bytes\n", len);
+      log_trace("zip: Unexpected EOF in end_central_dir_64: expected %llu bytes\n", (long long unsigned)len);
 #endif
       return -1;
     }
 #ifdef DEBUG_ZIP
-    log_trace("zip: End of 64b central dir of length %llu\n", len);
+    log_trace("zip: End of 64b central dir of length %llu\n", (long long unsigned)len);
 #endif
   }
 
@@ -461,7 +461,7 @@ static void file_check_zip(file_recovery_t *fr)
 
     header = le32(header);
 #ifdef DEBUG_ZIP
-    log_trace("Header 0x%08X at 0x%llx\n", header, fr->file_size);
+    log_trace("Header 0x%08X at 0x%llx\n", header, (long long unsigned int)fr->file_size);
     log_flush();
 #endif
     fr->file_size += 4;
