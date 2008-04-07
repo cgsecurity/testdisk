@@ -88,7 +88,6 @@ static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
 static const unsigned char header_dc[6]		= "SC V10";
-static const char sign_html[5]	= "<html";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -302,7 +301,8 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const char sign_grisbi[14]		= "Version_grisbi";
-  const char sign_fst[5]                 = "QBFSD";
+  const char sign_fst[5]                = "QBFSD";
+  const char sign_html[5]		= "<html";
   if(memcmp(buffer,header_cls,sizeof(header_cls))==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -423,6 +423,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_jsp2[]		= "<%=";
   const char sign_php[]			= "<?php";
   const char sign_tex[]			= "\\begin{";
+  const char sign_html[]		= "<html";
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int tmp=0;
@@ -685,7 +686,7 @@ static void file_check_html(file_recovery_t *file_recovery)
     /* TODO: use strcasestr if available */
     for(i=0;i<taille;i++)
       buffer_lower[i]=tolower(buffer_lower[i]);
-    if(strstr(buffer_lower, sign_html)==NULL)
+    if(strstr(buffer_lower, "<html")==NULL)
     {
       log_warning("%s: no header\n",file_recovery->filename);
       file_recovery->file_size=0;
