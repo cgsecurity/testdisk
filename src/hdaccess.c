@@ -99,6 +99,10 @@
 #include <windows.h>
 #include <winnt.h>
 #endif
+#ifdef HAVE_GLOB_H
+#include <glob.h>
+#endif
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include "win32.h"
 #endif
@@ -762,7 +766,10 @@ list_disk_t *insert_new_disk_nodup(list_disk_t *list_disk, disk_t *disk_car, con
     list_disk_t *cur;
     for(cur=list_disk;cur!=NULL;cur=cur->next)
     {
-      if(cur->disk->disk_size==disk_car->disk_size && cur->disk->sector_size==disk_car->sector_size)
+      if(cur->disk->disk_size==disk_car->disk_size &&
+	  cur->disk->sector_size==disk_car->sector_size &&
+	  ((cur->disk->model==NULL && disk_car->model==NULL) ||
+	   (cur->disk->model!=NULL && disk_car->model!=NULL && strcmp(cur->disk->model, disk_car->model)==0)))
         disk_same_size_present=1;
     }
     if(disk_car->sector_size==512 && disk_same_size_present!=0)
@@ -780,6 +787,26 @@ list_disk_t *insert_new_disk_nodup(list_disk_t *list_disk, disk_t *disk_car, con
   }
 }
 #endif
+
+#ifdef HAVE_GLOB_H
+static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_disk, const int verbose, const arch_fnct_t *arch, const int testdisk_mode)
+{
+  glob_t globbuf;
+  globbuf.gl_offs = 0;
+  glob(device_pattern, GLOB_DOOFFS, NULL, &globbuf);
+  if(globbuf.gl_pathc>0)
+  {
+    unsigned int i;
+    for (i=0; i<globbuf.gl_pathc; i++)
+    {
+      list_disk=insert_new_disk(list_disk,file_test_availability(globbuf.gl_pathv[i], verbose,arch,testdisk_mode));
+    }
+  }
+  globfree(&globbuf);
+  return list_disk;
+}
+#endif
+
 
 list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct_t *arch, const int testdisk_mode)
 {
@@ -912,6 +939,10 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       device_i2o_hd[strlen(device_i2o_hd)-1]='a'+i;
       list_disk=insert_new_disk(list_disk,file_test_availability(device_i2o_hd,verbose,arch,testdisk_mode));
     }
+#ifdef HAVE_GLOB_H
+    list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/md?", list_disk, verbose, arch, testdisk_mode);
+#endif
   }
 #elif defined(TARGET_SOLARIS)
   {
