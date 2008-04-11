@@ -233,5 +233,13 @@ const char *get_compiler(void)
 #else
   snprintf(buffer, sizeof(buffer) - 1, "unknown compiler");
 #endif
+#ifdef __DATE__ 
+  strcat(buffer, " - ");
+  strcat(buffer, __DATE__);
+#ifdef __TIME__
+  strcat(buffer, " ");
+  strcat(buffer, __TIME__);
+#endif
+#endif
   return buffer;
 }

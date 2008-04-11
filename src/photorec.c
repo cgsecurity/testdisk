@@ -1011,7 +1011,8 @@ int main( int argc, char **argv )
 #endif
   create_log=log_open("photorec.log", create_log, 1, "PhotoRec", argc, argv);
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
-  log_info("OS: %s - Compiler: %s\n", get_os(), get_compiler());
+  log_info("OS: %s\n" , get_os());
+  log_info("Compiler: %s\n", get_compiler());
   log_info("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: ",
       td_ext2fs_version(), td_ntfs_version(), td_ewf_version());
 #if defined(HAVE_LIBJPEG)

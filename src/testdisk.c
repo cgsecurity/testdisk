@@ -288,7 +288,8 @@ int main( int argc, char **argv )
   }
   create_log=log_open("testdisk.log", create_log, 1, "TestDisk", argc, argv);
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
-  log_info("OS: %s - Compiler: %s\n", get_os(), get_compiler());
+  log_info("OS: %s\n" , get_os());
+  log_info("Compiler: %s\n", get_compiler());
   log_info("ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s\n",
       td_ext2fs_version(), td_ntfs_version(), td_reiserfs_version(), td_ewf_version());
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
