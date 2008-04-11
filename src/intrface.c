@@ -638,7 +638,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
   int line=9;
   aff_copy(stdscr);
   wmove(stdscr,4,0);
-  wprintw(stdscr,"%s\n",disk_car->description(disk_car));
+  wprintw(stdscr,"%s\n",disk_car->description_short(disk_car));
   wmove(stdscr,6,0);
   wprintw(stdscr,"Write access for this media is not available.");
   wmove(stdscr,7,0);
