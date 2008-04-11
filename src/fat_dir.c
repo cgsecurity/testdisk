@@ -218,6 +218,8 @@ RecEnd:
       inode&=0xfff;
     else if((param&FLAG_LIST_MASK16)!=0)
       inode&=0xffff;
+    else
+      inode&=0xfffffff;
   if(long_slots==0 && de->attr != ATTR_EXT)
   { /* short name 8.3 */
     int i;
@@ -354,8 +356,8 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
     cluster=le32(fat_header->root_cluster);
   }
   {
-    file_data_t *dir_list;
-    unsigned int cluster_size=fat_header->cluster_size;
+    file_data_t *dir_list=NULL;
+    const unsigned int cluster_size=fat_header->cluster_size;
     unsigned char *buffer_dir=MALLOC(fat_sector_size(fat_header)*cluster_size*10);
     unsigned int nbr_cluster;
     int stop=0;
@@ -381,33 +383,42 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
 	log_error("FAT: Can't read directory cluster.\n");
 	stop=1;
       }
-      if(fat_meth==FAT_FOLLOW_CLUSTER)
+      if(stop==0 && nbr_cluster==0 &&
+	  !(partition->upart_type==UP_FAT32 && first_cluster==0) &&
+	   memcmp(buffer_dir,".          ",8+3)!=0)
       {
-	const unsigned int next_cluster=get_next_cluster(disk_car, partition, partition->upart_type, start_fat1, cluster);
-	if((next_cluster>=2 && next_cluster<=no_of_cluster+2) ||
-	    is_EOC(next_cluster, partition->upart_type))
-	  cluster=next_cluster;
-	else if(next_cluster==0)
+	stop=1;
+      }
+      if(stop==0)
+      {
+	if(fat_meth==FAT_FOLLOW_CLUSTER)
 	{
-//	  if(cluster==first_cluster)
-//	    fat_meth=FAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted directory */
-//	  else
+	  const unsigned int next_cluster=get_next_cluster(disk_car, partition, partition->upart_type, start_fat1, cluster);
+	  if((next_cluster>=2 && next_cluster<=no_of_cluster+2) ||
+	      is_EOC(next_cluster, partition->upart_type))
+	    cluster=next_cluster;
+	  else if(next_cluster==0)
+	  {
+	    //	  if(cluster==first_cluster)
+	    //	    fat_meth=FAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted directory */
+	    //	  else
 	    cluster=0;			/* Stop directory listing */
+	  }
+	  else
+	    fat_meth=FAT_NEXT_CLUSTER;		/* FAT is corrupted, don't trust it */
 	}
-	else
-	  fat_meth=FAT_NEXT_CLUSTER;		/* FAT is corrupted, don't trust it */
+	if(fat_meth==FAT_NEXT_CLUSTER)
+	  cluster++;
+	else if(fat_meth==FAT_NEXT_FREE_CLUSTER)
+	{	/* Deleted directories are composed of "free" clusters */
+	  while(++cluster<no_of_cluster+2 &&
+	      get_next_cluster(disk_car, partition, partition->upart_type, start_fat1, cluster)!=0);
+	}
+	nbr_cluster++;
       }
-      if(fat_meth==FAT_NEXT_CLUSTER)
-	cluster++;
-      else if(fat_meth==FAT_NEXT_FREE_CLUSTER)
-      {	/* Deleted directories are composed of "free" clusters */
-	while(++cluster<no_of_cluster+2 &&
-	    get_next_cluster(disk_car, partition, partition->upart_type, start_fat1, cluster)!=0);
-      }
-
-      nbr_cluster++;
     }
-    dir_list=dir_fat_aux(buffer_dir, fat_sector_size(fat_header)*cluster_size*nbr_cluster, cluster_size, dir_data->param);
+    if(nbr_cluster>0)
+      dir_list=dir_fat_aux(buffer_dir, fat_sector_size(fat_header)*cluster_size*nbr_cluster, cluster_size, dir_data->param);
     free(buffer_dir);
     return dir_list;
   }
