@@ -417,5 +417,21 @@ int strncasecmp(const char * s1, const char * s2, size_t len);
 #endif
 void create_dir(const char *dir_name, const unsigned int is_dir_name);
 unsigned int filename_convert(char *dst, const char*src, const unsigned int n);
+/*
+ * td_min()/td_max() macros that also do
+ * strict type-checking.. See the
+ * "unnecessary" pointer comparison.
+ * Comes from Linux kernel
+ */
+#define td_min(x,y) ({ \
+        typeof(x) _x = (x);     \
+        typeof(y) _y = (y);     \
+        (void) (&_x == &_y);            \
+        _x < _y ? _x : _y; })
 
+#define td_max(x,y) ({ \
+        typeof(x) _x = (x);     \
+        typeof(y) _y = (y);     \
+        (void) (&_x == &_y);            \
+        _x > _y ? _x : _y; })
 #endif
