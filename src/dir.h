@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #endif
 #define INTER_DIR 16
-#define DIR_NAME_LEN 255
+#define DIR_NAME_LEN 1024
 #define FLAG_LIST_DELETED	1
 #define FLAG_LIST_MASK12	2
 #define FLAG_LIST_MASK16	4
