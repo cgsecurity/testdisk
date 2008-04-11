@@ -383,10 +383,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   list_part_t *list_part=NULL;
   list_part_t *list_part_bad=NULL;
   partition_t *partition;
-  /* It's not a problem to read a little bit more than necessary, 255*63*512 =~ 10000000 */
-  const uint64_t search_location_max=(disk_car->disk_size + 10000000 < disk_car->disk_real_size ?
-      disk_car->disk_size + 10000000:
+  /* It's not a problem to read a little bit more than necessary */
+  const uint64_t search_location_max=td_max(disk_car->disk_size +
+      (disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size,
       disk_car->disk_real_size);
+  const uint64_t max_disk_size_for_partition=td_max(disk_car->disk_size,
+      (uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size);
   partition=partition_new(disk_car->arch);
   buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
   {
@@ -704,7 +706,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               /* TODO: Detect Linux md 1.0 software raid */
             }
             /* */
-            if(pos_fin<=disk_car->disk_size)
+            if(pos_fin <= max_disk_size_for_partition)
             {
               {
                 int insert_error=0;
@@ -797,7 +799,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               partition->status=STATUS_DELETED;
               if(disk_car->arch->is_part_known(partition)!=0 && partition->part_size>1 &&
                   partition->part_offset >= min_location &&
-                  partition->part_offset+partition->part_size-1 <= disk_car->disk_size)
+                  partition->part_offset+partition->part_size-1 <= max_disk_size_for_partition)
               {
                 int insert_error=0;
                 partition_t *new_partition=partition_new(NULL);
