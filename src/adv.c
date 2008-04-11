@@ -432,6 +432,13 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  }
 	}
 	break;
+      case 'l':
+      case 'L':
+	if(current_element!=NULL)
+	{
+	  dir_partition(disk_car, current_element->part, 0, current_cmd);
+	}
+	break;
       case 's':
       case 'S':
 	if(current_element!=NULL)
