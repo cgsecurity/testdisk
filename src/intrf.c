@@ -1331,21 +1331,23 @@ static int intrf_no_disk_ncurses(const char *prog_name)
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
-    static const struct MenuItem menuSudo[]=
-    {
-      {'S',"Sudo","Use the sudo command to restart as root"},
-      {'Q',"Quit",""},
-      {0,NULL,NULL}
-    };
-    unsigned int menu=0;
-    int command;
     wprintw(stdscr,"You need to be root to use %s.\n", prog_name);
 #ifdef SUDO_BIN
-    command = wmenuSelect_ext(stdscr,21, 0, menuSudo, 8,
-        "SQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
-    if(command=='s' || command=='S')
-      return 1;
-    return 0;
+    {
+      static const struct MenuItem menuSudo[]=
+      {
+	{'S',"Sudo","Use the sudo command to restart as root"},
+	{'Q',"Quit",""},
+	{0,NULL,NULL}
+      };
+      unsigned int menu=0;
+      int command;
+      command = wmenuSelect_ext(stdscr,21, 0, menuSudo, 8,
+	  "SQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
+      if(command=='s' || command=='S')
+	return 1;
+      return 0;
+    }
 #endif
   }
 #endif
