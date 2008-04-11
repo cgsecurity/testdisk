@@ -33,7 +33,6 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-//#include "phrecn.h"
 
 file_check_t *file_check_list=NULL;
 
@@ -54,7 +53,10 @@ void register_header_check(const unsigned int offset, const unsigned char *value
     file_check_t *last;
     /* tail */
     for(last=file_check_list;last!=NULL && last->next!=NULL;last=last->next);
-    last->next=file_check_new;
+    if(last==NULL)
+      file_check_list=file_check_new;
+    else
+      last->next=file_check_new;
     file_check_new->next=NULL;
   }
   else
