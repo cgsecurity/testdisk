@@ -1,6 +1,6 @@
 /*
 
-    File: win32.h
+    File: hdwin32.h
 
     Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
   
@@ -19,12 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifndef _WIN32_H
-#define _WIN32_H
+#ifndef _HDWIN32_H
+#define _HDWIN32_H
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
-unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const int verbose);
-uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbose);
-void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, const int verbose);
+void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose);
 #endif
 #endif

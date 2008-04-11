@@ -1,8 +1,8 @@
 /*
 
-    File: win32.h
+    File: msdos.h
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifndef _WIN32_H
-#define _WIN32_H
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
-unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const int verbose);
-uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbose);
-void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, const int verbose);
-#endif
-#endif
+struct info_disk_struct
+{
+  unsigned int disk;
+  CHS_t CHSR;	/* CHS low level */
+  int mode_enh;
+  int bad_geometry;
+};
+
+disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode);
+const char *disk_description(disk_t *disk_car);
+
