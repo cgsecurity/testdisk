@@ -96,6 +96,20 @@ unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const
 uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbose)
 {
   uint64_t disk_size=0;
+  {
+    GET_LENGTH_INFORMATION buf;
+    DWORD i;
+    if (DeviceIoControl(handle, IOCTL_DISK_GET_LENGTH_INFO, NULL, 0, &buf, sizeof(buf), &i, NULL))
+    {
+      disk_size=(uint64_t)buf.Length.QuadPart;
+      log_info("disk_get_size_win32 IOCTL_DISK_GET_LENGTH_INFO(%s)=%llu\n",
+	  device, (long long unsigned)disk_size);
+      return disk_size;
+    }
+  }
+  disk_size=filewin32_getfilesize(handle, device);
+  if(disk_size!=0)
+    return disk_size;
   if(device[0]!='\0' && device[1]!='\0' && device[2]!='\0' && device[3]!='\0' && device[4]!='\0')
   {
     uint64_t i64FreeBytesToCaller, i64TotalBytes, i64FreeBytes;
@@ -105,7 +119,8 @@ uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbos
 	  (PULARGE_INTEGER)&i64FreeBytes)!=0)
     {
       if(verbose>1)
-	log_info("GetDiskFreeSpaceEx %s: ok\n", device);
+	log_info("disk_get_size_win32 GetDiskFreeSpaceEx %s: %llu\n",
+	    device, (long long unsigned)i64TotalBytes);
       return i64TotalBytes;
     }
   }
@@ -117,12 +132,10 @@ uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbos
     {
       disk_size=(uint64_t)geometry_ex.DiskSize.QuadPart;
       if(verbose>1)
-	log_info("IOCTL_DISK_GET_DRIVE_GEOMETRY_EX %s: ok\n", device);
+	log_info("disk_get_size_win32 IOCTL_DISK_GET_DRIVE_GEOMETRY_EX %s: %llu\n",
+	    device, (long long unsigned)disk_size);
     }
   }
-  if(disk_size!=0)
-    return disk_size;
-  disk_size=filewin32_getfilesize(handle, device);
   if(disk_size!=0)
     return disk_size;
   return filewin32_setfilepointer(handle, device);
@@ -173,6 +186,7 @@ struct info_file_win32_struct
 
 static uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
 {
+  uint64_t disk_size;
   DWORD lpFileSizeLow;
   DWORD lpFileSizeHigh;
   lpFileSizeLow=GetFileSize(handle,&lpFileSizeHigh);
@@ -192,12 +206,15 @@ static uint64_t filewin32_getfilesize(HANDLE handle, const char *device)
     LocalFree(lpMsgBuf);
     return 0;
   }
-  log_verbose("filewin32_getfilesize(%s) ok\n",device);
-  return lpFileSizeLow+((uint64_t)lpFileSizeHigh>>32);
+  disk_size=lpFileSizeLow+((uint64_t)lpFileSizeHigh>>32);
+  log_verbose("filewin32_getfilesize(%s)=%llu\n",
+      device, (long long unsigned)disk_size );
+  return disk_size;
 }
 
 static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
 {
+  uint64_t disk_size;
   LARGE_INTEGER li;
   li.QuadPart = 0;
   li.LowPart = SetFilePointer(handle, li.LowPart, &li.HighPart, FILE_END);
@@ -217,8 +234,10 @@ static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
     LocalFree(lpMsgBuf);
     return 0;
   }
-  log_verbose("filewin32_setfilepointer(%s) ok\n",device);
-  return li.LowPart+((uint64_t)li.HighPart>>32);
+  disk_size=li.LowPart+((uint64_t)li.HighPart>>32);
+  log_verbose("filewin32_setfilepointer(%s)=%llu\n",
+      device, (long long unsigned)disk_size );
+  return disk_size;
 }
 
 disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, int testdisk_mode)

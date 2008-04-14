@@ -877,7 +877,8 @@ static int scsi_query_product_info (const int hd_h, char **vendor, char **produc
 static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
 {
 #ifdef TARGET_LINUX
-  if(dev->model==NULL)
+  if(dev->model!=NULL)
+    return;
   {
     /* Use modern /sys interface for SCSI device */
     char *vendor;
@@ -894,7 +895,8 @@ static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
   }
 #endif
 #ifdef HDIO_GET_IDENTITY
-  if(dev->model==NULL)
+  if(dev->model!=NULL)
+    return;
   {
     struct hd_driveid       hdi;
     if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
@@ -908,7 +910,8 @@ static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
   }
 #endif
 #if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
-  if(dev->model==NULL)
+  if(dev->model!=NULL)
+    return;
   {
     /* Uses direct queries via the deprecated ioctl SCSI_IOCTL_SEND_COMMAND */
     char *vendor=NULL;
@@ -924,6 +927,8 @@ static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
   }
 #endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
+  if(dev->model!=NULL)
+    return;
   {
     HANDLE handle;
 #if defined(__CYGWIN__)
