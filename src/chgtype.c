@@ -211,6 +211,13 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
 	  offset++;
 	break;
       case KEY_LEFT:
+	if(current_element_num > INTER_CHGTYPE)
+	  current_element_num-=INTER_CHGTYPE;
+	else
+	  current_element_num=0;
+	if(current_element_num < offset)
+	  offset=current_element_num;
+	break;
       case KEY_PPAGE:
 	if(current_element_num > 3*INTER_CHGTYPE-1)
 	  current_element_num-=3*INTER_CHGTYPE-1;
@@ -220,16 +227,27 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
 	  offset=current_element_num;
 	break;
       case KEY_RIGHT:
+	if(current_element_num+INTER_CHGTYPE < intr_nbr_line-1)
+	  current_element_num+=INTER_CHGTYPE;
+	else
+	  current_element_num=intr_nbr_line-1;
+	if(current_element_num >= offset+3*INTER_CHGTYPE)
+	  offset=current_element_num-3*INTER_CHGTYPE+1;
+	break;
       case KEY_NPAGE:
 	if(current_element_num+3*INTER_CHGTYPE-1 < intr_nbr_line-1)
 	  current_element_num+=3*INTER_CHGTYPE-1;
 	else
 	  current_element_num=intr_nbr_line-1;
 	if(current_element_num >= offset+3*INTER_CHGTYPE)
-	  offset=current_element_num-1*INTER_CHGTYPE+1;
+	  offset=current_element_num-3*INTER_CHGTYPE+1;
 	break;
       case 'Q':
       case 'q':
+      case key_CR:
+#ifdef PADENTER
+      case PADENTER:
+#endif
 	partition->arch->set_part_type(partition, part_name[current_element_num].index);
 	return;
     }
