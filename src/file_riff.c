@@ -66,7 +66,11 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     else if(memcmp(&buffer[8],"CDR",3)==0)
       file_recovery_new->extension="cdr";
     else if(memcmp(&buffer[8],"NUND",4)==0)
+    {
       file_recovery_new->extension="cpr";
+      file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) + (((uint64_t)buffer[5])<<16) +
+	(((uint64_t)buffer[6])<<8) + (uint64_t)buffer[7] + 12;
+    }
     else if(memcmp(&buffer[8],"RMP3",4)==0 || memcmp(&buffer[8],"WAVE",4)==0)
       file_recovery_new->extension="wav";
     else
