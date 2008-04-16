@@ -172,6 +172,7 @@ extern const file_hint_t file_hint_pap;
 extern const file_hint_t file_hint_pct;
 extern const file_hint_t file_hint_pcx;
 extern const file_hint_t file_hint_pdf;
+extern const file_hint_t file_hint_pfx;
 extern const file_hint_t file_hint_png;
 extern const file_hint_t file_hint_prc;
 extern const file_hint_t file_hint_ps;
@@ -855,6 +856,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_pct  },
     { .enable=0, .file_hint=&file_hint_pcx  },
     { .enable=0, .file_hint=&file_hint_pdf  },
+    { .enable=0, .file_hint=&file_hint_pfx  },
     { .enable=0, .file_hint=&file_hint_png  },
     { .enable=0, .file_hint=&file_hint_prc  },
     { .enable=0, .file_hint=&file_hint_ps   },
