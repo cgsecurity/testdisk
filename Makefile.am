@@ -5,6 +5,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	darwin/readme.txt \
 	doc_src/testdisk.1.in doc_src/photorec.1.in doc \
 	dos/readme.txt \
+	ico/photorec.ico ico/testdisk.ico \
 	linux/testdisk.spec.in \
 	src/icon_ph.rc src/icon_tst.rc \
 	win/readme.txt
@@ -13,19 +14,11 @@ AUTOMAKE_OPTIONS = gnits
 
 man_MANS		= doc_src/testdisk.1 doc_src/photorec.1
 
-#dist-hook: linux/testdisk.spec
-#	cp linux/testdisk.spec $(distdir)
-
-#libtool: $(LIBTOOL_DEPS)
-#	$(SHELL) ./config.status --recheck
-
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
 	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README $(top_srcdir)/THANKS $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/
-	$(INSTALL_DATA) $(top_srcdir)/doc/*.html $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
-	$(INSTALL_DATA) $(top_srcdir)/doc/*.gif $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
-	$(INSTALL_DATA) $(top_srcdir)/doc/*.png $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
+	$(INSTALL_DATA) $(top_srcdir)/doc/* $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)

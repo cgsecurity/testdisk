@@ -2,8 +2,8 @@
 	$(WINDRES) --include-dir $(srcdir) $< $@ 
 
 if USEICON
-ICON_TESTDISK=icon_tst.rc ../doc/favicon.ico
-ICON_PHOTOREC=icon_ph.rc ../doc/photorec.ico
+ICON_TESTDISK=icon_tst.rc ../ico/testdisk.ico
+ICON_PHOTOREC=icon_ph.rc ../ico/photorec.ico
 endif
 
 
