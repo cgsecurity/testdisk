@@ -150,6 +150,11 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="pub";
     }
+    else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
+	|| td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
+    { /* Microsoft Works .wdb */
+      file_recovery_new->extension="wdb";
+    }
     else if(td_memmem(buffer,buffer_size,"C\0O\0N\0T\0E\0N\0T\0S\0",16)!=NULL)
     { /* Microsoft Works .wps */
       file_recovery_new->extension="wps";
