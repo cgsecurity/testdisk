@@ -47,6 +47,7 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
   int tmp_val=0;
   int cyl_modified=0;
   int geo_modified=0;
+  log_info("Current geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
   while (done==0)
   {
     while(*current_cmd[0]==',')
@@ -249,7 +250,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             tmp_val = atoi(response);
             /* FIXME using 3*512=1536 as sector size and */
             /* 63/3=21 for number of sectors is an easy way to test */
-            if (tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512) {
+	    /* MS Backup internal blocksize is 256 bytes */
+            if (tmp_val==256 || tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512) {
               disk_car->sector_size = tmp_val;
               if(cyl_modified==0)
 	      {	/* Round up */

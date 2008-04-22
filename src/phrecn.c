@@ -359,9 +359,10 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
 {
   int command;
   unsigned int menu=0;
-  const char *optionsBlocksize="51248736";
+  const char *optionsBlocksize="S51248736";
   static struct MenuItem menuBlocksize[]=
   {
+	{'S',"256",""},
 	{'5',"512",""},
 	{'1',"1024",""},
 	{'2',"2048",""},
@@ -374,24 +375,26 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
   };
   switch(sector_size)
   {
-    case 1024: optionsBlocksize+=1; break;
-    case 2048: optionsBlocksize+=2; break;
-    case 4096: optionsBlocksize+=3; break;
-    case 8192: optionsBlocksize+=4; break;
-    case 16384: optionsBlocksize+=5;break;
-    case 32768: optionsBlocksize+=6; break;
-    case 65536: optionsBlocksize+=7; break;
+    case 512: optionsBlocksize+=1; break;
+    case 1024: optionsBlocksize+=2; break;
+    case 2048: optionsBlocksize+=3; break;
+    case 4096: optionsBlocksize+=4; break;
+    case 8192: optionsBlocksize+=5; break;
+    case 16384: optionsBlocksize+=6;break;
+    case 32768: optionsBlocksize+=7; break;
+    case 65536: optionsBlocksize+=8; break;
   }
   switch(blocksize)
   {
-    case 512: menu=0; break;
-    case 1024: menu=1; break;
-    case 2048: menu=2; break;
-    case 4096: menu=3; break;
-    case 8192: menu=4; break;
-    case 16384: menu=5; break;
-    case 32768: menu=6; break;
-    case 65536: menu=7; break;
+    case 256: menu=0; break;
+    case 512: menu=1; break;
+    case 1024: menu=2; break;
+    case 2048: menu=3; break;
+    case 4096: menu=4; break;
+    case 8192: menu=5; break;
+    case 16384: menu=6; break;
+    case 32768: menu=7; break;
+    case 65536: menu=8; break;
   }
   aff_copy(stdscr);
   wmove(stdscr,INTER_PARTITION_Y-1,0);
@@ -400,6 +403,7 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
       optionsBlocksize, MENU_VERT| MENU_BUTTON|MENU_VERT_WARN, &menu,NULL);
   switch(command)
   {
+    case 'S': blocksize=256; break;
     case '5': blocksize=512; break;
     case '1': blocksize=1024; break;
     case '2': blocksize=2048; break;
@@ -1284,7 +1288,23 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
     }
 #endif
     if(status==STATUS_FIND_OFFSET && blocksize_is_known>0)
+    {
+#ifdef HAVE_NCURSES
+      if(expert>0)
+      {
+	uint64_t offset=0;
+	if(!td_list_empty(&list_search_space->list))
+	{
+	  alloc_data_t *tmp;
+	  tmp=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+	  offset=tmp->start%blocksize;
+	}
+	blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &offset);
+	update_blocksize(blocksize,list_search_space, offset);
+      }
+#endif
       ind_stop=0;
+    }
     else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
     {
       ind_stop=photorec_bf(disk_car, partition, verbose, paranoid, recup_dir, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, &dir_num, status, pass,expert, lowmem);
