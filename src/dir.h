@@ -24,11 +24,12 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#define INTER_DIR 16
 #define DIR_NAME_LEN 1024
 #define FLAG_LIST_DELETED	1
 #define FLAG_LIST_MASK12	2
 #define FLAG_LIST_MASK16	4
+/* capabilities */
+#define CAPA_LIST_DELETED	1
 
 typedef struct dir_data dir_data_t;
 typedef struct file_data file_data_t;
@@ -39,6 +40,7 @@ struct dir_data
   unsigned long int current_inode;
   int verbose;
   unsigned int param;
+  unsigned int capabilities;
   file_data_t *(*get_dir)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_inode);
   int (*copy_file)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
   void (*close)(dir_data_t *dir_data);

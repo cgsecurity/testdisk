@@ -493,6 +493,7 @@ int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_d
   else if(partition->upart_type==UP_FAT16)
     dir_data->param|=FLAG_LIST_MASK16;
   dir_data->verbose=verbose;
+  dir_data->capabilities=CAPA_LIST_DELETED;
   dir_data->copy_file=fat_copy;
   dir_data->close=dir_partition_fat_close;
   dir_data->local_dir=NULL;

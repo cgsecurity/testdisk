@@ -278,6 +278,7 @@ static void set_parent_directory(char *dst_directory)
 }
 
 #ifdef HAVE_NCURSES
+#define INTER_DIR 16
 static void dir_aff_entry(WINDOW *window, struct file_info *dir_info);
 
 int get_string(char *str, int len, char *def)

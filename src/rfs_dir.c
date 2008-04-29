@@ -509,6 +509,7 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
     strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
     dir_data->current_inode=2;
     dir_data->verbose=verbose;
+    dir_data->capabilities=0;
     dir_data->get_dir=reiser_dir;
     dir_data->copy_file=NULL;
     dir_data->close=&dir_partition_reiser_close;

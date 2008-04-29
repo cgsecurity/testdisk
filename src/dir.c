@@ -60,11 +60,11 @@
 const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const int first_time, char **current_cmd);
+static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
 static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir);
 static char ftypelet (unsigned int bits);
 #ifdef HAVE_NCURSES
-static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const int first_time);
+static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
 #endif
 
 static char ftypelet (unsigned int bits)
@@ -210,7 +210,9 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
 }
 
 #ifdef HAVE_NCURSES
-static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const int first_time)
+#define INTER_DIR (LINES-25+16)
+
+static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
 {
   /* Return value
    * -1: quit
@@ -218,255 +220,275 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
    *  other: new inode
    * */
   int quit=0;
-  int offset=0;
-  int pos_num=0;
-  const file_data_t *current_file;
-  const file_data_t *pos=dir_list;
   WINDOW *window=(WINDOW*)dir_data->display;
-  aff_copy(window);
-  wmove(window,4,0);
-  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-  mvwaddstr(window,5,0,"Use ");
-  if(first_time==0)
-  {
-    if(has_colors())
-      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(window, "Left");
-    if(has_colors())
-      wbkgdset(window,' ' | COLOR_PAIR(0));
-    waddstr(window," arrow to go back, ");
-  }
-  if(has_colors())
-    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-  waddstr(window,"Right");
-  if(has_colors())
-    wbkgdset(window,' ' | COLOR_PAIR(0));
-  waddstr(window," arrow to change directory, ");
-  if(dir_data->copy_file!=NULL)
-  {
-    if(has_colors())
-      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(window,"c");
-    if(has_colors())
-      wbkgdset(window,' ' | COLOR_PAIR(0));
-    waddstr(window," to copy, ");
-  }
-  if(has_colors())
-    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-  waddstr(window,"q");
-  if(has_colors())
-    wbkgdset(window,' ' | COLOR_PAIR(0));
-  waddstr(window," to quit");
-  wmove(window,6,0);
-  wprintw(window,"Directory %s\n",dir_data->current_directory);
   do
   {
-    int i;
-    int car;
-    for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
-    for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
+    int offset=0;
+    int pos_num=0;
+    const file_data_t *current_file;
+    const file_data_t *pos=dir_list;
+    int old_LINES=LINES;
+    aff_copy(window);
+    wmove(window,3,0);
+    aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+    mvwaddstr(window,LINES-2,0,"Use ");
+    if(depth>0)
     {
-      struct tm		*tm_p;
-      char str[11];
-      char		datestr[80];
-      wmove(window, 8+i-offset, 0);
-      wclrtoeol(window);	/* before addstr for BSD compatibility */
-      if(current_file==pos)
-	wattrset(window, A_REVERSE);
-      if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
-	wbkgdset(window,' ' | COLOR_PAIR(1));
-      if(current_file->filestat.st_mtime!=0)
-      {
-	tm_p = localtime(&current_file->filestat.st_mtime);
-	snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	    tm_p->tm_mday, monstr[tm_p->tm_mon],
-	    1900 + tm_p->tm_year, tm_p->tm_hour,
-	    tm_p->tm_min);
-      /* May have to use %d instead of %e */
-      } else {
-	strncpy(datestr, "                 ",sizeof(datestr));
-      }
-      mode_string(current_file->filestat.st_mode,str);
-      wprintw(window, "%s %5u %5u   ", 
-	  str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-      wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
-      /* screen may overlap due to long filename */
-      wprintw(window, " %s %s", datestr, current_file->name);
-      if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(window, "Left");
+      if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
-      if(current_file==pos)
-	wattroff(window, A_REVERSE);
+      waddstr(window," arrow to go back, ");
     }
-    wmove(window, 8-1, 51);
-    wclrtoeol(window);
-    if(offset>0)
-      wprintw(window, "Previous");
-    /* Clear the last line, useful if overlapping */
-    wmove(window,8+i-offset,0);
-    wclrtoeol(window);
-    wmove(window, 8+INTER_DIR, 51);
-    wclrtoeol(window);
-    if(current_file!=NULL)
-      wprintw(window, "Next");
-    if(dir_list==NULL)
+    if(has_colors())
+      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+    waddstr(window,"Right");
+    if(has_colors())
+      wbkgdset(window,' ' | COLOR_PAIR(0));
+    waddstr(window," arrow to change directory, ");
+    if(dir_data->copy_file!=NULL)
     {
-      wmove(window,8,0);
-      wprintw(window,"No file found, filesystem seems damaged.");
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(window,"c");
+      if(has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(0));
+      waddstr(window," to copy, ");
     }
-    wrefresh(window);
-    /* Using gnome terminal under FC3, TERM=xterm, the screen is not always correct */
-    wredrawln(window,0,getmaxy(window));	/* redrawwin def is boggus in pdcur24 */
-    car=wgetch(window);
-    wmove(window,7,0);
-    wclrtoeol(window);
-    switch(car)
+    wmove(window,LINES-1,4);
+    if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
     {
-      case key_ESC:
-      case 'q':
-      case 'M':
-	quit=1;
-	break;
-      case '-':
-      case KEY_LEFT:
-	if(first_time==0)
-	  return 1;
-	break;
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(window,"h");
+      if(has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(0));
+      if((dir_data->param&FLAG_LIST_DELETED)==0)
+	waddstr(window," to unhide deleted files, ");
+      else
+	waddstr(window," to hide deleted files, ");
     }
-    if(dir_list!=NULL)
+    if(has_colors())
+      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+    waddstr(window,"q");
+    if(has_colors())
+      wbkgdset(window,' ' | COLOR_PAIR(0));
+    waddstr(window," to quit");
+    wmove(window,4,0);
+    wprintw(window,"Directory %s\n",dir_data->current_directory);
+    do
     {
+      int i;
+      int car;
+      for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
+      for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
+      {
+	struct tm		*tm_p;
+	char str[11];
+	char		datestr[80];
+	wmove(window, 6+i-offset, 0);
+	wclrtoeol(window);	/* before addstr for BSD compatibility */
+	if(current_file==pos)
+	  wattrset(window, A_REVERSE);
+	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(1));
+	if(current_file->filestat.st_mtime!=0)
+	{
+	  tm_p = localtime(&current_file->filestat.st_mtime);
+	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	      tm_p->tm_mday, monstr[tm_p->tm_mon],
+	      1900 + tm_p->tm_year, tm_p->tm_hour,
+	      tm_p->tm_min);
+	  /* May have to use %d instead of %e */
+	} else {
+	  strncpy(datestr, "                 ",sizeof(datestr));
+	}
+	mode_string(current_file->filestat.st_mode,str);
+	wprintw(window, "%s %5u %5u   ", 
+	    str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
+	wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+	/* screen may overlap due to long filename */
+	wprintw(window, " %s %s", datestr, current_file->name);
+	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	if(current_file==pos)
+	  wattroff(window, A_REVERSE);
+      }
+      wmove(window, 6-1, 51);
+      wclrtoeol(window);
+      if(offset>0)
+	wprintw(window, "Previous");
+      /* Clear the last line, useful if overlapping */
+      wmove(window,6+i-offset,0);
+      wclrtoeol(window);
+      wmove(window, 6+INTER_DIR, 51);
+      wclrtoeol(window);
+      if(current_file!=NULL)
+	wprintw(window, "Next");
+      if(dir_list==NULL)
+      {
+	wmove(window,6,0);
+	wprintw(window,"No file found, filesystem seems damaged.");
+      }
+      wrefresh(window);
+      /* Using gnome terminal under FC3, TERM=xterm, the screen is not always correct */
+      wredrawln(window,0,getmaxy(window));	/* redrawwin def is boggus in pdcur24 */
+      car=wgetch(window);
+      wmove(window,5,0);
+      wclrtoeol(window);
       switch(car)
       {
-	case KEY_UP:
-	  if(pos->prev!=NULL)
-	  {
-	    pos=pos->prev;
-	    pos_num--;
-	  }
-	  if(pos_num<offset)
-	    offset--;
+	case key_ESC:
+	case 'q':
+	case 'M':
+	  quit=1;
 	  break;
-	case KEY_DOWN:
-	  if(pos->next!=NULL)
-	  {
-	    pos=pos->next;
-	    pos_num++;
-	  }
-	  if(pos_num>=offset+INTER_DIR)
-	    offset++;
+	case '-':
+	case KEY_LEFT:
+	  if(depth>0)
+	    return 1;
 	  break;
-	case 'p':
-	case 'P':
-	case '+':
-	case ' ':
-	case KEY_RIGHT:
-	case '\r':
-	case '\n':
-
-	case KEY_ENTER:
-#ifdef PADENTER
-	case PADENTER:
-#endif
-	  if((pos!=NULL) && (LINUX_S_ISDIR(pos->filestat.st_mode)!=0))
-	  {
-	    unsigned long int new_inode=pos->filestat.st_ino;
-	    if((new_inode!=inode) &&(strcmp(pos->name,".")!=0))
+	case 'h':
+	  dir_data->param^=FLAG_LIST_DELETED;
+	  return inode;
+      }
+      if(dir_list!=NULL)
+      {
+	switch(car)
+	{
+	  case KEY_UP:
+	    if(pos->prev!=NULL)
 	    {
-	      if(strcmp(pos->name,"..")==0)
-		return 1;
-	      if(strlen(dir_data->current_directory)+1+strlen(pos->name)+1<=sizeof(dir_data->current_directory))
+	      pos=pos->prev;
+	      pos_num--;
+	    }
+	    if(pos_num<offset)
+	      offset--;
+	    break;
+	  case KEY_DOWN:
+	    if(pos->next!=NULL)
+	    {
+	      pos=pos->next;
+	      pos_num++;
+	    }
+	    if(pos_num>=offset+INTER_DIR)
+	      offset++;
+	    break;
+	  case 'p':
+	  case 'P':
+	  case '+':
+	  case ' ':
+	  case KEY_RIGHT:
+	  case '\r':
+	  case '\n':
+
+	  case KEY_ENTER:
+#ifdef PADENTER
+	  case PADENTER:
+#endif
+	    if((pos!=NULL) && (LINUX_S_ISDIR(pos->filestat.st_mode)!=0))
+	    {
+	      unsigned long int new_inode=pos->filestat.st_ino;
+	      if((new_inode!=inode) &&(strcmp(pos->name,".")!=0))
+	      {
+		if(strcmp(pos->name,"..")==0)
+		  return 1;
+		if(strlen(dir_data->current_directory)+1+strlen(pos->name)+1<=sizeof(dir_data->current_directory))
+		{
+		  if(strcmp(dir_data->current_directory,"/"))
+		    strcat(dir_data->current_directory,"/");
+		  strcat(dir_data->current_directory,pos->name);
+		  return (long int)new_inode;
+		}
+	      }
+	    }
+	    break;
+	  case KEY_PPAGE:
+	    for(i=0;(i<INTER_DIR-1)&&(pos->prev!=NULL);i++)
+	    {
+	      pos=pos->prev;
+	      pos_num--;
+	      if(pos_num<offset)
+		offset--;
+	    }
+	    break;
+	  case KEY_NPAGE:
+	    for(i=0;(i<INTER_DIR-1)&&(pos->next!=NULL);i++)
+	    {
+	      pos=pos->next;
+	      pos_num++;
+	      if(pos_num>=offset+INTER_DIR)
+		offset++;
+	    }
+	    break;
+	  case 'c':
+	    if(dir_data->copy_file!=NULL)
+	    {
+	      unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+	      if(strcmp(pos->name,"..")!=0 &&
+		  current_directory_namelength+1+strlen(pos->name)<sizeof(dir_data->current_directory)-1)
 	      {
 		if(strcmp(dir_data->current_directory,"/"))
 		  strcat(dir_data->current_directory,"/");
-		strcat(dir_data->current_directory,pos->name);
-		return (long int)new_inode;
-	      }
-	    }
-	  }
-	  break;
-	case KEY_PPAGE:
-	  for(i=0;(i<INTER_DIR-1)&&(pos->prev!=NULL);i++)
-	  {
-	    pos=pos->prev;
-	    pos_num--;
-	    if(pos_num<offset)
-	      offset--;
-	  }
-	  break;
-	case KEY_NPAGE:
-	  for(i=0;(i<INTER_DIR-1)&&(pos->next!=NULL);i++)
-	  {
-	    pos=pos->next;
-	    pos_num++;
-	    if(pos_num>=offset+INTER_DIR)
-	      offset++;
-	  }
-	  break;
-	case 'c':
-	  if(dir_data->copy_file!=NULL)
-	  {
-	    unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-	    if(strcmp(pos->name,"..")!=0 &&
-		current_directory_namelength+1+strlen(pos->name)<sizeof(dir_data->current_directory)-1)
-	    {
-	      if(strcmp(dir_data->current_directory,"/"))
-		strcat(dir_data->current_directory,"/");
-	      if(strcmp(pos->name,".")!=0)
-		strcat(dir_data->current_directory,pos->name);
-	      if(dir_data->local_dir==NULL)
-	      {
-		char *res;
-		if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
-		  res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",dir_data->current_directory);
-		else
-		  res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",dir_data->current_directory);
-		// free(dir_data->local_dir);
-		dir_data->local_dir=res;
-	      }
-	      if(dir_data->local_dir!=NULL)
-	      {
-		int res=-1;
-		wmove(window,7,0);
-		wclrtoeol(window);
-		if(has_colors())
-		  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
-		wprintw(window,"Copying, please wait...");
-		if(has_colors())
-		  wbkgdset(window,' ' | COLOR_PAIR(0));
-		wrefresh(window);
-		if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		if(strcmp(pos->name,".")!=0)
+		  strcat(dir_data->current_directory,pos->name);
+		if(dir_data->local_dir==NULL)
 		{
-		  res=copy_dir(disk_car, partition, dir_data, pos);
+		  char *res;
+		  if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		    res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",dir_data->current_directory);
+		  else
+		    res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",dir_data->current_directory);
+		  // free(dir_data->local_dir);
+		  dir_data->local_dir=res;
 		}
-		else if(LINUX_S_ISREG(pos->filestat.st_mode)!=0)
+		if(dir_data->local_dir!=NULL)
 		{
-		  res=dir_data->copy_file(disk_car, partition, dir_data, pos);
-		}
-		wmove(window,7,0);
-		wclrtoeol(window);
-		if(res < -1)
-		{
+		  int res=-1;
+		  wmove(window,5,0);
+		  wclrtoeol(window);
 		  if(has_colors())
 		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
-		  wprintw(window,"Copy failed!");
-		}
-		else
-		{
+		  wprintw(window,"Copying, please wait...");
 		  if(has_colors())
-		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
-		  if(res < 0)
-		    wprintw(window,"Copy done! (Failed to copy some files)");
+		    wbkgdset(window,' ' | COLOR_PAIR(0));
+		  wrefresh(window);
+		  if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		  {
+		    res=copy_dir(disk_car, partition, dir_data, pos);
+		  }
+		  else if(LINUX_S_ISREG(pos->filestat.st_mode)!=0)
+		  {
+		    res=dir_data->copy_file(disk_car, partition, dir_data, pos);
+		  }
+		  wmove(window,5,0);
+		  wclrtoeol(window);
+		  if(res < -1)
+		  {
+		    if(has_colors())
+		      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
+		    wprintw(window,"Copy failed!");
+		  }
 		  else
-		    wprintw(window,"Copy done!");
+		  {
+		    if(has_colors())
+		      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
+		    if(res < 0)
+		      wprintw(window,"Copy done! (Failed to copy some files)");
+		    else
+		      wprintw(window,"Copy done!");
+		  }
+		  if(has_colors())
+		    wbkgdset(window,' ' | COLOR_PAIR(0));
 		}
-		if(has_colors())
-		  wbkgdset(window,' ' | COLOR_PAIR(0));
+		dir_data->current_directory[current_directory_namelength]='\0';
 	      }
-	      dir_data->current_directory[current_directory_namelength]='\0';
 	    }
-	  }
-	  break;
+	    break;
+	}
       }
-    }
+    } while(quit==0 && old_LINES==LINES);
   } while(quit==0);
   return -1;
 }
@@ -487,57 +509,55 @@ int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t
 {
   if(dir_data==NULL)
     return -1;
-  return dir_partition_aux(disk_car,partition,dir_data,inode,1,current_cmd);
+  return dir_partition_aux(disk_car,partition,dir_data,inode,0,current_cmd);
 }
 
-static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const int first_time, char**current_cmd)
+static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char**current_cmd)
 {
-  file_data_t *dir_list;
-  long int new_inode=-1;
 #define MAX_DIR_NBR 256
-  static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
-  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-  if(dir_nbr==MAX_DIR_NBR)
+  if(depth==MAX_DIR_NBR)
     return 1;	/* subdirectories depth is too high => Back */
   if(dir_data->verbose>0)
     log_info("\ndir_partition inode=%lu\n",inode);
-  dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
-  dir_aff_log(disk_car, partition, dir_data, dir_list);
-  if(*current_cmd!=NULL)
-  {
-    delete_list_file(dir_list);
-    return -1;
-  }
-  /* Not perfect for FAT32 root cluster */
-  inode_known[dir_nbr++]=inode;
   while(1)
   {
-    unsigned int new_inode_ok=1;
-    unsigned int i;
+    const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+    long int new_inode=-1;	/* Quit */
+    file_data_t *dir_list;
+    /* Not perfect for FAT32 root cluster */
+    inode_known[depth]=inode;
+    dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
+    dir_aff_log(disk_car, partition, dir_data, dir_list);
+    if(*current_cmd!=NULL)
+    {
+      dir_data->current_directory[current_directory_namelength]='\0';
+      delete_list_file(dir_list);
+      return -1;	/* Quit */
+    }
 #ifdef HAVE_NCURSES
-    new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,first_time);
+    new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,depth);
 #endif
-    if(new_inode<=1) /* Quit or Back */
+    if(new_inode==-1 || new_inode==1) /* -1:Quit or 1:Back */
     {
       delete_list_file(dir_list);
-      dir_nbr--;
       return new_inode;
     }
-    for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
-      if(new_inode==inode_known[i]) /* Avoid loop */
-	new_inode_ok=0;
-    if(new_inode_ok>0)
+    if(new_inode>=2)
     {
-      if(dir_partition_aux(disk_car, partition, dir_data, (unsigned long int)new_inode,0,current_cmd)<0)
-      { /* quit */
-	delete_list_file(dir_list);
-	dir_nbr--;
-	return -1;
+      unsigned int new_inode_ok=1;
+      unsigned int i;
+      for(i=0;i<=depth && new_inode_ok!=0;i++)
+	if(new_inode==inode_known[i]) /* Avoid loop */
+	  new_inode_ok=0;
+      if(new_inode_ok>0)
+      {
+	new_inode=dir_partition_aux(disk_car, partition, dir_data, (unsigned long int)new_inode,depth+1,current_cmd);
       }
-      /* restore current_directory name */
-      dir_data->current_directory[current_directory_namelength]='\0';
     }
+    /* restore current_directory name */
+    dir_data->current_directory[current_directory_namelength]='\0';
+    delete_list_file(dir_list);
   }
 }
 
