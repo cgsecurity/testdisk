@@ -53,14 +53,14 @@
 
 #include <libewf.h>
 #include "log.h"
+#include "hdaccess.h"
 
 static const char *fewf_description(disk_t *disk_car);
 static const char *fewf_description_short(disk_t *disk_car);
 static int fewf_clean(disk_t *disk_car);
 static int fewf_read(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t offset);
-static int fewf_write(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
 static int fewf_nowrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
-
+static int fewf_sync(disk_t *disk_car);
 
 struct info_fewf_struct
 {
@@ -89,7 +89,6 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
   data->buffer_size=0;
   data->mode=mode;
   data->handle=NULL;
-//  data->handle=libewf_open(filenames, 1, ((mode&O_RDWR)==O_RDWR?LIBEWF_OPEN_WRITE:LIBEWF_OPEN_READ));
 #ifdef HAVE_GLOB_H
   {
     globbuf.gl_offs = 0;
@@ -111,6 +110,7 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
     data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
   if(data->handle==NULL)
   {
+    log_error("libewf_open(%s) failed\n", device);
 #ifdef HAVE_GLOB_H
     globfree(&globbuf);
 #endif
@@ -120,10 +120,20 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
   }
   if( libewf_parse_header_values( data->handle, LIBEWF_DATE_FORMAT_DAYMONTH) != 1 )
   {
-    fprintf( stderr, "Unable to parse header values.\n" );
+    log_error("%s Unable to parse EWF header values\n", device);
   }
   disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
+  init_disk(disk_car);
   disk_car->arch=arch;
+  disk_car->device=strdup(device);
+  disk_car->data=data;
+  disk_car->description=fewf_description;
+  disk_car->description_short=fewf_description_short;
+  disk_car->read=fewf_read;
+  disk_car->write=fewf_nowrite;
+  disk_car->sync=fewf_sync;
+  disk_car->access_mode=TESTDISK_O_RDONLY;
+  disk_car->clean=fewf_clean;
 #ifdef LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS
   {
     uint32_t bytes_per_sector;
@@ -138,31 +148,23 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
 //  printf("libewf_get_bytes_per_sector %u\n",disk_car->sector_size);
   if(disk_car->sector_size==0)
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
+  /* Set geometry */
+  disk_car->CHS.cylinder=0;
+  disk_car->CHS.head=0;
+  disk_car->CHS.sector=1;
+  /* Get disk_real_size */
 #ifdef LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS
   {
     size64_t media_size;
     if(libewf_get_media_size(data->handle, &media_size)<0)
-      disk_car->disk_size=0;
+      disk_car->disk_real_size=0;
     else
-      disk_car->disk_size=media_size;
+      disk_car->disk_real_size=media_size;
   }
 #else
-  disk_car->disk_size=libewf_get_media_size(data->handle);
+  disk_car->disk_real_size=libewf_get_media_size(data->handle);
 #endif
-//  printf("libewf_get_media_size %llu\n",(long long unsigned) (disk_car->sector_size/disk_car->sector_size));
-  disk_car->disk_real_size=disk_car->disk_size;
-  disk_car->CHS.head=255-1;
-  disk_car->CHS.sector=63;
-  disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
-  disk_car->device=strdup(device);
-  disk_car->write_used=0;
-  disk_car->description_txt[0]='\0';
-  disk_car->description=fewf_description;
-  disk_car->description_short=fewf_description_short;
-  disk_car->read=fewf_read;
-  disk_car->write=((mode&O_RDWR)==O_RDWR?fewf_write:fewf_nowrite);
-  disk_car->clean=fewf_clean;
-  disk_car->data=data;
+  update_disk_car_fields(disk_car);
 #ifdef HAVE_GLOB_H
   globfree(&globbuf);
 #endif
@@ -207,6 +209,12 @@ static int fewf_clean(disk_t *disk_car)
   return 0;
 }
 
+static int fewf_sync(disk_t *disk_car)
+{
+  errno=EINVAL;
+  return -1;
+}
+
 static int fewf_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
 {
   struct info_fewf_struct *data=(struct info_fewf_struct *)disk_car->data;
@@ -227,12 +235,6 @@ static int fewf_read(disk_t *disk_car,const unsigned int count, void *nom_buffer
       return -1;
   }
   return 0;
-}
-
-static int fewf_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
-{
-  struct info_fewf_struct *data=(struct info_fewf_struct *)disk_car->data;
-  return -1;
 }
 
 static int fewf_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)

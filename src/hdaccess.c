@@ -1299,30 +1299,27 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 	dos_nr = 0x87;
       if(dos_nr>0)
 	disk_car = hd_identify(verbose, dos_nr, arch, testdisk_mode);
+      if(disk_car!=NULL)
+	return disk_car;
     }
 #endif
+    /* Handle 'testdisk disk.E*' or 'photorec "disk.E*"' case */
+    if(strncmp(device,"/dev/",5)!=0)
+    {
+#if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF) && defined(HAVE_GLOB_H)
+      return fewf_init(device,verbose,arch,testdisk_mode);
+#endif
+    }
     return disk_car;
   }
   disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
   disk_car->arch=arch;
-  disk_car->autodetect=0;
-  disk_car->disk_size=0;
-  /* Note, some Raid reserves the first 1024 512-sectors */
-  disk_car->offset=0;
+  init_disk(disk_car);
+  disk_car->device=strdup(device);
   data=MALLOC(sizeof(*data));
   data->handle=hd_h;
-#if defined(POSIX_FADV_SEQUENTIAL) && defined(HAVE_POSIX_FADVISE)
-  posix_fadvise(hd_h,0,0,POSIX_FADV_SEQUENTIAL);
-#endif
   data->mode=mode;
-  disk_car->rbuffer=NULL;
-  disk_car->wbuffer=NULL;
-  disk_car->rbuffer_size=0;
-  disk_car->wbuffer_size=0;
-  disk_car->device=strdup(device);
-  disk_car->model=NULL;
-  disk_car->write_used=0;
-  disk_car->description_txt[0]='\0';
+  disk_car->data=data;
   disk_car->description=file_description;
   disk_car->description_short=file_description_short;
   disk_car->read=file_read;
@@ -1334,8 +1331,6 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     disk_car->access_mode|=TESTDISK_O_DIRECT;
 #endif
   disk_car->clean=file_clean;
-  disk_car->data=data;
-  disk_car->unit=UNIT_CHS;
   if(fstat(hd_h,&stat_rec)>=0)
   {
     if(S_ISREG(stat_rec.st_mode) && stat_rec.st_size > 0)
@@ -1387,8 +1382,11 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     else if(memcmp(buffer, evf_file_signature, 8)==0)
     {
       free(buffer);
-      close(hd_h);
+      free(data);
+      free(disk_car->device);
+      free(disk_car->model);
       free(disk_car);
+      close(hd_h);
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
       return fewf_init(device,verbose,arch,testdisk_mode);
 #else
@@ -1418,6 +1416,9 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     free(buffer);
   }
   update_disk_car_fields(disk_car);
+#if defined(POSIX_FADV_SEQUENTIAL) && defined(HAVE_POSIX_FADVISE)
+  posix_fadvise(hd_h,0,0,POSIX_FADV_SEQUENTIAL);
+#endif
   if(disk_car->disk_real_size!=0)
     return disk_car;
   log_warning("Warning: can't get size for %s\n", device);
@@ -1505,3 +1506,18 @@ void autoset_unit(disk_t *disk_car)
     disk_car->unit=UNIT_CHS;
 }
 
+void init_disk(disk_t *disk)
+{
+  disk->autodetect=0;
+  disk->disk_size=0;
+  /* Note, some Raid reserve the first 1024 512-sectors */
+  disk->offset=0;
+  disk->rbuffer=NULL;
+  disk->wbuffer=NULL;
+  disk->rbuffer_size=0;
+  disk->wbuffer_size=0;
+  disk->model=NULL;
+  disk->write_used=0;
+  disk->description_txt[0]='\0';
+  disk->unit=UNIT_CHS;
+}

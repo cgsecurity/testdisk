@@ -307,22 +307,13 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
   {
     struct info_file_win32_struct *data;
     disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
-    disk_car->sector_size=disk_get_sector_size_win32(handle, device, verbose);
-    disk_get_geometry_win32(&disk_car->CHS, handle, device, verbose);
-    disk_car->disk_real_size=disk_get_size_win32(handle, device, verbose);
-    update_disk_car_fields(disk_car);
+    init_disk(disk_car);
     disk_car->arch=arch;
+    disk_car->device=strdup(device);
     data=MALLOC(sizeof(*data));
     data->handle=handle;
     data->mode=mode;
-    disk_car->rbuffer=NULL;
-    disk_car->wbuffer=NULL;
-    disk_car->rbuffer_size=0;
-    disk_car->wbuffer_size=0;
-    disk_car->device=strdup(device);
-    disk_car->model=NULL;
-    disk_car->write_used=0;
-    disk_car->description_txt[0]='\0';
+    disk_car->data=data;
     disk_car->description=file_win32_description;
     disk_car->description_short=file_win32_description_short;
     disk_car->read=file_win32_read;
@@ -330,23 +321,21 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->sync=file_win32_sync;
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=file_win32_clean;
-    disk_car->data=data;
-    disk_car->offset=0;
+    disk_car->sector_size=disk_get_sector_size_win32(handle, device, verbose);
+    disk_get_geometry_win32(&disk_car->CHS, handle, device, verbose);
+    disk_car->disk_real_size=disk_get_size_win32(handle, device, verbose);
     file_win32_disk_get_model(handle, disk_car, verbose);
-    if(disk_car->disk_real_size==0)
-    {
-      log_warning("Warning: can't get size for %s\n",device);
-      free(data);
-      free(disk_car->device);
-      free(disk_car->model);
-      free(disk_car);
-      CloseHandle(handle);
-      return NULL;
-    }
-    disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
-    disk_car->unit=UNIT_CHS;
-    return disk_car;
+    update_disk_car_fields(disk_car);
+    if(disk_car->disk_real_size!=0)
+      return disk_car;
+    log_warning("Warning: can't get size for %s\n",device);
+    free(data);
+    free(disk_car->device);
+    free(disk_car->model);
+    free(disk_car);
+    CloseHandle(handle);
   }
+  return NULL;
 }
 
 static const char *file_win32_description(disk_t *disk_car)
