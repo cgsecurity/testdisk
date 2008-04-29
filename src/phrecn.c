@@ -47,6 +47,7 @@
 #else
 #include <stdio.h>
 #endif
+#include <errno.h>
 #include "fnctdsk.h"
 #include "dir.h"
 #include "fat_dir.h"
@@ -550,7 +551,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
         {
           if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
           { 
-            log_critical("Cannot create file %s\n", file_recovery.filename);
+            log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
             ind_stop=2;
           }
         }
@@ -659,7 +660,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
   file_recovery->handle=fopen(file_recovery->filename, "w+b");
   if(file_recovery->handle==NULL)
   {
-    log_critical("Brute Force : Cannot create file %s\n", file_recovery->filename);
+    log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
     return 2;
   }
   block_buffer=(unsigned char *) malloc(sizeof(unsigned char)*blocksize);
@@ -950,7 +951,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         {
           if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
           { 
-            log_critical("Cannot create file %s\n", file_recovery.filename);
+            log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
             ind_stop=2;
           }
         }
@@ -988,7 +989,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         {
           if(fwrite(buffer,*blocksize,1,file_recovery.handle)<1)
           { 
-            log_critical("Cannot write file %s\n", file_recovery.filename);
+            log_critical("Cannot write file %s:%s\n", file_recovery.filename, strerror(errno));
             ind_stop=3;
           }
         }
