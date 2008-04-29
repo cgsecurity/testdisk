@@ -68,20 +68,20 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
       return 0;
     }
   }
-  /* MD version 0.9 */
+  /* MD version 0.90 */
   {
     const struct mdp_superblock_s *sb=(const struct mdp_superblock_s *)buffer;
-    uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
+    const uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
     if(verbose>1)
     {
-      log_verbose("Raid offset %llu\n",(long long unsigned)offset/512);
+      log_verbose("Raid md 0.90 offset %llu\n", (long long unsigned)offset/512);
     }
     if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
     {
       if(le32(sb->major_version)==0 &&
           test_MD(disk_car,(struct mdp_superblock_s*)buffer,partition,verbose,0)==0)
       {
-        log_info("check_MD 0.9\n");
+        log_info("check_MD 0.90\n");
         set_MD_info(disk_car,(struct mdp_superblock_s*)buffer,partition,verbose,0);
         free(buffer);
         return 0;
@@ -91,10 +91,10 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
   /* MD version 1.0 */
   if(partition->part_size > 8*2*512)
   {
-    uint64_t offset=(uint64_t)(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
+    const uint64_t offset=(uint64_t)(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
     if(verbose>1)
     {
-      log_verbose("Raid offset %llu\n",(long long unsigned)offset/512);
+      log_verbose("Raid md 1.0 offset %llu\n", (long long unsigned)offset/512);
     }
     if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
     {
@@ -118,7 +118,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(MD_SB_BYTES);
-  /* MD version 0.9 */
+  /* MD version 0.90 */
   {
     uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
     if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
@@ -176,7 +176,7 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
 
 int set_MD_info(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
-  unsigned int i;
+  unsigned int i,d;
   if(le32(sb->major_version)==0)
   {
     sprintf(partition->fsname,"md%u",(unsigned int)le32(sb->md_minor));
@@ -204,12 +204,26 @@ int set_MD_info(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u: devices",
-        (unsigned int)le32(sb1->major_version),
-        (unsigned int)le32(sb1->level));
-    for(i=0;i<le32(sb1->max_dev);i++)
+    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %d (",
+	(unsigned int)le32(sb1->major_version),
+	(unsigned int)le32(sb1->level),
+	le32(sb1->dev_number));
+    for (i= le32(sb1->max_dev); i> 0 ; i--)
+      if (le16(sb1->dev_roles[i-1]) != 0xffff)
+	break;
+    for (d=0; d < i; d++)
     {
+      int role = le16(sb1->dev_roles[d]);
+      if (d)
+	strcat(partition->info, ", ");
+      if (role == 0xffff)
+	strcat(partition->info, "empty");
+      else if(role == 0xfffe)
+	strcat(partition->info, "failed");
+      else
+	sprintf(&partition->info[strlen(partition->info)], "%d", role);
     }
+    strcat(partition->info, ")");
   }
   if(verbose>0)
     log_info("%s %s\n", partition->fsname, partition->info);
@@ -228,8 +242,7 @@ int test_MD(disk_t *disk_car, const struct mdp_superblock_s *sb,partition_t *par
     if(le32(sb->major_version)==0)
     {
       log_info("Raid chunk size: %llu bytes\n",(long long unsigned)le32(sb->chunk_size));
-      if(le32(sb->chunk_size)==0)
-        return 1;
+      /* chunk_size may be 0 */
       partition->upart_type=UP_MD;
     }
     else if(le32(sb->major_version)==1)
