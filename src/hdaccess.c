@@ -467,6 +467,23 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
     }
   }
 #endif
+#ifdef DKIOCGETBLOCKSIZE
+  {
+    /* Mac */
+    uint32_t arg=0;
+    if(ioctl(hd_h,DKIOCGETBLOCKSIZE,&arg)==0)
+    {
+      sector_size=arg;
+      if(verbose>1)
+      {
+	log_verbose("disk_get_sector_size DKIOCGETBLOCKSIZE %s sector_size=%u\n",
+	    device, sector_size);
+      }
+      if(sector_size!=0)
+	return sector_size;
+    }
+  }
+#endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   {
     DWORD dwSectPerClust, 
@@ -695,6 +712,20 @@ static uint64_t disk_get_size(const int hd_h, const char *device, const int verb
     }
   }
 #endif
+#ifdef DKIOCGETBLOCKCOUNT
+  {
+    uint64_t longsectors64=0;
+    if (ioctl(hd_h, DKIOCGETBLOCKCOUNT, &longsectors64)>=0)
+    {
+      if(verbose>1)
+      {
+	log_verbose("disk_get_size DKIOCGETBLOCKCOUNT %s size %llu\n",
+	    device, (long long unsigned)longsectors64*sector_size);
+      }
+      return longsectors64*sector_size;
+    }
+  }
+#endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   {
     HANDLE handle;
@@ -706,7 +737,6 @@ static uint64_t disk_get_size(const int hd_h, const char *device, const int verb
     return disk_get_size_win32(handle, device, verbose);
   }
 #endif
-  /* Handle Mac */
   return compute_device_size(hd_h, device, verbose, sector_size);
 }
 #endif
@@ -950,7 +980,7 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
   min_offset=0;
   max_offset=sector_size;
   /* Search the maximum device size */
-  while(pread(hd_h, buffer, sector_size, max_offset)==0)
+  while(pread(hd_h, buffer, sector_size, max_offset) == sector_size)
   {
     min_offset=max_offset;
     max_offset*=2;
@@ -960,7 +990,7 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
   {
     uint64_t cur_offset;
     cur_offset=(min_offset+max_offset)/2/sector_size*sector_size;
-    if(pread(hd_h, buffer, sector_size, cur_offset)==0)
+    if(pread(hd_h, buffer, sector_size, cur_offset) == sector_size)
       min_offset=cur_offset+sector_size;
     else
     {
@@ -970,7 +1000,7 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
 	break;
     }
   }
-  if(pread(hd_h, buffer, sector_size, min_offset)==0)
+  if(pread(hd_h, buffer, sector_size, min_offset) == sector_size)
     min_offset+=sector_size;
   free(buffer);
   if(verbose>1)
