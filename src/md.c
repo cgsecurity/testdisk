@@ -204,10 +204,10 @@ int set_MD_info(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %d (",
+    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu (",
 	(unsigned int)le32(sb1->major_version),
 	(unsigned int)le32(sb1->level),
-	le32(sb1->dev_number));
+	(long unsigned)le32(sb1->dev_number));
     for (i= le32(sb1->max_dev); i> 0 ; i--)
       if (le16(sb1->dev_roles[i-1]) != 0xffff)
 	break;
