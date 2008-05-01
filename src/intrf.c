@@ -87,11 +87,6 @@ static char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 static int intr_nbr_line=0;
 static void set_parent_directory(char *dst_directory);
 static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
-struct file_info {
-  struct td_list_head list;
-  char name[4096];
-  struct stat stat;
-};
 
 int screen_buffer_add(const char *_format, ...)
 {
@@ -246,9 +241,8 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
 #define PATH_SEP '/'
 #define SPATH_SEP "/"
 #if defined(__CYGWIN__)
+/* /cygdrive/c/ => */
 #define PATH_DRIVE_LENGTH 9
-#elif defined(DJGPP) || defined(__OS2__)
-#define PATH_DRIVE_LENGTH 3
 #endif
 
 static void set_parent_directory(char *dst_directory)
@@ -265,10 +259,12 @@ static void set_parent_directory(char *dst_directory)
   else
     dst_directory[PATH_DRIVE_LENGTH]='\0';
 #elif defined(DJGPP) || defined(__OS2__)
-  if(last_sep>PATH_DRIVE_LENGTH)
-    dst_directory[last_sep]='\0';
+  if(last_sep > 2 )
+    dst_directory[last_sep]='\0';	/* subdirectory */
+  else if(last_sep == 2 && dst_directory[3]!='\0')
+    dst_directory[3]='\0';	/* root directory */
   else
-    dst_directory[0]='\0';
+    dst_directory[0]='\0';	/* drive list */
 #else
   if(last_sep>1)
     dst_directory[last_sep]='\0';
@@ -278,7 +274,7 @@ static void set_parent_directory(char *dst_directory)
 }
 
 #ifdef HAVE_NCURSES
-#define INTER_DIR 16
+#define INTER_DIR (LINES-25+16)
 static void dir_aff_entry(WINDOW *window, struct file_info *dir_info);
 
 int get_string(char *str, int len, char *def)
@@ -1455,6 +1451,43 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
   return 0;
 }
 
+static inline char *td_getcwd(char *buf, unsigned long size)
+{
+  /* buf must non-NULL*/
+#ifdef HAVE_GETCWD
+  if(getcwd(buf, size)!=NULL)
+    return buf;
+#endif
+  buf[0]='.';
+  buf[1]='\0';
+  return buf;
+}
+
+#if defined(DJGPP) || defined(__OS2__)
+void get_dos_drive_list(struct td_list_head *list);
+
+void get_dos_drive_list(struct td_list_head *list)
+{
+  int i;
+  for(i='a';i<='z';i++)
+  {
+    struct file_info *new_drive;
+    new_drive=(struct file_info*)MALLOC(sizeof(*new_drive));
+    new_drive->name[0]=i;
+    new_drive->name[1]=':';
+    new_drive->name[2]=PATH_SEP;
+    new_drive->name[3]='\0';
+    new_drive->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+    td_list_add_tail(&new_drive->list, list);
+  }
+}
+#endif
+
+#define ASK_LOCATION_WAITKEY 	0
+#define ASK_LOCATION_UPDATE	1
+#define ASK_LOCATION_NEWDIR	2
+#define ASK_LOCATION_QUIT	3
+
 char *ask_location(const char*msg, const char *src_dir)
 {
   char dst_directory[4096];
@@ -1462,18 +1495,10 @@ char *ask_location(const char*msg, const char *src_dir)
   int quit;
   WINDOW *window=newwin(0,0,0,0);	/* full screen */
   aff_copy(window);
-#ifdef HAVE_GETCWD
-  if(getcwd(dst_directory, sizeof(dst_directory))==NULL)
-    strncpy(dst_directory,".",sizeof(dst_directory));
-#else
-  strncpy(dst_directory,".",sizeof(dst_directory));
-#endif
+  td_getcwd(dst_directory, sizeof(dst_directory));
   do
   {
     DIR* dir;
-    struct td_list_head *dir_current;
-    int offset=0;
-    int pos_num=0;
     static struct file_info dir_list = {
       .list = TD_LIST_HEAD_INIT(dir_list.list),
       .name = {0}
@@ -1489,18 +1514,7 @@ char *ask_location(const char*msg, const char *src_dir)
 #if defined(DJGPP) || defined(__OS2__)
     if(dst_directory[0]=='\0')
     {
-      int i;
-      for(i='a';i<='z';i++)
-      {
-        struct file_info *new_drive;
-        new_drive=(struct file_info*)MALLOC(sizeof(*new_drive));
-        new_drive->name[0]=i;
-        new_drive->name[1]=':';
-        new_drive->name[2]=PATH_SEP;
-        new_drive->name[3]='\0';
-        new_drive->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
-        td_list_add_tail(&new_drive->list,&dir_list.list);
-      }
+      get_dos_drive_list(&dir_list.list);
       dir=NULL;
     }
     else
@@ -1517,6 +1531,10 @@ char *ask_location(const char*msg, const char *src_dir)
       {
         char current_file[4096];
         dir_entrie=readdir(dir);
+	/* if dir_entrie exists
+	 *   there is enough room to store the filename
+	 *   dir_entrie->d_name is ".", ".." or something that doesn't begin by a "."
+	 * */
         if(dir_entrie!=NULL
             && strlen(dst_directory)+1+strlen(dir_info->name)+1<=sizeof(current_file) &&
             (dir_entrie->d_name[0]!='.' ||
@@ -1540,50 +1558,61 @@ char *ask_location(const char*msg, const char *src_dir)
 #else
             if(stat(current_file,&dir_info->stat)==0)
 #endif
-            {
-              if(S_ISDIR(dir_info->stat.st_mode))
-              {
-                /* If the C compiler doesn't use posix definition, st_mode need to be fixed */
+	    {
 #if defined(DJGPP) || defined(__OS2__)
-                dir_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
-#elif defined(__CYGWIN__)
-                if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
-                {
-                  dir_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
-                  dir_info->stat.st_mtime=0;
-                  dir_info->stat.st_uid=0;
-                  dir_info->stat.st_gid=0;
-                }
+	      /* If the C library doesn't use posix definition, st_mode need to be fixed */
+	      if(S_ISDIR(dir_info->stat.st_mode))
+		dir_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+	      else
+		dir_info->stat.st_mode=LINUX_S_IFREG|LINUX_S_IRWXUGO;
 #endif
-                strncpy(dir_info->name,dir_entrie->d_name,sizeof(dir_info->name));
-                td_list_add_tail(&dir_info->list,&dir_list.list);
-                dir_info=(struct file_info*)MALLOC(sizeof(*dir_info));
-              }
-            }
+#ifdef __CYGWIN__
+	      /* Fix Drive list */
+	      if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
+	      {
+		dir_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+		dir_info->stat.st_mtime=0;
+		dir_info->stat.st_uid=0;
+		dir_info->stat.st_gid=0;
+	      }
+#endif
+	      strncpy(dir_info->name,dir_entrie->d_name,sizeof(dir_info->name));
+	      td_list_add_sorted(&dir_info->list, &dir_list.list, filesort);
+	      dir_info=(struct file_info*)MALLOC(sizeof(*dir_info));
+	    }
         }
       } while(dir_entrie!=NULL);
       free(dir_info);
       closedir(dir);
     }
-    dir_current=dir_list.list.next;
     if(dir_list.list.next!=&dir_list.list)
     {
+      struct td_list_head *dir_current=dir_list.list.next;
+      int offset=0;
+      int pos_num=0;
+      int old_LINES=LINES;
       do
       {
+	int dst_directory_ok=0;
+	if(old_LINES!=LINES)
+	{ /* Screen size has changed, reset to initial values */
+	  dir_current=dir_list.list.next;
+	  offset=0;
+	  pos_num=0;
+	  old_LINES=LINES;
+	}
         aff_copy(window);
         wmove(window,7,0);
-#ifdef PATH_DRIVE_LENGTH
 #ifdef __CYGWIN__
         if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
           wprintw(window,"To select a drive, use the arrow keys.");
         else
           wprintw(window,"To select another directory, use the arrow keys.");
-#else
-        if(strlen(dst_directory)<PATH_DRIVE_LENGTH)
+#elif defined(DJGPP) || defined(__OS2__)
+        if(dst_directory[0]=='\0')
           wprintw(window,"To select a drive, use the arrow keys.");
         else
           wprintw(window,"To select another directory, use the arrow keys.");
-#endif
 #else
         wprintw(window,"To select another directory, use the arrow keys.");
 #endif
@@ -1613,73 +1642,72 @@ char *ask_location(const char*msg, const char *src_dir)
 	  if(dir_walker!=&dir_list.list && dir_walker->next!=&dir_list.list)
 	    wprintw(window, "Next");
         }
-        {
-          int line=4;
-          char beautifull_dst_directory[4096];
-          if(strcmp(dst_directory,".")==0)
-          {
-            strncpy(beautifull_dst_directory,"the program is running from",sizeof(beautifull_dst_directory));
-            line=aff_txt(line,window,msg,src_dir,beautifull_dst_directory);
-          }
-          else
-          {
+	if(strcmp(dst_directory,".")==0)
+	{
+	  aff_txt(4, window, msg, src_dir, "the program is running from");
+	  dst_directory_ok=1;
+	}
+	else
+	{
 #ifdef __CYGWIN__
-            if(strlen(dst_directory)>PATH_DRIVE_LENGTH)
-            {
-              cygwin_conv_to_win32_path(dst_directory,beautifull_dst_directory);
-              line=aff_txt(line,window,msg,src_dir,beautifull_dst_directory);
-            }
+	  if(strlen(dst_directory)>PATH_DRIVE_LENGTH)
+	  {
+	    char beautifull_dst_directory[4096];
+	    cygwin_conv_to_win32_path(dst_directory, beautifull_dst_directory);
+	    aff_txt(4, window, msg, src_dir, beautifull_dst_directory);
+	    dst_directory_ok=1;
+	  }
+#elif defined(DJGPP) || defined(__OS2__)
+	  if(strlen(dst_directory)>0)
+	  {
+	    aff_txt(4, window, msg, src_dir, dst_directory);
+	    dst_directory_ok=1;
+	  }
 #else
-#ifdef PATH_DRIVE_LENGTH
-            if(strlen(dst_directory)>=PATH_DRIVE_LENGTH)
+	  aff_txt(4, window, msg, src_dir, dst_directory);
+	  dst_directory_ok=1;
 #endif
-            {
-              strncpy(beautifull_dst_directory,dst_directory,sizeof(beautifull_dst_directory));
-              line=aff_txt(line,window,msg,src_dir,beautifull_dst_directory);
-            }
-#endif
-          }
-        }
+	}
         wclrtoeol(window);	/* before addstr for BSD compatibility */
         wrefresh(window);
         do
         {
-          quit=0;
+          quit=ASK_LOCATION_WAITKEY;
           switch(wgetch(window))
           {
             case 'y':
             case 'Y':
-#if defined __CYGWIN__
-              if(strlen(dst_directory)>=PATH_DRIVE_LENGTH)
-#endif
+              if(dst_directory_ok>0)
               {
                 res=strdup(dst_directory);
-                quit=3;
+                quit=ASK_LOCATION_QUIT;
               }
               break;
             case 'n':
             case 'N':
               res=NULL;
-              quit=3;
+              quit=ASK_LOCATION_QUIT;
               break;
             case KEY_UP:
+	    case '8':
               if(dir_current->prev!=&dir_list.list)
               {
                 dir_current=dir_current->prev;
                 pos_num--;
                 if(pos_num<offset)
                   offset--;
-                quit=1;
+                quit=ASK_LOCATION_UPDATE;
               }
               break;
             case KEY_DOWN:
+	    case '2':
               if(dir_current->next!=&dir_list.list)
               {
                 dir_current=dir_current->next;
                 pos_num++;
                 if(pos_num>=offset+INTER_DIR)
                   offset++;
-                quit=1;
+                quit=ASK_LOCATION_UPDATE;
               }
               break;
             case KEY_PPAGE:
@@ -1691,7 +1719,7 @@ char *ask_location(const char*msg, const char *src_dir)
                   pos_num--;
                   if(pos_num<offset)
                     offset--;
-                  quit=1;
+                  quit=ASK_LOCATION_UPDATE;
                 }
               }
               break;
@@ -1704,47 +1732,54 @@ char *ask_location(const char*msg, const char *src_dir)
                   pos_num++;
                   if(pos_num>=offset+INTER_DIR)
                     offset++;
-                  quit=1;
+                  quit=ASK_LOCATION_UPDATE;
                 }
               }
               break;
+	    case KEY_LEFT:
+	    case '4':
+	      set_parent_directory(dst_directory);
+	      quit=ASK_LOCATION_NEWDIR;
+	      break;
             case KEY_RIGHT:
             case '\r':
             case '\n':
-
+	    case '6':
             case KEY_ENTER:
 #ifdef PADENTER
             case PADENTER:
 #endif
-              if(dir_current!=&dir_list.list)
-              {
-                struct file_info *dir_info;
-                dir_info=td_list_entry(dir_current, struct file_info, list);
-                if(strcmp(dir_info->name,".")==0)
-                {
-                }
-                else if(strcmp(dir_info->name,"..")==0)
-                {
-                  set_parent_directory(dst_directory);
-                  quit=2;
-                }
-                else if(strlen(dst_directory)+1+strlen(dir_info->name)+1<=sizeof(dst_directory))
-                {
+	      {
+		struct file_info *dir_info;
+		dir_info=td_list_entry(dir_current, struct file_info, list);
+		if(dir_current!=&dir_list.list && LINUX_S_ISDIR(dir_info->stat.st_mode))
+		{
+		  if(strcmp(dir_info->name,".")==0)
+		  {
+		  }
+		  else if(strcmp(dir_info->name,"..")==0)
+		  {
+		    set_parent_directory(dst_directory);
+		    quit=ASK_LOCATION_NEWDIR;
+		  }
+		  else if(strlen(dst_directory)+1+strlen(dir_info->name)+1<=sizeof(dst_directory))
+		  {
 #if defined(DJGPP) || defined(__OS2__)
-                  if(dst_directory[0]!='\0'&&dst_directory[1]!='\0'&&dst_directory[2]!='\0'&&dst_directory[3]!='\0')
+		    if(dst_directory[0]!='\0'&&dst_directory[1]!='\0'&&dst_directory[2]!='\0'&&dst_directory[3]!='\0')
 #else
-                    if(dst_directory[1]!='\0')
+		      if(dst_directory[1]!='\0')
 #endif
-                      strcat(dst_directory,SPATH_SEP);
-                  strcat(dst_directory,dir_info->name);
-                  quit=2;
-                }
-              }
+			strcat(dst_directory,SPATH_SEP);
+		    strcat(dst_directory,dir_info->name);
+		    quit=ASK_LOCATION_NEWDIR;
+		  }
+		}
+	      }
               break;
 
           }
-        } while(quit==0);
-      } while(quit==1);
+        } while(quit==ASK_LOCATION_WAITKEY && old_LINES==LINES);
+      } while(quit==ASK_LOCATION_UPDATE || old_LINES!=LINES);
       {
         struct td_list_head *dir_walker = NULL;
         struct td_list_head *dir_walker_next = NULL;
@@ -1760,9 +1795,9 @@ char *ask_location(const char*msg, const char *src_dir)
     else
     {
       set_parent_directory(dst_directory);
-      quit=2;
+      quit=ASK_LOCATION_NEWDIR;
     }
-  } while(quit==2);
+  } while(quit==ASK_LOCATION_NEWDIR);
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN
@@ -1861,16 +1896,8 @@ int ask_confirmation(const char*_format, ...)
 char *ask_location(const char*msg, const char *src_dir)
 {
   char dst_directory[4096];
-  char *res=NULL;
-  int quit;
-#ifdef HAVE_GETCWD
-  if(getcwd(dst_directory, sizeof(dst_directory))==NULL)
-    strncpy(dst_directory,".",sizeof(dst_directory));
-#else
-  strncpy(dst_directory,".",sizeof(dst_directory));
-#endif
-  res=strdup(dst_directory);
-  return res;
+  td_getcwd(dst_directory, sizeof(dst_directory));
+  return strdup(dst_directory);
 }
 #endif
 

@@ -2,7 +2,7 @@
 
     File: dir.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -346,6 +346,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	  break;
 	case '-':
 	case KEY_LEFT:
+	case '4':
 	  if(depth>0)
 	    return 1;
 	  break;
@@ -358,6 +359,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	switch(car)
 	{
 	  case KEY_UP:
+	  case '8':
 	    if(pos->prev!=NULL)
 	    {
 	      pos=pos->prev;
@@ -367,6 +369,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	      offset--;
 	    break;
 	  case KEY_DOWN:
+	  case '2':
 	    if(pos->next!=NULL)
 	    {
 	      pos=pos->next;
@@ -382,7 +385,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	  case KEY_RIGHT:
 	  case '\r':
 	  case '\n':
-
+	  case '6':
 	  case KEY_ENTER:
 #ifdef PADENTER
 	  case PADENTER:
@@ -709,4 +712,22 @@ int set_date(const char *pathname, time_t actime, time_t modtime)
 #else
   return 0;
 #endif
+}
+
+int filesort(const struct td_list_head *a, const struct td_list_head *b)
+{
+  const struct file_info *file_a=td_list_entry(a, struct file_info, list);
+  const struct file_info *file_b=td_list_entry(b, struct file_info, list);
+  /* Directories must be listed before files */
+  const int res=((file_b->stat.st_mode&LINUX_S_IFDIR)-(file_a->stat.st_mode&LINUX_S_IFDIR));
+  if(res)
+    return res;
+  /* . and .. must listed before the other directories */
+  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name,".")==0)
+    return -1;
+  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name,"..")==0 &&
+      !strcmp(file_b->name,".")==0)
+    return -1;
+  /* Files and directories are sorted by name */
+  return strcmp(file_a->name,file_b->name);
 }

@@ -24,6 +24,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#include "list.h"
 #define DIR_NAME_LEN 1024
 #define FLAG_LIST_DELETED	1
 #define FLAG_LIST_MASK12	2
@@ -50,6 +51,7 @@ struct dir_data
 
 #define	FILE_STATUS_DELETED	1
 
+/* TODO: add status to file_info and migrate file_data to file_info */
 struct file_data
 {
   file_data_t *prev;
@@ -57,6 +59,12 @@ struct file_data
   char	name[DIR_NAME_LEN];
   struct stat filestat;
   unsigned int status;
+};
+
+struct file_info {
+  struct td_list_head list;
+  char name[4096];
+  struct stat stat;
 };
 
 int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list);
@@ -109,4 +117,5 @@ int set_date(const char *pathname, time_t actime, time_t modtime);
 #define LINUX_S_ISFIFO(m)       (((m) & LINUX_S_IFMT) == LINUX_S_IFIFO)
 #define LINUX_S_ISSOCK(m)       (((m) & LINUX_S_IFMT) == LINUX_S_IFSOCK)
 
+int filesort(const struct td_list_head *a, const struct td_list_head *b);
 #endif
