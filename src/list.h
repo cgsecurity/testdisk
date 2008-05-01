@@ -2,7 +2,7 @@
 
     File: list.h
 
-    Copyright (C) 2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -333,4 +333,18 @@ static inline void td_list_splice_init(struct td_list_head *list,
 	     pos = n, n = td_list_entry(n->member.next, typeof(*n), member))
 
 
+static inline void td_list_add_sorted(struct td_list_head *new, struct td_list_head *head,
+    int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
+{
+  struct td_list_head *pos;
+  td_list_for_each(pos, head)
+  {
+    if(compar(new,pos)<0)
+    {
+      __td_list_add(new, pos->prev, pos);
+      return ;
+    }
+  }
+  td_list_add_tail(new, head);
+}
 #endif
