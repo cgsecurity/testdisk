@@ -59,6 +59,7 @@ const file_hint_t file_hint_jpg= {
 
 static const unsigned char jpg_header_app0[4]= { 0xff,0xd8,0xff,0xe0};
 static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
+static const unsigned char jpg_header_com[4]= { 0xff,0xd8,0xff,0xfe};
 static const unsigned char jpg_footer[2]= { 0xff,0xd9};
 static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
 static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
@@ -84,6 +85,7 @@ static void register_header_check_jpg(file_stat_t *file_stat)
 {
   register_header_check(0, jpg_header_app0,sizeof(jpg_header_app0), &header_check_jpg, file_stat);
   register_header_check(0, jpg_header_app1,sizeof(jpg_header_app1), &header_check_jpg, file_stat);
+  register_header_check(0, jpg_header_com,sizeof(jpg_header_com), &header_check_jpg, file_stat);
 }
 
 static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const unsigned int tiff_size)
@@ -197,8 +199,9 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_indd)
     return 0;
-  if(memcmp(buffer,jpg_header_app0,sizeof(jpg_header_app0))==0 ||
-      memcmp(buffer,jpg_header_app1,sizeof(jpg_header_app1))==0)
+  if(memcmp(buffer,  jpg_header_app0, sizeof(jpg_header_app0))==0 ||
+      memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 ||
+      memcmp(buffer, jpg_header_com,  sizeof(jpg_header_com))==0)
   {
     unsigned int i=2;
     reset_file_recovery(file_recovery_new);
@@ -209,6 +212,10 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     {
       if(buffer[i]==0xff && buffer[i+1]==0xe0)
       { /* APP0 */
+	i+=2+(buffer[i+2]<<8)+buffer[i+3];
+      }
+      else if(buffer[i]==0xff && buffer[i+1]==0xfe)
+      { /* COM */
 	i+=2+(buffer[i+2]<<8)+buffer[i+3];
       }
       else if(buffer[i]==0xff && buffer[i+1]==0xe1)
