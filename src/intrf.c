@@ -1132,6 +1132,42 @@ void not_implemented(const char *msg)
 static SCREEN *screenp=NULL;
 #endif
 
+static char *filename_to_directory(const char *filename)
+{
+  char buf[2048];
+  char *res;
+#ifdef HAVE_READLINK
+  int len;
+  len=readlink(filename,buf,sizeof(buf)-1);
+  if(len>=0)
+    buf[len]='\0';
+  else
+  {
+    strncpy(buf,filename,sizeof(buf)-1);
+    buf[sizeof(buf)-1]='\0';
+  }
+#else
+  strncpy(buf,filename,sizeof(buf)-1);
+  buf[sizeof(buf)-1]='\0';
+#endif
+  res=dirname(buf);
+#ifdef HAVE_GETCWD
+  if(res!=NULL && strcmp(res,".")==0 && getcwd(buf, sizeof(buf)-1)!=NULL)
+  {
+#ifdef __CYGWIN__
+    char beautifull_dst_directory[2048];
+    buf[sizeof(buf)-1]='\0';
+    cygwin_conv_to_win32_path(buf, beautifull_dst_directory);
+    return strdup(beautifull_dst_directory);
+#else
+    buf[sizeof(buf)-1]='\0';
+    return strdup(buf);
+#endif
+  }
+#endif
+  return strdup(res);
+}
+
 int start_ncurses(const char *prog_name, const char *real_prog_name)
 {
 #if defined(DJGPP) || defined(__MINGW32__)
@@ -1146,6 +1182,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
 #else
   {
     int term_overwrite;
+    char *terminfo=filename_to_directory(real_prog_name);
     for(term_overwrite=0;screenp==NULL && term_overwrite<=1;term_overwrite++)
     {
 #ifdef HAVE_SETENV
@@ -1163,34 +1200,11 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
 #endif
       screenp=newterm(NULL,stdout,stdin);
 #ifdef HAVE_SETENV
-#ifdef HAVE_DIRNAME
-      if(screenp==NULL)
+      if(screenp==NULL && terminfo!=NULL)
       {
-        char buf[2048];
-#ifdef HAVE_READLINK
-        {
-          int len;
-          len=readlink(real_prog_name,buf,sizeof(buf)-1);
-          if(len>=0)
-          {
-            buf[len]='\0';
-          }
-          else
-          {
-            strncpy(buf,real_prog_name,sizeof(buf)-1);
-            buf[sizeof(buf)-1]='\0';
-          }
-        }
-#else	// HAVE_READLINK
-        {
-          strncpy(buf,real_prog_name,sizeof(buf)-1);
-          buf[sizeof(buf)-1]='\0';
-        }
-#endif	// HAVE_READLINK
-        setenv("TERMINFO",dirname(buf),1);
+        setenv("TERMINFO", terminfo, 1);
         screenp=newterm(NULL,stdout,stdin);
       }
-#endif	// HAVE_DIRNAME
       if(screenp==NULL)
       {
         setenv("TERMINFO",".",1);
@@ -1204,15 +1218,17 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
     {
       log_critical("Terminfo file is missing.\n");
 #if defined(__CYGWIN__)
-      printf("Sub-directory 'c' and the terminfo file 'c\\cygwin' is missing.\n");
+      printf("The terminfo file '%s\\c\\cygwin' is missing.\n", terminfo);
 #else
       printf("Terminfo file is missing.\n");
 #endif
       printf("Extract all files and subdirectories before running the program.\n");
       printf("Press Enter key to quit.\n");
       getchar();
+      free(terminfo);
       return 1;
     }
+    free(terminfo);
   }
 #endif
   noecho();
@@ -1231,34 +1247,31 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
   curs_set(0);
   {
     int quit=0;
-    while(LINES<25 && quit==0)
+    while(LINES>=8 && LINES<25 && quit==0)
     {
-      if(LINES>=8)
+      aff_copy(stdscr);
+      wmove(stdscr,4,0);
+      wprintw(stdscr,"%s need 25 lines to work.", prog_name);
+      wmove(stdscr,5,0);
+      wprintw(stdscr,"Please enlarge the terminal.");
+      wmove(stdscr,LINES-2,0);
+      wattrset(stdscr, A_REVERSE);
+      wprintw(stdscr,"[ Quit ]");
+      wattroff(stdscr, A_REVERSE);
+      wrefresh(stdscr);
+      switch(wgetch(stdscr))
       {
-        aff_copy(stdscr);
-        wmove(stdscr,4,0);
-        wprintw(stdscr,"%s need 25 lines to work.", prog_name);
-        wmove(stdscr,5,0);
-        wprintw(stdscr,"Please enlarge the terminal.");
-        wmove(stdscr,LINES-2,0);
-        wattrset(stdscr, A_REVERSE);
-        wprintw(stdscr,"[ Quit ]");
-        wattroff(stdscr, A_REVERSE);
-        wrefresh(stdscr);
-        switch(wgetch(stdscr))
-        {
-          case KEY_ENTER:
+	case 'q':
+	case 'Q':
+	case KEY_ENTER:
 #ifdef PADENTER
-          case PADENTER:
+	case PADENTER:
 #endif
-          case '\n':
-          case '\r':
-            quit=1;
-            break;
-        }
+	case '\n':
+	case '\r':
+	  quit=1;
+	  break;
       }
-      else
-        quit=1;
     }
   }
   if(LINES<25)
