@@ -1188,7 +1188,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	log_warning("Warning: the current number of heads per cylinder is %u but the correct value may be %u.\n",
 	    disk_car->CHS.head+1, head_max+1);
 #ifdef HAVE_NCURSES
-	if(*current_cmd!=NULL)
+	if(*current_cmd==NULL)
 	{
 	  warning_geometry_ncurses(disk_car, head_max+1);
 	}
