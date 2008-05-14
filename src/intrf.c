@@ -1154,18 +1154,19 @@ static char *filename_to_directory(const char *filename)
 #ifdef HAVE_GETCWD
   if(res!=NULL && strcmp(res,".")==0 && getcwd(buf, sizeof(buf)-1)!=NULL)
   {
-#ifdef __CYGWIN__
-    char beautifull_dst_directory[2048];
     buf[sizeof(buf)-1]='\0';
-    cygwin_conv_to_win32_path(buf, beautifull_dst_directory);
-    return strdup(beautifull_dst_directory);
-#else
-    buf[sizeof(buf)-1]='\0';
-    return strdup(buf);
-#endif
+    res=buf;
   }
 #endif
+#ifdef __CYGWIN__
+  {
+    char beautifull_dst_directory[2048];
+    cygwin_conv_to_win32_path(res, beautifull_dst_directory);
+    return strdup(beautifull_dst_directory);
+  }
+#else
   return strdup(res);
+#endif
 }
 
 int start_ncurses(const char *prog_name, const char *real_prog_name)
