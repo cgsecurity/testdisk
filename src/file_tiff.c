@@ -63,6 +63,7 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
   const unsigned char nikon_sig[17]= { 'N', 'I', 'K', 'O', 'N', ' ', 'C', 'O', 'R', 'P', 'O', 'R', 'A', 'T', 'I', 'O', 'N'};
   const unsigned char dcr_sig[5]= { '.', 'D', 'C', 'R', 0x00};
   const unsigned char sony_sig[5]= { 'S', 'O', 'N', 'Y', 0x00};
+  const unsigned char sony_sig_arw[6]= { 'S', 'O', 'N', 'Y', ' ', 0x00};
   if(memcmp(buffer,tiff_header_be,sizeof(tiff_header_be))==0 ||
       memcmp(buffer,tiff_header_le,sizeof(tiff_header_le))==0)
   {
@@ -82,6 +83,8 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
     /* Sony RAW */
     else if(td_memmem(buffer, buffer_size, sony_sig, sizeof(sony_sig))!=NULL)
       file_recovery_new->extension="sr2";
+    else if(td_memmem(buffer, buffer_size, sony_sig_arw, sizeof(sony_sig_arw))!=NULL)
+      file_recovery_new->extension="arw";
     else
       file_recovery_new->extension=file_hint_tiff.extension;
     return 1;
