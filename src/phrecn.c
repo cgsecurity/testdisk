@@ -86,6 +86,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
 static void interface_options_photorec(int *paranoid, int *allow_partial_last_cylinder, int *keep_corrupted_file, unsigned int *mode_ext2, unsigned int *expert, unsigned int *lowmem, char**current_cmd);
 static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *current_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass);
 static void interface_file_select(file_enable_t *files_enable, char**current_cmd);
+static int interface_cannot_create_file(void);
 
 /* ==================== INLINE FUNCTIONS ========================= */
 /* Check if the block looks like an indirect/double-indirect block */
@@ -809,6 +810,26 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
   return ind_stop;
 }
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+/* Live antivirus protection may open file as soon as they are created by *
+ * PhotoRec. PhotoRec will not be able to overwrite a file as long as the *
+ * antivirus is scanning it, so let's wait a little bit if the creation   *
+ * failed. */
+static FILE *fopen_with_retry(const char *path, const char *mode)
+{
+  FILE *handle;
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+  sleep(1);
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+  sleep(2);
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+  return NULL;
+}
+#endif
+
 static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int expert, const unsigned int lowmem)
 {
   uint64_t offset=0;
@@ -949,7 +970,12 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         }
         if(file_recovery.file_stat->file_hint->recover==1 && status!=STATUS_FIND_OFFSET)
         {
-          if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+          file_recovery.handle=fopen_with_retry(file_recovery.filename,"w+b");
+#else
+          file_recovery.handle=fopen(file_recovery.filename,"w+b");
+#endif
+          if(!file_recovery.handle)
           { 
             log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
             ind_stop=2;
@@ -1086,7 +1112,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         }
 #endif
       }
-      if(interface!=0)
+      if(interface!=0 && ind_stop==0)
       {
         time_t current_time;
         current_time=time(NULL);
@@ -1180,6 +1206,37 @@ static void free_search_space(alloc_data_t *list_search_space)
     free(current_search_space);
   }
 }
+
+#if defined(HAVE_NCURSES) && (defined(__CYGWIN__) || defined(__MINGW32__))
+static int interface_cannot_create_file(void)
+{
+  static const struct MenuItem menuMain[]=
+  {
+    { 'C', "Continue", "Continue the recovery."},
+    { 'Q', "Quit", "Abort the recovery."},
+    { 0,NULL,NULL}
+  };
+  unsigned int menu=1;
+  int car;
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"PhotoRec has been unable to create new file.");
+  wmove(stdscr,5,0);
+  wprintw(stdscr,"This problem may be due to antivirus blocking write access while scanning files created by PhotoRec.");
+  wmove(stdscr,6,0);
+  wprintw(stdscr,"If possible, temporary disable your antivirus live protection.");
+  car= wmenuSelect_ext(stdscr, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
+      "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
+  if(car=='c' || car=='C')
+    return 0;
+  return 1;
+}
+#else
+static int interface_cannot_create_file(void)
+{
+  return 1;
+}
+#endif
 
 static int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, char *recup_dir, const int keep_corrupted_file, const int interface, file_enable_t *files_enable, unsigned int mode_ext2, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only)
 {
@@ -1338,6 +1395,11 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
 #else
       status=STATUS_QUIT;
 #endif
+    }
+    else if(ind_stop==2)
+    {
+      if(interface_cannot_create_file()!=0)
+	status=STATUS_QUIT;
     }
     else if(ind_stop>0)
     {
