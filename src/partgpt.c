@@ -37,6 +37,8 @@
 #include <uuid/uuid.h>
 #elif defined(HAVE_SYS_UUID_H)
 #include <sys/uuid.h>
+#elif defined(HAVE_UUID_H)
+#include <uuid.h>
 #endif
 #include "common.h"
 #include "testdisk.h"
@@ -76,6 +78,7 @@ static int is_part_known_gpt(const partition_t *partition);
 static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, const int verbose);
 static const char *get_partition_typename_gpt(const partition_t *partition);
 static const char *get_gpt_typename(const efi_guid_t part_type_gpt);
+static void efi_generate_uuid(efi_guid_t *ent_uuid);
 #if 0
 static int set_part_type_gpt(partition_t *partition, efi_guid_t part_type_gpt);
 static efi_guid_t get_part_type_gpt(const partition_t *partition);
@@ -317,6 +320,26 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   return new_list_part;
 }
 
+static void efi_generate_uuid(efi_guid_t *ent_uuid)
+{
+#ifdef HAVE_UUID_GENERATE
+  uuid_generate((unsigned char*)ent_uuid);
+#elif defined HAVE_UUIDGEN
+  uuidgen((struct uuid*)ent_uuid,1);
+#elif defined HAVE_UUID_CREATE
+  uuid_t *uuid;
+  char *data_ptr=(char*)&ent_uuid;
+  size_t data_len=sizeof(ent_uuid);;
+  uuid_create(&uuid);
+  uuid_make(uuid, UUID_MAKE_V1);
+  uuid_export(uuid, UUID_FMT_BIN, (void **)&data_ptr, &data_len);
+  uuid_destroy(uuid);
+#else
+#warning You need a uuid_generate, uuidgen or uuid_create function
+#endif
+  swap_uuid_and_efi_guid(ent_uuid);
+}
+
 static void partition_generate_gpt_entry(struct gpt_ent* gpt_entry, const partition_t *partition, const disk_t *disk_car)
 {
   guid_cpy(&gpt_entry->ent_type, &partition->part_type_gpt);
@@ -326,16 +349,7 @@ static void partition_generate_gpt_entry(struct gpt_ent* gpt_entry, const partit
   if(guid_cmp(partition->part_uuid, GPT_ENT_TYPE_UNUSED)!=0)
     guid_cpy(&gpt_entry->ent_uuid, &partition->part_uuid);
   else
-  {
-#ifdef HAVE_UUID_GENERATE
-    uuid_generate((unsigned char*)(&gpt_entry->ent_uuid));
-#elif defined HAVE_UUIDGEN
-    uuidgen((struct uuid*)(&gpt_entry->ent_uuid),1);
-#else
-#warning You need a uuid_generate or uuidgen function
-#endif
-    swap_uuid_and_efi_guid((efi_guid_t *)(&gpt_entry->ent_uuid));
-  }
+    efi_generate_uuid(&gpt_entry->ent_uuid);
   gpt_entry->ent_attr=le64(0);  /* May need fixing */
 }
 
@@ -467,14 +481,7 @@ static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const 
   gpt->__reserved=le32(0);
   gpt->hdr_lba_start=le64(1 + gpt_entries_size/disk_car->sector_size + 1);
   gpt->hdr_lba_end=le64((disk_car->disk_size-1 - gpt_entries_size)/disk_car->sector_size - 1);
-#ifdef HAVE_UUID_GENERATE
-    uuid_generate((unsigned char*)(&gpt->hdr_guid));
-#elif defined HAVE_UUIDGEN
-    uuidgen((struct uuid*)(&gpt->hdr_guid),1);
-#else
-#warning You need a uuid_generate or uuidgen function
-#endif
-  swap_uuid_and_efi_guid((efi_guid_t *)(&gpt->hdr_guid));
+  efi_generate_uuid(&gpt->hdr_guid);
   gpt->hdr_crc_table=le32(get_crc32(gpt_entries, gpt_entries_size, 0xFFFFFFFF)^0xFFFFFFFF);
   gpt->hdr_lba_self=le64(1);
   gpt->hdr_lba_alt=le64((disk_car->disk_size-1)/disk_car->sector_size);

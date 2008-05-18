@@ -461,20 +461,41 @@ if test -z "${use_reiserfs}"; then
 else
   AC_MSG_WARN(Use of reiserfs library disabled)
 fi
+# Check for UUID functions
+AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h uuid.h])
+found_uuid_function=yes
+AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
+if test "${found_uuid_function}" = "no";
+then
+  found_uuid_function=yes
+  AC_CHECK_LIB(uuid, uuid_create, , [found_uuid_function=no])
+  if test "${found_uuid_function}" = "yes";
+  then
+    AC_CHECK_FUNCS([uuid_create])
+  fi
+fi
 
-AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h])
-AC_CHECK_FUNCS([uuidgen],,[AC_CHECK_LIB(uuid, uuid_generate, ,
-      [
-      if test "${missing_uuid_ok}" = "true";
-      then
-        AC_MSG_WARN(Missing function: uuid_generate in library libuuid)
-      else
-        AC_MSG_ERROR(Missing function: uuid_generate in library libuuid)
-      fi
-      ]
-      )])
-AC_CHECK_FUNCS([uuid_generate])
+if test "${found_uuid_function}" = "no";
+then
+  found_uuid_function=yes
+  AC_CHECK_LIB(uuid, uuid_generate, ,[ found_uuid_function=no ])
+  if test "${found_uuid_function}" = "yes";
+  then
+    AC_CHECK_FUNCS([uuid_generate])
+  fi
+fi
 
+if test "${found_uuid_function}" = "no";
+then
+  if test "${missing_uuid_ok}" = "true";
+  then
+    AC_MSG_WARN(No uuid_create or uuid_generate function in library libuuid or uuidgen function present)
+  else
+    AC_MSG_ERROR(No uuid_create or uuid_generate function in library libuuid or uuidgen function present)
+  fi
+fi
+
+#
 if test -z "${use_ewf}"; then
   OLDLIBS="$LIBS"
   AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
