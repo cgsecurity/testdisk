@@ -136,6 +136,15 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     free(ntfs_header);
     return 0;
   }
+  if(partition->sb_offset!=0)
+  {
+    log_info("Please quit TestDisk and reboot your computer before trying to fix the MFT.\n");
+    display_message("Please quit TestDisk and reboot your computer before trying to fix the MFT.\n");
+    free(buffer_mftmirr);
+    free(buffer_mft);
+    free(ntfs_header);
+    return -1;
+  }
 /*
   log_debug("MFT\n");
   dump_log(buffer_mft, mftmirr_size_bytes);
