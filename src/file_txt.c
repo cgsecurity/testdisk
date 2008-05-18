@@ -29,6 +29,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #include <ctype.h>      /* tolower */
 #include <stdio.h>
 #include "types.h"
@@ -88,6 +91,8 @@ static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
 static const unsigned char header_dc[6]		= "SC V10";
+static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
+static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -108,6 +113,8 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -400,6 +407,51 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="dc";
+    return 1;
+  }
+  if(memcmp(buffer, header_ics, sizeof(header_ics))==0)
+  {
+    const char *date_asc;
+    char *buffer2;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="ics";
+    /* DTSTART:19970714T133000            ;Local time
+     * DTSTART:19970714T173000Z           ;UTC time
+     * DTSTART;TZID=US-Eastern:19970714T133000    ;Local time and time
+     */
+    buffer2=MALLOC(buffer_size+1);
+    buffer2[buffer_size]='\0';
+    memcpy(buffer2, buffer, buffer_size);
+    date_asc=strstr(buffer2, "DTSTART");
+    if(date_asc!=NULL)
+      date_asc=strchr(date_asc, ':');
+    if(date_asc!=NULL && date_asc-buffer2<=buffer_size-14)
+    {
+      struct tm tm_time;
+      memset(&tm_time, 0, sizeof(tm_time));
+      date_asc++;
+      tm_time.tm_sec=(date_asc[13]-'0')*10+(date_asc[14]-'0');      /* seconds 0-59 */
+      tm_time.tm_min=(date_asc[11]-'0')*10+(date_asc[12]-'0');      /* minutes 0-59 */
+      tm_time.tm_hour=(date_asc[9]-'0')*10+(date_asc[10]-'0');      /* hours   0-23*/
+      tm_time.tm_mday=(date_asc[6]-'0')*10+(date_asc[7]-'0');	/* day of the month 1-31 */
+      tm_time.tm_mon=(date_asc[4]-'0')*10+(date_asc[5]-'0')-1;	/* month 0-11 */
+      tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+	(date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+      tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+      file_recovery_new->time=mktime(&tm_time);
+    }
+    free(buffer2);
+    return 1;
+  }
+  /* Mozilla, firefox, thunderbird msf (Mail Summary File) */
+  if(memcmp(buffer, header_msf, sizeof(header_msf))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="msf";
     return 1;
   }
   return 0;
