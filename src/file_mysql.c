@@ -55,7 +55,7 @@ static void register_header_check_mysql(file_stat_t *file_stat)
 
 static int header_check_mysql(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  /* MySQL MISAM compressed data file Version 1 */
+  /* MySQL MYISAM compressed data file Version 1 */
   if(buffer[0]==0xfe && buffer[1]==0xfe && buffer[2]==0x07 && buffer[3]==0x01)
   {
     reset_file_recovery(file_recovery_new);

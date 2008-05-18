@@ -303,7 +303,7 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
     wprintw(stdscr,"Note: Correct disk geometry is required for a successful recovery. 'Analyse'");
     wmove(stdscr,21,0);
     wprintw(stdscr,"process may give some warnings if it thinks the logical geometry is mismatched.");
-    command = wmenuSelect_ext(stdscr,INTER_DISK_Y, INTER_DISK_X, menuMain, 10,
+    command = wmenuSelect_ext(stdscr, 24, INTER_DISK_Y, INTER_DISK_X, menuMain, 10,
 	options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
     /* e for editor will be added when the editor will be better */
     switch(command)
@@ -501,7 +501,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       wmove(stdscr,line++,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
-    command = wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
+    command = wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,NULL);
     switch(command)
     {
@@ -601,7 +601,7 @@ static int interface_check_disk_capacity_ncurses(disk_t *disk_car)
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   wprintw(stdscr,"Update Windows to support LBA48 (minimum: W2K SP4 or XP SP1)");
 #endif
-  car= wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
+  car= wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
     return 0;
@@ -672,7 +672,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
 #endif
   wmove(stdscr,line++,0);
   wprintw(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
-  car= wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuDiskAccess, 10,
+  car= wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuDiskAccess, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
     return 0;
@@ -908,7 +908,7 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
     menuOptions[2].name=*allow_partial_last_cylinder?"Allow partial last cylinder : Yes":"Allow partial last cylinder : No";
     menuOptions[3].name=*dump_ind?"Dump : Yes":"Dump : No";
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr,INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECADQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 24, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECADQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'd':
@@ -1381,7 +1381,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
       menu=0;
       strncpy(options,"Q",sizeof(options));
     }
-    switch(wmenuSelect(stdscr,INTER_DUMP_Y,INTER_DUMP_X, menuLoadBackup, 8, options, MENU_HORIZ| MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch(wmenuSelect(stdscr, 24, INTER_DUMP_Y,INTER_DUMP_X, menuLoadBackup, 8, options, MENU_HORIZ| MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'q':
       case 'Q':
@@ -1574,7 +1574,7 @@ int ask_testdisk_log_creation()
   while(1)
   {
     int command;
-    command = wmenuSelect_ext(stdscr,17, 0, menuLogCreation, 8,
+    command = wmenuSelect_ext(stdscr, 24, 17, 0, menuLogCreation, 8,
         "CAQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
     switch(command)
     {

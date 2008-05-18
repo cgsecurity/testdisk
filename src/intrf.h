@@ -32,10 +32,8 @@ struct MenuItem
 #define LINE_LENGTH 		80
 #define BUFFER_LINE_LENGTH 	4*LINE_LENGTH
 #define MAXIMUM_PARTS 		60
-#define COL_ID_WIDTH 		25
 #define WARNING_START 		23
 #define COLUMNS 		80
-
 
 #define DUMP_X			0
 #define DUMP_Y			5 + 2

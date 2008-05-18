@@ -978,7 +978,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     else
     {
 #ifdef HAVE_NCURSES
-      command=wmenuSelect(stdscr,INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ|MENU_BUTTON, 1);
+      command=wmenuSelect(stdscr, 24, INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ|MENU_BUTTON, 1);
 #else
       command=0;
 #endif

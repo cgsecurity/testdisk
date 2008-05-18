@@ -325,7 +325,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     else
     {
 #ifdef HAVE_NCURSES
-      command = wmenuSelect(stdscr,INTER_ADV_Y, INTER_ADV_X, menuAdv, 8, options,
+      command = wmenuSelect(stdscr, 24, INTER_ADV_Y, INTER_ADV_X, menuAdv, 8, options,
 	  MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
 #else
       command = 'q';

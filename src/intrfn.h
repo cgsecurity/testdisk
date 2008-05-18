@@ -43,10 +43,10 @@ void dump(WINDOW *window,const void *nom_dump,unsigned int lng);
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu);
 int screen_buffer_display(WINDOW *window, const char *options_org, const struct MenuItem *menuItems);
 int wgetch_nodelay(WINDOW *window);
-int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key);
-int wmenuSelect(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault);
+int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key);
+int wmenuSelect(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault);
 int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, unsigned int menuDefault);
-int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
+int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
 #endif

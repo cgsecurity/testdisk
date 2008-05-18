@@ -257,26 +257,26 @@ void aff_copy(WINDOW *window)
 
 static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned int *mode_ext2, unsigned int *carve_free_space_only)
 {
-  static struct MenuItem menuMode[]=
+  static const struct MenuItem menuMode[]=
     {
       {'E',"EXT2/EXT3","EXT2/EXT3 filesystem"},
       {'O',"Other","FAT/NTFS/HFS+/ReiserFS/..."},
       {0,NULL,NULL}
     };
-  static struct MenuItem menuFAT16[]=
+  static const struct MenuItem menuFAT16[]=
   {
     {'F',"Free", "Scan for files from FAT16 unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
-  static struct MenuItem menuFAT32[]=
+  static const struct MenuItem menuFAT32[]=
   {
     {'F',"Free", "Scan for file from FAT32 unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
 #ifdef HAVE_LIBNTFS
-  static struct MenuItem menuNTFS[]=
+  static const struct MenuItem menuNTFS[]=
   {
     {'F',"Free", "Scan for file from NTFS unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
@@ -284,7 +284,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   };
 #endif
 #ifdef HAVE_LIBEXT2FS
-  static struct MenuItem menuEXT2[]=
+  static const struct MenuItem menuEXT2[]=
   {
     {'F',"Free", "Scan for file from ext2/ext3 unallocated space only"},
     {'W',"Whole","Extract files from whole partition"},
@@ -308,7 +308,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   waddstr(window,"To recover lost files, PhotoRec need to know the filesystem type where the");
   wmove(window,7,0);
   waddstr(window,"file were stored:");
-  command = wmenuSelect_ext(window,8, 0, menuMode, 11,
+  command = wmenuSelect_ext(window, 24, 8, 0, menuMode, 11,
       options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   *mode_ext2=(command=='E' || command=='e');
   if(*mode_ext2>0)
@@ -329,19 +329,19 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
     wclrtoeol(window);
     waddstr(window,"Please choose if all space need to be analysed:");
     if(partition->upart_type==UP_FAT16)
-      command = wmenuSelect_ext(window,8, 0, menuFAT16, 11,
+      command = wmenuSelect_ext(window, 24, 8, 0, menuFAT16, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
     else if(partition->upart_type==UP_FAT32)
-      command = wmenuSelect_ext(window,8, 0, menuFAT32, 11,
+      command = wmenuSelect_ext(window, 24, 8, 0, menuFAT32, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
 #ifdef HAVE_LIBNTFS
     else if(partition->upart_type==UP_NTFS)
-      command = wmenuSelect_ext(window,8, 0, menuNTFS, 11,
+      command = wmenuSelect_ext(window, 24, 8, 0, menuNTFS, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
 #endif
 #ifdef HAVE_LIBEXT2FS
     else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3)
-      command = wmenuSelect_ext(window,8, 0, menuEXT2, 11,
+      command = wmenuSelect_ext(window, 24, 8, 0, menuEXT2, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
 #endif
     else
@@ -362,7 +362,7 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
   int command;
   unsigned int menu=0;
   const char *optionsBlocksize="S51248736";
-  static struct MenuItem menuBlocksize[]=
+  static const struct MenuItem menuBlocksize[]=
   {
 	{'S',"256",""},
 	{'5',"512",""},
@@ -401,7 +401,7 @@ static unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned
   aff_copy(stdscr);
   wmove(stdscr,INTER_PARTITION_Y-1,0);
   wprintw(stdscr,"Please select the block size, press Enter when done.");
-  command = wmenuSelect_ext(stdscr,INTER_PARTITION_Y, INTER_PARTITION_X, menuBlocksize, 7,
+  command = wmenuSelect_ext(stdscr, 24, INTER_PARTITION_Y, INTER_PARTITION_X, menuBlocksize, 7,
       optionsBlocksize, MENU_VERT| MENU_BUTTON|MENU_VERT_WARN, &menu,NULL);
   switch(command)
   {
@@ -1225,7 +1225,7 @@ static int interface_cannot_create_file(void)
   wprintw(stdscr,"This problem may be due to antivirus blocking write access while scanning files created by PhotoRec.");
   wmove(stdscr,6,0);
   wprintw(stdscr,"If possible, temporary disable your antivirus live protection.");
-  car= wmenuSelect_ext(stdscr, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
+  car= wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
     return 0;
@@ -1521,7 +1521,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
   int command;
   int offset=0;
   unsigned int menu=0;
-  static struct MenuItem menuMain[]=
+  static const struct MenuItem menuMain[]=
   {
 	{'S',"Search","Start file recovery"},
 	{'O',"Options","Modify options"},
@@ -1660,7 +1660,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	}
       }
-      command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
+      command = wmenuSelect(stdscr, 24, INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
 	  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
       switch(command)
       {
@@ -1761,7 +1761,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
   int pos_num=0;
   const list_disk_t *element_disk;
   const list_disk_t *current_disk=list_disk;
-  static struct MenuItem menuMain[]=
+  static const struct MenuItem menuMain[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },
@@ -1825,7 +1825,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
       wmove(stdscr,line++,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
-    command = wmenuSelect_ext(stdscr,INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
+    command = wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
     switch(command)
     {
@@ -1987,7 +1987,7 @@ static void interface_options_photorec_ncurses(int *paranoid, int *allow_partial
 
      */
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr,INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PAKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 24, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PAKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -2077,14 +2077,18 @@ static void interface_options_photorec(int *paranoid, int *allow_partial_last_cy
 }
 
 #ifdef HAVE_NCURSES
+#define INTER_FSELECT_X	0
+#define INTER_FSELECT_Y	LINES-2
+#define INTER_FSELECT	LINES-10
+
 static void interface_file_select_ncurses(file_enable_t *files_enable)
 {
   int current_element_num=0;
   int offset=0;
-  int rewrite=1;
+  int old_LINES=0;	/* Screen will be cleared */
   unsigned int menu=0;
   int enable_status=files_enable[0].enable;
-  static struct MenuItem menuAdv[]=
+  static const struct MenuItem menuAdv[]=
   {
     {'q',"Quit","Return to main menu"},
     {0,NULL,NULL}
@@ -2093,18 +2097,20 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
   {
     int i;
     int command;
-    if(rewrite!=0)
+    if(old_LINES!=LINES)
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
       wprintw(stdscr,"PhotoRec will try to locate the following files");
-      rewrite=0;
+      current_element_num=0;
+      offset=0;
+      old_LINES=LINES;
     }
     wmove(stdscr,5,4);
     wclrtoeol(stdscr);
     if(offset>0)
       wprintw(stdscr,"Previous");
-    for(i=offset;files_enable[i].file_hint!=NULL && ((i-offset)<INTER_SELECT);i++)
+    for(i=offset;files_enable[i].file_hint!=NULL && i<offset+INTER_FSELECT;i++)
     {
       wmove(stdscr,6+i-offset,0);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
@@ -2124,11 +2130,11 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
 	    files_enable[i].file_hint->description);
       }
     }
-    wmove(stdscr,6+INTER_SELECT,4);
+    wmove(stdscr,6+INTER_FSELECT,4);
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     if(files_enable[i].file_hint!=NULL)
       wprintw(stdscr,"Next");
-    wmove(stdscr,6+INTER_SELECT+1,0);
+    wmove(stdscr,6+INTER_FSELECT+1,0);
     wclrtoeol(stdscr);
     wprintw(stdscr,"Press ");
     if(has_colors())
@@ -2146,11 +2152,12 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     if(has_colors())
       wbkgdset(stdscr,' ' | COLOR_PAIR(0));
     wprintw(stdscr," to save the settings");
-    command = wmenuSelect(stdscr,INTER_SELECT_Y, INTER_SELECT_X, menuAdv, 8,
+    command = wmenuSelect(stdscr, LINES-1, INTER_FSELECT_Y, INTER_FSELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
     switch(command)
     {
       case KEY_UP:
+      case '8':
 	if(current_element_num>0)
 	{
 	  current_element_num--;
@@ -2159,7 +2166,8 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
 	}
 	break;
       case KEY_PPAGE:
-	for(i=0;(i<INTER_SELECT) && (current_element_num>0);i++)
+      case '9':
+	for(i=0;i<INTER_FSELECT-1 && current_element_num>0;i++)
 	{
 	  current_element_num--;
 	  if(current_element_num<offset)
@@ -2167,18 +2175,20 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
 	}
 	break;
       case KEY_DOWN:
+      case '2':
 	if(files_enable[current_element_num+1].file_hint!=NULL)
 	{
 	  current_element_num++;
-	  if(current_element_num>=offset+INTER_SELECT)
+	  if(current_element_num>=offset+INTER_FSELECT)
 	    offset++;
 	}
 	break;
       case KEY_NPAGE:
-	for(i=0;(i<INTER_SELECT) && (files_enable[current_element_num+1].file_hint!=NULL);i++)
+      case '3':
+	for(i=0;i<INTER_FSELECT-1 && (files_enable[current_element_num+1].file_hint!=NULL);i++)
 	{
 	  current_element_num++;
-	  if(current_element_num>=offset+INTER_SELECT)
+	  if(current_element_num>=offset+INTER_FSELECT)
 	    offset++;
 	}
 	break;
@@ -2189,6 +2199,9 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       case '-':
       case 'x':
       case 'X':
+      case '4':
+      case '5':
+      case '6':
 	files_enable[current_element_num].enable=1-files_enable[current_element_num].enable;
 	break;
       case 's':

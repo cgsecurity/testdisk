@@ -357,7 +357,7 @@ int wgetch_nodelay(WINDOW *window)
  * Should not be called directly. Call function menuSelect instead.
  */
 
-int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current)
+int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current)
 {
   unsigned int i, lmargin = x, ymargin = y;
   unsigned int lenNameMax=0;
@@ -437,7 +437,7 @@ int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, 
     if( menuType & MENU_VERT )
     {
       y += 1;
-      if( y >= WARNING_START )
+      if( y >= yinfo - 1)
       {
         y = ymargin;
         x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
@@ -459,7 +459,7 @@ int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, 
   if(!(menuType & MENU_VERT_WARN))
   {
     const char *mcd = menuItems[current].desc;
-    mvwaddstr(window, WARNING_START + 1, (COLUMNS - strlen( mcd )) / 2, mcd );
+    mvwaddstr(window, yinfo, (COLUMNS - strlen( mcd )) / 2, mcd );
   }
   return y;
 }
@@ -467,13 +467,13 @@ int wmenuUpdate(WINDOW *window, int y, int x, const struct MenuItem *menuItems, 
 /* This function takes a list of menu items, lets the user choose one *
  * and returns the value keyboard shortcut of the selected menu item  */
 
-int wmenuSelect(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault)
+int wmenuSelect(WINDOW *window, int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault)
 {
   unsigned int current=menuDefault;
-  return wmenuSelect_ext(window, y, x, menuItems, itemLength, available, menuType, &current,NULL);
+  return wmenuSelect_ext(window, yinfo, y, x, menuItems, itemLength, available, menuType, &current, NULL);
 }
 
-int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key)
+int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key)
 {
   int i, ylast = y, key = 0;
   /*
@@ -497,7 +497,7 @@ int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuIte
   while( key==0 )
   {
     /* Display the menu */
-    ylast = wmenuUpdate( window, y, x, menuItems, itemLength, available,
+    ylast = wmenuUpdate( window, yinfo, y, x, menuItems, itemLength, available,
         menuType, *current );
     wrefresh(window);
     /* Don't put wgetch after the following wclrtoeol */
@@ -511,7 +511,7 @@ int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuIte
       wmove(window, i, x );
       wclrtoeol(window);
     }
-    wmove(window, WARNING_START + 1, 0 );
+    wmove(window, yinfo, 0 );
     wclrtoeol(window);
     /* Cursor keys */
     switch(key)
@@ -596,7 +596,7 @@ int wmenuSelect_ext(WINDOW *window, int y, int x, const struct MenuItem *menuIte
     wmove(window, i, x );
     wclrtoeol(window);
   }
-  wmove(window, WARNING_START + 1, 0 );
+  wmove(window, yinfo, 0 );
   wclrtoeol(window);
   return key;
 }
@@ -616,7 +616,7 @@ int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, unsigned int me
       available[i] = menuItems[i].key;
     }
     available[i] = 0;
-    return wmenuSelect(window,18, 0, menuItems, itemLength, available, MENU_HORIZ | MENU_BUTTON, menuDefault);
+    return wmenuSelect(window, 24, 18, 0, menuItems, itemLength, available, MENU_HORIZ | MENU_BUTTON, menuDefault);
 }
 
 /* End of command menu support code */
@@ -724,7 +724,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
           wprintw(window," ");
       }
     }
-    switch (wmenuSelect(window,INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch (wmenuSelect(window, 24, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'p':
       case 'P':
@@ -877,7 +877,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           wprintw(window," ");
       }
     }
-    switch (wmenuSelect(window,INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch (wmenuSelect(window, 24, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'p':
       case 'P':
@@ -976,7 +976,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
     wclrtoeol(window);
     if(i<intr_nbr_line)
       wprintw(window, "Next");
-    key=wmenuSelect_ext(window,INTER_ANALYSE_MENU_Y, INTER_ANALYSE_MENU_X, (menuItems!=NULL?menuItems:menuDefault),
+    key=wmenuSelect_ext(window, 24, INTER_ANALYSE_MENU_Y, INTER_ANALYSE_MENU_X, (menuItems!=NULL?menuItems:menuDefault),
         itemLength, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu,NULL);
     switch (key)
     {
@@ -1424,7 +1424,7 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
     wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
     wmove(stdscr,21,0);
     wprintw(stdscr,"rare for a drive to be 'Non-partitioned'.");
-    car=wmenuSelect_ext(stdscr,INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 24, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
     switch(car)
     {
       case 'i':
