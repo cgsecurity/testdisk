@@ -577,7 +577,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   {
     const char *ext=NULL;
-    if(strstr(buffer_lower, sign_tex)!=NULL)
+    /* Detect Fortran */
+    unsigned int nbr=0;
+    char *str=buffer_lower;
+    while((str=strstr(str, "\n      "))!=NULL)
+    {
+      nbr++;
+      str++;
+    }
+    if(nbr>10)
+      ext="f";
+    /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
+    else if(strstr(buffer_lower, sign_tex)!=NULL)
       ext="tex";
     else if(strstr(buffer_lower, sign_c)!=NULL)
       ext="c";
