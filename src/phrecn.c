@@ -1509,7 +1509,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
   list_part_t *current_element;
   int allow_partial_last_cylinder=0;
   int paranoid=1;
-  int keep_corrupted_file=0;
+  int keep_corrupted_file=1;
   int current_element_num;
   unsigned int mode_ext2=0;
   unsigned int blocksize=0;
@@ -2049,6 +2049,11 @@ static void interface_options_photorec(int *paranoid, int *allow_partial_last_cy
       {
 	(*current_cmd)+=6;
 	*lowmem=1;
+      }
+      else if(strncmp(*current_cmd,"keep_corrupted_file_no",22)==0)
+      {
+	(*current_cmd)+=22;
+	*keep_corrupted_file=0;
       }
       else if(strncmp(*current_cmd,"keep_corrupted_file",19)==0)
       {
