@@ -2,7 +2,7 @@
 
     File: file_mp3.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -155,6 +155,7 @@ static int header_check_id3(const unsigned char *buffer, const unsigned int buff
 static int header_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int potential_frame_offset=0;
+  unsigned int nbr=0;
   /*
      	A Frame sync  				11 (length in bits)
     	B MPEG audio version (MPEG-1, 2, etc.) 	2
@@ -171,64 +172,63 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       ((potential_frame_offset==0 && file_recovery->file_stat->file_hint==&file_hint_mp3)||
        file_recovery->file_stat->file_hint==&file_hint_mkv))
     return 0;
-  if(buffer[potential_frame_offset+0]==0xFF &&
-      ((buffer[potential_frame_offset+1]&0xFE)==0xFA ||
-       (buffer[potential_frame_offset+1]&0xFE)==0xF2 ||
-       (buffer[potential_frame_offset+1]&0xFE)==0xE2))
+  if(!(buffer[potential_frame_offset+0]==0xFF &&
+	((buffer[potential_frame_offset+1]&0xFE)==0xFA ||
+	 (buffer[potential_frame_offset+1]&0xFE)==0xF2 ||
+	 (buffer[potential_frame_offset+1]&0xFE)==0xE2)))
+    return 0;
+  while(potential_frame_offset+1 < buffer_size &&
+      potential_frame_offset+1 < 2048)
   {
-    unsigned int mpeg_version	=(buffer[potential_frame_offset+1]>>3)&0x03;
-    unsigned int mpeg_layer	=(buffer[potential_frame_offset+1]>>1)&0x03;
-    unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
-    unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
-    unsigned int padding		=(buffer[potential_frame_offset+2]>>1)&0x01;
-    unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
-    unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
-    unsigned int frameLengthInBytes=0;
-    if(sample_rate>0 && bit_rate>0)
+    if(buffer[potential_frame_offset+0]!=0xFF)
+      return 0;
     {
-      if(mpeg_layer==MPEG_L3)
+      unsigned int mpeg_version	=(buffer[potential_frame_offset+1]>>3)&0x03;
+      unsigned int mpeg_layer	=(buffer[potential_frame_offset+1]>>1)&0x03;
+      unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
+      unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
+      unsigned int padding		=(buffer[potential_frame_offset+2]>>1)&0x01;
+      unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
+      unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
+      unsigned int frameLengthInBytes=0;
+      if(sample_rate>0 && bit_rate>0)
       {
-	if(mpeg_version==MPEG_V1)
+	if(mpeg_layer==MPEG_L3)
+	{
+	  if(mpeg_version==MPEG_V1)
+	    frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
+	  else
+	    frameLengthInBytes = 72 * bit_rate / sample_rate + padding;
+	}
+	else if(mpeg_layer==MPEG_L2)
 	  frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
 	else
-	  frameLengthInBytes = 72 * bit_rate / sample_rate + padding;
+	  frameLengthInBytes = (12 * bit_rate / sample_rate + padding)*4;
       }
-      else if(mpeg_layer==MPEG_L2)
-	frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
-      else
-	frameLengthInBytes = (12 * bit_rate / sample_rate + padding)*4;
+#ifdef DEBUG_MP3
+      log_info("bit_rate=%u\n",bit_rate);
+      log_info("sample_rate=%u\n",sample_rate);
+      log_info("padding=%u\n", padding);
+      log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
+#endif
+      if(frameLengthInBytes==0)
+	return 0;
+      potential_frame_offset+=frameLengthInBytes;
+      nbr++;
     }
-      /*
-    log_info("bit_rate=%u\n",bit_rate);
-    log_info("sample_rate=%u\n",sample_rate);
-    log_info("padding=%u\n", padding);
-    log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
-    */
-    if(frameLengthInBytes==0)
-      return 0;
-    potential_frame_offset+=frameLengthInBytes;
-    /*
-    log_info("potential_frame_offset at 0x%x\n", potential_frame_offset);
-    */
-    if(potential_frame_offset+1 < buffer_size)
-    {
-      if(buffer[potential_frame_offset+0]==0xFF &&
-	  ((buffer[potential_frame_offset+1]&0xFE)==0xFA ||
-				(buffer[potential_frame_offset+1]&0xFE)==0xF2 ||
-				(buffer[potential_frame_offset+1]&0xFE)==0xE2))
-      {
-	/*
-	log_info("header_check_mp3 mp3 found\n");
-	*/
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->calculated_file_size=potential_frame_offset;
-	file_recovery_new->min_filesize=287;
-	file_recovery_new->data_check=&data_check_mp3;
-	file_recovery_new->extension=file_hint_mp3.extension;
-	file_recovery_new->file_check=&file_check_size;
-	return 1;
-      }
-    }
+  }
+  if(nbr>1)
+  {
+#ifdef DEBUG_MP3
+    log_info("header_check_mp3 mp3 found\n");
+#endif
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->calculated_file_size=potential_frame_offset;
+    file_recovery_new->min_filesize=287;
+    file_recovery_new->data_check=&data_check_mp3;
+    file_recovery_new->extension=file_hint_mp3.extension;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
   }
   return 0;
 }
