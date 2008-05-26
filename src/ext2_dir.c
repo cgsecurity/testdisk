@@ -27,6 +27,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -66,6 +69,7 @@ static errcode_t my_flush(io_channel channel);
 
 static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data);
 static void dir_partition_ext2_close(dir_data_t *dir_data);
+static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
 
 static struct struct_io_manager my_struct_manager = {
         magic: EXT2_ET_MAGIC_IO_MANAGER,
@@ -293,7 +297,7 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   dir_data->verbose=verbose;
   dir_data->capabilities=0;
   dir_data->get_dir=ext2_dir;
-  dir_data->copy_file=NULL;
+  dir_data->copy_file=ext2_copy;
   dir_data->close=&dir_partition_ext2_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
@@ -301,6 +305,77 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
 #else
   return -2;
 #endif
+}
+
+static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+{
+  int error=0;
+  FILE *f_out;
+  struct ext2_dir_struct *ls = (struct ext2_dir_struct *)dir_data->private_dir_data;
+  char *new_file;
+  {
+    int l1=strlen(dir_data->local_dir);
+    int l2=strlen(dir_data->current_directory);
+    new_file=MALLOC(l1+l2+1);
+    l1=filename_convert(new_file, dir_data->local_dir, l1+1);
+    filename_convert(new_file+l1, dir_data->current_directory, l2+1);
+  }
+  f_out=create_file(new_file);
+  if(!f_out)
+  {
+    log_critical("Can't create file %s: %s\n", new_file, strerror(errno));
+    free(new_file);
+    return -4;
+  }
+  {
+    errcode_t retval;
+    struct ext2_inode       inode;
+    char            buffer[8192];
+    ext2_file_t     e2_file;
+    int             nbytes; 
+    unsigned int    got;
+
+    if (ext2fs_read_inode(ls->current_fs, file->filestat.st_ino, &inode)!=0)
+    {
+      free(new_file);
+      return -1;
+    }
+
+    retval = ext2fs_file_open(ls->current_fs, file->filestat.st_ino, 0, &e2_file);
+    if (retval) {
+      log_error("Error while opening ext2 file %s\n", dir_data->current_directory);
+      free(new_file);
+      return -2;
+    }
+    while (1)
+    {
+      retval = ext2fs_file_read(e2_file, buffer, sizeof(buffer), &got);
+      if (retval)
+      {
+	log_error("Error while reading ext2 file %s\n", dir_data->current_directory);
+	error=-3;
+      }
+      if (got == 0)
+	break;
+      nbytes = fwrite(buffer, 1, got, f_out);
+      if ((unsigned) nbytes != got)
+      {
+	log_error("Error while writing file %s\n", new_file);
+      error=-5;
+      }
+    }
+    retval = ext2fs_file_close(e2_file);
+    if (retval)
+    {
+      log_error("Error while closing ext2 file\n");
+      error=-6;
+    }
+    fclose(f_out);
+    set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+    set_mode(new_file, file->filestat.st_mode);
+  }
+  free(new_file);
+  return error;
 }
 
 const char*td_ext2fs_version(void)

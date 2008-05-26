@@ -74,6 +74,7 @@ int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_
 void mode_string (const unsigned int mode, char *str);
 FILE *create_file(const char *filename);
 int set_date(const char *pathname, time_t actime, time_t modtime);
+int set_mode(const char *pathname, unsigned int mode);
 
 #define LINUX_S_IFMT  00170000
 #define LINUX_S_IFSOCK 0140000

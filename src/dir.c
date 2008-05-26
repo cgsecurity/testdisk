@@ -731,3 +731,54 @@ int filesort(const struct td_list_head *a, const struct td_list_head *b)
   /* Files and directories are sorted by name */
   return strcmp(file_a->name,file_b->name);
 }
+
+/*
+ * The mode_xlate function translates a linux mode into a native-OS mode_t.
+ */
+
+static struct {
+  unsigned int lmask;
+  mode_t mask;
+} mode_table[] = {
+  { LINUX_S_IRUSR, S_IRUSR },
+  { LINUX_S_IWUSR, S_IWUSR },
+  { LINUX_S_IXUSR, S_IXUSR },
+  { LINUX_S_IRGRP, S_IRGRP },
+  { LINUX_S_IWGRP, S_IWGRP },
+  { LINUX_S_IXGRP, S_IXGRP },
+  { LINUX_S_IROTH, S_IROTH },
+  { LINUX_S_IWOTH, S_IWOTH },
+  { LINUX_S_IXOTH, S_IXOTH },
+  { 0, 0 }
+};
+
+static mode_t mode_xlate(unsigned int lmode)
+{
+  mode_t  mode = 0;
+  int     i;
+
+  for (i=0; mode_table[i].lmask; i++) {
+    if (lmode & mode_table[i].lmask)
+      mode |= mode_table[i].mask;
+  }
+  return mode;
+}
+
+/**
+ * set_mode - Set the file's date and time
+ * @pathname:  Path and name of the file to alter
+ * @mode:    Mode using LINUX values
+ *
+ * Give a file a particular mode.
+ *
+ * Return:  1  Success, set the file's mode
+ *	    0  Error, failed to change the file's mode
+ */
+int set_mode(const char *pathname, unsigned int mode)
+{
+#if defined(HAVE_CHMOD) && ! ( defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || defined(__OS2__))
+  return chmod(pathname, mode_xlate(mode));
+#else
+  return 0;
+#endif
+}
