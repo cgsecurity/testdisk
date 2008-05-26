@@ -276,6 +276,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     char device_cciss[]="/dev/cciss/c0d0";
     char device_p_ide[]="/dev/pda";
     char device_i2o_hd[]="/dev/i2o/hda";
+    char device_mmc[]="/dev/mmcblk0";
     /* Disk IDE */
     for(i=0;i<8;i++)
     {
@@ -326,6 +327,12 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     {
       device_i2o_hd[strlen(device_i2o_hd)-1]='a'+i;
       list_disk=insert_new_disk(list_disk,file_test_availability(device_i2o_hd,verbose,arch,testdisk_mode));
+    }
+    /* Memory card */
+    for(i=0;i<10;i++)
+    {
+      device_mmc[strlen(device_mmc)-1]='0'+i;
+      list_disk=insert_new_disk(list_disk,file_test_availability(device_mmc,verbose,arch,testdisk_mode));
     }
 #ifdef HAVE_GLOB_H
     list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, arch, testdisk_mode);
