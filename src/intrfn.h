@@ -2,7 +2,7 @@
 
     File: intrfn.h
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,11 +42,9 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
 void dump(WINDOW *window,const void *nom_dump,unsigned int lng);
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu);
 int screen_buffer_display(WINDOW *window, const char *options_org, const struct MenuItem *menuItems);
-int wgetch_nodelay(WINDOW *window);
 int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key);
 int wmenuSelect(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault);
 int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, unsigned int menuDefault);
-int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
 #endif

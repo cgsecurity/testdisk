@@ -2,7 +2,7 @@
 
     File: intrf.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@ static char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 static int intr_nbr_line=0;
 static void set_parent_directory(char *dst_directory);
 static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
+static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 
 int screen_buffer_add(const char *_format, ...)
 {
@@ -276,6 +277,7 @@ static void set_parent_directory(char *dst_directory)
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 static void dir_aff_entry(WINDOW *window, struct file_info *dir_info);
+static int wgetch_nodelay(WINDOW *window);
 
 int get_string(char *str, int len, char *def)
 {
@@ -343,7 +345,7 @@ int get_string(char *str, int len, char *def)
       return i;
 }
 
-int wgetch_nodelay(WINDOW *window)
+static int wgetch_nodelay(WINDOW *window)
 {
   int res;
   nodelay(window,TRUE);
@@ -357,7 +359,7 @@ int wgetch_nodelay(WINDOW *window)
  * Should not be called directly. Call function menuSelect instead.
  */
 
-int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current)
+static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current)
 {
   unsigned int i, lmargin = x, ymargin = y;
   unsigned int lenNameMax=0;
@@ -1353,7 +1355,7 @@ static int intrf_no_disk_ncurses(const char *prog_name)
       };
       unsigned int menu=0;
       int command;
-      command = wmenuSelect_ext(stdscr,21, 0, menuSudo, 8,
+      command = wmenuSelect_ext(stdscr,24, 21, 0, menuSudo, 8,
 	  "SQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
       if(command=='s' || command=='S')
 	return 1;
