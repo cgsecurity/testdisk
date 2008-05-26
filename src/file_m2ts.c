@@ -31,8 +31,12 @@
 #include "filegen.h"
 
 static void register_header_check_m2ts(file_stat_t *file_stat);
+/* M2TS */
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int data_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+/* M2T */
+static int header_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static int data_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_m2ts= {
   .extension="m2ts",
@@ -45,10 +49,12 @@ const file_hint_t file_hint_m2ts= {
 };
 
 static const unsigned char m2ts_header[4]=  { 'H','D','M','V'};
+static const unsigned char m2t_header[4] =  { 'T','S','H','V'};
 
 static void register_header_check_m2ts(file_stat_t *file_stat)
 {
-  register_header_check(0xd7, m2ts_header,sizeof(m2ts_header), &header_check_m2ts, file_stat);
+  register_header_check(0xd7, m2ts_header, sizeof(m2ts_header), &header_check_m2ts, file_stat);
+  register_header_check(0x18b, m2t_header, sizeof(m2t_header),  &header_check_m2t,  file_stat);
 }
 
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -73,6 +79,26 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   return 0;
 }
 
+static int header_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+       file_recovery->file_stat->file_hint==&file_hint_m2ts)
+    return 0;
+  /* Each frame is 188 byte long and begins by a TS_SYNC_BYTE */
+  if(buffer[0]==0x47 && buffer[188]==0x47 && buffer[2*188]==0x47 &&
+      memcmp(&buffer[0x18b], m2t_header, sizeof(m2t_header))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="m2t";
+    file_recovery_new->min_filesize=188;
+    file_recovery_new->calculated_file_size=188;
+    file_recovery_new->data_check=&data_check_m2t;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
+  return 0;
+}
+
 static int data_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
@@ -81,6 +107,18 @@ static int data_check_m2ts(const unsigned char *buffer, const unsigned int buffe
     if(buffer[i+4]!=0x47)	/* TS_SYNC_BYTE */
       return 2;
     file_recovery->calculated_file_size+=192;
+  }
+  return 1;
+}
+
+static int data_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
+  {
+    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    if(buffer[i]!=0x47)	/* TS_SYNC_BYTE */
+      return 2;
+    file_recovery->calculated_file_size+=188;
   }
   return 1;
 }
