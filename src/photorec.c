@@ -203,6 +203,7 @@ extern const file_hint_t file_hint_sit;
 extern const file_hint_t file_hint_skp;
 extern const file_hint_t file_hint_spe;
 extern const file_hint_t file_hint_spss;
+extern const file_hint_t file_hint_sqlite;
 extern const file_hint_t file_hint_stuffit;
 extern const file_hint_t file_hint_swf;
 extern const file_hint_t file_hint_tar;
@@ -217,6 +218,7 @@ extern const file_hint_t file_hint_x3f;
 extern const file_hint_t file_hint_xcf;
 extern const file_hint_t file_hint_xm;
 extern const file_hint_t file_hint_xsv;
+extern const file_hint_t file_hint_veg;
 extern const file_hint_t file_hint_zip;
 
 static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
@@ -893,6 +895,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_skp  },
     { .enable=0, .file_hint=&file_hint_spe  },
     { .enable=0, .file_hint=&file_hint_spss },
+    { .enable=0, .file_hint=&file_hint_sqlite	},
     { .enable=0, .file_hint=&file_hint_stuffit  },
     { .enable=0, .file_hint=&file_hint_swf  },
     { .enable=0, .file_hint=&file_hint_tar  },
@@ -907,6 +910,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_xcf  },
     { .enable=0, .file_hint=&file_hint_xm   },
     { .enable=0, .file_hint=&file_hint_xsv  },
+    { .enable=0, .file_hint=&file_hint_veg  },
     { .enable=0, .file_hint=&file_hint_zip  },
     { .enable=0, .file_hint=NULL }
   };
