@@ -1,5 +1,5 @@
 %define ver_progsreiserfs 0.3.1-rc8
-%define ver_libewf 20070512
+%define ver_libewf 20080501
 
 Summary:	Tool to check and undelete partition
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
