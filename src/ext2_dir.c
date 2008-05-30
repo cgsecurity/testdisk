@@ -269,43 +269,6 @@ static void dir_partition_ext2_close(dir_data_t *dir_data)
   /* ext2fs_close call the close function that freed my_data */
   free(ls);
 }
-#endif
-
-int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
-{
-#if defined(HAVE_LIBEXT2FS)
-  struct ext2_dir_struct *ls=(struct ext2_dir_struct *)MALLOC(sizeof(*ls));
-  io_channel ioch;
-  my_data_t *my_data;
-  ls->dir_list=NULL;
-  ls->current_file=NULL;
-  /*  ls->flags = DIRENT_FLAG_INCLUDE_EMPTY; */
-  ls->flags = 0;
-  my_data=MALLOC(sizeof(*my_data));
-  my_data->partition=partition;
-  my_data->disk_car=disk_car;
-  ioch=alloc_io_channel(disk_car,my_data);
-  shared_ioch=&ioch;
-  /* An alternate superblock may be used if the calling function has set an IO redirection */
-  if(ext2fs_open ("/dev/testdisk", 0, 0, 0, my_io_manager, &ls->current_fs)!=0)
-  {
-    free(ls);
-    return -1;
-  }
-  strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
-  dir_data->current_inode=EXT2_ROOT_INO;
-  dir_data->verbose=verbose;
-  dir_data->capabilities=0;
-  dir_data->get_dir=ext2_dir;
-  dir_data->copy_file=ext2_copy;
-  dir_data->close=&dir_partition_ext2_close;
-  dir_data->local_dir=NULL;
-  dir_data->private_dir_data=ls;
-  return 0;
-#else
-  return -2;
-#endif
-}
 
 static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
 {
@@ -376,6 +339,43 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   }
   free(new_file);
   return error;
+}
+#endif
+
+int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+{
+#if defined(HAVE_LIBEXT2FS)
+  struct ext2_dir_struct *ls=(struct ext2_dir_struct *)MALLOC(sizeof(*ls));
+  io_channel ioch;
+  my_data_t *my_data;
+  ls->dir_list=NULL;
+  ls->current_file=NULL;
+  /*  ls->flags = DIRENT_FLAG_INCLUDE_EMPTY; */
+  ls->flags = 0;
+  my_data=MALLOC(sizeof(*my_data));
+  my_data->partition=partition;
+  my_data->disk_car=disk_car;
+  ioch=alloc_io_channel(disk_car,my_data);
+  shared_ioch=&ioch;
+  /* An alternate superblock may be used if the calling function has set an IO redirection */
+  if(ext2fs_open ("/dev/testdisk", 0, 0, 0, my_io_manager, &ls->current_fs)!=0)
+  {
+    free(ls);
+    return -1;
+  }
+  strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
+  dir_data->current_inode=EXT2_ROOT_INO;
+  dir_data->verbose=verbose;
+  dir_data->capabilities=0;
+  dir_data->get_dir=ext2_dir;
+  dir_data->copy_file=ext2_copy;
+  dir_data->close=&dir_partition_ext2_close;
+  dir_data->local_dir=NULL;
+  dir_data->private_dir_data=ls;
+  return 0;
+#else
+  return -2;
+#endif
 }
 
 const char*td_ext2fs_version(void)
