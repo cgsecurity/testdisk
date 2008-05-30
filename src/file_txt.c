@@ -577,15 +577,33 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   {
     const char *ext=NULL;
-    /* Detect Fortran */
+    /* ind=~0: random
+     * ind=~1: constant	*/
+    double ind=1;
     unsigned int nbr=0;
-    char *str=buffer_lower;
-    while((str=strstr(str, "\n      "))!=NULL)
+    /* Detect Fortran */
     {
-      nbr++;
-      str++;
+      char *str=buffer_lower;
+      while((str=strstr(str, "\n      "))!=NULL)
+      {
+	nbr++;
+	str++;
+      }
     }
-    if(nbr>10)
+    if(i>1)
+    {
+      unsigned int stats[256];
+      unsigned int j;
+      memset(&stats, 0, sizeof(stats));
+      for(j=0;j<i;j++)
+        stats[buffer[j]]++;
+      ind=0;
+      for(j=0;j<256;j++)
+        if(stats[j]>0)
+          ind+=stats[j]*(stats[j]-1);
+      ind=ind/i/(i-1);
+    }
+    if(nbr>10 && i<=0.90)
       ext="f";
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, sign_tex)!=NULL)
@@ -604,25 +622,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="html";
     else if(strstr(buffer_lower, sign_h)!=NULL && i>50)
       ext="h";
-    else if(i<100)
+    else if(i<100 || ind<0.03 || ind>0.90)
       ext=NULL;
     else
-    {
-      unsigned int stats[256];
-      unsigned int j;
-      double ind=0;
-      memset(&stats, 0, sizeof(stats));
-      for(j=0;j<i;j++)
-        stats[buffer[j]]++;
-      for(j=0;j<256;j++)
-        if(stats[j]>0)
-          ind+=stats[j]*(stats[j]-1);
-      ind=ind/i/(i-1);
-      if(ind<0.03 || ind>0.90)
-        ext=NULL;
-      else
-        ext=file_hint_txt.extension;
-    }
+      ext=file_hint_txt.extension;
     if(ext!=NULL && strcmp(ext,"txt")==0 &&
         (strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL))
     {
