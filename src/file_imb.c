@@ -2,7 +2,7 @@
 
     File: file_imb.c
 
-    Copyright (C) 2006-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ static const unsigned char imb_header[15]= { 0x00, 0x00, 0x00, 'I','n','c','r','
 
 static void register_header_check_imb(file_stat_t *file_stat)
 {
-  register_header_check(0, imb_header,sizeof(imb_header), &header_check_imb, file_stat);
+  register_header_check(1, imb_header,sizeof(imb_header), &header_check_imb, file_stat);
 }
 
 static int header_check_imb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
