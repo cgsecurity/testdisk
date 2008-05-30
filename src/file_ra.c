@@ -55,16 +55,13 @@ static int header_check_ra(const unsigned char *buffer, const unsigned int buffe
 {
   if(memcmp(buffer,ra_header,sizeof(ra_header))==0)
   {
-    if(buffer[5]==0x00 && buffer[6]==0x03)
+    if(buffer[4]==0x00 && buffer[5]==0x03)
     { /* V3 */
       reset_file_recovery(file_recovery_new);
-      file_recovery_new->calculated_file_size=8+(buffer[7]<<8)+buffer[8]+(buffer[0x12]<<24)+(buffer[0x13]<<16)+(buffer[0x14]<<8)+buffer[0x15];
       file_recovery_new->extension=file_hint_ra.extension;
-      file_recovery_new->data_check=&data_check_size;
-      file_recovery_new->file_check=&file_check_size;
       return 1;
     }
-    else if(buffer[5]==0x00 && buffer[6]==0x04 && buffer[8]=='r' && buffer[9]=='a' && buffer[10]=='4')
+    else if(buffer[4]==0x00 && buffer[5]==0x04 && buffer[8]=='r' && buffer[9]=='a' && buffer[10]=='4')
     { /* V4 */
       reset_file_recovery(file_recovery_new);
       file_recovery_new->calculated_file_size=(buffer[11]<<24)+(buffer[12]<<16)+(buffer[13]<<8)+buffer[14]+40;
