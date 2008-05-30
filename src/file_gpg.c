@@ -126,6 +126,38 @@ static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *
   return 1 << (buf[1]& 0x1F);
 }
 
+static  int is_valid_pubkey_algo(const int algo)
+{
+  /*  1          - RSA (Encrypt or Sign)
+   *  2          - RSA Encrypt-Only
+   *  3          - RSA Sign-Only
+   *  16         - Elgamal (Encrypt-Only), see [ELGAMAL]
+   *  17         - DSA (Digital Signature Standard)
+   *  18         - Reserved for Elliptic Curve
+   *  19         - Reserved for ECDSA
+   *  20         - Elgamal (Encrypt or Sign)
+   *  21         - Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
+   *  100 to 110 - Private/Experimental algorith
+   */
+  if(algo>=100 && algo<=100)
+    return 1;
+  switch(algo)
+  {
+    case 1:
+    case 2:
+    case 3:
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+    case 21:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int potential_frame_offset=0;
@@ -174,8 +206,9 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     }
   }
   /* Secret-Key Packet v4 followed by User ID Packet */
-  if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==13)
+  if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==13 && is_valid_pubkey_algo(buffer[8])>0)
     start_recovery=1;
+    /* algo buffer[8]*/
   /* Public-Key Packet + User ID Packet */
 #if 0
   if(buffer[0]==0x99 && packet_tag[1]==13)
