@@ -91,9 +91,9 @@ void autodetect_arch(disk_t *disk)
   }
   if(list_part==NULL)
     disk->arch=arch;
-  log_info("Partition table type (auto): %s\n", disk->arch->part_name);
   part_free_list(list_part);
 #ifndef DEBUG_PARTAUTO
   log_set_levels(old_levels);
 #endif
+  log_info("Partition table type (auto): %s\n", disk->arch->part_name);
 }
