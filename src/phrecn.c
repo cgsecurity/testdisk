@@ -815,6 +815,11 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
  * PhotoRec. PhotoRec will not be able to overwrite a file as long as the *
  * antivirus is scanning it, so let's wait a little bit if the creation   *
  * failed. */
+
+#ifndef HAVE_SLEEP
+#define sleep(x) Sleep((x)*1000)
+#endif
+
 static FILE *fopen_with_retry(const char *path, const char *mode)
 {
   FILE *handle;
