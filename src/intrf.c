@@ -86,8 +86,6 @@ extern const char *monstr[];
 static char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 static int intr_nbr_line=0;
 static void set_parent_directory(char *dst_directory);
-static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
-static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 
 int screen_buffer_add(const char *_format, ...)
 {
@@ -274,8 +272,22 @@ static void set_parent_directory(char *dst_directory)
 #endif
 }
 
+static inline char *td_getcwd(char *buf, unsigned long size)
+{
+  /* buf must non-NULL*/
+#ifdef HAVE_GETCWD
+  if(getcwd(buf, size)!=NULL)
+    return buf;
+#endif
+  buf[0]='.';
+  buf[1]='\0';
+  return buf;
+}
+
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
+static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
+static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 static void dir_aff_entry(WINDOW *window, struct file_info *dir_info);
 static int wgetch_nodelay(WINDOW *window);
 
@@ -1465,18 +1477,6 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
     }
   }
   return 0;
-}
-
-static inline char *td_getcwd(char *buf, unsigned long size)
-{
-  /* buf must non-NULL*/
-#ifdef HAVE_GETCWD
-  if(getcwd(buf, size)!=NULL)
-    return buf;
-#endif
-  buf[0]='.';
-  buf[1]='\0';
-  return buf;
 }
 
 #if defined(DJGPP) || defined(__OS2__)
