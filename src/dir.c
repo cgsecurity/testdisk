@@ -740,15 +740,33 @@ static struct {
   unsigned int lmask;
   mode_t mask;
 } mode_table[] = {
+#ifdef S_IRUSR
   { LINUX_S_IRUSR, S_IRUSR },
+#endif
+#ifdef S_IWUSR
   { LINUX_S_IWUSR, S_IWUSR },
+#endif
+#ifdef S_IXUSR
   { LINUX_S_IXUSR, S_IXUSR },
+#endif
+#ifdef S_IRGRP
   { LINUX_S_IRGRP, S_IRGRP },
+#endif
+#ifdef S_IWGRP
   { LINUX_S_IWGRP, S_IWGRP },
+#endif
+#ifdef S_IXGRP
   { LINUX_S_IXGRP, S_IXGRP },
+#endif
+#ifdef S_IROTH
   { LINUX_S_IROTH, S_IROTH },
+#endif
+#ifdef S_IWOTH
   { LINUX_S_IWOTH, S_IWOTH },
+#endif
+#ifdef S_IXOTH
   { LINUX_S_IXOTH, S_IXOTH },
+#endif
   { 0, 0 }
 };
 
