@@ -276,13 +276,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   FILE *f_out;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *)dir_data->private_dir_data;
   char *new_file;
-  {
-    int l1=strlen(dir_data->local_dir);
-    int l2=strlen(dir_data->current_directory);
-    new_file=MALLOC(l1+l2+1);
-    l1=filename_convert(new_file, dir_data->local_dir, l1+1);
-    filename_convert(new_file+l1, dir_data->current_directory, l2+1);
-  }
+  new_file=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
   f_out=create_file(new_file);
   if(!f_out)
   {

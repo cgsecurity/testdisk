@@ -627,13 +627,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
   int copy_ok=0;
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
     return -2;
-  {
-    int l1=strlen(dir_data->local_dir);
-    int l2=strlen(dir_data->current_directory);
-    dir_name=MALLOC(l1+l2+1);
-    memcpy(dir_name,dir_data->local_dir,l1);
-    filename_convert(dir_name+l1,dir_data->current_directory,l2+1);
-  }
+  dir_name=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
   create_dir(dir_name,1);
   dir_list=dir_data->get_dir(disk_car, partition,dir_data, (const unsigned long int)dir->filestat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)

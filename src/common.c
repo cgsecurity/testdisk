@@ -155,9 +155,9 @@ void set_part_name(partition_t *partition,const char *src,const int max_size)
   partition->fsname[i--]='\0';
 }
 
-static inline unsigned char convert_char(unsigned char car)
-{
 #ifdef DJGPP
+static inline unsigned char convert_char_dos(unsigned char car)
+{
   if(car<0x20)
     return '_';
   switch(car)
@@ -205,7 +205,26 @@ static inline unsigned char convert_char(unsigned char car)
   /* 'y' */
   if(car>=253)
     return 'y';
-#elif defined(__CYGWIN__) || defined(__MINGW32__)
+  return car;
+}
+
+static unsigned int filename_convert_dos(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i;
+  for(i=0;i<n-1 && src[i]!='\0';i++)
+    dst[i]=convert_char_dos(src[i]);
+  while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
+    i--;
+  if(i==0 && (dst[i]==' '||dst[i]=='.'))
+    dst[i++]='_';
+  dst[i]='\0';
+  return i;
+}
+#endif
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+static inline unsigned char convert_char_win(unsigned char car)
+{
   if(car<0x20)
     return '_';
   switch(car)
@@ -229,28 +248,86 @@ static inline unsigned char convert_char(unsigned char car)
     case '=':
       return '_';
   }
-#endif
   return car;
 }
 
-unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
+static unsigned int filename_convert_win(char *dst, const char*src, const unsigned int n)
 {
   unsigned int i;
   for(i=0;i<n-1 && src[i]!='\0';i++)
-  {
-    if(i==1 && src[i]==':')
-      dst[i]=src[i];
-    else
-      dst[i]=convert_char(src[i]);
-  }
-#if defined(DJGPP) || defined(__CYGWIN__) || defined(__MINGW32__)
+    dst[i]=convert_char_win(src[i]);
   while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
     i--;
   if(i==0 && (dst[i]==' '||dst[i]=='.'))
     dst[i++]='_';
-#endif
   dst[i]='\0';
   return i;
+}
+#endif
+
+#if defined(__APPLE__)
+static unsigned int filename_convert_mac(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i,j;
+  const unsigned char *p; 	/* pointers to actual position in source buffer */
+  unsigned char *q;	/* pointers to actual position in destination buffer */
+  p=(const unsigned char *)src;
+  q=(unsigned char *)dst;
+  for(i=0,j=0; (*p)!='\0' && i<n; i++)
+  {
+    if((*p & 0x80)==0x00)
+    {
+      *q++=*p++;
+      j++;
+    }
+    else if((*p & 0xe0)==0xc0 && (*(p+1) & 0xc0)==0x80)
+    {
+      *q++=*p++;
+      *q++=*p++;
+      j+=2;
+    }
+    else if((*p & 0xf0)==0xe0 && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
+    {
+      *q++=*p++;
+      *q++=*p++;
+      *q++=*p++;
+      j+=3;
+    }
+    else
+    {
+      *q++='_';
+      p++;
+      j++;
+    }
+  }
+  *q='\0';
+  return j;
+}
+#endif
+
+char *gen_local_filename(const char *dir, const char*src)
+{
+  int l1=strlen(dir);
+  int l2=strlen(src);
+  char *dst=MALLOC(l1+l2+1);
+#if defined(DJGPP)
+  l1=filename_convert_dos(dst, dir, l1+1);
+  filename_convert_dos(dst+l1, src, l2+1);
+  if(dir[0]!='\0' && dir[1]==':')
+    dst[1]=':';
+#elif defined(__CYGWIN__) || defined(__MINGW32__)
+  l1=filename_convert_win(dst, dir, l1+1);
+  filename_convert_win(dst+l1, src, l2+1);
+  if(dir[0]!='\0' && dir[1]==':')
+    dst[1]=':';
+#elif defined(__APPLE__)
+  l1=filename_convert_mac(dst, dir, l1+1);
+  filename_convert_mac(dst+l1, src, l2+1);
+#else
+  memcpy(dst, dir, l1);
+  memcpy(dst+l1, src,l2+1);
+#endif
+  return dst;
 }
 
 void create_dir(const char *dir_name, const unsigned int is_dir_name)

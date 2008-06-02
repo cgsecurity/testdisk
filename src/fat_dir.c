@@ -523,10 +523,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
   uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length;
-
-  new_file=MALLOC(strlen(dir_data->local_dir)+strlen(dir_data->current_directory)+1);
-  strcpy(new_file,dir_data->local_dir);
-  strcat(new_file,dir_data->current_directory);
+  new_file=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
   f_out=create_file(new_file);
   if(!f_out)
   {

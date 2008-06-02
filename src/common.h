@@ -416,7 +416,7 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int strncasecmp(const char * s1, const char * s2, size_t len);
 #endif
 void create_dir(const char *dir_name, const unsigned int is_dir_name);
-unsigned int filename_convert(char *dst, const char*src, const unsigned int n);
+char *gen_local_filename(const char *dir, const char*src);
 /*
  * td_min()/td_max() macros that also do
  * strict type-checking.. See the
