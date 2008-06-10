@@ -21,8 +21,8 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-    VER_E2FSPROGS=1.40.7
-#    VER_E2FSPROGS=1.40.2
+    VER_E2FSPROGS=1.40.10
+#    VER_E2FSPROGS=1.40.7
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
 #    CC="$crosscompile_target-gcc -mno-cygwin"
@@ -76,6 +76,7 @@ if [ ! -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
 then
   if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/configure ];
   then
+        rm -f $compiledir/Makefile
   	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
 	CC=$TESTDISKCC CFLAGS="$CFLAGS -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
 	cd $pwd_saved
@@ -112,6 +113,7 @@ if [ ! -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
 then
   if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/configure ];
   then
+#        rm -f $compiledir/Makefile
         cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
         ./configure --host=$crosscompile_target --prefix=$prefix --disable-nls --disable-Werror
         cd $pwd_saved
@@ -150,6 +152,7 @@ if [ ! -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
 then
   if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/configure ];
   then
+#        rm -f $compiledir/Makefile
         cd $compiledir/ntfsprogs-$VER_NTFSPROGS
 # --disable-default-device-io-ops is need for NT 4
         CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
@@ -195,6 +198,7 @@ if [ ! -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
 then
   if [ -e $compiledir/libewf-$VER_LIBEWF/configure ];
   then
+#        rm -f $compiledir/Makefile
 	cd $compiledir/libewf-$VER_LIBEWF
 	CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix
 	cd $pwd_saved
