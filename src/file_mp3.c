@@ -235,7 +235,8 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
 
 static int data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i]==0)
@@ -254,7 +255,8 @@ static int data_check_id3(const unsigned char *buffer, const unsigned int buffer
 
 static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int MMT_size = 0;
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;

@@ -101,7 +101,8 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
 
 static int data_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i+4]!=0x47)	/* TS_SYNC_BYTE */

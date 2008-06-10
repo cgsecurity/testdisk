@@ -2,7 +2,7 @@
 
     File: file_evt.c
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,7 +69,8 @@ static int header_check_evt(const unsigned char *buffer, const unsigned int buff
 
 static int data_check_evt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if((buffer[i+4]=='L' && buffer[i+5]=='f' && buffer[i+6]=='L' && buffer[i+7]=='e') ||

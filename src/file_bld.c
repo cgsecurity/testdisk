@@ -2,7 +2,7 @@
 
     File: file_bld.c
 
-    Copyright (C) 2006-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,7 +85,8 @@ static int header_check_blend(const unsigned char *buffer, const unsigned int bu
 
 static int data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int len;
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;

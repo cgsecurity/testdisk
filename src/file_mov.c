@@ -2,7 +2,7 @@
 
     File: file_mov.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -174,7 +174,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 
 static int data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int atom_size;
     unsigned int i;
