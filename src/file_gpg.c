@@ -81,11 +81,15 @@ static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *
     *length_type=0;
     return 0;
   }
-  log_debug("%02x %02x %02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+#ifdef DEBUG_GPG
+  log_info("%02x %02x %02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+#endif
   if((buf[0]&0x40)==0)
   {
     /* Old format */
-    log_debug(" old_format\n");
+#ifdef DEBUG_GPG
+    log_info(" old_format\n");
+#endif
     switch(buf[0]&0x3)
     {
       case 0:
@@ -102,7 +106,9 @@ static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *
 	return 0;
     }
   }
-  log_debug(" new_format\n");
+#ifdef DEBUG_GPG
+  log_info(" new_format\n");
+#endif
   /* One-Octet Lengths */
   if(buf[1]<=191)
   {
@@ -184,11 +190,13 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   }
   if(nbr<2)
     return 0;
+#ifdef DEBUG_GPG
   for(i=0;i<nbr;i++)
   {
-    log_debug("%02u gpg tag %u, size=%u (0x%x - %u)\n",
+    log_info("%02u gpg tag %u, size=%u (0x%x - %u)\n",
 	i, packet_tag[i], length[i], length[i], length_type[i]);
   }
+#endif
   /* Public-Key Encrypted Session Key Packet v3 */
   if(buffer[0]==0x85 && buffer[3]==0x03)
   {
@@ -205,30 +213,34 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	return 0;
     }
   }
+  if(start_recovery>0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_gpg.extension;
+    return 1;
+  }
   /* Secret-Key Packet v4 followed by User ID Packet */
   if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==13 && is_valid_pubkey_algo(buffer[8])>0)
-    start_recovery=1;
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_gpg.extension;
+    file_recovery_new->data_check=&data_check_gpg;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
     /* algo buffer[8]*/
   /* Public-Key Packet + User ID Packet */
 #if 0
   if(buffer[0]==0x99 && packet_tag[1]==13)
     start_recovery=1;
 #endif
-  if(start_recovery==0)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->calculated_file_size=0;
-  file_recovery_new->min_filesize=0;
-  file_recovery_new->data_check=&data_check_gpg;
-  file_recovery_new->extension=file_hint_gpg.extension;
-  //file_recovery_new->file_check=&file_check_size;
-  return 1;
+  return 0;
 }
 
 static int data_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  log_debug("data_check_gpg\n");
-  while(file_recovery->calculated_file_size + 6 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int packet_tag;
     unsigned int length_type;
@@ -240,7 +252,9 @@ static int data_check_gpg(const unsigned char *buffer, const unsigned int buffer
     length=openpgp_length_type(&buffer[i], &length_type);
     if(length_type==0)
       return 2;	/* Don't know how to find the size */
-    log_debug("gpg tag %u, size=%u\n", packet_tag, length);
+#ifdef DEBUG_GPG
+    log_info("gpg tag %u, size=%u\n", packet_tag, length);
+#endif
     file_recovery->calculated_file_size+=length_type;
     file_recovery->calculated_file_size+=length;
   }
