@@ -93,6 +93,7 @@ static const unsigned char header_xml[14]	= "<?xml version=";
 static const unsigned char header_dc[6]		= "SC V10";
 static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
+static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -115,6 +116,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_adr, sizeof(header_adr), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -452,6 +454,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="msf";
+    return 1;
+  }
+  /* Opera Hotlist bookmark/contact list/notes */
+  if(memcmp(buffer, header_adr, sizeof(header_adr))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="adr";
     return 1;
   }
   return 0;
