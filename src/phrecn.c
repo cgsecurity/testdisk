@@ -315,7 +315,6 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   {
     log_info("EXT2/EXT3 mode activated.\n");
   }
-  *carve_free_space_only=0;
   /*
   if((*mode_ext2)!=0)
     return 0;
@@ -346,8 +345,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
 #endif
     else
       command='W';
-    if(command=='F' || command=='f')
-      *carve_free_space_only=1;
+    *carve_free_space_only=(command=='F' || command=='f')?1:0;
     if(*carve_free_space_only>0)
     {
       log_info("Carve free space only.\n");
@@ -1371,12 +1369,12 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
     else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
     {
       ind_stop=photorec_bf(disk_car, partition, verbose, paranoid, recup_dir, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, &dir_num, status, pass,expert, lowmem);
-      session_save(list_search_space, disk_car, partition, files_enable, blocksize, verbose);
+      session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose);
     }
     else
     {
       ind_stop=photorec_aux(disk_car, partition, verbose, paranoid, recup_dir, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, &dir_num, status, pass,expert, lowmem);
-      session_save(list_search_space, disk_car, partition, files_enable, blocksize, verbose);
+      session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose);
     }
     if(ind_stop==3)
     { /* no more space */
@@ -1514,7 +1512,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
   list_part_t *current_element;
   int allow_partial_last_cylinder=0;
   int paranoid=1;
-  int keep_corrupted_file=1;
+  int keep_corrupted_file=0;
   int current_element_num;
   unsigned int mode_ext2=0;
   unsigned int blocksize=0;
@@ -1622,6 +1620,16 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
       else if(strncmp(*current_cmd,"inter",5)==0)
       {	/* Start interactive mode */
 	*current_cmd=NULL;
+      }
+      else if(strncmp(*current_cmd,"wholespace",10)==0)
+      {
+	(*current_cmd)+=10;
+	carve_free_space_only=0;
+      }
+      else if(strncmp(*current_cmd,"freespace",9)==0)
+      {
+	(*current_cmd)+=9;
+	carve_free_space_only=1;
       }
       else if(isdigit(*current_cmd[0]))
       {
@@ -2040,21 +2048,24 @@ static void interface_options_photorec(int *paranoid, int *allow_partial_last_cy
     {
       while(*current_cmd[0]==',')
 	(*current_cmd)++;
-      if(strncmp(*current_cmd,"mode_ext2",9)==0)
+      /* paranoid, longer option first */
+      if(strncmp(*current_cmd,"paranoid_no",11)==0)
       {
-	(*current_cmd)+=9;
-	*mode_ext2=1;
+	(*current_cmd)+=11;
+	*paranoid=0;
       }
-      else if(strncmp(*current_cmd,"expert",6)==0)
+      else if(strncmp(*current_cmd,"paranoid_bf",11)==0)
       {
-	(*current_cmd)+=6;
-	*expert=1;
+	(*current_cmd)+=11;
+	*paranoid=2;
       }
-      else if(strncmp(*current_cmd,"lowmem",6)==0)
+      else if(strncmp(*current_cmd,"paranoid",8)==0)
       {
-	(*current_cmd)+=6;
-	*lowmem=1;
+	(*current_cmd)+=8;
+	*paranoid=1;
       }
+      /* TODO: allow_partial_last_cylinder */
+      /* keep_corrupted_file */
       else if(strncmp(*current_cmd,"keep_corrupted_file_no",22)==0)
       {
 	(*current_cmd)+=22;
@@ -2064,6 +2075,24 @@ static void interface_options_photorec(int *paranoid, int *allow_partial_last_cy
       {
 	(*current_cmd)+=19;
 	*keep_corrupted_file=1;
+      }
+      /* mode_ext2 */
+      else if(strncmp(*current_cmd,"mode_ext2",9)==0)
+      {
+	(*current_cmd)+=9;
+	*mode_ext2=1;
+      }
+      /* expert */
+      else if(strncmp(*current_cmd,"expert",6)==0)
+      {
+	(*current_cmd)+=6;
+	*expert=1;
+      }
+      /* lowmem */
+      else if(strncmp(*current_cmd,"lowmem",6)==0)
+      {
+	(*current_cmd)+=6;
+	*lowmem=1;
       }
       else
 	keep_asking=0;

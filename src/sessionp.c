@@ -2,7 +2,7 @@
 
     File: sessionp.c
 
-    Copyright (C) 2006-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   if(!f_session)
   {
     log_info("Can't open photorec.ses file: %s\n",strerror(errno));
-    session_save(NULL, NULL, NULL, NULL, 0, 0);
+    session_save(NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0);
     return -1;
   }
   if(fstat(fileno(f_session), &stat_rec)<0)
@@ -151,7 +151,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   return 0;
 }
 
-int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const int verbose)
+int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const unsigned int paranoid, const unsigned int keep_corrupted_file, const unsigned int mode_ext2, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only, const int verbose)
 {
   FILE *f_session;
   if(verbose>1)
@@ -168,7 +168,8 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
   {
     struct td_list_head *free_walker = NULL;
     unsigned int i;
-    fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",(unsigned int)time(NULL), disk_car->device, disk_car->arch->part_name_option, partition->order,blocksize);
+    fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",
+	(unsigned int)time(NULL), disk_car->device, disk_car->arch->part_name_option, partition->order, blocksize);
     for(i=0;files_enable[i].file_hint!=NULL;i++)
     {
       if(files_enable[i].file_hint->extension!=NULL && files_enable[i].file_hint->extension[0]!='\0')
@@ -176,6 +177,30 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
 	fprintf(f_session,"%s,%s,",files_enable[i].file_hint->extension,(files_enable[i].enable!=0?"enable":"disable"));
       }
     }
+    /* Save options */
+    fprintf(f_session, "options,");
+    if(paranoid==0)
+      fprintf(f_session, "paranoid_no,");
+    else if(paranoid==1)
+      fprintf(f_session, "paranoid,");
+    else
+      fprintf(f_session, "paranoid_bf,");
+    /* TODO: allow_partial_last_cylinder ? */
+    if(keep_corrupted_file>0)
+      fprintf(f_session, "keep_corrupted_file,");
+    else
+      fprintf(f_session, "keep_corrupted_file_no,");
+    if(mode_ext2>0)
+      fprintf(f_session, "mode_ext2,");
+    if(expert>0)
+      fprintf(f_session, "expert,");
+    if(lowmem>0)
+      fprintf(f_session, "lowmem,");
+    /* Save options - End */
+    if(carve_free_space_only>0)
+      fprintf(f_session,"freespace,");
+    else
+      fprintf(f_session,"wholespace,");
     fprintf(f_session,"search,inter\n");
     td_list_for_each(free_walker, &list_free_space->list)
     {
