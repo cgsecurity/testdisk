@@ -61,7 +61,7 @@ static void file_check_xml(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
-  .description="Text files with header: rtf,xml,xhtml,imm,pm,reg,sh,slk,ram",
+  .description="Text files with header: rtf,xml,xhtml,imm,pm,ram,reg,sh,slk,stp",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -88,12 +88,14 @@ static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
 static const unsigned char header_reg[8]  	= "REGEDIT4";
 static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
+static const unsigned char header_stp[13]  	= "ISO-10303-21;";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_xml[14]	= "<?xml version=";
 static const unsigned char header_dc[6]		= "SC V10";
 static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
+static const unsigned char header_stl[6]	= "solid ";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -111,6 +113,8 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
@@ -312,6 +316,9 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   const char sign_grisbi[14]		= "Version_grisbi";
   const char sign_fst[5]                = "QBFSD";
   const char sign_html[5]		= "<html";
+  static const unsigned char spaces[16]={
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
   if(memcmp(buffer,header_cls,sizeof(header_cls))==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -373,6 +380,30 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="slk";
+    return 1;
+  }
+  if(memcmp(buffer, header_stl, sizeof(header_stl))==0 &&
+      memcmp(buffer+0x40, spaces, sizeof(spaces))!=0)
+  {
+    /* StereoLithography - STL Ascii format
+     * http://www.ennex.com/~fabbers/StL.asp	*/
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="stl";
+    return 1;
+  }
+  if(memcmp(buffer,header_stp,sizeof(header_stp))==0)
+  {
+    /* ISO 10303 is an ISO standard for the computer-interpretable
+     * representation and exchange of industrial product data.
+     * - Industrial automation systems and integration - Product data representation and exchange
+     * - Standard for the Exchange of Product model data.
+     * */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="stp";
     return 1;
   }
   if(memcmp(buffer,header_ram,sizeof(header_ram))==0)
