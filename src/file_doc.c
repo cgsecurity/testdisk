@@ -2,7 +2,7 @@
 
     File: file_doc.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -170,6 +170,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     else if(td_memmem(buffer,buffer_size,"Publisher",9)!=NULL)
     { /* Publisher */
       file_recovery_new->extension="pub";
+    }
+    else if(td_memmem(buffer,buffer_size,"L\0i\0c\0o\0m\0",10)!=NULL)
+    { /* Licom AlphaCAM */
+      file_recovery_new->extension="amb";
     }
     else
       file_recovery_new->extension=file_hint_doc.extension;
