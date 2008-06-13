@@ -26,6 +26,9 @@
 #else
 #define PHOTOREC_MAX_FILE_SIZE (((uint64_t)1<<41)-1)
 #endif
+#define PHOTOREC_MAX_SIZE_16 (((uint64_t)1<<15)-1)
+#define PHOTOREC_MAX_SIZE_32 (((uint64_t)1<<31)-1)
+
 typedef struct file_hint_struct file_hint_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
