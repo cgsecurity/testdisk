@@ -1768,7 +1768,9 @@ char *ask_location(const char*msg, const char *src_dir)
 	      {
 		struct file_info *dir_info;
 		dir_info=td_list_entry(dir_current, struct file_info, list);
-		if(dir_current!=&dir_list.list && LINUX_S_ISDIR(dir_info->stat.st_mode))
+		if(dir_current!=&dir_list.list &&
+		  (LINUX_S_ISDIR(dir_info->stat.st_mode) || LINUX_S_ISLNK(dir_info->stat.st_mode)))
+		if(dir_current!=&dir_list.list)
 		{
 		  if(strcmp(dir_info->name,".")==0)
 		  {
