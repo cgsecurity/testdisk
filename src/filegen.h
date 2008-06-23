@@ -101,7 +101,7 @@ struct alloc_data_struct
 
 void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
-alloc_data_t *del_search_space(alloc_data_t *list_search_space, uint64_t start, uint64_t end);
+alloc_data_t *del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
 int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 void file_check_size(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);

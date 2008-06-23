@@ -228,7 +228,8 @@ then
         case "$crosscompile_target" in
           powerpc-apple-darwin)
 # libewf should work under MacOSX but it hasn't been tested
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo
+# use --with-ncurses, so the binaries don't need libncurses
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo --with-ncurses-lib=$prefix/usr/lib
                 ;;
           i586-pc-msdosdjgpp)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv

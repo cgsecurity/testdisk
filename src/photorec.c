@@ -104,6 +104,7 @@ extern const file_hint_t file_hint_ace;
 extern const file_hint_t file_hint_addressbook;
 extern const file_hint_t file_hint_aif;
 extern const file_hint_t file_hint_all;
+extern const file_hint_t file_hint_als;
 extern const file_hint_t file_hint_amd;
 extern const file_hint_t file_hint_amr;
 extern const file_hint_t file_hint_arj;
@@ -335,12 +336,12 @@ static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, a
   return list_search_space;
 }
 
-alloc_data_t *del_search_space(alloc_data_t *list_search_space, uint64_t start, uint64_t end)
+alloc_data_t *del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end)
 {
   return update_search_space_aux(list_search_space, start, end, NULL, NULL);
 }
 
-static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
+static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
   struct td_list_head *search_walker = NULL;
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
@@ -365,8 +366,9 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, ui
 #endif
     if(current_search_space->start==start)
     {
-      if(end<current_search_space->end)
-      { /* current_search_space->start==start end<current_search_space->end */
+      const uint64_t pivot=current_search_space->end+1;
+      if(end+1<current_search_space->end)
+      { /* current_search_space->start==start end+1<current_search_space->end */
         if(offset!=NULL && new_current_search_space!=NULL &&
             current_search_space->start<=*offset && *offset<=end)
         {
@@ -378,7 +380,6 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, ui
         return list_search_space;
       }
       /* current_search_space->start==start current_search_space->end<=end */
-      start=current_search_space->end+1;
       if(list_search_space==current_search_space)
         list_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
       if(offset!=NULL && new_current_search_space!=NULL &&
@@ -389,14 +390,15 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, ui
       }
       td_list_del(search_walker);
       free(current_search_space);
-      return update_search_space_aux(list_search_space, start,end, new_current_search_space, offset);
+      return update_search_space_aux(list_search_space, pivot, end, new_current_search_space, offset);
     }
     if(current_search_space->end==end)
     {
+      const uint64_t pivot=current_search_space->start-1;
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
       log_trace("current_search_space->end==end\n");
 #endif
-      if(current_search_space->start<start)
+      if(current_search_space->start+1<start)
       { /* current_search_space->start<start current_search_space->end==end */
         if(offset!=NULL && new_current_search_space!=NULL &&
             start<=*offset && *offset<=current_search_space->end)
@@ -408,7 +410,6 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, ui
         return list_search_space;
       }
       /* start<=current_search_space->start current_search_space->end==end */
-      end=current_search_space->start-1;
       if(list_search_space==current_search_space)
         list_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
       if(offset!=NULL && new_current_search_space!=NULL &&
@@ -419,18 +420,19 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, ui
       }
       td_list_del(search_walker);
       free(current_search_space);
-      return update_search_space_aux(list_search_space, start,end, new_current_search_space, offset);
+      return update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
     }
     if(start < current_search_space->start && current_search_space->start <= end)
     {
-      list_search_space=update_search_space_aux(list_search_space,
-          start, current_search_space->start-1,  new_current_search_space, offset);
-      return update_search_space_aux(list_search_space, current_search_space->start, end, new_current_search_space, offset);
+      const uint64_t pivot=current_search_space->start;
+      list_search_space=update_search_space_aux(list_search_space, start, pivot-1,  new_current_search_space, offset);
+      return update_search_space_aux(list_search_space, pivot, end, new_current_search_space, offset);
     }
     if(start <= current_search_space->end && current_search_space->end < end)
     {
-      list_search_space=update_search_space_aux(list_search_space, start, current_search_space->end, new_current_search_space, offset);
-      return update_search_space_aux(list_search_space, current_search_space->end+1, end, new_current_search_space, offset);
+      const uint64_t pivot=current_search_space->end;
+      list_search_space=update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
+      return update_search_space_aux(list_search_space, pivot+1, end, new_current_search_space, offset);
     }
     if(current_search_space->start < start && end < current_search_space->end)
     {
@@ -808,6 +810,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_addressbook},
     { .enable=0, .file_hint=&file_hint_aif  },
     { .enable=0, .file_hint=&file_hint_all  },
+    { .enable=0, .file_hint=&file_hint_als  },
     { .enable=0, .file_hint=&file_hint_amd  },
     { .enable=0, .file_hint=&file_hint_amr  },
     { .enable=0, .file_hint=&file_hint_arj  },

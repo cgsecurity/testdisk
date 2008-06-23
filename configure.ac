@@ -35,7 +35,7 @@ AC_ARG_WITH([ncurses],
 
 AC_ARG_WITH(ncurses-lib,
     AS_HELP_STRING(--with-ncurses-lib=DIR,location of the ncurses library),
-    [ ncurses_lib_a="${withval}/libncurses.a"
+    [ ncurses_lib_dir="${withval}"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(ncurses-includes,
@@ -369,14 +369,37 @@ AC_PROG_GCC_TRADITIONAL
 
 # Checks for libraries.
 if test -z "${use_ncurses}"; then
-  AC_SEARCH_LIBS(initscr, ncursesw ncurses pdcurses curses,
-      [
-        AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncursesw/ncurses/pdcurses/curses library.])
-	AC_CHECK_LIB(tinfo,keypad,[
-	  AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
-	  LIBS="$LIBS -ltinfo"
-	  ])
-      ],AC_MSG_ERROR(No ncurses library detected))
+  AC_CHECK_LIB(ncursesw, initscr, [ ncurses_lib="ncursesw" ])
+ if test -z "${ncurses_lib}"; then
+  AC_CHECK_LIB( ncurses, initscr, [ ncurses_lib="ncurses" ])
+ fi
+ if test -z "${ncurses_lib}"; then
+  AC_CHECK_LIB(pdcurses, initscr, [ ncurses_lib="pdcurses" ])
+ fi
+ if test -z "${ncurses_lib}"; then
+  AC_CHECK_LIB(curses, initscr,   [ ncurses_lib="curses" ])
+ fi
+ if test -z "${ncurses_lib}"; then
+   AC_MSG_ERROR(At least one of ncursesw/ncurses/pdcurses/curses library must be present)
+ fi
+ AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncursesw/ncurses/pdcurses/curses library.])
+ if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a"; then
+   LIBS="$LIBS ${ncurses_lib_dir}/lib${ncurses_lib}.a"
+ else
+   LIBS="$LIBS -l${ncurses_lib}"
+ fi
+  AC_CHECK_LIB(tinfo,keypad,[
+      AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
+# if lib${ncurses_lib}.a is present, try to use libtinfo.a
+ if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a";
+ then 
+   if test -e "${ncurses_lib_dir}/libtinfo.a"; then
+     LIBS="$LIBS ${ncurses_lib_dir}/libtinfo.a"
+   fi
+ else
+   LIBS="$LIBS -ltinfo"
+ fi
+      ])
 else
   AC_MSG_WARN(Use of ncurses library disabled)
 fi
@@ -390,7 +413,7 @@ if test -z "${use_ext2fs}"; then
         LIBS="$LIBS ${ext2fs_lib_a}"
       fi
       ],AC_MSG_WARN(No ext2fs library detected))
-  AC_CHECK_LIB(ext2fs,ext2fs_open,[
+  AC_CHECK_LIB(com_err,com_err,[
   AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
       if test "${com_err_lib_a}" = ""; then
         LIBS="$LIBS -lcom_err"
