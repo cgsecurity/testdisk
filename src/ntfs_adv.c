@@ -611,6 +611,10 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   if(sectors_per_cluster>0 && mft_record_size>0)
   {
     unsigned int index_block_size=4096;
+    log_info("ntfs_find_mft: sectors_per_cluster %u\n",sectors_per_cluster);
+    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
+    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
+    log_info("ntfs_find_mft: mft_record_size     %u\n",mft_record_size);
     /* Read "root directory" in MFT */
     if(disk_car->read(disk_car,mft_record_size, &buffer, partition->part_offset+(uint64_t)mft_lcn*sectors_per_cluster*disk_car->sector_size+5*(uint64_t)mft_record_size)!=0)
     {
@@ -620,10 +624,6 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     index_block_size=ntfs_get_attr(buffer,0x90,partition,buffer+mft_record_size,verbose,0,NULL);
     if(index_block_size%512!=0)
       index_block_size=4096;
-    log_info("ntfs_find_mft: sectors_per_cluster %u\n",sectors_per_cluster);
-    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
-    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
-    log_info("ntfs_find_mft: mft_record_size     %u\n",mft_record_size);
     log_info("ntfs_find_mft: index_block_size    %u\n",index_block_size);
     create_ntfs_boot_sector(disk_car,partition, interface, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size,current_cmd);
     /* TODO: ask if the user want to continue the search of MFT */
