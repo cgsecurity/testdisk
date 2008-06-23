@@ -55,7 +55,6 @@
 unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space)
 {
   dir_data_t dir_data;
-  unsigned int res;
   switch(dir_partition_ntfs_init(disk_car,partition,&dir_data,0))
   {
     case -2:
@@ -90,8 +89,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     uint64_t end_free=0;
     unsigned long int lcn;
     unsigned long int no_of_cluster;
-    unsigned int cluster_size;
-    unsigned int sector_size;
+    unsigned int cluster_size;	/* size in bytes */
     log_trace("ntfs_remove_used_space\n");
     buffer=(unsigned char *)MALLOC(SIZEOF_BUFFER);
     {
@@ -102,13 +100,11 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	return 0;
       }
       no_of_cluster=le64(ntfs_header->sectors_nbr)/ntfs_header->sectors_per_cluster;
-      cluster_size=ntfs_header->sectors_per_cluster;
-      sector_size=ntfs_sector_size(ntfs_header);
-      res=cluster_size * sector_size;
+      cluster_size=ntfs_header->sectors_per_cluster*ntfs_sector_size(ntfs_header);
     }
     for(lcn=0;lcn<no_of_cluster;lcn++)
     {
-      static long long int bmplcn = -SIZEOF_BUFFER - 1;	/* Which bit of $Bitmap is in the buffer */
+      static long long int bmplcn = - (SIZEOF_BUFFER << 3);	/* Which bit of $Bitmap is in the buffer */
       int byte, bit;
       if ((lcn < bmplcn) || (lcn >= (bmplcn + (SIZEOF_BUFFER << 3))))
       {
@@ -136,22 +132,22 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
       if((buffer[byte] & bit)!=0)
       {
 	/* Not free */
-	if(end_free+1==partition->part_offset+(uint64_t)lcn*cluster_size*sector_size)
-	  end_free+=cluster_size*sector_size;
+	if(end_free+1==partition->part_offset+(uint64_t)lcn*cluster_size)
+	  end_free+=cluster_size;
 	else
 	{
-	  if(start_free != end_free)
+	  if(start_free < end_free)
 	    del_search_space(list_search_space, start_free, end_free);
-	  start_free=partition->part_offset+(uint64_t)lcn*cluster_size*sector_size;
-	  end_free=start_free+(uint64_t)cluster_size*sector_size-1;
+	  start_free=partition->part_offset+(uint64_t)lcn*cluster_size;
+	  end_free=start_free+(uint64_t)cluster_size-1;
 	}
       }
     }
     free(buffer);
-    if(start_free != end_free)
+    if(start_free < end_free)
       del_search_space(list_search_space, start_free, end_free);
     dir_data.close(&dir_data);
-    return cluster_size * sector_size;
+    return cluster_size;
   }
 }
 #endif
