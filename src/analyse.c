@@ -265,7 +265,7 @@ int search_type_128(unsigned char *buffer, disk_t *disk_car,partition_t *partiti
 
 list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, const int verbose, const int dump_ind, const int interface)
 {
-  unsigned char *buffer=MALLOC(2*0x200);
+  unsigned char *buffer=(unsigned char *)MALLOC(2*0x200);
   uint64_t hd_offset;
   int nbr_sb=0;
   list_part_t *list_part=NULL;

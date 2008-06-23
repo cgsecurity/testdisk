@@ -334,7 +334,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     int interactive=1;
     unsigned char *buffer;
     int ind_stop=0;
-    buffer=MALLOC(cluster_size*disk_car->sector_size);
+    buffer=(unsigned char *)MALLOC(cluster_size*disk_car->sector_size);
 #ifdef HAVE_NCURSES
     if(interface)
     {
@@ -385,7 +385,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               dir_aff_log(disk_car, partition, NULL, dir_list);
             }
             {
-              file_data_t *new_file=MALLOC(sizeof(*new_file));
+              file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
               memcpy(new_file,dir_list,sizeof(*new_file));
               new_file->prev=current_file;
               new_file->next=NULL;
@@ -643,7 +643,7 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
     log_trace("fat32_create_rootdir(reserved=%u,fat_length=%u,root_cluster=%u,cluster_size=%u)\n",reserved,fat_length,root_cluster,cluster_size);
   }
   cluster=root_cluster;
-  buffer=MALLOC(disk_car->sector_size*cluster_size);
+  buffer=(unsigned char *)MALLOC(disk_car->sector_size*cluster_size);
   memset(buffer,0,disk_car->sector_size*cluster_size);
   for(current_file=rootdir_list;current_file!=NULL;current_file=current_file->next)
   {
@@ -744,7 +744,7 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
   int etat=0;
   unsigned int sector_etat1=0;
   uint64_t hd_offset;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   hd_offset=partition->part_offset+(uint64_t)offset*disk_car->sector_size;
   for(i=0;i<200;i++)
   {
@@ -1047,8 +1047,8 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   struct fat_boot_sector *fat_header;
   int error=0;
   unsigned long int part_size=0;
-  orgboot=MALLOC(3*disk_car->sector_size);
-  newboot=MALLOC(3*disk_car->sector_size);
+  orgboot=(unsigned char *)MALLOC(3*disk_car->sector_size);
+  newboot=(unsigned char *)MALLOC(3*disk_car->sector_size);
   org_fat_header=(struct fat_boot_sector *)orgboot;
   fat_header=(struct fat_boot_sector *)newboot;
   if(disk_car->read(disk_car,3*disk_car->sector_size, orgboot, partition->part_offset)!=0)
@@ -1259,7 +1259,7 @@ static unsigned int fat_find_fat_start(const unsigned char *buffer,const int p_f
   info_offset_t *info_offset;
   unsigned int nbr_offset=0;
   int have_fat_signature=0;
-  info_offset=MALLOC(sector_size*sizeof(info_offset_t));
+  info_offset=(info_offset_t *)MALLOC(sector_size*sizeof(info_offset_t));
   if(p_fat12!=0)
   {
     unsigned int i;
@@ -1535,7 +1535,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
   uint64_t offset;
   unsigned long int old_percent=0;
   int ind_stop=0;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(verbose>0)
   {
     log_trace("fat_find_type(max_offset=%lu, p_fat12=%d, p_fat16=%d, p_fat32=%d, debug=%d, dump_ind=%d)\n",
@@ -1639,7 +1639,7 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
 #ifdef HAVE_NCURSES
     if(dump_ind>0 && interface>0)
     {
-      unsigned char *buffer=MALLOC(disk_car->sector_size);
+      unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
       if(disk_car->read(disk_car,disk_car->sector_size, &buffer, end)==0)
       {
 	dump_ncurses(buffer,disk_car->sector_size);
@@ -1854,7 +1854,7 @@ static int find_cluster_size(disk_t *disk_car, partition_t *partition, const int
     uint64_t offset;
     uint64_t skip_offset;
     int ind_stop=0;
-    unsigned char *buffer=MALLOC(disk_car->sector_size);
+    unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
 #ifdef HAVE_NCURSES
     if(interface)
     {
@@ -2442,7 +2442,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
       struct fat_boot_sector *fat_header;
       uint64_t part_size,start_data;
       unsigned char *buffer;
-      buffer=MALLOC(disk_car->sector_size);
+      buffer=(unsigned char *)MALLOC(disk_car->sector_size);
       fat_header=(struct fat_boot_sector *)buffer;
       if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset)!=0)
       {
@@ -2474,7 +2474,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
       unsigned char *buffer_fat[2];
       unsigned int rw_size=buffer_size;
       for(fat_nbr=0;fat_nbr<fats;fat_nbr++)
-        buffer_fat[fat_nbr]=MALLOC(fats*buffer_size);
+        buffer_fat[fat_nbr]=(unsigned char *)MALLOC(fats*buffer_size);
       for(fat_nbr=0;fat_nbr<fats;fat_nbr++)
       {
         fat_history[fat_nbr][FAT_UNREADABLE]=0;

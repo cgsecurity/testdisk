@@ -421,7 +421,7 @@ unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part
   unsigned int nbr;
   unsigned int h_index=0;
   unsigned int head_max=disk_car->CHS.head;
-  disk_t *new_disk_car=MALLOC(sizeof(*new_disk_car));
+  disk_t *new_disk_car=(disk_t *)MALLOC(sizeof(*new_disk_car));
   memcpy(new_disk_car,disk_car,sizeof(*new_disk_car));
   nbr_max=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
   for(h_index=0;head_list[h_index]!=0;h_index++)

@@ -281,7 +281,7 @@ int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector
 int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer;
-  buffer=MALLOC(3*disk_car->sector_size);
+  buffer=(unsigned char *)MALLOC(3*disk_car->sector_size);
   if(disk_car->read(disk_car,3*disk_car->sector_size, buffer, partition->part_offset)!=0)
   {
     screen_buffer_add("check_FAT: can't read FAT boot sector\n");
@@ -481,7 +481,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
   const uint32_t *p32;
   uint64_t hd_offset=partition->part_offset+(uint64_t)fat_offset*disk_car->sector_size;
   unsigned int prev_cluster;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   p32=(const uint32_t*)buffer;
 
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)

@@ -75,40 +75,40 @@ struct td_list_head {
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __td_list_add(struct td_list_head *new,
+static inline void __td_list_add(struct td_list_head *newe,
 			      struct td_list_head *prev,
 			      struct td_list_head *next)
 {
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
+	next->prev = newe;
+	newe->next = next;
+	newe->prev = prev;
+	prev->next = newe;
 }
 
 /**
  * td_list_add - add a new entry
- * @new: new entry to be added
+ * @newe: new entry to be added
  * @head: list head to add it after
  *
  * Insert a new entry after the specified head.
  * This is good for implementing stacks.
  */
-static inline void td_list_add(struct td_list_head *new, struct td_list_head *head)
+static inline void td_list_add(struct td_list_head *newe, struct td_list_head *head)
 {
-	__td_list_add(new, head, head->next);
+	__td_list_add(newe, head, head->next);
 }
 
 /**
  * td_list_add_tail - add a new entry
- * @new: new entry to be added
+ * @newe: new entry to be added
  * @head: list head to add it before
  *
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
-static inline void td_list_add_tail(struct td_list_head *new, struct td_list_head *head)
+static inline void td_list_add_tail(struct td_list_head *newe, struct td_list_head *head)
 {
-	__td_list_add(new, head->prev, head);
+	__td_list_add(newe, head->prev, head);
 }
 
 /*
@@ -133,8 +133,8 @@ static inline void __td_list_del(struct td_list_head * prev, struct td_list_head
 static inline void td_list_del(struct td_list_head *entry)
 {
 	__td_list_del(entry->prev, entry->next);
-	entry->next = LIST_POISON1;
-	entry->prev = LIST_POISON2;
+	entry->next = (struct td_list_head*)LIST_POISON1;
+	entry->prev = (struct td_list_head*)LIST_POISON2;
 }
 
 /**
@@ -333,18 +333,18 @@ static inline void td_list_splice_init(struct td_list_head *list,
 	     pos = n, n = td_list_entry(n->member.next, typeof(*n), member))
 
 
-static inline void td_list_add_sorted(struct td_list_head *new, struct td_list_head *head,
+static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
     int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
 {
   struct td_list_head *pos;
   td_list_for_each(pos, head)
   {
-    if(compar(new,pos)<0)
+    if(compar(newe,pos)<0)
     {
-      __td_list_add(new, pos->prev, pos);
+      __td_list_add(newe, pos->prev, pos);
       return ;
     }
   }
-  td_list_add_tail(new, head);
+  td_list_add_tail(newe, head);
 }
 #endif

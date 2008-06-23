@@ -202,7 +202,7 @@ static int list_dir_proc2(ext2_ino_t dir,
   ext2_ino_t		ino;
   unsigned int		thislen;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *) private;
-  file_data_t *new_file=MALLOC(sizeof(*new_file));
+  file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
   new_file->status=0;
   new_file->prev=ls->current_file;
   new_file->next=NULL;
@@ -346,7 +346,7 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   ls->current_file=NULL;
   /*  ls->flags = DIRENT_FLAG_INCLUDE_EMPTY; */
   ls->flags = 0;
-  my_data=MALLOC(sizeof(*my_data));
+  my_data=(my_data_t *)MALLOC(sizeof(*my_data));
   my_data->partition=partition;
   my_data->disk_car=disk_car;
   ioch=alloc_io_channel(disk_car,my_data);

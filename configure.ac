@@ -554,25 +554,19 @@ fi
 
 
 #-Wconversion -Wunreachable-code -Wmissing-noreturn"
-if test "$GCC" = "yes"; then                    
-CFLAGS="$CFLAGS -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar"
-
-for option in -Wdeclaration-after-statement; do
+for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar
+do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
-AC_MSG_CHECKING([whether gcc understands $option])
+  AC_MSG_CHECKING([whether gcc understands $option])
   AC_TRY_COMPILE([], [],
       has_option=yes,
-      has_option=no,)
-  if test $has_option = no; then
-  CFLAGS="$SAVE_CFLAGS"
-  fi
-AC_MSG_RESULT($has_option)
+      has_option=no; CFLAGS="$SAVE_CFLAGS",)
+  AC_MSG_RESULT($has_option)
   unset has_option
   unset SAVE_CFLAGS
-  done
-  unset option
-fi
+done
+unset option
 
 case "$target" in
   *hpux*)

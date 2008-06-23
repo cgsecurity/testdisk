@@ -95,7 +95,7 @@ static uint32_t expected_compressed_size=0;
 
 static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size)
 {
-  char     *buffer = MALLOC(4096);
+  char     *buffer =(char *)MALLOC(4096);
   int64_t  total   = 0;
 #ifdef DEBUG_ZIP
   log_trace("zip: file_get_pos(f, needle, %u)\n", size);
@@ -154,7 +154,7 @@ static int zip_parse_file_entry(file_recovery_t *fr)
   len = le16(file.filename_length);
   if (len)
   {
-    char *filename=MALLOC(len+1);
+    char *filename=(char *)MALLOC(len+1);
     fr->file_size += len;
     if (fread(filename, len, 1, fr->handle) != 1)
     {

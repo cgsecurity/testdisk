@@ -170,7 +170,7 @@ list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveh
   partition_t *partition;
   int res=0;
   partition=partition_new(&arch_none);
-  buffer_disk=MALLOC(16*DEFAULT_SECTOR_SIZE);
+  buffer_disk=(unsigned char *)MALLOC(16*DEFAULT_SECTOR_SIZE);
   partition->part_size=disk_car->disk_size;
   if(recover_MD_from_partition(disk_car, partition, verbose)==0)
     res=1;
@@ -222,7 +222,7 @@ static int test_structure_none(list_part_t *list_part)
 
 int set_part_type_none(partition_t *partition, unsigned int part_type)
 {
-  partition->upart_type=part_type;
+  partition->upart_type=(upart_type_t)part_type;
   return 0;
 }
 

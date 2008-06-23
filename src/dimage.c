@@ -75,7 +75,7 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
   const uint64_t offset_end=partition->part_offset+partition->part_size;
   const uint64_t offset_inc=(offset_end-offset)/100;
   uint64_t offset_next=offset;
-  unsigned char *buffer_disk=MALLOC(READ_SIZE);
+  unsigned char *buffer_disk=(unsigned char *)MALLOC(READ_SIZE);
   int disk_dst;
 #ifdef HAVE_NCURSES
   WINDOW *window;

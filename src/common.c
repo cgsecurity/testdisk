@@ -309,7 +309,7 @@ char *gen_local_filename(const char *dir, const char*src)
 {
   int l1=strlen(dir);
   int l2=strlen(src);
-  char *dst=MALLOC(l1+l2+1);
+  char *dst=(char *)MALLOC(l1+l2+1);
 #if defined(DJGPP)
   l1=filename_convert_dos(dst, dir, l1+1);
   filename_convert_dos(dst+l1, src, l2+1);

@@ -81,7 +81,7 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
 #ifdef HAVE_GLOB_H
   glob_t globbuf;
 #endif
-  data=MALLOC(sizeof(*data));
+  data=(struct info_fewf_struct *)MALLOC(sizeof(*data));
   data->offset=0;
   strncpy(data->file_name,device,sizeof(data->file_name));
   data->file_name[sizeof(data->file_name)-1]='\0';
@@ -95,14 +95,14 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
     glob(data->file_name, GLOB_DOOFFS, NULL, &globbuf);
     if(globbuf.gl_pathc>0)
     {
-      filenames=MALLOC(globbuf.gl_pathc * sizeof(*filenames));
+      filenames=(char **)MALLOC(globbuf.gl_pathc * sizeof(*filenames));
       for (num_files=0; num_files<globbuf.gl_pathc; num_files++) {
 	filenames[num_files]=globbuf.gl_pathv[num_files];
       }
     }
   }
 #else
-  filenames=MALLOC(1*sizeof(*filenames));
+  filenames=(char **)MALLOC(1*sizeof(*filenames));
   filenames[num_files] = data->file_name;
   num_files++;
 #endif /*HAVE_GLOB_H*/

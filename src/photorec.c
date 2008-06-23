@@ -972,7 +972,7 @@ int main( int argc, char **argv )
       int len=strlen(argv[i+1]);
       if(argv[i+1][len-1]=='\\' || argv[i+1][len-1]=='/')
       {
-        char *new_recup_dir=MALLOC(len+strlen(DEFAULT_RECUP_DIR)+1);
+        char *new_recup_dir=(char *)MALLOC(len+strlen(DEFAULT_RECUP_DIR)+1);
         strcpy(new_recup_dir,argv[i+1]);
         strcat(new_recup_dir,DEFAULT_RECUP_DIR);
         recup_dir=new_recup_dir;	/* small memory leak */

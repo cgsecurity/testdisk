@@ -457,7 +457,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
      * DTSTART:19970714T173000Z           ;UTC time
      * DTSTART;TZID=US-Eastern:19970714T133000    ;Local time and time
      */
-    buffer2=MALLOC(buffer_size+1);
+    buffer2=(char *)MALLOC(buffer_size+1);
     buffer2[buffer_size]='\0';
     memcpy(buffer2, buffer, buffer_size);
     date_asc=strstr(buffer2, "DTSTART");
@@ -548,7 +548,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   if(buffer_lower==NULL)
   {
     buffer_lower_size=buffer_size_test+16;
-    buffer_lower=MALLOC(buffer_lower_size);
+    buffer_lower=(char *)MALLOC(buffer_lower_size);
   }
   i=UTF2Lat(buffer_lower,buffer,buffer_size_test);
   /* strncasecmp */
@@ -751,7 +751,7 @@ Doc: \r (0xD)
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
-  char *buffer_lower=MALLOC(buffer_size+16);
+  char *buffer_lower=(char *)MALLOC(buffer_size+16);
   i=UTF2Lat(buffer_lower,&buffer[buffer_size/2],buffer_size/2);
   if(i<buffer_size/2)
   {
@@ -786,7 +786,7 @@ static void file_check_html(file_recovery_t *file_recovery)
     int i;
     if(fseek(file_recovery->handle,0,SEEK_SET)<0)
       return;
-    buffer_lower=MALLOC(read_size);
+    buffer_lower=(char *)MALLOC(read_size);
     taille=fread(buffer_lower,1,read_size,file_recovery->handle);
     if(taille<0)
     {

@@ -89,7 +89,7 @@ unsigned int get_crc32(const void*buf, const unsigned int len, const uint32_t se
 {
   unsigned int i;
   register uint32_t crc32val;
-  const unsigned char *s=buf;
+  const unsigned char *s=(const unsigned char *)buf;
   crc32val = seed; 
   for (i = 0;  i < len;  i ++)
   {
@@ -102,7 +102,7 @@ unsigned int get_crc32(const void*buf, const unsigned int len, const uint32_t se
 uint32_t* make_crc32_table(uint32_t poly)
 {
   unsigned i,j;
-  uint32_t *crctable = MALLOC(256*sizeof(uint32_t));
+  uint32_t *crctable = (uint32_t *)MALLOC(256*sizeof(uint32_t));
   for (i=0;i<256;i++)
   {
     uint32_t r=i;

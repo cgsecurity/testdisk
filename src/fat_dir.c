@@ -257,7 +257,7 @@ RecEnd:
     if((int8_t) unicode[0] != (int8_t) DELETED_FLAG)
     {
       unsigned int i;
-      file_data_t *new_file=MALLOC(sizeof(*new_file));
+      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
       for(i=0;(unicode[i]!=0)&&(i<sizeof(new_file->name)-1);i++)
 	new_file->name[i]=(char) unicode[i];
       new_file->name[i]=0;
@@ -358,7 +358,7 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
   {
     file_data_t *dir_list=NULL;
     const unsigned int cluster_size=fat_header->cluster_size;
-    unsigned char *buffer_dir=MALLOC(fat_sector_size(fat_header)*cluster_size*10);
+    unsigned char *buffer_dir=(unsigned char *)MALLOC(fat_sector_size(fat_header)*cluster_size*10);
     unsigned int nbr_cluster;
     int stop=0;
     uint64_t start_fat1,start_data,part_size;
@@ -517,7 +517,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   const struct fat_boot_sector *fat_header=ls->boot_sector;
   unsigned int cluster_size=fat_header->cluster_size;
   const unsigned int block_size=fat_sector_size(fat_header)*cluster_size;
-  unsigned char *buffer_file=MALLOC(block_size);
+  unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
   unsigned int file_size=file->filestat.st_size;
   unsigned int fat_meth=FAT_FOLLOW_CLUSTER;

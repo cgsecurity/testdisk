@@ -74,7 +74,7 @@ static int cache_read(disk_t *disk_car,const unsigned int count, void *nom_buffe
 
 static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset, const unsigned int can_read_more)
 {
-  struct cache_struct *data=disk_car->data;
+  struct cache_struct *data=(struct cache_struct *)disk_car->data;
 #ifdef DEBUG_CACHE
   log_trace("cache_read(count=%u,buffer,offset=%llu)\n", count,(long long unsigned)offset);
 #endif
@@ -142,7 +142,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
     if(cache->buffer==NULL)
     {	/* Allocate buffer */
       cache->buffer_size=(count_new<CACHE_DEFAULT_SIZE?CACHE_DEFAULT_SIZE:count_new);
-      cache->buffer=MALLOC(cache->buffer_size);
+      cache->buffer=(unsigned char *)MALLOC(cache->buffer_size);
     }
     res=data->disk_car->read(data->disk_car, count_new, cache->buffer, offset);
     cache->cache_size=count_new;
@@ -184,7 +184,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 
 static int cache_write(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
 {
-  struct cache_struct *data=disk_car->data;
+  struct cache_struct *data=(struct cache_struct *)disk_car->data;
   unsigned int i;
   for(i=0;i<CACHE_BUFFER_NBR;i++)
   {
@@ -203,7 +203,7 @@ static int cache_clean(disk_t *disk_car)
 {
   if(disk_car->data)
   {
-    struct cache_struct *data=disk_car->data;
+    struct cache_struct *data=(struct cache_struct *)disk_car->data;
     unsigned int i;
 #ifdef DEBUG_CACHE
     log_trace("%s\ncache_read total_call=%u, total_count=%llu\n      read total_call=%u, total_count=%llu\n",
@@ -227,15 +227,15 @@ static int cache_clean(disk_t *disk_car)
 
 static int cache_sync(disk_t *disk_car)
 {
-  struct cache_struct *data=disk_car->data;
+  struct cache_struct *data=(struct cache_struct *)disk_car->data;
   return data->disk_car->sync(data->disk_car);
 }
 
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
 {
   unsigned int i;
-  struct cache_struct*data=MALLOC(sizeof(*data));
-  disk_t *new_disk_car=MALLOC(sizeof(*new_disk_car));
+  struct cache_struct*data=(struct cache_struct*)MALLOC(sizeof(*data));
+  disk_t *new_disk_car=(disk_t *)MALLOC(sizeof(*new_disk_car));
   memcpy(new_disk_car,disk_car,sizeof(*new_disk_car));
   data->disk_car=disk_car;
   data->nbr_fnct_sect=0;
@@ -271,7 +271,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
 
 static const char *cache_description(disk_t *disk_car)
 {
-  struct cache_struct *data=disk_car->data;
+  struct cache_struct *data=(struct cache_struct *)disk_car->data;
   dup_CHS(&data->disk_car->CHS,&disk_car->CHS);
   data->disk_car->disk_size=disk_car->disk_size;
   return data->disk_car->description(data->disk_car);
@@ -279,7 +279,7 @@ static const char *cache_description(disk_t *disk_car)
 
 static const char *cache_description_short(disk_t *disk_car)
 {
-  struct cache_struct *data=disk_car->data;
+  struct cache_struct *data=(struct cache_struct *)disk_car->data;
   dup_CHS(&data->disk_car->CHS,&disk_car->CHS);
   data->disk_car->disk_size=disk_car->disk_size;
   return data->disk_car->description_short(data->disk_car);

@@ -471,7 +471,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
   int pass2=pass;
   read_size=((*blocksize)>8192?(*blocksize):8192);
   buffer_size=(*blocksize)+READ_SIZE;
-  buffer_start=MALLOC(buffer_size);
+  buffer_start=(unsigned char *)MALLOC(buffer_size);
   for(search_walker=list_search_space->list.prev, n=search_walker->prev;
       search_walker!=&list_search_space->list && ind_stop==0;
       search_walker=n,n=search_walker->prev)
@@ -853,7 +853,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
     .list = TD_LIST_HEAD_INIT(list_cluster.list)
   };
   buffer_size=(*blocksize)+READ_SIZE;
-  buffer_start=MALLOC(buffer_size);
+  buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
   buffer=buffer_olddata+(*blocksize);
   reset_file_recovery(&file_recovery);
@@ -1297,7 +1297,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
         enable_count++;
       }
     }
-    file_stats=MALLOC(enable_count * sizeof(file_stat_t));
+    file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
     enable_count=0;
     for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
     {
@@ -1386,7 +1386,7 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
       else
       {
         free(new_recup_dir);
-        new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+        new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
         strcpy(new_recup_dir,res);
         strcat(new_recup_dir,"/");
         strcat(new_recup_dir,DEFAULT_RECUP_DIR);
@@ -1577,7 +1577,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
 	  if(res!=NULL)
 	  {
-	    char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	    char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
 	    strcpy(new_recup_dir,res);
 	    strcat(new_recup_dir,"/");
 	    strcat(new_recup_dir,DEFAULT_RECUP_DIR);
@@ -1714,7 +1714,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	      res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
 	      if(res!=NULL)
 	      {
-		char *new_recup_dir=MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+		char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
 		strcpy(new_recup_dir,res);
 		strcat(new_recup_dir,"/");
 		strcat(new_recup_dir,DEFAULT_RECUP_DIR);

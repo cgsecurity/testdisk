@@ -139,7 +139,7 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
     unsigned int res;
     unsigned int sector_size;
     const struct fat_boot_sector *fat_header;
-    buffer=MALLOC(3*disk_car->sector_size);
+    buffer=(unsigned char *)MALLOC(3*disk_car->sector_size);
     fat_header=(const struct fat_boot_sector *)buffer;
     if(disk_car->read(disk_car,3*disk_car->sector_size, buffer, partition->part_offset)!=0)
     {

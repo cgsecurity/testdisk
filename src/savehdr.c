@@ -60,7 +60,7 @@ int save_header(disk_t *disk_car,partition_t *partition, const int verbose)
     log_critical("Can't create header.log file: %s\n",strerror(errno));
     return -1;
   }
-  buffer=MALLOC(256*DEFAULT_SECTOR_SIZE);
+  buffer=(unsigned char *)MALLOC(256*DEFAULT_SECTOR_SIZE);
   memset(buffer,0,DEFAULT_SECTOR_SIZE);
   {
     char status='D';
@@ -112,7 +112,7 @@ backup_disk_t *partition_load(const disk_t *disk_car, const int verbose)
     log_error("Can't open backup.log file: %s\n",strerror(errno));
     return list_backup;
   }
-  buffer=MALLOC(BACKUP_MAXSIZE);
+  buffer=(char *)MALLOC(BACKUP_MAXSIZE);
   taille=fread(buffer,1,BACKUP_MAXSIZE,f_backup);
   buffer[(taille<BACKUP_MAXSIZE?taille:BACKUP_MAXSIZE-1)]='\0';
   if(verbose>1)

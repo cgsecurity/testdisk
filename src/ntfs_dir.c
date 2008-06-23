@@ -241,7 +241,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     }
 
     {
-      file_data_t *new_file=MALLOC(sizeof(*new_file));
+      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
       memcpy(new_file->name,filename,(MAX_PATH<sizeof(new_file->name)?MAX_PATH:sizeof(new_file->name)));
       new_file->status=0;
       new_file->prev=ls->current_file;
@@ -338,7 +338,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     s64 bytes_read, written;
     s64 offset;
     u32 block_size;
-    buffer = MALLOC(bufsize);
+    buffer = (char *)MALLOC(bufsize);
     if (!buffer)
       return -2;
     attr = ntfs_attr_open(inode, AT_DATA, NULL, 0);
@@ -431,7 +431,7 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
   dev = ntfs_device_alloc("/", 0, &ntfs_device_testdisk_io_ops, NULL);
   if (dev)
   {
-    my_data=MALLOC(sizeof(*my_data));
+    my_data=(my_data_t *)MALLOC(sizeof(*my_data));
     my_data->partition=partition;
     my_data->disk_car=disk_car;
     my_data->offset=0;

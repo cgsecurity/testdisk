@@ -93,7 +93,7 @@ int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *
 
 static int set_cramfs_info(const disk_t *disk_car,const struct cramfs_super *sb,partition_t *partition, const int verbose, const int dump_ind)
 {
-  set_part_name(partition,sb->name,16);
+  set_part_name(partition, (const char*)sb->name, 16);
   switch(partition->upart_type)
   {
     case UP_CRAMFS:

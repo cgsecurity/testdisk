@@ -20,8 +20,6 @@
 
  */
 
-typedef enum buffer_cmd buffer_cmd_t;
-
 struct MenuItem
 {
     const int key; /* Keyboard shortcut; if zero, then there is no more items in the menu item table */

@@ -52,7 +52,7 @@ static void interface_editor_ncurses(disk_t *disk_car)
 {
   int done = 0;
   uint64_t hd_offset=0;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   log_info("%s\n",disk_car->description(disk_car));
   while (done==0)
   {

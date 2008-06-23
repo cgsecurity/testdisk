@@ -326,8 +326,8 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
               long lcn;
               int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
               mapping_pairs_offset=NTFS_GETU16(attr_record+32);
-              buf=attr_record+mapping_pairs_offset;
-              attr_end = (const char*)attr_record + attr_len;
+              buf=(const unsigned char*)attr_record + mapping_pairs_offset;
+              attr_end = (const unsigned char*)attr_record + attr_len;
               lcn = 0;
               /* return first element of the run_list */
               {

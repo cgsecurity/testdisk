@@ -310,7 +310,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     init_disk(disk_car);
     disk_car->arch=arch;
     disk_car->device=strdup(device);
-    data=MALLOC(sizeof(*data));
+    data=(struct info_file_win32_struct *)MALLOC(sizeof(*data));
     data->handle=handle;
     data->mode=mode;
     disk_car->data=data;
@@ -402,7 +402,7 @@ static int file_win32_clean(disk_t *disk_car)
 
 static unsigned int file_win32_compute_sector_size(HANDLE handle)
 {
-  char *buffer=MALLOC(4096);
+  char *buffer=(char *)MALLOC(4096);
   unsigned int sector_size;
   for(sector_size=512;sector_size<=4096;sector_size*=2)
   {

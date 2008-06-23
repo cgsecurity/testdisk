@@ -986,7 +986,7 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
 #ifdef HAVE_PREAD
   /* This function can failed if there are bad sectors */
   uint64_t min_offset, max_offset;
-  char *buffer=MALLOC(sector_size);
+  char *buffer=(char *)MALLOC(sector_size);
   min_offset=0;
   max_offset=sector_size;
   /* Search the maximum device size */
@@ -1027,7 +1027,7 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
 
 static const char *file_description(disk_t *disk_car)
 {
-  const struct info_file_struct *data=disk_car->data;
+  const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
   char buffer_disk_size[100];
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
       disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
@@ -1038,7 +1038,7 @@ static const char *file_description(disk_t *disk_car)
 
 static const char *file_description_short(disk_t *disk_car)
 {
-  const struct info_file_struct *data=disk_car->data;
+  const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
   char buffer_disk_size[100];
   if(disk_car->model==NULL)
     snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s",
@@ -1056,7 +1056,7 @@ static int file_clean(disk_t *disk_car)
 {
   if(disk_car->data!=NULL)
   {
-    struct info_file_struct *data=disk_car->data;
+    struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
     /*
 #ifdef BLKRRPART
     if (ioctl(data->handle, BLKRRPART, NULL)) {
@@ -1186,7 +1186,7 @@ static int file_write(disk_t *disk_car, const unsigned int count, const void *bu
 
 static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
-  struct info_file_struct *data=disk_car->data;
+  struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
   log_warning("file_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->handle,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
@@ -1195,7 +1195,7 @@ static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *b
 
 static int file_sync(disk_t *disk_car)
 {
-  struct info_file_struct *data=disk_car->data;
+  struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
 #ifdef HAVE_FSYNC
   return fsync(data->handle);
 #else
@@ -1356,7 +1356,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
   disk_car->arch=arch;
   init_disk(disk_car);
   disk_car->device=strdup(device);
-  data=MALLOC(sizeof(*data));
+  data=(struct info_file_struct *)MALLOC(sizeof(*data));
   data->handle=hd_h;
   data->mode=mode;
   disk_car->data=data;
@@ -1475,7 +1475,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
   unsigned char *buffer;
   uint64_t pos;
   CHS_t pos_CHS;
-  buffer=MALLOC(disk_car->sector_size);
+  buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(disk_car->autodetect!=0)
   {
     if(disk_car->read(disk_car,disk_car->sector_size, buffer, 0)==0)

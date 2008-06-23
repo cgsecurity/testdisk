@@ -418,7 +418,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  image_dd=ask_location("Do you want to save disk file image.dd in %s%s ? [Y/N]","");
 	  if(image_dd!=NULL)
 	  {
-	    char *new_recup_dir=MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);
+	    char *new_recup_dir=(char *)MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);
 	    strcpy(new_recup_dir,image_dd);
 	    strcat(new_recup_dir,"/");
 	    strcat(new_recup_dir,DEFAULT_IMAGE_NAME);

@@ -71,7 +71,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
     buffer_size=SESSION_MAXSIZE;
   else
     buffer_size=stat_rec.st_size;
-  buffer=MALLOC(buffer_size+1);
+  buffer=(char *)MALLOC(buffer_size+1);
   taille=fread(buffer,1,buffer_size,f_session);
   buffer[taille]='\0';
   fclose(f_session);
@@ -213,7 +213,7 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
   { /* Reserve some space */
     int res;
     char *buffer;
-    buffer=MALLOC(SESSION_MAXSIZE);
+    buffer=(char *)MALLOC(SESSION_MAXSIZE);
     memset(buffer,0,SESSION_MAXSIZE);
     res=fwrite(buffer,1,SESSION_MAXSIZE,f_session);
     free(buffer);

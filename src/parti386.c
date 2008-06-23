@@ -347,7 +347,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   int res=0;
   CHS_t geometry;
   list_part_t *new_list_part=NULL;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
   if(disk_car->read(disk_car,disk_car->sector_size, buffer, (uint64_t)0))
   {
@@ -634,8 +634,8 @@ int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro
 static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   const list_part_t *element;
-  unsigned char *buffer=MALLOC(disk_car->sector_size);
-  unsigned char *buffer_org=MALLOC(disk_car->sector_size);
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  unsigned char *buffer_org=(unsigned char *)MALLOC(disk_car->sector_size);
   if(verbose>0)
   {
     log_trace("\nwrite_mbr_i386: starting...\n");
