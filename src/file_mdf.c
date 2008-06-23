@@ -36,7 +36,7 @@ static int header_check_mdf(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_mdf= {
   .extension="mdf",
-  .description="Microsoft SQL mdf",
+  .description="Microsoft SQL Server Master Database File",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,

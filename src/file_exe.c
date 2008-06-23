@@ -77,6 +77,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
     }
     if(le16(pe_hdr->Characteristics) & 0x2000)
     {
+      /* Dynamic Link Library */
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension="dll";
     }

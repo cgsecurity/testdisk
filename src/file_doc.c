@@ -110,7 +110,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="sdd";
     }
     else if(td_memmem(buffer,buffer_size,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)!=NULL)
-    {
+    { /* Microsoft Works Spreadsheet or Chart */
       file_recovery_new->extension="xlr";
     }
     else if(td_memmem(buffer,buffer_size,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)!=NULL)
@@ -150,6 +150,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="pub";
     }
+    else if(td_memmem(buffer,buffer_size,"Publisher",9)!=NULL)
+    { /* Publisher */
+      file_recovery_new->extension="pub";
+    }
     else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
 	|| td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
     { /* Microsoft Works .wdb */
@@ -160,16 +164,12 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="wps";
     }
     else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
-    {
+    { /* MetaStock */
       file_recovery_new->extension="mws";
     }
     else if(td_memmem(buffer,buffer_size,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)!=NULL)
     { /* Outlook */
       file_recovery_new->extension="msg";
-    }
-    else if(td_memmem(buffer,buffer_size,"Publisher",9)!=NULL)
-    { /* Publisher */
-      file_recovery_new->extension="pub";
     }
     else if(td_memmem(buffer,buffer_size,"L\0i\0c\0o\0m\0",10)!=NULL)
     { /* Licom AlphaCAM */

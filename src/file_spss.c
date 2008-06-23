@@ -35,7 +35,7 @@ static int header_check_spss(const unsigned char *buffer, const unsigned int buf
 
 const file_hint_t file_hint_spss= {
   .extension="sav",
-  .description="SPSS",
+  .description="SPSS (Statistical Package for the Social Sciences) saved data",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,

@@ -419,7 +419,10 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     if(td_memmem(buffer, buffer_size, sign_grisbi, sizeof(sign_grisbi))!=NULL)
+    {
+      /* Grisbi - Personal Finance Manager XML data */
       file_recovery_new->extension="gsb";
+    }
     else if(td_memmem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
       file_recovery_new->extension="fst";
     else if(td_memmem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
