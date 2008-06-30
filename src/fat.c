@@ -848,6 +848,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
   partition->sborg_offset=0;
   partition->sb_size=512;
   partition->sb_offset=0;
+  set_FAT_info(disk_car,fat_header,partition,verbose);
   switch(partition->upart_type)
   {
     case UP_FAT12:
@@ -890,7 +891,10 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
       else
         partition->part_type_i386=P_32FAT_LBA;
       partition->part_type_mac=PMAC_FAT32;
-      partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
+      if(memcmp(partition->fsname,"EFI",4)==0)
+	partition->part_type_gpt=GPT_ENT_TYPE_EFI;
+      else
+	partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
       if(backup)
       {
         partition->sb_offset=6*512;
@@ -901,7 +905,6 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
       log_critical("recover_FAT unknown FAT type\n");
       return 1;
   }
-  set_FAT_info(disk_car,fat_header,partition,verbose);
   return 0;
 }
 
