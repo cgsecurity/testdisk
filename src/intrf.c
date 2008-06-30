@@ -1444,38 +1444,33 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
       case 'i':
       case 'I':
         disk_car->arch=&arch_i386;
-	autoset_unit(disk_car);
         break;
       case 'g':
       case 'G':
         disk_car->arch=&arch_gpt;
-	autoset_unit(disk_car);
         break;
       case 'm':
       case 'M':
         disk_car->arch=&arch_mac;
-	autoset_unit(disk_car);
         break;
       case 'n':
       case 'N':
         disk_car->arch=&arch_none;
-	autoset_unit(disk_car);
         break;
       case 's':
       case 'S':
         disk_car->arch=&arch_sun;
-	autoset_unit(disk_car);
         break;
       case 'x':
       case 'X':
         disk_car->arch=&arch_xbox;
-	autoset_unit(disk_car);
         break;
       case 'q':
       case 'Q':
         return 1;
     }
   }
+  autoset_unit(disk_car);
   return 0;
 }
 
