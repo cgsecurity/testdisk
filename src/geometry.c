@@ -287,9 +287,13 @@ static void change_geometry_ncurses(disk_t *disk_car)
 void change_geometry(disk_t *disk_car, char ** current_cmd)
 {
   if(*current_cmd!=NULL)
-    return change_geometry_cli(disk_car, current_cmd);
+  {
+    change_geometry_cli(disk_car, current_cmd);
+    autoset_unit(disk_car);
+    return;
+  }
 #ifdef HAVE_NCURSES
-    change_geometry_ncurses(disk_car);
+  change_geometry_ncurses(disk_car);
 #endif
+  autoset_unit(disk_car);
 }
-
