@@ -329,7 +329,9 @@ static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned in
   if(tab_nbr<MAX_SEARCH_LOCATION-1)
   {
     unsigned int i,j;
-    for(i=0;i<tab_nbr && tab[i]<=offset;i++);
+    for(i=0;i<tab_nbr && tab[i]<offset;i++);
+    if(i<tab_nbr && tab[i]==offset)
+      return tab_nbr;
     tab_nbr++;
     for(j=tab_nbr;j>i;j--)
       tab[j]=tab[j-1];
@@ -425,6 +427,22 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     try_offset_nbr=tab_insert(try_offset, 2*disk_car->sector_size+16384, try_offset_nbr);
     /* sometimes users don't choose Vista by mistake */
     try_offset_nbr=tab_insert(try_offset, 2048*512, try_offset_nbr);
+    /* try to deal with incorrect geometry */
+    /* 1/[01]/1 CHS x  16 63 */
+    try_offset_nbr=tab_insert(try_offset, 16 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 17 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 16 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 17 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    /* 1/[01]/1 CHS x 240 63 */
+    try_offset_nbr=tab_insert(try_offset, 240 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 241 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 240 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 241 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    /* 1/[01]/1 CHS x 255 63 */
+    try_offset_nbr=tab_insert(try_offset, 255 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 256 * 63 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 255 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 256 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
   }
   else if(disk_car->arch==&arch_mac)
   {
