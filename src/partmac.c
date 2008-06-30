@@ -68,22 +68,23 @@ static const char *get_partition_typename_mac_aux(const unsigned int part_type_m
 static unsigned int get_part_type_mac(const partition_t *partition);
 
 static const struct systypes mac_sys_types[] = {
-  { PMAC_DRIVER43,  "Driver43"		},
-  { PMAC_DRIVERATA,  "Driver_ATA"		},
-  { PMAC_DRIVERIO,  "Driver_IOKit"	},
-  { PMAC_FREE,  "Free"		},
-  { PMAC_FWDRIVER,  "FWDriver"		},
-  { PMAC_SWAP, "Swap"		},
-  { PMAC_LINUX, "Linux"		},
-  { PMAC_HFS, "HFS"		},
-  { PMAC_MAP,  "partition_map"	},
-  { PMAC_PATCHES,  "Patches"		},
-  { PMAC_UNK,  "Unknown"		},
-  { PMAC_NewWorld,  "NewWorld"		},
-  { PMAC_DRIVER, "Driver"		},
-  { PMAC_MFS, "MFS"		},
-  { PMAC_PRODOS, "ProDOS"		},
-  { PMAC_UNK,		NULL }
+  { PMAC_DRIVER43,	"Driver43"	},
+  { PMAC_DRIVERATA,	"Driver_ATA"	},
+  { PMAC_DRIVERIO,	"Driver_IOKit"	},
+  { PMAC_FREE,		"Free"		},
+  { PMAC_FWDRIVER,	"FWDriver"	},
+  { PMAC_SWAP,		"Swap"		},
+  { PMAC_LINUX,		"Linux"		},
+  { PMAC_HFS,		"HFS"		},
+  { PMAC_MAP,		"partition_map"	},
+  { PMAC_PATCHES,	"Patches"	},
+  { PMAC_UNK,  		"Unknown"	},
+  { PMAC_NewWorld,  	"NewWorld"	},
+  { PMAC_DRIVER, 	"Driver"	},
+  { PMAC_MFS, 		"MFS"		},
+  { PMAC_PRODOS, 	"ProDOS"	},
+  { PMAC_FAT32, 	"DOS_FAT_32"	},
+  { PMAC_UNK,		NULL 		}
 };
 
 arch_fnct_t arch_mac=
