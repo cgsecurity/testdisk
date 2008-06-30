@@ -79,17 +79,8 @@ static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, co
 static const char *get_partition_typename_gpt(const partition_t *partition);
 static const char *get_gpt_typename(const efi_guid_t part_type_gpt);
 static void efi_generate_uuid(efi_guid_t *ent_uuid);
-#if 0
-static int set_part_type_gpt(partition_t *partition, efi_guid_t part_type_gpt);
-static efi_guid_t get_part_type_gpt(const partition_t *partition);
-#endif
 
-struct systypes_gtp {
-  const efi_guid_t part_type;
-  const char *name;
-};
-
-static const struct systypes_gtp gpt_sys_types[] = {
+const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_EFI, 			"EFI System"		},
   { GPT_ENT_TYPE_MBR,			"MBR"			},
   { GPT_ENT_TYPE_FREEBSD,		"FreeBSD"		},
@@ -147,13 +138,10 @@ arch_fnct_t arch_gpt=
   .set_next_status=set_next_status_gpt,
   .test_structure=test_structure_gpt,
   .set_part_type=NULL,
-//  .set_part_type=set_part_type_none,
   .is_part_known=is_part_known_gpt,
   .init_structure=init_structure_gpt,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_gpt,
-//  .get_part_type=get_part_type_gpt
-//  .get_part_type=get_part_type_none
   .get_part_type=NULL
 };
 
@@ -186,17 +174,20 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     free(gpt);
     return NULL;
   }
-  log_info("hdr_size=%llu\n", (long long unsigned)le32(gpt->hdr_size));
-  log_info("hdr_lba_self=%llu\n", (long long unsigned)le64(gpt->hdr_lba_self));
-  log_info("hdr_lba_alt=%llu (expected %llu)\n",
-      (long long unsigned)le64(gpt->hdr_lba_alt),
-      (long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size));
-  log_info("hdr_lba_start=%llu\n", (long long unsigned)le64(gpt->hdr_lba_start));
-  log_info("hdr_lba_end=%llu\n", (long long unsigned)le64(gpt->hdr_lba_end));
-  log_info("hdr_lba_table=%llu\n",
-      (long long unsigned)le64(gpt->hdr_lba_table));
-  log_info("hdr_entries=%llu\n", (long long unsigned)le32(gpt->hdr_entries));
-  log_info("hdr_entsz=%llu\n", (long long unsigned)le32(gpt->hdr_entsz));
+  if(verbose>0)
+  {
+    log_info("hdr_size=%llu\n", (long long unsigned)le32(gpt->hdr_size));
+    log_info("hdr_lba_self=%llu\n", (long long unsigned)le64(gpt->hdr_lba_self));
+    log_info("hdr_lba_alt=%llu (expected %llu)\n",
+	(long long unsigned)le64(gpt->hdr_lba_alt),
+	(long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size));
+    log_info("hdr_lba_start=%llu\n", (long long unsigned)le64(gpt->hdr_lba_start));
+    log_info("hdr_lba_end=%llu\n", (long long unsigned)le64(gpt->hdr_lba_end));
+    log_info("hdr_lba_table=%llu\n",
+	(long long unsigned)le64(gpt->hdr_lba_table));
+    log_info("hdr_entries=%llu\n", (long long unsigned)le32(gpt->hdr_entries));
+    log_info("hdr_entsz=%llu\n", (long long unsigned)le32(gpt->hdr_entsz));
+  }
   /* Check header size */
   if(le32(gpt->hdr_size)<92 || le32(gpt->hdr_size) > disk_car->sector_size)
   {
@@ -715,23 +706,6 @@ static int test_structure_gpt(list_part_t *list_part)
   return res;
 }
 
-#if 0
-static efi_guid_t get_part_type_gpt(const partition_t *partition)
-{
-  return partition->part_type_gpt;
-}
-
-static int set_part_type_gpt(partition_t *partition, efi_guid_t part_type_gpt)
-{
-  if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)!=0)
-  {
-    guid_cpy(&partition->part_type_gpt, &part_type_gpt);
-    return 0;
-  }
-  return 1;
-}
-#endif
-
 static int is_part_known_gpt(const partition_t *partition)
 {
   return (guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)!=0);
@@ -806,6 +780,7 @@ static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partit
   if(ret!=0)
   {
     log_error("check_part_gpt failed for partition\n");
+    log_partition(disk_car, partition);
     aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
     if(saveheader>0)
     {

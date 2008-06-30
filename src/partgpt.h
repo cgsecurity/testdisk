@@ -1,3 +1,24 @@
+/*
+
+    File: partgpt.h
+
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
+
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
 #ifndef _PARTGPT_H
 #define	_PARTGPT_H
 
@@ -32,5 +53,11 @@ struct gpt_ent
 #define	GPT_ENT_ATTR_PLATFORM		(1ULL << 0)
   uint8_t	ent_name[72];		/* UNICODE-16 */
 };
+
+struct systypes_gtp {
+  const efi_guid_t part_type;
+  const char *name;
+};
+
 
 #endif /* _PARTGPT_H */

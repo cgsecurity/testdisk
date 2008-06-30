@@ -38,11 +38,14 @@
 #include "chgtype.h"
 #include "log.h"
 #include "guid_cmp.h"
+#include "guid_cpy.h"
+#include "partgpt.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_sun;
+extern const struct systypes_gtp gpt_sys_types[];
 
 struct part_name_struct
 {
@@ -52,6 +55,8 @@ struct part_name_struct
 
 static void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **current_cmd)
 {
+  if(partition->arch->set_part_type==NULL)
+    return ;
   while(*current_cmd[0]==',')
     (*current_cmd)++;
   {
@@ -78,6 +83,8 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
     { 'Q', "Proceed","Go set the partition type"},
     { 0, NULL, NULL }
   };
+  if(partition->arch->set_part_type==NULL)
+    return ;
   /* Create an index of all partition type except Intel extended */
   new_partition=partition_new(NULL);
   dup_partition_t(new_partition,partition);
@@ -132,6 +139,8 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
   unsigned int i;
   unsigned int current_element_num=0;
   struct part_name_struct part_name[0x100];
+  if(partition->arch->set_part_type==NULL)
+    return ;
   aff_copy(stdscr);
   wmove(stdscr,4,0);
   aff_part(stdscr, AFF_PART_ORDER|AFF_PART_STATUS, disk_car, partition);
@@ -253,22 +262,158 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
     }
   }
 }
+
+static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
+{
+  unsigned int offset=0;
+  unsigned int i,j;
+  unsigned int current_element_num=0;
+  log_info("gpt_change_part_type\n");
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  aff_part(stdscr, AFF_PART_ORDER|AFF_PART_STATUS, disk_car, partition);
+  wmove(stdscr,INTER_CHGTYPE_Y, INTER_CHGTYPE_X);
+  wattrset(stdscr, A_REVERSE);
+  wprintw(stdscr, "[ Proceed ]");
+  wattroff(stdscr, A_REVERSE);
+  while(1)
+  {
+    wmove(stdscr,5,0);
+    wprintw(stdscr, "Please choose the partition type, press Enter when done.");
+    wmove(stdscr,5+1,1);
+    wclrtoeol(stdscr);
+    if(offset>0)
+      wprintw(stdscr, "Previous");
+    for(i=offset;gpt_sys_types[i].name!=NULL && (i-offset)<3*INTER_CHGTYPE;i++)
+    {
+      if(i-offset<INTER_CHGTYPE)
+	wmove(stdscr,5+2+i-offset,0);
+      else if(i-offset<2*INTER_CHGTYPE)
+	wmove(stdscr,5+2+i-offset-INTER_CHGTYPE,26);
+      else
+	wmove(stdscr,5+2+i-offset-2*INTER_CHGTYPE,52);
+      wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
+      if(i==current_element_num)
+      {
+	wattrset(stdscr, A_REVERSE);
+	wprintw(stdscr,"%s", gpt_sys_types[i].name);
+	wattroff(stdscr, A_REVERSE);
+      } else
+      {
+	wprintw(stdscr,"%s", gpt_sys_types[i].name);
+      }
+    }
+    if(i-offset<INTER_CHGTYPE)
+      wmove(stdscr,5+2+i-offset,1);
+    else if(i-offset<2*INTER_CHGTYPE)
+      wmove(stdscr,5+2+i-offset-INTER_CHGTYPE,27);
+    else
+      wmove(stdscr,5+2+i-offset-2*INTER_CHGTYPE,53);
+    wclrtoeol(stdscr);
+    if(gpt_sys_types[i].name!=NULL)
+      wprintw(stdscr, "Next");
+    switch(wgetch(stdscr))
+    {
+      case 'p':
+      case 'P':
+      case KEY_UP:
+	if(current_element_num>0)
+	  current_element_num--;
+	if(current_element_num<offset)
+	  offset=current_element_num;
+	break;
+      case 'n':
+      case 'N':
+      case KEY_DOWN:
+	if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
+	  current_element_num++;
+	if(current_element_num >= offset+3*INTER_CHGTYPE)
+	  offset++;
+	break;
+      case KEY_LEFT:
+	if(current_element_num > INTER_CHGTYPE)
+	  current_element_num-=INTER_CHGTYPE;
+	else
+	  current_element_num=0;
+	if(current_element_num < offset)
+	  offset=current_element_num;
+	break;
+      case KEY_PPAGE:
+	if(current_element_num > 3*INTER_CHGTYPE-1)
+	  current_element_num-=3*INTER_CHGTYPE-1;
+	else
+	  current_element_num=0;
+	if(current_element_num < offset)
+	  offset=current_element_num;
+	break;
+      case KEY_RIGHT:
+	for(j=0;j<INTER_CHGTYPE;j++)
+	{
+	  if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
+	    current_element_num++;
+	  if(current_element_num >= offset+3*INTER_CHGTYPE)
+	    offset++;
+	}
+	break;
+      case KEY_NPAGE:
+	for(j=0;j<3*INTER_CHGTYPE;j++)
+	{
+	  if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
+	    current_element_num++;
+	  if(current_element_num >= offset+3*INTER_CHGTYPE)
+	    offset++;
+	}
+	break;
+      case 'Q':
+      case 'q':
+      case key_CR:
+#ifdef PADENTER
+      case PADENTER:
+#endif
+	guid_cpy(&partition->part_type_gpt, &gpt_sys_types[current_element_num].part_type);
+	return;
+    }
+  }
+}
 #endif
 
 void change_part_type(const disk_t *disk_car,partition_t *partition, char **current_cmd)
 {
-  const arch_fnct_t *arch=partition->arch;
   if(partition->arch==NULL)
   {
     log_error("change_part_type arch==NULL\n");
     return;
   }
   if(partition->arch==&arch_gpt)
+  {
+    if(*current_cmd!=NULL)
+    { /* TODO: implement it */
+    }
+    else
+    {
+#ifdef HAVE_NCURSES
+      gpt_change_part_type(disk_car, partition);
+#endif
+    }
+    log_info("Change partition type:\n");
+    log_partition(disk_car,partition);
     partition->arch=&arch_none;
+    if(*current_cmd!=NULL)
+      change_part_type_cli(disk_car, partition, current_cmd);
+    else
+    {
+#ifdef HAVE_NCURSES
+      change_part_type_ncurses2(disk_car, partition);
+#endif
+    }
+    log_info("Change partition type:\n");
+    log_partition(disk_car,partition);
+    partition->arch=&arch_gpt;
+    return ;
+  }
   if(partition->arch->set_part_type==NULL)
   {
     log_error("change_part_type set_part_type==NULL\n");
-    partition->arch=arch;
     return;
   }
   if(*current_cmd!=NULL)
@@ -281,13 +426,6 @@ void change_part_type(const disk_t *disk_car,partition_t *partition, char **curr
     else
       change_part_type_ncurses2(disk_car, partition);
 #endif
-  }
-  if(arch==&arch_gpt)
-  {
-    partition->arch=arch;
-    /* TODO: use upart_type to set part_type_gpt */
-    if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)==0)
-      partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
   }
   log_info("Change partition type:\n");
   log_partition(disk_car,partition);
