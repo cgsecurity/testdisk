@@ -192,6 +192,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'b',"Boot","Boot sector recovery"},
       {'s',"Superblock",NULL},
       {'c',"Image Creation", "Create an image"},
+      {'u',"Undelete", "File undelete"},
 //      {'a',"Add", "Add temporary partition (Expert only)"},
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}
@@ -238,15 +239,22 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     }
     else
     {
-      if(is_part_fat(current_element->part) ||
-	  is_part_ntfs(current_element->part))
+      if(is_part_fat(current_element->part))
+      {
+	options="tubcq";
+	menu=1;
+      }
+      else if(is_part_ntfs(current_element->part))
       {
 	options="tbcq";
 	menu=1;
       }
       else if(is_part_linux(current_element->part))
       {
-	options="tscq";
+	if(current_element->part->upart_type==UP_EXT2)
+	  options="tuscq";
+	else
+	  options="tscq";
 	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
 	menu=1;
       }
@@ -256,15 +264,22 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
 	menu=1;
       }
-      else if(is_fat(current_element->part) ||
-	  is_ntfs(current_element->part))
+      else if(is_fat(current_element->part))
+      {
+	options="tubcq";
+	menu=1;
+      }
+      else if(is_ntfs(current_element->part))
       {
 	options="tbcq";
 	menu=1;
       }
       else if(is_linux(current_element->part))
       {
-	options="tscq";
+	if(current_element->part->upart_type==UP_EXT2)
+	  options="tuscq";
+	else
+	  options="tscq";
 	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
 	menu=1;
       }
@@ -432,6 +447,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  }
 	}
 	break;
+      case 'u':
+      case 'U':
       case 'l':
       case 'L':
 	if(current_element!=NULL)

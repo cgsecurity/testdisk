@@ -351,7 +351,8 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	    return 1;
 	  break;
 	case 'h':
-	  dir_data->param^=FLAG_LIST_DELETED;
+	  if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
+	    dir_data->param^=FLAG_LIST_DELETED;
 	  return inode;
       }
       if(dir_list!=NULL)
