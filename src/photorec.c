@@ -454,20 +454,20 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
   return list_search_space;
 }
 
-alloc_data_t *init_search_space(const partition_t *partition, const disk_t *disk_car)
+void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition)
 {
-  alloc_data_t *list_search_space;
-  list_search_space=(alloc_data_t*)MALLOC(sizeof(*list_search_space));
-  list_search_space->start=partition->part_offset;
-  list_search_space->end=partition->part_offset+partition->part_size-1;
-  if(list_search_space->end > disk_car->disk_size-1)
-    list_search_space->end = disk_car->disk_size-1;
-  if(list_search_space->end > disk_car->disk_real_size-1)
-    list_search_space->end = disk_car->disk_real_size-1;
-  list_search_space->file_stat=NULL;
-  list_search_space->list.prev=&list_search_space->list;
-  list_search_space->list.next=&list_search_space->list;
-  return list_search_space;
+  alloc_data_t *new_sp;
+  new_sp=(alloc_data_t*)MALLOC(sizeof(*new_sp));
+  new_sp->start=partition->part_offset;
+  new_sp->end=partition->part_offset+partition->part_size-1;
+  if(new_sp->end > disk_car->disk_size-1)
+    new_sp->end = disk_car->disk_size-1;
+  if(new_sp->end > disk_car->disk_real_size-1)
+    new_sp->end = disk_car->disk_real_size-1;
+  new_sp->file_stat=NULL;
+  new_sp->list.prev=&new_sp->list;
+  new_sp->list.next=&new_sp->list;
+  td_list_add_tail(&new_sp->list, &list_search_space->list);
 }
 
 void free_list_search_space(alloc_data_t *list_search_space)

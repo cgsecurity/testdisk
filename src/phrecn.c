@@ -1197,7 +1197,7 @@ static void recovery_finished(const unsigned int file_nbr, const char *recup_dir
 #endif
 
 
-static void free_search_space(alloc_data_t *list_search_space)
+void free_search_space(alloc_data_t *list_search_space)
 {
   struct td_list_head *search_walker = NULL;
   struct td_list_head *search_walker_next = NULL;
@@ -1241,10 +1241,40 @@ static int interface_cannot_create_file(void)
 }
 #endif
 
+static file_stat_t * init_file_stats(file_enable_t *files_enable)
+{
+  file_stat_t *file_stats;
+  file_enable_t *file_enable;
+  unsigned int enable_count=1;	/* Lists are terminated by NULL */
+  for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
+  {
+    if(file_enable->enable>0)
+    {
+      enable_count++;
+    }
+  }
+  file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
+  enable_count=0;
+  for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
+  {
+    if(file_enable->enable>0)
+    {
+      file_stats[enable_count].file_hint=file_enable->file_hint;
+      file_stats[enable_count].not_recovered=0;
+      file_stats[enable_count].recovered=0;
+      if(file_enable->file_hint->register_header_check!=NULL)
+	file_enable->file_hint->register_header_check(&file_stats[enable_count]);
+      enable_count++;
+    }
+  }
+  file_stats[enable_count].file_hint=NULL;
+  return file_stats;
+}
+
 static int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, char *recup_dir, const int keep_corrupted_file, const int interface, file_enable_t *files_enable, unsigned int mode_ext2, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only)
 {
   char *new_recup_dir=NULL;
-  file_stat_t *file_stats=NULL;
+  file_stat_t *file_stats;
   time_t real_start_time;
   unsigned int file_nbr=0;
   unsigned int dir_num=1;
@@ -1255,64 +1285,11 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   screen_buffer_reset();
   log_info("\nAnalyse\n");
   log_partition(disk_car,partition);
-  if(blocksize==0 || td_list_empty(&list_search_space->list))
-  {
+  if(blocksize==0)
     blocksize=disk_car->sector_size;
-    blocksize_is_known=0;
-  }
   else
     blocksize_is_known=1;
-
-  if(td_list_empty(&list_search_space->list))
-  {
-    alloc_data_t *tmp=init_search_space(partition,disk_car);
-    td_list_add_tail(&tmp->list, &list_search_space->list);
-    if(carve_free_space_only>0)
-    {
-      blocksize=remove_used_space(disk_car, partition, list_search_space);
-      if(blocksize==0)
-        blocksize=disk_car->sector_size;
-      else
-        blocksize_is_known=1;
-    }
-  }
-  else
-  { /* Correct the values */
-    struct td_list_head *search_walker = NULL;
-    td_list_for_each(search_walker, &list_search_space->list)
-    {
-      alloc_data_t *current_search_space;
-      current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-      current_search_space->start=current_search_space->start*disk_car->sector_size;
-      current_search_space->end=current_search_space->end*disk_car->sector_size+disk_car->sector_size-1;
-    }
-  }
-  {
-    file_enable_t *file_enable;
-    unsigned int enable_count=1;	/* Lists are terminated by NULL */
-    for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
-    {
-      if(file_enable->enable>0)
-      {
-        enable_count++;
-      }
-    }
-    file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
-    enable_count=0;
-    for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
-    {
-      if(file_enable->enable>0)
-      {
-        file_stats[enable_count].file_hint=file_enable->file_hint;
-        file_stats[enable_count].not_recovered=0;
-        file_stats[enable_count].recovered=0;
-        if(file_enable->file_hint->register_header_check!=NULL)
-          file_enable->file_hint->register_header_check(&file_stats[enable_count]);
-        enable_count++;
-      }
-    }
-    file_stats[enable_count].file_hint=NULL;
-  }
+  file_stats=init_file_stats(files_enable);
 
   real_start_time=time(NULL);
   dir_num=photorec_mkdir(recup_dir,dir_num);
@@ -1501,8 +1478,6 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   return 0;
 }
 
-
-
 static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
 {
   int insert_error=0;
@@ -1520,6 +1495,7 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
   unsigned int lowmem=0;
   unsigned int carve_free_space_only=0;
   int done=0;
+  int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
 #ifdef HAVE_NCURSES
   int command;
   int offset=0;
@@ -1587,7 +1563,18 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	  }
 	}
 	if(res!=NULL)
-	  photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2,current_cmd,list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	{
+	  partition_t *partition=current_element->part;
+	  if(td_list_empty(&list_search_space->list))
+	  {
+	    init_search_space(list_search_space, disk_car, partition);
+	  }
+	  if(carve_free_space_only>0)
+	  {
+	    blocksize=remove_used_space(disk_car, partition, list_search_space);
+	  }
+	  photorec(disk_car, partition, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2,current_cmd,list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	}
 	if(res!=recup_dir)
 	  free(res);
       }
@@ -1703,9 +1690,11 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	  break;
 	case 's':
 	case 'S':
-	  ask_mode_ext2(disk_car, current_element->part, &mode_ext2, &carve_free_space_only);
+	  if(current_element!=NULL)
 	  {
 	    char *res;
+	    partition_t *partition=current_element->part;
+	    ask_mode_ext2(disk_car, partition, &mode_ext2, &carve_free_space_only);
 	    menu=0;
 	    if(recup_dir!=NULL)
 	      res=recup_dir;
@@ -1724,7 +1713,17 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	      }
 	    }
 	    if(res!=NULL)
-	      photorec(disk_car, current_element->part, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	    {
+	      if(td_list_empty(&list_search_space->list))
+	      {
+		init_search_space(list_search_space, disk_car, partition);
+	      }
+	      if(carve_free_space_only>0)
+	      {
+		blocksize=remove_used_space(disk_car, partition, list_search_space);
+	      }
+	      photorec(disk_car, partition, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	    }
 	    if(res!=recup_dir)
 	      free(res);
 	  }
@@ -1900,10 +1899,13 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 
 int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
 {
-  const list_disk_t *current_disk=list_disk;
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
+  if(list_disk==NULL)
+  {
+    return intrf_no_disk("PhotoRec");
+  }
   if(cmd_device==NULL)
   {
     char *saved_device=NULL;
@@ -1922,22 +1924,30 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
       free_list_search_space(&list_search_space);
     }
   }
-  if(cmd_device!=NULL)
+  if(cmd_device!=NULL && *current_cmd!=NULL)
   {
     const list_disk_t *element_disk;
+    disk_t *disk=NULL;
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
       if(strcmp(element_disk->disk->device,cmd_device)==0)
-	current_disk=element_disk;
+	disk=element_disk->disk;
     }
-  }
-  if(current_disk==NULL)
-  {
-    return intrf_no_disk("PhotoRec");
-  }
-  if(*current_cmd!=NULL)
-  {
-    disk_t *disk=current_disk->disk;
+    if(disk==NULL)
+    {
+      return intrf_no_disk("PhotoRec");
+    }
+    {
+      /* disk sector size is now known, fix the sector ranges */
+      struct td_list_head *search_walker = NULL;
+      td_list_for_each(search_walker, &list_search_space.list)
+      {
+	alloc_data_t *current_search_space;
+	current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+	current_search_space->start=current_search_space->start*disk->sector_size;
+	current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
+      }
+    }
     autodetect_arch(disk);
     if(interface_partition_type(disk, verbose, current_cmd)==0)
       menu_photorec(disk, verbose, recup_dir, file_enable, current_cmd, &list_search_space);
