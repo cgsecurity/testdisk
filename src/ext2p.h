@@ -2,7 +2,7 @@
 
     File: ext2p.h
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,5 +19,6 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space);
-
+#ifdef HAVE_LIBEXT2FS
+unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space);
+#endif

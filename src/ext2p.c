@@ -42,19 +42,16 @@
 #ifdef HAVE_EXT2FS_EXT2FS_H
 #include "ext2fs/ext2fs.h"
 #endif
-#ifdef HAVE_LIBEXT2FS
 #include "ext2p.h"
-#endif
-//#include "ext2.h"
 #include "ext2_inc.h"
 #include "ext2_dir.h"
 #include "log.h"
 
 #ifdef HAVE_LIBEXT2FS
-unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space)
+unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space)
 {
   dir_data_t dir_data;
-  switch(dir_partition_ext2_init(disk_car,partition,&dir_data,0))
+  switch(dir_partition_ext2_init(disk, partition, &dir_data, 0))
   {
     case -2:
     case -1:
@@ -65,9 +62,9 @@ unsigned int ext2_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	window=newwin(0,0,0,0);	/* full screen */
 	aff_copy(window);
 	wmove(window,4,0);
-	aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+	aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
 #endif
-	log_partition(disk_car,partition);
+	log_partition(disk, partition);
 	screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
 	screen_buffer_to_log();
 #ifdef HAVE_NCURSES
