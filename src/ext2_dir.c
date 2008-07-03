@@ -202,11 +202,12 @@ static int list_dir_proc2(ext2_ino_t dir,
   ext2_ino_t		ino;
   unsigned int		thislen;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *) private;
-  file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-  new_file->status=0;
+  file_data_t *new_file;
+  if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
+    return 0;
+  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
   new_file->prev=ls->current_file;
   new_file->next=NULL;
-
   thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
     (dirent->name_len & 0xFF) : EXT2_NAME_LEN;
   if(thislen>DIR_NAME_LEN)
@@ -225,6 +226,10 @@ static int list_dir_proc2(ext2_ino_t dir,
   } else {
     memset(&inode, 0, sizeof(struct ext2_inode));
   }
+  if(entry==DIRENT_DELETED_FILE)
+    new_file->status=FILE_STATUS_DELETED;
+  else
+    new_file->status=0;
   new_file->filestat.st_dev=0;
   new_file->filestat.st_ino=ino;
   new_file->filestat.st_mode=inode.i_mode;
@@ -345,7 +350,8 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   ls->dir_list=NULL;
   ls->current_file=NULL;
   /*  ls->flags = DIRENT_FLAG_INCLUDE_EMPTY; */
-  ls->flags = 0;
+  ls->flags = DIRENT_FLAG_INCLUDE_REMOVED;
+  ls->dir_data=dir_data;
   my_data=(my_data_t *)MALLOC(sizeof(*my_data));
   my_data->partition=partition;
   my_data->disk_car=disk_car;
@@ -359,8 +365,9 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   }
   strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
   dir_data->current_inode=EXT2_ROOT_INO;
+  dir_data->param=FLAG_LIST_DELETED;
   dir_data->verbose=verbose;
-  dir_data->capabilities=0;
+  dir_data->capabilities=CAPA_LIST_DELETED;
   dir_data->get_dir=ext2_dir;
   dir_data->copy_file=ext2_copy;
   dir_data->close=&dir_partition_ext2_close;

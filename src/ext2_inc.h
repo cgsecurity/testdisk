@@ -25,5 +25,6 @@ struct ext2_dir_struct {
 	file_data_t *current_file;
 	ext2_filsys current_fs;
 	int flags;
+	dir_data_t *dir_data;
 };
 #endif
