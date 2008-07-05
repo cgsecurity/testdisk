@@ -151,12 +151,12 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
     part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+sector_size-1)/sector_size;
-    no_of_cluster=(part_size-start_data)/fat_header->cluster_size;
+    no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
     if(partition->upart_type==UP_FAT16)
-      fat16_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->cluster_size,sector_size);
+      fat16_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->sectors_per_cluster,sector_size);
     else if(partition->upart_type==UP_FAT32)
-      fat32_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->cluster_size,sector_size);
-    res=fat_header->cluster_size * sector_size;
+      fat32_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->sectors_per_cluster,sector_size);
+    res=fat_header->sectors_per_cluster * sector_size;
     free(buffer);
     return res;
 }

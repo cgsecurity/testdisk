@@ -334,7 +334,7 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
   const struct fat_boot_sector*fat_header=ls->boot_sector;
   unsigned int cluster=first_cluster;
-  if(fat_header->cluster_size<1)
+  if(fat_header->sectors_per_cluster<1)
   {
     log_error("FAT: Can't list files, bad cluster size.\n");
     return NULL;
@@ -357,28 +357,28 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
   }
   {
     file_data_t *dir_list=NULL;
-    const unsigned int cluster_size=fat_header->cluster_size;
-    unsigned char *buffer_dir=(unsigned char *)MALLOC(fat_sector_size(fat_header)*cluster_size*10);
+    const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
+    unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*10);
     unsigned int nbr_cluster;
     int stop=0;
     uint64_t start_fat1,start_data,part_size;
     unsigned long int no_of_cluster,fat_length;
     unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
-    memset(buffer_dir,0,fat_sector_size(fat_header)*cluster_size*10);
+    memset(buffer_dir,0,cluster_size*10);
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
     part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
-    no_of_cluster=(part_size-start_data)/fat_header->cluster_size;
+    no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
     nbr_cluster=0;
     while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<10 && stop==0)
     {
-      uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*cluster_size)*fat_sector_size(fat_header);
+      uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*fat_header->sectors_per_cluster)*fat_sector_size(fat_header);
 //      if(dir_data->verbose>0)
       {
         log_info("FAT: cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/fat_sector_size(fat_header)));
       }
-      if(disk_car->read(disk_car, cluster_size*fat_sector_size(fat_header), buffer_dir+(uint64_t)fat_sector_size(fat_header)*cluster_size*nbr_cluster, start))
+      if(disk_car->read(disk_car, cluster_size, buffer_dir+(uint64_t)cluster_size*nbr_cluster, start))
       {
 	log_error("FAT: Can't read directory cluster.\n");
 	stop=1;
@@ -418,7 +418,7 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
       }
     }
     if(nbr_cluster>0)
-      dir_list=dir_fat_aux(buffer_dir, fat_sector_size(fat_header)*cluster_size*nbr_cluster, cluster_size, dir_data->param);
+      dir_list=dir_fat_aux(buffer_dir, cluster_size*nbr_cluster, cluster_size, dir_data->param);
     free(buffer_dir);
     return dir_list;
   }
@@ -442,12 +442,11 @@ static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition
       log_error("FAT 1x: Can't read root directory.\n");
       /* Don't return yet, it may have been a partial read */
     }
-    res=dir_fat_aux(buffer_dir, root_size, fat_header->cluster_size, dir_data->param);
+    res=dir_fat_aux(buffer_dir, root_size, fat_header->sectors_per_cluster * fat_sector_size(fat_header), dir_data->param);
     free(buffer_dir);
     return res;
   }
 }
-
 
 static void set_secwest(void)
 {
@@ -515,8 +514,8 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   FILE *f_out;
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
   const struct fat_boot_sector *fat_header=ls->boot_sector;
-  unsigned int cluster_size=fat_header->cluster_size;
-  const unsigned int block_size=fat_sector_size(fat_header)*cluster_size;
+  const unsigned int sectors_per_cluster=fat_header->sectors_per_cluster;
+  const unsigned int block_size=fat_sector_size(fat_header)*sectors_per_cluster;
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
   unsigned int file_size=file->filestat.st_size;
@@ -539,11 +538,11 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
-  no_of_cluster=(part_size-start_data)/fat_header->cluster_size;
+  no_of_cluster=(part_size-start_data)/sectors_per_cluster;
 
   while(cluster>=2 && cluster<=no_of_cluster+2 && file_size>0)
   {
-    uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*cluster_size)*fat_sector_size(fat_header);
+    const uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*sectors_per_cluster)*fat_sector_size(fat_header);
     unsigned int toread = block_size;
     if (toread > file_size)
       toread = file_size;

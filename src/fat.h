@@ -41,7 +41,7 @@ struct fat_boot_sector {
 	int8_t	system_id[8];	/* 0x03 Name - can be used to special case
 				   partition manager volumes */
 	uint8_t	sector_size[2];	/* 0x0B bytes per logical sector */
-	uint8_t	cluster_size;	/* 0x0D sectors/cluster */
+	uint8_t	sectors_per_cluster;	/* 0x0D sectors/cluster */
 	uint16_t	reserved;	/* 0x0E reserved sectors */
 	uint8_t	fats;		/* 0x10 number of FATs */
 	uint8_t	dir_entries[2];	/* 0x11 root directory entries */

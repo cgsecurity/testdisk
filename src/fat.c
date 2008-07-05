@@ -68,7 +68,7 @@ static void fat_set_part_name(partition_t *partition,const unsigned char *src,co
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
 {
   log_info("sector_size  %u\n", fat_sector_size(fh1));
-  log_info("cluster_size %u\n", fh1->cluster_size);
+  log_info("cluster_size %u\n", fh1->sectors_per_cluster);
   log_info("reserved     %u\n", le16(fh1->reserved));
   log_info("fats         %u\n", fh1->fats);
   log_info("dir_entries  %u\n", get_dir_entries(fh1));
@@ -117,7 +117,7 @@ static int dump_fat_info_ncurses(const struct fat_boot_sector*fh1, const upart_t
       wprintw(stdscr,"Not a FAT\n");
       return 0;
   }
-  wprintw(stdscr,"cluster_size %u\n", fh1->cluster_size);
+  wprintw(stdscr,"cluster_size %u\n", fh1->sectors_per_cluster);
   wprintw(stdscr,"reserved     %u\n", le16(fh1->reserved));
   if(sectors(fh1)!=0)
     wprintw(stdscr,"sectors      %u\n", sectors(fh1));
@@ -175,7 +175,7 @@ static int dump_2fat_info_ncurses(const struct fat_boot_sector*fh1, const struct
       wprintw(stdscr,"Not a FAT\n");
       return 1;
   }
-  wprintw(stdscr,"cluster_size %u %u\n", fh1->cluster_size, fh2->cluster_size);
+  wprintw(stdscr,"cluster_size %u %u\n", fh1->sectors_per_cluster, fh2->sectors_per_cluster);
   wprintw(stdscr,"reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
   if(sectors(fh1)!=0 || sectors(fh2)!=0)
     wprintw(stdscr,"sectors      %u %u\n", sectors(fh1), sectors(fh2));
@@ -237,7 +237,7 @@ int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector
       return 1;
   }
   log_info("sector_size  %u %u\n", fat_sector_size(fh1),fat_sector_size(fh2));
-  log_info("cluster_size %u %u\n", fh1->cluster_size,fh2->cluster_size);
+  log_info("cluster_size %u %u\n", fh1->sectors_per_cluster,fh2->sectors_per_cluster);
   log_info("reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
   log_info("fats         %u %u\n", fh1->fats,fh2->fats);
   log_info("dir_entries  %u %u\n", get_dir_entries(fh1),get_dir_entries(fh2));
@@ -551,7 +551,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
     log_error("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
     return 1;
   }
-  switch(fat_header->cluster_size)
+  switch(fat_header->sectors_per_cluster)
   {
     case 1:
     case 2:
@@ -596,8 +596,8 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   start_fat1=le16(fat_header->reserved);
   start_fat2=start_fat1+(fat_header->fats>1?fat_length:0);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
-  no_of_cluster=(part_size-start_data)/fat_header->cluster_size;
-  end_data=start_data+no_of_cluster*fat_header->cluster_size-1;
+  no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
+  end_data=start_data+no_of_cluster*fat_header->sectors_per_cluster-1;
   if(verbose>1)
   {
     log_info("number of cluster = %lu\n",no_of_cluster);
@@ -712,7 +712,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
       log_error("Bad root_cluster\n");
       return 1;
     }
-    start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->cluster_size;
+    start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->sectors_per_cluster;
     fat_length_calc=((no_of_cluster+2+disk_car->sector_size/4-1)*4/disk_car->sector_size);
     partition->upart_type=UP_FAT32;
     if(memcmp(buffer+FAT_NAME2,"FAT32   ",8)!=0)
@@ -750,7 +750,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
       log_info(" root cluster : %u",(unsigned int)le32(fat_header->root_cluster));
     log_info("\nData : %lu-%lu\n", (long unsigned)start_data, (long unsigned)end_data);
     log_info("sectors : %lu\n", (long unsigned)part_size);
-    log_info("cluster_size : %u\n",fat_header->cluster_size);
+    log_info("cluster_size : %u\n", fat_header->sectors_per_cluster);
     log_info("no_of_cluster : %lu (2 - %lu)\n", no_of_cluster,no_of_cluster+1);
     log_info("fat_length %lu calculated %lu\n",fat_length,fat_length_calc);
   }
@@ -911,14 +911,14 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
 int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)
 {
   partition->fsname[0]='\0';
-  if((fat_header->cluster_size>0)&&(fat_header->cluster_size<=128))
+  if((fat_header->sectors_per_cluster>0)&&(fat_header->sectors_per_cluster<=128))
   {
-    unsigned char *buffer=(unsigned char*)MALLOC(fat_header->cluster_size*disk_car->sector_size);
+    unsigned char *buffer=(unsigned char*)MALLOC(fat_header->sectors_per_cluster*disk_car->sector_size);
     if(disk_car->read(disk_car,
-          fat_header->cluster_size*disk_car->sector_size,
+          fat_header->sectors_per_cluster*disk_car->sector_size,
           buffer,
           partition->part_offset +
-          (le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->cluster_size) * disk_car->sector_size))
+          (le16(fat_header->reserved)+fat_header->fats*le32(fat_header->fat32_length)+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->sectors_per_cluster) * disk_car->sector_size))
     {
       log_error("fat32_set_part_name() cannot read FAT32 root cluster.\n");
     }
@@ -926,7 +926,7 @@ int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct f
     {
       int i;
       int stop=0;
-      for(i=0;(i<16*fat_header->cluster_size)&&(stop==0);i++)
+      for(i=0;(i<16*fat_header->sectors_per_cluster)&&(stop==0);i++)
       { /* Test attribut volume name and check if the volume name is erased or not */
         if(((buffer[i*0x20+0xB] & ATTR_EXT) !=ATTR_EXT) && ((buffer[i*0x20+0xB] & ATTR_VOLUME) !=0) && (buffer[i*0x20]!=0xE5))
         {
