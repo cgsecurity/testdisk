@@ -20,4 +20,4 @@
 
  */
 int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char**cmd_run);
-
+void free_search_space(alloc_data_t *list_search_space);
