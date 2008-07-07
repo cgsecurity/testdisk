@@ -317,6 +317,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  (*current_cmd)+=4;
 	  command='c';
 	}
+	else if(strncmp(*current_cmd,"list",4)==0)
+	{
+	  (*current_cmd)+=4;
+	  command='l';
+	}
 	else if(strncmp(*current_cmd,"superblock",10)==0)
 	{
 	  (*current_cmd)+=10;
