@@ -3,7 +3,9 @@
 .SH NAME
 testdisk \- Scan and repair disk partitions
 .SH SYNOPSIS
-.BI "testdisk [/log] [/debug] [/dump]
+.BI "testdisk [/log] [/debug] [/dump] [device|image.dd|image.e01]
+.sp
+.BI "testdisk /version
 .sp
 .BI "testdisk /list [/log]
 .SH DESCRIPTION

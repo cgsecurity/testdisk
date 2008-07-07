@@ -782,7 +782,7 @@ int main( int argc, char **argv )
 {
   int i;
   int use_sudo=0;
-  int help=0, verbose=0;
+  int help=0, version=0, verbose=0;
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -988,6 +988,9 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/help")==0) || (strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"--help")==0) ||
       (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0))
       help=1;
+    else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
+      (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
+      version=1;
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
     else if(strcmp(argv[i],"/cmd")==0)
@@ -1022,9 +1025,30 @@ int main( int argc, char **argv )
         list_disk=insert_new_disk(list_disk,disk_car);
     }
   }
+  if(version!=0)
+  {
+    printf("\n");
+    printf("Version: %s\n", VERSION);
+    printf("Compiler: %s\n", get_compiler());
+    printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: ",
+	td_ext2fs_version(), td_ntfs_version(), td_ewf_version());
+#if defined(HAVE_LIBJPEG)
+#if defined(JPEG_LIB_VERSION)
+    printf("%u", JPEG_LIB_VERSION);
+#else
+    printf("yes");
+#endif
+#else
+    printf("none");
+#endif
+    printf("\n");
+    printf("OS: %s\n" , get_os());
+    return 0;
+  }
   if(help!=0)
   {
-    printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file or device]\n"\
+    printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+	"       photorec /version\n" \
         "\n" \
         "/log          : create a photorec.log file\n" \
         "/debug        : add debug information\n" \

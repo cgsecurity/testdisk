@@ -95,7 +95,7 @@ int main( int argc, char **argv )
 {
   int i;
   int use_sudo=0;
-  int help=0, verbose=0, dump_ind=0;
+  int help=0, version=0, verbose=0, dump_ind=0;
   int create_log=TD_LOG_NONE;
   int do_list=0;
   int unit=UNIT_DEFAULT;
@@ -157,6 +157,9 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/help")==0) || (strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"--help")==0) ||
       (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0))
       help=1;
+    else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
+      (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
+      version=1;
     else if(strcmp(argv[i],"/list")==0 || strcmp(argv[i],"-list")==0 || strcmp(argv[i],"-l")==0)
     {
       do_list=1;
@@ -203,11 +206,22 @@ int main( int argc, char **argv )
 	list_disk=insert_new_disk(list_disk,disk_car);
     }
   }
+  if(version!=0)
+  {
+    printf("\n");
+    printf("Version: %s\n", VERSION);
+    printf("Compiler: %s\n", get_compiler());
+    printf("ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s\n",
+	td_ext2fs_version(), td_ntfs_version(), td_reiserfs_version(), td_ewf_version());
+    printf("OS: %s\n" , get_os());
+    return 0;
+  }
   if(help!=0)
   {
     printf("\n" \
-	"Usage: testdisk [/log] [/debug] [file or device]\n"\
-	"       testdisk /list  [/log]   [file or device]\n" \
+	"Usage: testdisk [/log] [/debug] [file.dd|file.e01|device]\n"\
+	"       testdisk /list  [/log]   [file.dd|file.e01|device]\n" \
+	"       testdisk /version\n" \
 	"\n" \
 	"/log          : create a testdisk.log file\n" \
 	"/debug        : add debug information\n" \
