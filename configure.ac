@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.10-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="May 2008"
+TESTDISKDATE="July 2008"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -518,10 +518,10 @@ then
   fi
 fi
 
+AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
 #
 if test -z "${use_ewf}"; then
   OLDLIBS="$LIBS"
-  AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
   AC_CHECK_LIB(crypto, MD5_Init, [], AC_MSG_WARN(Missing function: MD5_Init in library libcrypto))
   AC_CHECK_LIB(ewf,libewf_check_file_signature,[
   AC_DEFINE([HAVE_LIBEWF],1,[Define to 1 if you have the ewf library (-lewf).])
