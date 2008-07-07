@@ -63,6 +63,7 @@
 #include "hdaccess.h"
 #include "file_tar.h"
 #include "phcfg.h"
+#include "ext2grp.h"
 
 /* #define DEBUG */
 /* #define DEBUG_GET_NEXT_SECTOR */
@@ -662,7 +663,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
     log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
     return 2;
   }
-  block_buffer=(unsigned char *) malloc(sizeof(unsigned char)*blocksize);
+  block_buffer=(unsigned char *) MALLOC(sizeof(unsigned char)*blocksize);
 
   current_search_space=start_search_space;
   /* We have offset==start_search_space->start==file_recovery->location.start */
@@ -1478,6 +1479,19 @@ static int photorec(disk_t *disk_car, partition_t *partition, const int verbose,
   return 0;
 }
 
+static int spacerange_cmp(const struct td_list_head *a, const struct td_list_head *b)
+{
+  const alloc_data_t *space_a=td_list_entry(a, const alloc_data_t, list);
+  const alloc_data_t *space_b=td_list_entry(b, const alloc_data_t, list);
+  if(space_a->start < space_b->start)
+    return -1;
+  if(space_a->start > space_b->start)
+    return 1;
+  return space_a->end - space_b->end;
+}
+
+enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE };
+
 static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
 {
   int insert_error=0;
@@ -1565,6 +1579,14 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	if(res!=NULL)
 	{
 	  partition_t *partition=current_element->part;
+	  if(mode_init_space==INIT_SPACE_EXT2_GROUP)
+	  {
+	    blocksize=ext2_fix_group(list_search_space, disk_car, partition);
+	  }
+	  else if(mode_init_space==INIT_SPACE_EXT2_INODE)
+	  {
+	    blocksize=ext2_fix_inode(list_search_space, disk_car, partition);
+	  }
 	  if(td_list_empty(&list_search_space->list))
 	  {
 	    init_search_space(list_search_space, disk_car, partition);
@@ -1617,6 +1639,50 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
       {
 	(*current_cmd)+=9;
 	carve_free_space_only=1;
+      }
+      else if(strncmp(*current_cmd,"ext2_group,",11)==0)
+      {
+	unsigned int groupnr;
+	(*current_cmd)+=11;
+	mode_ext2=1;
+	groupnr=atoi(*current_cmd);
+	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+	  (*current_cmd)++;
+	if(mode_init_space==INIT_SPACE_WHOLE)
+	  mode_init_space=INIT_SPACE_EXT2_GROUP;
+	if(mode_init_space==INIT_SPACE_EXT2_GROUP)
+	{
+          alloc_data_t *new_free_space;
+          new_free_space=(alloc_data_t*)MALLOC(sizeof(*new_free_space));
+          /* Temporary storage, values need to be multiplied by group size and aligned */
+          new_free_space->start=groupnr;
+          new_free_space->end=groupnr;
+          new_free_space->file_stat=NULL;
+          if(td_list_add_sorted_uniq(&new_free_space->list, &list_search_space->list, spacerange_cmp))
+	    free(new_free_space);
+        }
+      }
+      else if(strncmp(*current_cmd,"ext2_inode,",11)==0)
+      {
+	unsigned int inodenr;
+	(*current_cmd)+=11;
+	mode_ext2=1;
+	inodenr=atoi(*current_cmd);
+	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+	  (*current_cmd)++;
+	if(mode_init_space==INIT_SPACE_WHOLE)
+	  mode_init_space=INIT_SPACE_EXT2_INODE;
+	if(mode_init_space==INIT_SPACE_EXT2_INODE)
+	{
+          alloc_data_t *new_free_space;
+          new_free_space=(alloc_data_t*)MALLOC(sizeof(*new_free_space));
+          /* Temporary storage, values need to be multiplied by group size and aligned */
+          new_free_space->start=inodenr;
+          new_free_space->end=inodenr;
+          new_free_space->file_stat=NULL;
+          if(td_list_add_sorted_uniq(&new_free_space->list, &list_search_space->list, spacerange_cmp))
+	    free(new_free_space);
+        }
       }
       else if(isdigit(*current_cmd[0]))
       {

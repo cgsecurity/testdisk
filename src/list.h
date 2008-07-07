@@ -347,4 +347,23 @@ static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_
   }
   td_list_add_tail(newe, head);
 }
+
+static inline int td_list_add_sorted_uniq(struct td_list_head *newe, struct td_list_head *head,
+    int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
+{
+  struct td_list_head *pos;
+  td_list_for_each(pos, head)
+  {
+    const int res=compar(newe,pos);
+    if(res<0)
+    {
+      __td_list_add(newe, pos->prev, pos);
+      return 0;
+    }
+    else if(res==0)
+      return 1;
+  }
+  td_list_add_tail(newe, head);
+  return 0;
+}
 #endif
