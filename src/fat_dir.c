@@ -329,6 +329,7 @@ static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
     return((cluster&0xffffff8)==(unsigned)FAT32_EOC);
 }
 
+#define NBR_CLUSTER_MAX 30
 static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster)
 {
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
@@ -358,20 +359,20 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
   {
     file_data_t *dir_list=NULL;
     const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
-    unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*10);
+    unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*NBR_CLUSTER_MAX);
     unsigned int nbr_cluster;
     int stop=0;
     uint64_t start_fat1,start_data,part_size;
     unsigned long int no_of_cluster,fat_length;
     unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
-    memset(buffer_dir,0,cluster_size*10);
+    memset(buffer_dir,0,cluster_size*NBR_CLUSTER_MAX);
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
     part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
     no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
     nbr_cluster=0;
-    while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<10 && stop==0)
+    while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)
     {
       uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*fat_header->sectors_per_cluster)*fat_sector_size(fat_header);
 //      if(dir_data->verbose>0)
@@ -399,10 +400,15 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
 	    cluster=next_cluster;
 	  else if(next_cluster==0)
 	  {
-	    //	  if(cluster==first_cluster)
-	    //	    fat_meth=FAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted directory */
-	    //	  else
+#if 0
+	    /* FIXME: experimental */
+	    if(cluster==first_cluster && (dir_data->param & FLAG_LIST_DELETED)==FLAG_LIST_DELETED)
+	      fat_meth=FAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted directory */
+	    else
+	      cluster=0;			/* Stop directory listing */
+#else
 	    cluster=0;			/* Stop directory listing */
+#endif
 	  }
 	  else
 	    fat_meth=FAT_NEXT_CLUSTER;		/* FAT is corrupted, don't trust it */
@@ -532,7 +538,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     return -1;
   }
   cluster = file->filestat.st_ino;
-  log_trace("fat_copy newfile=%s first_cluster=%u size=%lu\n", new_file,
+  log_trace("fat_copy dst=%s first_cluster=%u size=%lu\n", new_file,
       cluster, (long unsigned)file_size);
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
   part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
