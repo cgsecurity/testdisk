@@ -617,51 +617,27 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
   if(CHS->sector==0)
   {
     int error;
-    unsigned int u,sectors,heads,cyls;
-    off_t o;
+    unsigned int u;
     error = ioctl(hd_h, DIOCGFWSECTORS, &u);
     if(error==0 && u>0)
     {
+      unsigned int sectors,heads;
       sectors=u;
       if(verbose>1)
       {
 	log_verbose("disk_get_geometry DIOCGFWSECTORS %s Ok\n",device);
       }
-    }
-    else
-    {
-      sectors=63;
-      if(verbose>1)
+      error = ioctl(hd_h, DIOCGFWHEADS, &u);
+      if(error==0 && u>0)
       {
-	log_error("disk_get_geometry DIOCGFWSECTORS %s failed %s\n",device,strerror(errno));
-      }
-    }
-    error = ioctl(hd_h, DIOCGFWHEADS, &u);
-    if(error==0 && u>0)
-    {
-      heads=u;
-    }
-    else
-    {
-      heads=255;
-      if(verbose>1)
-      {
-	log_error("disk_get_geometry DIOCGFWHEADS %s failed %s\n", device, strerror(errno));
-      }
-    }
-    error = ioctl(hd_h, DIOCGMEDIASIZE, &o);
-    if(error==0)
-    {
-      cyls = o / ((off_t)sector_size * heads * sectors);
-      CHS->cylinder=cyls-1;
-      CHS->head=heads-1;
-      CHS->sector=sectors;
-    }
-    else
-    {
-      if(verbose>1)
-      {
-	log_error("disk_get_geometry DIOCGMEDIASIZE %s failed %s\n", device, strerror(errno));
+	heads=u;
+	if(verbose>1)
+	{
+	  log_verbose("disk_get_geometry DIOCGFWHEADS %s Ok\n",device);
+	}
+	CHS->cylinder=0;
+	CHS->head=heads-1;
+	CHS->sector=sectors;
       }
     }
   }
@@ -733,6 +709,22 @@ static uint64_t disk_get_size(const int hd_h, const char *device, const int verb
 	    device, (long long unsigned)longsectors64*sector_size);
       }
       return longsectors64*sector_size;
+    }
+  }
+#endif
+#ifdef DIOCGMEDIASIZE
+  {
+    off_t o;
+    int error;
+    error = ioctl(hd_h, DIOCGMEDIASIZE, &o);
+    if(error==0)
+    {
+      if(verbose>1)
+      {
+	log_verbose("disk_get_size DIOCGMEDIASIZE %s size %llu\n",
+	    device, (long long unsigned)o);
+      }
+      return o;
     }
   }
 #endif
