@@ -2,7 +2,7 @@
 
     File: geometry.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #endif
 #include "chgtype.h"
 #include "log.h"
+#include "hdaccess.h"
 
 static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 {
