@@ -231,50 +231,6 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
     aff_copy(window);
     wmove(window,3,0);
     aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-    mvwaddstr(window,LINES-2,0,"Use ");
-    if(depth>0)
-    {
-      if(has_colors())
-	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-      waddstr(window, "Left");
-      if(has_colors())
-	wbkgdset(window,' ' | COLOR_PAIR(0));
-      waddstr(window," arrow to go back, ");
-    }
-    if(has_colors())
-      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(window,"Right");
-    if(has_colors())
-      wbkgdset(window,' ' | COLOR_PAIR(0));
-    waddstr(window," arrow to change directory, ");
-    if(dir_data->copy_file!=NULL)
-    {
-      if(has_colors())
-	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-      waddstr(window,"c");
-      if(has_colors())
-	wbkgdset(window,' ' | COLOR_PAIR(0));
-      waddstr(window," to copy, ");
-    }
-    wmove(window,LINES-1,4);
-    if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
-    {
-      if(has_colors())
-	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-      waddstr(window,"h");
-      if(has_colors())
-	wbkgdset(window,' ' | COLOR_PAIR(0));
-      if((dir_data->param&FLAG_LIST_DELETED)==0)
-	waddstr(window," to unhide deleted files, ");
-      else
-	waddstr(window," to hide deleted files, ");
-    }
-    if(has_colors())
-      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-    waddstr(window,"q");
-    if(has_colors())
-      wbkgdset(window,' ' | COLOR_PAIR(0));
-    waddstr(window," to quit");
     wmove(window,4,0);
     wprintw(window,"Directory %s\n",dir_data->current_directory);
     do
@@ -331,6 +287,51 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	wmove(window,6,0);
 	wprintw(window,"No file found, filesystem seems damaged.");
       }
+      /* Redraw the bottom of the screen everytime because very long filenames may have corrupt it*/
+      mvwaddstr(window,LINES-2,0,"Use ");
+      if(depth>0)
+      {
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window, "Left");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," arrow to go back, ");
+      }
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(window,"Right");
+      if(has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(0));
+      waddstr(window," arrow to change directory, ");
+      if(dir_data->copy_file!=NULL)
+      {
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"c");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy, ");
+      }
+      wmove(window,LINES-1,4);
+      if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
+      {
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"h");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	if((dir_data->param&FLAG_LIST_DELETED)==0)
+	  waddstr(window," to unhide deleted files, ");
+	else
+	  waddstr(window," to hide deleted files, ");
+      }
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      waddstr(window,"q");
+      if(has_colors())
+	wbkgdset(window,' ' | COLOR_PAIR(0));
+      waddstr(window," to quit");
       wrefresh(window);
       /* Using gnome terminal under FC3, TERM=xterm, the screen is not always correct */
       wredrawln(window,0,getmaxy(window));	/* redrawwin def is boggus in pdcur24 */
@@ -621,7 +622,7 @@ Returns
 static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir)
 {
   file_data_t *dir_list;
-  unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   file_data_t *current_file;
   char *dir_name;
   int copy_bad=0;
@@ -633,7 +634,8 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
   dir_list=dir_data->get_dir(disk_car, partition,dir_data, (const unsigned long int)dir->filestat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
-    if(strlen(dir_data->current_directory)+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
+    dir_data->current_directory[current_directory_namelength]='\0';
+    if(current_directory_namelength+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
     {
       if(strcmp(dir_data->current_directory,"/"))
 	strcat(dir_data->current_directory,"/");
@@ -659,9 +661,9 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
 	else
 	  copy_bad=1;
       }
-      dir_data->current_directory[current_directory_namelength]='\0';
     }
   }
+  dir_data->current_directory[current_directory_namelength]='\0';
   delete_list_file(dir_list);
   set_date(dir_name, dir->filestat.st_atime, dir->filestat.st_mtime);
   free(dir_name);
