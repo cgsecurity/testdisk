@@ -147,10 +147,6 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="fla";
     }
     else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-    {
-      file_recovery_new->extension="pub";
-    }
-    else if(td_memmem(buffer,buffer_size,"Publisher",9)!=NULL)
     { /* Publisher */
       file_recovery_new->extension="pub";
     }
