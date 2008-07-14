@@ -90,6 +90,7 @@ static int is_linux(const partition_t *partition)
     case UP_CRAMFS:
     case UP_EXT2:
     case UP_EXT3:
+    case UP_EXT4:
     case UP_JFS:
     case UP_RFS:
     case UP_RFS2:
@@ -255,7 +256,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  options="tuscq";
 	else
 	  options="tscq";
-	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
+	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
 	menu=1;
       }
       else if(is_part_hfs(current_element->part) || is_part_hfsp(current_element->part))
@@ -280,7 +281,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  options="tuscq";
 	else
 	  options="tscq";
-	menuAdv[2].desc="Locate EXT2/EXT3 backup superblock";
+	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
 	menu=1;
       }
       else if(is_hfs(current_element->part) || is_hfsp(current_element->part))

@@ -47,10 +47,11 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, parti
   unsigned char *buffer;
   unsigned int blocksize;
   if(partition->upart_type!=UP_EXT2 &&
-      partition->upart_type!=UP_EXT3)
+      partition->upart_type!=UP_EXT3 &&
+      partition->upart_type!=UP_EXT4)
   {
-    log_error("Not a valid ext2/ext3 filesystem");
-    display_message("Not a valid ext2/ext3 filesystem");
+    log_error("Not a valid ext2/ext3/ext4 filesystem");
+    display_message("Not a valid ext2/ext3/ext4 filesystem");
     free_search_space(list_search_space);
     return 0;
   }
@@ -84,10 +85,11 @@ unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, parti
   unsigned char *buffer;
   unsigned int blocksize;
   if(partition->upart_type!=UP_EXT2 &&
-      partition->upart_type!=UP_EXT3)
+      partition->upart_type!=UP_EXT3 &&
+      partition->upart_type!=UP_EXT4)
   {
-    log_error("Not a valid ext2/ext3 filesystem");
-    display_message("Not a valid ext2/ext3 filesystem");
+    log_error("Not a valid ext2/ext3/ext4 filesystem");
+    display_message("Not a valid ext2/ext3/ext4 filesystem");
     free_search_space(list_search_space);
     return 0;
   }

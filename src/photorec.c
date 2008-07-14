@@ -611,7 +611,7 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
     return ntfs_remove_used_space(disk_car, partition, list_search_space);
 #endif
 #ifdef HAVE_LIBEXT2FS
-  else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3)
+  else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3 || partition->upart_type==UP_EXT4)
     return ext2_remove_used_space(disk_car, partition, list_search_space);
 #endif
   return 0;

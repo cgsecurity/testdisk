@@ -260,7 +260,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
 {
   static const struct MenuItem menuMode[]=
     {
-      {'E',"EXT2/EXT3","EXT2/EXT3 filesystem"},
+      {'E',"ext2/ext3","ext2/ext3/ext4 filesystem"},
       {'O',"Other","FAT/NTFS/HFS+/ReiserFS/..."},
       {0,NULL,NULL}
     };
@@ -297,7 +297,8 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   unsigned int menu;
   int command;
   if(partition->upart_type==UP_EXT2 ||
-      partition->upart_type==UP_EXT3)
+      partition->upart_type==UP_EXT3 ||
+      partition->upart_type==UP_EXT4)
     menu=0;
   else
     menu=1;
@@ -314,7 +315,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
   *mode_ext2=(command=='E' || command=='e');
   if(*mode_ext2>0)
   {
-    log_info("EXT2/EXT3 mode activated.\n");
+    log_info("ext2/ext3/ext4 mode activated.\n");
   }
   /*
   if((*mode_ext2)!=0)
@@ -340,7 +341,7 @@ static int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, u
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
 #endif
 #ifdef HAVE_LIBEXT2FS
-    else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3)
+    else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3 || partition->upart_type==UP_EXT4)
       command = wmenuSelect_ext(window, 24, 8, 0, menuEXT2, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
 #endif

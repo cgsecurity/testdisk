@@ -2,7 +2,7 @@
 
     File: ext2.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -61,10 +61,18 @@ static int set_EXT2_info(disk_t *disk_car, const struct ext2_super_block *sb,par
 {
   set_part_name(partition,sb->s_volume_name,16);
   /* sb->s_last_mounted seems to be unemployed in kernel 2.2.16 */
-  if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
+  if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_HUGE_FILE)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_GDT_CSUM)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_DIR_NLINK)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_64BIT)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_MMP)!=0)
+    strncpy(partition->info,"EXT4",sizeof(partition->info));
+  else if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
     strncpy(partition->info,"EXT3",sizeof(partition->info));
   else
     strncpy(partition->info,"EXT2",sizeof(partition->info));
+
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_LARGE_FILE)!=0)
     strcat(partition->info," Large file");
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER)!=0)
@@ -174,7 +182,14 @@ static int test_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partiti
   if(partition->part_size!=0 &&
       partition->part_size<(uint64_t)le32(sb->s_blocks_count)*(EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
     return 8;
-  if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
+  if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_HUGE_FILE)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_GDT_CSUM)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_DIR_NLINK)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_64BIT)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_MMP)!=0)
+    partition->upart_type=UP_EXT4;
+  else if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
     partition->upart_type=UP_EXT3;
   else
     partition->upart_type=UP_EXT2;

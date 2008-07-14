@@ -83,6 +83,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
       case UP_FAT32:
 	res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
 	break;
+      case UP_EXT4:
       case UP_EXT3:
       case UP_EXT2:
 	res=dir_partition_ext2_init(disk_car,partition,&dir_data,verbose);

@@ -79,6 +79,7 @@ static const struct systypes none_sys_types[] = {
   {UP_CRAMFS,	"CramFS"},
   {UP_EXT2,	"ext2"},
   {UP_EXT3,	"ext3"},
+  {UP_EXT4,	"ext4"},
 /*  {UP_EXTENDED,	"Extended"}, */
   {UP_FAT12,	"FAT12"},
   {UP_FAT16,	"FAT16"},
@@ -253,6 +254,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_EXT2:
     case UP_EXT3:
+    case UP_EXT4:
       ret=check_EXT2(disk_car,partition,verbose);
       break;
     case UP_EXTENDED:

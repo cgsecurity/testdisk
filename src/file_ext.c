@@ -37,7 +37,7 @@ static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int 
 
 const file_hint_t file_hint_ext2_sb= {
   .extension="",
-  .description="EXT2/EXT3 Superblock",
+  .description="ext2/ext3/ext4 Superblock",
   .min_header_distance=0,
   .max_filesize=1,
   .recover=0,

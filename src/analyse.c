@@ -298,14 +298,14 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Search EXT2/EXT3 superblock %10lu/%lu %lu%%", (long unsigned)(hd_offset/disk_car->sector_size),
+      wprintw(stdscr,"Search ext2/ext3/ext4 superblock %10lu/%lu %lu%%", (long unsigned)(hd_offset/disk_car->sector_size),
 	  (long unsigned)(partition->part_size/disk_car->sector_size),percent);
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
       old_percent=percent;
     }
 #endif
-    /* EXT2/EXT3 */
+    /* ext2/ext3/ext4 */
     if( hd_offset==(EXT2_MIN_BLOCK_SIZE<<0) ||
 	hd_offset==(EXT2_MIN_BLOCK_SIZE<<1) ||
 	hd_offset==(EXT2_MIN_BLOCK_SIZE<<2) ||
