@@ -5,9 +5,7 @@
 VER_E2FSPROGS=
 VER_PROGSREISERFS=0.3.1-rc8
 VER_NTFSPROGS=2.0.0
-#VER_LIBEWF=20080322
 VER_LIBEWF=20080501
-#VER_LIBEWF=
 crosscompile_target=
 prefix=/usr/
 if [ "$CC" = "gcc295" ];
@@ -21,25 +19,12 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-    VER_E2FSPROGS=1.40.10
-#    VER_E2FSPROGS=1.40.7
+    VER_E2FSPROGS=1.41.0
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
-#    CC="$crosscompile_target-gcc -mno-cygwin"
-    export CC
   fi
 fi
 prefix=/usr/$crosscompile_target
-LD=ld
-AR=ar
-if [ "X$crosscompile_target" = "Xpowerpc-apple-darwin" ];
-then
-  AR=$crosscompile_target-ar
-  export RANLIB=powerpc-apple-darwin-ranlib
-else
-  export LD
-fi
-export AR
 LYNX=links
 LIBEXT=$compiledir/e2fsprogs-$VER_E2FSPROGS/lib/ext2fs/libext2fs.a
 LIBNTFS=$compiledir/ntfsprogs-$VER_NTFSPROGS/libntfs/.libs/libntfs.a
@@ -78,7 +63,7 @@ then
   then
         rm -f $compiledir/Makefile
   	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
-	CC=$TESTDISKCC CFLAGS="$CFLAGS -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
+	CC=$TESTDISKCC CFLAGS="$CFLAGS -g -O2 -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
 	cd $pwd_saved
   fi
 fi
