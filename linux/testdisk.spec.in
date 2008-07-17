@@ -47,7 +47,6 @@ Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 %prep
 %setup -q
 %setup -q -a 1 -D
-%setup -q -a 2 -D
 %setup -q -a 3 -D
 %patch0
 
@@ -84,6 +83,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_sbindir}/testdisk
 %attr(755,root,root) %{_sbindir}/photorec
 %changelog
+* Thu Jul 17 2008 Christophe Grenier <grenier@cgsecurity.org> 6.10-1
+- 6.10
+
 * Sun Jan 4 2004 Christophe Grenier <grenier@cgsecurity.org> 5.0
 - 5.0
 
