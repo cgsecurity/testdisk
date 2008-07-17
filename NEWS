@@ -1,6 +1,23 @@
 Current news
 ============
-6.10-WIP
+6.10
+TestDisk & PhotoRec 6.10 comes with severals improvements:
+- Report disk manufacturer and model under Windows and Linux (Only Linux was
+  supported in 6.9)
+- Under Linux, /dev/mapper/* and /dev/md? are now listed with the harddisks.
+- Now both OS and compiler versions are recorded in the log file.
+
+This new TestDisk version can
+- undelete files and directories for FAT filesystem,
+- undelete files for ext2 filesystem,
+- copy files from ext2/ext3 partitions. These feature was already available
+  for FAT and NTFS.
+
+PhotoRec
+- Load and save FileOpts settings: remember which file types to recover
+- For JPEG files, extract the time/date from Exif header and set the
+  file time. It's now easier to sort the recovered jpg.
+- PhotoRec can now identify and recover 38 additional file formats.
 
 6.9
 TestDisk & PhotoRec 6.9 comes with numerous improvements:
