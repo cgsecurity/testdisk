@@ -50,7 +50,8 @@ static unsigned int search_location_nbr=0;
 static search_location_t search_location_info[SEARCH_LOCATION_MAX];
 
 static inline uint64_t CHS_to_offset(const unsigned int C, const int H, const int S,const disk_t *disk_car)
-{ return (((uint64_t)C*(disk_car->CHS.head+1)+H)*disk_car->CHS.sector+(S>0?S-1:S))*disk_car->sector_size;
+{
+  return (((uint64_t)C * disk_car->geom.heads_per_cylinder + H) * disk_car->geom.sectors_per_head +(S>0?S-1:S))*disk_car->sector_size;
 }
 
 void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode, const int search_vista_part)

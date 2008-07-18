@@ -612,7 +612,8 @@ static int interface_check_disk_capacity_ncurses(disk_t *disk_car)
 static int interface_check_disk_capacity(disk_t *disk_car)
 {
   /* Test for LBA28 limitation */
-  if(disk_car->CHS.sector>0 && (disk_car->CHS.cylinder+1) == (((1<<28)-1) / (disk_car->CHS.head+1) / disk_car->CHS.sector))
+  if(disk_car->geom.sectors_per_head>0 &&
+      disk_car->geom.cylinders == (((1<<28)-1) / disk_car->geom.heads_per_cylinder / disk_car->geom.sectors_per_head))
   {
     log_warning("LBA28 limitation\n");
     log_flush();

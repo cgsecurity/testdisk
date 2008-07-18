@@ -43,33 +43,44 @@
 static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, const list_part_t *list_part, const int verbose);
 
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
-{ return ((unsigned long int)C*(disk_car->CHS.head+1)+H)*disk_car->CHS.sector+S-1;
+{
+  return ((unsigned long int)C * disk_car->geom.heads_per_cylinder + H) * disk_car->geom.sectors_per_head + S - 1;
 }
 
 uint64_t CHS2offset(const disk_t *disk_car,const CHS_t*CHS)
-{ return (((uint64_t)CHS->cylinder*(disk_car->CHS.head+1)+CHS->head)*disk_car->CHS.sector+CHS->sector-1)*disk_car->sector_size;
+{
+  return (((uint64_t)CHS->cylinder * disk_car->geom.heads_per_cylinder + CHS->head) *
+      disk_car->geom.sectors_per_head + CHS->sector - 1) * disk_car->sector_size;
 }
 
 uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
-{ return (((uint64_t)C*(disk_car->CHS.head+1)+H)*disk_car->CHS.sector+S-1)*disk_car->sector_size;
+{
+  return (((uint64_t)C * disk_car->geom.heads_per_cylinder + H) *
+      disk_car->geom.sectors_per_head + S - 1) * disk_car->sector_size;
 }
 
 unsigned int offset2sector(const disk_t *disk_car, const uint64_t offset)
-{ return ((offset/disk_car->sector_size)%disk_car->CHS.sector)+1; }
+{
+  return ((offset / disk_car->sector_size) % disk_car->geom.sectors_per_head) + 1;
+}
 
 unsigned int offset2head(const disk_t *disk_car, const uint64_t offset)
-{ return ((offset/disk_car->sector_size)/disk_car->CHS.sector)%(disk_car->CHS.head+1); }
+{
+  return ((offset / disk_car->sector_size) / disk_car->geom.sectors_per_head) % disk_car->geom.heads_per_cylinder;
+}
 
 unsigned int offset2cylinder(const disk_t *disk_car, const uint64_t offset)
-{ return ((offset/disk_car->sector_size)/disk_car->CHS.sector)/(disk_car->CHS.head+1); }
+{
+  return ((offset / disk_car->sector_size) / disk_car->geom.sectors_per_head) / disk_car->geom.heads_per_cylinder;
+}
 
 void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
 {
   uint64_t pos=offset/disk_car->sector_size;
-  CHS->sector=(pos%disk_car->CHS.sector)+1;
-  pos/=disk_car->CHS.sector;
-  CHS->head=pos%(disk_car->CHS.head+1);
-  CHS->cylinder=pos/(disk_car->CHS.head+1);
+  CHS->sector=(pos%disk_car->geom.sectors_per_head)+1;
+  pos/=disk_car->geom.sectors_per_head;
+  CHS->head=pos%disk_car->geom.heads_per_cylinder;
+  CHS->cylinder=pos/disk_car->geom.heads_per_cylinder;
 }
 
 void dup_CHS(CHS_t * CHS_dst, const CHS_t * CHS_source)
@@ -386,7 +397,7 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
     if(start.sector==1 && start.head<=1)
     {
       nbr++;
-      if(end.head==disk_car->CHS.head)
+      if(end.head==disk_car->geom.heads_per_cylinder-1)
       {
 	nbr++;
 	/* Doesn't check if end.sector==disk_car->CHS.sector */
@@ -395,7 +406,8 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
   }
   if(nbr>0)
   {
-    log_info("get_geometry_from_list_part_aux head=%u nbr=%u\n",disk_car->CHS.head+1,nbr);
+    log_info("get_geometry_from_list_part_aux head=%u nbr=%u\n",
+	disk_car->geom.heads_per_cylinder, nbr);
     if(verbose>1)
     {
       for(element=list_part;element!=NULL;element=element->next)
@@ -404,7 +416,7 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
 	CHS_t end;
 	offset2CHS(disk_car,element->part->part_offset,&start);
 	offset2CHS(disk_car,element->part->part_offset+element->part->part_size-1,&end);
-	if(start.sector==1 && start.head<=1 && end.head==disk_car->CHS.head)
+	if(start.sector==1 && start.head<=1 && end.head==disk_car->geom.heads_per_cylinder-1)
 	{
 	  log_partition(disk_car,element->part);
 	}
@@ -417,25 +429,25 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
 unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part_t *list_part, const int verbose)
 {
   const unsigned int head_list[]={8,16,32,64,128,240,255,0};
-  unsigned int nbr_max;
-  unsigned int nbr;
-  unsigned int h_index=0;
-  unsigned int head_max=disk_car->CHS.head;
+  unsigned int best_score;
+  unsigned int score;
+  unsigned int i;
+  unsigned int heads_per_cylinder=disk_car->geom.heads_per_cylinder;
   disk_t *new_disk_car=(disk_t *)MALLOC(sizeof(*new_disk_car));
   memcpy(new_disk_car,disk_car,sizeof(*new_disk_car));
-  nbr_max=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
-  for(h_index=0;head_list[h_index]!=0;h_index++)
+  best_score=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
+  for(i=0; head_list[i]!=0; i++)
   {
-    new_disk_car->CHS.head=head_list[h_index]-1;
-    nbr=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
-    if(nbr>=nbr_max)
+    new_disk_car->geom.heads_per_cylinder=head_list[i];
+    score=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
+    if(score >= best_score)
     {
-      nbr_max=nbr;
-      head_max=new_disk_car->CHS.head;
+      best_score=score;
+      heads_per_cylinder=new_disk_car->geom.heads_per_cylinder;
     }
   }
   free(new_disk_car);
-  return head_max;
+  return heads_per_cylinder;
 }
 
 const char *size_to_unit(uint64_t disk_size, char *buffer)

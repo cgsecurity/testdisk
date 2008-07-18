@@ -22,7 +22,7 @@
 struct info_disk_struct
 {
   unsigned int disk;
-  CHS_t CHSR;	/* CHS low level */
+  CHSgeometry_t geo_phys;	/* CHS low level */
   int mode_enh;
   int bad_geometry;
 };

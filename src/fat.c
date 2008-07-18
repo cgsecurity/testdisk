@@ -761,15 +761,19 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   }
   if(fat_header->fats>1)
     comp_FAT(disk_car,partition,fat_length,le16(fat_header->reserved));
-  if(le16(fat_header->heads)!=disk_car->CHS.head+1)
+  if(le16(fat_header->heads)!=disk_car->geom.heads_per_cylinder)
   {
-    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (FAT) != %u (HD)\n",le16(fat_header->heads),disk_car->CHS.head+1);
-    log_warning("heads/cylinder %u (FAT) != %u (HD)\n",le16(fat_header->heads),disk_car->CHS.head+1);
+    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (FAT) != %u (HD)\n",
+	le16(fat_header->heads), disk_car->geom.heads_per_cylinder);
+    log_warning("heads/cylinder %u (FAT) != %u (HD)\n",
+	le16(fat_header->heads), disk_car->geom.heads_per_cylinder);
   }
-  if(le16(fat_header->secs_track)!=disk_car->CHS.sector)
+  if(le16(fat_header->secs_track)!=disk_car->geom.sectors_per_head)
   {
-    screen_buffer_add("Warning: Incorrect number of sectors per track %u (FAT) != %u (HD)\n",le16(fat_header->secs_track),disk_car->CHS.sector);
-    log_warning("sect/track %u (FAT) != %u (HD)\n",le16(fat_header->secs_track),disk_car->CHS.sector);
+    screen_buffer_add("Warning: Incorrect number of sectors per track %u (FAT) != %u (HD)\n",
+	le16(fat_header->secs_track), disk_car->geom.sectors_per_head);
+    log_warning("sect/track %u (FAT) != %u (HD)\n",
+	le16(fat_header->secs_track), disk_car->geom.sectors_per_head);
   }
   return 0;
 }
@@ -1039,7 +1043,8 @@ int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, par
 {
   if(test_OS2MB(disk_car, fat_header, partition, verbose, dump_ind))
     return 1;
-  partition->part_size=(uint64_t)(disk_car->CHS.head+1) * disk_car->CHS.sector*disk_car->sector_size; /* 1 cylinder */
+  /* 1 cylinder */
+  partition->part_size=(uint64_t)disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
   partition->part_type_i386=P_OS2MB;
   partition->fsname[0]='\0';
   partition->info[0]='\0';

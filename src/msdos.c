@@ -100,15 +100,15 @@ static int hd_read(disk_t *disk_car, void *buf, const unsigned int count, const 
   if(data->mode_enh==0)
   { /* Limite CHS = 1023,255,63 = 8,064Mo ~= 7.8 Go */
     int head, track, sector;
-    if(data->CHSR.sector==0)
+    if(data->geo_phys.sectors_per_head==0)
     {
-      log_critical("hd_read: BUG CHSR.sector=0 !\n");
+      log_critical("hd_read: BUG geo_phys.sectors_per_head=0 !\n");
       return 1;
     }
-    sector=(hd_offset%data->CHSR.sector)+1;
-    hd_offset/=data->CHSR.sector;
-    head=hd_offset%(data->CHSR.head+1);
-    track=hd_offset/(data->CHSR.head+1);
+    sector=(hd_offset%data->geo_phys.sectors_per_head)+1;
+    hd_offset/=data->geo_phys.sectors_per_head;
+    head=hd_offset%data->geo_phys.heads_per_cylinder;
+    track=hd_offset/data->geo_phys.heads_per_cylinder;
     if(track<1024)
       return biosdisk(2, data->disk, head, track, sector, nsects, buf);
     return 1;
@@ -149,15 +149,15 @@ static int hd_write(disk_t *disk_car, const void *buf, const unsigned int count,
   if(data->mode_enh==0)
   { /* Limite CHS = 1023,255,63 = 8,064Mo ~= 7.8 Go */
     int head, track, sector;
-    if(data->CHSR.sector==0)
+    if(data->geo_phys.sectors_per_head==0)
     {
-      log_critical("hd_write: BUG CHSR.sector=0 !\n");
+      log_critical("hd_write: BUG geo_phys.sectors_per_head=0 !\n");
       return 1;
     }
-    sector=(hd_offset%data->CHSR.sector)+1;
-    hd_offset/=data->CHSR.sector;
-    head=hd_offset%(data->CHSR.head+1);
-    track=hd_offset/(data->CHSR.head+1);
+    sector=(hd_offset%data->geo_phys.sectors_per_head)+1;
+    hd_offset/=data->geo_phys.sectors_per_head;
+    head=hd_offset%data->geo_phys.heads_per_cylinder;
+    track=hd_offset/data->geo_phys.heads_per_cylinder;
     if(track<1024)
       return biosdisk(3, data->disk, head, track, sector, nsects, buf);
     return 1;
@@ -229,6 +229,7 @@ static int check_enh_bios(const unsigned int disk, const int verbose)
 
 static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
 {
+  uint64_t computed_size;
   int compute_LBA=0;
   __dpmi_regs r;
   unsigned char buf[0x200];	/* Don't change it! */
@@ -247,13 +248,13 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   dosmemget(cmd_dos_segment<<4, HDPARM_BUF_SIZ, &buf);
   if(r.h.ah)
     return 1;
-  disk_car->CHS.cylinder=*(uint16_t*)&buf[0x04];
-  disk_car->CHS.head=*(uint16_t*)&buf[0x08];
-  disk_car->CHS.sector=*(uint16_t*)&buf[0x0C];
+  disk_car->geom.cylinders=*(uint16_t*)&buf[0x04];
+  disk_car->geom.heads_per_cylinder=*(uint16_t*)&buf[0x08];
+  disk_car->geom.sectors_per_head=*(uint16_t*)&buf[0x0C];
   disk_car->disk_size=(*(uint32_t*)&buf[0x10])*(uint64_t)disk_car->sector_size;
   if(disk_car->disk_size==0)
   {
-    if(disk_car->CHS.cylinder==0 || disk_car->CHS.head==0 || disk_car->CHS.sector==0)
+    if(disk_car->geom.cylinders==0 || disk_car->geom.heads_per_cylinder==0 || disk_car->geom.sectors_per_head==0)
     {
       if(verbose>0)
 	log_warning("hd_identify_enh_bios: No size returned by BIOS.\n");
@@ -261,24 +262,23 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
     }
     else
     {
-      disk_car->CHS.cylinder--;
-      disk_car->CHS.head--;
       compute_LBA=1;
-      disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
       if(verbose>0)
         log_verbose("Computes LBA from CHS\n");
     }
   }
   else
   {
-    if(disk_car->CHS.cylinder>0 && disk_car->CHS.head>0 && disk_car->CHS.sector>0)
+    if(disk_car->geom.cylinders>0 && disk_car->geom.heads_per_cylinder>0 && disk_car->geom.sectors_per_head>0)
     {
-      disk_car->CHS.cylinder--;
-      disk_car->CHS.head--;
       /* Some bios are buggy */
-      if(disk_car->disk_size>(uint64_t)(disk_car->CHS.cylinder+2)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size)
+      if(disk_car->disk_size>(uint64_t)(disk_car->geom.cylinders+1)*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size)
       {
-        disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
+        disk_car->geom.cylinders=disk_car->disk_size /
+	  disk_car->geom.heads_per_cylinder /
+	  disk_car->geom.sectors_per_head /
+	  disk_car->sector_size;
         if(verbose>0)
           log_verbose("Computes C from number of sectors\n");
       }
@@ -287,43 +287,52 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
     {
       if(verbose>0)
         log_verbose("Computes CHS from number of sectors\n");
-      disk_car->CHS.head=255-1;
-      disk_car->CHS.sector=63;
-      disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
+      disk_car->geom.heads_per_cylinder=255;
+      disk_car->geom.sectors_per_head=63;
+      disk_car->geom.cylinders=disk_car->disk_size /
+	disk_car->geom.heads_per_cylinder /
+	disk_car->geom.sectors_per_head /
+	disk_car->sector_size;
     }
   }
-  if(disk_car->CHS.sector==0)
+  if(disk_car->geom.sectors_per_head==0)
   {
     data->bad_geometry=1;
-    disk_car->CHS.sector=1;
+    disk_car->geom.sectors_per_head=1;
     log_critical("Incorrect number of sector\n");
   }
-  if(disk_car->CHS.sector>63)
+  if(disk_car->geom.sectors_per_head>63)
   {
 /*    data->bad_geometry=1; */
     log_critical("Incorrect number of sector\n");
   }
-  if(disk_car->CHS.head>255-1)
+  if(disk_car->geom.heads_per_cylinder>255)
   {
     data->bad_geometry=1;
     log_critical("Incorrect number of head\n");
   }
+  computed_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   if(verbose>0 || data->bad_geometry!=0)
-    log_info("LBA %lu, computed %u (CHS=%u,%u,%u)\n",(long unsigned)(disk_car->disk_size/disk_car->sector_size), (disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector,disk_car->CHS.cylinder,disk_car->CHS.head,disk_car->CHS.sector);
+    log_info("LBA %lu, computed %lu (CHS=%u,%u,%u)\n",
+	(long unsigned)(disk_car->disk_size/disk_car->sector_size),
+	(long unsigned)(computed_size/disk_car->sector_size),
+	disk_car->geom.cylinders,
+	disk_car->geom.heads_per_cylinder,
+	disk_car->geom.sectors_per_head);
   if(compute_LBA)
-    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+    disk_car->disk_size=computed_size;
   else
   {
-    if(disk_car->disk_size < (uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector/disk_car->sector_size)
+    if(disk_car->disk_size < computed_size)
     {
       log_info("Computes LBA from CHS, previous value may be false.\n");
-      disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_size=computed_size;
     }
   }
   disk_car->disk_real_size=disk_car->disk_size;
-  data->CHSR.cylinder=disk_car->CHS.cylinder;
-  data->CHSR.head=disk_car->CHS.head;
-  data->CHSR.sector=disk_car->CHS.sector;
+  data->geo_phys.cylinders=disk_car->geom.cylinders;
+  data->geo_phys.heads_per_cylinder=disk_car->geom.heads_per_cylinder;
+  data->geo_phys.sectors_per_head=disk_car->geom.sectors_per_head;
   if(verbose>0)
   {
     log_info("hd_identify_enh_bios\n");
@@ -366,26 +375,26 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=disk_clean;
     disk_car->data=data;
-    disk_car->CHS.cylinder=((buf[0] & 0x0C0)<<2)|buf[1];
-    disk_car->CHS.head=buf[3];
-    disk_car->CHS.sector=buf[0] & 0x3F;
-    if(disk_car->CHS.head>=255)
+    disk_car->geom.cylinders=1+(((buf[0] & 0x0C0)<<2)|buf[1]);
+    disk_car->geom.heads_per_cylinder=1+buf[3];
+    disk_car->geom.sectors_per_head=buf[0] & 0x3F;
+    if(disk_car->geom.heads_per_cylinder>255)
     { /* Problem found by G Rowe */
       log_critical("BIOS reports an invalid heads number\n");
       data->bad_geometry=1;
-      disk_car->CHS.head=254;
+      disk_car->geom.heads_per_cylinder=255;
     }
-    if(disk_car->CHS.sector==0)
+    if(disk_car->geom.sectors_per_head==0)
     { /* Problem found by Brian Barrett */
       log_critical("BIOS reports an invalid number of sector per head\n");
       data->bad_geometry=1;
-      disk_car->CHS.sector=1;
+      disk_car->geom.sectors_per_head=1;
     }
-    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+    disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
     disk_car->disk_real_size=disk_car->disk_size;
-    data->CHSR.cylinder=disk_car->CHS.cylinder;
-    data->CHSR.head=disk_car->CHS.head;
-    data->CHSR.sector=disk_car->CHS.sector;
+    data->geo_phys.cylinders=disk_car->geom.cylinders;
+    data->geo_phys.heads_per_cylinder=disk_car->geom.heads_per_cylinder;
+    data->geo_phys.sectors_per_head=disk_car->geom.sectors_per_head;
     if(verbose>0)
       log_info("%s\n",disk_description(disk_car));
     if(check_enh_bios(disk,verbose))
@@ -401,7 +410,7 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
 	/* standard geometry H,S, compute C from LBA */
 	disk_car->disk_size=param_disk_enh->disk_size;
 	disk_car->disk_real_size=disk_car->disk_size;
-	disk_car->CHS.cylinder=(disk_car->disk_size/(disk_car->CHS.head+1))/disk_car->CHS.sector/disk_car->sector_size-1;
+	disk_car->geom.cylinders=(disk_car->disk_size/disk_car->geom.heads_per_cylinder)/disk_car->geom.sectors_per_head/disk_car->sector_size;
       }
       else
 	data->mode_enh=0;
@@ -418,7 +427,7 @@ const char *disk_description(disk_t *disk_car)
   char buffer_disk_size[100];
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %2x - %s - CHS %u %u %u%s",
       data->disk, size_to_unit(disk_car->disk_size,buffer_disk_size),
-      disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,
+      disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       data->bad_geometry!=0?" (Buggy BIOS)":"");
   return disk_car->description_txt;
 }
@@ -435,7 +444,7 @@ static const char *disk_description_short(disk_t *disk_car)
 static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   struct info_disk_struct*data=disk_car->data;
-  if(data->CHSR.cylinder>0 && offset+count>disk_car->disk_size)
+  if(data->geo_phys.cylinders>0 && offset+count>disk_car->disk_size)
   {
     log_error("disk_read_aux: Don't read after the end of the disk\n");
     return -1;

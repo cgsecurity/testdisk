@@ -231,6 +231,13 @@ static int cache_sync(disk_t *disk_car)
   return data->disk_car->sync(data->disk_car);
 }
 
+static void dup_geometry(CHSgeometry_t * CHS_dst, const CHSgeometry_t * CHS_source)
+{
+  CHS_dst->cylinders=CHS_source->cylinders;
+  CHS_dst->heads_per_cylinder=CHS_source->heads_per_cylinder;
+  CHS_dst->sectors_per_head=CHS_source->sectors_per_head;
+}
+
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
 {
   unsigned int i;
@@ -249,7 +256,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
     data->cache_size_min=64*512;
   else
     data->cache_size_min=0;
-  dup_CHS(&new_disk_car->CHS,&disk_car->CHS);
+  dup_geometry(&new_disk_car->geom,&disk_car->geom);
   new_disk_car->disk_size=disk_car->disk_size;
   new_disk_car->disk_real_size=disk_car->disk_real_size;
   new_disk_car->write_used=0;
@@ -272,7 +279,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
 static const char *cache_description(disk_t *disk_car)
 {
   struct cache_struct *data=(struct cache_struct *)disk_car->data;
-  dup_CHS(&data->disk_car->CHS,&disk_car->CHS);
+  dup_geometry(&data->disk_car->geom,&disk_car->geom);
   data->disk_car->disk_size=disk_car->disk_size;
   return data->disk_car->description(data->disk_car);
 }
@@ -280,7 +287,7 @@ static const char *cache_description(disk_t *disk_car)
 static const char *cache_description_short(disk_t *disk_car)
 {
   struct cache_struct *data=(struct cache_struct *)disk_car->data;
-  dup_CHS(&data->disk_car->CHS,&disk_car->CHS);
+  dup_geometry(&data->disk_car->geom,&disk_car->geom);
   data->disk_car->disk_size=disk_car->disk_size;
   return data->disk_car->description_short(data->disk_car);
 }

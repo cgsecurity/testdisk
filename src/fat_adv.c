@@ -1068,8 +1068,8 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   fat_header->sector_size[1]=disk_car->sector_size >>8;
   fat_header->fats=fats;
   fat_header->media=0xF8;
-  fat_header->secs_track=le16(disk_car->CHS.sector);
-  fat_header->heads=le16(disk_car->CHS.head+1);
+  fat_header->secs_track=le16(disk_car->geom.sectors_per_head);
+  fat_header->heads=le16(disk_car->geom.heads_per_cylinder);
   fat_header->marker=le16(0xAA55);
   if(!((fat_header->ignored[0]==0xeb&&fat_header->ignored[2]==0x90)||fat_header->ignored[0]==0xe9))
   {
@@ -1085,7 +1085,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
     memcpy(fat_header->system_id,"MSWIN4.1",8);
   /* FIXME, need to know where the extended or logical partition start */
   if(partition->status==STATUS_LOG)
-    fat_header->hidden=le32(disk_car->CHS.sector);
+    fat_header->hidden=le32(disk_car->geom.sectors_per_head);
   else
     fat_header->hidden=le32((partition->part_offset/disk_car->sector_size));
   fat_header->sectors_per_cluster=sectors_per_cluster;

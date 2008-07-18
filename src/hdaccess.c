@@ -532,23 +532,24 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
   return DEFAULT_SECTOR_SIZE;
 }
 
-static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, const int verbose)
+static void disk_get_geometry(CHSgeometry_t *geom, const int hd_h, const char *device, const int verbose)
 {
   if(verbose>1)
     log_verbose("disk_get_geometry for %s\n", device);
 #ifdef HDIO_GETGEO_BIG
-  if(CHS->sector==0)
+  if(geom->sectors_per_head==0)
   {
-    struct hd_big_geometry geometry_big;
-    if (ioctl(hd_h, HDIO_GETGEO_BIG, &geometry_big)>=0)
+    struct hd_big_geometry geometry;
+    if (ioctl(hd_h, HDIO_GETGEO_BIG, &geometry)>=0)
     { /* I can get the geometry */
       if(verbose>1)
       {
-        log_verbose("disk_get_geometry HDIO_GETGEO_BIG %s Ok (%u,%u,%u)\n",device,geometry_big.cylinders,geometry_big.heads,geometry_big.sectors);
+        log_verbose("disk_get_geometry HDIO_GETGEO_BIG %s Ok (%u,%u,%u)\n",
+	    device, geometry.cylinders, geometry.heads, geometry.sectors);
       }
-      CHS->cylinder= geometry_big.cylinders-1;
-      CHS->head=geometry_big.heads-1;
-      CHS->sector= geometry_big.sectors;
+      geom->cylinders=geometry.cylinders;
+      geom->heads_per_cylinder=geometry.heads;
+      geom->sectors_per_head=geometry.sectors;
     }
     else
     {
@@ -560,29 +561,30 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
   }
 #endif
 #ifdef HDIO_GETGEO
-  if(CHS->sector==0)
+  if(geom->sectors_per_head==0)
   {
     struct hd_geometry geometry;
     if(ioctl(hd_h, HDIO_GETGEO, &geometry)>=0)
     { /* I can get the geometry */
       if(verbose>1)
       {
-	log_verbose("disk_get_geometry HDIO_GETGEO %s Ok (%u,%u,%u)\n",device,geometry.cylinders,geometry.heads,geometry.sectors);
+	log_verbose("disk_get_geometry HDIO_GETGEO %s Ok (%u,%u,%u)\n",
+	    device, geometry.cylinders, geometry.heads, geometry.sectors);
       }
-      CHS->cylinder= geometry.cylinders-1;
-      CHS->head=geometry.heads-1;
-      CHS->sector= geometry.sectors;
+      geom->cylinders=geometry.cylinders;
+      geom->heads_per_cylinder=geometry.heads;
+      geom->sectors_per_head=geometry.sectors;
     }
   }
 #endif
 #ifdef DKIOCGGEOM
-  if(CHS->sector==0)
+  if(geom->sectors_per_head==0)
   {
     struct dk_geom dkgeom;
     if (ioctl (hd_h, DKIOCGGEOM, &dkgeom)>=0) {
-      CHS->cylinder= dkgeom.dkg_ncyl-1;
-      CHS->head=dkgeom.dkg_nhead-1;
-      CHS->sector=dkgeom.dkg_nsect;
+      geom->cylinders= dkgeom.dkg_ncyl;
+      geom->heads_per_cylinder=dkgeom.dkg_nhead;
+      geom->sectors_per_head=dkgeom.dkg_nsect;
       if(verbose>1)
       {
 	log_verbose("disk_get_geometry DKIOCGGEOM %s Ok\n",device);
@@ -591,7 +593,7 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
   }
 #endif
 #ifdef DIOCGDINFO
-  if(CHS->sector==0)
+  if(geom->sectors_per_head==0)
   {
     struct disklabel geometry;
     if (ioctl(hd_h, DIOCGDINFO, &geometry)==0)
@@ -600,9 +602,9 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
       {
 	log_verbose("disk_get_geometry DIOCGDINFO %s Ok\n",device);
       }
-      CHS->cylinder=geometry.d_ncylinders-1;
-      CHS->head=geometry.d_ntracks-1;
-      CHS->sector=geometry.d_nsectors;
+      geom->cylinders=geometry.d_ncylinders;
+      geom->heads_per_cylinder=geometry.d_ntracks;
+      geom->sectors_per_head=geometry.d_nsectors;
     }
     else
     {
@@ -614,7 +616,7 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
   }
 #endif
 #ifdef DIOCGFWSECTORS
-  if(CHS->sector==0)
+  if(geom->sectors_per_head==0)
   {
     int error;
     unsigned int u;
@@ -635,9 +637,9 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
 	{
 	  log_verbose("disk_get_geometry DIOCGFWHEADS %s Ok\n",device);
 	}
-	CHS->cylinder=0;
-	CHS->head=heads-1;
-	CHS->sector=sectors;
+	geom->cylinders=0;
+	geom->heads_per_cylinder=heads;
+	geom->sectors_per_head=sectors;
       }
     }
   }
@@ -650,14 +652,14 @@ static void disk_get_geometry(CHS_t *CHS, const int hd_h, const char *device, co
 #else
     handle=(HANDLE)_get_osfhandle(hd_h);
 #endif
-    return disk_get_geometry_win32(CHS, handle, device, verbose);
+    return disk_get_geometry_win32(geom, handle, device, verbose);
   }
 #endif
-  if(CHS->sector!=0)
+  if(geom->sectors_per_head>0 && geom->heads_per_cylinder>0)
     return ;
-  CHS->cylinder=0;
-  CHS->head=0;
-  CHS->sector=1;
+  geom->cylinders=0;
+  geom->heads_per_cylinder=1;
+  geom->sectors_per_head=1;
   if(verbose>1)
   {
     log_error("disk_get_geometry default geometry for %s\n", device);
@@ -747,28 +749,27 @@ void update_disk_car_fields(disk_t *disk_car)
 {
   if(disk_car->disk_real_size==0)
   {
-    if(disk_car->CHS.cylinder>0)
+    if(disk_car->geom.cylinders>0)
     {
       log_warning("Fix disk size using CHS\n");
-      disk_car->disk_real_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder *
+	disk_car->geom.sectors_per_head * disk_car->sector_size;
     }
   }
   else
   {
-    unsigned int cylinder_num;
-    cylinder_num=disk_car->disk_real_size / ((uint64_t)disk_car->CHS.head+1) / (uint64_t)disk_car->CHS.sector/(uint64_t)disk_car->sector_size;
-    if(cylinder_num>0 && disk_car->CHS.cylinder+1!= cylinder_num)
+    const unsigned int cylinder_num=disk_car->disk_real_size /
+      (uint64_t)disk_car->geom.heads_per_cylinder /
+      (uint64_t)disk_car->geom.sectors_per_head /
+      (uint64_t)disk_car->sector_size;
+    if(cylinder_num>0 && disk_car->geom.cylinders != cylinder_num)
     {
       log_debug("Fix cylinder count for %s: number of cylinders %u !=  %u (calculated)\n",
-	  disk_car->device, disk_car->CHS.cylinder+1, cylinder_num);
-      disk_car->CHS.cylinder= cylinder_num-1;
+	  disk_car->device, disk_car->geom.cylinders, cylinder_num);
+      disk_car->geom.cylinders = cylinder_num;
     }
   }
   disk_car->disk_size=disk_car->disk_real_size;
-  /*
-  disk_car->disk_size=td_max(disk_car->disk_real_size,
-      (uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size);
-  */
 }
 
 #ifdef TARGET_LINUX
@@ -1023,7 +1024,7 @@ static const char *file_description(disk_t *disk_car)
   char buffer_disk_size[100];
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
       disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
-      disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,
+      disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk_car->description_txt;
 }
@@ -1200,29 +1201,27 @@ static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, con
 {
   if(disk_car->arch->get_geometry_from_mbr!=NULL)
   {
-    CHS_t geometry;
-    geometry.cylinder=0;
-    geometry.head=0;
-    geometry.sector=0;
+    CHSgeometry_t geometry;
+    geometry.cylinders=0;
+    geometry.heads_per_cylinder=0;
+    geometry.sectors_per_head=0;
     disk_car->arch->get_geometry_from_mbr(buffer, verbose, &geometry);
     disk_car->autodetect=1;
-    if(geometry.sector>0)
+    if(geometry.sectors_per_head > 0)
     {
-      disk_car->CHS.head=geometry.head;
-      disk_car->CHS.sector=geometry.sector;
+      disk_car->geom.heads_per_cylinder=geometry.heads_per_cylinder;
+      disk_car->geom.sectors_per_head=geometry.sectors_per_head;
     }
     else
     {
-      disk_car->CHS.head=255-1;
-      disk_car->CHS.sector=63;
+      disk_car->geom.heads_per_cylinder=255;
+      disk_car->geom.sectors_per_head=63;
     }
   }
   /* Round up because file is often truncated. */
-  disk_car->CHS.cylinder=(disk_car->disk_size / disk_car->sector_size +
-      (uint64_t)disk_car->CHS.sector*(disk_car->CHS.head+1) - 1) /
-    disk_car->CHS.sector / (disk_car->CHS.head+1);
-  if(disk_car->CHS.cylinder > 0)
-    disk_car->CHS.cylinder--;
+  disk_car->geom.cylinders=(disk_car->disk_size / disk_car->sector_size +
+      (uint64_t)disk_car->geom.sectors_per_head * disk_car->geom.heads_per_cylinder - 1) /
+    disk_car->geom.sectors_per_head / disk_car->geom.heads_per_cylinder;
 }
 
 disk_t *file_test_availability(const char *device, const int verbose, const arch_fnct_t *arch, int testdisk_mode)
@@ -1376,7 +1375,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     if(verbose>1)
       log_info("file_test_availability %s is a device\n", device);
     disk_car->sector_size=disk_get_sector_size(hd_h, device, verbose);
-    disk_get_geometry(&disk_car->CHS, hd_h, device, verbose);
+    disk_get_geometry(&disk_car->geom, hd_h, device, verbose);
     disk_car->disk_real_size=disk_get_size(hd_h, device, verbose, disk_car->sector_size);
 #ifdef BLKFLSBUF
     /* Little trick from Linux fdisk */
@@ -1405,10 +1404,10 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     if(memcmp(buffer,"DOSEMU",6)==0 && *(unsigned long*)(buffer+11)>0)
     {
       log_info("%s DOSEMU\n",device);
-      disk_car->CHS.cylinder=*(unsigned long*)(buffer+15)-1;
-      disk_car->CHS.head=*(unsigned long*)(buffer+7)-1;
-      disk_car->CHS.sector=*(unsigned long*)(buffer+11);
-      disk_car->disk_real_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->geom.cylinders=*(unsigned long*)(buffer+15);
+      disk_car->geom.heads_per_cylinder=*(unsigned long*)(buffer+7);
+      disk_car->geom.sectors_per_head=*(unsigned long*)(buffer+11);
+      disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
       disk_car->offset=*(unsigned long*)(buffer+19);
     }
     else if(memcmp(buffer, evf_file_signature, 8)==0)
@@ -1427,9 +1426,9 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     }
     else
     {
-      disk_car->CHS.cylinder=0;
-      disk_car->CHS.head=255-1;
-      disk_car->CHS.sector=63;
+      disk_car->geom.cylinders=0;
+      disk_car->geom.heads_per_cylinder=255;
+      disk_car->geom.sectors_per_head=63;
       if((uint64_t)stat_rec.st_size > disk_car->offset)
       {
 	disk_car->disk_real_size=((uint64_t)stat_rec.st_size-disk_car->offset+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
@@ -1465,8 +1464,6 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder, const int verbose)
 {
   unsigned char *buffer;
-  uint64_t pos;
-  CHS_t pos_CHS;
   buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(disk_car->autodetect!=0)
   {
@@ -1479,28 +1476,35 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
       autoset_geometry(disk_car,buffer,1);
     }
   }
-  dup_CHS(&pos_CHS,&disk_car->CHS);
-  pos_CHS.cylinder++;
-  if(allow_partial_last_cylinder) {
-    pos_CHS.head=0;
-    pos_CHS.sector=1;
-  }
-  pos=CHS2offset(disk_car,&pos_CHS);
-#ifdef DJGPP
-  if(disk_car->description==disk_description)
+  if((unsigned int)(disk_car->geom.cylinders+1)!=0)	/* Avoid to wrap */
   {
-    struct info_disk_struct*data=disk_car->data;
-    data->CHSR.cylinder=0;
-  }
-#endif
-  if((unsigned int)(disk_car->CHS.cylinder+1)!=0)	/* Avoid to wrap */
-  {
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, pos)==0)
+    uint64_t pos;
+    CHS_t pos_CHS;
+    pos_CHS.cylinder=disk_car->geom.cylinders-1+1;
+    if(allow_partial_last_cylinder)
     {
-      disk_car->CHS.cylinder++;
-      if(disk_car->disk_size < (uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size)
+      pos_CHS.head=0;
+      pos_CHS.sector=1;
+    }
+    else
+    {
+      pos_CHS.head=disk_car->geom.heads_per_cylinder-1;
+      pos_CHS.sector=disk_car->geom.sectors_per_head;
+    }
+    pos=CHS2offset(disk_car,&pos_CHS);
+#ifdef DJGPP
+    if(disk_car->description==disk_description)
+    {
+      struct info_disk_struct*data=disk_car->data;
+      data->geo_phys.cylinders=0;
+    }
+#endif
+    if(disk_car->read(disk_car,disk_car->sector_size, buffer, pos)>=0)
+    {
+      disk_car->geom.cylinders++;
+      if(disk_car->disk_size < (uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size)
       {
-	disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+	disk_car->disk_size = (uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
 	log_info("Computes LBA from CHS for %s\n",disk_car->description(disk_car));
       }
     }
@@ -1509,7 +1513,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
   if(disk_car->description==disk_description)
   {
     struct info_disk_struct*data=disk_car->data;
-    data->CHSR.cylinder=disk_car->CHS.cylinder;
+    data->geo_phys.cylinders=disk_car->geom.cylinders;
   }
 #endif
   free(buffer);
@@ -1532,7 +1536,7 @@ void autoset_unit(disk_t *disk_car)
     return ;
   if(disk_car->arch==&arch_mac || 
       disk_car->arch==&arch_gpt || 
-      (disk_car->CHS.head==0 && disk_car->CHS.sector==1))
+      (disk_car->geom.heads_per_cylinder==1 && disk_car->geom.sectors_per_head==1))
     disk_car->unit=UNIT_SECTOR;
   else
     disk_car->unit=UNIT_CHS;

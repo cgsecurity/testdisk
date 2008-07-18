@@ -230,6 +230,13 @@ typedef enum errcode_type errcode_type_t;
 typedef struct param_disk_struct disk_t;
 typedef struct partition_struct partition_t;
 typedef struct CHS_struct CHS_t;
+typedef struct
+{
+  unsigned int cylinders;
+  unsigned int heads_per_cylinder;
+  unsigned int sectors_per_head;
+//  unsigned int bytes_per_sector;
+} CHSgeometry_t;
 
 struct CHS_struct
 {
@@ -269,7 +276,7 @@ struct arch_fnct_struct
   int (*write_part)(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align);
   list_part_t *(*init_part_order)(const disk_t *disk_car, list_part_t *list_part);
   /* geometry must be initialized to 0,0,0 in get_geometry_from_mbr()*/
-  int (*get_geometry_from_mbr)(const unsigned char *buffer, const int verbose, CHS_t *geometry);
+  int (*get_geometry_from_mbr)(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
   int (*check_part)(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader);
   int (*write_MBR_code)(disk_t *disk_car);
   list_part_t *(*add_partition)(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
@@ -289,7 +296,7 @@ typedef struct arch_fnct_struct arch_fnct_t;
 struct param_disk_struct
 {
   uint64_t disk_size;
-  CHS_t CHS;	/* logical CHS */
+  CHSgeometry_t	geom;	/* logical CHS */
   int write_used;
   int autodetect;
   int access_mode;

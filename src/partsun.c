@@ -59,7 +59,7 @@
 #include "log.h"
 
 static int check_part_sun(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
-static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHS_t *geometry);
+static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader);
 static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
 static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *list_part);
@@ -120,19 +120,20 @@ static unsigned int get_part_type_sun(const partition_t *partition)
   return partition->part_type_sun;
 }
 
-int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHS_t *geometry)
+int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   const sun_partition *sunlabel=(const sun_partition*)buffer;
   if(verbose>1)
   {
     log_trace("get_geometry_from_sunmbr\n");
   }
-  geometry->cylinder=0;
-  geometry->head=be16(sunlabel->ntrks)-1;
-  geometry->sector=be16(sunlabel->nsect);
-  if(geometry->sector>0)
+  geometry->cylinders=0;
+  geometry->heads_per_cylinder=be16(sunlabel->ntrks);
+  geometry->sectors_per_head=be16(sunlabel->nsect);
+  if(geometry->sectors_per_head>0)
   {
-    log_info("Geometry from SUN MBR: head=%u sector=%u\n",geometry->head+1,geometry->sector);
+    log_info("Geometry from SUN MBR: head=%u sector=%u\n",
+	geometry->heads_per_cylinder, geometry->sectors_per_head);
   }
   return 0;
 }
@@ -230,9 +231,9 @@ static list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_par
   start.cylinder=0;
   start.head=0;
   start.sector=1;
-  end.cylinder=disk_car->CHS.cylinder;
-  end.head=disk_car->CHS.head;
-  end.sector=disk_car->CHS.sector;
+  end.cylinder=disk_car->geom.cylinders-1;
+  end.head=disk_car->geom.heads_per_cylinder-1;
+  end.sector=disk_car->geom.sectors_per_head;
   while(*current_cmd[0]==',')
     (*current_cmd)++;
   while(1)
@@ -240,12 +241,12 @@ static list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_par
     if(strncmp(*current_cmd,"c,",2)==0)
     {
       (*current_cmd)+=2;
-      start.cylinder=ask_number_cli(current_cmd, start.cylinder,0,disk_car->CHS.cylinder,"Enter the starting cylinder ");
+      start.cylinder=ask_number_cli(current_cmd, start.cylinder,0,disk_car->geom.cylinders-1,"Enter the starting cylinder ");
     }
     else if(strncmp(*current_cmd,"C,",2)==0)
     {
       (*current_cmd)+=2;
-      end.cylinder=ask_number_cli(current_cmd, end.cylinder,start.cylinder,disk_car->CHS.cylinder,"Enter the ending cylinder ");
+      end.cylinder=ask_number_cli(current_cmd, end.cylinder,start.cylinder,disk_car->geom.cylinders-1,"Enter the ending cylinder ");
     }
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
@@ -284,9 +285,9 @@ static list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list
   start.cylinder=0;
   start.head=0;
   start.sector=1;
-  end.cylinder=disk_car->CHS.cylinder;
-  end.head=disk_car->CHS.head;
-  end.sector=disk_car->CHS.sector;
+  end.cylinder=disk_car->geom.cylinders-1;
+  end.head=disk_car->geom.heads_per_cylinder-1;
+  end.sector=disk_car->geom.sectors_per_head;
   {
     int done = FALSE;
     while (done==FALSE) {
@@ -314,12 +315,12 @@ static list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list
       switch (command) {
 	case 'c':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.cylinder=ask_number(start.cylinder,0,disk_car->CHS.cylinder,"Enter the starting cylinder ");
+	  start.cylinder=ask_number(start.cylinder,0,disk_car->geom.cylinders-1,"Enter the starting cylinder ");
 	  position=1;
 	  break;
 	case 'C':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.cylinder=ask_number(end.cylinder,start.cylinder,disk_car->CHS.cylinder,"Enter the ending cylinder ");
+	  end.cylinder=ask_number(end.cylinder,start.cylinder,disk_car->geom.cylinders-1,"Enter the ending cylinder ");
 	  position=2;
 	  break;
 	case 'T':

@@ -76,14 +76,15 @@ static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offse
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
 {
   uint64_t pos=offset/disk_car->sector_size;
-  CHS->sector=(pos%disk_car->CHS.sector)+1;
-  pos/=disk_car->CHS.sector;
-  CHS->head=pos%(disk_car->CHS.head+1);
-  CHS->cylinder=pos/(disk_car->CHS.head+1);
+  CHS->sector=(pos%disk_car->geom.sectors_per_head)+1;
+  pos/=disk_car->geom.sectors_per_head;
+  CHS->head=pos%disk_car->geom.heads_per_cylinder;
+  CHS->cylinder=pos/disk_car->geom.heads_per_cylinder;
 }
 
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS)
-{ return (((uint64_t)CHS->cylinder*(disk_car->CHS.head+1)+CHS->head)*disk_car->CHS.sector+CHS->sector-1)*disk_car->sector_size;
+{
+  return (((uint64_t)CHS->cylinder*disk_car->geom.heads_per_cylinder+CHS->head)*disk_car->geom.sectors_per_head+CHS->sector-1)*disk_car->sector_size;
 }
 /* Optimization end */
 
@@ -304,7 +305,8 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
   wmove(stdscr,4,0);
   wprintw(stdscr,"%s",disk_car->description(disk_car));
   wmove(stdscr,6,0);
-  wprintw(stdscr,"Warning: the current number of heads per cylinder is %u",disk_car->CHS.head+1);
+  wprintw(stdscr, "Warning: the current number of heads per cylinder is %u",
+      disk_car->geom.heads_per_cylinder);
   wmove(stdscr,7,0);
   wprintw(stdscr,"but the correct value may be %u.",recommanded_heads_per_cylinder);
   wmove(stdscr,8,0);
@@ -387,10 +389,10 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   partition_t *partition;
   /* It's not a problem to read a little bit more than necessary */
   const uint64_t search_location_max=td_max(disk_car->disk_size +
-      (disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size,
+      disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size,
       disk_car->disk_real_size);
   const uint64_t max_disk_size_for_partition=td_max(disk_car->disk_size,
-      (uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size);
+      (uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size);
   partition=partition_new(disk_car->arch);
   buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
   {
@@ -431,18 +433,18 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     /* 1/[01]/1 CHS x  16 63 */
     try_offset_nbr=tab_insert(try_offset, 16 * 63 * disk_car->sector_size, try_offset_nbr);
     try_offset_nbr=tab_insert(try_offset, 17 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 16 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 17 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 16 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 17 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
     /* 1/[01]/1 CHS x 240 63 */
     try_offset_nbr=tab_insert(try_offset, 240 * 63 * disk_car->sector_size, try_offset_nbr);
     try_offset_nbr=tab_insert(try_offset, 241 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 240 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 241 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 240 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 241 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
     /* 1/[01]/1 CHS x 255 63 */
     try_offset_nbr=tab_insert(try_offset, 255 * 63 * disk_car->sector_size, try_offset_nbr);
     try_offset_nbr=tab_insert(try_offset, 256 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 255 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 256 * disk_car->CHS.sector * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 255 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 256 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
   }
   else if(disk_car->arch==&arch_mac)
   {
@@ -453,8 +455,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   }
   else if(disk_car->arch==&arch_sun)
   {
-    min_location=(disk_car->CHS.head+1) * disk_car->CHS.sector * disk_car->sector_size;
-    location_boundary=(disk_car->CHS.head+1) * disk_car->CHS.sector * disk_car->sector_size;
+    min_location=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
+    location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
   }
   else if(disk_car->arch==&arch_xbox)
   {
@@ -476,12 +478,14 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     static CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
-    if(old_cylinder!=start.cylinder && interface!=0 && (disk_car->CHS.head!=0 || (start.cylinder & 0xFFF)==0))
+    if(old_cylinder!=start.cylinder && interface!=0 && (disk_car->geom.heads_per_cylinder>0 || (start.cylinder & 0xFFF)==0))
     {
       old_cylinder=start.cylinder;
       wmove(stdscr,ANALYSE_Y,ANALYSE_X);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",start.cylinder,disk_car->CHS.cylinder,(unsigned int)((uint64_t)start.cylinder*100/(disk_car->CHS.cylinder+1)));
+      wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",
+	  start.cylinder, disk_car->geom.cylinders-1,
+	  (unsigned int)((uint64_t)start.cylinder*100/disk_car->geom.cylinders));
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
     }
@@ -569,7 +573,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==3)
         {
           if((disk_car->arch==&arch_i386 &&
-                ((start.sector==disk_car->CHS.sector && (start.head==disk_car->CHS.head || fast_mode>1)) ||
+                ((start.sector==disk_car->geom.sectors_per_head &&
+		  (start.head==disk_car->geom.heads_per_cylinder-1 || fast_mode>1)) ||
                  (search_vista_part>0 && search_location%(2048*512)==(2048-1)*512))) ||
               (disk_car->arch!=&arch_i386 && search_location%location_boundary==(location_boundary-512) &&
                search_location>0))
@@ -579,7 +584,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==4)
         {
           if((disk_car->arch==&arch_i386 &&
-                ((start.sector==disk_car->CHS.sector && (start.head==disk_car->CHS.head || fast_mode>1)) ||
+                ((start.sector==disk_car->geom.sectors_per_head &&
+		  (start.head==disk_car->geom.heads_per_cylinder-1 || fast_mode>1)) ||
                  (search_vista_part>0 && search_location%(2048*512)==(2048-1)*512))) ||
               (disk_car->arch!=&arch_i386 && search_location%location_boundary==(location_boundary-512) &&
                search_location>0))
@@ -704,9 +710,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               offset2CHS_inline(disk_car,partition->part_offset+partition->part_size-1,&end);
               if(align>0)
               {
-                end.sector=disk_car->CHS.sector;
+                end.sector=disk_car->geom.sectors_per_head;
                 if(align>1)
-                  end.head=disk_car->CHS.head;
+                  end.head=disk_car->geom.heads_per_cylinder-1;
               }
               help_factor_max=((uint64_t)CHS2offset_inline(disk_car, &end)-partition->part_offset+disk_car->sector_size-partition->part_size)/MD_RESERVED_BYTES;
               if(help_factor_max<3)
@@ -736,7 +742,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               }
               {
                 uint64_t next_part_offset=partition->part_offset+partition->part_size-1+1;
-                uint64_t head_size=disk_car->CHS.sector*disk_car->sector_size;
+                uint64_t head_size=disk_car->geom.sectors_per_head * disk_car->sector_size;
                 try_offset_nbr=tab_insert(try_offset,next_part_offset,try_offset_nbr);
                 try_offset_nbr=tab_insert(try_offset,next_part_offset+head_size,try_offset_nbr);
                 if(next_part_offset%head_size!=0)
@@ -1062,7 +1068,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
 	offset2CHS_inline(disk_car,deb->prev->part->part_offset+deb->prev->part->part_size-1+1,&start);
 	start.sector=1;
 	start.head++;
-	if(start.head>=disk_car->CHS.head)
+	if(start.head >= disk_car->geom.heads_per_cylinder)
 	{
 	  start.cylinder++;
 	  start.head=0;
@@ -1075,25 +1081,25 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
     }
     if(fin->next==NULL)
     {
-      end.cylinder=disk_car->CHS.cylinder;
-      end.head=disk_car->CHS.head;
-      end.sector=disk_car->CHS.sector;
+      end.cylinder=disk_car->geom.cylinders-1;
+      end.head=disk_car->geom.heads_per_cylinder-1;
+      end.sector=disk_car->geom.sectors_per_head;
     }
     else
     {
       end.cylinder=offset2cylinder(disk_car,fin->next->part->part_offset)-1; /* 8 october 2002 */
-      end.head=disk_car->CHS.head;
-      end.sector=disk_car->CHS.sector;
+      end.head=disk_car->geom.heads_per_cylinder-1;
+      end.sector=disk_car->geom.sectors_per_head;
       if(CHS2offset_inline(disk_car,&end)<=fin->part->part_offset+fin->part->part_size-1)
       {
 	offset2CHS_inline(disk_car,fin->next->part->part_offset-1,&end);
-	end.sector=disk_car->CHS.sector;
+	end.sector=disk_car->geom.sectors_per_head;
 	if(end.head>0)
 	  end.head--;
 	else
 	{
 	  end.cylinder--;
-	  end.head=disk_car->CHS.head;
+	  end.head=disk_car->geom.heads_per_cylinder-1;
 	}
 	if(CHS2offset_inline(disk_car,&end)<=fin->part->part_offset+fin->part->part_size-1)
 	{
@@ -1120,12 +1126,12 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
       }
     }
     offset2CHS_inline(disk_car,fin->part->part_offset+fin->part->part_size-1,&end);
-    end.head=disk_car->CHS.head;
-    end.sector=disk_car->CHS.sector;
+    end.head=disk_car->geom.heads_per_cylinder-1;
+    end.sector=disk_car->geom.sectors_per_head;
     if(fin->next && CHS2offset_inline(disk_car,&end)>=fin->next->part->part_offset)
     {
       offset2CHS_inline(disk_car,fin->part->part_offset+fin->part->part_size-1,&end);
-      end.sector=disk_car->CHS.sector;
+      end.sector=disk_car->geom.sectors_per_head;
     }
     if(fin->next && CHS2offset_inline(disk_car,&end)>=fin->next->part->part_offset)
     {
@@ -1199,16 +1205,16 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, 1, search_vista_part, current_cmd);
     if(list_part!=NULL && (disk_car->arch==&arch_i386 || disk_car->arch==&arch_sun))
     { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
-      unsigned int head_max;
-      head_max=get_geometry_from_list_part(disk_car, list_part, verbose);
-      if(disk_car->CHS.head!=head_max)
+      unsigned int heads_per_cylinder;
+      heads_per_cylinder=get_geometry_from_list_part(disk_car, list_part, verbose);
+      if(disk_car->geom.heads_per_cylinder!=heads_per_cylinder)
       {
 	log_warning("Warning: the current number of heads per cylinder is %u but the correct value may be %u.\n",
-	    disk_car->CHS.head+1, head_max+1);
+	    disk_car->geom.heads_per_cylinder, heads_per_cylinder);
 #ifdef HAVE_NCURSES
 	if(*current_cmd==NULL)
 	{
-	  warning_geometry_ncurses(disk_car, head_max+1);
+	  warning_geometry_ncurses(disk_car, heads_per_cylinder);
 	}
 #endif
       }
@@ -1235,9 +1241,9 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	  if(align==0)
 	    location_boundary=disk_car->sector_size;
 	  else if(align==1)
-	    location_boundary=disk_car->CHS.sector * disk_car->sector_size;
+	    location_boundary=disk_car->geom.sectors_per_head * disk_car->sector_size;
 	  else
-	    location_boundary=(disk_car->CHS.head+1) * disk_car->CHS.sector * disk_car->sector_size;
+	    location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
 	}
       }
       else if(disk_car->arch==&arch_mac)
@@ -1246,7 +1252,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
       }
       else if(disk_car->arch==&arch_sun)
       {
-	location_boundary=(disk_car->CHS.head+1) * disk_car->CHS.sector * disk_car->sector_size;
+	location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
       }
       else
       {	/* arch_none, arch_xbox, arch_gpt */

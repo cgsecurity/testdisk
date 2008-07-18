@@ -1061,12 +1061,12 @@ void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA)
 {
   unsigned long int tmp;
   unsigned long int cylinder, head, sector;
-  tmp=disk_car->CHS.sector;
+  tmp=disk_car->geom.sectors_per_head;
   sector=(pos_LBA%tmp)+1;
   tmp=pos_LBA/tmp;
-  cylinder=tmp/(disk_car->CHS.head+1);
-  head=tmp%(disk_car->CHS.head+1);
-  wprintw(stdscr,"%lu/%lu/%lu", cylinder,head,sector);
+  cylinder=tmp / disk_car->geom.heads_per_cylinder;
+  head=tmp % disk_car->geom.heads_per_cylinder;
+  wprintw(stdscr, "%lu/%lu/%lu", cylinder, head, sector);
 }
 
 int ask_YN(WINDOW *window)
@@ -1963,12 +1963,12 @@ void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA)
 {
   unsigned long int tmp;
   unsigned long int cylinder, head, sector;
-  tmp=disk_car->CHS.sector;
+  tmp=disk_car->geom.sectors_per_head;
   sector=(pos_LBA%tmp)+1;
   tmp=pos_LBA/tmp;
-  cylinder=tmp/(disk_car->CHS.head+1);
-  head=tmp%(disk_car->CHS.head+1);
-  log_info("%lu/%lu/%lu", cylinder,head,sector);
+  cylinder=tmp / disk_car->geom.heads_per_cylinder;
+  head=tmp % disk_car->geom.heads_per_cylinder;
+  log_info("%lu/%lu/%lu", cylinder, head, sector);
 }
 
 int display_message(const char*msg)

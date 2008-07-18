@@ -296,8 +296,8 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
   ntfs_header->sectors[1]=0;
   ntfs_header->media=0xF8;
   ntfs_header->fat_length=le16(0);
-  ntfs_header->secs_track=le16(disk_car->CHS.sector);
-  ntfs_header->heads=le16(disk_car->CHS.head+1);
+  ntfs_header->secs_track=le16(disk_car->geom.sectors_per_head);
+  ntfs_header->heads=le16(disk_car->geom.heads_per_cylinder);
   /* absolute sector address from the beginning of the disk (!= FAT) */
   ntfs_header->hidden=le32(partition->part_offset/disk_car->sector_size);
   ntfs_header->total_sect=le32(0);

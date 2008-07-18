@@ -141,9 +141,9 @@ uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbos
   return filewin32_setfilepointer(handle, device);
 }
 
-void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, const int verbose)
+void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *device, const int verbose)
 {
-  if(CHS->sector!=0)
+  if(geom->sectors_per_head!=0)
     return;
   {
     DWORD gotbytes;
@@ -151,10 +151,10 @@ void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, cons
     if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
 	  &geometry_ex, sizeof(geometry_ex), &gotbytes, NULL))
     {
-      CHS->cylinder= geometry_ex.Geometry.Cylinders.QuadPart-1;
-      CHS->head=geometry_ex.Geometry.TracksPerCylinder-1;
-      CHS->sector= geometry_ex.Geometry.SectorsPerTrack;
-      if(CHS->sector!=0)
+      geom->cylinders= geometry_ex.Geometry.Cylinders.QuadPart;
+      geom->heads_per_cylinder=geometry_ex.Geometry.TracksPerCylinder;
+      geom->sectors_per_head= geometry_ex.Geometry.SectorsPerTrack;
+      if(geom->sectors_per_head!=0)
 	return ;
     }
   }
@@ -164,16 +164,16 @@ void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, cons
     if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
 	  &geometry, sizeof(geometry), &gotbytes, NULL))
     {
-      CHS->cylinder= geometry.Cylinders.QuadPart-1;
-      CHS->head=geometry.TracksPerCylinder-1;
-      CHS->sector= geometry.SectorsPerTrack;
-      if(CHS->sector!=0)
+      geom->cylinders= geometry.Cylinders.QuadPart;
+      geom->heads_per_cylinder=geometry.TracksPerCylinder;
+      geom->sectors_per_head= geometry.SectorsPerTrack;
+      if(geom->sectors_per_head!=0)
 	return ;
     }
   }
-  CHS->cylinder=0;
-  CHS->head=0;
-  CHS->sector=1;
+  geom->cylinders=0;
+  geom->heads_per_cylinder=1;
+  geom->sectors_per_head=1;
 }
 // Try to handle cdrom
 
@@ -322,7 +322,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=file_win32_clean;
     disk_car->sector_size=disk_get_sector_size_win32(handle, device, verbose);
-    disk_get_geometry_win32(&disk_car->CHS, handle, device, verbose);
+    disk_get_geometry_win32(&disk_car->geom, handle, device, verbose);
     disk_car->disk_real_size=disk_get_size_win32(handle, device, verbose);
     file_win32_disk_get_model(handle, disk_car, verbose);
     update_disk_car_fields(disk_car);
@@ -345,12 +345,12 @@ static const char *file_win32_description(disk_t *disk_car)
   if(disk_car->device[0]=='\\' && disk_car->device[1]=='\\' && disk_car->device[2]=='.' && disk_car->device[3]=='\\' && disk_car->device[5]==':')
     snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Drive %c: - %s - CHS %u %u %u%s",
 	disk_car->device[4], size_to_unit(disk_car->disk_size,buffer_disk_size),
-	disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,
+	disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
 	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
   else
     snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
 	disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
-	disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,
+	disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
 	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
   return disk_car->description_txt;
 }

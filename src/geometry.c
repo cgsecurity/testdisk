@@ -42,6 +42,13 @@
 #include "log.h"
 #include "hdaccess.h"
 
+static inline void set_cylinders_from_size_up(disk_t *disk_car)
+{
+  disk_car->geom.cylinders=(disk_car->disk_size / disk_car->sector_size +
+      (uint64_t)disk_car->geom.sectors_per_head * disk_car->geom.heads_per_cylinder - 1) /
+    ((uint64_t)disk_car->geom.sectors_per_head * disk_car->geom.heads_per_cylinder);
+}
+
 static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 {
   int done = 0;
@@ -61,7 +68,7 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	(*current_cmd)++;
       if (tmp_val > 0)
       {
-	disk_car->CHS.cylinder = tmp_val-1;
+	disk_car->geom.cylinders = tmp_val;
 	cyl_modified=1;
 	geo_modified=1;
       }
@@ -76,12 +83,10 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	(*current_cmd)++;
       if (tmp_val > 0 && tmp_val <= MAX_HEADS)
       {
-	disk_car->CHS.head = tmp_val-1;
+	disk_car->geom.heads_per_cylinder = tmp_val;
 	geo_modified=1;
 	if(cyl_modified==0)
-	{	/* Round up */
-	  disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-	}
+	  set_cylinders_from_size_up(disk_car);
       }
       else
 	log_error("Illegal heads value\n");
@@ -94,12 +99,10 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	(*current_cmd)++;
       /* SUN partition can have more than 63 sectors */
       if (tmp_val > 0) {
-	disk_car->CHS.sector = tmp_val;
+	disk_car->geom.sectors_per_head = tmp_val;
 	geo_modified=1;
 	if(cyl_modified==0)
-	{	/* Round up */
-	  disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-	}
+	  set_cylinders_from_size_up(disk_car);
       } else
 	log_error("Illegal sectors value\n");
     }
@@ -115,9 +118,7 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       {
 	disk_car->sector_size = tmp_val;
 	if(cyl_modified==0)
-	{	/* Round up */
-	  disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-	}
+	  set_cylinders_from_size_up(disk_car);
       }
       else
 	log_error("Illegal sector size\n");
@@ -127,11 +128,11 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       done = 1;
     }
     if(cyl_modified!=0)
-      disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   }
   if(geo_modified!=0)
   {
-    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+    disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
 #ifdef __APPLE__
     /* On MacOSX if HD contains some bad sectors, the disk size may not be correctly detected */
     disk_car->disk_real_size=disk_car->disk_size;
@@ -185,12 +186,12 @@ static void change_geometry_ncurses(disk_t *disk_car)
       case 'c':
       case 'C':
         {
-          sprintf(def, "%u", disk_car->CHS.cylinder+1);
+          sprintf(def, "%u", disk_car->geom.cylinders);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
           if (get_string(response, LINE_LENGTH, def) > 0) {
             tmp_val = atoi(response);
             if (tmp_val > 0) {
-              disk_car->CHS.cylinder = tmp_val-1;
+              disk_car->geom.cylinders = tmp_val;
               cyl_modified=1;
               geo_modified=1;
             } else
@@ -202,17 +203,15 @@ static void change_geometry_ncurses(disk_t *disk_car)
       case 'h':
       case 'H':
         {
-          sprintf(def, "%u", disk_car->CHS.head+1);
+          sprintf(def, "%u", disk_car->geom.heads_per_cylinder);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
           if (get_string(response, LINE_LENGTH, def) > 0) {
             tmp_val = atoi(response);
             if (tmp_val > 0 && tmp_val <= MAX_HEADS) {
-              disk_car->CHS.head = tmp_val-1;
+              disk_car->geom.heads_per_cylinder = tmp_val;
               geo_modified=1;
               if(cyl_modified==0)
-              {	/* Round up */
-                disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-              }
+		set_cylinders_from_size_up(disk_car);
             } else
               wprintw(stdscr,"Illegal heads value");
           }
@@ -222,7 +221,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
       case 's':
       case 'S':
         {
-          sprintf(def, "%u", disk_car->CHS.sector);
+          sprintf(def, "%u", disk_car->geom.sectors_per_head);
           /* FIXME SUN partition can have more than 63 sectors */
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track (1-63): ");
           if (get_string(response, LINE_LENGTH, def) > 0)
@@ -230,12 +229,10 @@ static void change_geometry_ncurses(disk_t *disk_car)
             tmp_val = atoi(response);
             /* TODO Check for the maximum value */
             if (tmp_val > 0) {
-              disk_car->CHS.sector = tmp_val;
+              disk_car->geom.sectors_per_head = tmp_val;
               geo_modified=1;
               if(cyl_modified==0)
-	      {	/* Round up */
-		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-	      }
+		set_cylinders_from_size_up(disk_car);
             } else
               wprintw(stdscr,"Illegal sectors value");
           }
@@ -255,9 +252,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
             if (tmp_val==256 || tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512) {
               disk_car->sector_size = tmp_val;
               if(cyl_modified==0)
-	      {	/* Round up */
-		disk_car->CHS.cylinder=(((disk_car->disk_size/disk_car->sector_size+disk_car->CHS.head)/(disk_car->CHS.head+1))+disk_car->CHS.sector-1)/disk_car->CHS.sector-1;
-	      }
+		set_cylinders_from_size_up(disk_car);
             } else
               wprintw(stdscr,"Illegal sector size");
           }
@@ -271,11 +266,11 @@ static void change_geometry_ncurses(disk_t *disk_car)
         break;
     }
     if(cyl_modified!=0)
-      disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+      disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   }
   if(geo_modified!=0)
   {
-    disk_car->disk_size=(uint64_t)(disk_car->CHS.cylinder+1)*(disk_car->CHS.head+1)*disk_car->CHS.sector*disk_car->sector_size;
+    disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
 #ifdef __APPLE__
     /* On MacOSX if HD contains some bad sectors, the disk size may not be correctly detected */
     disk_car->disk_real_size=disk_car->disk_size;

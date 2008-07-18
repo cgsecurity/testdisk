@@ -65,7 +65,7 @@
 #include "partnone.h"
 
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
-static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHS_t *geometry);
+static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader);
 static list_part_t *init_part_order_none(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_none(const disk_t *disk_car, partition_t *partition);
@@ -145,7 +145,7 @@ unsigned int get_part_type_none(const partition_t *partition)
   return partition->upart_type;
 }
 
-int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHS_t *geometry)
+int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   {
     /* Ugly hack to get geometry from FAT and NTFS */
@@ -155,8 +155,8 @@ int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CH
       if(le16(fat_header->secs_track)>0 && le16(fat_header->secs_track)<=63 &&
           le16(fat_header->heads)>0 && le16(fat_header->heads)<=255)
       {
-        geometry->sector=le16(fat_header->secs_track);
-        geometry->head=le16(fat_header->heads)-1;
+        geometry->sectors_per_head=le16(fat_header->secs_track);
+        geometry->heads_per_cylinder=le16(fat_header->heads);
       }
     }
   }

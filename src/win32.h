@@ -25,6 +25,6 @@
 disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
 unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const int verbose);
 uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbose);
-void disk_get_geometry_win32(CHS_t *CHS, HANDLE handle, const char *device, const int verbose);
+void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *device, const int verbose);
 #endif
 #endif

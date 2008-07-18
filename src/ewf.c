@@ -149,9 +149,9 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
   if(disk_car->sector_size==0)
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
   /* Set geometry */
-  disk_car->CHS.cylinder=0;
-  disk_car->CHS.head=0;
-  disk_car->CHS.sector=1;
+  disk_car->geom.cylinders=0;
+  disk_car->geom.heads_per_cylinder=1;
+  disk_car->geom.sectors_per_head=1;
   /* Get disk_real_size */
 #ifdef LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS
   {
@@ -178,7 +178,8 @@ static const char *fewf_description(disk_t *disk_car)
   char buffer_disk_size[100];
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Image %s - %s - CHS %u %u %u%s",
       data->file_name, size_to_unit(disk_car->disk_size,buffer_disk_size),
-      disk_car->CHS.cylinder+1, disk_car->CHS.head+1, disk_car->CHS.sector,((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+      disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
+      ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk_car->description_txt;
 }
 

@@ -149,7 +149,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
 		if (get_string(response, LINE_LENGTH, def) > 0) {
 		  tmp_val = atoi(response);
-		  if (tmp_val <= disk_car->CHS.cylinder) {
+		  if (tmp_val < disk_car->geom.cylinders) {
 			position.cylinder = tmp_val;
 		  } else
 			wprintw(stdscr,"Illegal cylinders value");
@@ -161,7 +161,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
 		if (get_string(response, LINE_LENGTH, def) > 0) {
 		  tmp_val = atoi(response);
-		  if (tmp_val <= disk_car->CHS.head) {
+		  if (tmp_val < disk_car->geom.heads_per_cylinder) {
 			position.head = tmp_val;
 		  } else
 			wprintw(stdscr,"Illegal heads value");
@@ -173,7 +173,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track: ");
 		if (get_string(response, LINE_LENGTH, def) > 0) {
 		  tmp_val = atoi(response);
-		  if (tmp_val > 0 && tmp_val <= disk_car->CHS.sector ) {
+		  if (tmp_val > 0 && tmp_val <= disk_car->geom.sectors_per_head ) {
 			position.sector = tmp_val;
 		  } else
 			wprintw(stdscr,"Illegal sectors value");

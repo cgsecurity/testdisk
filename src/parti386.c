@@ -92,7 +92,7 @@ struct partition_dos {
 static uint64_t get_start_sect(const struct partition_dos *p);
 static uint64_t get_nr_sects(const struct partition_dos *p);
 static void log_dos_entry(const disk_t *disk_car, const struct partition_dos*);
-static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHS_t *geometry);
+static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader);
 static void test_MBR_data(list_part_t *list_part);
 static int test_MBR_over(disk_t *disk_car,list_part_t *list_part);
@@ -277,7 +277,7 @@ static void set_start_sect(struct partition_dos *p, unsigned int start_sect)
 }
 
 
-int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHS_t *geometry)
+int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   unsigned int i;
   if(verbose>1)
@@ -293,24 +293,32 @@ int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CH
     const struct partition_dos *p=pt_offset_const(buffer,i);
     if(p->sys_ind!=0)
     {
-      if(geometry->cylinder<e_cyl(p))
-	geometry->cylinder=e_cyl(p);
-      if(geometry->head<e_head(p))
-	geometry->head=e_head(p);
-      if(geometry->sector<e_sect(p))
-	geometry->sector=e_sect(p);
+      if(geometry->cylinders<e_cyl(p)+1)
+	geometry->cylinders=e_cyl(p)+1;
+      if(geometry->heads_per_cylinder<e_head(p)+1)
+	geometry->heads_per_cylinder=e_head(p)+1;
+      if(geometry->sectors_per_head<e_sect(p))
+	geometry->sectors_per_head=e_sect(p);
     }
   }
-  if(geometry->sector==32 ||
-      (geometry->sector==63 && (geometry->head==16-1 || geometry->head==32-1 || geometry->head==64-1 || geometry->head==128-1 || geometry->head==240-1 || geometry->head==255-1)))
-    log_info("Geometry from i386 MBR: head=%u sector=%u\n",geometry->head+1,geometry->sector);
+  if(geometry->sectors_per_head==32 ||
+      (geometry->sectors_per_head==63 &&
+       ( geometry->heads_per_cylinder==16 ||
+	 geometry->heads_per_cylinder==32 ||
+	 geometry->heads_per_cylinder==64 ||
+	 geometry->heads_per_cylinder==128 ||
+	 geometry->heads_per_cylinder==240 ||
+	 geometry->heads_per_cylinder==255)))
+    log_info("Geometry from i386 MBR: head=%u sector=%u\n",
+	geometry->heads_per_cylinder, geometry->sectors_per_head);
   else
   {
-    if(geometry->sector>0)
-      log_warning("Geometry from i386 MBR: head=%u sector=%u\n",geometry->head+1,geometry->sector);
-    geometry->cylinder=0;
-    geometry->head=0;
-    geometry->sector=0;
+    if(geometry->sectors_per_head>0)
+      log_warning("Geometry from i386 MBR: head=%u sector=%u\n",geometry->heads_per_cylinder, geometry->sectors_per_head);
+    /* Don't trust the geometry */
+    geometry->cylinders=0;
+    geometry->heads_per_cylinder=0;
+    geometry->sectors_per_head=0;
   }
   return 0;
 }
@@ -345,7 +353,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
 {
   unsigned int i;
   int res=0;
-  CHS_t geometry;
+  CHSgeometry_t geometry;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
@@ -355,9 +363,9 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
     free(buffer);
     return NULL;
   }
-  geometry.cylinder=0;
-  geometry.head=0;
-  geometry.sector=0;
+  geometry.cylinders=0;
+  geometry.heads_per_cylinder=0;
+  geometry.sectors_per_head=0;
   if(get_geometry_from_i386mbr(buffer,verbose,&geometry)!=0)
   {
     screen_buffer_add(msg_TBL_NMARK);
@@ -793,13 +801,13 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
         CHS_t nextext_start;
         bloc_nextext->part_offset=element->next->part->part_offset-disk_car->sector_size;
         offset2CHS(disk_car,bloc_nextext->part_offset,&nextext_start);
-        if(nextext_start.sector!=disk_car->CHS.sector)
+        if(nextext_start.sector!=disk_car->geom.sectors_per_head)
         {
           if(nextext_start.head>0)
             nextext_start.head--;
           else
           {
-            nextext_start.head=disk_car->CHS.head;
+            nextext_start.head=disk_car->geom.heads_per_cylinder-1;
             nextext_start.cylinder--;
           }
         }
@@ -963,8 +971,8 @@ static void partition2_i386_entry(const disk_t *disk_car, const uint64_t pos, co
   if(start.cylinder>1023)
   { /* Partition Magic 5 uses CHS=(1023,0,1) if extended or last logical *
      * Linux fdisk and TestDisk use CHS=(1023,lastH,lastS)               */
-    p->head=(unsigned char)disk_car->CHS.head;
-    p->sector=(unsigned char)(disk_car->CHS.sector|((1023>>8)<<6));
+    p->head=(unsigned char)disk_car->geom.heads_per_cylinder-1;
+    p->sector=(unsigned char)(disk_car->geom.sectors_per_head | ((1023>>8)<<6));
     p->cyl=(unsigned char)1023;
   }
   else
@@ -975,8 +983,8 @@ static void partition2_i386_entry(const disk_t *disk_car, const uint64_t pos, co
   }
   if(end.cylinder>1023)
   {
-    p->end_head=(unsigned char)disk_car->CHS.head;
-    p->end_sector=(unsigned char)(disk_car->CHS.sector|((1023>>8)<<6));
+    p->end_head=(unsigned char)disk_car->geom.heads_per_cylinder-1;
+    p->end_sector=(unsigned char)(disk_car->geom.sectors_per_head | ((1023>>8)<<6));
     p->end_cyl=(unsigned char)1023;
   }
   else
@@ -1030,32 +1038,32 @@ static int i386_entry2partition(disk_t *disk_car, const uint64_t offset, partiti
       break;
   }
   /* Check CHS */
-  if((start.sector==0)||(start.sector>disk_car->CHS.sector))
+  if(start.sector==0 || start.sector > disk_car->geom.sectors_per_head)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_SS;
   }
-  if((end.sector==0)||(end.sector>disk_car->CHS.sector))
+  if(end.sector==0 || end.sector > disk_car->geom.sectors_per_head)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_ES;
   }
-  if(start.head>disk_car->CHS.head)
+  if(start.head >= disk_car->geom.heads_per_cylinder)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_SH;
   }
-  if(start.cylinder>disk_car->CHS.cylinder)
+  if(start.cylinder >= disk_car->geom.cylinders)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_SC;
   }
-  if(end.head>disk_car->CHS.head)
+  if(end.head >= disk_car->geom.heads_per_cylinder)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_EH;
   }
-  if(end.cylinder>disk_car->CHS.cylinder)
+  if(end.cylinder >= disk_car->geom.cylinders)
   {
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_EC;
@@ -1063,7 +1071,9 @@ static int i386_entry2partition(disk_t *disk_car, const uint64_t offset, partiti
   if(((start_calculated.cylinder<=1023)&& (C_H_S2offset(disk_car,start.cylinder,start.head,start.sector)!=partition->part_offset))
     || ((start_calculated.cylinder>1023)&&(start.cylinder!=1023)&&(start.cylinder!=(start_calculated.cylinder&1023))))
   {
-    log_error("BAD_RS LBA=%lu %lu\n",(long unsigned)(partition->part_offset/disk_car->sector_size),C_H_S2LBA(disk_car,start.cylinder,start.head,start.sector));
+    log_error("BAD_RS LBA=%lu %lu\n",
+	(long unsigned)(partition->part_offset/disk_car->sector_size),
+	C_H_S2LBA(disk_car, start.cylinder, start.head, start.sector));
     if(partition->errcode==BAD_NOERR)
       partition->errcode=BAD_RS;
   }
@@ -1176,9 +1186,9 @@ static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_pa
   start.cylinder=0;
   start.head=0;
   start.sector=1;
-  end.cylinder=disk_car->CHS.cylinder;
-  end.head=disk_car->CHS.head;
-  end.sector=disk_car->CHS.sector;
+  end.cylinder=disk_car->geom.cylinders-1;
+  end.head=disk_car->geom.heads_per_cylinder-1;
+  end.sector=disk_car->geom.sectors_per_head;
   while(*current_cmd[0]==',')
     (*current_cmd)++;
   while(1)
@@ -1186,32 +1196,38 @@ static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_pa
     if(strncmp(*current_cmd,"c,",2)==0)
     {
       (*current_cmd)+=2;
-      start.cylinder=ask_number_cli(current_cmd, start.cylinder,0,disk_car->CHS.cylinder,"Enter the starting cylinder ");
+      start.cylinder=ask_number_cli(current_cmd, start.cylinder,
+	  0, disk_car->geom.cylinders-1, "Enter the starting cylinder ");
     }
     else if(strncmp(*current_cmd,"h,",2)==0)
     {
       (*current_cmd)+=2;
-      start.head=ask_number_cli(current_cmd, start.head,0,disk_car->CHS.head,"Enter the starting head ");
+      start.head=ask_number_cli(current_cmd, start.head,
+	  0, disk_car->geom.heads_per_cylinder-1, "Enter the starting head ");
     }
     else if(strncmp(*current_cmd,"s,",2)==0)
     {
       (*current_cmd)+=2;
-      start.sector=ask_number_cli(current_cmd, start.sector,1,disk_car->CHS.sector,"Enter the starting sector ");
+      start.sector=ask_number_cli(current_cmd, start.sector,
+	  1, disk_car->geom.sectors_per_head, "Enter the starting sector ");
     }
     else if(strncmp(*current_cmd,"C,",2)==0)
     {
       (*current_cmd)+=2;
-      end.cylinder=ask_number_cli(current_cmd, end.cylinder,start.cylinder,disk_car->CHS.cylinder,"Enter the ending cylinder ");
+      end.cylinder=ask_number_cli(current_cmd, end.cylinder,
+	  start.cylinder, disk_car->geom.cylinders-1, "Enter the ending cylinder ");
     }
     else if(strncmp(*current_cmd,"H,",2)==0)
     {
       (*current_cmd)+=2;
-      end.head=ask_number_cli(current_cmd, end.head,0,disk_car->CHS.head,"Enter the ending head ");
+      end.head=ask_number_cli(current_cmd, end.head,
+	  0, disk_car->geom.heads_per_cylinder-1, "Enter the ending head ");
     }
     else if(strncmp(*current_cmd,"S,",2)==0)
     {
       (*current_cmd)+=2;
-      end.sector=ask_number_cli(current_cmd, end.sector,1,disk_car->CHS.sector,"Enter the ending sector ");
+      end.sector=ask_number_cli(current_cmd, end.sector,
+	  1, disk_car->geom.sectors_per_head-1, "Enter the ending sector ");
     }
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
@@ -1264,9 +1280,9 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
   start.cylinder=0;
   start.head=0;
   start.sector=1;
-  end.cylinder=disk_car->CHS.cylinder;
-  end.head=disk_car->CHS.head;
-  end.sector=disk_car->CHS.sector;
+  end.cylinder=disk_car->geom.cylinders-1;
+  end.head=disk_car->geom.heads_per_cylinder-1;
+  end.sector=disk_car->geom.sectors_per_head;
   {
     int done = 0;
     while (done==0) {
@@ -1298,32 +1314,38 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
       switch (command) {
 	case 'c':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.cylinder=ask_number(start.cylinder,0,disk_car->CHS.cylinder,"Enter the starting cylinder ");
+	  start.cylinder=ask_number(start.cylinder,
+	      0, disk_car->geom.cylinders, "Enter the starting cylinder ");
 	  position=1;
 	  break;
 	case 'h':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.head=ask_number(start.head,0,disk_car->CHS.head,"Enter the starting head ");
+	  start.head=ask_number(start.head,
+	      0, disk_car->geom.heads_per_cylinder, "Enter the starting head ");
 	  position=2;
 	  break;
 	case 's':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.sector=ask_number(start.sector,1,disk_car->CHS.sector,"Enter the starting sector ");
+	  start.sector=ask_number(start.sector,
+	      1, disk_car->geom.sectors_per_head, "Enter the starting sector ");
 	  position=3;
 	  break;
 	case 'C':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.cylinder=ask_number(end.cylinder,start.cylinder,disk_car->CHS.cylinder,"Enter the ending cylinder ");
+	  end.cylinder=ask_number(end.cylinder,
+	      start.cylinder, disk_car->geom.cylinders-1, "Enter the ending cylinder ");
 	  position=4;
 	  break;
 	case 'H':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.head=ask_number(end.head,0,disk_car->CHS.head,"Enter the ending head ");
+	  end.head=ask_number(end.head,
+	      0, disk_car->geom.heads_per_cylinder, "Enter the ending head ");
 	  position=5;
 	  break;
 	case 'S':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.sector=ask_number(end.sector,1,disk_car->CHS.sector,"Enter the ending sector ");
+	  end.sector=ask_number(end.sector,
+	      1, disk_car->geom.sectors_per_head, "Enter the ending sector ");
 	  position=6;
 	  break;
 	case 'T':
