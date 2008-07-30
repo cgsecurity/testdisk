@@ -81,12 +81,14 @@ const file_hint_t file_hint_txt= {
 
 static const unsigned char header_cls[24]	= {'V','E','R','S','I','O','N',' ','1','.','0',' ','C','L','A','S','S','\r','\n','B','E','G','I','N'};
 static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
-static const unsigned char header_imm2[13]	= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
+static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
+static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
 static const unsigned char header_perlm[7] 	= "package";
 static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
 static const unsigned char header_reg[8]  	= "REGEDIT4";
 static const unsigned char header_sh[9]  	= "#!/bin/sh";
+static const unsigned char header_bash[9]  	= "#!/bin/bash";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_stp[13]  	= "ISO-10303-21;";
 static const unsigned char header_ram[7]	= "rtsp://";
@@ -106,12 +108,13 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
   register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_imm2,sizeof(header_imm2), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
   register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_bash,sizeof(header_bash), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
@@ -329,7 +332,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   }
   /* Incredimail has .imm extension but this extension isn't frequent */
   if(memcmp(buffer,header_imm,sizeof(header_imm))==0 ||
-      memcmp(buffer,header_imm2,sizeof(header_imm2))==0 ||
+      memcmp(buffer,header_ReturnPath,sizeof(header_ReturnPath))==0 ||
       memcmp(buffer,header_mail,sizeof(header_mail))==0)
   {
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
@@ -366,7 +369,8 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="reg";
     return 1;
   }
-  if(memcmp(buffer,header_sh,sizeof(header_sh))==0)
+  if(memcmp(buffer,header_sh,sizeof(header_sh))==0 ||
+      memcmp(buffer,header_bash,sizeof(header_bash))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -526,7 +530,9 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     unsigned int tmp=0;
     for(i=0;i<10 && isdigit(buffer[i]);i++)
       tmp=tmp*10+buffer[i]-'0';
-    if(buffer[i]==0x0a && memcmp(buffer+i+1, header_imm2, sizeof(header_imm2))==0 &&
+    if(buffer[i]==0x0a &&
+      (memcmp(buffer+i+1, header_ReturnPath, sizeof(header_ReturnPath))==0 ||
+       memcmp(buffer+i+1, header_ReceivedFrom, sizeof(header_ReceivedFrom))==0) &&
         !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
           file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
           strcmp(file_recovery->extension,"imm")==0))
