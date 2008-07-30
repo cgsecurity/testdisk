@@ -527,6 +527,19 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct 
     }
     wmove(window, yinfo, 0 );
     wclrtoeol(window);
+    if(strchr(available, key)==NULL)
+    {
+      if(key=='2')
+	key=KEY_DOWN;
+      else if(key=='4')
+	key=KEY_LEFT;
+      else if(key=='5')
+	key=KEY_ENTER;
+      else if(key=='6')
+	key=KEY_RIGHT;
+      else if(key=='8')
+	key=KEY_UP;
+    }
     /* Cursor keys */
     switch(key)
     {
