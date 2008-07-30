@@ -82,7 +82,8 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
 static int header_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-       file_recovery->file_stat->file_hint==&file_hint_m2ts)
+      file_recovery->file_stat->file_hint==&file_hint_m2ts &&
+      file_recovery->calculated_file_size == file_recovery->file_size)
     return 0;
   /* Each frame is 188 byte long and begins by a TS_SYNC_BYTE */
   if(buffer[0]==0x47 && buffer[188]==0x47 && buffer[2*188]==0x47 &&

@@ -56,6 +56,12 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 {
   unsigned int i=0;
   unsigned int prev_atom_skip=0;
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_mov &&
+      file_recovery->calculated_file_size == file_recovery->file_size)
+  { /* PhotoRec is already trying to recover this mov file */
+    return 0;
+  }
   while(i<buffer_size-8)
   {
     unsigned int atom_size;
