@@ -52,6 +52,7 @@
 #include "guid_cmp.h"
 #include "dimage.h"
 #include "fat_adv.h"
+#include "ntfs_udl.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -171,8 +172,10 @@ int is_part_linux(const partition_t *partition)
 void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd)
 {
   int quit;
+#ifdef HAVE_NCURSES
   int offset=0;
   int current_element_num=0;
+#endif
   int rewrite=1;
   const char *options;
   list_part_t *element;
@@ -199,9 +202,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {0,NULL,NULL}
     };
     int menu=0;
-    int i;
     int command;
 #ifdef HAVE_NCURSES
+    int i;
     if(rewrite!=0)
     {
       aff_copy(stdscr);
@@ -247,7 +250,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       }
       else if(is_part_ntfs(current_element->part))
       {
-	options="tbcq";
+	options="tubcq";
 	menu=1;
       }
       else if(is_part_linux(current_element->part))
@@ -272,7 +275,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       }
       else if(is_ntfs(current_element->part))
       {
-	options="tbcq";
+	options="tubcq";
 	menu=1;
       }
       else if(is_linux(current_element->part))
@@ -459,7 +462,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       case 'L':
 	if(current_element!=NULL)
 	{
-	  dir_partition(disk_car, current_element->part, 0, current_cmd);
+	  partition_t *partition=current_element->part;
+	  if(partition->upart_type==UP_NTFS)
+	    ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
+	  else
+	    dir_partition(disk_car, partition, 0, current_cmd);
 	}
 	break;
       case 's':
@@ -526,6 +533,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   unsigned char *buffer_bs;
   const char *options="DR";
   int rescan=1;
+#ifdef HAVE_NCURSES
   struct MenuItem menu_fat1x[]=
   {
     { 'P', "Previous",""},
@@ -538,10 +546,13 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     { 'I', "Init Root","Init root directory: Very Dangerous! Expert only"},
     { 0, NULL, NULL }
   };
+#endif
   buffer_bs=(unsigned char*)MALLOC(FAT1x_BOOT_SECTOR_SIZE);
   while(1)
   {
+#ifdef HAVE_NCURSES
     unsigned int menu=0;
+#endif
     int command;
     screen_buffer_reset();
     if(rescan==1)
@@ -685,6 +696,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   unsigned char *buffer_backup_bs;
   const char *options="DRC";
   int rescan=1;
+#ifdef HAVE_NCURSES
   struct MenuItem menu_fat32[]=
   {
     { 'P', "Previous",""},
@@ -698,6 +710,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     { 'C', "Repair FAT","Very Dangerous! Expert only"},
     { 0, NULL, NULL }
   };
+#endif
   buffer_bs=(unsigned char*)MALLOC(3*disk_car->sector_size);
   buffer_backup_bs=(unsigned char*)MALLOC(3*disk_car->sector_size);
   while(1)
@@ -949,6 +962,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
   unsigned char *buffer_backup_bs;
   const char *options="";
   int rescan=1;
+#ifdef HAVE_NCURSES
   struct MenuItem menu_ntfs[]=
   {
     { 'P', "Previous",""},
@@ -960,11 +974,9 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
     { 'R', "Rebuild BS","Rebuild boot sector"},
     { 'M', "Repair MFT","Check MFT"},
     { 'D', "Dump","Dump boot sector and backup boot sector"},
-#if 0
-    { 'U', "Undelete","Recover deleted files"},
-#endif
     { 0, NULL, NULL }
   };
+#endif
   buffer_bs=(unsigned char*)MALLOC(NTFS_BOOT_SECTOR_SIZE);
   buffer_backup_bs=(unsigned char*)MALLOC(NTFS_BOOT_SECTOR_SIZE);
 
@@ -1036,7 +1048,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       screen_buffer_add("any data; even if the partition is not bootable.\n");
       if(opt_B!=0 && opt_O!=0)
       {
-//      options="DRMLU";
 	if(identical_sectors==0)
 	  options="DOBRL";
 	else
@@ -1155,13 +1166,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       case 'D':
 	dump_NTFS(disk_car, partition, buffer_bs, buffer_backup_bs);
 	break;
-#if 0
-#ifdef HAVE_LIBNTFS
-      case 'U':
-	ntfs_undelete_part(disk_car, partition, verbose);
-	break;
-#endif
-#endif
     }
   }
 }
@@ -1201,6 +1205,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
   unsigned char *buffer_backup_bs;
   const char *options="";
   int rescan=1;
+#ifdef HAVE_NCURSES
   struct MenuItem menu_hfsp[]=
   {
     { 'P', "Previous",""},
@@ -1211,12 +1216,15 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
     { 'D', "Dump","Dump superblock and backup superblock"},
     { 0, NULL, NULL }
   };
+#endif
   buffer_bs=(unsigned char*)MALLOC(HFSP_BOOT_SECTOR_SIZE);
   buffer_backup_bs=(unsigned char*)MALLOC(HFSP_BOOT_SECTOR_SIZE);
 
   while(1)
   {
+#ifdef HAVE_NCURSES
     unsigned int menu=0;
+#endif
     int command;
     screen_buffer_reset();
     if(rescan==1)
