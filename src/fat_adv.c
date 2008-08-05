@@ -58,8 +58,7 @@
 
 #define INTER_FAT_ASK_X 0
 #define INTER_FAT_ASK_Y	23
-static const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+extern const char *monstr[];
 
 typedef struct sector_cluster_struct sector_cluster_t;
 typedef struct info_offset_struct info_offset_t;
@@ -332,7 +331,9 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     file_data_t *rootdir_list=NULL;
     file_data_t *current_file=NULL;
     unsigned int dir_nbr=0;
+#ifdef HAVE_NCURSES
     int interactive=1;
+#endif
     unsigned char *buffer;
     int ind_stop=0;
     buffer=(unsigned char *)MALLOC(cluster_size);
@@ -347,8 +348,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 #endif
     for(root_cluster=2;(root_cluster<2+no_of_cluster)&&(ind_stop==0);root_cluster++)
     {
-      unsigned long int percent=root_cluster*100/(2+no_of_cluster);
 #ifdef HAVE_NCURSES
+      const unsigned long int percent=root_cluster*100/(2+no_of_cluster);
       if(interface>0 && (root_cluster&0xfff)==0)
       {
         wmove(stdscr,9,0);
@@ -906,6 +907,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 {
   const struct fat_boot_sector *org_fat_header=(const struct fat_boot_sector *)orgboot;
   const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)newboot;
+#ifdef HAVE_NCURSES
   struct MenuItem menuSaveBoot[]=
   {
     { 'D', "Dump", "Dump sector" },
@@ -914,6 +916,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     { 'Q',"Quit","Quit this section"},
     { 0, NULL, NULL }
   };
+#endif
   const char *options="DLQ";
   int do_write=0;
   int do_exit=0;
@@ -1535,7 +1538,9 @@ static unsigned int fat_find_fat_start(const unsigned char *buffer,const int p_f
 static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface,unsigned int *nbr_offset,info_offset_t *info_offset, const unsigned int max_nbr_offset)
 {
   uint64_t offset;
+#ifdef HAVE_NCURSES
   unsigned long int old_percent=0;
+#endif
   int ind_stop=0;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(verbose>0)
@@ -2472,7 +2477,9 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
       unsigned int fat_mismatch=0;
       unsigned int fat_nbr;
       unsigned long int cluster;
+#ifdef HAVE_NCURSES
       unsigned long int old_percent=0;
+#endif
       unsigned char *buffer_fat[2];
       unsigned int rw_size=buffer_size;
       for(fat_nbr=0;fat_nbr<fats;fat_nbr++)
@@ -2509,7 +2516,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
         if(offset_s!=old_offset_s)
         {
 #ifdef HAVE_NCURSES
-          unsigned long int percent=cluster*100/(no_of_cluster+1);
+          const unsigned long int percent=cluster*100/(no_of_cluster+1);
           if(percent!=old_percent)
           {
             wmove(window,4,0);

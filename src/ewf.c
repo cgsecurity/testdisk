@@ -240,7 +240,6 @@ static int fewf_read(disk_t *disk_car,const unsigned int count, void *nom_buffer
 
 static int fewf_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
 {
-  struct info_fewf_struct *data=(struct info_fewf_struct *)disk_car->data;
   log_error("fewf_nowrite(xx,%u,buffer,%lu(%u/%u/%u)) write refused\n",
       (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));

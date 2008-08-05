@@ -294,8 +294,6 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     struct ext2_inode       inode;
     char            buffer[8192];
     ext2_file_t     e2_file;
-    int             nbytes; 
-    unsigned int    got;
 
     if (ext2fs_read_inode(ls->current_fs, file->filestat.st_ino, &inode)!=0)
     {
@@ -311,6 +309,8 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     }
     while (1)
     {
+      int             nbytes; 
+      unsigned int    got;
       retval = ext2fs_file_read(e2_file, buffer, sizeof(buffer), &got);
       if (retval)
       {

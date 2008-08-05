@@ -556,7 +556,15 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     {
       log_error("fat_copy: Can't read cluster %u.\n", cluster);
     }
-    fwrite(buffer_file, 1, toread, f_out);
+    if(fwrite(buffer_file, 1, toread, f_out) != toread)
+    {
+      log_error("fat_copy: no space left on destination.\n");
+      fclose(f_out);
+      set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+      free(new_file);
+      free(buffer_file);
+      return -1;
+    }
     file_size -= toread;
     if(file_size>0)
     {

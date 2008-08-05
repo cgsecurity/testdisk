@@ -270,7 +270,9 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
   int nbr_sb=0;
   list_part_t *list_part=NULL;
   int ind_stop=0;
+#ifdef HAVE_NCURSES
   unsigned long int old_percent=0;
+#endif
   struct ext2_super_block *sb=(struct ext2_super_block *)buffer;
   partition_t *new_partition=partition_new(disk_car->arch);
   log_trace("search_superblock\n");

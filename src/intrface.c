@@ -74,8 +74,10 @@
 extern const arch_fnct_t arch_i386;
 
 static void interface_options(int *dump_ind, int *align, int *allow_partial_last_cylinder, unsigned int *expert, char**current_cmd);
+#ifdef HAVE_NCURSES
 static list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int verbose);
 static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *backup_part, const int verbose);
+#endif
 static int write_MBR_code(disk_t *disk_car);
 static int write_clean_table(disk_t *disk_car);
 static int interface_check_disk_capacity(disk_t *disk_car);
@@ -627,7 +629,6 @@ static int interface_check_disk_capacity(disk_t *disk_car)
 #ifdef HAVE_NCURSES
 static int interface_check_disk_access_ncurses(disk_t *disk_car)
 {
-  const char *prog_name="TestDisk";
   static const struct MenuItem menuDiskAccess[]=
   {
     { 'C', "Continue", "Continue even if write access isn't available"},
@@ -649,7 +650,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
   wmove(stdscr,line++,0);
   wprintw(stdscr,"- You may need to be administrator to have write access.\n");
   wmove(stdscr,line++,0);
-  wprintw(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
+  wprintw(stdscr,"Under Vista, select TestDisk, right-click and choose \"Run as administrator\".\n");
 #elif defined HAVE_GETEUID
   if(geteuid()!=0)
   {
@@ -657,7 +658,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
     wprintw(stdscr,"- You may need to be root to have write access.\n");
 #if defined(__APPLE__)
     wmove(stdscr,line++,0);
-    wprintw(stdscr,"Use the sudo command to launch %s.\n", prog_name);
+    wprintw(stdscr,"Use the sudo command to launch TestDisk.\n");
 #endif
     wmove(stdscr,line++,0);
     wprintw(stdscr,"- Check the OS permission for this file or device.\n");
@@ -700,6 +701,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
 {
   list_part_t *list_part;
   int command;
+#ifdef HAVE_NCURSES
   struct MenuItem menuAnalyse[]=
   {
     { 'P', "Previous",""},
@@ -708,6 +710,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
     { 'B', "Backup","Save current partition list to backup.log file and proceed"},
     { 0, NULL, NULL }
   };
+#endif
   screen_buffer_reset();
   /* ncurses interface */
 #ifdef HAVE_NCURSES
@@ -771,6 +774,7 @@ static list_part_t *interface_analyse(disk_t *disk_car, const int verbose, const
 int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search_deeper, const int can_ask_minmax_ext, int *no_confirm, char **current_cmd, unsigned int *menu)
 {
   list_part_t *parts;
+#ifdef HAVE_NCURSES
   struct MenuItem menuWrite[]=
   {
     { 'P', "Previous",""},
@@ -781,6 +785,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
     { 'E', "Extd Part","Maximize/Minimize extended partition"},
     { 0, NULL, NULL }
   };
+#endif
   int command;
   log_info("\ninterface_write()\n");
   screen_buffer_reset();
@@ -1297,6 +1302,7 @@ list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int ve
 #endif
 }
 
+#ifdef HAVE_NCURSES
 static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *backup_part, const int verbose)
 {
   list_part_t *partition;
@@ -1311,6 +1317,7 @@ static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *bac
   }
   return list_part;
 }
+#endif
 
 #ifdef HAVE_NCURSES
 static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk_t *backup_list, const int verbose)
@@ -1441,6 +1448,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
 }
 #endif
 
+#ifdef HAVE_NCURSES
 static list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int verbose)
 {
   struct td_list_head *backup_walker=NULL;
@@ -1484,11 +1492,13 @@ static list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, cons
   }
   return list_part;
 }
+#endif
 
 int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_cmd)
 {
   const list_part_t *parts;
   const partition_t *old_part=NULL;
+#ifdef HAVE_NCURSES
   struct MenuItem menuSuperblock[]=
   {
     { 'P', "Previous",""},
@@ -1496,6 +1506,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
     { 'Q',"Quit","Return to Advanced menu"},
     { 0, NULL, NULL }
   };
+#endif
   screen_buffer_reset();
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);

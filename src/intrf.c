@@ -85,7 +85,9 @@ extern const char *monstr[];
 
 static char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 static int intr_nbr_line=0;
+#ifdef HAVE_NCURSES
 static void set_parent_directory(char *dst_directory);
+#endif
 
 int screen_buffer_add(const char *_format, ...)
 {
@@ -244,6 +246,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
 #define PATH_DRIVE_LENGTH 9
 #endif
 
+#ifdef HAVE_NCURSES
 static void set_parent_directory(char *dst_directory)
 {
   int i;
@@ -271,6 +274,7 @@ static void set_parent_directory(char *dst_directory)
     dst_directory[1]='\0';
 #endif
 }
+#endif
 
 static inline char *td_getcwd(char *buf, unsigned long size)
 {
