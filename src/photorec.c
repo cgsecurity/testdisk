@@ -102,6 +102,7 @@ extern const file_hint_t file_hint_a;
 extern const file_hint_t file_hint_accdb;
 extern const file_hint_t file_hint_ace;
 extern const file_hint_t file_hint_addressbook;
+extern const file_hint_t file_hint_ahn;
 extern const file_hint_t file_hint_aif;
 extern const file_hint_t file_hint_all;
 extern const file_hint_t file_hint_als;
@@ -142,17 +143,21 @@ extern const file_hint_t file_hint_emf;
 extern const file_hint_t file_hint_evt;
 extern const file_hint_t file_hint_exe;
 extern const file_hint_t file_hint_ext2_sb;
+extern const file_hint_t file_hint_fbk;
 extern const file_hint_t file_hint_fcp;
 extern const file_hint_t file_hint_fcs;
+extern const file_hint_t file_hint_fdb;
 extern const file_hint_t file_hint_fh10;
 extern const file_hint_t file_hint_fh5;
 extern const file_hint_t file_hint_fits;
 extern const file_hint_t file_hint_flac;
+extern const file_hint_t file_hint_fasttxt;
 extern const file_hint_t file_hint_flv;
+extern const file_hint_t file_hint_fob;
 extern const file_hint_t file_hint_frm;
 extern const file_hint_t file_hint_fs;
-extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gho;
+extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gpg;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_ifo;
@@ -184,6 +189,7 @@ extern const file_hint_t file_hint_one;
 extern const file_hint_t file_hint_orf;
 extern const file_hint_t file_hint_paf;
 extern const file_hint_t file_hint_pap;
+extern const file_hint_t file_hint_pcap;
 extern const file_hint_t file_hint_pct;
 extern const file_hint_t file_hint_pcx;
 extern const file_hint_t file_hint_pdf;
@@ -223,17 +229,17 @@ extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_tib;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_tph;
-extern const file_hint_t file_hint_fasttxt;
 extern const file_hint_t file_hint_txt;
+extern const file_hint_t file_hint_veg;
 extern const file_hint_t file_hint_vmdk;
-extern const file_hint_t file_hint_wpd;
+extern const file_hint_t file_hint_wks;
 extern const file_hint_t file_hint_wmf;
+extern const file_hint_t file_hint_wnk;
+extern const file_hint_t file_hint_wpd;
 extern const file_hint_t file_hint_x3f;
 extern const file_hint_t file_hint_xcf;
 extern const file_hint_t file_hint_xm;
 extern const file_hint_t file_hint_xsv;
-extern const file_hint_t file_hint_veg;
-extern const file_hint_t file_hint_wks;
 extern const file_hint_t file_hint_zip;
 
 static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
@@ -810,6 +816,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_accdb},
     { .enable=0, .file_hint=&file_hint_ace  },
     { .enable=0, .file_hint=&file_hint_addressbook},
+    { .enable=0, .file_hint=&file_hint_ahn  },
     { .enable=0, .file_hint=&file_hint_aif  },
     { .enable=0, .file_hint=&file_hint_all  },
     { .enable=0, .file_hint=&file_hint_als  },
@@ -850,13 +857,16 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_evt  },
     { .enable=0, .file_hint=&file_hint_exe  },
     { .enable=0, .file_hint=&file_hint_ext2_sb },
+    { .enable=0, .file_hint=&file_hint_fbk  },
     { .enable=0, .file_hint=&file_hint_fcp  },
     { .enable=0, .file_hint=&file_hint_fcs  },
+    { .enable=0, .file_hint=&file_hint_fdb  },
     { .enable=0, .file_hint=&file_hint_fh10  },
     { .enable=0, .file_hint=&file_hint_fh5  },
     { .enable=0, .file_hint=&file_hint_fits },
     { .enable=0, .file_hint=&file_hint_flac },
     { .enable=0, .file_hint=&file_hint_flv  },
+    { .enable=0, .file_hint=&file_hint_fob  },
     { .enable=0, .file_hint=&file_hint_frm  },
     { .enable=0, .file_hint=&file_hint_fs   },
     { .enable=0, .file_hint=&file_hint_gho  },
@@ -892,6 +902,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_orf  },
     { .enable=0, .file_hint=&file_hint_paf  },
     { .enable=0, .file_hint=&file_hint_pap  },
+    { .enable=0, .file_hint=&file_hint_pcap },
     { .enable=0, .file_hint=&file_hint_pct  },
     { .enable=0, .file_hint=&file_hint_pcx  },
     { .enable=0, .file_hint=&file_hint_pdf  },
@@ -934,14 +945,15 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_fasttxt  },
     { .enable=0, .file_hint=&file_hint_txt  },
     { .enable=0, .file_hint=&file_hint_vmdk },
-    { .enable=0, .file_hint=&file_hint_wpd  },
+    { .enable=0, .file_hint=&file_hint_veg  },
+    { .enable=0, .file_hint=&file_hint_wks  },
     { .enable=0, .file_hint=&file_hint_wmf  },
+    { .enable=0, .file_hint=&file_hint_wnk  },
+    { .enable=0, .file_hint=&file_hint_wpd  },
     { .enable=0, .file_hint=&file_hint_x3f  },
     { .enable=0, .file_hint=&file_hint_xcf  },
     { .enable=0, .file_hint=&file_hint_xm   },
     { .enable=0, .file_hint=&file_hint_xsv  },
-    { .enable=0, .file_hint=&file_hint_veg  },
-    { .enable=0, .file_hint=&file_hint_wks  },
     { .enable=0, .file_hint=&file_hint_zip  },
     { .enable=0, .file_hint=NULL }
   };
