@@ -381,7 +381,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   uint64_t search_location;
   unsigned int try_offset_nbr=0;
   unsigned int try_offset_raid_nbr=0;
+#ifdef HAVE_NCURSES
   unsigned int old_cylinder=0;
+#endif
   unsigned int location_boundary;
   int ind_stop=0;
   list_part_t *list_part=NULL;
@@ -430,6 +432,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     /* sometimes users don't choose Vista by mistake */
     try_offset_nbr=tab_insert(try_offset, 2048*512, try_offset_nbr);
     /* try to deal with incorrect geometry */
+    /* 0/1/1 */
+    try_offset_nbr=tab_insert(try_offset, 32 * disk_car->sector_size, try_offset_nbr);
+    try_offset_nbr=tab_insert(try_offset, 63 * disk_car->sector_size, try_offset_nbr);
     /* 1/[01]/1 CHS x  16 63 */
     try_offset_nbr=tab_insert(try_offset, 16 * 63 * disk_car->sector_size, try_offset_nbr);
     try_offset_nbr=tab_insert(try_offset, 17 * 63 * disk_car->sector_size, try_offset_nbr);
