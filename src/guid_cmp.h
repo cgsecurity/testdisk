@@ -2,7 +2,7 @@
 
     File: guidcmp.c
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-static inline int guid_cmp (efi_guid_t left, efi_guid_t right)
+static inline int guid_cmp (const efi_guid_t left, const efi_guid_t right)
 {
   return memcmp(&left, &right, sizeof(efi_guid_t));
 }

@@ -276,6 +276,16 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
   wattrset(stdscr, A_REVERSE);
   wprintw(stdscr, "[ Proceed ]");
   wattroff(stdscr, A_REVERSE);
+  /* By default, select the current type */
+  for(i=0;gpt_sys_types[i].name!=NULL;i++)
+  {
+    if(guid_cmp(partition->part_type_gpt, gpt_sys_types[i].part_type)==0)
+    {
+      current_element_num=i;
+      while(current_element_num >= offset+3*INTER_CHGTYPE)
+	offset++;
+    }
+  }
   while(1)
   {
     wmove(stdscr,5,0);
