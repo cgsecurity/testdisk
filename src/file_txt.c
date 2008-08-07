@@ -55,8 +55,9 @@ static void register_header_check_fasttxt(file_stat_t *file_stat);
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static void file_check_html(file_recovery_t *file_recovery);
 static void file_check_emlx(file_recovery_t *file_recovery);
+static void file_check_ers(file_recovery_t *file_recovery);
+static void file_check_html(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fasttxt= {
@@ -98,6 +99,7 @@ static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
 static const unsigned char header_stl[6]	= "solid ";
+static const unsigned char header_ers[19]	= "DatasetHeader Begin";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -118,6 +120,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
@@ -395,6 +398,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="stl";
+    return 1;
+  }
+  if(memcmp(buffer, header_ers, sizeof(header_ers))==0)
+  {
+    /* ER Mapper Rasters (ERS) */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_ers;
+    file_recovery_new->extension="ers";
     return 1;
   }
   if(memcmp(buffer,header_stp,sizeof(header_stp))==0)
@@ -829,5 +841,12 @@ static void file_check_xml(file_recovery_t *file_recovery)
 {
   const unsigned char xml_footer[1]= { '>'};
   file_search_footer(file_recovery, xml_footer, sizeof(xml_footer));
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+}
+
+static void file_check_ers(file_recovery_t *file_recovery)
+{
+  const unsigned char ers_footer[17]= "DatasetHeader End";
+  file_search_footer(file_recovery, ers_footer, sizeof(ers_footer));
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
