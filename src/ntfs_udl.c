@@ -835,22 +835,35 @@ static unsigned int write_data(int fd, const char *buffer,
 static int create_pathname(const char *dir, const char *dir2, const char *name,
 	const char *stream, char *buffer, int bufsize)
 {
-  if (!name)
+  char *namel;
+  if (name==NULL)
     name = UNKNOWN;
+  namel=gen_local_filename(name, NULL);
   if(dir2)
   {
+    char *dir2l=gen_local_filename(dir2, NULL);
     if (stream)
-      snprintf(buffer, bufsize, "%s/%s/%s:%s", dir, dir2, name, stream);
+    {
+      char *streaml=gen_local_filename(stream, NULL);
+      snprintf(buffer, bufsize, "%s/%s/%s:%s", dir, dir2l, namel, streaml);
+      free(streaml);
+    }
     else
-      snprintf(buffer, bufsize, "%s/%s/%s", dir, dir2, name);
+      snprintf(buffer, bufsize, "%s/%s/%s", dir, dir2l, namel);
+    free(dir2l);
   }
   else
   {
     if (stream)
-      snprintf(buffer, bufsize, "%s/%s:%s", dir, name, stream);
+    {
+      char *streaml=gen_local_filename(stream, NULL);
+      snprintf(buffer, bufsize, "%s/%s:%s", dir, namel, streaml);
+      free(streaml);
+    }
     else
-      snprintf(buffer, bufsize, "%s/%s", dir, name);
+      snprintf(buffer, bufsize, "%s/%s", dir, namel);
   }
+  free(namel);
   return strlen(buffer);
 }
 
@@ -867,6 +880,7 @@ static int create_pathname(const char *dir, const char *dir2, const char *name,
  */
 static int open_file(const char *pathname)
 {
+  create_dir(pathname, 0);
   return open(pathname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 }
 
@@ -952,7 +966,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 		if (d->resident) {
 			fd = open_file(pathname);
 			if (fd < 0) {
-				log_error("Couldn't create file\n");
+				log_error("Couldn't create file %s\n", pathname);
 				goto free;
 			}
 
@@ -981,7 +995,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 
 			fd = open_file(pathname);
 			if (fd < 0) {
-				log_error("Couldn't create output file\n");
+				log_error("Couldn't create output file %s\n", pathname);
 				goto free;
 			}
 

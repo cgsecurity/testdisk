@@ -308,7 +308,7 @@ static unsigned int filename_convert_mac(char *dst, const char*src, const unsign
 char *gen_local_filename(const char *dir, const char*src)
 {
   int l1=strlen(dir);
-  int l2=strlen(src);
+  int l2=(src==NULL?0:strlen(src));
   char *dst=(char *)MALLOC(l1+l2+1);
 #if defined(DJGPP)
   l1=filename_convert_dos(dst, dir, l1+1);
