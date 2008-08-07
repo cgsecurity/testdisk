@@ -1452,7 +1452,12 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 #endif
   if(disk_car->disk_real_size!=0)
     return disk_car;
-  log_warning("Warning: can't get size for %s\n", device);
+  if(disk_car->model==NULL)
+    log_warning("Warning: can't get size for %s, sector size=%u\n",
+	disk_car->description(disk_car), disk_car->sector_size);
+  else
+    log_warning("Warning: can't get size for %s, sector size=%u - %s\n",
+	disk_car->description(disk_car), disk_car->sector_size, disk_car->model);
   free(data);
   free(disk_car->device);
   free(disk_car->model);
