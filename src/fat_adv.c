@@ -225,9 +225,9 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       wclrtoeol(window);	/* before addstr for BSD compatibility */
       if(current_file==pos)
 	wattrset(window, A_REVERSE);
-      if(current_file->filestat.st_mtime!=0)
+      if(current_file->stat.st_mtime!=0)
       {
-	tm_p = localtime(&current_file->filestat.st_mtime);
+	tm_p = localtime(&current_file->stat.st_mtime);
 	snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	    tm_p->tm_mday, monstr[tm_p->tm_mon],
 	    1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -235,10 +235,10 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       } else {
 	strncpy(datestr, "                 ",sizeof(datestr));
       }
-      mode_string(current_file->filestat.st_mode,str);
+      mode_string(current_file->stat.st_mode,str);
       wprintw(window, "%s %5u %5u   ", 
-	  str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-      wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+	  str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+      wprintw(window, "%7llu", (long long unsigned int)current_file->stat.st_size);
       /* FIXME: screen overlaps due to long filename */
       wprintw(window, " %s %s\n", datestr, current_file->name);
       if(current_file==pos)
@@ -511,7 +511,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
             {
               file_data_t *dir_list;
               dir_list=dir_fat_aux(buffer, cluster_size, cluster_size, 0);
-              if(dir_list!=NULL && (dir_list->next==NULL || dir_list->filestat.st_ino!=dir_list->next->filestat.st_ino))
+              if(dir_list!=NULL && (dir_list->next==NULL || dir_list->stat.st_ino!=dir_list->next->stat.st_ino))
               {
                 int test_date=1;
                 if(verbose>0)
@@ -625,11 +625,11 @@ static int file2entry(struct msdos_dir_entry *de, const file_data_t *current_fil
   {
     de->ext[j]=' ';
   }
-  de->attr=(LINUX_S_ISDIR(current_file->filestat.st_mode)!=0?ATTR_DIR:ATTR_NONE);
-  fat_date_unix2dos(current_file->filestat.st_mtime,&de->time,&de->date);
-  de->start=le16(current_file->filestat.st_ino);
-  de->starthi=le16(current_file->filestat.st_ino>>16);
-  de->size=le32(current_file->filestat.st_size);
+  de->attr=(LINUX_S_ISDIR(current_file->stat.st_mode)!=0?ATTR_DIR:ATTR_NONE);
+  fat_date_unix2dos(current_file->stat.st_mtime,&de->time,&de->date);
+  de->start=le16(current_file->stat.st_ino);
+  de->starthi=le16(current_file->stat.st_ino>>16);
+  de->size=le32(current_file->stat.st_size);
   return 0;
 }
 
@@ -825,10 +825,10 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
   {
     dir_aff_log(disk_car, partition, NULL, dir_list);
   }
-  for(current_file=dir_list;(current_file!=NULL)&&(LINUX_S_ISDIR(current_file->filestat.st_mode)==0);current_file=current_file->next);
+  for(current_file=dir_list;(current_file!=NULL)&&(LINUX_S_ISDIR(current_file->stat.st_mode)==0);current_file=current_file->next);
   if(current_file!=NULL)
   {
-    unsigned long int new_inode=current_file->filestat.st_ino;
+    unsigned long int new_inode=current_file->stat.st_ino;
     unsigned int dir_entries;
     if(verbose>1)
     {

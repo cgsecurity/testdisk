@@ -34,6 +34,8 @@
 
 typedef struct dir_data dir_data_t;
 typedef struct file_data file_data_t;
+typedef struct file_info file_info_t;
+
 struct dir_data
 {
   void *display;
@@ -57,7 +59,7 @@ struct file_data
   file_data_t *prev;
   file_data_t *next;
   char	name[DIR_NAME_LEN];
-  struct stat filestat;
+  struct stat stat;
   unsigned int status;
 };
 

@@ -441,8 +441,8 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
       new_file->status=0;
       new_file->prev=ls->current_file;
       new_file->next=NULL;
-      new_file->filestat.st_size=entity->stat.st_size;
-      memcpy(&new_file->filestat,&entity->stat,sizeof(new_file->filestat));
+      new_file->stat.st_size=entity->stat.st_size;
+      memcpy(&new_file->stat,&entity->stat,sizeof(new_file->stat));
       reiserfs_object_free(entity);
       if(ls->current_file)
 	ls->current_file->next=new_file;

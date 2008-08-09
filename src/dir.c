@@ -183,9 +183,9 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
       log_info("X");
     else
       log_info(" ");
-    if(current_file->filestat.st_mtime)
+    if(current_file->stat.st_mtime)
     {
-      tm_p = localtime(&current_file->filestat.st_mtime);
+      tm_p = localtime(&current_file->stat.st_mtime);
 
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
@@ -199,11 +199,11 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
     } else {
       strncpy(datestr, "                 ",sizeof(datestr));
     }
-    mode_string(current_file->filestat.st_mode,str);
-    log_info("%7lu ",(unsigned long int)current_file->filestat.st_ino);
+    mode_string(current_file->stat.st_mode,str);
+    log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
     log_info("%s %5u  %5u   ", 
-	str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-    log_info("%7llu", (long long unsigned int)current_file->filestat.st_size);
+	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+    log_info("%7llu", (long long unsigned int)current_file->stat.st_size);
     log_info(" %s %s\n", datestr, current_file->name);
   }
   return test_date;
@@ -249,9 +249,9 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	  wattrset(window, A_REVERSE);
 	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(1));
-	if(current_file->filestat.st_mtime!=0)
+	if(current_file->stat.st_mtime!=0)
 	{
-	  tm_p = localtime(&current_file->filestat.st_mtime);
+	  tm_p = localtime(&current_file->stat.st_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
 	      1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -260,10 +260,10 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	} else {
 	  strncpy(datestr, "                 ",sizeof(datestr));
 	}
-	mode_string(current_file->filestat.st_mode,str);
+	mode_string(current_file->stat.st_mode,str);
 	wprintw(window, "%s %5u %5u   ", 
-	    str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-	wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+	    str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+	wprintw(window, "%7llu", (long long unsigned int)current_file->stat.st_size);
 	/* screen may overlap due to long filename */
 	wprintw(window, " %s %s", datestr, current_file->name);
 	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
@@ -392,9 +392,9 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 #ifdef PADENTER
 	  case PADENTER:
 #endif
-	    if((pos!=NULL) && (LINUX_S_ISDIR(pos->filestat.st_mode)!=0))
+	    if((pos!=NULL) && (LINUX_S_ISDIR(pos->stat.st_mode)!=0))
 	    {
-	      unsigned long int new_inode=pos->filestat.st_ino;
+	      unsigned long int new_inode=pos->stat.st_ino;
 	      if((new_inode!=inode) &&(strcmp(pos->name,".")!=0))
 	      {
 		if(strcmp(pos->name,"..")==0)
@@ -441,7 +441,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 		if(dir_data->local_dir==NULL)
 		{
 		  char *res;
-		  if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		  if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
 		    res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",dir_data->current_directory);
 		  else
 		    res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",dir_data->current_directory);
@@ -459,11 +459,11 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 		  if(has_colors())
 		    wbkgdset(window,' ' | COLOR_PAIR(0));
 		  wrefresh(window);
-		  if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		  if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
 		  {
 		    res=copy_dir(disk_car, partition, dir_data, pos);
 		  }
-		  else if(LINUX_S_ISREG(pos->filestat.st_mode)!=0)
+		  else if(LINUX_S_ISREG(pos->stat.st_mode)!=0)
 		  {
 		    res=dir_data->copy_file(disk_car, partition, dir_data, pos);
 		  }
@@ -584,9 +584,9 @@ int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_
   inode_known[dir_nbr++]=inode;
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
-    if(LINUX_S_ISDIR(current_file->filestat.st_mode)!=0)
+    if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
     {
-      const unsigned long int new_inode=current_file->filestat.st_ino;
+      const unsigned long int new_inode=current_file->stat.st_ino;
       unsigned int new_inode_ok=1;
       unsigned int i;
       if(new_inode<2)
@@ -631,7 +631,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
     return -2;
   dir_name=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
   create_dir(dir_name,1);
-  dir_list=dir_data->get_dir(disk_car, partition,dir_data, (const unsigned long int)dir->filestat.st_ino);
+  dir_list=dir_data->get_dir(disk_car, partition,dir_data, (const unsigned long int)dir->stat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
     dir_data->current_directory[current_directory_namelength]='\0';
@@ -640,10 +640,10 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
       if(strcmp(dir_data->current_directory,"/"))
 	strcat(dir_data->current_directory,"/");
       strcat(dir_data->current_directory,current_file->name);
-      if(LINUX_S_ISDIR(current_file->filestat.st_mode)!=0)
+      if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
       {
 	int tmp=0;
-	if(current_file->filestat.st_ino != dir->filestat.st_ino &&
+	if(current_file->stat.st_ino != dir->stat.st_ino &&
 	    strcmp(current_file->name,"..")!=0 && strcmp(current_file->name,".")!=0)
 	  tmp=copy_dir(disk_car, partition, dir_data, current_file);
 	if(tmp>=-1)
@@ -651,7 +651,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
 	if(tmp<0)
 	  copy_bad=1;
       }
-      else if(LINUX_S_ISREG(current_file->filestat.st_mode)!=0)
+      else if(LINUX_S_ISREG(current_file->stat.st_mode)!=0)
       {
 //	log_trace("copy_file %s\n",dir_data->current_directory);
 	int tmp;
@@ -665,7 +665,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
   }
   dir_data->current_directory[current_directory_namelength]='\0';
   delete_list_file(dir_list);
-  set_date(dir_name, dir->filestat.st_atime, dir->filestat.st_mtime);
+  set_date(dir_name, dir->stat.st_atime, dir->stat.st_mtime);
   free(dir_name);
   return (copy_bad>0?(copy_ok>0?-1:-2):0);
 }

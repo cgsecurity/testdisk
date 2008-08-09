@@ -1141,24 +1141,24 @@ static file_data_t *ufile_to_file_data(const struct ufile *file)
 	strlen(file->pref_name)+1<sizeof(new_file->name)?strlen(file->pref_name)+1:sizeof(new_file->name) );
     new_file->name[sizeof(new_file->name)-1]=0;
   }
-  new_file->filestat.st_dev=0;
-  new_file->filestat.st_ino=file->inode;
-  new_file->filestat.st_mode = (file->directory ?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
-  new_file->filestat.st_nlink=0;
-  new_file->filestat.st_uid=0;
-  new_file->filestat.st_gid=0;
-  new_file->filestat.st_rdev=0;
-  new_file->filestat.st_size=file->max_size;
+  new_file->stat.st_dev=0;
+  new_file->stat.st_ino=file->inode;
+  new_file->stat.st_mode = (file->directory ?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
+  new_file->stat.st_nlink=0;
+  new_file->stat.st_uid=0;
+  new_file->stat.st_gid=0;
+  new_file->stat.st_rdev=0;
+  new_file->stat.st_size=file->max_size;
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-  new_file->filestat.st_blksize=512;	/* FIXME cluster_size */
+  new_file->stat.st_blksize=512;	/* FIXME cluster_size */
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-  if(new_file->filestat.st_blksize!=0)
+  if(new_file->stat.st_blksize!=0)
   {
-    new_file->filestat.st_blocks=(new_file->filestat.st_size+new_file->filestat.st_blksize-1)/new_file->filestat.st_blksize;
+    new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
   }
 #endif
 #endif
-  new_file->filestat.st_atime=new_file->filestat.st_ctime=new_file->filestat.st_mtime=file->date;
+  new_file->stat.st_atime=new_file->stat.st_ctime=new_file->stat.st_mtime=file->date;
   new_file->status=FILE_STATUS_DELETED;
   return new_file;
 }
@@ -1298,9 +1298,9 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	wclrtoeol(window);	/* before addstr for BSD compatibility */
 	if(current_file==pos)
 	  wattrset(window, A_REVERSE);
-	if(current_file->filestat.st_mtime!=0)
+	if(current_file->stat.st_mtime!=0)
 	{
-	  tm_p = localtime(&current_file->filestat.st_mtime);
+	  tm_p = localtime(&current_file->stat.st_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
 	      1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -1309,10 +1309,10 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	} else {
 	  strncpy(datestr, "                 ",sizeof(datestr));
 	}
-	mode_string(current_file->filestat.st_mode,str);
+	mode_string(current_file->stat.st_mode,str);
 	wprintw(window, "%s %5u %5u   ", 
-	    str, (unsigned int)current_file->filestat.st_uid, (unsigned int)current_file->filestat.st_gid);
-	wprintw(window, "%7llu", (long long unsigned int)current_file->filestat.st_size);
+	    str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+	wprintw(window, "%7llu", (long long unsigned int)current_file->stat.st_size);
 	/* screen may overlap due to long filename */
 	wprintw(window, " %s %s", datestr, current_file->name);
 	if(current_file==pos)
@@ -1404,12 +1404,12 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	    }
 	    break;
 	  case 'c':
-	    if(LINUX_S_ISDIR(pos->filestat.st_mode)==0)
+	    if(LINUX_S_ISDIR(pos->stat.st_mode)==0)
 	    {
 	      if(dir_data->local_dir==NULL)
 	      {
 		char *res;
-		if(LINUX_S_ISDIR(pos->filestat.st_mode)!=0)
+		if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
 		  res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
 		      pos->name);
 		else
@@ -1429,7 +1429,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		if(has_colors())
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 		wrefresh(window);
-		res=undelete_file(ls->vol, pos->filestat.st_ino);
+		res=undelete_file(ls->vol, pos->stat.st_ino);
 		wmove(window,5,0);
 		wclrtoeol(window);
 		if(res < -1)

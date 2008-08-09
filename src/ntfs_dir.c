@@ -246,24 +246,24 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       new_file->status=0;
       new_file->prev=ls->current_file;
       new_file->next=NULL;
-      new_file->filestat.st_dev=0;
-      new_file->filestat.st_ino=MREF(mref);
-      new_file->filestat.st_mode = (dt_type == NTFS_DT_DIR?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
-      new_file->filestat.st_nlink=1;
-      new_file->filestat.st_uid=0;
-      new_file->filestat.st_gid=0;
-      new_file->filestat.st_rdev=0;
-      new_file->filestat.st_size=filesize;
-      new_file->filestat.st_blksize=DEFAULT_SECTOR_SIZE;
+      new_file->stat.st_dev=0;
+      new_file->stat.st_ino=MREF(mref);
+      new_file->stat.st_mode = (dt_type == NTFS_DT_DIR?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
+      new_file->stat.st_nlink=1;
+      new_file->stat.st_uid=0;
+      new_file->stat.st_gid=0;
+      new_file->stat.st_rdev=0;
+      new_file->stat.st_size=filesize;
+      new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-      if(new_file->filestat.st_blksize!=0)
+      if(new_file->stat.st_blksize!=0)
       {
-	new_file->filestat.st_blocks=(new_file->filestat.st_size+new_file->filestat.st_blksize-1)/new_file->filestat.st_blksize;
+	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
       }
 #endif
-      new_file->filestat.st_atime=ntfs2utc(sle64_to_cpu(file_name_attr->last_access_time));
-      new_file->filestat.st_ctime=ntfs2utc(sle64_to_cpu(file_name_attr->creation_time));
-      new_file->filestat.st_mtime=ntfs2utc(sle64_to_cpu(file_name_attr->last_data_change_time));
+      new_file->stat.st_atime=ntfs2utc(sle64_to_cpu(file_name_attr->last_access_time));
+      new_file->stat.st_ctime=ntfs2utc(sle64_to_cpu(file_name_attr->creation_time));
+      new_file->stat.st_mtime=ntfs2utc(sle64_to_cpu(file_name_attr->last_data_change_time));
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       /* log_debug("fat: new file %s de=%p size=%u\n",new_file->name,de,de->size); */
@@ -321,7 +321,7 @@ static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir
 
 static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
 {
-  const unsigned long int first_inode=file->filestat.st_ino;
+  const unsigned long int first_inode=file->stat.st_ino;
   ntfs_inode *inode;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
   inode = ntfs_inode_open (ls->vol, first_inode);
@@ -389,7 +389,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       offset += bytes_read;
     }
     fclose(f_out);
-    set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+    set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
     ntfs_attr_close(attr);
     free(new_file);
     free(buffer);

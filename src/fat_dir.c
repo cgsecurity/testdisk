@@ -261,24 +261,24 @@ RecEnd:
       for(i=0;(unicode[i]!=0)&&(i<sizeof(new_file->name)-1);i++)
 	new_file->name[i]=(char) unicode[i];
       new_file->name[i]=0;
-      new_file->filestat.st_dev=0;
-      new_file->filestat.st_ino=inode;
-      new_file->filestat.st_mode = MSDOS_MKMODE(de->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
-      new_file->filestat.st_nlink=0;
-      new_file->filestat.st_uid=0;
-      new_file->filestat.st_gid=0;
-      new_file->filestat.st_rdev=0;
-      new_file->filestat.st_size=le32(de->size);
+      new_file->stat.st_dev=0;
+      new_file->stat.st_ino=inode;
+      new_file->stat.st_mode = MSDOS_MKMODE(de->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
+      new_file->stat.st_nlink=0;
+      new_file->stat.st_uid=0;
+      new_file->stat.st_gid=0;
+      new_file->stat.st_rdev=0;
+      new_file->stat.st_size=le32(de->size);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-      new_file->filestat.st_blksize=cluster_size;
+      new_file->stat.st_blksize=cluster_size;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-      if(new_file->filestat.st_blksize!=0)
+      if(new_file->stat.st_blksize!=0)
       {
-	new_file->filestat.st_blocks=(new_file->filestat.st_size+new_file->filestat.st_blksize-1)/new_file->filestat.st_blksize;
+	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
       }
 #endif
 #endif
-      new_file->filestat.st_atime=new_file->filestat.st_ctime=new_file->filestat.st_mtime=date_dos2unix(le16(de->time),le16(de->date));
+      new_file->stat.st_atime=new_file->stat.st_ctime=new_file->stat.st_mtime=date_dos2unix(le16(de->time),le16(de->date));
       new_file->status=status;
       new_file->prev=current_file;
       new_file->next=NULL;
@@ -524,7 +524,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   const unsigned int block_size=fat_sector_size(fat_header)*sectors_per_cluster;
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
-  unsigned int file_size=file->filestat.st_size;
+  unsigned int file_size=file->stat.st_size;
   unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
   uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length;
@@ -537,7 +537,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     free(buffer_file);
     return -1;
   }
-  cluster = file->filestat.st_ino;
+  cluster = file->stat.st_ino;
   log_trace("fat_copy dst=%s first_cluster=%u size=%lu\n", new_file,
       cluster, (long unsigned)file_size);
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
@@ -560,7 +560,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     {
       log_error("fat_copy: no space left on destination.\n");
       fclose(f_out);
-      set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+      set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
       free(new_file);
       free(buffer_file);
       return -1;
@@ -573,7 +573,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
 	const unsigned int next_cluster=get_next_cluster(disk_car, partition, partition->upart_type, start_fat1, cluster);
 	if(next_cluster>=2 && next_cluster<=no_of_cluster+2)
 	  cluster=next_cluster;
-	else if(cluster==file->filestat.st_ino && next_cluster==0)
+	else if(cluster==file->stat.st_ino && next_cluster==0)
 	  fat_meth=FAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted file */
 	else
 	  fat_meth=FAT_NEXT_CLUSTER;		/* FAT is corrupted, don't trust it */
@@ -588,7 +588,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     }
   }
   fclose(f_out);
-  set_date(new_file, file->filestat.st_atime, file->filestat.st_mtime);
+  set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
   free(new_file);
   free(buffer_file);
   return 0;
