@@ -1,6 +1,8 @@
-/**
- * ntfsundelete - Part of the Linux-NTFS project.
- *
+/*
+    File: ntfs_udl.c
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
+
+ * Original source: ntfsundelete.c from Linux-NTFS project
  * Copyright (c) 2002-2005 Richard Russon
  * Copyright (c) 2004-2005 Holger Ohmacht
  * Copyright (c) 2005 Anton Altaparmakov
@@ -94,11 +96,7 @@
 extern const char *monstr[];
 
 struct options {
-	char		*device;	/* Device/File to work with */
-	int		 percent;	/* Minimum recoverability */
-	int		 uinode;	/* Undelete this inode */
 	char		*dest;		/* Save file to this directory */
-	int              optimistic;    /* Undelete in-use clusters as well */
 };
 
 struct filename {
@@ -700,86 +698,6 @@ static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 	return percent;
 }
 
-#if 0
-/**
- * list_record - Print a one line summary of the file
- * @file:  The file to work with
- *
- * Print a one line description of a file.
- *
- *   Inode    Flags  %age  Date            Size  Filename
- *
- * The output will contain the file's inode number (MFT Record), some flags,
- * the percentage of the file that is recoverable, the last modification date,
- * the size and the filename.
- *
- * The flags are F/D = File/Directory, N/R = Data is (Non-)Resident,
- * C = Compressed, E = Encrypted, ! = Metadata may span multiple records.
- *
- * N.B.  The file size is stored in many forms in several attributes.   This
- *       display the largest it finds.
- *
- * N.B.  If the filename is missing, or couldn't be converted to the current
- *       locale, "<none>" will be displayed.
- *
- * Return:  none
- */
-static void list_record(struct ufile *file)
-{
-	char buffer[20];
-	struct td_list_head *item;
-	const char *name = NULL;
-	long long size = 0;
-	int percent = 0;
-
-	char flagd = '.', flagr = '.', flagc = '.', flagx = '.';
-
-	strftime(buffer, sizeof(buffer), "%F", localtime(&file->date));
-
-	if (file->attr_list)
-		flagx = '!';
-
-	if (file->directory)
-		flagd = 'D';
-	else
-		flagd = 'F';
-
-	td_list_for_each(item, &file->data) {
-		struct data *d = td_list_entry(item, struct data, list);
-
-		if (!d->name) {
-			if (d->resident)   flagr = 'R';
-			else		   flagr = 'N';
-			if (d->compressed) flagc = 'C';	/* These two are mutually exclusive */
-			if (d->encrypted)  flagc = 'E';
-
-			percent = max(percent, d->percent);
-		}
-
-		size = max(size, d->size_data);
-		size = max(size, d->size_init);
-	}
-
-	if (file->pref_name)
-		name = file->pref_name;
-	else
-		name = NONE;
-
-	if(file->pref_pname)
-	{
-	  log_info("%-8lld %c%c%c%c   %3d%%  %s %9lld  %s/%s\n",
-	      file->inode, flagd, flagr, flagc, flagx,
-	      percent, buffer, size, file->pref_pname, name);
-	}
-	else
-	{
-	  log_info("%-8lld %c%c%c%c   %3d%%  %s %9lld  %s\n",
-	      file->inode, flagd, flagr, flagc, flagx,
-	      percent, buffer, size, name);
-	}
-}
-#endif
-
 /**
  * write_data - Write out a block of data
  * @fd:       File descriptor to write to
@@ -970,6 +888,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 
 		name = file->pref_name;
 
+		//dir_data->local_dir;
 		create_pathname(opts.dest, file->pref_pname, name, d->name, pathname, sizeof(pathname));
 		if (d->resident) {
 			fd = open_file(pathname);
@@ -1056,15 +975,23 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 				start = rl[i].lcn;
 				end   = rl[i].lcn + rl[i].length;
 
-				for (j = start; j < end; j++) {
-					if (utils_cluster_in_use(vol, j) && !opts.optimistic) {
+				for (j = start; j < end; j++)
+				{
+				  /* Don't check if clusters are in used or not */
+#if 0
+					if (utils_cluster_in_use(vol, j) && !opts.optimistic)
+					{
 						memset(buffer, 0, bufsize);
-						if (write_data(fd, buffer, bufsize) < bufsize) {
+						if (write_data(fd, buffer, bufsize) < bufsize)
+						{
 							log_error("Write failed\n");
 							close(fd);
 							goto free;
 						}
-					} else {
+					}
+					else
+#endif
+					{
 						if (ntfs_cluster_read(vol, j, 1, buffer) < 1) {
 							log_error("Read failed\n");
 							close(fd);
@@ -1194,8 +1121,6 @@ static file_data_t *scan_disk(ntfs_volume *vol)
 	ntfs_log_set_levels(NTFS_LOG_LEVEL_QUIET);
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
 #endif
-	opts.uinode   = -1;
-	opts.percent  = 1;
 
 	attr = ntfs_attr_open(vol->mft_ni, AT_BITMAP, AT_UNNAMED, 0);
 	if (!attr) {
