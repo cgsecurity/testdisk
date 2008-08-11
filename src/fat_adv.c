@@ -2089,7 +2089,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       {
 	while(partition->part_size/sectors_per_cluster_min > (1<<12))
 	  sectors_per_cluster_min*=2;
-	fat_length_max=partition->part_size/sectors_per_cluster_min*1.5;
+	fat_length_max=partition->part_size/sectors_per_cluster_min*3/2;
       }
     fat_length_max=fat_length_max/disk_car->sector_size*disk_car->sector_size;
     if(verbose>1)

@@ -312,20 +312,24 @@ char *gen_local_filename(const char *dir, const char*src)
   char *dst=(char *)MALLOC(l1+l2+1);
 #if defined(DJGPP)
   l1=filename_convert_dos(dst, dir, l1+1);
-  filename_convert_dos(dst+l1, src, l2+1);
+  if(src!=NULL)
+    filename_convert_dos(dst+l1, src, l2+1);
   if(dir[0]!='\0' && dir[1]==':')
     dst[1]=':';
 #elif defined(__CYGWIN__) || defined(__MINGW32__)
   l1=filename_convert_win(dst, dir, l1+1);
-  filename_convert_win(dst+l1, src, l2+1);
+  if(src!=NULL)
+    filename_convert_win(dst+l1, src, l2+1);
   if(dir[0]!='\0' && dir[1]==':')
     dst[1]=':';
 #elif defined(__APPLE__)
   l1=filename_convert_mac(dst, dir, l1+1);
-  filename_convert_mac(dst+l1, src, l2+1);
+  if(src!=NULL)
+    filename_convert_mac(dst+l1, src, l2+1);
 #else
   memcpy(dst, dir, l1);
-  memcpy(dst+l1, src,l2+1);
+  if(src!=NULL)
+    memcpy(dst+l1, src,l2+1);
 #endif
   return dst;
 }

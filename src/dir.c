@@ -209,6 +209,52 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
   return test_date;
 }
 
+int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
+{
+  int test_date=0;
+  struct td_list_head *tmp;
+  log_partition(disk_car,partition);
+  if(dir_data!=NULL)
+  {
+    log_info("Directory %s\n",dir_data->current_directory);
+  }
+  td_list_for_each(tmp, &list->list)
+  {
+    file_info_t *current_file;
+    struct tm		*tm_p;
+    char		datestr[80];
+    char str[11];
+    current_file=td_list_entry(tmp, file_info_t, list);
+    if((current_file->status&FILE_STATUS_DELETED)!=0)
+      log_info("X");
+    else
+      log_info(" ");
+    if(current_file->stat.st_mtime)
+    {
+      tm_p = localtime(&current_file->stat.st_mtime);
+
+      snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	  tm_p->tm_mday, monstr[tm_p->tm_mon],
+	  1900 + tm_p->tm_year, tm_p->tm_hour,
+	  tm_p->tm_min);
+      /* FIXME: a check using current_file->name will be better */
+      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2010)
+      {
+	test_date=1;
+      }
+    } else {
+      strncpy(datestr, "                 ",sizeof(datestr));
+    }
+    mode_string(current_file->stat.st_mode,str);
+    log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
+    log_info("%s %5u  %5u   ", 
+	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+    log_info("%7llu", (long long unsigned int)current_file->stat.st_size);
+    log_info(" %s %s\n", datestr, current_file->name);
+  }
+  return test_date;
+}
+
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 
@@ -510,6 +556,19 @@ void delete_list_file(file_data_t *file_list)
   }
 }
 
+void delete_list_file_info(struct td_list_head *list)
+{
+  struct td_list_head *file_walker = NULL;
+  struct td_list_head *file_walker_next = NULL;
+  td_list_for_each_safe(file_walker,file_walker_next, list)
+  {
+    file_info_t *file_info;
+    file_info=td_list_entry(file_walker, file_info_t, list);
+    td_list_del(file_walker);
+    free(file_info);
+  }
+}
+
 int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd)
 {
   if(dir_data==NULL)
@@ -713,8 +772,8 @@ int set_date(const char *pathname, time_t actime, time_t modtime)
 
 int filesort(const struct td_list_head *a, const struct td_list_head *b)
 {
-  const struct file_info *file_a=td_list_entry(a, struct file_info, list);
-  const struct file_info *file_b=td_list_entry(b, struct file_info, list);
+  const file_info_t *file_a=td_list_entry(a, file_info_t, list);
+  const file_info_t *file_b=td_list_entry(b, file_info_t, list);
   /* Directories must be listed before files */
   const int res=((file_b->stat.st_mode&LINUX_S_IFDIR)-(file_a->stat.st_mode&LINUX_S_IFDIR));
   if(res)

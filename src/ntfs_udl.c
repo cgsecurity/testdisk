@@ -149,9 +149,6 @@ struct ufile {
 	char		 padding[4];	/* Unused: padding to 64 bit. */
 };
 
-#if 0
-static const char *NONE      = "<none>";
-#endif
 static const char *UNKNOWN   = "unknown";
 static struct options opts;
 
@@ -270,7 +267,7 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
     log_error("ERROR: Couldn't open $MFT/$DATA\n");
     return;
   }
-  rec = calloc(1, vol->mft_record_size);
+  rec = (MFT_RECORD*) calloc(1, vol->mft_record_size);
   if (!rec) {
     log_error("ERROR: Couldn't allocate memory in get_parent_name()\n");
     ntfs_attr_close(mft_data);
@@ -307,14 +304,14 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 	  else if(strcmp(parent_name,".")==0 && inode_num==5)
 	  {
 	    /* root directory */
-	    char *npn=MALLOC(strlen(name->parent_name)+2);
+	    char *npn=(char *)MALLOC(strlen(name->parent_name)+2);
 	    sprintf(npn, "/%s", name->parent_name);
 	    free(name->parent_name);
 	    name->parent_name=npn;
 	  }
 	  else
 	  {
-	    char *npn=MALLOC(strlen(parent_name)+strlen(name->parent_name)+2);
+	    char *npn=(char *)MALLOC(strlen(parent_name)+strlen(name->parent_name)+2);
 	    sprintf(npn, "%s/%s", parent_name, name->parent_name);
 	    free(name->parent_name);
 	    name->parent_name=npn;
@@ -372,7 +369,7 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
 		/* We know this will always be resident. */
 		attr = (FILE_NAME_ATTR *) ((char *) rec + le16_to_cpu(rec->value_offset));
 
-		name = calloc(1, sizeof(*name));
+		name = (struct filename *)calloc(1, sizeof(*name));
 		if (!name) {
 			log_error("ERROR: Couldn't allocate memory in get_filenames().\n");
 			count = -1;
@@ -453,7 +450,7 @@ static int get_data(struct ufile *file, ntfs_volume *vol)
 		return -1;
 
 	while ((rec = find_attribute(AT_DATA, ctx))) {
-		data = calloc(1, sizeof(*data));
+		data = (struct data *)calloc(1, sizeof(*data));
 		if (!data) {
 			log_error("ERROR: Couldn't allocate memory in get_data().\n");
 			count = -1;
@@ -521,7 +518,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	if (!vol)
 		return NULL;
 
-	file = calloc(1, sizeof(*file));
+	file = (struct ufile *)calloc(1, sizeof(*file));
 	if (!file) {
 		log_error("ERROR: Couldn't allocate memory in read_record()\n");
 		return NULL;
@@ -531,7 +528,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	TD_INIT_LIST_HEAD(&file->data);
 	file->inode = record;
 
-	file->mft = MALLOC(vol->mft_record_size);
+	file->mft = (MFT_RECORD *)MALLOC(vol->mft_record_size);
 
 	mft = ntfs_attr_open(vol->mft_ni, AT_DATA, AT_UNNAMED, 0);
 	if (!mft) {
@@ -860,7 +857,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 
 
 	bufsize = vol->cluster_size;
-	buffer = MALLOC(bufsize);
+	buffer = (char *)MALLOC(bufsize);
 
 	/* calc_percentage() must be called before 
 	 * list_record(). Otherwise, when undeleting, a file will always be
@@ -898,7 +895,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 			}
 
 			log_verbose("File has resident data.\n");
-			if (write_data(fd, d->data, d->size_data) < d->size_data) {
+			if (write_data(fd, (const char *)d->data, d->size_data) < d->size_data) {
 				log_error("Write failed\n");
 				close(fd);
 				goto free;
@@ -1045,13 +1042,13 @@ free:
 	return result;
 }
 
-static file_data_t *ufile_to_file_data(const struct ufile *file)
+static file_info_t *ufile_to_file_data(const struct ufile *file)
 {
-  file_data_t *new_file;
+  file_info_t *new_file;
   int len;
   if(file->pref_name==NULL)
     return NULL;
-  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+  new_file=(file_info_t *)MALLOC(sizeof(*new_file));
   len=strlen(file->pref_name);
   if(file->pref_pname!=NULL)
     len+=strlen(file->pref_pname)+1;
@@ -1100,7 +1097,7 @@ static file_data_t *ufile_to_file_data(const struct ufile *file)
  * The list can be filtered by name, size and date, using command line options.
  *
  */
-static file_data_t *scan_disk(ntfs_volume *vol)
+static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 {
 	s64 nr_mft_records;
 	const int BUFSIZE = 8192;
@@ -1110,26 +1107,23 @@ static file_data_t *scan_disk(ntfs_volume *vol)
 	long long size;
 	long long bmpsize;
 	int i, j, k, b;
-	int percent;
 	struct ufile *file;
-	file_data_t *dir_list=NULL;
-	file_data_t *current_file=NULL;
-
 	if (!vol)
-		return NULL;
+	  return;
 #ifdef NTFS_LOG_LEVEL_VERBOSE
 	ntfs_log_set_levels(NTFS_LOG_LEVEL_QUIET);
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
 #endif
 
 	attr = ntfs_attr_open(vol->mft_ni, AT_BITMAP, AT_UNNAMED, 0);
-	if (!attr) {
-		log_error("ERROR: Couldn't open $MFT/$BITMAP\n");
-		return NULL;
+	if (!attr)
+	{
+	  log_error("ERROR: Couldn't open $MFT/$BITMAP\n");
+	  return;
 	}
 	bmpsize = attr->initialized_size;
 
-	buffer = MALLOC(BUFSIZE);
+	buffer = (char *) MALLOC(BUFSIZE);
 
 	nr_mft_records = vol->mft_na->initialized_size >>
 			vol->mft_record_size_bits;
@@ -1142,43 +1136,28 @@ static file_data_t *scan_disk(ntfs_volume *vol)
 
 		for (j = 0; j < size; j++) {
 			b = buffer[j];
-			for (k = 0; k < 8; k++, b>>=1) {
-				if (((i+j)*8+k) >= nr_mft_records)
-					goto done;
-				if (b & 1)
-					continue;
-				file = read_record(vol, (i+j)*8+k);
-				if (!file) {
-					log_error("Couldn't read MFT Record %d.\n", (i+j)*8+k);
-					continue;
-				}
+			for (k = 0; k < 8; k++, b>>=1)
+			{
+			  int percent;
+			  if (((i+j)*8+k) >= nr_mft_records)
+			    goto done;
+			  if (b & 1)
+			    continue;
+			  file = read_record(vol, (i+j)*8+k);
+			  if (!file) {
+			    log_error("Couldn't read MFT Record %d.\n", (i+j)*8+k);
+			    continue;
+			  }
 
-				percent = calc_percentage(file, vol);
-				if (percent >0)
-				{
-				  file_data_t *new_file;
-				  new_file=ufile_to_file_data(file);
-				  new_file->prev=current_file;
-				  new_file->next=NULL;
-				  if(current_file!=NULL)
-				    current_file->next=new_file;
-				  else
-				    dir_list=new_file;
-				  current_file=new_file;
-#if 0
-				  list_record(file);
-				  /* Was -u specified with no inode
-				     so undelete file by regex */
-				  if (opts.mode == MODE_UNDELETE) {
-				    if  (!undelete_file(vol, file->inode))
-				      log_error("ERROR: Failed to undelete "
-					  "inode %lli\n!",
-					  file->inode);
-				  }
-#endif
-				  results++;
-				}
-				free_file(file);
+			  percent = calc_percentage(file, vol);
+			  if (percent >0)
+			  {
+			    file_info_t *new_file;
+			    new_file=ufile_to_file_data(file);
+			    td_list_add_sorted(&new_file->list, &dir_list->list, filesort);
+			    results++;
+			  }
+			  free_file(file);
 			}
 		}
 	}
@@ -1187,22 +1166,20 @@ done:
 	free(buffer);
 	if (attr)
 		ntfs_attr_close(attr);
-	return dir_list;
 }
 
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 
-static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir_list)
+static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir_list)
 {
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data->private_dir_data;
   WINDOW *window=(WINDOW*)dir_data->display;
   while(1)
   {
+    struct td_list_head *current_file=dir_list->list.next;
     int offset=0;
     int pos_num=0;
-    const file_data_t *current_file;
-    const file_data_t *pos=dir_list;
     int old_LINES=LINES;
     aff_copy(window);
     wmove(window,3,0);
@@ -1211,37 +1188,45 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
     wprintw(window,"Deleted files\n");
     do
     {
-      int i;
+      struct td_list_head *file_walker = NULL;
+      int i=0;
       int car;
-      for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
-      for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
+      td_list_for_each(file_walker,&dir_list->list)
       {
-	struct tm		*tm_p;
-	char str[11];
-	char		datestr[80];
-	wmove(window, 6+i-offset, 0);
-	wclrtoeol(window);	/* before addstr for BSD compatibility */
-	if(current_file==pos)
-	  wattrset(window, A_REVERSE);
-	if(current_file->stat.st_mtime!=0)
+	if(i++<offset)
+	  continue;
 	{
-	  tm_p = localtime(&current_file->stat.st_mtime);
-	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	      tm_p->tm_mday, monstr[tm_p->tm_mon],
-	      1900 + tm_p->tm_year, tm_p->tm_hour,
-	      tm_p->tm_min);
-	  /* May have to use %d instead of %e */
-	} else {
-	  strncpy(datestr, "                 ",sizeof(datestr));
+	  file_info_t *file_info;
+	  struct tm		*tm_p;
+	  char str[11];
+	  char		datestr[80];
+	  file_info=td_list_entry(file_walker, file_info_t, list);
+	  wmove(window, 6-1+i-offset, 0);
+	  wclrtoeol(window);	/* before addstr for BSD compatibility */
+	  if(file_walker==current_file)
+	    wattrset(window, A_REVERSE);
+	  if(file_info->stat.st_mtime!=0)
+	  {
+	    tm_p = localtime(&file_info->stat.st_mtime);
+	    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+		tm_p->tm_mday, monstr[tm_p->tm_mon],
+		1900 + tm_p->tm_year, tm_p->tm_hour,
+		tm_p->tm_min);
+	    /* May have to use %d instead of %e */
+	  } else {
+	    strncpy(datestr, "                 ",sizeof(datestr));
+	  }
+	  mode_string(file_info->stat.st_mode,str);
+	  wprintw(window, "%s %5u %5u   ", 
+	      str, (unsigned int)file_info->stat.st_uid, (unsigned int)file_info->stat.st_gid);
+	  wprintw(window, "%7llu", (long long unsigned int)file_info->stat.st_size);
+	  /* screen may overlap due to long filename */
+	  wprintw(window, " %s %s", datestr, file_info->name);
+	  if(file_walker==current_file)
+	    wattroff(window, A_REVERSE);
 	}
-	mode_string(current_file->stat.st_mode,str);
-	wprintw(window, "%s %5u %5u   ", 
-	    str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
-	wprintw(window, "%7llu", (long long unsigned int)current_file->stat.st_size);
-	/* screen may overlap due to long filename */
-	wprintw(window, " %s %s", datestr, current_file->name);
-	if(current_file==pos)
-	  wattroff(window, A_REVERSE);
+	if(offset+INTER_DIR<=i)
+	  break;
       }
       wmove(window, 6-1, 51);
       wclrtoeol(window);
@@ -1252,9 +1237,9 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
       wclrtoeol(window);
       wmove(window, 6+INTER_DIR, 51);
       wclrtoeol(window);
-      if(current_file!=NULL)
+      if(file_walker!=&dir_list->list && file_walker->next!=&dir_list->list)
 	wprintw(window, "Next");
-      if(dir_list==NULL)
+      if(td_list_empty(&dir_list->list))
       {
 	wmove(window,6,0);
 	wprintw(window,"No deleted file found.");
@@ -1286,60 +1271,62 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	case 'M':
 	  return;
       }
-      if(dir_list!=NULL)
+      switch(car)
       {
-	switch(car)
-	{
-	  case KEY_UP:
-	  case '8':
-	    if(pos->prev!=NULL)
-	    {
-	      pos=pos->prev;
-	      pos_num--;
-	    }
+	case KEY_UP:
+	case '8':
+	  if(current_file->prev!=&dir_list->list)
+	  {
+	    current_file=current_file->prev;
+	    pos_num--;
 	    if(pos_num<offset)
 	      offset--;
-	    break;
-	  case KEY_DOWN:
-	  case '2':
-	    if(pos->next!=NULL)
-	    {
-	      pos=pos->next;
-	      pos_num++;
-	    }
+	  }
+	  break;
+	case KEY_DOWN:
+	case '2':
+	  if(current_file->next!=&dir_list->list)
+	  {
+	    current_file=current_file->next;
+	    pos_num++;
 	    if(pos_num>=offset+INTER_DIR)
 	      offset++;
-	    break;
-	  case KEY_PPAGE:
-	    for(i=0;(i<INTER_DIR-1)&&(pos->prev!=NULL);i++)
-	    {
-	      pos=pos->prev;
-	      pos_num--;
-	      if(pos_num<offset)
-		offset--;
-	    }
-	    break;
-	  case KEY_NPAGE:
-	    for(i=0;(i<INTER_DIR-1)&&(pos->next!=NULL);i++)
-	    {
-	      pos=pos->next;
-	      pos_num++;
-	      if(pos_num>=offset+INTER_DIR)
-		offset++;
-	    }
-	    break;
-	  case 'c':
-	    if(LINUX_S_ISDIR(pos->stat.st_mode)==0)
+	  }
+	  break;
+	case KEY_PPAGE:
+	  for(i=0; i<INTER_DIR-1 && current_file->prev!=&dir_list->list; i++)
+	  {
+	    current_file=current_file->prev;
+	    pos_num--;
+	    if(pos_num<offset)
+	      offset--;
+	  }
+	  break;
+	case KEY_NPAGE:
+	  for(i=0; i<INTER_DIR-1 && current_file->next!=&dir_list->list; i++)
+	  {
+	    current_file=current_file->next;
+	    pos_num++;
+	    if(pos_num>=offset+INTER_DIR)
+	      offset++;
+	  }
+	  break;
+	case 'c':
+	  {
+	    file_info_t *file_info;
+	    file_info=td_list_entry(current_file, file_info_t, list);
+	    if(current_file!=&dir_list->list &&
+		LINUX_S_ISDIR(file_info->stat.st_mode)==0)
 	    {
 	      if(dir_data->local_dir==NULL)
 	      {
 		char *res;
-		if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
+		if(LINUX_S_ISDIR(file_info->stat.st_mode)!=0)
 		  res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
-		      pos->name);
+		      file_info->name);
 		else
 		  res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",
-		      pos->name);
+		      file_info->name);
 		dir_data->local_dir=res;
 		opts.dest=res;
 	      }
@@ -1354,7 +1341,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		if(has_colors())
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 		wrefresh(window);
-		res=undelete_file(ls->vol, pos->stat.st_ino);
+		res=undelete_file(ls->vol, file_info->stat.st_ino);
 		wmove(window,5,0);
 		wclrtoeol(window);
 		if(res < -1)
@@ -1376,17 +1363,17 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 	      }
 	    }
-	    break;
-	}
+	  }
+	  break;
       }
     } while(old_LINES==LINES);
   }
 }
 #endif
 
-static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir_list, char**current_cmd)
+static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir_list, char**current_cmd)
 {
-  dir_aff_log(disk_car, partition, dir_data, dir_list);
+  log_list_file(disk_car, partition, dir_data, dir_list);
   if(*current_cmd!=NULL)
   {
     return;	/* Quit */
@@ -1449,11 +1436,14 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
       break;
     default:
       {
-	file_data_t *dir_list;
+	static file_info_t dir_list = {
+	  .list = TD_LIST_HEAD_INIT(dir_list.list),
+	  .name = {0}
+	};
 	struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data.private_dir_data;
-	dir_list=scan_disk(ls->vol);
-	ntfs_undelete_menu(disk_car, partition, &dir_data, dir_list, current_cmd);
-	delete_list_file(dir_list);
+	scan_disk(ls->vol, &dir_list);
+	ntfs_undelete_menu(disk_car, partition, &dir_data, &dir_list, current_cmd);
+	delete_list_file_info(&dir_list.list);
 	dir_data.close(&dir_data);
       }
       break;
