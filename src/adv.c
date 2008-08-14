@@ -1056,7 +1056,10 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       else if(opt_B!=0)
       {
 	menu=5;
-	options="DBRL";
+	if(expert>0)
+	  options="DBRML";
+	else
+	  options="DBRL";
       }
       else if(opt_O!=0)
       {
