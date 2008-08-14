@@ -2,7 +2,7 @@
 
     File: filegen.c
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,48 +34,50 @@
 #include "common.h"
 #include "filegen.h"
 
-file_check_t *file_check_list=NULL;
+file_check_t file_check_list={
+    .list = TD_LIST_HEAD_INIT(file_check_list.list)
+};
+
+static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
+{
+  const file_check_t *fc_a=td_list_entry(a, const file_check_t, list);
+  const file_check_t *fc_b=td_list_entry(b, const file_check_t, list);
+  int res;
+  if(fc_a->length==0 && fc_b->length!=0)
+    return 1;
+  if(fc_a->length!=0 && fc_b->length==0)
+    return -1;
+  res=fc_a->offset-fc_b->offset;
+  if(res!=0)
+    return res;
+  return memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
+}
 
 void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
   int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat)
 {
-  /* No need to use the more advanced list.h, this structure should be updated to a tree */
   file_check_t *file_check_new=(file_check_t *)MALLOC(sizeof(*file_check_new));
   file_check_new->value=value;
   file_check_new->length=length;
   file_check_new->offset=offset;
   file_check_new->header_check=header_check;
   file_check_new->file_stat=file_stat;
-  if(length==0)
-  {
-    file_check_t *last;
-    /* tail */
-    for(last=file_check_list;last!=NULL && last->next!=NULL;last=last->next);
-    if(last==NULL)
-      file_check_list=file_check_new;
-    else
-      last->next=file_check_new;
-    file_check_new->next=NULL;
-  }
-  else
-  { /* head */
-    file_check_new->next=file_check_list;
-    file_check_list=file_check_new;
-  }
+  td_list_add_sorted(&file_check_new->list, &file_check_list.list, file_check_cmp);
 }
 
 void free_header_check(void)
 {
-  file_check_t *current=file_check_list;
-  while(current!=NULL)
+  struct td_list_head *tmp;
+  struct td_list_head *next;
+  td_list_for_each_safe(tmp, next, &file_check_list.list)
   {
-    file_check_t *next=current->next;
-    free(current);
-    current=next;
+    file_check_t *current_check;
+    current_check=td_list_entry(tmp, file_check_t, list);
+    td_list_del(tmp);
+    free(current_check);
   }
-  file_check_list=NULL;
 }
 
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)

@@ -110,18 +110,17 @@ void register_header_check(const unsigned int offset, const unsigned char *value
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 
-typedef struct file_check_struct file_check_t;
-
-struct file_check_struct
+typedef struct
 {
+  struct td_list_head list;
   const unsigned char *value;
   unsigned int length;
   unsigned int offset;
   int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
   file_stat_t *file_stat;
-  file_check_t *next;
-};
+} file_check_t;
+
 void free_header_check(void);
 #define NL_BARENL       (1 << 0)
 #define NL_CRLF         (1 << 1)

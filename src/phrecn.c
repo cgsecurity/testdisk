@@ -73,7 +73,7 @@
 
 extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_dir;
-extern file_check_t *file_check_list;
+extern file_check_t file_check_list;
 
 #ifdef HAVE_NCURSES
 static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats);
@@ -518,17 +518,23 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
       need_to_check_file=0;
       if(offset==current_search_space->start)
       {
+	struct td_list_head *tmp;
         file_recovery_t file_recovery_new;
-        file_check_t *file_check;
-        for(file_check=file_check_list;
-            file_check!=NULL &&
-            !((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0);
-            file_check=file_check->next);
-        file_recovery_new.file_stat=(file_check==NULL?NULL:file_check->file_stat);
-        file_recovery_new.location.start=offset;
+        file_recovery_new.file_stat=NULL;
+	td_list_for_each(tmp, &file_check_list.list)
+	{
+	  file_check_t *file_check;
+	  file_check=td_list_entry(tmp, file_check_t, list);
+	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	  {
+	    file_recovery_new.file_stat=file_check->file_stat;
+	    break;
+	  }
+	}
         if(file_recovery_new.file_stat!=NULL)
         {
+	  file_recovery_new.location.start=offset;
           if(verbose>0)
           {
             log_info("%s header found at sector %lu\n",
@@ -886,18 +892,24 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
       }
       else
       {
-        file_check_t *file_check;
-        for(file_check=file_check_list;
-            file_check!=NULL &&
-            !((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0);
-            file_check=file_check->next);
-        file_recovery_new.file_stat=(file_check==NULL?NULL:file_check->file_stat);
-        file_recovery_new.location.start=offset;
+	struct td_list_head *tmp;
+        file_recovery_new.file_stat=NULL;
+	td_list_for_each(tmp, &file_check_list.list)
+	{
+	  file_check_t *file_check;
+	  file_check=td_list_entry(tmp, file_check_t, list);
+	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+              file_check->header_check(buffer, read_size, 1, &file_recovery, &file_recovery_new)!=0)
+	  {
+	    file_recovery_new.file_stat=file_check->file_stat;
+	    break;
+	  }
+	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
 	{
 	  /* A new file begins, backup file offset */
 	  alloc_data_t *new_file_alloc;
+	  file_recovery_new.location.start=offset;
 	  memcpy(&file_recovery, &file_recovery_new, sizeof(file_recovery));
 	  new_file_alloc=(alloc_data_t*)MALLOC(sizeof(*new_file_alloc));
 	  new_file_alloc->start=offset;
@@ -1057,17 +1069,22 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       }
       else
       {
-        {
-          file_check_t *file_check;
-          for(file_check=file_check_list;file_check!=NULL &&
-              !((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-                file_check->header_check(buffer, read_size, (status==STATUS_FIND_OFFSET), &file_recovery, &file_recovery_new)!=0); file_check=file_check->next);
-          file_recovery_new.file_stat=(file_check==NULL?NULL:file_check->file_stat);
-          file_recovery_new.location.start=offset;
-        }
-
+	struct td_list_head *tmp;
+        file_recovery_new.file_stat=NULL;
+	td_list_for_each(tmp, &file_check_list.list)
+	{
+	  file_check_t *file_check;
+	  file_check=td_list_entry(tmp, file_check_t, list);
+	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	  {
+	    file_recovery_new.file_stat=file_check->file_stat;
+	    break;
+	  }
+	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
         {
+	  file_recovery_new.location.start=offset;
           if(verbose>1)
             log_trace("A known header has been found, recovery of the previous file is finished\n");
           if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)>0)
