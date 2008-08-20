@@ -49,7 +49,21 @@ const file_hint_t file_hint_mov= {
 
 static void register_header_check_mov(file_stat_t *file_stat)
 {
-  register_header_check(0, NULL,0, &header_check_mov, file_stat);
+  register_header_check(4, "cmov",4, &header_check_mov, file_stat);
+  register_header_check(4, "cmvd",4, &header_check_mov, file_stat);
+  register_header_check(4, "dcom",4, &header_check_mov, file_stat);
+  register_header_check(4, "free",4, &header_check_mov, file_stat);
+  register_header_check(4, "ftyp",4, &header_check_mov, file_stat);
+  register_header_check(4, "jp2h",4, &header_check_mov, file_stat);
+  register_header_check(4, "mdat",4, &header_check_mov, file_stat);
+  register_header_check(4, "mdia",4, &header_check_mov, file_stat);
+  register_header_check(4, "moov",4, &header_check_mov, file_stat);
+  register_header_check(4, "PICT",4, &header_check_mov, file_stat);
+  register_header_check(4, "pnot",4, &header_check_mov, file_stat);
+  register_header_check(4, "skip",4, &header_check_mov, file_stat);
+  register_header_check(4, "stbl",4, &header_check_mov, file_stat);
+  register_header_check(4, "trak",4, &header_check_mov, file_stat);
+  register_header_check(4, "wide",4, &header_check_mov, file_stat);
 }
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -195,21 +209,22 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
         (long long unsigned)file_recovery->calculated_file_size);
 #endif
     if(atom_size>=8 && atom_size<1024*1024*1024 &&
-        ((buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
-         (buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
-         (buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e') ||
-         (buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
-         (buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
-         (buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
-         (buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
+        (
          (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-         (buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
          (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
+         (buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
+	 (buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
+         (buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
          (buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
-         (buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T')
+         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
+         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
+         (buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+         (buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
+         (buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
+         (buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
+         (buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
+         (buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
+         (buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e')
         )
       )
     {
