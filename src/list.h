@@ -276,6 +276,16 @@ static inline void td_list_splice_init(struct td_list_head *list,
 		pos = n, n = pos->next)
 
 /**
+ * td_list_for_each_prev_safe	-	iterate over a list backwards safe against removal of list entry
+ * @pos:	the &struct td_list_head to use as a loop counter.
+ * @n:		another &struct td_list_head to use as temporary storage
+ * @head:	the head for your list.
+ */
+#define td_list_for_each_prev_safe(pos, n, head) \
+	for (pos = (head)->prev, n = pos->prev; pos != (head); \
+		pos = n, n = pos->prev)
+
+/**
  * td_list_for_each_entry	-	iterate over list of given type
  * @pos:	the type * to use as a loop counter.
  * @head:	the head for your list.

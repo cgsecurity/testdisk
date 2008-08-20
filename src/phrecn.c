@@ -73,7 +73,7 @@
 
 extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_dir;
-extern file_check_t file_check_list;
+extern file_check_list_t file_check_list;
 
 #ifdef HAVE_NCURSES
 static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats);
@@ -518,19 +518,25 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
       need_to_check_file=0;
       if(offset==current_search_space->start)
       {
-	struct td_list_head *tmp;
         file_recovery_t file_recovery_new;
+	struct td_list_head *tmpl;
         file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmp, &file_check_list.list)
+	td_list_for_each(tmpl, &file_check_list.list)
 	{
-	  file_check_t *file_check;
-	  file_check=td_list_entry(tmp, file_check_t, list);
-	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	  struct td_list_head *tmp;
+	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
 	  {
-	    file_recovery_new.file_stat=file_check->file_stat;
-	    break;
+	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+		file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	    {
+	      file_recovery_new.file_stat=file_check->file_stat;
+	      break;
+	    }
 	  }
+	  if(file_recovery_new.file_stat!=NULL)
+	    break;
 	}
         if(file_recovery_new.file_stat!=NULL)
         {
@@ -892,18 +898,24 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
       }
       else
       {
-	struct td_list_head *tmp;
+	struct td_list_head *tmpl;
         file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmp, &file_check_list.list)
+	td_list_for_each(tmpl, &file_check_list.list)
 	{
-	  file_check_t *file_check;
-	  file_check=td_list_entry(tmp, file_check_t, list);
-	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-              file_check->header_check(buffer, read_size, 1, &file_recovery, &file_recovery_new)!=0)
+	  struct td_list_head *tmp;
+	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
 	  {
-	    file_recovery_new.file_stat=file_check->file_stat;
-	    break;
+	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+		file_check->header_check(buffer, read_size, 1, &file_recovery, &file_recovery_new)!=0)
+	    {
+	      file_recovery_new.file_stat=file_check->file_stat;
+	      break;
+	    }
 	  }
+	  if(file_recovery_new.file_stat!=NULL)
+	    break;
 	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
 	{
@@ -1069,18 +1081,24 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       }
       else
       {
-	struct td_list_head *tmp;
+	struct td_list_head *tmpl;
         file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmp, &file_check_list.list)
+	td_list_for_each(tmpl, &file_check_list.list)
 	{
-	  file_check_t *file_check;
-	  file_check=td_list_entry(tmp, file_check_t, list);
-	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-              file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	  struct td_list_head *tmp;
+	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
 	  {
-	    file_recovery_new.file_stat=file_check->file_stat;
-	    break;
+	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+		file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
+	    {
+	      file_recovery_new.file_stat=file_check->file_stat;
+	      break;
+	    }
 	  }
+	  if(file_recovery_new.file_stat!=NULL)
+	    break;
 	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
         {
@@ -1390,6 +1408,7 @@ static file_stat_t * init_file_stats(file_enable_t *files_enable)
       enable_count++;
     }
   }
+  index_header_check();
   file_stats[enable_count].file_hint=NULL;
   return file_stats;
 }

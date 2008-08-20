@@ -34,7 +34,11 @@
 #include "common.h"
 #include "filegen.h"
 
-file_check_t file_check_list={
+static  file_check_t file_check_plist={
+  .list = TD_LIST_HEAD_INIT(file_check_plist.list)
+};
+
+file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
@@ -53,6 +57,21 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   return memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
 }
 
+static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
+{
+  unsigned int i;
+  file_check_list_t *newe=(file_check_list_t *)MALLOC(sizeof(*newe));
+  newe->offset=file_check_new->offset;
+  newe->has_value=(file_check_new->length==0?0:1);
+  for(i=0;i<256;i++)
+  {
+    newe->file_checks[i].list.prev=&newe->file_checks[i].list;
+    newe->file_checks[i].list.next=&newe->file_checks[i].list;
+  }
+  td_list_add_tail(&file_check_new->list, &newe->file_checks[file_check_new->length==0?0:file_check_new->value[0]].list);
+  td_list_add_tail(&newe->list, &pos->list);
+}
+
 void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
   int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
@@ -64,19 +83,77 @@ void register_header_check(const unsigned int offset, const unsigned char *value
   file_check_new->offset=offset;
   file_check_new->header_check=header_check;
   file_check_new->file_stat=file_stat;
-  td_list_add_sorted(&file_check_new->list, &file_check_list.list, file_check_cmp);
+  td_list_add_sorted(&file_check_new->list, &file_check_plist.list, file_check_cmp);
 }
 
-void free_header_check(void)
+static void index_header_check_aux(file_check_t *file_check_new)
+{
+  struct td_list_head *tmp;
+  td_list_for_each(tmp, &file_check_list.list)
+  {
+    file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
+    if(file_check_new->length>0)
+    {
+      if(pos->has_value==1)
+      {
+	if(pos->offset>=file_check_new->offset &&
+	    pos->offset<=file_check_new->offset+file_check_new->length)
+	{
+	  return td_list_add_sorted(&file_check_new->list,
+	      &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
+	      file_check_cmp);
+	}
+	if(pos->offset>file_check_new->offset)
+	{
+	  return file_check_add_tail(file_check_new, pos);
+	}
+      }
+    }
+    else
+    {
+      return td_list_add_sorted(&file_check_new->list,
+	  &pos->file_checks[0].list,
+	  file_check_cmp);
+    }
+  }
+  file_check_add_tail(file_check_new, &file_check_list);
+}
+
+void index_header_check(void)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;
-  td_list_for_each_safe(tmp, next, &file_check_list.list)
+  td_list_for_each_prev_safe(tmp, next, &file_check_plist.list)
   {
     file_check_t *current_check;
     current_check=td_list_entry(tmp, file_check_t, list);
     td_list_del(tmp);
-    free(current_check);
+    index_header_check_aux(current_check);
+  }
+}
+
+void free_header_check(void)
+{
+  struct td_list_head *tmpl;
+  struct td_list_head *nextl;
+  td_list_for_each_safe(tmpl, nextl, &file_check_list.list)
+  {
+    unsigned int i;
+    struct td_list_head *tmp;
+    struct td_list_head *next;
+    file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+    for(i=0;i<256;i++)
+    {
+      td_list_for_each_safe(tmp, next, &pos->file_checks[i].list)
+      {
+	file_check_t *current_check;
+	current_check=td_list_entry(tmp, file_check_t, list);
+	td_list_del(tmp);
+	free(current_check);
+      }
+    }
+    td_list_del(tmpl);
+    free(pos);
   }
 }
 

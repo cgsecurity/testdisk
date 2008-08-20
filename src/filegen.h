@@ -2,7 +2,7 @@
 
     File: filegen.h
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -99,17 +99,6 @@ struct alloc_data_struct
   file_stat_t *file_stat;
 };
 
-void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
-void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
-alloc_data_t *del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
-int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-void file_check_size(file_recovery_t *file_recovery);
-void reset_file_recovery(file_recovery_t *file_recovery);
-void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
-  int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
-      const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
-  file_stat_t *file_stat);
-
 typedef struct
 {
   struct td_list_head list;
@@ -121,8 +110,29 @@ typedef struct
   file_stat_t *file_stat;
 } file_check_t;
 
+typedef struct
+{
+  struct td_list_head list;
+  unsigned int offset;
+  unsigned int has_value;
+  file_check_t file_checks[256];
+} file_check_list_t;
+
 void free_header_check(void);
 #define NL_BARENL       (1 << 0)
 #define NL_CRLF         (1 << 1)
 #define NL_BARECR       (1 << 2)
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
+void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
+void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
+alloc_data_t *del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
+int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+void file_check_size(file_recovery_t *file_recovery);
+void reset_file_recovery(file_recovery_t *file_recovery);
+void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
+  int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
+      const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
+  file_stat_t *file_stat);
+void index_header_check(void);
+
+
