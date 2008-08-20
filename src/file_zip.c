@@ -105,7 +105,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   {
     int      count = 0;
     unsigned int left;
-    unsigned int read_size= fread(buffer, 1, 4096, f);
+    const unsigned int read_size= fread(buffer, 1, 4096, f);
     left  = read_size;
 
     while (left>=size)
