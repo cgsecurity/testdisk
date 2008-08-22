@@ -149,6 +149,7 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
   {
     return ;
   }
+#ifdef DEBUG_GET_NEXT_SECTOR
   if(! ((*current_search_space)->start <= *offset && (*offset)<=(*current_search_space)->end))
   {
     log_critical("BUG: get_next_sector stop everything %llu (%llu-%llu)\n",
@@ -156,16 +157,58 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
         (unsigned long long)((*current_search_space)->start/512),
         (unsigned long long)((*current_search_space)->end/512));
     log_flush();
-#ifdef DEBUG_GET_NEXT_SECTOR
     bug();
-#endif
     exit(1);
   }
+#endif
   if((*offset)+blocksize <= (*current_search_space)->end)
     *offset+=blocksize;
   else
     get_next_header(list_search_space, current_search_space, offset);
 }
+
+static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
+{
+  memcpy(dst, src, sizeof(*dst));
+#if 0
+  if(td_list_empty(&src->location.list))
+  {
+    dst->location.list.prev=&dst->location.list;
+    dst->location.list.next=&dst->location.list;
+  }
+  else
+  {
+    src->location.list.prev=&src->location.list;
+    src->location.list.next=&src->location.list;
+    dst->location.list.prev->next=&dst->location.list;
+    dst->location.list.next->prev=&dst->location.list;
+  }
+#else
+  dst->location.list.prev=&dst->location.list;
+  dst->location.list.next=&dst->location.list;
+#endif
+}
+
+static inline void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
+{
+  if(!td_list_empty(&list->list))
+  {
+    alloc_list_t *prev=td_list_entry(list->list.prev, alloc_list_t, list);
+    if(prev->end+1==offset && prev->data==data)
+    {
+      prev->end=offset+blocksize-1;
+      return ;
+    }
+  }
+  {
+    alloc_list_t *new_list=(alloc_list_t *)MALLOC(sizeof(*new_list));
+    new_list->start=offset;
+    new_list->end=offset+blocksize-1;
+    new_list->data=data;
+    td_list_add_tail(&new_list->list, &list->list);
+  }
+}
+
 /* ==================== INLINE FUNCTIONS ========================= */
 
 #ifdef HAVE_NCURSES
@@ -550,7 +593,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
           }
           if(file_recovery.file_stat==NULL)
           { /* Header found => file found */
-            memcpy(&file_recovery, &file_recovery_new, sizeof(file_recovery));
+            file_recovery_cpy(&file_recovery, &file_recovery_new);
           }
           else if(file_recovery_new.file_stat->file_hint!=NULL)
           {
@@ -723,10 +766,10 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
 #endif
       /* Get the last block added to the file */
       extrablock_offset=0;
+      if(!td_list_empty(&file_recovery->location.list))
       {
-        const alloc_list_t *element;
-        for(element=&file_recovery->location;element!=NULL;element=element->next)
-          extrablock_offset=element->end/blocksize*blocksize;
+	const alloc_list_t *element=td_list_entry(file_recovery->location.list.prev, alloc_list_t, list);
+	extrablock_offset=element->end/blocksize*blocksize;
       }
       /* Get the corresponding search_place */
       extractblock_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
@@ -799,8 +842,8 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
             log_trace("offset_error %llu %llu\n",
                 (long long unsigned) file_recovery->offset_error,
                 (long long unsigned) offset_error_tmp);
-#endif
             log_flush();
+#endif
             fseek(file_recovery->handle, save_seek, SEEK_SET);
           } while(file_recovery->offset_error/blocksize*blocksize > offset_error_tmp/blocksize*blocksize);
         }
@@ -922,7 +965,7 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
 	  /* A new file begins, backup file offset */
 	  alloc_data_t *new_file_alloc;
 	  file_recovery_new.location.start=offset;
-	  memcpy(&file_recovery, &file_recovery_new, sizeof(file_recovery));
+	  file_recovery_cpy(&file_recovery, &file_recovery_new);
 	  new_file_alloc=(alloc_data_t*)MALLOC(sizeof(*new_file_alloc));
 	  new_file_alloc->start=offset;
 	  new_file_alloc->end=0;
@@ -1112,7 +1155,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
             forget(list_search_space,current_search_space);
           if(move_next!=0)
           {
-            memcpy(&file_recovery, &file_recovery_new, sizeof(file_recovery));
+	    file_recovery_cpy(&file_recovery, &file_recovery_new);
             if(verbose>1)
             {
               log_info("%s header found at sector %lu\n",

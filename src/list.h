@@ -21,22 +21,6 @@
  */
 #ifndef _LIST_H
 #define _LIST_H
-typedef struct struct_mediaspace alloc_list_t;
-
-struct struct_mediaspace
-{
-  uint64_t start;
-  uint64_t end;
-  alloc_list_t *prev;
-  alloc_list_t *next;
-  unsigned int data;
-};
-
-void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data);
-void list_truncate(alloc_list_t *list, uint64_t size);
-void td_list_delete(alloc_list_t *list);
-
-
 /*
  * These are non-NULL pointers that will result in page faults
  * under normal circumstances, used to verify that nobody uses
@@ -376,4 +360,15 @@ static inline int td_list_add_sorted_uniq(struct td_list_head *newe, struct td_l
   td_list_add_tail(newe, head);
   return 0;
 }
+
+typedef struct alloc_list_s alloc_list_t;
+struct alloc_list_s
+{
+  struct td_list_head list;
+  uint64_t start;
+  uint64_t end;
+  unsigned int data;
+};
+
+void list_truncate(alloc_list_t *list, const uint64_t file_size);
 #endif

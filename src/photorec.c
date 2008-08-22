@@ -259,14 +259,15 @@ void sighup_hdlr(int shup)
 
 void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
 {
-  const alloc_list_t *element;
+  struct td_list_head *tmp;
   uint64_t file_size=0;
   uint64_t file_size_on_disk=0;
   if(file_recovery->filename==NULL)
     return;
   log_info("%s\t",file_recovery->filename);
-  for(element=&file_recovery->location;element!=NULL;element=element->next)
+  td_list_for_each(tmp, &file_recovery->location.list)
   {
+    const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
     file_size_on_disk+=(element->end-element->start+1);
     if(element->data>0)
     {
@@ -318,7 +319,6 @@ static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *li
 
 static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
-  const alloc_list_t *element;
   struct td_list_head *search_walker = NULL;
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
   log_trace("update_search_space\n");
@@ -327,6 +327,7 @@ static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, a
 
   td_list_for_each(search_walker, &list_search_space->list)
   {
+    struct td_list_head *tmp;
     alloc_data_t *current_search_space;
     current_search_space=td_list_entry(search_walker, alloc_data_t, list);
     if(current_search_space->start <= file_recovery->location.start &&
@@ -334,8 +335,9 @@ static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, a
     {
       *offset=file_recovery->location.start;
       *new_current_search_space=current_search_space;
-      for(element=&file_recovery->location;element!=NULL;element=element->next)
+      td_list_for_each(tmp, &file_recovery->location.list)
       {
+	const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
         uint64_t end=(element->end-(element->start%blocksize)+blocksize-1+1)/blocksize*blocksize+(element->start%blocksize)-1;
         list_search_space=update_search_space_aux(list_search_space, element->start, end, new_current_search_space, offset);
       }
@@ -500,8 +502,8 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->handle=NULL;
   file_recovery->file_size=0;
   file_recovery->file_size_on_disk=0;
-  file_recovery->location.prev=NULL;
-  file_recovery->location.next=NULL;
+  file_recovery->location.list.prev=&file_recovery->location.list;
+  file_recovery->location.list.next=&file_recovery->location.list;
   file_recovery->location.start=0;
   file_recovery->location.end=0;
   file_recovery->location.data=0;
@@ -1261,6 +1263,19 @@ void file_check_size(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size;
 }
 
+static void free_list_allocation(alloc_list_t *list_allocation)
+{
+  struct td_list_head *tmp = NULL;
+  struct td_list_head *tmp_next = NULL;
+  td_list_for_each_safe(tmp,tmp_next,&list_allocation->list)
+  {
+    alloc_list_t *allocated_space;
+    allocated_space=td_list_entry(tmp, alloc_list_t, list);
+    td_list_del(tmp);
+    free(allocated_space);
+  }
+}
+
 /* file_finish() returns
    -1: file not recovered, file_size=0 offset_error!=0
     0: file not recovered
@@ -1346,8 +1361,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
       list_search_space=update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
       file_recovered=1;
     }
-    td_list_delete(file_recovery->location.next);
-    file_recovery->location.next=NULL;
+    free_list_allocation(&file_recovery->location);
   }
   if(file_recovery->file_size==0 && file_recovery->offset_error!=0)
     file_recovered=-1;
