@@ -110,7 +110,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
 
     while (left>=size)
     {
-      if (memcmp(buffer+count, needle, size)==0)
+      if (buffer[count]==*(const char *)needle && memcmp(buffer+count, needle, size)==0)
       {
 	free(buffer);
         if(fseek(f, (long)count-read_size, SEEK_CUR)<0)
