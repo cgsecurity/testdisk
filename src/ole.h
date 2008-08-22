@@ -64,7 +64,7 @@ struct OLE_DIR
 	char		bflags;		// 67: 0 or 1
 	uint32_t	prev_dirent;	// 68
 	uint32_t	next_dirent;	// 72
-	uint32_t	dir_dirent;	// 76
+	uint32_t	sidChild;	// 76
 	char		clsid[16];	// 80
 	uint32_t	userFlags;	// 96
 	int32_t		secs1;		// 100
@@ -74,6 +74,7 @@ struct OLE_DIR
 	uint32_t	start_block;	// 116 starting SECT of stream
 	uint32_t	size;		// 120
 	int16_t			reserved;	// 124 must be 0
+	int16_t			padding;	// 126 must be 0
 } __attribute__ ((__packed__));
 
 struct DIRECTORY

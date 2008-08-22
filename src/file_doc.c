@@ -69,6 +69,95 @@ static void file_check_doc(file_recovery_t *file_recovery)
 #endif
 }
 
+static const char *ole_get_file_extension(const unsigned char *buffer, const unsigned int buffer_size)
+{
+  const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
+  const uint32_t *fat;
+  unsigned int block=le32(header->root_start_block);
+  unsigned int fat_entries;
+  if(header->num_FAT_blocks==0)
+  {
+    fat=(const uint32_t *)(header+1);
+    fat_entries=109;
+  }
+  else
+  {
+    const uint32_t *fati=(const uint32_t *)(header+1);
+    const unsigned int fat_offset=(le32(fati[0])<<header->uSectorShift)+512;
+    fat=(const uint32_t *)&buffer[fat_offset];
+    fat_entries=(header->num_FAT_blocks<<header->uSectorShift)/4;
+    if(fat_offset>buffer_size)
+      fat_entries=0;
+    else if(fat_offset+fat_entries>buffer_size)
+      fat_entries=buffer_size-fat_offset;
+  }
+  do
+  {
+    const unsigned int offset_root_dir=512+(block<<le16(header->uSectorShift));
+#ifdef DEBUG_OLE
+    log_info("Root Directory block=%u (0x%x)\n", block, block);
+#endif
+    if(offset_root_dir+512>buffer_size)
+      return NULL;
+    {
+      unsigned int sid;
+      const struct OLE_DIR *dir_entry;
+      const char *ext=NULL;
+      for(sid=0,dir_entry=(const struct OLE_DIR *)&buffer[offset_root_dir];
+	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;sid++,dir_entry++)
+      {
+#ifdef DEBUG_OLE
+	unsigned int i;
+	for(i=0;i<64 && dir_entry->name[i]!='\0' && i<dir_entry->namsiz;i+=2)
+	{
+	  log_info("%c",dir_entry->name[i]);
+	}
+	log_info(" type %u",dir_entry->type);
+	log_info(" sector %llu\n",(long long unsigned)le32(dir_entry->start_block));
+#endif
+	/* 3ds max */
+	if(memcmp(&dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
+	  return "max";
+	/* MS Excel
+	 * Note: Microsoft Works Spreadsheet contains the same signature */
+	if(memcmp(&dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
+	  ext="xls";
+	if(memcmp(&dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
+	  return "sda";
+	if(memcmp(&dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
+	  return "sdc";
+	/* Microsoft Works Spreadsheet or Chart */
+	if(memcmp(&dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
+	  return "xlr";
+	/* HP Photosmart Photo Printing Album */
+	if(memcmp(&dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
+	  return "albm";
+        if(memcmp(&dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
+	  return "ppt";
+	/* Microsoft Works .wps */
+	if(memcmp(&dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
+	  return "wps";
+	/* Outlook */
+	if(memcmp(&dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
+	  return "msg";
+	/* Licom AlphaCAM */
+	if(memcmp(&dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
+	  return "amb";
+	/* Note: False positive with StarImpress sdd files */
+	if(memcmp(&dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
+	  return "sdw";
+      }
+      if(ext!=NULL)
+	return ext;
+      block=(block<fat_entries?le32(fat[block]):0);
+    }
+  } while(block>0 && block!=0xFFFFFFFE);	/* FFFFFFFE = ENDOFCHAIN */
+#ifdef DEBUG_OLE
+  log_info("Root Directory end\n");
+#endif
+  return NULL;
+}
+
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,doc_header,sizeof(doc_header))==0)
@@ -86,14 +175,24 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
 	le32(header->num_extra_FAT_blocks)>50 ||
 	le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
       return 0;
-    /* TODO read the Root Directory */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_doc;
-    if(td_memmem(buffer,buffer_size,"S\0c\0e\0n\0e\0",10)!=NULL)
+    file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
+    if(file_recovery_new->extension!=NULL)
     {
-      file_recovery_new->extension="max";
+      if(strcmp(file_recovery_new->extension,"sdw")==0)
+      {
+	/* Distinguish between sda/sdc/sdd/sdw */
+	if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+	  file_recovery_new->extension="sdd";
+	else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
+	  file_recovery_new->extension="sda";
+	else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
+	  file_recovery_new->extension="sdc";
+      }
+      return 1;
     }
-    else if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
+    if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
     {
       file_recovery_new->extension="doc";
     }
@@ -109,24 +208,14 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="sdd";
     }
-    else if(td_memmem(buffer,buffer_size,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)!=NULL)
-    { /* Microsoft Works Spreadsheet or Chart */
-      file_recovery_new->extension="xlr";
-    }
-    else if(td_memmem(buffer,buffer_size,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)!=NULL)
-    { /* HP Photosmart Photo Printing Album */
-      file_recovery_new->extension="albm";
-    }
     else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
 	td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
 	td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
-	td_memmem(buffer,buffer_size,"W\0o\0r\0k\0b\0o\0o\0k\0",16)!=NULL || 
 	td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
     {
       file_recovery_new->extension="xls";
     }
-    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL ||
-        td_memmem(buffer,buffer_size,"P\0o\0w\0e\0r\0",10)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
     {
       file_recovery_new->extension="ppt";
     }
@@ -138,7 +227,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="vis";
     }
-    else if(td_memmem(buffer,buffer_size,"Sfx",3)!=NULL)
+    else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
     {
       file_recovery_new->extension="sdw";
     }
@@ -155,21 +244,9 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     { /* Microsoft Works .wdb */
       file_recovery_new->extension="wdb";
     }
-    else if(td_memmem(buffer,buffer_size,"C\0O\0N\0T\0E\0N\0T\0S\0",16)!=NULL)
-    { /* Microsoft Works .wps */
-      file_recovery_new->extension="wps";
-    }
     else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
     { /* MetaStock */
       file_recovery_new->extension="mws";
-    }
-    else if(td_memmem(buffer,buffer_size,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)!=NULL)
-    { /* Outlook */
-      file_recovery_new->extension="msg";
-    }
-    else if(td_memmem(buffer,buffer_size,"L\0i\0c\0o\0m\0",10)!=NULL)
-    { /* Licom AlphaCAM */
-      file_recovery_new->extension="amb";
     }
     else
       file_recovery_new->extension=file_hint_doc.extension;
@@ -191,10 +268,10 @@ static uint64_t test_OLE(FILE *IN)
   fseek(IN,0,SEEK_SET);
   if(fread(&buffer_header,sizeof(buffer_header),1,IN)!=1)	/*reads first sector including OLE header */
     return 0;
-  /*
+#ifdef DEBUG_OLE
   log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
   log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
-  */
+#endif
   /* Sanity check */
   if(le32(header->num_FAT_blocks)==0 ||
       le32(header->num_extra_FAT_blocks)>50 ||
