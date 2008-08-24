@@ -120,7 +120,7 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
   wmove(stdscr,4,0);
   aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   screen_buffer_display(stdscr,"",menuType);
-  wmove(stdscr,23,0);
+  wmove(stdscr,LINES-2,0);
   wprintw(stdscr,"New partition type [current %02x] ? ",partition->arch->get_part_type(partition));
   if (get_string(response, sizeof(response), NULL) > 0) {
     int tmp_val = strtol(response, NULL, 16);
@@ -208,48 +208,36 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
       case KEY_UP:
 	if(current_element_num>0)
 	  current_element_num--;
-	if(current_element_num<offset)
-	  offset=current_element_num;
 	break;
       case 'n':
       case 'N':
       case KEY_DOWN:
 	if(current_element_num < intr_nbr_line-1)
 	  current_element_num++;
-	if(current_element_num >= offset+3*INTER_CHGTYPE)
-	  offset++;
 	break;
       case KEY_LEFT:
 	if(current_element_num > INTER_CHGTYPE)
 	  current_element_num-=INTER_CHGTYPE;
 	else
 	  current_element_num=0;
-	if(current_element_num < offset)
-	  offset=current_element_num;
 	break;
       case KEY_PPAGE:
 	if(current_element_num > 3*INTER_CHGTYPE-1)
 	  current_element_num-=3*INTER_CHGTYPE-1;
 	else
 	  current_element_num=0;
-	if(current_element_num < offset)
-	  offset=current_element_num;
 	break;
       case KEY_RIGHT:
 	if(current_element_num+INTER_CHGTYPE < intr_nbr_line-1)
 	  current_element_num+=INTER_CHGTYPE;
 	else
 	  current_element_num=intr_nbr_line-1;
-	if(current_element_num >= offset+3*INTER_CHGTYPE)
-	  offset=current_element_num-3*INTER_CHGTYPE+1;
 	break;
       case KEY_NPAGE:
 	if(current_element_num+3*INTER_CHGTYPE-1 < intr_nbr_line-1)
 	  current_element_num+=3*INTER_CHGTYPE-1;
 	else
 	  current_element_num=intr_nbr_line-1;
-	if(current_element_num >= offset+3*INTER_CHGTYPE)
-	  offset=current_element_num-3*INTER_CHGTYPE+1;
 	break;
       case 'Q':
       case 'q':
@@ -260,6 +248,10 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
 	partition->arch->set_part_type(partition, part_name[current_element_num].index);
 	return;
     }
+    if(current_element_num < offset)
+      offset=current_element_num;
+    if(current_element_num >= offset+3*INTER_CHGTYPE)
+      offset=current_element_num-3*INTER_CHGTYPE+1;
   }
 }
 
@@ -329,40 +321,30 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
       case KEY_UP:
 	if(current_element_num>0)
 	  current_element_num--;
-	if(current_element_num<offset)
-	  offset=current_element_num;
 	break;
       case 'n':
       case 'N':
       case KEY_DOWN:
 	if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
 	  current_element_num++;
-	if(current_element_num >= offset+3*INTER_CHGTYPE)
-	  offset++;
 	break;
       case KEY_LEFT:
 	if(current_element_num > INTER_CHGTYPE)
 	  current_element_num-=INTER_CHGTYPE;
 	else
 	  current_element_num=0;
-	if(current_element_num < offset)
-	  offset=current_element_num;
 	break;
       case KEY_PPAGE:
 	if(current_element_num > 3*INTER_CHGTYPE-1)
 	  current_element_num-=3*INTER_CHGTYPE-1;
 	else
 	  current_element_num=0;
-	if(current_element_num < offset)
-	  offset=current_element_num;
 	break;
       case KEY_RIGHT:
 	for(j=0;j<INTER_CHGTYPE;j++)
 	{
 	  if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
 	    current_element_num++;
-	  if(current_element_num >= offset+3*INTER_CHGTYPE)
-	    offset++;
 	}
 	break;
       case KEY_NPAGE:
@@ -370,8 +352,6 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
 	{
 	  if(gpt_sys_types[current_element_num].name!=NULL && gpt_sys_types[current_element_num+1].name!=NULL)
 	    current_element_num++;
-	  if(current_element_num >= offset+3*INTER_CHGTYPE)
-	    offset++;
 	}
 	break;
       case 'Q':
@@ -383,6 +363,10 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
 	guid_cpy(&partition->part_type_gpt, &gpt_sys_types[current_element_num].part_type);
 	return;
     }
+    if(current_element_num<offset)
+      offset=current_element_num;
+    if(current_element_num >= offset+3*INTER_CHGTYPE)
+      offset=current_element_num-3*INTER_CHGTYPE+1;
   }
 }
 #endif

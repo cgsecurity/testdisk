@@ -1,8 +1,8 @@
 /*
 
-    File: intrface.h
+    File: tdisksel.h
 
-    Copyright (C) 1998-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,9 +20,5 @@
 
  */
 
-#define ANALYSE_X	0
-#define ANALYSE_Y	5
-#define INTER_BAD_PART	10
+int do_curses_testdisk(int verbose, int dump_ind, const list_disk_t *list_disk, const int saveheader, const char *cmd_device, char **current_cmd);
 
-list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
-void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd);

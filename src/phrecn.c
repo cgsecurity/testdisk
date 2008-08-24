@@ -1919,27 +1919,31 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
       switch(command)
       {
 	case KEY_UP:
-	  if(current_element!=NULL)
+	  if(current_element!=NULL && current_element->prev!=NULL)
 	  {
-	    if(current_element->prev!=NULL)
-	    {
-	      current_element=current_element->prev;
-	      current_element_num--;
-	    }
-	    if(current_element_num<offset)
-	      offset--;
+	    current_element=current_element->prev;
+	    current_element_num--;
+	  }
+	  break;
+	case KEY_PPAGE:
+	  for(i=0; i<INTER_SELECT && current_element->prev!=NULL; i++)
+	  {
+	    current_element=current_element->prev;
+	    current_element_num--;
 	  }
 	  break;
 	case KEY_DOWN:
-	  if(current_element!=NULL)
+	  if(current_element->next!=NULL)
 	  {
-	    if(current_element->next!=NULL)
-	    {
-	      current_element=current_element->next;
-	      current_element_num++;
-	    }
-	    if(current_element_num>=offset+INTER_SELECT)
-	      offset++;
+	    current_element=current_element->next;
+	    current_element_num++;
+	  }
+	  break;
+	case KEY_NPAGE:
+	  for(i=0; i<INTER_SELECT && current_element->next!=NULL; i++)
+	  {
+	    current_element=current_element->next;
+	    current_element_num++;
 	  }
 	  break;
 	case 's':
@@ -2008,6 +2012,10 @@ static void menu_photorec(disk_t *disk_car, const int verbose, const char *recup
 	  done = 1;
 	  break;
       }
+      if(current_element_num<offset)
+	offset=current_element_num;
+      if(current_element_num>=offset+INTER_SELECT)
+	offset=current_element_num-INTER_SELECT+1;
     }
 #endif
   }
@@ -2102,8 +2110,6 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	  current_disk=current_disk->prev;
 	  pos_num--;
 	}
-	if(pos_num<offset)
-	  offset--;
 	break;
       case KEY_DOWN:
       case 'N':
@@ -2112,16 +2118,12 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	  current_disk=current_disk->next;
 	  pos_num++;
 	}
-	if(pos_num>=offset+INTER_MENU_DISK)
-	  offset++;
 	break;
       case KEY_PPAGE:
 	for(i=0;i<INTER_MENU_DISK && current_disk->prev!=NULL;i++)
 	{
 	  current_disk=current_disk->prev;
 	  pos_num--;
-	  if(pos_num<offset)
-	    offset--;
 	}
 	break;
       case KEY_NPAGE:
@@ -2129,8 +2131,6 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	{
 	  current_disk=current_disk->next;
 	  pos_num++;
-	  if(pos_num>=offset+INTER_MENU_DISK)
-	    offset++;
 	}
 	break;
       case 'o':
@@ -2147,6 +2147,10 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	done=1;
 	break;
     }
+    if(pos_num<offset)
+      offset=pos_num;
+    if(pos_num>=offset+INTER_MENU_DISK)
+      offset=pos_num-INTER_MENU_DISK+1;
   }
 }
 #endif
@@ -2462,38 +2466,22 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       case KEY_UP:
       case '8':
 	if(current_element_num>0)
-	{
 	  current_element_num--;
-	  if(current_element_num<offset)
-	    offset--;
-	}
 	break;
       case KEY_PPAGE:
       case '9':
-	for(i=0;i<INTER_FSELECT-1 && current_element_num>0;i++)
-	{
+	for(i=0; i<INTER_FSELECT-1 && current_element_num>0; i++)
 	  current_element_num--;
-	  if(current_element_num<offset)
-	    offset--;
-	}
 	break;
       case KEY_DOWN:
       case '2':
 	if(files_enable[current_element_num+1].file_hint!=NULL)
-	{
 	  current_element_num++;
-	  if(current_element_num>=offset+INTER_FSELECT)
-	    offset++;
-	}
 	break;
       case KEY_NPAGE:
       case '3':
-	for(i=0;i<INTER_FSELECT-1 && (files_enable[current_element_num+1].file_hint!=NULL);i++)
-	{
+	for(i=0; i<INTER_FSELECT-1 && files_enable[current_element_num+1].file_hint!=NULL; i++)
 	  current_element_num++;
-	  if(current_element_num>=offset+INTER_FSELECT)
-	    offset++;
-	}
 	break;
       case KEY_RIGHT:
       case '+':
@@ -2536,6 +2524,10 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       case 'Q':
 	return;
     }
+    if(current_element_num<offset)
+      offset=current_element_num;
+    if(current_element_num>=offset+INTER_FSELECT)
+      offset=current_element_num-INTER_FSELECT+1;
   }
 }
 #endif

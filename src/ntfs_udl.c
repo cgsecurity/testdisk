@@ -1279,8 +1279,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->prev;
 	    pos_num--;
-	    if(pos_num<offset)
-	      offset--;
 	  }
 	  break;
 	case KEY_DOWN:
@@ -1289,8 +1287,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->next;
 	    pos_num++;
-	    if(pos_num>=offset+INTER_DIR)
-	      offset++;
 	  }
 	  break;
 	case KEY_PPAGE:
@@ -1298,8 +1294,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->prev;
 	    pos_num--;
-	    if(pos_num<offset)
-	      offset--;
 	  }
 	  break;
 	case KEY_NPAGE:
@@ -1307,8 +1301,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->next;
 	    pos_num++;
-	    if(pos_num>=offset+INTER_DIR)
-	      offset++;
 	  }
 	  break;
 	case 'c':
@@ -1366,6 +1358,10 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  }
 	  break;
       }
+      if(pos_num<offset)
+	offset=pos_num;
+      if(pos_num>=offset+INTER_DIR)
+	offset=pos_num-INTER_DIR+1;
     } while(old_LINES==LINES);
   }
 }

@@ -965,6 +965,11 @@ int screen_buffer_display(WINDOW *window, const char *options_org, const struct 
   return screen_buffer_display_ext(window,options_org,menuItems,&menu);
 }
 
+#define INTER_ANALYSE_X		0
+#define INTER_ANALYSE_Y 	8
+#define INTER_ANALYSE_MENU_X 	0
+#define INTER_ANALYSE_MENU_Y 	(LINES-2)
+#define INTER_MAX_LINES 	(INTER_ANALYSE_MENU_Y-INTER_ANALYSE_Y-2)
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu)
 {
   int i;
@@ -993,22 +998,36 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
     wclrtoeol(window);
     if(first_line_to_display>0)
       wprintw(window, "Previous");
-    for (i=first_line_to_display; (i<intr_nbr_line)&&((i-first_line_to_display)<INTER_MAX_LINES); i++)
+    if(intr_nbr_line>INTER_MAX_LINES && has_colors())
     {
-      wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
-      wclrtoeol(window);
-      if(i==current_line && intr_nbr_line>INTER_MAX_LINES && has_colors())
-        wattrset(window, A_REVERSE);
-      wprintw(window,"%s",intr_buffer_screen[i]);
-      if(i==current_line && intr_nbr_line>INTER_MAX_LINES && has_colors())
-        wattroff(window, A_REVERSE);
+      for (i=first_line_to_display; i<intr_nbr_line && (i-first_line_to_display)<INTER_MAX_LINES; i++)
+      {
+	wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
+	wclrtoeol(window);
+	if(i==current_line)
+	  wattrset(window, A_REVERSE);
+	wprintw(window,"%s",intr_buffer_screen[i]);
+	if(i==current_line)
+	  wattroff(window, A_REVERSE);
+      }
+    }
+    else
+    {
+      for (i=first_line_to_display; i<intr_nbr_line && (i-first_line_to_display)<INTER_MAX_LINES; i++)
+      {
+	wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
+	wclrtoeol(window);
+	wprintw(window,"%s",intr_buffer_screen[i]);
+      }
     }
     wmove(window, INTER_ANALYSE_Y+INTER_MAX_LINES, INTER_ANALYSE_X+4);
     wclrtoeol(window);
     if(i<intr_nbr_line)
       wprintw(window, "Next");
-    key=wmenuSelect_ext(window, 24, INTER_ANALYSE_MENU_Y, INTER_ANALYSE_MENU_X, (menuItems!=NULL?menuItems:menuDefault),
-        itemLength, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu,NULL);
+    key=wmenuSelect_ext(window, INTER_ANALYSE_MENU_Y+1,
+	INTER_ANALYSE_MENU_Y, INTER_ANALYSE_MENU_X,
+	(menuItems!=NULL?menuItems:menuDefault), itemLength, options,
+	MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu,NULL);
     switch (key)
     {
       case key_ESC:
@@ -1021,38 +1040,34 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
       case KEY_UP:
         if(current_line>0)
           current_line--;
-        if(current_line<first_line_to_display)
-          first_line_to_display=current_line;
         break;
       case 'n':
       case 'N':
       case KEY_DOWN:
         if(current_line<intr_nbr_line-1)
           current_line++;
-        if(current_line>=first_line_to_display+INTER_MAX_LINES)
-          first_line_to_display=current_line-INTER_MAX_LINES+1;
         break;
       case KEY_PPAGE:
         if(current_line>INTER_MAX_LINES-1)
           current_line-=INTER_MAX_LINES-1;
         else
           current_line=0;
-        if(current_line<first_line_to_display)
-          first_line_to_display=current_line;
         break;
       case KEY_NPAGE:
         if(current_line+INTER_MAX_LINES-1 < intr_nbr_line-1)
           current_line+=INTER_MAX_LINES-1;
         else
           current_line=intr_nbr_line-1;
-        if(current_line>=first_line_to_display+INTER_MAX_LINES)
-          first_line_to_display=current_line-INTER_MAX_LINES+1;
         break;
       default:
         if(strchr(options,toupper(key))!=NULL)
           return toupper(key);
         break;
     }
+    if(current_line<first_line_to_display)
+      first_line_to_display=current_line;
+    if(current_line>=first_line_to_display+INTER_MAX_LINES)
+      first_line_to_display=current_line-INTER_MAX_LINES+1;
   } while(done!=TRUE);
   return 0;
 }
@@ -1722,8 +1737,6 @@ char *ask_location(const char*msg, const char *src_dir)
               {
                 current_file=current_file->prev;
                 pos_num--;
-                if(pos_num<offset)
-                  offset--;
                 quit=ASK_LOCATION_UPDATE;
               }
               break;
@@ -1733,8 +1746,6 @@ char *ask_location(const char*msg, const char *src_dir)
               {
                 current_file=current_file->next;
                 pos_num++;
-                if(pos_num>=offset+INTER_DIR)
-                  offset++;
                 quit=ASK_LOCATION_UPDATE;
               }
               break;
@@ -1745,8 +1756,6 @@ char *ask_location(const char*msg, const char *src_dir)
                 {
                   current_file=current_file->prev;
                   pos_num--;
-                  if(pos_num<offset)
-                    offset--;
                   quit=ASK_LOCATION_UPDATE;
                 }
               }
@@ -1758,8 +1767,6 @@ char *ask_location(const char*msg, const char *src_dir)
                 {
                   current_file=current_file->next;
                   pos_num++;
-                  if(pos_num>=offset+INTER_DIR)
-                    offset++;
                   quit=ASK_LOCATION_UPDATE;
                 }
               }
@@ -1808,6 +1815,10 @@ char *ask_location(const char*msg, const char *src_dir)
               break;
 
           }
+	  if(pos_num<offset)
+	    offset=pos_num;
+	  if(pos_num>=offset+INTER_DIR)
+	    offset=pos_num-INTER_DIR+1;
         } while(quit==ASK_LOCATION_WAITKEY && old_LINES==LINES);
       } while(quit==ASK_LOCATION_UPDATE || old_LINES!=LINES);
       delete_list_file_info(&dir_list.list);

@@ -46,6 +46,7 @@
 #include "adv.h"
 #include "ntfs.h"
 #include "next.h"
+#include "tpartwr.h"
 #include "log.h"
 
 #define RO 1
@@ -209,8 +210,6 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	    pos=pos->prev;
 	    pos_num--;
 	  }
-	  if(pos_num<offset)
-	    offset--;
 	}
 	break;
       case KEY_DOWN:
@@ -221,37 +220,35 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	    pos=pos->next;
 	    pos_num++;
 	  }
-	  if(pos_num>=offset+INTER_BAD_PART)
-	    offset++;
 	}
 	break;
       case KEY_PPAGE:
 	if(list_part!=NULL)
 	{
-	  for(i=0;(i<INTER_BAD_PART) && (pos->prev!=NULL);i++)
+	  for(i=0; i<INTER_BAD_PART && pos->prev!=NULL; i++)
 	  {
 	    pos=pos->prev;
 	    pos_num--;
-	    if(pos_num<offset)
-	      offset--;
 	  }
 	}
 	break;
       case KEY_NPAGE:
 	if(list_part!=NULL)
 	{
-	  for(i=0;(i<INTER_BAD_PART) && (pos->next!=NULL);i++)
+	  for(i=0; i<INTER_BAD_PART && pos->next!=NULL; i++)
 	  {
 	    pos=pos->next;
 	    pos_num++;
-	    if(pos_num>=offset+INTER_BAD_PART)
-	      offset++;
 	  }
 	}
 	break;
       default:
 	break;
     }
+    if(pos_num<offset)
+      offset=pos_num;
+    if(pos_num>=offset+INTER_BAD_PART)
+      offset=pos_num-INTER_BAD_PART+1;
   } while(quit==0);
   return 0;
 }

@@ -413,8 +413,6 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	      pos=pos->prev;
 	      pos_num--;
 	    }
-	    if(pos_num<offset)
-	      offset--;
 	    break;
 	  case KEY_DOWN:
 	  case '2':
@@ -423,8 +421,6 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	      pos=pos->next;
 	      pos_num++;
 	    }
-	    if(pos_num>=offset+INTER_DIR)
-	      offset++;
 	    break;
 	  case 'p':
 	  case 'P':
@@ -460,8 +456,6 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	    {
 	      pos=pos->prev;
 	      pos_num--;
-	      if(pos_num<offset)
-		offset--;
 	    }
 	    break;
 	  case KEY_NPAGE:
@@ -469,8 +463,6 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	    {
 	      pos=pos->next;
 	      pos_num++;
-	      if(pos_num>=offset+INTER_DIR)
-		offset++;
 	    }
 	    break;
 	  case 'c':
@@ -538,6 +530,10 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 	    }
 	    break;
 	}
+	if(pos_num<offset)
+	  offset=pos_num;
+	if(pos_num>=offset+INTER_DIR)
+	  offset=pos_num-INTER_DIR+1;
       }
     } while(quit==0 && old_LINES==LINES);
   } while(quit==0);

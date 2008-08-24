@@ -38,11 +38,6 @@ struct MenuItem
 #define DUMP_MAX_LINES		14
 #define INTER_DUMP_X		DUMP_X
 #define INTER_DUMP_Y		DUMP_Y+DUMP_MAX_LINES+1
-#define INTER_ANALYSE_X		0
-#define INTER_ANALYSE_Y 	8
-#define INTER_MAX_LINES 	13
-#define INTER_ANALYSE_MENU_X 	0
-#define INTER_ANALYSE_MENU_Y 	23
 #define INTER_OPTION_X  	0
 #define INTER_OPTION_Y		10
 #define INTER_PARTITION_X  	0

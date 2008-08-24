@@ -274,8 +274,6 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	    pos=pos->prev;
 	    pos_num--;
 	  }
-	  if(pos_num<offset)
-	    offset--;
 	  break;
 	case KEY_DOWN:
 	  if(pos->next!=NULL)
@@ -283,28 +281,26 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	    pos=pos->next;
 	    pos_num++;
 	  }
-	  if(pos_num>=offset+INTER_DIR)
-	    offset++;
 	  break;
 	case KEY_PPAGE:
-	  for(i=0;(i<INTER_DIR-1)&&(pos->prev!=NULL);i++)
+	  for(i=0; i<INTER_DIR-1 && pos->prev!=NULL; i++)
 	  {
 	    pos=pos->prev;
 	    pos_num--;
-	    if(pos_num<offset)
-	      offset--;
 	  }
 	  break;
 	case KEY_NPAGE:
-	  for(i=0;(i<INTER_DIR-1)&&(pos->next!=NULL);i++)
+	  for(i=0; i<INTER_DIR-1 && pos->next!=NULL; i++)
 	  {
 	    pos=pos->next;
 	    pos_num++;
-	    if(pos_num>=offset+INTER_DIR)
-	      offset++;
 	  }
 	  break;
       }
+      if(pos_num<offset)
+	offset=pos_num;
+      if(pos_num>=offset+INTER_DIR)
+	offset=pos_num-INTER_DIR+1;
     }
   } while(quit==0);
   curs_set(0);

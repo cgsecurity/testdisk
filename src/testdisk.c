@@ -63,6 +63,8 @@
 #include "sudo.h"
 #include "partauto.h"
 #include "misc.h"
+#include "tdisksel.h"
+#include "tlog.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
