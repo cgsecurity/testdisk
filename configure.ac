@@ -148,6 +148,19 @@ AC_ARG_WITH(giconv-includes,
     AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
+#AC_ARG_WITH([carvpath], 
+#    AS_HELP_STRING(--without-carvpath,disabled use of the carvpath library (default is NO)),
+#    [	use_carvpath="n" ])
+#
+#AC_ARG_WITH(carvpath-lib,
+#    AS_HELP_STRING(--with-carvpath-lib=DIR,location of the carvpath library),
+#    [ carvpath_lib_a="${withval}/libcarvpath.a"
+#    LDFLAGS="${LDFLAGS} -L${withval}" ])
+#
+#AC_ARG_WITH(carvpath-includes,
+#    AS_HELP_STRING(--with-carvpath-includes=DIR,location of the carvpath includes files),
+#    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
 AC_ARG_ENABLE([sudo],
     AS_HELP_STRING(--enable-sudo,enable use of sudo (default is NO)),
     [case "${enableval}" in
@@ -335,6 +348,10 @@ AC_CHECK_HEADERS([ntfs/attrib.h ntfs/volume.h],,
               use_ntfs=no
               AC_MSG_WARN(Disable use of ntfs library))
 
+#AC_CHECK_HEADERS([libcarvpath.h],,
+#              use_carvpath=no
+#              AC_MSG_WARN(Disable use of carvpath library))
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_BIGENDIAN(,
@@ -484,6 +501,20 @@ if test -z "${use_reiserfs}"; then
 else
   AC_MSG_WARN(Use of reiserfs library disabled)
 fi
+
+#if test -z "${use_carvpath}"; then
+#  AC_CHECK_LIB(carvpath,carvpath_top_entity,[
+#      AC_DEFINE([HAVE_LIBCARVPATH],1,[Define to 1 if you have the carvpath library (-lcarvpath).])
+#      if test "${carvpath_lib_a}" = ""; then
+#        photorec_LDADD="$photorec_LDADD -lcarvpath"
+#      else
+#        photorec_LDADD="$photorec_LDADD ${carvpath_lib_a}"
+#      fi
+#      ],AC_MSG_WARN(No carvpath library detected))
+#else
+#  AC_MSG_WARN(Use of carvpath library disabled)
+#fi
+
 # Check for UUID functions
 AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h uuid.h])
 found_uuid_function=yes
