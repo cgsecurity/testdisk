@@ -32,6 +32,7 @@
 #else
 #include <stdio.h>
 #endif
+#include "log.h"
 #include "tdelete.h"
 
 #ifdef HAVE_NCURSES

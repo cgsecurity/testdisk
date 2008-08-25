@@ -1,8 +1,8 @@
 /*
 
-    File: intrface.h
+    File: fat1x.h
 
-    Copyright (C) 1998-2004,2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,5 +19,5 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
-int is_part_linux(const partition_t *partition);
+int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd);
+

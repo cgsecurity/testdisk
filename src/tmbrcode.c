@@ -35,6 +35,7 @@
 #else
 #include <stdio.h>
 #endif
+#include "log.h"
 #include "tmbrcode.h"
 
 #ifdef HAVE_NCURSES
@@ -65,7 +66,7 @@ int write_MBR_code(disk_t *disk_car)
   return 0;
 }
 #else
-static int write_MBR_code(disk_t *disk_car)
+int write_MBR_code(disk_t *disk_car)
 {
   if(disk_car->arch->write_MBR_code==NULL)
   {

@@ -74,9 +74,9 @@
 #include "photorec.h"
 #include "fat.h"
 #include "hdcache.h"
+#include "ext2p.h"
 #include "fatp.h"
 #include "ntfsp.h"
-#include "ext2p.h"
 #include "ewf.h"
 #include "log.h"
 #include "phrecn.h"
@@ -86,6 +86,7 @@
 #include "misc.h"
 #include "ext2_dir.h"
 #include "ntfs_dir.h"
+#include "pdisksel.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */

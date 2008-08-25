@@ -1285,7 +1285,8 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
   end.sector=disk_car->geom.sectors_per_head;
   {
     int done = 0;
-    while (done==0) {
+    while (done==0)
+    {
       int command;
       static struct MenuItem menuGeometry[]=
       {
@@ -1311,17 +1312,18 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
       wclrtoeol(stdscr);
       wrefresh(stdscr);
       command=wmenuSimple(stdscr,menuGeometry, position);
-      switch (command) {
+      switch (command)
+      {
 	case 'c':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
 	  start.cylinder=ask_number(start.cylinder,
-	      0, disk_car->geom.cylinders, "Enter the starting cylinder ");
+	      0, disk_car->geom.cylinders-1, "Enter the starting cylinder ");
 	  position=1;
 	  break;
 	case 'h':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
 	  start.head=ask_number(start.head,
-	      0, disk_car->geom.heads_per_cylinder, "Enter the starting head ");
+	      0, disk_car->geom.heads_per_cylinder-1, "Enter the starting head ");
 	  position=2;
 	  break;
 	case 's':
@@ -1339,7 +1341,7 @@ static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *lis
 	case 'H':
 	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
 	  end.head=ask_number(end.head,
-	      0, disk_car->geom.heads_per_cylinder, "Enter the ending head ");
+	      0, disk_car->geom.heads_per_cylinder-1, "Enter the ending head ");
 	  position=5;
 	  break;
 	case 'S':

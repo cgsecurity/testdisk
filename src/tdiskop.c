@@ -171,7 +171,7 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
     wprintw(stdscr,"Note: Correct disk geometry is required for a successful recovery. 'Analyse'");
     wmove(stdscr,21,0);
     wprintw(stdscr,"process may give some warnings if it thinks the logical geometry is mismatched.");
-    command = wmenuSelect_ext(stdscr, 24, INTER_DISK_Y, INTER_DISK_X, menuMain, 10,
+    command = wmenuSelect_ext(stdscr, 23, INTER_DISK_Y, INTER_DISK_X, menuMain, 10,
 	options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
     /* e for editor will be added when the editor will be better */
     switch(command)

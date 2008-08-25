@@ -68,7 +68,7 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
     menuOptions[2].name=*allow_partial_last_cylinder?"Allow partial last cylinder : Yes":"Allow partial last cylinder : No";
     menuOptions[3].name=*dump_ind?"Dump : Yes":"Dump : No";
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 24, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECADQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECADQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'd':

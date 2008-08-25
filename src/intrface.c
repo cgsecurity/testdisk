@@ -93,19 +93,25 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
 }
 
 #ifdef HAVE_NCURSES
-#define INTER_STRUCTURE	13
+#define INTER_STRUCTURE	(LINES-12)
 static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
   int offset=0;
   int pos_num=0;
   list_part_t *pos=list_part;
   int rewrite=1;
+  int old_LINES=LINES;
   while(1)
   {
     int i;
     int command;
     list_part_t *parts;
     int structure_status;
+    if(old_LINES!=LINES)
+    {
+      rewrite=1;
+      old_LINES=LINES;
+    }
     if(rewrite)
     {
       aff_copy(stdscr);
@@ -115,9 +121,12 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       rewrite=0;
     }
     structure_status=disk_car->arch->test_structure(list_part);
-    for(i=0,parts=list_part;(parts!=NULL) && (i<offset);parts=parts->next,i++);
-    for(i=offset;(parts!=NULL) &&((i-offset)<INTER_STRUCTURE);i++,parts=parts->next)
+    for(i=0,parts=list_part;
+	parts!=NULL && i<offset+INTER_STRUCTURE;
+	i++, parts=parts->next)
     {
+      if(i<offset)
+	continue;
       wmove(stdscr,6+i-offset,0);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
       if(parts==pos)
@@ -133,7 +142,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       {
 	char buffer_part_size[100];
 	wattroff(stdscr, A_REVERSE);
-	wmove(stdscr,24,0);
+	wmove(stdscr,LINES-1,0);
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
 	if(parts->part->info[0]!='\0')
 	{
@@ -143,18 +152,18 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       }
     }
     if(structure_status==0)
-      mvwaddstr(stdscr,19,0,msg_STRUCT_OK);
+      mvwaddstr(stdscr,LINES-6,0,msg_STRUCT_OK);
     else
     {
       if(has_colors())
 	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(1));
-      mvwaddstr(stdscr,19,0,msg_STRUCT_BAD);
+      mvwaddstr(stdscr,LINES-6,0,msg_STRUCT_BAD);
       if(has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
     }
     if(list_part!=NULL && disk_car->arch->msg_part_type!=NULL)
     {
-      mvwaddstr(stdscr,19,16,"Use ");
+      mvwaddstr(stdscr,LINES-6,16,"Use ");
       if(has_colors())
 	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
       waddstr(stdscr,"Up");
@@ -167,7 +176,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       if(has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
       waddstr(stdscr," Arrow keys to select partition.");
-      mvwaddstr(stdscr,20,0,"Use ");
+      mvwaddstr(stdscr,LINES-5,0,"Use ");
       if(has_colors())
 	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
       waddstr(stdscr,"Left");
@@ -180,9 +189,9 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       if(has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
       waddstr(stdscr," Arrow keys to CHANGE partition characteristics:");
-      mvwaddstr(stdscr,21,0,disk_car->arch->msg_part_type);
+      mvwaddstr(stdscr,LINES-4,0,disk_car->arch->msg_part_type);
     }
-    wmove(stdscr,22,0);
+    wmove(stdscr,LINES-3,0);
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     waddstr(stdscr,"Keys ");
     /* If the disk can't be partionned, there is no partition to add and no partition to save */
@@ -240,7 +249,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       }
       if(has_colors())
 	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
-      mvwaddstr(stdscr,23,5, "Enter");
+      mvwaddstr(stdscr,LINES-2,5, "Enter");
       if(has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
       waddstr(stdscr,": to continue");

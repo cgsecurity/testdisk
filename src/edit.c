@@ -63,7 +63,7 @@ static void interface_editor_ncurses(disk_t *disk_car)
       { 'Q', "Quit",""},
       { 0, NULL, NULL }
     };
-    switch ( wmenuSelect(stdscr, 24, INTER_DUMP_Y, INTER_DUMP_X, menuEditor, 8, "CDQ", MENU_HORIZ | MENU_BUTTON, 0))
+    switch ( wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuEditor, 8, "CDQ", MENU_HORIZ | MENU_BUTTON, 0))
     {
       case 'c':
       case 'C':
@@ -233,7 +233,7 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 		  wprintw(stdscr,"%c",  car);
 	  }
 	}
-	switch (wmenuSelect(stdscr, 24, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, "PNQ", MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+	switch (wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, "PNQ", MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
 	{
 	  case 'p':
 	  case 'P':

@@ -23,52 +23,22 @@
 #include <config.h>
 #endif
  
-#include <stdarg.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#include <ctype.h>
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include "types.h"
 #include "common.h"
-#include "lang.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
 #else
 #include <stdio.h>
 #endif
-#include "intrface.h"
-#include "godmode.h"
-#include "fnctdsk.h"
-#include "testdisk.h"
-#include "adv.h"
-#include "analyse.h"
-#include "chgtype.h"
-#include "edit.h"
-#include "savehdr.h"
-#include "dirpart.h"
-#include "fat.h"
-#include "partauto.h"
 #include "log.h"
-#include "guid_cmp.h"
-#include "hdaccess.h"
-#include "io_redir.h"
 #include "diskacc.h"
+
+#define INTER_DISK_X		0
+#define INTER_DISK_Y		18
 
 #ifdef HAVE_NCURSES
 static int interface_check_disk_access_ncurses(disk_t *disk_car)
@@ -118,7 +88,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
 #endif
   wmove(stdscr,line++,0);
   wprintw(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
-  car= wmenuSelect_ext(stdscr, 24, INTER_MAIN_Y, INTER_MAIN_X, menuDiskAccess, 10,
+  car= wmenuSelect_ext(stdscr, 23, INTER_DISK_Y, INTER_DISK_X, menuDiskAccess, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
     return 0;

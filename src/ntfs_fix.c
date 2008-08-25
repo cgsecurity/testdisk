@@ -258,7 +258,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	  wprintw(stdscr, "MFT and MFT mirror are bad.\n");
 	else
 	  wprintw(stdscr, "Both MFT seems ok but they don't match.\n");
-	command=wmenuSelect_ext(stdscr, 24, INTER_MFT_Y, INTER_MFT_X, menuMFT, 10, "MBQ",
+	command=wmenuSelect_ext(stdscr, 23, INTER_MFT_Y, INTER_MFT_X, menuMFT, 10, "MBQ",
 	    MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu, &real_key);
 	switch(command)
 	{

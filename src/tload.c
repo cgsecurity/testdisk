@@ -23,57 +23,38 @@
 #include <config.h>
 #endif
  
-#include <stdarg.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#include <ctype.h>
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include "types.h"
 #include "common.h"
-#include "lang.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
 #else
 #include <stdio.h>
 #endif
-#include "intrface.h"
-#include "godmode.h"
 #include "fnctdsk.h"
-#include "testdisk.h"
-#include "adv.h"
-#include "analyse.h"
-#include "chgtype.h"
-#include "edit.h"
 #include "savehdr.h"
-#include "dirpart.h"
-#include "fat.h"
-#include "partauto.h"
 #include "log.h"
-#include "guid_cmp.h"
-#include "hdaccess.h"
-#include "io_redir.h"
 #include "tload.h"
 
 #ifdef HAVE_NCURSES
 static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *backup_part, const int verbose);
 
-#define INTER_STRUCTURE	13
+#define INTER_LOAD	13
+#define INTER_LOAD_X    0
+#define INTER_LOAD_Y	22
+
 static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk_t *backup_list, const int verbose)
 {
   int offset=0;
@@ -112,9 +93,12 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
     if(backup_list!=NULL)
     {
       backup_disk_t *backup=NULL;
-      for(i=0,backup_walker=backup_list->list.next;(backup_walker!=&backup_list->list) && (i<offset);backup_walker=backup_walker->next,i++);
-      for(i=offset;(backup_walker!=&backup_list->list) &&((i-offset)<INTER_STRUCTURE);i++,backup_walker=backup_walker->next)
+      for(i=0,backup_walker=backup_list->list.next;
+	  backup_walker!=&backup_list->list && i<offset+INTER_LOAD;
+	  backup_walker=backup_walker->next,i++)
       {
+	if(i<offset)
+	  continue;
 	backup=td_list_entry(backup_walker, backup_disk_t, list);
 	wmove(stdscr,8+i-offset,0);
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
@@ -128,7 +112,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
 	  wprintw(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
 	}
       }
-      if(i<=INTER_STRUCTURE && backup==NULL)
+      if(i<=INTER_LOAD && backup==NULL)
       {
 	strncpy(options,"LQ",sizeof(options));
 	menu=0;
@@ -144,7 +128,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
       menu=0;
       strncpy(options,"Q",sizeof(options));
     }
-    switch(wmenuSelect(stdscr, 24, INTER_DUMP_Y,INTER_DUMP_X, menuLoadBackup, 8, options, MENU_HORIZ| MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch(wmenuSelect(stdscr, INTER_LOAD_Y+1, INTER_LOAD_Y,INTER_LOAD_X, menuLoadBackup, 8, options, MENU_HORIZ| MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'q':
       case 'Q':
@@ -169,14 +153,14 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
 	}
 	break;
       case KEY_PPAGE:
-	for(i=0;(i<INTER_STRUCTURE) && (backup_current->prev!=&backup_list->list);i++)
+	for(i=0;(i<INTER_LOAD) && (backup_current->prev!=&backup_list->list);i++)
 	{
 	  backup_current=backup_current->prev;
 	  backup_current_num--;
 	}
 	break;
       case KEY_NPAGE:
-	for(i=0;(i<INTER_STRUCTURE) && (backup_current->next!=&backup_list->list);i++)
+	for(i=0;(i<INTER_LOAD) && (backup_current->next!=&backup_list->list);i++)
 	{
 	  backup_current=backup_current->next;
 	  backup_current_num++;
@@ -188,8 +172,8 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
     }
     if(backup_current_num<offset)
       offset=backup_current_num;
-    if(backup_current_num>=offset+INTER_STRUCTURE)
-      offset=backup_current_num-INTER_STRUCTURE+1;
+    if(backup_current_num>=offset+INTER_LOAD)
+      offset=backup_current_num-INTER_LOAD+1;
   }
 }
 

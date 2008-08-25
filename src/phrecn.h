@@ -19,5 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char**cmd_run);
+int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, char *recup_dir, const int keep_corrupted_file, const int interface, file_enable_t *file_enable, const unsigned int mode_ext2, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only);
+void interface_file_select(file_enable_t *files_enable, char**current_cmd);
+void interface_options_photorec(int *paranoid, int *allow_partial_last_cylinder, int *keep_corrupted_file, unsigned int *mode_ext2, unsigned int *expert, unsigned int *lowmem, char**current_cmd);
 void free_search_space(alloc_data_t *list_search_space);

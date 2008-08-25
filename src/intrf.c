@@ -647,7 +647,7 @@ int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, unsigned int me
       available[i] = menuItems[i].key;
     }
     available[i] = 0;
-    return wmenuSelect(window, 24, 18, 0, menuItems, itemLength, available, MENU_HORIZ | MENU_BUTTON, menuDefault);
+    return wmenuSelect(window, 23, 18, 0, menuItems, itemLength, available, MENU_HORIZ | MENU_BUTTON, menuDefault);
 }
 
 /* End of command menu support code */
@@ -755,7 +755,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
           wprintw(window," ");
       }
     }
-    switch (wmenuSelect(window, 24, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch (wmenuSelect(window, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'p':
       case 'P':
@@ -908,7 +908,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
           wprintw(window," ");
       }
     }
-    switch (wmenuSelect(window, 24, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+    switch (wmenuSelect(window, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
     {
       case 'p':
       case 'P':
@@ -1294,11 +1294,11 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
   curs_set(0);
   {
     int quit=0;
-    while(LINES>=8 && LINES<25 && quit==0)
+    while(LINES>=8 && LINES<24 && quit==0)
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wprintw(stdscr,"%s need 25 lines to work.", prog_name);
+      wprintw(stdscr,"%s need 24 lines to work.", prog_name);
       wmove(stdscr,5,0);
       wprintw(stdscr,"Please enlarge the terminal.");
       wmove(stdscr,LINES-2,0);
@@ -1321,10 +1321,10 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
       }
     }
   }
-  if(LINES<25)
+  if(LINES<24)
   {
     end_ncurses();
-    printf("%s need 25 lines to work.\nPlease enlarge the terminal and restart %s.\n",prog_name,prog_name);
+    printf("%s need 24 lines to work.\nPlease enlarge the terminal and restart %s.\n",prog_name,prog_name);
     log_critical("Terminal has only %u lines\n",LINES);
     return 1;
   }
@@ -1399,7 +1399,7 @@ static int intrf_no_disk_ncurses(const char *prog_name)
       };
       unsigned int menu=0;
       int command;
-      command = wmenuSelect_ext(stdscr,24, 21, 0, menuSudo, 8,
+      command = wmenuSelect_ext(stdscr,23, 20, 0, menuSudo, 8,
 	  "SQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
       if(command=='s' || command=='S')
 	return 1;
@@ -1470,7 +1470,7 @@ static int interface_partition_type_ncurses(disk_t *disk_car)
     wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
     wmove(stdscr,21,0);
     wprintw(stdscr,"rare for a drive to be 'Non-partitioned'.");
-    car=wmenuSelect_ext(stdscr, 24, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
     switch(car)
     {
       case 'i':

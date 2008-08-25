@@ -75,7 +75,7 @@ int ask_testdisk_log_creation()
   while(1)
   {
     int command;
-    command = wmenuSelect_ext(stdscr, 24, 17, 0, menuLogCreation, 8,
+    command = wmenuSelect_ext(stdscr, 23, 17, 0, menuLogCreation, 8,
         "CAQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
     switch(command)
     {

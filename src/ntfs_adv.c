@@ -194,7 +194,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
       ncurses_ntfs_info(ntfs_header);
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
     }
-    command=wmenuSelect(stdscr, 24, INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ | MENU_BUTTON, 1);
+    command=wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ | MENU_BUTTON, 1);
     switch(command)
     {
       case 'w':

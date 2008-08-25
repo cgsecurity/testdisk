@@ -1,30 +1,33 @@
 /*
 
-    File: tdisksel.c
+    File: pdisksel.c
 
     Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#include <unistd.h>	/* geteuid */
 #endif
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -37,15 +40,15 @@
 #else
 #include <stdio.h>
 #endif
-#include "fnctdsk.h"
-#include "testdisk.h"
+#include "dir.h"
+#include "list.h"
+#include "filegen.h"
+#include "photorec.h"
+#include "sessionp.h"
 #include "partauto.h"
 #include "log.h"
-#include "hdaccess.h"
-#include "diskcapa.h"
-#include "diskacc.h"
-#include "tdiskop.h"
-#include "tdisksel.h"
+#include "pdisksel.h"
+#include "ppartsel.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -53,15 +56,18 @@
 #define INTER_DISK_Y		(8+NBR_DISK_MAX)
 #define INTER_NOTE_Y		(LINES-4)
 
-static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_disk_t *list_disk, const int saveheader, char **current_cmd)
+static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable)
 {
-  int command='Q';
+  char * current_cmd=NULL;
+  int command;
+  int real_key;
+  int done=0;
   unsigned int menu=0;
   int offset=0;
   int pos_num=0;
   const list_disk_t *element_disk;
-  const list_disk_t *current_disk;
-  static struct MenuItem menuMain[]=
+  const list_disk_t *current_disk=list_disk;
+  static const struct MenuItem menuMain[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },
@@ -69,25 +75,21 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
     { 'Q',"Quit","Quit program"},
     { 0,NULL,NULL}
   };
-  current_disk=list_disk;
-  if(current_disk==NULL)
-  {
-    return intrf_no_disk("TestDisk");
-  }
-    /* ncurses interface */
-  while(1)
+  static alloc_data_t list_search_space={
+    .list = TD_LIST_HEAD_INIT(list_search_space.list)
+  };
+  /* ncurses interface */
+  while(done==0)
   {
     const char *options;
     int i;
-#ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
-    wprintw(stdscr,"  TestDisk is free software, and");
+    wprintw(stdscr,"  PhotoRec is free software, and");
     wmove(stdscr,5,0);
     wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
     wmove(stdscr,7,0);
     wprintw(stdscr,"Select a media (use Arrow keys, then press Enter):");
-#endif
     for(i=0,element_disk=list_disk;
 	element_disk!=NULL && i<offset+NBR_DISK_MAX;
 	i++, element_disk=element_disk->next)
@@ -111,42 +113,42 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
     {
       int line=INTER_NOTE_Y;
       mvwaddstr(stdscr,line++,0,"Note: ");
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 #else
+#ifndef DJGPP
 #ifdef HAVE_GETEUID
       if(geteuid()!=0)
       {
-        if(has_colors())
-          wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(1));
-        waddstr(stdscr,"Some disks won't appear unless you are root user.");
+	if(has_colors())
+	  wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(1));
+	wprintw(stdscr,"Some disks won't appear unless you're root user.");
         if(has_colors())
           wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-        wmove(stdscr,line++,0);
       }
 #endif
 #endif
-      waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
+#endif
+      wmove(stdscr,line++,0);
+      wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
       wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
       wmove(stdscr,line++,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,
-	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,NULL);
+	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
     switch(command)
     {
-      case 'p':
-      case 'P':
       case KEY_UP:
+      case 'P':
 	if(current_disk->prev!=NULL)
 	{
 	  current_disk=current_disk->prev;
 	  pos_num--;
 	}
 	break;
-      case 'n':
-      case 'N':
       case KEY_DOWN:
+      case 'N':
 	if(current_disk->next!=NULL)
 	{
 	  current_disk=current_disk->next;
@@ -172,19 +174,14 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	{
 	  disk_t *disk=current_disk->disk;
 	  autodetect_arch(disk);
-	  autoset_unit(disk);
-	  if(interface_check_disk_capacity(disk)==0 &&
-              interface_check_disk_access(disk, current_cmd)==0 &&
-	      interface_partition_type(disk, verbose, current_cmd)==0)
-	  {
-	    if(menu_disk(disk, verbose, dump_ind, saveheader, current_cmd))
-	      return 0;
-	  }
+	  if(interface_partition_type(disk, verbose, &current_cmd)==0)
+	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, &list_search_space);
 	}
 	break;
       case 'q':
       case 'Q':
-	return 0;
+	done=1;
+	break;
     }
     if(pos_num<offset)
       offset=pos_num;
@@ -194,50 +191,67 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 }
 #endif
 
-static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk_t *list_disk, const int saveheader, const char *cmd_device, char **current_cmd)
+int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
 {
-  const list_disk_t *element_disk;
-  const list_disk_t *current_disk=NULL;
-  if(cmd_device!=NULL)
+  static alloc_data_t list_search_space={
+    .list = TD_LIST_HEAD_INIT(list_search_space.list)
+  };
+  if(list_disk==NULL)
   {
+    return intrf_no_disk("PhotoRec");
+  }
+  if(cmd_device==NULL)
+  {
+    char *saved_device=NULL;
+    char *saved_cmd=NULL;
+    session_load(&saved_device, &saved_cmd,&list_search_space);
+    if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list) && ask_confirmation("Continue previous session ? (Y/N)")!=0)
+    {
+      /* yes */
+      *current_cmd=saved_cmd;
+      cmd_device=saved_device;
+    }
+    else
+    {
+      free(saved_device);
+      free(saved_cmd);
+      free_list_search_space(&list_search_space);
+    }
+  }
+  if(cmd_device!=NULL && *current_cmd!=NULL)
+  {
+    const list_disk_t *element_disk;
+    disk_t *disk=NULL;
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
       if(strcmp(element_disk->disk->device,cmd_device)==0)
-	current_disk=element_disk;
+	disk=element_disk->disk;
     }
-  }
-  else
-    current_disk=list_disk;
-  if(current_disk==NULL)
-  {
-    return intrf_no_disk("TestDisk");
-  }
-  if(*current_cmd!=NULL)
-  {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    if(disk==NULL)
     {
-      disk_t *disk=current_disk->disk;
-      autodetect_arch(disk);
-      autoset_unit(disk);
-      if(interface_check_disk_capacity(disk)==0 &&
-          interface_check_disk_access(disk, current_cmd)==0 &&
-          interface_partition_type(disk, verbose, current_cmd)==0)
+      return intrf_no_disk("PhotoRec");
+    }
+    {
+      /* disk sector size is now known, fix the sector ranges */
+      struct td_list_head *search_walker = NULL;
+      td_list_for_each(search_walker, &list_search_space.list)
       {
-	menu_disk(disk, verbose, dump_ind, saveheader, current_cmd);
+	alloc_data_t *current_search_space;
+	current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+	current_search_space->start=current_search_space->start*disk->sector_size;
+	current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
       }
     }
+    autodetect_arch(disk);
+    if(interface_partition_type(disk, verbose, current_cmd)==0)
+      menu_photorec(disk, verbose, recup_dir, file_enable, current_cmd, &list_search_space);
   }
-  return 0;
-}
-
-int do_curses_testdisk(int verbose,int dump_ind, const list_disk_t *list_disk, const int saveheader, const char *cmd_device, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-    return testdisk_disk_selection_cli(verbose, dump_ind, list_disk, saveheader, cmd_device, current_cmd);
+  else
+  {
 #ifdef HAVE_NCURSES
-  return testdisk_disk_selection_ncurses(verbose, dump_ind, list_disk, saveheader, current_cmd);
-#else
-  return 0;
+    photorec_disk_selection_ncurses(verbose, recup_dir, list_disk, file_enable);
 #endif
+  }
+  log_info("\n");
+  return 0;
 }

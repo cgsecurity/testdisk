@@ -20,9 +20,5 @@
 
  */
 
-#define ANALYSE_X	0
-#define ANALYSE_Y	5
-#define INTER_BAD_PART	10
-
 list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd);

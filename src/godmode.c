@@ -2,7 +2,7 @@
 
     File: godmode.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,17 +37,20 @@
 #include "lang.h"
 #include "godmode.h"
 #include "testdisk.h"
+#include "intrface.h"
 #include "fat.h"
 #include "ext2.h"
 #include "intrf.h"
 #include "intrfn.h"
-#include "intrface.h"
 #include "md.h"
 #include "adv.h"
 #include "ntfs.h"
 #include "next.h"
 #include "tpartwr.h"
 #include "log.h"
+#include "fat32.h"
+#include "tntfs.h"
+#include "thfs.h"
 
 #define RO 1
 #define RW 0
@@ -66,6 +69,9 @@ static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
 static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part_bad);
 static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recommanded_heads_per_cylinder);
 static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
+#define ANALYSE_X	0
+#define ANALYSE_Y	5
+#define INTER_BAD_PART	10
 #endif
 static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int align,const int verbose);
 static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr);
@@ -176,7 +182,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	wattrset(stdscr, A_REVERSE);
 	aff_part(stdscr, AFF_PART_BASE, disk_car, parts->part);
 	wattroff(stdscr, A_REVERSE);
-	wmove(stdscr,24,0);
+	wmove(stdscr,23,0);
 	wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
 	if(parts->part->info[0]!='\0')
 	{
