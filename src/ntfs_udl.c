@@ -1154,8 +1154,11 @@ static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 			  {
 			    file_info_t *new_file;
 			    new_file=ufile_to_file_data(file);
-			    td_list_add_sorted(&new_file->list, &dir_list->list, filesort);
-			    results++;
+			    if(new_file!=NULL)
+			    {
+			      td_list_add_sorted(&new_file->list, &dir_list->list, filesort);
+			      results++;
+			    }
 			  }
 			  free_file(file);
 			}
