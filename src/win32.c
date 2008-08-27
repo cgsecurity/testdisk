@@ -155,7 +155,12 @@ void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *dev
       geom->heads_per_cylinder=geometry_ex.Geometry.TracksPerCylinder;
       geom->sectors_per_head= geometry_ex.Geometry.SectorsPerTrack;
       if(geom->sectors_per_head!=0)
+      {
+	if(verbose>1)
+	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY_EX %s Ok (%u, %u, %u)\n",
+	      device, geom->cylinders, geom->heads_per_cylinder, geom->sectors_per_head);
 	return ;
+      }
     }
   }
   {
@@ -168,7 +173,12 @@ void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *dev
       geom->heads_per_cylinder=geometry.TracksPerCylinder;
       geom->sectors_per_head= geometry.SectorsPerTrack;
       if(geom->sectors_per_head!=0)
+      {
+	if(verbose>1)
+	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY %s Ok (%u, %u, %u)\n",
+	      device, geom->cylinders, geom->heads_per_cylinder, geom->sectors_per_head);
 	return ;
+      }
     }
   }
   geom->cylinders=0;
