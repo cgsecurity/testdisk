@@ -375,6 +375,9 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	      if(carve_free_space_only>0)
 	      {
 		blocksize=remove_used_space(disk_car, partition, list_search_space);
+		/* Only free space is carved, list_search_space is modified.
+		 * To carve the whole space, need to quit and reselect the partition */
+		done = 1;
 	      }
 	      photorec(disk_car, partition, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
 	    }
