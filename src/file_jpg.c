@@ -2,7 +2,7 @@
 
     File: file_jpg.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
       const struct ifd_entry *ifd;
       unsigned int j;
       for(j=0, ifd=&ifd0->ifd;
-	  j<be16(ifd0->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	  (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd0->nbr_fields);
 	  j++, ifd++)
       {
 	if(be16(ifd->tag)==0x132)
@@ -120,7 +120,7 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
       if(ifd1!=NULL)
       {	/* Exif */
 	for(j=0, ifd=&ifd1->ifd;
-	    j<be16(ifd1->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd1->nbr_fields);
 	    j++, ifd++)
 	{
 	  if(be16(ifd->tag)==0x9003)		/* DateTimeOriginal */
@@ -141,13 +141,13 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
   {
     if(tiff_size < le32(tiff->ifd0_offset)+sizeof(struct ifd_entry))
       return (time_t)0;
-      {
+    {
       const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->ifd0_offset));
       const struct ifd_header *ifd1=NULL;
       const struct ifd_entry *ifd;
       unsigned int j;
       for(j=0, ifd=&ifd0->ifd;
-	  j<le16(ifd0->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	   (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd0->nbr_fields);
 	  j++, ifd++)
       {
 	if(le16(ifd->tag)==0x132)
@@ -163,7 +163,7 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
       if(ifd1!=NULL)
       {	/* Exif */
 	for(j=0, ifd=&ifd1->ifd;
-	    j<le16(ifd1->nbr_fields) && (const char*)(ifd+1) <= (const char*)tiff+tiff_size;
+	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd1->nbr_fields);
 	    j++, ifd++)
 	{
 	  if(le16(ifd->tag)==0x9003)		/* DateTimeOriginal */
