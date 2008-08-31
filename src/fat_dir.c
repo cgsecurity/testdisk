@@ -386,7 +386,7 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
       }
       if(stop==0 && nbr_cluster==0 &&
 	  !(partition->upart_type==UP_FAT32 && first_cluster==0) &&
-	   memcmp(buffer_dir,".          ",8+3)!=0)
+	  !(buffer_dir[0]=='.' && buffer_dir[0x20]=='.' && buffer_dir[0x21]=='.'))
       {
 	stop=1;
       }
