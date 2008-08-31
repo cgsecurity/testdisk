@@ -59,7 +59,7 @@ static void register_header_check_tiff(file_stat_t *file_stat)
 
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned char pentax_sig[18]= { 'P', 'E', 'N', 'T', 'A', 'X', ' ', 'C', 'o', 'r', 'p', 'o', 'r', 'a', 't', 'i', 'o', 'n'};
+  const unsigned char pentax_sig[7]= { 'P', 'E', 'N', 'T', 'A', 'X', ' '};
   const unsigned char nikon_sig[17]= { 'N', 'I', 'K', 'O', 'N', ' ', 'C', 'O', 'R', 'P', 'O', 'R', 'A', 'T', 'I', 'O', 'N'};
   const unsigned char dcr_sig[5]= { '.', 'D', 'C', 'R', 0x00};
   const unsigned char sony_sig[5]= { 'S', 'O', 'N', 'Y', 0x00};
