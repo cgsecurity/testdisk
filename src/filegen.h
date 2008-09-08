@@ -33,17 +33,14 @@ typedef struct file_hint_struct file_hint_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
 typedef struct file_stat_struct file_stat_t;
-typedef struct alloc_data_struct alloc_data_t;
-#if 0
-typedef struct file_magic_struct file_magic_t;
-
-struct file_magic_struct
+typedef struct
 {
-  const unsigned char *value;
-  const unsigned int length;
-  const unsigned int offset;
-};
-#endif
+  struct td_list_head list;
+  uint64_t start;
+  uint64_t end;
+  file_stat_t *file_stat;
+  unsigned int data;
+} alloc_data_t;
 
 struct file_enable_struct
 {
@@ -67,6 +64,7 @@ struct file_recovery_struct
   uint64_t file_size;
   uint64_t file_size_on_disk;
   alloc_list_t location;
+  alloc_data_t *loc;
   const char *extension;
   uint64_t min_filesize;
   uint64_t offset_error;
@@ -89,14 +87,6 @@ struct file_hint_struct
   const int recover;
   const int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
-};
-
-struct alloc_data_struct
-{
-  struct td_list_head list;
-  uint64_t start;
-  uint64_t end;
-  file_stat_t *file_stat;
 };
 
 typedef struct

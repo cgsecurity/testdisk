@@ -23,3 +23,4 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
 void interface_file_select(file_enable_t *files_enable, char**current_cmd);
 void interface_options_photorec(int *paranoid, int *allow_partial_last_cylinder, int *keep_corrupted_file, unsigned int *mode_ext2, unsigned int *expert, unsigned int *lowmem, char**current_cmd);
 void free_search_space(alloc_data_t *list_search_space);
+alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);

@@ -272,7 +272,6 @@ void list_space_used(const file_recovery_t *file_recovery, const unsigned int se
     file_size_on_disk+=(element->end-element->start+1);
     if(element->data>0)
     {
-      // log_trace(" %llu-%llu", (unsigned long long)(element->start), (unsigned long long)(element->end));
       log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
       file_size+=(element->end-element->start+1);
     }
@@ -560,7 +559,7 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
 {
   int nbr;
   alloc_data_t *file_space=*current_search_space;
-  for(nbr=0;nbr<5;nbr++)
+  for(nbr=0;nbr<10;nbr++)
   {
     file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
     if(file_space==list_search_space)
@@ -739,32 +738,35 @@ struct info_cluster_offset
   unsigned int nbr;
 };
 
-
-unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset)
+unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int default_blocksize, uint64_t *offset)
 {
-  int blocksize_ok=0;
+  int blocksize_ok=2;
   unsigned int blocksize;
   *offset=0;
-  if(td_list_empty(&list_file->list))
-    return default_blocksize;
-  for(blocksize=128*512;blocksize>=default_blocksize && blocksize_ok==0;blocksize=blocksize>>1)
+  for(blocksize=128*512;blocksize>=default_blocksize && blocksize_ok==2;blocksize=blocksize>>1)
   {
     struct td_list_head *search_walker = NULL;
-    blocksize_ok=1;
+    blocksize_ok=0;
+    td_list_for_each(search_walker, &list_search_space->list)
     {
       alloc_data_t *tmp;
-      tmp=td_list_entry(list_file->list.next, alloc_data_t, list);
-      *offset=tmp->start%blocksize;
+      tmp=td_list_entry(search_walker, alloc_data_t, list);
+      if(tmp->file_stat!=NULL)
+      {
+	if(blocksize_ok==0)
+	{
+	  *offset=tmp->start%blocksize;
+	  blocksize_ok=1;
+	}
+	else if(tmp->start%blocksize!=*offset)
+	{
+	  blocksize_ok=2;
+	  break;
+	}
+      }
     }
-    for(search_walker=list_file->list.next;
-      search_walker!=&list_file->list && blocksize_ok!=0;
-      search_walker=search_walker->next)
-    {
-      alloc_data_t *current_file;
-      current_file=td_list_entry(search_walker, alloc_data_t, list);
-      if(current_file->start%blocksize!=*offset)
-        blocksize_ok=0;
-    }
+    if(blocksize_ok==0)
+      return default_blocksize;
   }
   blocksize=blocksize<<1;
   return blocksize;
@@ -1284,7 +1286,7 @@ static void free_list_allocation(alloc_list_t *list_allocation)
  */
 int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset,
-    unsigned int *dir_num, const photorec_status_t status, const unsigned int sector_size, const disk_t *disk_car)
+    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk)
 {
   int file_recovered=0;
 #ifdef DEBUG_FILE_FINISH
@@ -1303,6 +1305,11 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
       { /* Check if recovered file is valid */
         file_recovery->file_check(file_recovery);
       }
+      /* FIXME: need to adapt read_size to volume size to avoid this */
+      if(file_recovery->file_size > disk->disk_size)
+        file_recovery->file_size = disk->disk_size;
+      if(file_recovery->file_size > disk->disk_real_size)
+        file_recovery->file_size = disk->disk_real_size;
       if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
           file_recovery->file_size < file_recovery->min_filesize)
       { 
@@ -1312,11 +1319,6 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
         file_recovery->file_size=0;
         file_recovery->file_size_on_disk=0;
       }
-      /* FIXME: need to adapt read_size to volume size to avoid this */
-      if(file_recovery->file_size > disk_car->disk_size)
-        file_recovery->file_size = disk_car->disk_size;
-      if(file_recovery->file_size > disk_car->disk_real_size)
-        file_recovery->file_size = disk_car->disk_real_size;
 #ifdef HAVE_FTRUNCATE
       fflush(file_recovery->handle);
       if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
@@ -1336,7 +1338,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
       {
         *dir_num=photorec_mkdir(recup_dir,*dir_num+1);
       }
-      if(paranoid==0 || (status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING))
+      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
         file_recovery->file_stat->recovered++;
     }
     else
@@ -1347,8 +1349,8 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
   if(file_recovery->file_stat!=NULL)
   {
     list_truncate(&file_recovery->location,file_recovery->file_size);
-    if(status!=STATUS_FIND_OFFSET && file_recovery->file_size>0)
-      list_space_used(file_recovery,sector_size);
+    if(file_recovery->file_size>0)
+      list_space_used(file_recovery, disk->sector_size);
     if(file_recovery->file_size==0)
     {
       /* File hasn't been sucessfully recovered, remember where it begins */
@@ -1375,6 +1377,89 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
 #endif
   return file_recovered;
+}
+
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
+    const unsigned int blocksize, alloc_data_t *list_search_space,
+    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk)
+{
+  alloc_data_t *datanext=NULL;
+#ifdef DEBUG_FILE_FINISH
+  log_debug("file_recovery->offset_error=%llu\n", (long long unsigned)file_recovery->offset_error);
+  log_debug("file_recovery->handle %s NULL\n", (file_recovery->handle!=NULL?"!=":"=="));
+  info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
+#endif
+  if(file_recovery->handle)
+  {
+    if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+    {
+      if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
+      { /* Check if recovered file is valid */
+        file_recovery->file_check(file_recovery);
+      }
+      /* FIXME: need to adapt read_size to volume size to avoid this */
+      if(file_recovery->file_size > disk->disk_size)
+        file_recovery->file_size = disk->disk_size;
+      if(file_recovery->file_size > disk->disk_real_size)
+        file_recovery->file_size = disk->disk_real_size;
+
+      if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
+          file_recovery->file_size < file_recovery->min_filesize)
+      { 
+        log_info("File too small ( %llu < %llu), reject it\n",
+            (long long unsigned) file_recovery->file_size,
+            (long long unsigned) file_recovery->min_filesize);
+        file_recovery->file_size=0;
+        file_recovery->file_size_on_disk=0;
+      }
+#ifdef HAVE_FTRUNCATE
+      fflush(file_recovery->handle);
+      if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
+      {
+        log_critical("ftruncate failed.\n");
+      }
+#endif
+    }
+    fclose(file_recovery->handle);
+    file_recovery->handle=NULL;
+    //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
+    if(file_recovery->file_size>0)
+    {
+      if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
+      if((++(*file_nbr))%MAX_FILES_PER_DIR==0)
+      {
+        *dir_num=photorec_mkdir(recup_dir,*dir_num+1);
+      }
+      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+        file_recovery->file_stat->recovered++;
+    }
+    else
+    {
+      unlink(file_recovery->filename);
+    }
+  }
+  if(file_recovery->file_stat!=NULL)
+  {
+    if(file_recovery->file_size==0)
+    {
+      /* File hasn't been sucessfully recovered */
+    }
+    else
+    {
+      datanext=file_truncate(list_search_space, file_recovery, disk->sector_size, blocksize);
+    }
+    free_list_allocation(&file_recovery->location);
+  }
+  if(file_recovery->file_size==0 && file_recovery->offset_error!=0)
+  {
+  }
+  else
+    reset_file_recovery(file_recovery);
+#ifdef DEBUG_FILE_FINISH
+  info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
+#endif
+  return datanext;
 }
 
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose)

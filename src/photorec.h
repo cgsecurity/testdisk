@@ -36,7 +36,10 @@ struct list_cluster_struct
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset,
-    unsigned int *dir_num, const photorec_status_t status, const unsigned int sector_size, const disk_t *disk_car);
+    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
+    const unsigned int blocksize, alloc_data_t *list_search_space,
+    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
 void reset_file_stats(file_stat_t *file_stats);
 void write_stats_log(const file_stat_t *file_stats);
 void write_stats_stdout(const file_stat_t *file_stats);

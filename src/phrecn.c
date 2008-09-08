@@ -319,11 +319,10 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
   struct td_list_head *search_walker = NULL;
   struct td_list_head *n= NULL;
   unsigned char *buffer_start;
-  unsigned int read_size;
+  const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
   unsigned int buffer_size;
   int ind_stop=0;
   int pass2=pass;
-  read_size=((*blocksize)>8192?(*blocksize):8192);
   buffer_size=(*blocksize)+READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   for(search_walker=list_search_space->list.prev, n=search_walker->prev;
@@ -400,8 +399,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
       }
       if(file_recovery.file_stat!=NULL && file_recovery.handle==NULL)
       { /* Create new file */
-	set_filename(&file_recovery, recup_dir, *dir_num, disk_car, partition,
-	    (status==STATUS_EXT2_ON_SAVE_EVERYTHING||status==STATUS_EXT2_OFF_SAVE_EVERYTHING));
+	set_filename(&file_recovery, recup_dir, *dir_num, disk_car, partition, 0);
         if(file_recovery.file_stat->file_hint->recover==1)
         {
           if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
@@ -413,46 +411,31 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
       }
       if(file_recovery.handle!=NULL)
       {
-        if((status==STATUS_EXT2_ON || status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
-            file_recovery.file_stat!=NULL && file_recovery.file_size_on_disk>=12*(*blocksize) &&
-            ind_block(buffer,*blocksize)!=0)
-        {
-          list_append_block(&file_recovery.location,offset,*blocksize,0);
-          file_recovery.file_size_on_disk+=*blocksize;
-          if(verbose>1)
-          {
-            log_verbose("Skipping sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size));
-          }
-          memcpy(buffer,buffer_olddata,(*blocksize));
-        }
-        else
-        {
-          if(file_recovery.handle!=NULL)
-          {
-            if(fwrite(buffer,*blocksize,1,file_recovery.handle)<1)
-            { 
-              log_critical("Cannot write to file %s\n", file_recovery.filename);
-              ind_stop=3;
-            }
-          }
-          if(file_recovery.file_stat!=NULL)
-          {
-            int res=1;
-            list_append_block(&file_recovery.location,offset,*blocksize,1);
-            if(file_recovery.data_check!=NULL)
-              res=file_recovery.data_check(buffer_olddata,2*(*blocksize),&file_recovery);
-            file_recovery.file_size+=*blocksize;
-            file_recovery.file_size_on_disk+=*blocksize;
-            if(res==2)
-            { /* EOF found */
-              need_to_check_file=1;
-            }
-          }
-        }
-        if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
-        {
-          log_verbose("File should not be bigger than %llu, stop adding data\n",
-              (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
+	if(file_recovery.handle!=NULL)
+	{
+	  if(fwrite(buffer,*blocksize,1,file_recovery.handle)<1)
+	  { 
+	    log_critical("Cannot write to file %s\n", file_recovery.filename);
+	    ind_stop=3;
+	  }
+	}
+	if(file_recovery.file_stat!=NULL)
+	{
+	  int res=1;
+	  list_append_block(&file_recovery.location,offset,*blocksize,1);
+	  if(file_recovery.data_check!=NULL)
+	    res=file_recovery.data_check(buffer_olddata,2*(*blocksize),&file_recovery);
+	  file_recovery.file_size+=*blocksize;
+	  file_recovery.file_size_on_disk+=*blocksize;
+	  if(res==2)
+	  { /* EOF found */
+	    need_to_check_file=1;
+	  }
+	}
+	if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
+	{
+	  log_verbose("File should not be bigger than %llu, stop adding data\n",
+	      (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
           need_to_check_file=1;
         }
       }
@@ -480,7 +463,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
     } while(need_to_check_file==0);
     if(need_to_check_file==1)
     {
-      if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr, *blocksize, list_search_space, &current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)<0)
+      if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr, *blocksize, list_search_space, &current_search_space, &offset, dir_num,status,disk_car)<0)
       { /* BF */
         current_search_space=td_list_entry(search_walker, alloc_data_t, list);
         ind_stop=photorec_bf_aux(disk_car, partition, paranoid, recup_dir, interface, file_stats, file_nbr, &file_recovery, *blocksize, list_search_space, current_search_space, real_start_time, dir_num, status);
@@ -590,7 +573,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
 #endif
             if(ind_stop!=0)
             {
-              file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car);
+              file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
               free(block_buffer);
               return ind_stop;
             }
@@ -642,7 +625,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
         }
         if(file_recovery->offset_error==0)
         { /* Recover the file */
-          file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car);
+          file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
           free(block_buffer);
           return ind_stop;
         }
@@ -659,7 +642,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
     }
   } while(ind_stop==2);
   /* Cleanup */
-  file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car);
+  file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
   free(block_buffer);
   return ind_stop;
 }
@@ -689,6 +672,110 @@ static FILE *fopen_with_retry(const char *path, const char *mode)
 }
 #endif
 
+static alloc_data_t *file_found(alloc_data_t *current_search_space, const uint64_t offset, file_stat_t *file_stat)
+{
+  if(current_search_space==NULL)
+    return current_search_space;
+  if(current_search_space->start == offset)
+  {
+    current_search_space->file_stat=file_stat;
+    return current_search_space;
+  }
+  if(current_search_space->start < offset && offset <= current_search_space->end)
+  {
+    alloc_data_t *next_search_space;
+    next_search_space=(alloc_data_t*)MALLOC(sizeof(*next_search_space));
+    memcpy(next_search_space, current_search_space, sizeof(*next_search_space));
+    current_search_space->end=offset-1;
+    next_search_space->start=offset;
+    next_search_space->file_stat=file_stat;
+    td_list_add(&next_search_space->list, &current_search_space->list);
+    return next_search_space;
+  }
+  return current_search_space;
+}
+
+static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, const unsigned int content)
+{
+  if(!(data->start <= offset && offset <= data->end))
+  {
+    log_critical("file_add_data: bug\n");
+    return data;
+  }
+  if(data->start==offset)
+  {
+    data->data=content;
+    return data;
+  }
+  if(data->data==content)
+    return data;
+  {
+    alloc_data_t *datanext=(alloc_data_t*)MALLOC(sizeof(*datanext));
+    memcpy(datanext, data, sizeof(*datanext));
+    data->end=offset-1;
+    datanext->start=offset;
+    datanext->file_stat=NULL;
+    datanext->data=content;
+    td_list_add(&datanext->list, &data->list);
+    return datanext;
+  }
+}
+
+static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, const uint64_t file_size, const unsigned int sector_size, const unsigned int blocksize)
+{
+  struct td_list_head *tmp;
+  struct td_list_head *next;
+  uint64_t size=0;
+  const uint64_t file_size_on_disk=(file_size+blocksize-1)/blocksize*blocksize;
+  for(tmp=&file->list, next=tmp->next; tmp!=&space->list; tmp=next, next=tmp->next)
+  {
+    alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
+    if(size >= file_size)
+      return element;
+    if(element->data>0)
+    {
+      if(size + (element->end-element->start+1) <= file_size_on_disk)
+      {
+	size=size + (element->end-element->start+1);
+	log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
+	td_list_del(tmp);
+	free(element);
+      }
+      else
+      {
+	log_info(" %lu-%lu",
+	    (unsigned long)(element->start/sector_size),
+	    (unsigned long)((element->start + file_size_on_disk - size - 1)/sector_size));
+	element->start+=file_size_on_disk - size;
+	element->file_stat=NULL;
+	element->data=1;
+	return element;
+      }
+    }
+    else
+    {
+      log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
+      td_list_del(tmp);
+      free(element);
+    }
+  }
+  return space;
+}
+
+alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
+{
+  alloc_data_t *spacenext;
+  alloc_data_t *datanext;
+  if(file->filename!=NULL)
+    log_info("%s\t", file->filename);
+  else
+    log_info("?\t");
+  spacenext=file_truncate_aux(space, file->loc, file->file_size, sector_size, blocksize);
+  log_info("\n");
+  datanext=td_list_entry(&spacenext->list.next, alloc_data_t, list);
+  return datanext;
+}
+
 static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, const unsigned int expert)
 {
   uint64_t offset=0;
@@ -701,9 +788,6 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
   const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
-  static alloc_data_t list_file={
-    .list = TD_LIST_HEAD_INIT(list_file.list)
-  };
   buffer_size=(*blocksize)+READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
@@ -756,13 +840,7 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
 	{
 	  /* A new file begins, backup file offset */
-	  alloc_data_t *new_file_alloc;
-	  file_recovery_new.location.start=offset;
-	  file_recovery_cpy(&file_recovery, &file_recovery_new);
-	  new_file_alloc=(alloc_data_t*)MALLOC(sizeof(*new_file_alloc));
-	  new_file_alloc->start=offset;
-	  new_file_alloc->end=0;
-	  td_list_add_tail(&new_file_alloc->list,&list_file.list);
+	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
 	  (*file_nbr)++;
 	}
       }
@@ -771,7 +849,6 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
     if(file_recovery.file_stat!=NULL)
     {
       int res=1;
-      list_append_block(&file_recovery.location,offset,*blocksize,1);
       if(file_recovery.data_check!=NULL)
 	res=file_recovery.data_check(buffer_olddata,2*(*blocksize),&file_recovery);
       file_recovery.file_size+=*blocksize;
@@ -843,13 +920,12 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
   } /* end while(current_search_space!=list_search_space) */
   {
     uint64_t start_offset;
-    *blocksize=find_blocksize(&list_file,disk_car->sector_size, &start_offset);
+    *blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
 #ifdef HAVE_NCURSES
     if(expert>0)
       *blocksize=menu_choose_blocksize(*blocksize, disk_car->sector_size, &start_offset);
 #endif
     update_blocksize(*blocksize,list_search_space, start_offset);
-    free_list_search_space(&list_file);
   }
   free(buffer_start);
   return 0;
@@ -938,11 +1014,21 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
         {
+	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
+	  file_recovery_new.loc=current_search_space;
 	  file_recovery_new.location.start=offset;
           if(verbose>1)
             log_trace("A known header has been found, recovery of the previous file is finished\n");
-          if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)>0)
-            move_next=0;
+	  {
+	    alloc_data_t *datanext;
+	    datanext=file_finish2(&file_recovery, recup_dir, paranoid, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+	    if(datanext!=NULL)
+	    {
+	      current_search_space=datanext;
+	      offset=current_search_space->start;
+	      move_next=0;
+	    }
+	  }
           reset_file_recovery(&file_recovery);
           if(lowmem>0)
             forget(list_search_space,current_search_space);
@@ -991,12 +1077,15 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         }
       }
     }
+    if(file_recovery.file_stat!=NULL)
+    {
+      int res=1;
     /* try to skip ext2/ext3 indirect block */
       if((status==STATUS_EXT2_ON || status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
-          file_recovery.file_stat!=NULL && file_recovery.file_size_on_disk>=12*(blocksize) &&
+          file_recovery.file_size_on_disk>=12*(blocksize) &&
           ind_block(buffer,blocksize)!=0)
       {
-        list_append_block(&file_recovery.location,offset,blocksize,0);
+	current_search_space=file_add_data(current_search_space, offset, 0);
         file_recovery.file_size_on_disk+=blocksize;
         if(verbose>1)
         {
@@ -1008,45 +1097,46 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       }
       else
       {
-        if(file_recovery.handle!=NULL)
-        {
-          if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
-          { 
-            log_critical("Cannot write file %s:%s\n", file_recovery.filename, strerror(errno));
-            ind_stop=3;
-          }
-        }
-        if(file_recovery.file_stat!=NULL)
-        {
-          int res=1;
-          list_append_block(&file_recovery.location,offset,blocksize,1);
-          if(file_recovery.data_check!=NULL)
-            res=file_recovery.data_check(buffer_olddata,2*(blocksize),&file_recovery);
-          file_recovery.file_size+=blocksize;
-          file_recovery.file_size_on_disk+=blocksize;
-          if(res==2)
-          {
-            if(verbose>1)
-              log_trace("EOF found\n");
-            if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr, blocksize, list_search_space, &current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)>0)
-              move_next=0;
-            reset_file_recovery(&file_recovery);
-            if(lowmem>0)
-              forget(list_search_space,current_search_space);
-          }
-        }
+	if(file_recovery.handle!=NULL)
+	{
+	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
+	  { 
+	    log_critical("Cannot write file %s:%s\n", file_recovery.filename, strerror(errno));
+	    ind_stop=3;
+	  }
+	}
+	current_search_space=file_add_data(current_search_space, offset, 1);
+	if(file_recovery.data_check!=NULL)
+	  res=file_recovery.data_check(buffer_olddata,2*(blocksize),&file_recovery);
+	file_recovery.file_size+=blocksize;
+	file_recovery.file_size_on_disk+=blocksize;
+	if(res==2)
+	{
+	  if(verbose>1)
+	    log_trace("EOF found\n");
+	}
       }
-    if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
-    {
-      log_verbose("File should not be bigger than %llu, stop adding data\n",
-          (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
-      if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr,blocksize, list_search_space, &current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)>0)
-        move_next=0;
-      reset_file_recovery(&file_recovery);
-      if(lowmem>0)
-        forget(list_search_space,current_search_space);
+      if(res!=2 && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
+      {
+	res=2;
+	log_verbose("File should not be bigger than %llu, stop adding data\n",
+	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
+      }
+      if(res==2)
+      {
+	alloc_data_t *datanext;
+	datanext=file_finish2(&file_recovery, recup_dir, paranoid, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+	if(datanext!=NULL)
+	{
+	  current_search_space=datanext;
+	  offset=current_search_space->start;
+	  move_next=0;
+	}
+	reset_file_recovery(&file_recovery);
+	if(lowmem>0)
+	  forget(list_search_space,current_search_space);
+      }
     }
-
     if(ind_stop>0)
     {
       log_info("PhotoRec has been stopped\n");
@@ -1063,19 +1153,22 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
     }
     if(current_search_space==list_search_space)
     {
+      alloc_data_t *datanext;
 #ifdef DEBUG_GET_NEXT_SECTOR
       log_trace("current_search_space==list_search_space=%p (prev=%p,next=%p)\n",
-          current_search_space, current_search_space->list.prev, current_search_space->list.next);
+	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space, &current_search_space, &offset, dir_num,status,disk_car->sector_size,disk_car)>0)
+      datanext=file_finish2(&file_recovery, recup_dir, paranoid, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+      if(datanext!=NULL)
       {
-        move_next=0;
-        get_prev_file_header(list_search_space, &current_search_space, &offset);
+	current_search_space=datanext;
+	offset=current_search_space->start;
+	move_next=0;
       }
       reset_file_recovery(&file_recovery);
       if(lowmem>0)
-        forget(list_search_space,current_search_space);
+	forget(list_search_space,current_search_space);
     }
     buffer_olddata+=blocksize;
     buffer+=blocksize;
@@ -1438,8 +1531,11 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
           (unsigned)((current_time-real_start_time)%60));
     }
     update_stats(file_stats,list_search_space);
-    log_info("Pass %u +%u file%s\n",pass,file_nbr-old_file_nbr,(file_nbr-old_file_nbr<=1?"":"s"));
-    write_stats_log(file_stats);
+    if(pass>0)
+    {
+      log_info("Pass %u +%u file%s\n",pass,file_nbr-old_file_nbr,(file_nbr-old_file_nbr<=1?"":"s"));
+      write_stats_log(file_stats);
+    }
     if(interface==0)
     {
       printf("Pass %u +%u file%s\n",pass,file_nbr-old_file_nbr,(file_nbr-old_file_nbr<=1?"":"s"));
