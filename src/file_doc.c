@@ -75,6 +75,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   const uint32_t *fat;
   unsigned int block=le32(header->root_start_block);
   unsigned int fat_entries;
+  if(buffer_size<512)
+    return NULL;
   if(header->num_FAT_blocks==0)
   {
     fat=(const uint32_t *)(header+1);
@@ -97,7 +99,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 #ifdef DEBUG_OLE
     log_info("Root Directory block=%u (0x%x)\n", block, block);
 #endif
-    if(offset_root_dir+512>buffer_size)
+    if(offset_root_dir>buffer_size-512)
       return NULL;
     {
       unsigned int sid;
