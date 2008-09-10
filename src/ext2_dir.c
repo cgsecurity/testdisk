@@ -200,20 +200,10 @@ static int list_dir_proc2(ext2_ino_t dir,
 {
   struct ext2_inode	inode;
   ext2_ino_t		ino;
-  unsigned int		thislen;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *) private;
   file_data_t *new_file;
   if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
     return 0;
-  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-  new_file->prev=ls->current_file;
-  new_file->next=NULL;
-  thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
-    (dirent->name_len & 0xFF) : EXT2_NAME_LEN;
-  if(thislen>DIR_NAME_LEN)
-    thislen=DIR_NAME_LEN;
-  memcpy(new_file->name, dirent->name, thislen);
-  new_file->name[thislen] = '\0';
   ino = dirent->inode;
   if (ino) {
     errcode_t retval;
@@ -225,6 +215,18 @@ static int list_dir_proc2(ext2_ino_t dir,
     }
   } else {
     memset(&inode, 0, sizeof(struct ext2_inode));
+  }
+  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+  new_file->prev=ls->current_file;
+  new_file->next=NULL;
+  {
+    unsigned int thislen;
+    thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
+      (dirent->name_len & 0xFF) : EXT2_NAME_LEN;
+    if(thislen>=DIR_NAME_LEN)
+      thislen=DIR_NAME_LEN-1;
+    memcpy(new_file->name, dirent->name, thislen);
+    new_file->name[thislen] = '\0';
   }
   if(entry==DIRENT_DELETED_FILE)
     new_file->status=FILE_STATUS_DELETED;
