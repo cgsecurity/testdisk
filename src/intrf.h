@@ -86,4 +86,5 @@ int interface_partition_type(disk_t *disk_car, const int verbose, char**current_
 int intrf_no_disk(const char *prog_name);
 char *ask_log_location(const char*filename);
 char *ask_location(const char*msg, const char *src_dir);
+char *get_default_location(void);
 void dump_ncurses(const void *nom_dump, unsigned int lng);

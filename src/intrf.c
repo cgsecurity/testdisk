@@ -288,6 +288,13 @@ static inline char *td_getcwd(char *buf, unsigned long size)
   return buf;
 }
 
+char *get_default_location(void)
+{
+  char dst_directory[4096];
+  td_getcwd(dst_directory, sizeof(dst_directory));
+  return strdup(dst_directory);
+}
+
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
@@ -1926,9 +1933,7 @@ int ask_confirmation(const char*_format, ...)
 
 char *ask_location(const char*msg, const char *src_dir)
 {
-  char dst_directory[4096];
-  td_getcwd(dst_directory, sizeof(dst_directory));
-  return strdup(dst_directory);
+  return get_default_location();
 }
 #endif
 
