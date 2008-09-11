@@ -33,6 +33,9 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#ifdef DEBUG_HEADER_CHECK
+#include "log.h"
+#endif
 
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
@@ -48,9 +51,9 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   const file_check_t *fc_b=td_list_entry(b, const file_check_t, list);
   int res;
   if(fc_a->length==0 && fc_b->length!=0)
-    return 1;
-  if(fc_a->length!=0 && fc_b->length==0)
     return -1;
+  if(fc_a->length!=0 && fc_b->length==0)
+    return 1;
   res=fc_a->offset-fc_b->offset;
   if(res!=0)
     return res;
@@ -92,24 +95,21 @@ static void index_header_check_aux(file_check_t *file_check_new)
   td_list_for_each(tmp, &file_check_list.list)
   {
     file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
-    if(file_check_new->length>0)
+    if(file_check_new->length>0 && pos->has_value==1)
     {
-      if(pos->has_value==1)
+      if(pos->offset>=file_check_new->offset &&
+	  pos->offset<=file_check_new->offset+file_check_new->length)
       {
-	if(pos->offset>=file_check_new->offset &&
-	    pos->offset<=file_check_new->offset+file_check_new->length)
-	{
-	  return td_list_add_sorted(&file_check_new->list,
-	      &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
-	      file_check_cmp);
-	}
-	if(pos->offset>file_check_new->offset)
-	{
-	  return file_check_add_tail(file_check_new, pos);
-	}
+	return td_list_add_sorted(&file_check_new->list,
+	    &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
+	    file_check_cmp);
+      }
+      if(pos->offset>file_check_new->offset)
+      {
+	return file_check_add_tail(file_check_new, pos);
       }
     }
-    else
+    else if(file_check_new->length==0 && pos->has_value==0)
     {
       return td_list_add_sorted(&file_check_new->list,
 	  &pos->file_checks[0].list,
@@ -148,10 +148,19 @@ void free_header_check(void)
       {
 	file_check_t *current_check;
 	current_check=td_list_entry(tmp, file_check_t, list);
+#ifdef DEBUG_HEADER_CHECK
+	log_info("%02x length=%u offset=%u", i, current_check->length, current_check->offset);
+	if(current_check->file_stat!=NULL && current_check->file_stat->file_hint!=NULL)
+	  log_info(" %s", current_check->file_stat->file_hint->description);
+	log_info("\n");
+#endif
 	td_list_del(tmp);
 	free(current_check);
       }
     }
+#ifdef DEBUG_HEADER_CHECK
+    log_info("\n");
+#endif
     td_list_del(tmpl);
     free(pos);
   }
