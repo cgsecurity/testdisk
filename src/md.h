@@ -240,7 +240,7 @@ struct mdp_superblock_1 {
 	 * have a meaningful role.
 	 */
 	uint16_t	dev_roles[0];	/* role in array, or 0xffff for a spare, or 0xfffe for faulty */
-} mdp_super1_t;
+};
 
 static inline uint64_t md_event(mdp_super_t *sb) {
 	uint64_t ev = sb->events_hi;
