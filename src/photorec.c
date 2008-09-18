@@ -100,6 +100,7 @@ extern const arch_fnct_t arch_xbox;
 
 extern const file_hint_t file_hint_7z;
 extern const file_hint_t file_hint_a;
+extern const file_hint_t file_hint_abcdp;
 extern const file_hint_t file_hint_accdb;
 extern const file_hint_t file_hint_ace;
 extern const file_hint_t file_hint_addressbook;
@@ -819,6 +820,7 @@ int main( int argc, char **argv )
   {
     { .enable=0, .file_hint=&file_hint_7z   },
     { .enable=0, .file_hint=&file_hint_a    },
+    { .enable=0, .file_hint=&file_hint_abcdp},
     { .enable=0, .file_hint=&file_hint_accdb},
     { .enable=0, .file_hint=&file_hint_ace  },
     { .enable=0, .file_hint=&file_hint_addressbook},
