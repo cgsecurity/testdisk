@@ -406,6 +406,15 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  if(expert!=0)
 	    change_geometry(disk_car, current_cmd);
 	  break;
+      case 'a':
+      case 'A':
+	if(disk_car->arch->add_partition!=NULL)
+	{
+	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
+	  current_element=list_part;
+	  current_element_num=0;
+	}
+	break;
 	case 'q':
 	case 'Q':
 	  done = 1;
