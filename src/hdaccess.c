@@ -769,6 +769,8 @@ void update_disk_car_fields(disk_t *disk_car)
       disk_car->geom.cylinders = cylinder_num;
     }
   }
+  if(disk_car->geom.cylinders == 0)
+    disk_car->geom.cylinders++;
   disk_car->disk_size=disk_car->disk_real_size;
 }
 
