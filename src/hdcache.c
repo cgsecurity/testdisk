@@ -57,6 +57,7 @@ struct cache_struct
   unsigned int 	nbr_read_call;
   unsigned int  cache_buffer_nbr;
   unsigned int  cache_size_min;
+  unsigned int  last_io_error_nbr;
 };
 
 static int cache_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset);
@@ -65,14 +66,15 @@ static int cache_sync(disk_t *clean);
 static int cache_clean(disk_t *clean);
 static const char *cache_description(disk_t *disk_car);
 static const char *cache_description_short(disk_t *disk_car);
-static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset, const unsigned int can_read_more);
+static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset, const unsigned int read_ahead);
 
 static int cache_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
 {
-  return cache_read_aux(disk_car, count, nom_buffer, offset, 1);
+  const struct cache_struct *data=(const struct cache_struct *)disk_car->data;
+  return cache_read_aux(disk_car, count, nom_buffer, offset, (data->last_io_error_nbr==0));
 }
 
-static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset, const unsigned int can_read_more)
+static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset, const unsigned int read_ahead)
 {
   struct cache_struct *data=(struct cache_struct *)disk_car->data;
 #ifdef DEBUG_CACHE
@@ -91,13 +93,11 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 	  offset < cache->cache_offset +cache->cache_size)
       {
 	const unsigned data_available=cache->cache_offset +cache->cache_size-offset;
-	/*
+#ifdef DEBUG_CACHE
 	if(cache_buffer_nbr==data->cache_buffer_nbr)
 	  log_trace("hit\n");
 	else
 	  log_trace("bid\n");
-	  */
-#ifdef DEBUG_CACHE
 	log_trace("use cache %u count=%u, offset=%llu\n",i,
 	    cache->cache_size, cache->cache_offset);
 #endif
@@ -114,7 +114,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
 	  data->nbr_fnct_sect+=data_available;
 	  memcpy(nom_buffer, cache->buffer+offset-cache->cache_offset, data_available);
 	  newres=cache_read_aux(disk_car, count-data_available,
-	      (unsigned char*)nom_buffer+data_available, offset+data_available, can_read_more);
+	      (unsigned char*)nom_buffer+data_available, offset+data_available, read_ahead);
 	  if(res>=0)
 	    res=newres;
 	  return res;
@@ -125,7 +125,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
   {
     struct cache_buffer_struct *cache;
     int res;
-    const unsigned int count_new=(can_read_more!=0 && count<data->cache_size_min && (offset+data->cache_size_min<data->disk_car->disk_real_size)?data->cache_size_min:count);
+    const unsigned int count_new=(read_ahead!=0 && count<data->cache_size_min && (offset+data->cache_size_min<data->disk_car->disk_real_size)?data->cache_size_min:count);
     data->nbr_fnct_sect+=count;
     data->nbr_read_call++;
     data->nbr_read_sect+=count_new;
@@ -150,6 +150,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
     cache->cache_status=res;
     if(res>=0)
     {
+      data->last_io_error_nbr=0;
       memcpy(nom_buffer, cache->buffer, count);
 #ifdef DEBUG_CACHE
       log_trace("cache_read offset=%llu size=%lu, update cache %u, res=%d\n",
@@ -161,7 +162,8 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
     }
     { /* read failure */
       unsigned int i;
-      if(count<=disk_car->sector_size || disk_car->sector_size<=0)
+      data->last_io_error_nbr++;
+      if(count<=disk_car->sector_size || disk_car->sector_size<=0 || data->last_io_error_nbr>1)
       {
 	memset(cache->buffer, 0, cache->cache_size);
 	memcpy(nom_buffer, cache->buffer, count);
@@ -172,7 +174,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
       res=-1;
       for(i=0;i*disk_car->sector_size<count;i++)
       {
-	const int newres=cache_read_aux(disk_car, (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size), (unsigned char*)nom_buffer+i*disk_car->sector_size, offset+i*disk_car->sector_size,0);
+	const int newres=cache_read_aux(disk_car, (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size), (unsigned char*)nom_buffer+i*disk_car->sector_size, offset+i*disk_car->sector_size, 0);
 	/* If one read succeed, considered that's ok, we are doing data recovery */
 	if(newres>=0)
 	  res=0;
@@ -250,6 +252,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   data->nbr_fnct_call=0;
   data->nbr_read_call=0;
   data->cache_buffer_nbr=0;
+  data->last_io_error_nbr=0;
   if(testdisk_mode&TESTDISK_O_READAHEAD_8K)
     data->cache_size_min=16*512;
   else if(testdisk_mode&TESTDISK_O_READAHEAD_32K)
