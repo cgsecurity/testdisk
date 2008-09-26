@@ -88,16 +88,14 @@ static void register_header_check_jpg(file_stat_t *file_stat)
   register_header_check(0, jpg_header_com,sizeof(jpg_header_com), &header_check_jpg, file_stat);
 }
 
-static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const unsigned int tiff_size)
+static const char *get_date_from_tiff_header_aux(const struct tiff_entry *tiff, const unsigned int tiff_size, const unsigned int tag)
 {
-  const char *date_asc=NULL;
-  struct tm tm_time;
   if(tiff_size < sizeof(struct tiff_entry))
-    return (time_t)0;
+    return NULL;
   if(memcmp(&tiff->magic, tiff_header_be, sizeof(tiff_header_be))==0)
   {
     if(tiff_size < be32(tiff->ifd0_offset)+sizeof(struct ifd_entry))
-      return (time_t)0;
+      return NULL;
     {
       const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->ifd0_offset));
       const struct ifd_header *ifd1=NULL;
@@ -107,10 +105,10 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
 	  (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd0->nbr_fields);
 	  j++, ifd++)
       {
-	if(be16(ifd->tag)==0x132)
+	if(be16(ifd->tag)==tag)
 	{
-	  if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
-	    date_asc=(const char*)tiff+be32(ifd->offset);
+	  if(be32(ifd->offset)+19 < tiff_size)
+	    return (const char*)tiff+be32(ifd->offset);
 	}
 	else if(be16(ifd->tag)==0x8769)	/* Exif IFD Pointer */
 	{
@@ -123,15 +121,10 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
 	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd1->nbr_fields);
 	    j++, ifd++)
 	{
-	  if(be16(ifd->tag)==0x9003)		/* DateTimeOriginal */
+	  if(be16(ifd->tag)==tag)
 	  {
-	    if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
-	      date_asc=(const char*)tiff+be32(ifd->offset);
-	  }
-	  else if(be16(ifd->tag)==0x9004)	/* DateTimeDigitalized*/
-	  {
-	    if(date_asc==NULL && be32(ifd->offset)+19 < tiff_size)
-	      date_asc=(const char*)tiff+be32(ifd->offset);
+	    if(be32(ifd->offset)+19 < tiff_size)
+	      return (const char*)tiff+be32(ifd->offset);
 	  }
 	}
       }
@@ -140,7 +133,7 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
   else if(memcmp(&tiff->magic, tiff_header_le, sizeof(tiff_header_le))==0)
   {
     if(tiff_size < le32(tiff->ifd0_offset)+sizeof(struct ifd_entry))
-      return (time_t)0;
+      return NULL;
     {
       const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->ifd0_offset));
       const struct ifd_header *ifd1=NULL;
@@ -150,10 +143,10 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
 	   (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd0->nbr_fields);
 	  j++, ifd++)
       {
-	if(le16(ifd->tag)==0x132)
+	if(le16(ifd->tag)==tag)
 	{
-	  if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
-	    date_asc=(const char*)tiff+le32(ifd->offset);
+	  if(le32(ifd->offset)+19 < tiff_size)
+	    return (const char*)tiff+le32(ifd->offset);
 	}
 	else if(le16(ifd->tag)==0x8769)	/* Exif IFD Pointer */
 	{
@@ -166,20 +159,29 @@ static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const uns
 	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd1->nbr_fields);
 	    j++, ifd++)
 	{
-	  if(le16(ifd->tag)==0x9003)		/* DateTimeOriginal */
+	  if(le16(ifd->tag)==tag)		/* DateTimeOriginal */
 	  {
-	    if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
-	      date_asc=(const char*)tiff+le32(ifd->offset);
-	  }
-	  else if(le16(ifd->tag)==0x9004)	/* DateTimeDigitalized*/
-	  {
-	    if(date_asc==NULL && le32(ifd->offset)+19 < tiff_size)
-	      date_asc=(const char*)tiff+le32(ifd->offset);
+	    if(le32(ifd->offset)+19 < tiff_size)
+	      return (const char*)tiff+le32(ifd->offset);
 	  }
 	}
       }
     }
   }
+  return NULL;
+}
+
+static time_t get_date_from_tiff_header(const struct tiff_entry *tiff, const unsigned int tiff_size)
+{
+  const char *date_asc;
+  struct tm tm_time;
+  /* DateTimeOriginal */
+  date_asc=get_date_from_tiff_header_aux(tiff, tiff_size, 0x9003);
+  /* DateTimeDigitalized*/
+  if(date_asc==NULL)
+    date_asc=get_date_from_tiff_header_aux(tiff, tiff_size, 0x9004);
+  if(date_asc==NULL)
+    date_asc=get_date_from_tiff_header_aux(tiff, tiff_size, 0x132);
   if(date_asc==NULL)
     return (time_t)0;
   memset(&tm_time, 0, sizeof(tm_time));
