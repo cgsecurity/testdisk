@@ -230,6 +230,7 @@ extern const file_hint_t file_hint_stl;
 extern const file_hint_t file_hint_stuffit;
 extern const file_hint_t file_hint_swf;
 extern const file_hint_t file_hint_tar;
+extern const file_hint_t file_hint_tax;
 extern const file_hint_t file_hint_tib;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_tph;
@@ -951,6 +952,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_stuffit  },
     { .enable=0, .file_hint=&file_hint_swf  },
     { .enable=0, .file_hint=&file_hint_tar  },
+    { .enable=0, .file_hint=&file_hint_tax  },
     { .enable=0, .file_hint=&file_hint_tib  },
     { .enable=0, .file_hint=&file_hint_tiff },
     { .enable=0, .file_hint=&file_hint_tph  },
