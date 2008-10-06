@@ -109,6 +109,7 @@
 #include "log.h"
 #include "hdaccess.h"
 #include "alignio.h"
+#include "hpa_dco.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_mac;
@@ -934,6 +935,7 @@ static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
     return;
   {
     struct hd_driveid       hdi;
+    memset(&hdi, 0, sizeof(hdi));
     if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
     {
       char hdi_buf[41];
@@ -1389,6 +1391,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
 #endif
     disk_get_model(hd_h, disk_car, verbose);
+    disk_get_hpa_dco(hd_h, disk_car, verbose);
   }
   else
 #endif
