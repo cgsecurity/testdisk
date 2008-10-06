@@ -807,6 +807,7 @@ int main( int argc, char **argv )
   list_disk_t *element_disk;
   char *cmd_device=NULL;
   char *cmd_run=NULL;
+  const char *logfile="photorec.log";
 #ifdef TARGET_SOLARIS
   const arch_fnct_t *arch=&arch_sun;
 #elif defined __APPLE__
@@ -983,16 +984,23 @@ int main( int argc, char **argv )
   printf("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   for(i=1;i<argc;i++)
   {
-    if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
+    if((strcmp(argv[i],"/logname")==0) ||(strcmp(argv[i],"-logname")==0))
+    {
+      if(i+2>=argc)
+	help=1;
+      else
+	logfile=argv[++i];
+    }
+    else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
       if(create_log==TD_LOG_NONE)
-        create_log=log_open("photorec.log", TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
+        create_log=log_open(logfile, TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
       if(create_log==TD_LOG_NONE)
-        create_log=log_open("photorec.log", TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
+        create_log=log_open(logfile, TD_LOG_APPEND, 0, "PhotoRec", argc, argv);
     }
     else if(((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)) &&(i+1<argc))
     {
@@ -1105,7 +1113,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
     return 1;
 #endif
-  create_log=log_open("photorec.log", create_log, 1, "PhotoRec", argc, argv);
+  create_log=log_open(logfile, create_log, 1, "PhotoRec", argc, argv);
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());

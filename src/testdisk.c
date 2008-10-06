@@ -112,6 +112,7 @@ int main( int argc, char **argv )
   list_disk_t *element_disk;
   const char *cmd_device=NULL;
   char *cmd_run=NULL;
+  const char *logfile="testdisk.log";
 #ifdef TARGET_SOLARIS
   const arch_fnct_t *arch=&arch_sun;
 #elif defined __APPLE__
@@ -139,16 +140,23 @@ int main( int argc, char **argv )
   {
     if((strcmp(argv[i],"/dump")==0) || (strcmp(argv[i],"-dump")==0))
       dump_ind=1;
+    else if((strcmp(argv[i],"/logname")==0) ||(strcmp(argv[i],"-logname")==0))
+    {
+      if(i+2>=argc)
+	help=1;
+      else
+	logfile=argv[++i];
+    }
     else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
       if(create_log==TD_LOG_NONE)
-        create_log=log_open("testdisk.log", TD_LOG_APPEND, 0, "TestDisk", argc, argv);
+        create_log=log_open(logfile, TD_LOG_APPEND, 0, "TestDisk", argc, argv);
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
       if(create_log==TD_LOG_NONE)
-        create_log=log_open("testdisk.log", TD_LOG_APPEND, 0, "TestDisk", argc, argv);
+        create_log=log_open(logfile, TD_LOG_APPEND, 0, "TestDisk", argc, argv);
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
       testdisk_mode|=TESTDISK_O_ALL;
@@ -302,7 +310,7 @@ int main( int argc, char **argv )
     verbose=1;
     create_log=ask_testdisk_log_creation();
   }
-  create_log=log_open("testdisk.log", create_log, 1, "TestDisk", argc, argv);
+  create_log=log_open(logfile, create_log, 1, "TestDisk", argc, argv);
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());
