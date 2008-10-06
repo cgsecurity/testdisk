@@ -1249,14 +1249,17 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
       }
       /* Redraw the bottom of the screen everytime because very long filenames may have corrupt it*/
       mvwaddstr(window,LINES-2,0,"Use ");
-      if(has_colors())
-	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-      waddstr(window,"c");
-      if(has_colors())
-	wbkgdset(window,' ' | COLOR_PAIR(0));
-      waddstr(window," to copy, ");
-      if(has_colors())
-	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      if(!td_list_empty(&dir_list->list))
+      {
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"c");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy, ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+      }
       waddstr(window,"q");
       if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
