@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.11-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="July 2008"
+TESTDISKDATE="October 2008"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -235,7 +235,7 @@ AC_SYS_LARGEFILE
 AC_HEADER_STDC
 #AC_CHECK_HEADERS([sys/types.h sys/stat.h stdlib.h stdint.h unistd.h])
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h ddk/ntddstor.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h io.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ncursesw/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
+AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h ddk/ntddstor.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h io.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h ncurses.h ncurses/curses.h ncurses/ncurses.h ncursesw/ncurses.h ntfs/version.h openssl/md5.h openssl/opensslv.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h scsi/sg.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h varargs.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
 
 #--------------------------------------------------------------------
 # Check for iconv support (for Unicode conversion).
@@ -332,9 +332,21 @@ AC_CHECK_HEADERS([winioctl.h],,,
 #endif
 ]])
 
-AC_CHECK_HEADERS([ext2fs/ext2_fs.h ext2fs/ext2fs.h],,
+AC_CHECK_HEADERS([ext2fs/ext2_fs.h],,,
+[[
+#if HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+]])
+AC_CHECK_HEADERS([ext2fs/ext2fs.h],,
               use_ext2fs=no
-              AC_MSG_WARN(Disable use of ext2fs library))
+              AC_MSG_WARN(Disable use of ext2fs library),
+[[
+#if HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+]])
+
 
 AC_CHECK_HEADERS([libewf.h],,
               use_ewf=no
@@ -371,8 +383,17 @@ AC_CHECK_MEMBERS([dal_t.error],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([dal_t.entity],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([dal_t.name],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([struct dal_ops.dev],,,[#include <dal/dal.h>])
-AC_CHECK_MEMBERS([struct struct_io_manager.set_option],,,[#include <ext2fs/ext2_fs.h>
-#include <ext2fs/ext2fs.h>])
+AC_CHECK_MEMBERS([struct struct_io_manager.set_option],,,[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_EXT2FS_EXT2_FS_H
+#include <ext2fs/ext2_fs.h>
+#endif
+#ifdef HAVE_EXT2FS_EXT2FS_H
+#include <ext2fs/ext2fs.h>
+#endif
+])
 AC_CHECK_MEMBERS([struct tm.tm_gmtoff])
 
 # Checks for library functions.
@@ -421,6 +442,9 @@ else
   AC_MSG_WARN(Use of ncurses library disabled)
 fi
 
+if test -z "${use_ext2fs}" -o -z "${use_ewf}"; then
+  AC_CHECK_LIB(crypto, MD5_Init, [], AC_MSG_WARN(Missing function: MD5_Init in library libcrypto))
+fi
 if test -z "${use_ext2fs}"; then
   AC_CHECK_LIB(ext2fs,ext2fs_open,[
       AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
@@ -431,13 +455,14 @@ if test -z "${use_ext2fs}"; then
       fi
       ],AC_MSG_WARN(No ext2fs library detected))
   AC_CHECK_LIB(com_err,com_err,[
-  AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
+      AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
       if test "${com_err_lib_a}" = ""; then
         LIBS="$LIBS -lcom_err"
       else
         LIBS="$LIBS ${com_err_lib_a}"
       fi
-      ],AC_MSG_WARN(No com_err library detected))
+      ], AC_MSG_WARN(No com_err library detected))
+
   AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
@@ -552,8 +577,6 @@ fi
 AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
 #
 if test -z "${use_ewf}"; then
-  OLDLIBS="$LIBS"
-  AC_CHECK_LIB(crypto, MD5_Init, [], AC_MSG_WARN(Missing function: MD5_Init in library libcrypto))
   AC_CHECK_LIB(ewf,libewf_check_file_signature,[
   AC_DEFINE([HAVE_LIBEWF],1,[Define to 1 if you have the ewf library (-lewf).])
   if test "${ewf_lib_a}" = ""; then
@@ -577,7 +600,6 @@ if test -z "${use_ewf}"; then
   fi
   ],[
   AC_MSG_WARN(No ewf library detected)
-  LIBS="$OLDLIBS"
   ],[])
 else
   AC_MSG_WARN(Use of ewf library disabled)
