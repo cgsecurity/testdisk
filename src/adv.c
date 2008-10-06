@@ -486,7 +486,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'L':
 	  {
 	    partition_t *partition=current_element->part;
-	    if(partition->upart_type==UP_NTFS)
+	    if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
 	      ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
 	    else
 	      dir_partition(disk_car, partition, 0, current_cmd);
