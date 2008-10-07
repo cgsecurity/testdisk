@@ -46,6 +46,7 @@
 #include "diskacc.h"
 #include "tdiskop.h"
 #include "tdisksel.h"
+#include "hidden.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -175,6 +176,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	  autoset_unit(disk);
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
+	      interface_check_hidden(disk, current_cmd)==0 &&
 	      interface_partition_type(disk, verbose, current_cmd)==0)
 	  {
 	    if(menu_disk(disk, verbose, dump_ind, saveheader, current_cmd))

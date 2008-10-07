@@ -49,6 +49,7 @@
 #include "log.h"
 #include "pdisksel.h"
 #include "ppartsel.h"
+#include "hidden.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -174,7 +175,8 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	{
 	  disk_t *disk=current_disk->disk;
 	  autodetect_arch(disk);
-	  if(interface_partition_type(disk, verbose, &current_cmd)==0)
+	  if(interface_check_hidden(disk, &current_cmd)==0 &&
+	      interface_partition_type(disk, verbose, &current_cmd)==0)
 	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, &list_search_space);
 	}
 	break;
