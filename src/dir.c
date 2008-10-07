@@ -60,11 +60,11 @@
 const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
-static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir);
+static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
+static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir);
 static char ftypelet (unsigned int bits);
 #ifdef HAVE_NCURSES
-static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
+static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
 #endif
 
 static char ftypelet (unsigned int bits)
@@ -165,11 +165,10 @@ void mode_string (const unsigned int mode, char *str)
 #endif
 }
 
-int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list)
+int dir_aff_log(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list)
 {
   int test_date=0;
   const file_data_t *current_file;
-  log_partition(disk_car,partition);
   if(dir_data!=NULL)
   {
     log_info("Directory %s\n",dir_data->current_directory);
@@ -200,20 +199,30 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
       strncpy(datestr, "                 ",sizeof(datestr));
     }
     mode_string(current_file->stat.st_mode,str);
-    log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
-    log_info("%s %5u  %5u   ", 
-	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
-    log_info("%7llu", (long long unsigned int)current_file->stat.st_size);
-    log_info(" %s %s\n", datestr, current_file->name);
+    log_info("%7lu %s %5u  %5u   %7llu %s ",
+	(unsigned long int)current_file->stat.st_ino,
+	str,
+	(unsigned int)current_file->stat.st_uid,
+	(unsigned int)current_file->stat.st_gid,
+	(long long unsigned int)current_file->stat.st_size,
+	datestr);
+    if(dir_data!=NULL && (dir_data->param&FLAG_LIST_PATHNAME)!=0)
+    {
+      if(dir_data->current_directory[1]!='\0')
+	log_info("%s/", dir_data->current_directory);
+      else
+	log_info("/");
+    }
+    log_info("%s\n", current_file->name);
   }
   return test_date;
 }
 
-int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
+int log_list_file(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
 {
   int test_date=0;
   struct td_list_head *tmp;
-  log_partition(disk_car,partition);
+  log_partition(disk, partition);
   if(dir_data!=NULL)
   {
     log_info("Directory %s\n",dir_data->current_directory);
@@ -258,7 +267,7 @@ int log_list_file(const disk_t *disk_car, const partition_t *partition, const di
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 
-static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
+static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
 {
   /* Return value
    * -1: quit
@@ -276,7 +285,7 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
     int old_LINES=LINES;
     aff_copy(window);
     wmove(window,3,0);
-    aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+    aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
     wmove(window,4,0);
     wprintw(window,"Directory %s\n",dir_data->current_directory);
     do
@@ -499,11 +508,11 @@ static long int dir_aff_ncurses(disk_t *disk_car, const partition_t *partition, 
 		  wrefresh(window);
 		  if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
 		  {
-		    res=copy_dir(disk_car, partition, dir_data, pos);
+		    res=copy_dir(disk, partition, dir_data, pos);
 		  }
 		  else if(LINUX_S_ISREG(pos->stat.st_mode)!=0)
 		  {
-		    res=dir_data->copy_file(disk_car, partition, dir_data, pos);
+		    res=dir_data->copy_file(disk, partition, dir_data, pos);
 		  }
 		  wmove(window,5,0);
 		  wclrtoeol(window);
@@ -565,21 +574,24 @@ void delete_list_file_info(struct td_list_head *list)
   }
 }
 
-int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd)
+int dir_partition_aff(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd)
 {
   if(dir_data==NULL)
     return -1;
-  return dir_partition_aux(disk_car,partition,dir_data,inode,0,current_cmd);
+  return dir_partition_aux(disk, partition, dir_data, inode, 0, current_cmd);
 }
 
-static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char**current_cmd)
+static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char**current_cmd)
 {
 #define MAX_DIR_NBR 256
   static unsigned long int inode_known[MAX_DIR_NBR];
   if(depth==MAX_DIR_NBR)
     return 1;	/* subdirectories depth is too high => Back */
   if(dir_data->verbose>0)
+  {
     log_info("\ndir_partition inode=%lu\n",inode);
+    log_partition(disk, partition);
+  }
   while(1)
   {
     const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
@@ -587,8 +599,8 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
     file_data_t *dir_list;
     /* Not perfect for FAT32 root cluster */
     inode_known[depth]=inode;
-    dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
-    dir_aff_log(disk_car, partition, dir_data, dir_list);
+    dir_list=dir_data->get_dir(disk, partition, dir_data, inode);
+    dir_aff_log(disk, partition, dir_data, dir_list);
     if(*current_cmd!=NULL)
     {
       dir_data->current_directory[current_directory_namelength]='\0';
@@ -596,7 +608,7 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
       return -1;	/* Quit */
     }
 #ifdef HAVE_NCURSES
-    new_inode=dir_aff_ncurses(disk_car,partition,dir_data,dir_list,inode,depth);
+    new_inode=dir_aff_ncurses(disk, partition, dir_data,dir_list,inode,depth);
 #endif
     if(new_inode==-1 || new_inode==1) /* -1:Quit or 1:Back */
     {
@@ -612,7 +624,7 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
 	  new_inode_ok=0;
       if(new_inode_ok>0)
       {
-	new_inode=dir_partition_aux(disk_car, partition, dir_data, (unsigned long int)new_inode,depth+1,current_cmd);
+	new_inode=dir_partition_aux(disk, partition, dir_data, (unsigned long int)new_inode, depth+1, current_cmd);
       }
     }
     /* restore current_directory name */
@@ -621,7 +633,7 @@ static int dir_partition_aux(disk_t *disk_car, const partition_t *partition, dir
   }
 }
 
-int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
+static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
 {
   file_data_t *dir_list;
   file_data_t *current_file;
@@ -633,8 +645,8 @@ int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_
     return 1;	/* subdirectories depth is too high => Back */
   if(dir_data->verbose>0)
     log_info("\ndir_partition inode=%lu\n",inode);
-  dir_list=dir_data->get_dir(disk_car,partition,dir_data,inode);
-  dir_aff_log(disk_car, partition, dir_data, dir_list);
+  dir_list=dir_data->get_dir(disk, partition, dir_data, inode);
+  dir_aff_log(disk, partition, dir_data, dir_list);
   /* Not perfect for FAT32 root cluster */
   inode_known[dir_nbr++]=inode;
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
@@ -656,7 +668,7 @@ int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_
 	  if(strcmp(dir_data->current_directory,"/"))
 	    strcat(dir_data->current_directory,"/");
 	  strcat(dir_data->current_directory,current_file->name);
-	  dir_whole_partition_log(disk_car, partition, dir_data, new_inode);
+	  dir_whole_partition_log_aux(disk, partition, dir_data, new_inode);
 	  /* restore current_directory name */
 	  dir_data->current_directory[current_directory_namelength]='\0';
 	}
@@ -668,13 +680,19 @@ int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_
   return 0;
 }
 
+int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
+{
+  log_partition(disk, partition);
+  return dir_whole_partition_log_aux(disk, partition, dir_data, inode);
+}
+
 /*
 Returns
 -2: no file copied
 -1: failed to copy some files
 0: all files has been copied
 */
-static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir)
+static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir)
 {
   file_data_t *dir_list;
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
@@ -686,7 +704,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
     return -2;
   dir_name=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
   create_dir(dir_name,1);
-  dir_list=dir_data->get_dir(disk_car, partition,dir_data, (const unsigned long int)dir->stat.st_ino);
+  dir_list=dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->stat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
     dir_data->current_directory[current_directory_namelength]='\0';
@@ -700,7 +718,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
 	int tmp=0;
 	if(current_file->stat.st_ino != dir->stat.st_ino &&
 	    strcmp(current_file->name,"..")!=0 && strcmp(current_file->name,".")!=0)
-	  tmp=copy_dir(disk_car, partition, dir_data, current_file);
+	  tmp=copy_dir(disk, partition, dir_data, current_file);
 	if(tmp>=-1)
 	  copy_ok=1;
 	if(tmp<0)
@@ -710,7 +728,7 @@ static int copy_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
       {
 //	log_trace("copy_file %s\n",dir_data->current_directory);
 	int tmp;
-	tmp=dir_data->copy_file(disk_car, partition, dir_data, current_file);
+	tmp=dir_data->copy_file(disk, partition, dir_data, current_file);
 	if(tmp==0)
 	  copy_ok=1;
 	else

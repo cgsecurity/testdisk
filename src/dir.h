@@ -29,6 +29,7 @@
 #define FLAG_LIST_DELETED	1
 #define FLAG_LIST_MASK12	2
 #define FLAG_LIST_MASK16	4
+#define FLAG_LIST_PATHNAME	8
 /* capabilities */
 #define CAPA_LIST_DELETED	1
 

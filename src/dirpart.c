@@ -145,18 +145,36 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
       }
       break;
     default:
-      if(*current_cmd!=NULL)
       {
-	while(*current_cmd[0]==',')
-	  (*current_cmd)++;
-	if(strncmp(*current_cmd,"recursive",9)==0)
+	int recursive=0;
+	if(*current_cmd!=NULL)
 	{
-	  (*current_cmd)+=9;
-	  dir_whole_partition_log(disk_car,partition,&dir_data,dir_data.current_inode);
+	  int do_continue;
+	  do
+	  {
+	    do_continue=0;
+	    while(*current_cmd[0]==',')
+	      (*current_cmd)++;
+	    if(strncmp(*current_cmd,"recursive",9)==0)
+	    {
+	      (*current_cmd)+=9;
+	      recursive=1;
+	      do_continue=1;
+	    }
+	    else if(strncmp(*current_cmd,"fullpathname",12)==0)
+	    {
+	      (*current_cmd)+=12;
+	      dir_data.param|=FLAG_LIST_PATHNAME;
+	      do_continue=1;
+	    }
+	  } while(do_continue==1);
 	}
+	if(recursive>0)
+	  dir_whole_partition_log(disk_car,partition,&dir_data,dir_data.current_inode);
+	else
+	  dir_partition_aff(disk_car,partition,&dir_data,dir_data.current_inode,current_cmd);
+	dir_data.close(&dir_data);
       }
-      dir_partition_aff(disk_car,partition,&dir_data,dir_data.current_inode,current_cmd);
-      dir_data.close(&dir_data);
       break;
   }
 #ifdef HAVE_NCURSES
