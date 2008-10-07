@@ -337,6 +337,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  (*current_cmd)+=4;
 	  command='l';
 	}
+	else if(strncmp(*current_cmd,"undelete",8)==0)
+	{
+	  (*current_cmd)+=8;
+	  command='u';
+	}
 	else if(strncmp(*current_cmd,"superblock",10)==0)
 	{
 	  (*current_cmd)+=10;
@@ -482,14 +487,19 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  break;
 	case 'u':
 	case 'U':
-	case 'l':
-	case 'L':
 	  {
 	    partition_t *partition=current_element->part;
 	    if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
 	      ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
 	    else
 	      dir_partition(disk_car, partition, 0, current_cmd);
+	  }
+	  break;
+	case 'l':
+	case 'L':
+	  {
+	    partition_t *partition=current_element->part;
+	    dir_partition(disk_car, partition, 0, current_cmd);
 	  }
 	  break;
 	case 's':
