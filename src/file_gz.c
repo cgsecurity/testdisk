@@ -140,8 +140,16 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->min_filesize=22;
 	file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
-	file_recovery_new->extension=file_hint_gz.extension;
 	file_recovery_new->extension="kmy";
+	return 1;
+      }
+      if(memcmp(buffer_uncompr, "PVP ", 4)==0)
+      {
+	/* php Video Pro */
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->min_filesize=22;
+	file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
+	file_recovery_new->extension="pvp";
 	return 1;
       }
     }
