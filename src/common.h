@@ -315,6 +315,9 @@ struct param_disk_struct
   const arch_fnct_t *arch;
   void *data;
   uint64_t disk_real_size;
+  uint64_t user_max;
+  uint64_t native_max;
+  uint64_t dco;
   uint64_t offset;      /* offset to first sector, may be modified in the futur to handle broken raid */
   void *rbuffer;
   void *wbuffer;

@@ -230,9 +230,6 @@ void disk_get_hpa_dco(const int fd, disk_t *disk, const int verbose)
   unsigned char id_args[4 + 512];
   const uint16_t *id_val=(const uint16_t *) & id_args[4];
   unsigned int flags=0;
-  uint64_t user_max;
-  uint64_t native_max;
-  uint64_t dco;
   /* Execute the IDENTIFY DEVICE command */
   memset(id_args, 0, sizeof(id_args));
   id_args[0] = WIN_IDENTIFY;
@@ -281,27 +278,28 @@ void disk_get_hpa_dco(const int fd, disk_t *disk, const int verbose)
   }
   log_info(" support\n");
 
-  user_max = 0;
+  disk->user_max = 0;
   if (flags & DISK_HAS_48_SUPPORT) {
-    user_max = (uint64_t) id_val[103] << 48 |
+    disk->user_max = (uint64_t) id_val[103] << 48 |
       (uint64_t) id_val[102] << 32 |
       (uint64_t) id_val[101] << 16 | (uint64_t) id_val[100];
   }
   /* Use the 28-bit fields */
-  if (user_max == 0) {
-    user_max = (uint64_t) id_val[61] << 16 | id_val[60];
+  if (disk->user_max == 0) {
+    disk->user_max = (uint64_t) id_val[61] << 16 | id_val[60];
   }
-  native_max=sg_read_native_max_ext(fd);
-  if(native_max==0)
-    native_max=read_native_max(fd);
+  disk->native_max=sg_read_native_max_ext(fd);
+  if(disk->native_max==0)
+    disk->native_max=read_native_max(fd);
+  disk->dco=sg_device_configuration_identify(fd);
   if(disk->sector_size!=0)
-    log_info("%s: size       %llu\n", disk->device, (long long unsigned)(disk->disk_real_size/disk->sector_size));
-  if(user_max!=0)
-    log_info("%s: user_max   %llu\n", disk->device, (long long unsigned)user_max);
-  if(native_max!=0)
-    log_info("%s: native_max %llu\n", disk->device, (long long unsigned)(native_max+1));
-  if(dco!=0)
-    log_info("%s: dco        %llu\n", disk->device, (long long unsigned)(dco+1));
+    log_info("%s: size       %llu sectors\n", disk->device, (long long unsigned)(disk->disk_real_size/disk->sector_size));
+  if(disk->user_max!=0)
+    log_info("%s: user_max   %llu sectors\n", disk->device, (long long unsigned)disk->user_max);
+  if(disk->native_max!=0)
+    log_info("%s: native_max %llu sectors\n", disk->device, (long long unsigned)(disk->native_max+1));
+  if(disk->dco!=0)
+    log_info("%s: dco        %llu sectors\n", disk->device, (long long unsigned)(disk->dco+1));
 #endif
 }
 #else
