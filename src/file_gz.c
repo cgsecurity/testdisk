@@ -47,6 +47,7 @@ const file_hint_t file_hint_gz= {
 };
 
 static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
+static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
 
 static void register_header_check_gz(file_stat_t *file_stat)
 {
@@ -135,30 +136,36 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       if(err!=Z_OK)
 	return 0;
       buffer_uncompr[d_stream.total_out]='\0';
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->min_filesize=22;
+      file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
       if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
       {
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->min_filesize=22;
-	file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
 	file_recovery_new->extension="kmy";
 	return 1;
       }
       if(memcmp(buffer_uncompr, "PVP ", 4)==0)
       {
 	/* php Video Pro */
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->min_filesize=22;
-	file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
 	file_recovery_new->extension="pvp";
 	return 1;
       }
+      if(d_stream.total_out>0x110 &&
+	memcmp(&buffer_uncompr[0x101],tar_header_posix,sizeof(tar_header_posix))==0)
+      {
+	file_recovery_new->extension="tar.gz";
+	return 1;
+      }
+      file_recovery_new->extension=file_hint_gz.extension;
+      return 1;
     }
-#endif
+#else
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=22;
     file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
     file_recovery_new->extension=file_hint_gz.extension;
     return 1;
+#endif
   }
   return 0;
 }
