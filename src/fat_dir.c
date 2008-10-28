@@ -432,7 +432,9 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
 
 static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header)
 {
-  unsigned int root_size=(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
+  const unsigned int root_size=(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
+  if(root_size==0)
+    return NULL;
   if(dir_data->verbose>1)
   {
     log_trace("fat1x_rootdir root_size=%u sectors\n",root_size/disk_car->sector_size);
