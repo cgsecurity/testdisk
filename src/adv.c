@@ -468,7 +468,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    if(*current_cmd!=NULL)
 	      image_dd=get_default_location();
 	    else
-	      image_dd=ask_location("Do you want to save disk file image.dd in %s%s ? [Y/N]","");
+	      image_dd=ask_location("Do you want to save partition file image.dd in %s%s ? [Y/N]","");
 	    if(image_dd!=NULL)
 	    {
 	      char *new_recup_dir=(char *)MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);
