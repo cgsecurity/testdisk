@@ -522,7 +522,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 {
   static char *buffer_lower=NULL;
   static unsigned int buffer_lower_size=0;
-  unsigned int i;
+  unsigned int l=0;
   const unsigned char header_asp[22]	= "<%@ language=\"vbscript";
   const unsigned char header_bat[9]  	= "@echo off";
   const unsigned char header_vcf[11]	= "begin:vcard";
@@ -539,6 +539,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_html[]		= "<html";
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
+    unsigned int i;
     unsigned int tmp=0;
     for(i=0;i<10 && isdigit(buffer[i]);i++)
       tmp=tmp*10+buffer[i]-'0';
@@ -568,7 +569,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     buffer_lower_size=buffer_size_test+16;
     buffer_lower=(char *)MALLOC(buffer_lower_size);
   }
-  i=UTF2Lat(buffer_lower,buffer,buffer_size_test);
+  l=UTF2Lat(buffer_lower,buffer,buffer_size_test);
   /* strncasecmp */
   if(memcmp(buffer_lower,header_bat,sizeof(header_bat))==0)
   {
@@ -596,13 +597,13 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(buffer[0]=='#' && buffer[1]=='!')
   {
-    unsigned int l=i-2;
+    unsigned int ll=l-2;
     const unsigned char *haystack=buffer_lower+2;
     const unsigned char *res;
-    res=memchr(haystack,'\n',l);
+    res=memchr(haystack,'\n',ll);
     if(res!=NULL)
-      l=res-haystack;
-    if(td_memmem(haystack, l, header_sig_perl, sizeof(header_sig_perl)) != NULL)
+      ll=res-haystack;
+    if(td_memmem(haystack, ll, header_sig_perl, sizeof(header_sig_perl)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -610,7 +611,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="pl";
       return 1;
     }
-    if(td_memmem(haystack, l, header_sig_python, sizeof(header_sig_python)) != NULL)
+    if(td_memmem(haystack, ll, header_sig_python, sizeof(header_sig_python)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -618,7 +619,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="py";
       return 1;
     }
-    if(td_memmem(haystack, l, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
+    if(td_memmem(haystack, ll, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -643,31 +644,59 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     /* ind=~0: random
      * ind=~1: constant	*/
     double ind=1;
-    unsigned int nbr=0;
+    unsigned int nbrf=0;
+    unsigned int is_csv=1;
     /* Detect Fortran */
     {
       char *str=buffer_lower;
       while((str=strstr(str, "\n      "))!=NULL)
       {
-	nbr++;
+	nbrf++;
 	str++;
       }
     }
-    if(i>1)
+    /* Detect csv */
+    {
+      unsigned int csv_per_line_current=0;
+      unsigned int csv_per_line=0;
+      unsigned int line_nbr=0;
+      unsigned int i;
+      for(i=0;i<l && is_csv>0;i++)
+      {
+	if(buffer_lower[i]==';')
+	{
+	  csv_per_line_current++;
+	}
+	else if(buffer_lower[i]=='\n')
+	{
+	  if(line_nbr==0)
+	    csv_per_line=csv_per_line_current;
+	  if(csv_per_line_current!=csv_per_line)
+	    is_csv=0;
+	  line_nbr++;
+	  csv_per_line_current=0;
+	}
+      }
+      if(csv_per_line<1 || line_nbr<10)
+	is_csv=0;
+    }
+    if(l>1)
     {
       unsigned int stats[256];
-      unsigned int j;
+      unsigned int i;
       memset(&stats, 0, sizeof(stats));
-      for(j=0;j<i;j++)
-        stats[buffer[j]]++;
+      for(i=0;i<l;i++)
+        stats[(unsigned char)buffer_lower[i]]++;
       ind=0;
-      for(j=0;j<256;j++)
-        if(stats[j]>0)
-          ind+=stats[j]*(stats[j]-1);
-      ind=ind/i/(i-1);
+      for(i=0;i<256;i++)
+        if(stats[i]>0)
+          ind+=stats[i]*(stats[i]-1);
+      ind=ind/l/(l-1);
     }
-    if(nbr>10 && i<=0.90)
+    if(nbrf>10 && ind<0.9)
       ext="f";
+    else if(is_csv>0)
+      ext="csv";
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, sign_tex)!=NULL)
       ext="tex";
@@ -683,9 +712,9 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="asp";
     else if(strstr(buffer_lower, sign_html)!=NULL)
       ext="html";
-    else if(strstr(buffer_lower, sign_h)!=NULL && i>50)
+    else if(strstr(buffer_lower, sign_h)!=NULL && l>50)
       ext="h";
-    else if(i<100 || ind<0.03 || ind>0.90)
+    else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;
     else
       ext=file_hint_txt.extension;
@@ -712,15 +741,15 @@ Doc: \r (0xD)
       if(file_recovery->file_stat->file_hint==&file_hint_doc &&
           strstr(file_recovery->filename,".doc")!=NULL)
       {
-        unsigned int j;
+        unsigned int i;
         unsigned int txt_nl=0;
-        for(j=0;j<i-1;j++)
-          if(buffer_lower[j]=='\r' && buffer_lower[j+1]!='\n')
+        for(i=0;i<l-1;i++)
+          if(buffer_lower[i]=='\r' && buffer_lower[i+1]!='\n')
           {
             return 0;
           }
-        for(j=0;j<i && j<512;j++)
-          if(buffer[j]=='\n')
+        for(i=0;i<l && i<512;i++)
+          if(buffer_lower[i]=='\n')
             txt_nl=1;
         if(txt_nl==1)
         {
