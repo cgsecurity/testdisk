@@ -2,7 +2,7 @@
 
     File: ntfs.h
 
-    Copyright (C) 1998-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,7 +59,6 @@ int is_ntfs(const partition_t *partition);
 int is_part_ntfs(const partition_t *partition);
 int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find);
 int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind, const int backup);
-int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind);
 int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind);
 #define NTFS_GETU8(p)      (*(const uint8_t*)(p))
 #define NTFS_GETU16(p)     (le16(*(const uint16_t*)(p)))

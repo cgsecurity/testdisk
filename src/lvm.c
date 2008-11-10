@@ -2,7 +2,7 @@
 
     File: lvm.c
 
-    Copyright (C) 2003-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2003-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,7 +38,10 @@
 #include "guid_cpy.h"
 
 static int set_LVM_info(partition_t *partition, const pv_disk_t *pv);
+static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
+
 static int set_LVM2_info(partition_t*partition, const unsigned char *buf);
+static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind);
 
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -76,7 +79,7 @@ int recover_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,con
   return 0;
 }
 
-int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind)
+static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind)
 {
   if ((memcmp((const char *)pv->id,LVM_ID,sizeof(pv->id)) == 0) && (le16(pv->version) == 1 || le16(pv->version) == 2))
   {
@@ -163,7 +166,7 @@ int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partiti
   return 0;
 }
 
-int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind)
+static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind)
 {
   if (memcmp((const char *)lh->type,LVM2_LABEL,sizeof(lh->type)) == 0)
   {

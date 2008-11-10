@@ -63,8 +63,6 @@ struct MenuItem
 /* '\014' == ^L */
 #define key_REDRAWKEY 		'\014'
 
-void aff_CHS(const CHS_t * CHS);
-void aff_CHS_buffer(const CHS_t * CHS);
 void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
 void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA);
 const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition);

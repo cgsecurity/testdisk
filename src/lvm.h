@@ -1,7 +1,7 @@
 /*
      File: lvm.h, TestDisk
 
-    Copyright (C) 2003-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2003-2008 Christophe GRENIER <grenier@cgsecurity.org>
     Same wunderfull license.
  */   
 /* gm_hmlvm.h -- gpart Linux LVM physical volume guessing module header
@@ -88,7 +88,6 @@ typedef struct {
 
 #define pv_disk_t pv_disk_v2_t
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose);
-int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
 int recover_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
 
 #define LVM2_LABEL	"LVM2 001"
@@ -117,7 +116,6 @@ struct lvm2_pv_header {
 } __attribute__ ((packed));
 
 int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose);
-int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind);
 int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partition,const int verbose, const int dump_ind);
 
 #endif /* _LVM_H */

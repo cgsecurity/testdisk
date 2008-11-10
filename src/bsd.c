@@ -2,7 +2,7 @@
 
     File: bsd.c
 
-    Copyright (C) 1998-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include "intrf.h"
 #include "fnctdsk.h"
 #include "log.h"
+static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions);
 
 int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const unsigned int max_partitions)
 {
@@ -53,7 +54,7 @@ int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const u
   return 0;
 }
 
-int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions)
+static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions)
 {
   if((le32(bsd_header->d_magic) == DISKMAGIC)&&
       (le32(bsd_header->d_magic2)==DISKMAGIC))

@@ -2,7 +2,7 @@
 
     File: jfs.c
 
-    Copyright (C) 2004-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2004-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@
 #include "guid_cpy.h"
 
 static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind);
 
 int check_JFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -57,7 +58,7 @@ int check_JFS(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
   snprintf(partition->info,sizeof(partition->info),"JFS %u",(unsigned int)le32(sb->s_version));
   partition->fsname[0]='\0';

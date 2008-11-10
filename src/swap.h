@@ -2,7 +2,7 @@
 
     file: swap.h
 
-    Copyright (C) 1998-2004,2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2004,2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     this software is free software; you can redistribute it and/or modify
     it under the terms of the gnu general public license as published by
@@ -42,5 +42,4 @@ union swap_header {
 };
 
 int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose);
-int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);
 int recover_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);

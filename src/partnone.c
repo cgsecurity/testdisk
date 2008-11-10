@@ -51,6 +51,7 @@
 #include "hfsp.h"
 #include "jfs_superblock.h"
 #include "jfs.h"
+#include "luks.h"
 #include "lvm.h"
 #include "md.h"
 #include "netware.h"
@@ -73,6 +74,7 @@ static int test_structure_none(list_part_t *list_part);
 static int is_part_known_none(const partition_t *partition);
 static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, const int verbose);
 static const char *get_partition_typename_none_aux(const unsigned int part_type_none);
+static int set_part_type_none(partition_t *partition, unsigned int part_type);
 
 static const struct systypes none_sys_types[] = {
   {UP_BEOS,	"BeFS"},
@@ -221,7 +223,7 @@ static int test_structure_none(list_part_t *list_part)
   return 0;
 }
 
-int set_part_type_none(partition_t *partition, unsigned int part_type)
+static int set_part_type_none(partition_t *partition, unsigned int part_type)
 {
   partition->upart_type=(upart_type_t)part_type;
   return 0;
@@ -286,6 +288,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_LINSWAP:
     case UP_LINSWAP2:
       ret=check_Linux_SWAP(disk_car,partition,verbose);
+      break;
+    case UP_LUKS:
+    ret=check_LUKS(disk_car, partition, verbose);
       break;
     case UP_LVM:
       ret=check_LVM(disk_car,partition,verbose);

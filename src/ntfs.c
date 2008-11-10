@@ -2,7 +2,7 @@
 
     File: ntfs.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
+static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind);
 static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header,const int my_type,const int verbose, const int dump_ind);
 static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find);
 
@@ -109,7 +110,7 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
   return 0;
 }
 
-int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind)
+static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind)
 {
   partition->fsname[0]='\0';
   if(partition->sb_offset==0)

@@ -2,7 +2,7 @@
 
     File: bsd.h
 
-    Copyright (C) 1998-2004,2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2004,2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -166,7 +166,6 @@ struct disklabel {
 #define TST_FS_RAID         15              /* RAIDFrame drive */
 #define TST_FS_JFS2         21              /* IBM JFS2 */
 int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose,const unsigned int max_partitions);
-int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions);
 int recover_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind);
 
 #endif

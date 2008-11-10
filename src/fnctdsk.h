@@ -21,14 +21,11 @@
  */
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S);
 uint64_t CHS2offset(const disk_t *disk_car,const CHS_t*CHS);
-uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S);
 unsigned int offset2sector(const disk_t *disk_car, const uint64_t offset);
 unsigned int offset2head(const disk_t *disk_car, const uint64_t offset);
 unsigned int offset2cylinder(const disk_t *disk_car, const uint64_t offset);
 void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
-void dup_CHS(CHS_t * CHS_dest, const CHS_t * CHS_source);
-list_part_t *element_new(partition_t *part);
 list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car);
 list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error);
 list_part_t *remove_partition(list_part_t *list_part, list_part_t *element2removed);

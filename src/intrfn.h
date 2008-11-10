@@ -35,7 +35,6 @@
 
 void aff_copy(WINDOW *window);
 void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
-int aff_txt(int line, WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 3, 4)));
 int ask_YN(WINDOW *window);
 int check_enter_key_or_s(WINDOW *window);
 void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigned int lng);

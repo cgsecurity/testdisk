@@ -2,7 +2,7 @@
 
     File: fnctdsk.c
 
-    Copyright (C) 1998-2005 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2005,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 #include "guid_cpy.h"
 
 static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, const list_part_t *list_part, const int verbose);
+static list_part_t *element_new(partition_t *part);
 
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
 {
@@ -51,12 +52,6 @@ uint64_t CHS2offset(const disk_t *disk_car,const CHS_t*CHS)
 {
   return (((uint64_t)CHS->cylinder * disk_car->geom.heads_per_cylinder + CHS->head) *
       disk_car->geom.sectors_per_head + CHS->sector - 1) * disk_car->sector_size;
-}
-
-uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
-{
-  return (((uint64_t)C * disk_car->geom.heads_per_cylinder + H) *
-      disk_car->geom.sectors_per_head + S - 1) * disk_car->sector_size;
 }
 
 unsigned int offset2sector(const disk_t *disk_car, const uint64_t offset)
@@ -81,13 +76,6 @@ void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
   pos/=disk_car->geom.sectors_per_head;
   CHS->head=pos%disk_car->geom.heads_per_cylinder;
   CHS->cylinder=pos/disk_car->geom.heads_per_cylinder;
-}
-
-void dup_CHS(CHS_t * CHS_dst, const CHS_t * CHS_source)
-{
-  CHS_dst->cylinder=CHS_source->cylinder;
-  CHS_dst->head=CHS_source->head;
-  CHS_dst->sector=CHS_source->sector;
 }
 
 void dup_partition_t(partition_t *dst, const partition_t *src)
@@ -375,7 +363,7 @@ partition_t *partition_new(const arch_fnct_t *arch)
   return partition;
 }
 
-list_part_t *element_new(partition_t *part)
+static list_part_t *element_new(partition_t *part)
 {
   list_part_t *new_element=(list_part_t*)MALLOC(sizeof(*new_element));
   new_element->part=part;

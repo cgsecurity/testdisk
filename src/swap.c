@@ -2,7 +2,7 @@
 
     File: swap.c
 
-    Copyright (C) 1998-2006 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include "swap.h"
 #include "fnctdsk.h"
 static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t *partition);
+static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);
 
 int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -73,7 +74,7 @@ static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t 
   return 0;
 }
 
-int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind)
+static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind)
 {
   if(memcmp(swap_header->magic.magic,"SWAP-SPACE",10)==0)
   {

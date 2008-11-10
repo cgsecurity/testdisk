@@ -2,7 +2,7 @@
 
     File: fat.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +53,32 @@ extern const arch_fnct_t arch_mac;
 
 static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose);
 static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size);
+static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
+static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+static unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
+static unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
+
+#define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
+#define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
+#define ATTR_RO      1  /* read-only */
+#define ATTR_HIDDEN  2  /* hidden */
+#define ATTR_SYS     4  /* system */
+#define ATTR_VOLUME  8  /* volume label */
+#define ATTR_DIR     16 /* directory */
+#define ATTR_ARCH    32 /* archived */
+
+#define ATTR_NONE    0 /* no attribute bits */
+#define ATTR_UNUSED  (ATTR_VOLUME | ATTR_ARCH | ATTR_SYS | ATTR_HIDDEN)
+	/* attribute bits that are copied "as is" */
+#define ATTR_EXT     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
+#define ATTR_EXT_MASK     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME | ATTR_DIR | ATTR_ARCH)
+	/* bits that are used by the Windows 95/Windows NT extended FAT */
+#define FAT12_BAD	0x0FF7
+#define FAT12_EOC	0x0FF8
+#define FAT16_BAD	0xFFF7
+#define FAT16_EOC	0xFFF8
 
 static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size)
 {
@@ -832,12 +857,12 @@ unsigned int get_dir_entries(const struct fat_boot_sector *fat_header)
 unsigned int sectors(const struct fat_boot_sector *fat_header)
 { return (fat_header->sectors[1]<<8)+fat_header->sectors[0]; }
 
-unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
+static unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
   return (boot_fat32[sector_size+0x1E8+3]<<24)+(boot_fat32[sector_size+0x1E8+2]<<16)+(boot_fat32[sector_size+0x1E8+1]<<8)+boot_fat32[sector_size+0x1E8];
 }
 
-unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size)
+static unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
   return (boot_fat32[sector_size+0x1EC+3]<<24)+(boot_fat32[sector_size+0x1EC+2]<<16)+(boot_fat32[sector_size+0x1EC+1]<<8)+boot_fat32[sector_size+0x1EC];
 }
@@ -912,7 +937,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
   return 0;
 }
 
-int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)
+static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)
 {
   partition->fsname[0]='\0';
   if((fat_header->sectors_per_cluster>0)&&(fat_header->sectors_per_cluster<=128))
@@ -978,7 +1003,7 @@ int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)fat_header;
   if(le16(fat_header->marker)==0xAA55)
@@ -1051,7 +1076,7 @@ int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, par
   return 0;
 }
 
-int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)fat_header;
   if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)

@@ -50,6 +50,7 @@
 #include "hfsp.h"
 #include "jfs_superblock.h"
 #include "jfs.h"
+#include "luks.h"
 #include "lvm.h"
 #include "md.h"
 #include "netware.h"
@@ -120,6 +121,7 @@ static const char* errmsg_i386_entry2partition(const errcode_type_t errcode);
 static const char *get_partition_typename_i386(const partition_t *partition);
 static const char *get_partition_typename_i386_aux(const unsigned int part_type_i386);
 static unsigned int get_part_type_i386(const partition_t *partition);
+static uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S);
 
 static const struct systypes i386_sys_types[] = {
   {P_NO_OS,		"No partition"},
@@ -237,6 +239,12 @@ arch_fnct_t arch_i386= {
   .get_partition_typename=get_partition_typename_i386,
   .get_part_type=get_part_type_i386
 };
+
+static uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
+{
+  return (((uint64_t)C * disk_car->geom.heads_per_cylinder + H) *
+      disk_car->geom.sectors_per_head + S - 1) * disk_car->sector_size;
+}
 
 static unsigned int get_part_type_i386(const partition_t *partition)
 {
@@ -1649,6 +1657,10 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       if(ret!=0)
       {
 	ret=check_xfs(disk_car,partition,verbose);
+      }
+      if(ret!=0)
+      {
+	ret=check_LUKS(disk_car,partition,verbose);
       }
       if(ret!=0)
       { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }

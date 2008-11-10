@@ -297,6 +297,7 @@ char *get_default_location(void)
 
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
+static int aff_txt(int line, WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 3, 4)));
 static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
 static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 static void dir_aff_entry(WINDOW *window, file_info_t *file_info);
@@ -1079,16 +1080,6 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
   return 0;
 }
 
-void aff_CHS(const CHS_t * CHS)
-{
-  wprintw(stdscr,"%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
-}
-
-void aff_CHS_buffer(const CHS_t * CHS)
-{
-  screen_buffer_add("%5u %3u %2u ", CHS->cylinder, CHS->head, CHS->sector);
-}
-
 void aff_part(WINDOW *window,const unsigned int newline,const disk_t *disk_car,const partition_t *partition)
 {
   const char *msg;
@@ -1358,8 +1349,11 @@ char *ask_log_location(const char*filename)
 {
   static char response[LINE_LENGTH];
   aff_copy(stdscr);
-  wmove(stdscr,6,0);
-  wprintw(stdscr,"Cannot open %s: %s\n",filename, strerror(errno));
+  if(filename!=NULL)
+  {
+    wmove(stdscr,6,0);
+    wprintw(stdscr,"Cannot open %s: %s\n",filename, strerror(errno));
+  }
   wmove(stdscr,8,0);
   wprintw(stdscr,"Please enter the full log filename or press ");
   if(has_colors())
@@ -1383,8 +1377,8 @@ static int intrf_no_disk_ncurses(const char *prog_name)
   wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
   wmove(stdscr,7,0);
   wprintw(stdscr,"No harddisk found\n");
-  wmove(stdscr,8,0);
 #if defined(__CYGWIN__) || defined(__MINGW32__)
+  wmove(stdscr,8,0);
   wprintw(stdscr,"You need to be administrator to use %s.\n", prog_name);
   wmove(stdscr,9,0);
   wprintw(stdscr,"Under Win9x, use the DOS version instead.\n");
@@ -1395,6 +1389,7 @@ static int intrf_no_disk_ncurses(const char *prog_name)
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
+    wmove(stdscr,8,0);
     wprintw(stdscr,"You need to be root to use %s.\n", prog_name);
 #ifdef SUDO_BIN
     {
@@ -1884,7 +1879,7 @@ static int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap)
   return line;
 }
 
-int aff_txt(int line, WINDOW *window, const char *_format, ...)
+static int aff_txt(int line, WINDOW *window, const char *_format, ...)
 {
   va_list ap;
   va_start(ap,_format);
@@ -1955,21 +1950,15 @@ unsigned long long int ask_number_cli(char **current_cmd, const unsigned long lo
       return tmp_val;
     else
     {
-      {
-        char res[200];
-        char res2[200];
-        va_list ap;
-        va_start(ap,_format);
-        vsnprintf(res,sizeof(res),_format,ap);
-        if(val_min!=val_max)
-          snprintf(res2,sizeof(res2),"(%llu-%llu) :",val_min,val_max);
-        else
-          res2[0]='\0';
-        va_end(ap);
-        log_error(res);
-        log_error(res2);
-        log_error("Invalid value\n");
-      }
+      char res[200];
+      va_list ap;
+      va_start(ap,_format);
+      vsnprintf(res,sizeof(res),_format,ap);
+      log_error(res);
+      if(val_min!=val_max)
+	log_error("(%llu-%llu) :",val_min,val_max);
+      log_error("Invalid value\n");
+      va_end(ap);
     }
   }
   return val_cur;
