@@ -60,18 +60,18 @@
 #include "log.h"
 #include "hpa_dco.h"
 
-#define DISK_HAS_48_SUPPORT	0x01
-#define DISK_HAS_HPA_SUPPORT 0x02
+#define DISK_HAS_48_SUPPORT		0x01
+#define DISK_HAS_HPA_SUPPORT		0x02
 #define DISK_HAS_REMOVABLE_SUPPORT	0x04
-#define DISK_HAS_DCO_SUPPORT	0x08
+#define DISK_HAS_DCO_SUPPORT		0x08
 
-#define IDE_STATUS_OFFSET 7
-#define DEVICE_CONFIGURATION_IDENTIFY 0xC2
+#define IDE_STATUS_OFFSET 	7
 #define SG_ATA_PROTO_NON_DATA 	( 3 << 1)
 #define SG_ATA_PROTO_PIO_IN     ( 4 << 1)
-#define SG_ATA_LBA48             1
-#define SG_DRIVER_SENSE          0x08
-#define SG_CHECK_CONDITION       0x02
+#define SG_ATA_PROTO_PIO_OUT	( 5 << 1)
+#define SG_ATA_LBA48            1
+#define SG_DRIVER_SENSE         0x08
+#define SG_CHECK_CONDITION      0x02
 
 enum {
   SG_CDB2_TLEN_NODATA     = 0 << 0,
@@ -179,6 +179,8 @@ static uint64_t sg_device_configuration_identify(int fd)
   unsigned char cdb[16];
   unsigned char sb[32];
   unsigned char data[512];
+  unsigned int i;
+  unsigned int sum=0;
   sg_io_hdr_t  io_hdr;
 
   memset(&cdb,    0, sizeof(cdb));
@@ -215,7 +217,16 @@ static uint64_t sg_device_configuration_identify(int fd)
     return 0;
   if (sb[0] != 0x72 || sb[7] < 14)
     return 0;
+  /* Check for error bit */
+    if((sb[8+3]&1)!=0)
+      return 0;
+  /* Check the signature presence */
   if(data[0x1fe]!=0xa5)
+    return 0;
+  /* Checksum must be 0 */
+  for(i=0;i<512;i++)
+    sum+=data[i];
+  if((sum&0xff)!=0)
     return 0;
   return data[6] + (data[7]<<8) + (data[8]<<16) + (data[9]<<24) +
     ((uint64_t)data[10]<<32) + ((uint64_t)data[11]<<40) + ((uint64_t)data[12]<<48) + ((uint64_t)data[13]<<56);
