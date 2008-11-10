@@ -552,10 +552,20 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               if(recover_MD(disk_car,(const struct mdp_superblock_s*)buffer_disk,partition,verbose,dump_ind)==0)
               {
                 const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer_disk;
-                if(le32(sb1->major_version)==0)
-                  partition->part_offset-=(uint64_t)MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
-                else
-                  partition->part_offset-=le64(sb1->super_offset)*512;
+		if(le32(sb1->md_magic)==(unsigned int)MD_SB_MAGIC)
+		{
+		  if(le32(sb1->major_version)==0)
+		    partition->part_offset-=(uint64_t)MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
+		  else
+		    partition->part_offset-=le64(sb1->super_offset)*512;
+		}
+		else
+		{
+		  if(be32(sb1->major_version)==0)
+		    partition->part_offset-=(uint64_t)MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
+		  else
+		    partition->part_offset-=be64(sb1->super_offset)*512;
+		}
                 res=1;
               }
               else

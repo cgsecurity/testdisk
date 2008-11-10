@@ -249,9 +249,7 @@ static inline uint64_t md_event(mdp_super_t *sb) {
 
 /* TestDisk */
 int check_MD(disk_t *disk_car,partition_t *partition,const int verbose);
-int test_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind);
 int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind);
 int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const int verbose);
-int set_MD_info(disk_t *disk_car, const struct mdp_superblock_s *sb,partition_t *partition,const int verbose, const int dump_ind);
 #endif 
 
