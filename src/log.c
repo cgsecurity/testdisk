@@ -22,7 +22,13 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include <stdio.h>
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 #include <stdarg.h>
 #ifdef HAVE_TIME_H
 #include <time.h>
@@ -57,21 +63,41 @@ int log_open(const char*default_filename, const int mode, const int ncurses_inte
   const char*filename=default_filename;
   if(mode!=TD_LOG_CREATE && mode!=TD_LOG_APPEND)
     return mode;
-  do
+  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  if(log_handle==NULL && ncurses_interface==0)
   {
-    log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
-    if(log_handle==NULL)
+    printf("Can't create %s file\n", filename);
+  }
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+  if(log_handle==NULL)
+  {
+    char *path;
+    path = getenv("USERPROFILE");
+    if (path == NULL)
+      path = getenv("HOMEPATH");
+    if(path!=NULL)
     {
-      if(ncurses_interface==0)
-      {
-	printf("Can't create %s file\n", default_filename);
-	return mode;
-      }
-      filename=ask_log_location(filename);
-      if(filename==NULL)
-	return TD_LOG_REFUSED;
+      FILE*handle;
+      filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
+      strcpy(filename, path);
+      strcat(filename, "\\");
+      strcat(filename, default_filename);
+      handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+      /* WARN: filename: memory leak */
     }
-  } while(log_handle==NULL);
+  }
+#endif
+  if(log_handle==NULL && ncurses_interface==0)
+  {
+    return mode;
+  }
+  while(log_handle==NULL)
+  {
+    filename=ask_log_location(filename);
+    if(filename==NULL)
+      return TD_LOG_REFUSED;
+    log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  }
   {
     int i;
     time_t my_time;
