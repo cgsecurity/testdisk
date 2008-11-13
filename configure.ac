@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.11-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="October 2008"
+TESTDISKDATE="November 2008"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -360,9 +360,9 @@ AC_CHECK_HEADERS([ntfs/attrib.h ntfs/volume.h],,
               use_ntfs=no
               AC_MSG_WARN(Disable use of ntfs library))
 
-#AC_CHECK_HEADERS([libcarvpath.h],,
-#              use_carvpath=no
-#              AC_MSG_WARN(Disable use of carvpath library))
+AC_CHECK_HEADERS([libcarvpath.h],,
+              use_carvpath=no
+              AC_MSG_WARN(Disable use of carvpath library))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
