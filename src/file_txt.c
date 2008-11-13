@@ -100,6 +100,7 @@ static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
 static const unsigned char header_stl[6]	= "solid ";
 static const unsigned char header_ers[19]	= "DatasetHeader Begin";
+static const unsigned char header_cue[10]	= "REM GENRE ";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -108,25 +109,26 @@ static void register_header_check_txt(file_stat_t *file_stat)
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
-  register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_bash,sizeof(header_bash), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
-  register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_adr, sizeof(header_adr), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_bash,sizeof(header_bash), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_cue,sizeof(header_cue), &header_check_fasttxt, file_stat);
+  register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -515,6 +517,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="adr";
     return 1;
   }
+  /* Cue sheet often begins by the music genre
+   * http://wiki.hydrogenaudio.org/index.php?title=Cue_sheet */
+  if(memcmp(buffer, header_cue, sizeof(header_cue))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="cue";
+    return 1;
+  }
   return 0;
 }
 
@@ -537,6 +549,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_php[]			= "<?php";
   const char sign_tex[]			= "\\begin{";
   const char sign_html[]		= "<html";
+  const char sign_cue[6]		= { 'F', 'I', 'L', 'E', ' ', '"'};
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int i;
@@ -557,6 +570,16 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="emlx";
       return 1;
     }
+  }
+  /* Cue sheet can begin by the filename 
+   * http://wiki.hydrogenaudio.org/index.php?title=Cue_sheet */
+  if(memcmp(buffer, sign_cue, sizeof(sign_cue))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="cue";
+    return 1;
   }
   if(buffer_lower_size<buffer_size_test+16)
   {
