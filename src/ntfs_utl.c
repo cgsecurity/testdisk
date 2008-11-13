@@ -151,7 +151,6 @@ int utils_cluster_in_use(ntfs_volume *vol, long long lcn)
   static long long bmplcn = -sizeof(buffer) - 1;	/* Which bit of $Bitmap is in the buffer */
 
   int byte, bit;
-  ntfs_attr *attr;
 
   if (!vol) {
     errno = EINVAL;
@@ -160,6 +159,7 @@ int utils_cluster_in_use(ntfs_volume *vol, long long lcn)
 
   /* Does lcn lie in the section of $Bitmap we already have cached? */
   if ((bmplcn <0 ) || (lcn < bmplcn) || (lcn >= (bmplcn + (sizeof(buffer) << 3)))) {
+    ntfs_attr *attr;
 #ifdef DEBUG_NTFS
     log_debug("Bit lies outside cache.\n");
 #endif
