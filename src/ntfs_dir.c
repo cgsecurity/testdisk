@@ -340,12 +340,16 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     u32 block_size;
     buffer = (char *)MALLOC(bufsize);
     if (!buffer)
+    {
+      ntfs_inode_close(inode);
       return -2;
+    }
     attr = ntfs_attr_open(inode, AT_DATA, NULL, 0);
     if (!attr)
     {
       log_error("Cannot find attribute type 0x%lx.\n", (long) AT_DATA);
       free(buffer);
+      ntfs_inode_close(inode);
       return -3;
     }
     if ((inode->mft_no < 2) && (attr->type == AT_DATA))
@@ -360,6 +364,9 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     {
       log_critical("Can't create file %s: %s\n",new_file, strerror(errno));
       free(new_file);
+      ntfs_attr_close(attr);
+      free(buffer);
+      ntfs_inode_close(inode);
       return -4;
     }
     offset = 0;
@@ -390,8 +397,8 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     }
     fclose(f_out);
     set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
-    ntfs_attr_close(attr);
     free(new_file);
+    ntfs_attr_close(attr);
     free(buffer);
   }
   /* Finished with the inode; release it. */
