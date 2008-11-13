@@ -242,6 +242,7 @@ extern const file_hint_t file_hint_wks;
 extern const file_hint_t file_hint_wmf;
 extern const file_hint_t file_hint_wnk;
 extern const file_hint_t file_hint_wpd;
+extern const file_hint_t file_hint_wv;
 extern const file_hint_t file_hint_x3f;
 extern const file_hint_t file_hint_xcf;
 extern const file_hint_t file_hint_xm;
@@ -966,6 +967,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_wmf  },
     { .enable=0, .file_hint=&file_hint_wnk  },
     { .enable=0, .file_hint=&file_hint_wpd  },
+    { .enable=0, .file_hint=&file_hint_wv   },
     { .enable=0, .file_hint=&file_hint_x3f  },
     { .enable=0, .file_hint=&file_hint_xcf  },
     { .enable=0, .file_hint=&file_hint_xm   },
