@@ -75,8 +75,6 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 {
   int insert_error=0;
   list_part_t *list_part;
-  list_part_t *element;
-  partition_t *partition_wd;
   list_part_t *current_element;
   int allow_partial_last_cylinder=0;
   int paranoid=1;
@@ -104,17 +102,25 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
   };
 #endif
   list_part=disk_car->arch->read_part(disk_car,verbose,0);
-  partition_wd=new_whole_disk(disk_car);
-  list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
-  if(insert_error>0)
   {
-    free(partition_wd);
+    partition_t *partition_wd;
+    partition_wd=new_whole_disk(disk_car);
+    list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
+    if(insert_error>0)
+    {
+      free(partition_wd);
+    }
   }
-  for(element=list_part;element!=NULL;element=element->next)
+  if(list_part==NULL)
+    return;
   {
-    log_partition(disk_car,element->part);
+    list_part_t *element;
+    for(element=list_part;element!=NULL;element=element->next)
+    {
+      log_partition(disk_car,element->part);
+    }
   }
-  if(list_part!=NULL && list_part->next!=NULL)
+  if(list_part->next!=NULL)
   {
     current_element_num=1;
     current_element=list_part->next;
@@ -265,6 +271,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       }
       else if(isdigit(*current_cmd[0]))
       {
+	list_part_t *element;
 	unsigned int order;
 	order= atoi(*current_cmd);
 	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
@@ -285,6 +292,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 #ifdef HAVE_NCURSES
     else
     { /* ncurses interface */
+      list_part_t *element;
       unsigned int i;
       aff_copy(stdscr);
       wmove(stdscr,4,0);

@@ -107,12 +107,12 @@ arch_fnct_t arch_sun=
   .set_prev_status=set_next_status_sun,
   .set_next_status=set_next_status_sun,
   .test_structure=test_structure_sun,
+  .get_part_type=get_part_type_sun,
   .set_part_type=set_part_type_sun,
-  .is_part_known=is_part_known_sun,
   .init_structure=init_structure_sun,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_sun,
-  .get_part_type=get_part_type_sun
+  .is_part_known=is_part_known_sun
 };
 
 static unsigned int get_part_type_sun(const partition_t *partition)

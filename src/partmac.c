@@ -102,12 +102,12 @@ arch_fnct_t arch_mac=
   .set_prev_status=set_next_status_mac,
   .set_next_status=set_next_status_mac,
   .test_structure=test_structure_mac,
+  .get_part_type=get_part_type_mac,
   .set_part_type=set_part_type_mac,
-  .is_part_known=is_part_known_mac,
   .init_structure=init_structure_mac,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_mac,
-  .get_part_type=get_part_type_mac
+  .is_part_known=is_part_known_mac
 };
 
 static unsigned int get_part_type_mac(const partition_t *partition)

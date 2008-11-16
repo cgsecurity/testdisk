@@ -658,7 +658,7 @@ static int testdisk_ffs(int x)
     r += 2;
   }
   if (!(x & 1)) {
-    x >>= 1;
+//  x >>= 1;
     r += 1;
   }
   return r;

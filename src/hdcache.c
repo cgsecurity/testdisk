@@ -171,7 +171,7 @@ static int cache_read_aux(disk_t *disk_car,const unsigned int count, void *nom_b
       }
       /* split the read sector by sector */
       cache->cache_size=0;
-      res=-1;
+      res = -1;
       for(i=0;i*disk_car->sector_size<count;i++)
       {
 	const int newres=cache_read_aux(disk_car, (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size), (unsigned char*)nom_buffer+i*disk_car->sector_size, offset+i*disk_car->sector_size, 0);

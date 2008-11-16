@@ -86,7 +86,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
   wmove(stdscr,line++,0);
   wprintw(stdscr,"and press Umount button for each volume from this disk\n");
 #endif
-  wmove(stdscr,line++,0);
+  wmove(stdscr,line,0);
   wprintw(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
   car= wmenuSelect_ext(stdscr, 23, INTER_DISK_Y, INTER_DISK_X, menuDiskAccess, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);

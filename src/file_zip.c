@@ -496,7 +496,7 @@ static void file_check_zip(file_recovery_t *fr)
         else
           log_trace("Unparsable block with ID 0x%04X\n", header>>16);
 #endif
-        status=-1;
+        status = -1;
         break;
     }
 

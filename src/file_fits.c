@@ -121,7 +121,7 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
 	    tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
 	    tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
 	      (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
-	    tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+	    tm_time.tm_isdst = -1;	/* unknown daylight saving time */
 	    file_recovery_new->time=mktime(&tm_time);
 	  }
 	}

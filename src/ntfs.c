@@ -309,7 +309,7 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
                 volume_name_length=sizeof(partition->fsname)-1;
               for(name_it=attr_td_list_entry;(volume_name_length>0) && (*name_it!='\0') && (name_it[1]=='\0'); name_it+=2,volume_name_length--)
                 *dest++=*name_it;
-              *dest++='\0'; /* 27 january 2003: Correct a bug found by Andreas du Plessis-Denz */
+              *dest='\0'; /* 27 january 2003: Correct a bug found by Andreas du Plessis-Denz */
             }
             return 1;
           case 0x90:	/* AT_INDEX_ROOT */

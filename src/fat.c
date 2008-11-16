@@ -511,8 +511,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
 
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
-    unsigned int offset_s,offset_o;
-    offset_s=prev_cluster/(disk_car->sector_size/4);
+    unsigned int offset_o;
     offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
@@ -547,7 +546,6 @@ static unsigned int get_prev_cluster(disk_t *disk_car,const partition_t *partiti
 
 int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
-  upart_type_t upart_type=UP_UNK;
   uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
   unsigned long int no_of_cluster,fat_length,fat_length_calc;
   const char *buffer=(const char*)fat_header;
@@ -629,7 +627,6 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   }
   if(no_of_cluster<4085)
   {
-    upart_type=UP_FAT12;
     if(verbose>0)
     {
       log_info("FAT12 at %u/%u/%u\n",
@@ -670,7 +667,6 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   }
   else if(no_of_cluster<65525)
   {
-    upart_type=UP_FAT16;
     if(verbose>0)
     {
       log_info("FAT16 at %u/%u/%u\n",
@@ -706,7 +702,6 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   }
   else
   {
-    upart_type=UP_FAT32;
     if(verbose>0)
     {
       log_info("FAT32 at %u/%u/%u\n",
@@ -1213,8 +1208,7 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
     unsigned long int cluster;
-    unsigned int offset_s,offset_o;
-    offset_s=prev_cluster/(disk_car->sector_size/4);
+    unsigned int offset_o;
     offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {

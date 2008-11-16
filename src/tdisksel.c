@@ -60,6 +60,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   unsigned int menu=0;
   int offset=0;
   int pos_num=0;
+  int use_sudo=0;
   const list_disk_t *element_disk;
   const list_disk_t *current_disk;
   static struct MenuItem menuMain[]=
@@ -70,12 +71,14 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
     { 'Q',"Quit","Quit program"},
     { 0,NULL,NULL}
   };
-  current_disk=list_disk;
-  if(current_disk==NULL)
+  if(list_disk==NULL)
   {
-    return intrf_no_disk("TestDisk");
+    use_sudo=intrf_no_disk("TestDisk");
   }
-    /* ncurses interface */
+  if(list_disk==NULL || use_sudo>0)
+    return use_sudo;
+  current_disk=list_disk;
+  /* ncurses interface */
   while(1)
   {
     const char *options;
@@ -129,7 +132,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
       wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
-      wmove(stdscr,line++,0);
+      wmove(stdscr,line,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,

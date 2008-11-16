@@ -79,6 +79,8 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
+  if(list_disk==NULL)
+    return ;
   /* ncurses interface */
   while(done==0)
   {
@@ -112,8 +114,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
     else
       options="PNOQ";
     {
-      int line=INTER_NOTE_Y;
-      mvwaddstr(stdscr,line++,0,"Note: ");
+      mvwaddstr(stdscr, INTER_NOTE_Y,0,"Note: ");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #else
 #ifndef DJGPP
@@ -129,11 +130,11 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 #endif
 #endif
 #endif
-      wmove(stdscr,line++,0);
+      wmove(stdscr, INTER_NOTE_Y+1, 0);
       wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
-      wmove(stdscr,line++,0);
+      wmove(stdscr, INTER_NOTE_Y+2, 0);
       wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
-      wmove(stdscr,line++,0);
+      wmove(stdscr, INTER_NOTE_Y+3, 0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,

@@ -72,7 +72,7 @@ const file_hint_t file_hint_fasttxt= {
 
 const file_hint_t file_hint_txt= {
   .extension="txt",
-  .description="Other text files: txt,html,asp,bat,C,jsp,perl,php,py... scripts",
+  .description="Other text files: txt,html,asp,bat,C,jsp,perl,php,py/emlx... scripts",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -493,7 +493,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
       tm_time.tm_mon=(date_asc[4]-'0')*10+(date_asc[5]-'0')-1;	/* month 0-11 */
       tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
 	(date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
-      tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+      tm_time.tm_isdst = -1;		/* unknown daylight saving time */
       file_recovery_new->time=mktime(&tm_time);
     }
     free(buffer2);

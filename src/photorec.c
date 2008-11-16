@@ -1119,7 +1119,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
     return 1;
 #endif
-  create_log=log_open(logfile, create_log, 1, "PhotoRec", argc, argv);
+  log_open(logfile, create_log, 1, "PhotoRec", argc, argv);
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());
@@ -1385,7 +1385,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     free_list_allocation(&file_recovery->location);
   }
   if(file_recovery->file_size==0 && file_recovery->offset_error!=0)
-    file_recovered=-1;
+    file_recovered = -1;
   else
     reset_file_recovery(file_recovery);
 #ifdef DEBUG_FILE_FINISH

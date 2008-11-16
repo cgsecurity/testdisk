@@ -80,11 +80,11 @@ int save_header(disk_t *disk_car,partition_t *partition, const int verbose)
 	(unsigned long)(partition->part_size/disk_car->sector_size));
   }
   if(fwrite(buffer,DEFAULT_SECTOR_SIZE,1,f_backup)!=1)
-    res=-1;
+    res = -1;
   if(res>=0 && disk_car->read(disk_car,256*DEFAULT_SECTOR_SIZE, buffer, partition->part_offset)!=0)
-    res=-1;
+    res = -1;
   if(res>=0 && fwrite(buffer,DEFAULT_SECTOR_SIZE,256,f_backup)!=256)
-    res=-1;
+    res = -1;
   fclose(f_backup);
   free(buffer);
   return res;

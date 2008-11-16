@@ -232,12 +232,12 @@ arch_fnct_t arch_i386= {
   .set_prev_status=set_prev_status_i386,
   .set_next_status=set_next_status_i386,
   .test_structure=test_structure_i386,
+  .get_part_type=get_part_type_i386,
   .set_part_type=set_part_type_i386,
-  .is_part_known=is_part_known_i386,
   .init_structure=init_structure_i386,
   .erase_list_part=erase_list_part_i386,
   .get_partition_typename=get_partition_typename_i386,
-  .get_part_type=get_part_type_i386
+  .is_part_known=is_part_known_i386
 };
 
 static uint64_t C_H_S2offset(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
@@ -478,7 +478,6 @@ static void test_MBR_data(list_part_t *list_part)
 static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader)
 {
   list_part_t *element;
-  int res=0;
   partition_t *partition_main_ext=NULL;
   for(element=list_part;element!=NULL;element=element->next)
   {
@@ -557,13 +556,11 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
 	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
-	      res=1;
 	    }
 	    {
 	      if((new_partition->part_offset<=partition_main_ext->part_offset) ||
 		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
 	      {	/* Must be IN partition_main_ext */
-		res=1;
 		screen_buffer_add("Must be in extended partition\n");
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
@@ -578,7 +575,6 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 		    if(((partition->part_offset>=new_partition->part_offset) && (partition->part_offset<=new_partition->part_offset+new_partition->part_size-1)) ||
 			((partition->part_offset+partition->part_size-1>=new_partition->part_offset) && (partition->part_offset+partition->part_size-1<=new_partition->part_offset+partition->part_size-1)))
 		    { /* New Partition start or end mustn't been in partition */
-		      res=1;
 		      screen_buffer_add( "Logical partition must be in its own extended partition\n");
 		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
@@ -598,13 +594,11 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
 	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
-	      res=1;
 	    }
 	    {
 	      if((new_partition->part_offset<=partition_main_ext->part_offset) ||
 		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
 	      {	/* Must be IN partition_main_ext */
-		res=1;
 		screen_buffer_add( msg_SAME_SPACE);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
 		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
@@ -1453,17 +1447,9 @@ static int is_part_known_i386(const partition_t *partition)
 
 static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, const int verbose)
 {
-  /* Reconstruit une structure 
-   * nbr_prim nombre de partition primaire
-   * end_log_block : partition etendu du block etendu
-   * nbr_log_block : nombre de block de partition etendu
-   *                    devrait etre 0 ou 1 */
   unsigned int nbr_prim=0, nbr_log_block=0;
   unsigned int vista_partition=0;
-  unsigned int log_block_size=0,biggest_log_block_size=0;
   list_part_t *element;
-  list_part_t *end_log_block=NULL;
-  list_part_t *end_biggest_log_block=NULL;
   list_part_t *new_list_part=NULL;
   /* Create new list */
   for(element=list_part;element!=NULL;element=element->next)
@@ -1492,62 +1478,70 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
       new_list_part=insert_new_partition(new_list_part,element->part, 0, &insert_error);
     }
   }
-  /* Verify */
-  for(element=new_list_part;element!=NULL;element=element->next)
-  {
-    if(can_be_ext(disk_car,element->part)==0)
-    {
-      nbr_prim++;
-      if((end_log_block!=NULL) && (end_log_block->next==element))
-      {
-	if(log_block_size>biggest_log_block_size)
-	{
-	  biggest_log_block_size=log_block_size;
-	  end_biggest_log_block=end_log_block;
-	}
-	nbr_log_block++;
-	end_log_block=NULL;
-      }
-    }
-    else
-    {
-      log_block_size++;
-      end_log_block=element;
-    }
-  }
-  /* Verification */
-  if((end_log_block!=NULL) && (end_log_block->next==NULL))
-  {
-    if(log_block_size>biggest_log_block_size)
-    {
-      biggest_log_block_size=log_block_size;
-      end_biggest_log_block=end_log_block;
-    }
-    nbr_log_block++;
-  }
-  if(verbose>1)
-    log_info("\nRes: nbr_prim %u, nbr_log_block %u, vista_partition=%u\n", nbr_prim, nbr_log_block, vista_partition);
+
 /* Set primary, extended, logical */
-  if(vista_partition==0 && nbr_prim+nbr_log_block<=4)
+  if(vista_partition==0)
   {
-    int set_prim_bootable_done=0;
-    for(element=end_biggest_log_block;element!=NULL && can_be_ext(disk_car,element->part);element=element->prev)
-    {
-      element->part->status=STATUS_LOG;
-    }
+    /* log_block_size must be 0 or 1 for a valid partition table */
+    unsigned int log_block_size=0;
+    unsigned int biggest_log_block_size=0;
+    list_part_t *end_log_block=NULL;
+    list_part_t *end_biggest_log_block=NULL;
+    /* Verify */
     for(element=new_list_part;element!=NULL;element=element->next)
     {
-      if(element->part->status!=STATUS_LOG)
+      if(can_be_ext(disk_car,element->part)==0)
       {
-	/* The first primary partition is bootable unless it's a swap */
-	if(set_prim_bootable_done==0 &&
-	    element->part->upart_type!=UP_LINSWAP && element->part->upart_type!=UP_LVM && element->part->upart_type!=UP_LVM2)
+	nbr_prim++;
+	if((end_log_block!=NULL) && (end_log_block->next==element))
 	{
-	  element->part->status=STATUS_PRIM_BOOT;
-	  set_prim_bootable_done=1;
+	  if(log_block_size>biggest_log_block_size)
+	  {
+	    biggest_log_block_size=log_block_size;
+	    end_biggest_log_block=end_log_block;
+	  }
+	  nbr_log_block++;
+	  end_log_block=NULL;
 	}
-	else
-	  element->part->status=STATUS_PRIM;
+      }
+      else
+      {
+	log_block_size++;
+	end_log_block=element;
+      }
+    }
+    /* Verification */
+    if((end_log_block!=NULL) && (end_log_block->next==NULL))
+    {
+      if(log_block_size>biggest_log_block_size)
+      {
+	end_biggest_log_block=end_log_block;
+      }
+      nbr_log_block++;
+    }
+    if(verbose>1)
+      log_info("\nRes: nbr_prim %u, nbr_log_block %u, vista_partition=%u\n", nbr_prim, nbr_log_block, vista_partition);
+    if(nbr_prim+nbr_log_block<=4)
+    {
+      int set_prim_bootable_done=0;
+      for(element=end_biggest_log_block;element!=NULL && can_be_ext(disk_car,element->part);element=element->prev)
+      {
+	element->part->status=STATUS_LOG;
+      }
+      for(element=new_list_part;element!=NULL;element=element->next)
+      {
+	if(element->part->status!=STATUS_LOG)
+	{
+	  /* The first primary partition is bootable unless it's a swap */
+	  if(set_prim_bootable_done==0 &&
+	      element->part->upart_type!=UP_LINSWAP && element->part->upart_type!=UP_LVM && element->part->upart_type!=UP_LVM2)
+	  {
+	    element->part->status=STATUS_PRIM_BOOT;
+	    set_prim_bootable_done=1;
+	  }
+	  else
+	    element->part->status=STATUS_PRIM;
+	}
       }
     }
   }

@@ -451,7 +451,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
           {
             if((nb_subdir_ok>nb_subdir*0.90)&&(nb_subdir>=3))
             {
-              unsigned long int new_root_cluster=root_cluster;
+              unsigned long int new_root_cluster;
               unsigned long int tmp=root_cluster;
               int back=0;	/* To avoid an endless loop... */
               /* Il faut ajouter un parcours arriere de la FAT 
@@ -1770,7 +1770,6 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
 static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsigned int nbr_offset,unsigned int*reserved, unsigned int*fat_length, const unsigned long int max_sector_offset, unsigned int *fats)
 {
   unsigned int i;
-  int reserved_can_be_one=0;
   unsigned long int fat2_location=*reserved+*fat_length;
   struct MenuItem menuSelectFAT[]=
   {
@@ -1786,10 +1785,6 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
   {
     if(nbr_offset<30 || info_offset[i].nbr>1)
       screen_buffer_add(" %02d %8lu   %u\n",info_offset[i].fat_type,info_offset[i].offset,info_offset[i].nbr);
-    if(info_offset[i].fat_type<32)
-    {
-      reserved_can_be_one=1;
-    }
   }
   aff_copy(stdscr);
   wmove(stdscr,4,0);

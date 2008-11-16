@@ -545,7 +545,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           { /* Search Linux software RAID */
             if(disk_car->read(disk_car,8*DEFAULT_SECTOR_SIZE, buffer_disk, search_location)!=0)
             {
-              res=-1;
+              res = -1;
             }
             else
             {
@@ -641,7 +641,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                 }
                 else
                 {
-                  res=-1;
+                  res = -1;
                 }
               }
             }
@@ -722,7 +722,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             { /* Detect Linux md 0.9 software raid */
               unsigned int disk_factor;
               unsigned int help_factor;
+#if 0
               unsigned int help_factor_max;
+#endif
               const int align=2;
               CHS_t end;
               offset2CHS_inline(disk_car,partition->part_offset+partition->part_size-1,&end);
@@ -732,10 +734,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                 if(align>1)
                   end.head=disk_car->geom.heads_per_cylinder-1;
               }
+#if 0
               help_factor_max=((uint64_t)CHS2offset_inline(disk_car, &end)-partition->part_offset+disk_car->sector_size-partition->part_size)/MD_RESERVED_BYTES;
               if(help_factor_max<3)
                 help_factor_max=3;
               help_factor_max+=MD_MAX_CHUNK_SIZE/MD_RESERVED_BYTES;
+#endif
               for(disk_factor=6;disk_factor>=1 && ind_stop==0;disk_factor--)
               { /* disk_factor=1, detect Raid 0/1 */
                 /* disk_factor>1, detect Raid 5 */

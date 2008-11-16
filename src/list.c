@@ -2,7 +2,7 @@
 
     File: list.c
 
-    Copyright (C) 2006-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include "types.h"
 #include "common.h"
 #include "list.h"
-#include "log.h"
 
 void list_truncate(alloc_list_t *list, const uint64_t file_size)
 {

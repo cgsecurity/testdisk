@@ -83,7 +83,7 @@ static int interface_check_hidden_ncurses(disk_t *disk)
   }
   if(disk->native_max < disk->dco)
   {
-    wmove(stdscr,line++,0);
+    wmove(stdscr,line,0);
     wprintw(stdscr, "Device Configuration Overlay (DCO) present.\n");
   }
   car= wmenuSelect_ext(stdscr, 23, INTER_DISK_Y, INTER_DISK_X, menuHidden, 10,

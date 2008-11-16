@@ -138,20 +138,22 @@ static int file_read(dal_t *dal, void *buff, blk_t block, blk_t count) {
 
 static int file_write(dal_t *dal, void *buff, blk_t block, blk_t count)
 {
-  uint64_t off, blocklen;
   if (!dal || !buff)
     return 0;
-#ifdef HAVE_DAL_T_BLOCK_SIZE
-  off = (uint64_t)block * (uint64_t)dal->block_size;
-  blocklen = (uint64_t)count * (uint64_t)dal->block_size;
-#else
-  off = (uint64_t)block * (uint64_t)dal->blocksize;
-  blocklen = (uint64_t)count * (uint64_t)dal->blocksize;
-#endif
 #ifdef ENABLE_REISERFS_WRITE
-  if(my_data->disk_car->write(my_data->disk_car,blocklen,buff,my_data->partition->part_offset+off))
-    return 0;
-  return 1;
+  {
+    uint64_t off, blocklen;
+#ifdef HAVE_DAL_T_BLOCK_SIZE
+    off = (uint64_t)block * (uint64_t)dal->block_size;
+    blocklen = (uint64_t)count * (uint64_t)dal->block_size;
+#else
+    off = (uint64_t)block * (uint64_t)dal->blocksize;
+    blocklen = (uint64_t)count * (uint64_t)dal->blocksize;
+#endif
+    if(my_data->disk_car->write(my_data->disk_car,blocklen,buff,my_data->partition->part_offset+off))
+      return 0;
+    return 1;
+  }
 #else
   log_info("reiser file_write not implemented\n");
   return 0;

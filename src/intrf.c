@@ -235,7 +235,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   if(partition->partname[0]!='\0')
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->partname);
   if(partition->fsname[0]!='\0')
-    pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->fsname);
+    snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->fsname);
   return msg;
 }
 
@@ -1195,8 +1195,10 @@ static char *filename_to_directory(const char *filename)
   buf[sizeof(buf)-1]='\0';
 #endif
   res=dirname(buf);
+  if(res==NULL)
+    return NULL;
 #ifdef HAVE_GETCWD
-  if(res!=NULL && strcmp(res,".")==0 && getcwd(buf, sizeof(buf)-1)!=NULL)
+  if(strcmp(res,".")==0 && getcwd(buf, sizeof(buf)-1)!=NULL)
   {
     buf[sizeof(buf)-1]='\0';
     res=buf;

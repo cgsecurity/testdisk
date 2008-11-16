@@ -53,8 +53,7 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
       partition->part_offset+(uint64_t)(start_data*sector_size));
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
-    unsigned int offset_s,offset_o;
-    offset_s=prev_cluster/(sector_size/2);
+    unsigned int offset_o;
     offset_o=prev_cluster%(sector_size/2);
     if((offset_o==0)||(prev_cluster==2))
     {
@@ -97,8 +96,7 @@ static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partitio
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
     unsigned long int cluster;
-    unsigned int offset_s,offset_o;
-    offset_s=prev_cluster/(sector_size/4);
+    unsigned int offset_o;
     offset_o=prev_cluster%(sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {

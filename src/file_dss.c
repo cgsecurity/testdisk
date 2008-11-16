@@ -84,7 +84,7 @@ static int header_check_dss(const unsigned char *buffer, const unsigned int buff
     tm_time.tm_year=(date_asc[0]-'0')*10+(date_asc[1]-'0');        	/* year */
     if(tm_time.tm_year<80)
       tm_time.tm_year+=100;	/* year 2000 - 2079 */
-    tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+    tm_time.tm_isdst = -1;	/* unknown daylight saving time */
     file_recovery_new->time=mktime(&tm_time);
     return 1;
   }

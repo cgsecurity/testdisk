@@ -134,12 +134,12 @@ arch_fnct_t arch_none=
   .set_prev_status=set_next_status_none,
   .set_next_status=set_next_status_none,
   .test_structure=test_structure_none,
+  .get_part_type=get_part_type_none,
   .set_part_type=set_part_type_none,
-  .is_part_known=is_part_known_none,
   .init_structure=init_structure_none,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_none,
-  .get_part_type=get_part_type_none
+  .is_part_known=is_part_known_none
 };
 
 unsigned int get_part_type_none(const partition_t *partition)

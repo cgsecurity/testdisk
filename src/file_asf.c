@@ -41,7 +41,6 @@ const file_hint_t file_hint_asf= {
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-  .enable_by_default=1,
   .register_header_check=&register_header_check_asf
 };
 

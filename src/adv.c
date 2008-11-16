@@ -241,7 +241,6 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     if(element!=NULL)
       wprintw(stdscr, "Next");
 #endif
-    menu=0;
     if(current_element==NULL)
     {
       options="q";
@@ -464,7 +463,6 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'C':
 	  {
 	    char *image_dd;
-	    menu=0;
 	    if(*current_cmd!=NULL)
 	      image_dd=get_default_location();
 	    else

@@ -80,12 +80,12 @@ arch_fnct_t arch_xbox=
   .set_prev_status=set_next_status_xbox,
   .set_next_status=set_next_status_xbox,
   .test_structure=test_structure_xbox,
+  .get_part_type=get_part_type_xbox,
   .set_part_type=set_part_type_xbox,
-  .is_part_known=is_part_known_xbox,
   .init_structure=init_structure_xbox,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_xbox,
-  .get_part_type=get_part_type_xbox
+  .is_part_known=is_part_known_xbox
 };
 
 static unsigned int get_part_type_xbox(const partition_t *partition)

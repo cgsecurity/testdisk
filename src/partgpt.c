@@ -138,12 +138,12 @@ arch_fnct_t arch_gpt=
   .set_prev_status=set_next_status_gpt,
   .set_next_status=set_next_status_gpt,
   .test_structure=test_structure_gpt,
+  .get_part_type=NULL,
   .set_part_type=NULL,
-  .is_part_known=is_part_known_gpt,
   .init_structure=init_structure_gpt,
   .erase_list_part=NULL,
   .get_partition_typename=get_partition_typename_gpt,
-  .get_part_type=NULL
+  .is_part_known=&is_part_known_gpt
 };
 
 static void swap_uuid_and_efi_guid(efi_guid_t *guid)

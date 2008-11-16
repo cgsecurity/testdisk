@@ -84,7 +84,7 @@ static int header_check_sp3(const unsigned char *buffer, const unsigned int buff
     tm_time.tm_mday=h->DataExameDia-1;
     tm_time.tm_mon=h->DataExameMes-1;
     tm_time.tm_year=le16(h->DataExameAno)-1900;
-    tm_time.tm_isdst=-1;       /* unknown daylight saving time */
+    tm_time.tm_isdst = -1;	/* unknown daylight saving time */
     file_recovery_new->time= mktime(&tm_time);
     filesize=td_max(filesize, file_offset_end(le32(h->TimeBaseDelta_POS), le32(h->TimeBaseDelta_LEN)));
     filesize=td_max(filesize, file_offset_end(le32(h->ExtraInfoFlag_POS), le32(h->ExtraInfoFlag_LEN)));
