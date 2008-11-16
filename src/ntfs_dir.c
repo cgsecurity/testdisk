@@ -358,8 +358,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       block_size = index_get_size(inode);
     else
       block_size = 0;
-    new_file=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
-    f_out=create_file(new_file);
+    f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
     if(!f_out)
     {
       log_critical("Can't create file %s: %s\n",new_file, strerror(errno));

@@ -78,9 +78,12 @@ void delete_list_file_info(struct td_list_head *list);
 int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);
 void mode_string (const unsigned int mode, char *str);
-FILE *create_file(const char *filename);
 int set_date(const char *pathname, time_t actime, time_t modtime);
 int set_mode(const char *pathname, unsigned int mode);
+FILE *fopen_local(char **localfilename, const char *localroot, const char *filename);
+char *gen_local_filename(const char *filename);
+char *mkdir_local(const char *localroot, const char *pathname);
+void mkdir_local_for_file(const char *filename);
 
 #define LINUX_S_IFMT  00170000
 #define LINUX_S_IFSOCK 0140000

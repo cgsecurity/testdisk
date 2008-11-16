@@ -178,11 +178,17 @@ static errcode_t my_read_blk(io_channel channel, unsigned long block, int count,
 
 static errcode_t my_write_blk(io_channel channel, unsigned long block, int count, const void *buf)
 {
-  my_data_t *my_data=(my_data_t*)channel;
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
-/* if(my_data->disk_car->write(my_data->disk_car,count*channel->block_size,buf,my_data->partition->part_offset+(uint64_t)block*channel->block_size))!=0) */
-    return 1;
-/* return 0; */
+#if 1
+  {
+    my_data_t *my_data=(my_data_t*)channel;
+    if(my_data->disk_car->write(my_data->disk_car,count*channel->block_size,buf,my_data->partition->part_offset+(uint64_t)block*channel->block_size)!=0)
+      return 1;
+    return 0;
+  }
+#else
+  return 1;
+#endif
 }
 
 static errcode_t my_flush(io_channel channel)
@@ -283,8 +289,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   FILE *f_out;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *)dir_data->private_dir_data;
   char *new_file;
-  new_file=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
-  f_out=create_file(new_file);
+  f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
   if(!f_out)
   {
     log_critical("Can't create file %s: %s\n", new_file, strerror(errno));
@@ -317,7 +322,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       if (retval)
       {
 	log_error("Error while reading ext2 file %s\n", dir_data->current_directory);
-	error=-3;
+	error = -3;
       }
       if (got == 0)
 	break;
@@ -325,14 +330,14 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       if ((unsigned) nbytes != got)
       {
 	log_error("Error while writing file %s\n", new_file);
-      error=-5;
+      error = -5;
       }
     }
     retval = ext2fs_file_close(e2_file);
     if (retval)
     {
       log_error("Error while closing ext2 file\n");
-      error=-6;
+      error = -6;
     }
     fclose(f_out);
     set_date(new_file, file->stat.st_atime, file->stat.st_mtime);

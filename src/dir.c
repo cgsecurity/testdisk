@@ -39,6 +39,7 @@
 #ifdef HAVE_UTIME_H
 #include <utime.h>
 #endif
+#include <errno.h>
 #include "common.h"
 #include "fat.h"
 #include "lang.h"
@@ -175,7 +176,6 @@ int dir_aff_log(const disk_t *disk, const partition_t *partition, const dir_data
   }
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
-    struct tm		*tm_p;
     char		datestr[80];
     char str[11];
     if((current_file->status&FILE_STATUS_DELETED)!=0)
@@ -184,6 +184,7 @@ int dir_aff_log(const disk_t *disk, const partition_t *partition, const dir_data
       log_info(" ");
     if(current_file->stat.st_mtime)
     {
+      struct tm		*tm_p;
       tm_p = localtime(&current_file->stat.st_mtime);
 
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
@@ -191,7 +192,7 @@ int dir_aff_log(const disk_t *disk, const partition_t *partition, const dir_data
 	  1900 + tm_p->tm_year, tm_p->tm_hour,
 	  tm_p->tm_min);
       /* FIXME: a check using current_file->name will be better */
-      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2010)
+      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2012)
       {
 	test_date=1;
       }
@@ -230,7 +231,6 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
   td_list_for_each(tmp, &list->list)
   {
     file_info_t *current_file;
-    struct tm		*tm_p;
     char		datestr[80];
     char str[11];
     current_file=td_list_entry(tmp, file_info_t, list);
@@ -240,6 +240,7 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
       log_info(" ");
     if(current_file->stat.st_mtime)
     {
+      struct tm		*tm_p;
       tm_p = localtime(&current_file->stat.st_mtime);
 
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
@@ -247,7 +248,7 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
 	  1900 + tm_p->tm_year, tm_p->tm_hour,
 	  tm_p->tm_min);
       /* FIXME: a check using current_file->name will be better */
-      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2010)
+      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2012)
       {
 	test_date=1;
       }
@@ -295,7 +296,6 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
       for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
       for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
       {
-	struct tm		*tm_p;
 	char str[11];
 	char		datestr[80];
 	wmove(window, 6+i-offset, 0);
@@ -306,6 +306,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  wbkgdset(window,' ' | COLOR_PAIR(1));
 	if(current_file->stat.st_mtime!=0)
 	{
+	  struct tm		*tm_p;
 	  tm_p = localtime(&current_file->stat.st_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
@@ -624,7 +625,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
 	  new_inode_ok=0;
       if(new_inode_ok>0)
       {
-	new_inode=dir_partition_aux(disk, partition, dir_data, (unsigned long int)new_inode, depth+1, current_cmd);
+	dir_partition_aux(disk, partition, dir_data, (unsigned long int)new_inode, depth+1, current_cmd);
       }
     }
     /* restore current_directory name */
@@ -702,8 +703,7 @@ static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_
   int copy_ok=0;
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
     return -2;
-  dir_name=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
-  create_dir(dir_name,1);
+  dir_name=mkdir_local(dir_data->local_dir, dir_data->current_directory);
   dir_list=dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->stat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
@@ -741,18 +741,6 @@ static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_
   set_date(dir_name, dir->stat.st_atime, dir->stat.st_mtime);
   free(dir_name);
   return (copy_bad>0?(copy_ok>0?-1:-2):0);
-}
-
-FILE *create_file(const char *filename)
-{
-  FILE *f_out;
-  f_out=fopen(filename,"wb");
-  if(!f_out)
-  {
-    create_dir(filename,0);
-    f_out=fopen(filename,"wb");
-  }
-  return f_out;
 }
 
 /**
@@ -869,4 +857,325 @@ int set_mode(const char *pathname, unsigned int mode)
 #else
   return 0;
 #endif
+}
+
+#ifdef DJGPP
+static inline unsigned char convert_char_dos(unsigned char car)
+{
+  if(car<0x20)
+    return '_';
+  switch(car)
+  {
+    /* Forbidden */
+    case '<':
+    case '>':
+    case ':':
+    case '"':
+    /* case '/': subdirectory */
+    case '\\':
+    case '|':
+    case '?':
+    case '*':
+    /* Not recommanded */
+    case '[':
+    case ']':
+    case ';':
+    case ',':
+    case '+':
+    case '=':
+      return '_';
+  }
+  /* 'a' */
+  if(car>=224 && car<=230)      
+    return 'a';
+  /* 'c' */
+  if(car==231)
+    return 'c';
+  /* 'e' */
+  if(car>=232 && car<=235)
+    return 'e';
+  /* 'i' */
+  if(car>=236 && car<=239)
+    return 'n';
+  /* n */
+  if(car==241)
+    return 'n';
+  /* 'o' */
+  if((car>=242 && car<=246) || car==248)
+    return 'o';
+  /* 'u' */
+  if(car>=249 && car<=252)
+    return 'u';
+  /* 'y' */
+  if(car>=253)
+    return 'y';
+  return car;
+}
+
+/*
+ * filename_convert reads a maximum of n and writes a maximum of n+1 bytes
+ * dst string will be null-terminated
+ */
+static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i;
+  for(i=0;i<n && src[i]!='\0';i++)
+    dst[i]=convert_char_dos(src[i]);
+  while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
+    i--;
+  if(i==0 && (dst[i]==' '||dst[i]=='.'))
+    dst[i++]='_';
+  dst[i]='\0';
+  return i;
+}
+#elif defined(__CYGWIN__) || defined(__MINGW32__)
+static inline unsigned char convert_char_win(unsigned char car)
+{
+  if(car<0x20)
+    return '_';
+  switch(car)
+  {
+    /* Forbidden */
+    case '<':
+    case '>':
+    case ':':
+    case '"':
+    /* case '/': subdirectory */
+    case '\\':
+    case '|':
+    case '?':
+    case '*':
+    /* Not recommanded, valid for NTFS, invalid for FAT */
+    case '[':
+    case ']':
+    case '+':
+    /* Not recommanded */
+    case ';':
+    case ',':
+    case '=':
+      return '_';
+  }
+  return car;
+}
+
+static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i;
+  for(i=0;i<n && src[i]!='\0';i++)
+    dst[i]=convert_char_win(src[i]);
+  while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
+    i--;
+  if(i==0 && (dst[i]==' '||dst[i]=='.'))
+    dst[i++]='_';
+  dst[i]='\0';
+  return i;
+}
+#elif defined(__APPLE__)
+static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i,j;
+  const unsigned char *p; 	/* pointers to actual position in source buffer */
+  unsigned char *q;	/* pointers to actual position in destination buffer */
+  p=(const unsigned char *)src;
+  q=(unsigned char *)dst;
+  for(i=0,j=0; (*p)!='\0' && i<n; i++)
+  {
+    if((*p & 0x80)==0x00)
+    {
+      *q++=*p++;
+      j++;
+    }
+    else if((*p & 0xe0)==0xc0 && (*(p+1) & 0xc0)==0x80)
+    {
+      *q++=*p++;
+      *q++=*p++;
+      j+=2;
+    }
+    else if((*p & 0xf0)==0xe0 && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
+    {
+      *q++=*p++;
+      *q++=*p++;
+      *q++=*p++;
+      j+=3;
+    }
+    else
+    {
+      *q++='_';
+      p++;
+      j++;
+    }
+  }
+  *q='\0';
+  return j;
+}
+#else
+static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
+{
+  unsigned int i;
+  for(i=0;i<n && src[i]!='\0';i++)
+    dst[i]=src[i];
+  dst[i]='\0';
+  return i;
+}
+#endif
+
+char *gen_local_filename(const char *filename)
+{
+  int l=strlen(filename);
+  char *dst=(char *)MALLOC(l+1);
+  filename_convert(dst, filename, l);
+#if defined(DJGPP) || defined(__CYGWIN__) || defined(__MINGW32__)
+  if(filename[0]!='\0' && filename[1]==':')
+    dst[1]=':';
+#endif
+  return dst;
+}
+
+char *mkdir_local(const char *localroot, const char *pathname)
+{
+  const int l1=(localroot==NULL?0:strlen(localroot));
+  const int l2=strlen(pathname);
+  char *localdir=(char *)MALLOC(l1+l2+1);
+  const char *src;
+  char *dst;
+  if(localroot!=NULL)
+    memcpy(localdir, localroot, l1);
+  memcpy(localdir+l1, pathname, l2+1);
+#ifdef HAVE_MKDIR
+#ifdef __MINGW32__
+  if(mkdir(localdir)>=0 || errno==EEXIST)
+    return localdir;
+#else
+  if(mkdir(localdir, 0775)>=0 || errno==EEXIST)
+    return localdir;
+#endif
+  /* Need to create the parent and maybe convert the pathname */
+  if(localroot!=NULL)
+    memcpy(localdir, localroot, l1);
+  localdir[l1]='\0';
+  src=pathname;
+  dst=localdir+l1;
+  while(*src!='\0')
+  {
+    unsigned int n=0;
+    unsigned int l;
+    const char *src_org=src;
+    char *dst_org=dst;
+    for(n=0;
+	*src!='\0' && (n==0 || *src!='/');
+	dst++, src++, n++)
+      *dst=*src;
+    *dst='\0';
+#ifdef __MINGW32__
+    if(mkdir(localdir)<0 && errno==EINVAL)
+    {
+      l=filename_convert(dst_org, src_org, n);
+      dst=dst_org+l;
+      mkdir(localdir);
+    }
+#elif defined(__CYGWIN__)
+    if(memcmp(&localdir[1],":/cygdrive",11)!=0 &&
+	mkdir(localdir, 0775)<0 && errno==EINVAL)
+    {
+      l=filename_convert(dst_org, src_org, n);
+      dst=dst_org+l;
+      mkdir(localdir, 0775);
+    }
+#else
+    if(mkdir(localdir, 0775)<0 && errno==EINVAL)
+    {
+      l=filename_convert(dst_org, src_org, n);
+      dst=dst_org+l;
+      mkdir(localdir, 0775);
+    }
+#endif
+  }
+#else
+#warning You need a mkdir function!
+#endif
+  return localdir;
+}
+
+void mkdir_local_for_file(const char *filename)
+{
+  char *dir=strdup(filename);
+  char *sep=NULL;
+  char *oldsep;
+  do
+  {
+    oldsep=sep;
+    sep=strchr(dir,'/');
+  } while(sep!=NULL);
+  if(oldsep!=NULL)
+  {
+    *oldsep='\0';
+    free(mkdir_local(NULL, dir));
+  }
+  free(dir);
+}
+
+FILE *fopen_local(char **localfilename, const char *localroot, const char *filename)
+{
+  const int l1=strlen(localroot);
+  const int l2=strlen(filename);
+  const char *src;
+  char *dst=(char *)MALLOC(l1+l2+1);
+  const char *src_org=filename;
+  char *dst_org=dst;
+  FILE *f_out;
+  memcpy(dst, localroot, l1);
+  memcpy(dst+l1, filename, l2+1);
+  *localfilename=dst;
+  f_out=fopen(dst,"wb");
+  if(f_out)
+    return f_out;
+  /* Need to create the parent and maybe convert the pathname */
+  src=filename;
+  memcpy(dst, localroot, l1+1);
+  dst+=l1;
+  while(*src!='\0')
+  {
+    unsigned int n;
+    src_org=src;
+    dst_org=dst;
+    for(n=0;
+	*src!='\0' && (n==0 || *src!='/');
+	dst++, src++, n++)
+      *dst=*src;
+    *dst='\0';
+    if(*src!='\0')
+    {
+#ifdef __MINGW32__
+      if(mkdir(*localfilename)<0 && errno==EINVAL)
+      {
+	unsigned int l;
+	l=filename_convert(dst_org, src_org, n);
+	dst=dst_org+l;
+	mkdir(*localfilename);
+      }
+#elif defined(__CYGWIN__)
+      if(memcmp(&localfilename[1],":/cygdrive",11)!=0 &&
+	  mkdir(*localfilename, 0775)<0 && errno==EINVAL)
+      {
+	unsigned int l;
+	l=filename_convert(dst_org, src_org, n);
+	dst=dst_org+l;
+	mkdir(*localfilename, 0775);
+      }
+#else
+      if(mkdir(*localfilename, 0775)<0 && errno==EINVAL)
+      {
+	unsigned int l;
+	l=filename_convert(dst_org, src_org, n);
+	dst=dst_org+l;
+	mkdir(*localfilename, 0775);
+      }
+#endif
+    }
+  }
+  f_out=fopen(*localfilename,"wb");
+  if(f_out)
+    return f_out;
+  filename_convert(dst_org, src_org, l2);
+  return fopen(*localfilename,"wb");
 }

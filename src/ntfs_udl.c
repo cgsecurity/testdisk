@@ -761,13 +761,13 @@ static int create_pathname(const char *dir, const char *dir2, const char *name,
   char *namel;
   if (name==NULL)
     name = UNKNOWN;
-  namel=gen_local_filename(name, NULL);
+  namel=gen_local_filename(name);
   if(dir2)
   {
-    char *dir2l=gen_local_filename(dir2, NULL);
+    char *dir2l=gen_local_filename(dir2);
     if (stream)
     {
-      char *streaml=gen_local_filename(stream, NULL);
+      char *streaml=gen_local_filename(stream);
       snprintf(buffer, bufsize, "%s/%s/%s:%s", dir, dir2l, namel, streaml);
       free(streaml);
     }
@@ -779,7 +779,7 @@ static int create_pathname(const char *dir, const char *dir2, const char *name,
   {
     if (stream)
     {
-      char *streaml=gen_local_filename(stream, NULL);
+      char *streaml=gen_local_filename(stream);
       snprintf(buffer, bufsize, "%s/%s:%s", dir, namel, streaml);
       free(streaml);
     }
@@ -803,7 +803,11 @@ static int create_pathname(const char *dir, const char *dir2, const char *name,
  */
 static int open_file(const char *pathname)
 {
-  create_dir(pathname, 0);
+  int fh;
+  fh=open(pathname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  if(fh>=0 || errno!=ENOENT)
+    return fh;
+  mkdir_local_for_file(pathname);
   return open(pathname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 }
 
@@ -831,7 +835,6 @@ static int open_file(const char *pathname)
  */
 static int undelete_file(ntfs_volume *vol, long long inode)
 {
-	char pathname[256];
 	char *buffer = NULL;
 	unsigned int bufsize;
 	struct ufile *file;
@@ -881,6 +884,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 	}
 
 	td_list_for_each(item, &file->data) {
+	  char pathname[256];
 		struct data *d = td_list_entry(item, struct data, list);
 
 		name = file->pref_name;

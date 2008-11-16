@@ -153,50 +153,51 @@ ParseLongDeletedNext:
     unsigned int i;
     const struct msdos_dir_slot *ds;
     unsigned char id;
-    unsigned char slot;
-    unsigned char slots;
     unsigned char sum;
     unsigned char alias_checksum;
 ParseLong:
-    slots = 0;
     ds = (const struct msdos_dir_slot *) de;
     id = ds->id;
     if ((id & 0x40)==0)
       goto RecEnd;
-    slots = id & ~0x40;
-    if (slots > 20 || slots==0)	/* ceil(256 * 2 / 26) */
-      goto RecEnd;
-    long_slots = slots;
-    alias_checksum = ds->alias_checksum;
+    {
+      unsigned char slots;
+      unsigned char slot;
+      slots = id & ~0x40;
+      if (slots > 20 || slots==0)	/* ceil(256 * 2 / 26) */
+	goto RecEnd;
+      long_slots = slots;
+      alias_checksum = ds->alias_checksum;
 
-    slot = slots;
-    while (1) {
-      int offset;
+      slot = slots;
+      while (1) {
+	int offset;
 
-      slot--;
-      offset = slot * 13;
-      fat16_towchar(unicode + offset, ds->name0_4, 5);
-      fat16_towchar(unicode + offset + 5, ds->name5_10, 6);
-      fat16_towchar(unicode + offset + 11, ds->name11_12, 2);
+	slot--;
+	offset = slot * 13;
+	fat16_towchar(unicode + offset, ds->name0_4, 5);
+	fat16_towchar(unicode + offset + 5, ds->name5_10, 6);
+	fat16_towchar(unicode + offset + 11, ds->name11_12, 2);
 
-      if ((ds->id & 0x40)!=0) {
-	unicode[offset + 13] = 0;
+	if ((ds->id & 0x40)!=0) {
+	  unicode[offset + 13] = 0;
+	}
+	de++;
+	if((const void*)de>=(const void*)(buffer+size))
+	  goto EODir;
+	if (slot == 0)
+	  break;
+	ds = (const struct msdos_dir_slot *) de;
+	if (ds->attr !=  ATTR_EXT)
+	{
+	  long_slots=0;
+	  goto RecEnd;	/* XXX */
+	}
+	if ((ds->id & ~0x40) != slot)
+	  goto ParseLong;
+	if (ds->alias_checksum != alias_checksum)
+	  goto ParseLong;
       }
-      de++;
-      if((const void*)de>=(const void*)(buffer+size))
-	goto EODir;
-      if (slot == 0)
-	break;
-      ds = (const struct msdos_dir_slot *) de;
-      if (ds->attr !=  ATTR_EXT)
-      {
-	long_slots=0;
-	goto RecEnd;	/* XXX */
-      }
-      if ((ds->id & ~0x40) != slot)
-	goto ParseLong;
-      if (ds->alias_checksum != alias_checksum)
-	goto ParseLong;
     }
     if (de->attr ==  ATTR_EXT)
       goto ParseLong;
@@ -530,8 +531,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
   uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length;
-  new_file=gen_local_filename(dir_data->local_dir, dir_data->current_directory);
-  f_out=create_file(new_file);
+  f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
   if(!f_out)
   {
     log_critical("Can't create file %s: \n",new_file);
