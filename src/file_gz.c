@@ -92,7 +92,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     if((flags&GZ_FEXTRA)!=0)
     {
       off+=2;
-      off=+buffer[10]|(buffer[11]<<8);
+      off+=buffer[10]|(buffer[11]<<8);
     }
     if((flags&GZ_FNAME)!=0)
     {
