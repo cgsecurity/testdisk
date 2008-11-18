@@ -76,9 +76,9 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
       old_part=partition;
     }
     if(partition->blocksize!=0)
-      screen_buffer_add("superblock %lu, blocksize=%u\n",
+      screen_buffer_add("superblock %lu, blocksize=%u [%s]\n",
           (long unsigned)(partition->sb_offset/partition->blocksize),
-          partition->blocksize);
+          partition->blocksize, partition->fsname);
   }
   screen_buffer_to_log();
   if(*current_cmd==NULL)
