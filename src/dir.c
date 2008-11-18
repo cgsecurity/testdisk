@@ -478,7 +478,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  case 'c':
 	    if(dir_data->copy_file!=NULL)
 	    {
-	      unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+	      const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
 	      if(strcmp(pos->name,"..")!=0 &&
 		  current_directory_namelength+1+strlen(pos->name)<sizeof(dir_data->current_directory)-1)
 	      {
@@ -488,13 +488,12 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		  strcat(dir_data->current_directory,pos->name);
 		if(dir_data->local_dir==NULL)
 		{
-		  char *res;
 		  if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
-		    res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",dir_data->current_directory);
+		    dir_data->local_dir=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
+			dir_data->current_directory);
 		  else
-		    res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",dir_data->current_directory);
-		  // free(dir_data->local_dir);
-		  dir_data->local_dir=res;
+		    dir_data->local_dir=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",
+			dir_data->current_directory);
 		}
 		if(dir_data->local_dir!=NULL)
 		{
