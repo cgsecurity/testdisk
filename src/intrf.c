@@ -206,6 +206,11 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
       case STATUS_DELETED:        status='D'; break;
       default:			  status=' '; break;
     }
+    /* Don't marked as D(eleted) an entry that is not a partition */
+    if((newline&AFF_PART_ORDER)==AFF_PART_ORDER &&
+      partition->order==NO_ORDER &&
+      partition->status==STATUS_DELETED)
+      status=' ';
   }
   pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%c", status);
   if(arch->get_partition_typename(partition)!=NULL)
