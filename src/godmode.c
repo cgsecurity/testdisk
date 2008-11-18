@@ -393,8 +393,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   list_part_t *list_part_bad=NULL;
   partition_t *partition;
   /* It's not a problem to read a little bit more than necessary */
-  const uint64_t search_location_max=td_max(disk_car->disk_size +
-      disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size,
+  const uint64_t search_location_max=td_max((disk_car->disk_size /
+      ((uint64_t) disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size) + 1 ) *
+      ((uint64_t) disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size),
       disk_car->disk_real_size);
   const uint64_t max_disk_size_for_partition=td_max(disk_car->disk_size,
       (uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size);
