@@ -113,6 +113,7 @@ extern const file_hint_t file_hint_amr;
 extern const file_hint_t file_hint_arj;
 extern const file_hint_t file_hint_asf;
 extern const file_hint_t file_hint_asm;
+extern const file_hint_t file_hint_atd;
 extern const file_hint_t file_hint_au;
 extern const file_hint_t file_hint_bkf;
 extern const file_hint_t file_hint_blend;
@@ -838,6 +839,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_arj  },
     { .enable=0, .file_hint=&file_hint_asf  },
     { .enable=0, .file_hint=&file_hint_asm  },
+    { .enable=0, .file_hint=&file_hint_atd  },
     { .enable=0, .file_hint=&file_hint_au   },
     { .enable=0, .file_hint=&file_hint_bkf  },
     { .enable=0, .file_hint=&file_hint_blend },
