@@ -156,6 +156,7 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
         (unsigned long long)((*current_search_space)->end/512));
     log_flush();
     bug();
+    log_close();
     exit(1);
   }
 #endif
@@ -971,7 +972,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
           (unsigned long long)(offset/disk_car->sector_size),
           (unsigned long long)(current_search_space->start/disk_car->sector_size),
           (unsigned long long)(current_search_space->end/disk_car->sector_size));
-      log_flush();
+      log_close();
       exit(1);
     }
 #endif

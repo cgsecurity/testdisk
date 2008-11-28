@@ -56,6 +56,7 @@ void *MALLOC(size_t size)
   if(size<=0)
   {
     log_critical("Try to allocate 0 byte of memory\n");
+    log_close();
     exit(EXIT_FAILURE);
   }
 #if defined(HAVE_POSIX_MEMALIGN)
@@ -74,6 +75,7 @@ void *MALLOC(size_t size)
   if((res=malloc(size))==NULL)
   {
     log_critical("\nCan't allocate %lu bytes of memory.\n", (long unsigned)size);
+    log_close();
     exit(EXIT_FAILURE);
   }
   memset(res,0,size);

@@ -1103,6 +1103,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       break;
     default:
       log_critical("create_fat_boot_sector: severe error\n");
+      log_close();
       exit(1);
   }
   if(part_size>partition->part_size/disk_car->sector_size)
@@ -1217,6 +1218,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       break;
     default:
       log_critical("create_fat_boot_sector: severe error\n");
+      log_close();
       exit(1);
   }
   if(memcmp(newboot,orgboot,1*DEFAULT_SECTOR_SIZE))	/* Only compare the first sector */

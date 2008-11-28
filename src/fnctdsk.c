@@ -215,6 +215,7 @@ int check_list_part(list_part_t *list_part)
   if((list_part!=NULL) && (list_part->prev!=NULL))
   {
     log_critical("\ncheck_list_part error: list_part->prev!=NULL\n");
+    log_close();
     exit(EXIT_FAILURE);
   }
   log_trace("check_list_part\n");
@@ -224,6 +225,7 @@ int check_list_part(list_part_t *list_part)
     if(prev!=parts->prev)
     {
       log_critical("\ncheck_list_part error: prev!=parts->prev\n");
+      log_close();
       exit(EXIT_FAILURE);
     }
     prev=parts;
@@ -231,6 +233,7 @@ int check_list_part(list_part_t *list_part)
   if((prev!=NULL) && (prev->next!=NULL))
   {
     log_critical("\ncheck_list_part error: prev->next!=NULL\n");
+    log_close();
     exit(EXIT_FAILURE);
   }
   return 0;
