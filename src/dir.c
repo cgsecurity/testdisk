@@ -550,15 +550,18 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 }
 #endif
 
-void delete_list_file(file_data_t *file_list)
+unsigned int delete_list_file(file_data_t *file_list)
 {
+  int nbr=0;
   file_data_t *current_file=file_list;
   while(current_file!=NULL)
   {
     file_data_t *next=current_file->next;
     free(current_file);
     current_file=next;
+    nbr++;
   }
+  return nbr;
 }
 
 void delete_list_file_info(struct td_list_head *list)

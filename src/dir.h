@@ -73,7 +73,7 @@ typedef struct
 
 int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list);
 int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
-void delete_list_file(file_data_t *file_list);
+unsigned int delete_list_file(file_data_t *file_list);
 void delete_list_file_info(struct td_list_head *list);
 int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);

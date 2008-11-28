@@ -56,7 +56,6 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   unsigned char *buffer_mftmirr;
   unsigned int cluster_size;
   unsigned int mft_record_size;
-  unsigned int mftmirr_size;
   unsigned int mftmirr_size_bytes;
   unsigned int use_MFT=0;
   /* 0: do nothing
@@ -86,15 +85,10 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 
   cluster_size=ntfs_header->sectors_per_cluster;
 
-  if (cluster_size <= 4 * mft_record_size)
-    mftmirr_size = 4;
-  else
-    mftmirr_size = cluster_size / mft_record_size;
-  mftmirr_size_bytes=mftmirr_size * mft_record_size * ntfs_sector_size(ntfs_header);
+  mftmirr_size_bytes = (cluster_size <= 4 * mft_record_size ? 4 * mft_record_size : cluster_size) * ntfs_sector_size(ntfs_header);
 #ifdef DEBUG_REPAIR_MFT
   log_debug("mft_pos %lu\n",(unsigned long)(mft_pos/disk_car->sector_size));
   log_debug("mftmirr_pos %lu\n",(unsigned long)(mftmirr_pos/disk_car->sector_size));
-  log_debug("mftmirr_size %u\n", mftmirr_size);
   log_debug("cluster_size %u\n", cluster_size);
   log_debug("mft_record_size    %u\n", mft_record_size);
   log_debug("ntfs_sector_size   %u\n", ntfs_sector_size(ntfs_header));
@@ -181,8 +175,8 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
       {
 	log_info("NTFS listing using MFT:\n");
 	dir_aff_log(disk_car, partition, &dir_data, dir_list);
-	delete_list_file(dir_list);
-	res1++;
+	if(delete_list_file(dir_list)>2)
+	  res1++;
       }
       dir_data.close(&dir_data);
     }
@@ -198,8 +192,8 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
       {
 	log_info("NTFS listing using MFT mirror:\n");
 	dir_aff_log(disk_car, partition, &dir_data, dir_list);
-	delete_list_file(dir_list);
-	res2++;
+	if(delete_list_file(dir_list)>2)
+	  res2++;
       }
       dir_data.close(&dir_data);
     }
