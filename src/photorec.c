@@ -171,6 +171,7 @@ extern const file_hint_t file_hint_iso;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
+extern const file_hint_t file_hint_logic;
 extern const file_hint_t file_hint_lnk;
 extern const file_hint_t file_hint_m2ts;
 extern const file_hint_t file_hint_max;
@@ -225,6 +226,7 @@ extern const file_hint_t file_hint_sit;
 extern const file_hint_t file_hint_skp;
 extern const file_hint_t file_hint_sp3;
 extern const file_hint_t file_hint_spe;
+extern const file_hint_t file_hint_spf;
 extern const file_hint_t file_hint_spss;
 extern const file_hint_t file_hint_sqlite;
 extern const file_hint_t file_hint_sqm;
@@ -896,6 +898,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_itunes  },
     { .enable=0, .file_hint=&file_hint_jpg  },
     { .enable=0, .file_hint=&file_hint_kdb  },
+    { .enable=0, .file_hint=&file_hint_logic},
     { .enable=0, .file_hint=&file_hint_lnk  },
     { .enable=0, .file_hint=&file_hint_m2ts },
     { .enable=0, .file_hint=&file_hint_max  },
@@ -950,6 +953,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_skp  },
     { .enable=0, .file_hint=&file_hint_sp3  },
     { .enable=0, .file_hint=&file_hint_spe  },
+    { .enable=0, .file_hint=&file_hint_spf  },
     { .enable=0, .file_hint=&file_hint_spss },
     { .enable=0, .file_hint=&file_hint_sqlite	},
     { .enable=0, .file_hint=&file_hint_sqm  },
