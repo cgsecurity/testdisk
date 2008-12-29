@@ -91,6 +91,9 @@ int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,c
   /* Check for valid blocksize */
   if(be32(hfs_mdb->drAlBlkSiz)%512!=0 || be32(hfs_mdb->drAlBlkSiz)==0)
     return 1;
+  /* Check for valid number of allocation blocks */
+  if(be16(hfs_mdb->drNmAlBlks)==0)
+    return 1;
   /* Check for coherent block numbers */
   if(be16(hfs_mdb->drFreeBks) > be16(hfs_mdb->drNmAlBlks))
     return 1;
