@@ -101,7 +101,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  unsigned int tiff_size=2+(buffer[i+2]<<8)+buffer[i+3]-0x0A;
 	  if(buffer_size - (i+0x0A) < tiff_size)
 	    tiff_size=buffer_size - (i+0x0A);
-	  file_recovery_new->time=get_date_from_tiff_header((const struct tiff_entry *)&buffer[i+0x0A], tiff_size);
+	  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
 	i+=2+(buffer[i+2]<<8)+buffer[i+3];
       }

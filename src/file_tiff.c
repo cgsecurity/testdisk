@@ -352,7 +352,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	  {
 	    unsigned int j;
 	    uint32_t *subifd_offsetp;
-	    subifd_offsetp=(uint32_t *)malloc(nbr*sizeof(*subifd_offsetp));
+	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
 	    if(fseek(in, le32(entry->tdir_offset), SEEK_SET) < 0)
 	      return -1;
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
@@ -474,7 +474,7 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
 	  {
 	    unsigned int j;
 	    uint32_t *subifd_offsetp;
-	    subifd_offsetp=(uint32_t *)malloc(nbr*sizeof(*subifd_offsetp));
+	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
 	    if(fseek(in, be32(entry->tdir_offset), SEEK_SET) < 0)
 	      return -1;
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)

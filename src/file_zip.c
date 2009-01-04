@@ -562,11 +562,11 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
        file_recovery_new->extension="odt";
      else if(memcmp(&buffer[30],"[Content_Types].xml",19)==0)
      {
-       if(pos_in_mem(&buffer[0],2000,"word",4)!=0)
+       if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"word", 4)!=0)
          file_recovery_new->extension="docx";
-       else if(pos_in_mem(&buffer[0],2000,"xl",2)!=0)
+       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl", 2)!=0)
          file_recovery_new->extension="xlsx";
-       else if(pos_in_mem(&buffer[0],2000,"ppt",3)!=0)
+       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"ppt", 3)!=0)
          file_recovery_new->extension="pptx";
        else
          file_recovery_new->extension="docx";

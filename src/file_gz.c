@@ -118,7 +118,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       d_stream.zfree = (free_func)0;
       d_stream.opaque = (voidpf)0;
 
-      d_stream.next_in  = buffer_compr;
+      d_stream.next_in  = (Bytef*)buffer_compr;
       d_stream.avail_in = 0;
       d_stream.next_out = buffer_uncompr;
 

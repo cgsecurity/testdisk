@@ -592,7 +592,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     buffer_lower_size=buffer_size_test+16;
     buffer_lower=(char *)MALLOC(buffer_lower_size);
   }
-  l=UTF2Lat(buffer_lower,buffer,buffer_size_test);
+  l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
   /* strncasecmp */
   if(memcmp(buffer_lower,header_bat,sizeof(header_bat))==0)
   {
@@ -621,9 +621,9 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   if(buffer[0]=='#' && buffer[1]=='!')
   {
     unsigned int ll=l-2;
-    const unsigned char *haystack=buffer_lower+2;
+    const unsigned char *haystack=(const unsigned char *)buffer_lower+2;
     const unsigned char *res;
-    res=memchr(haystack,'\n',ll);
+    res=(const unsigned char *)memchr(haystack,'\n',ll);
     if(res!=NULL)
       ll=res-haystack;
     if(td_memmem(haystack, ll, header_sig_perl, sizeof(header_sig_perl)) != NULL)
@@ -822,7 +822,7 @@ static int data_check_txt(const unsigned char *buffer, const unsigned int buffer
 {
   unsigned int i;
   char *buffer_lower=(char *)MALLOC(buffer_size+16);
-  i=UTF2Lat(buffer_lower,&buffer[buffer_size/2],buffer_size/2);
+  i=UTF2Lat((unsigned char*)buffer_lower, &buffer[buffer_size/2], buffer_size/2);
   if(i<buffer_size/2)
   {
     const char sign_html_end[]	= "</html>";

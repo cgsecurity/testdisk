@@ -318,11 +318,11 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
       /* FIXME */
       if(file_recovery->calculated_file_size + 5100 >= file_recovery->file_size + buffer_size/2)
 	return 1;
-      if((pos_lyrics=pos_in_mem(&buffer[i],4096,"LYRICS200",9)) != 0)
+      if((pos_lyrics=pos_in_mem(&buffer[i], 4096, (const unsigned char*)"LYRICS200", 9)) != 0)
       {
 	file_recovery->calculated_file_size+=pos_lyrics;
       }
-      else if((pos_lyrics=pos_in_mem(&buffer[i],5100,"LYRICSEND",9)) != 0)
+      else if((pos_lyrics=pos_in_mem(&buffer[i], 5100, (const unsigned char*)"LYRICSEND", 9)) != 0)
       {
 	file_recovery->calculated_file_size+=pos_lyrics;
       }

@@ -1840,7 +1840,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
   }
   *reserved=0;
   *fat_length=0;
-  return 0;
+  return UP_UNK;
 }
 #endif
 

@@ -146,7 +146,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	char *res;
 	(*current_cmd)+=6;
 	if(recup_dir!=NULL)
-	  res=recup_dir;
+	  res=(char *)recup_dir;
 	else
 	{
 	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
@@ -359,7 +359,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	    ask_mode_ext2(disk_car, partition, &mode_ext2, &carve_free_space_only);
 	    menu=0;
 	    if(recup_dir!=NULL)
-	      res=recup_dir;
+	      res=(char *)recup_dir;
 	    else
 	    {
 	      res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");

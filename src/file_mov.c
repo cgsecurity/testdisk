@@ -49,21 +49,21 @@ const file_hint_t file_hint_mov= {
 
 static void register_header_check_mov(file_stat_t *file_stat)
 {
-  register_header_check(4, "cmov",4, &header_check_mov, file_stat);
-  register_header_check(4, "cmvd",4, &header_check_mov, file_stat);
-  register_header_check(4, "dcom",4, &header_check_mov, file_stat);
-  register_header_check(4, "free",4, &header_check_mov, file_stat);
-  register_header_check(4, "ftyp",4, &header_check_mov, file_stat);
-  register_header_check(4, "jp2h",4, &header_check_mov, file_stat);
-  register_header_check(4, "mdat",4, &header_check_mov, file_stat);
-  register_header_check(4, "mdia",4, &header_check_mov, file_stat);
-  register_header_check(4, "moov",4, &header_check_mov, file_stat);
-  register_header_check(4, "PICT",4, &header_check_mov, file_stat);
-  register_header_check(4, "pnot",4, &header_check_mov, file_stat);
-  register_header_check(4, "skip",4, &header_check_mov, file_stat);
-  register_header_check(4, "stbl",4, &header_check_mov, file_stat);
-  register_header_check(4, "trak",4, &header_check_mov, file_stat);
-  register_header_check(4, "wide",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"cmov",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"cmvd",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"dcom",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"free",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"ftyp",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"jp2h",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"mdat",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"mdia",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"moov",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"PICT",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"pnot",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"skip",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"stbl",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"trak",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"wide",4, &header_check_mov, file_stat);
 }
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

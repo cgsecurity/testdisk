@@ -65,7 +65,7 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="ai";
     else
       file_recovery_new->extension=file_hint_pdf.extension;
-    if((linearized=td_memmem(buffer, 512, sig_linearized,sizeof(sig_linearized))) != NULL)
+    if((linearized=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
     {
       linearized+=sizeof(sig_linearized);
       while(*linearized!='>' && linearized<=buffer+512)

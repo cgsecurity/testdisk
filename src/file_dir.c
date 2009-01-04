@@ -43,7 +43,7 @@ const file_hint_t file_hint_dir= {
   .register_header_check=&register_header_check_dir
 };
 
-static const unsigned char *dir_header=".          ";
+static const unsigned char *dir_header=(const unsigned char *)".          ";
 
 static void register_header_check_dir(file_stat_t *file_stat)
 {
