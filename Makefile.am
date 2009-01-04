@@ -25,7 +25,7 @@ uninstall-hook:
 
 static:
 	rm -f src/testdisk src/photorec src/testdisk.exe src/photorec.exe
-	$(MAKE) LDFLAGS="$(LDFLAGS) -static"
+	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)"
 
 smallstatic:
 	$(MAKE) static

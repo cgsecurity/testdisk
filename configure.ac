@@ -3,7 +3,8 @@
 
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.11-WIP],[grenier@cgsecurity.org])
-TESTDISKDATE="November 2008"
+sinclude(acx_pthread.m4)
+TESTDISKDATE="January 2009"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -175,7 +176,7 @@ AC_ARG_WITH(sudo-bin,
     [SUDO_BIN="${withval}"])
 
 AC_ARG_ENABLE([missing-uuid-ok],
-    AS_HELP_STRING(--enable-missing-uuid-ok, force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)),
+    AS_HELP_STRING(--enable-missing-uuid-ok, [force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)]),
     [case "${enableval}" in
        yes) missing_uuid_ok=true ;;
        no)  missing_uuid_ok=false ;;
@@ -218,15 +219,17 @@ AM_CONDITIONAL(USEICON, test "$use_icon" = yes)
 
 # Checks for programs.
 AC_PROG_CC
+#AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 AC_ARG_VAR(WINDRES, [Windows Resource compiler tool path])
-AC_PATH_TOOL(WINDRES,windres,
-	[AC_MSG_WARN(Could not find a windres tool in your PATH.)]
-	)
+AC_PATH_TOOL(WINDRES,windres,)
 AC_SUBST(WINDRES)
+if test -z "$WINDRES"; then
+  AC_MSG_WARN(Could not find a windres tool in your PATH.)
+fi
 
 # Enable large file support.
 AC_SYS_LARGEFILE
@@ -547,7 +550,7 @@ AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
 if test "${found_uuid_function}" = "no";
 then
   found_uuid_function=yes
-  AC_CHECK_LIB(uuid, uuid_create, , [found_uuid_function=no])
+  AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
   if test "${found_uuid_function}" = "yes";
   then
     AC_CHECK_FUNCS([uuid_create])
@@ -557,7 +560,7 @@ fi
 if test "${found_uuid_function}" = "no";
 then
   found_uuid_function=yes
-  AC_CHECK_LIB(uuid, uuid_generate, ,[ found_uuid_function=no ])
+  AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
   if test "${found_uuid_function}" = "yes";
   then
     AC_CHECK_FUNCS([uuid_generate])
@@ -649,6 +652,13 @@ LIBS="$OLDLIBS $testdisk_LDADD -ldal"
 AC_CHECK_FUNCS([reiserfs_fs_open_fast])
 LIBS="$OLDLIBS"
 AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
+
+# e2fsprogs may be using pthread
+# checks for pthreads
+SAVE_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -static"
+ACX_PTHREAD([enable_threads="pthread"],[enable_threads="no"])
+CFLAGS="$SAVE_CFLAGS"
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
