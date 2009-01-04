@@ -110,6 +110,7 @@ extern const file_hint_t file_hint_all;
 extern const file_hint_t file_hint_als;
 extern const file_hint_t file_hint_amd;
 extern const file_hint_t file_hint_amr;
+extern const file_hint_t file_hint_ape;
 extern const file_hint_t file_hint_arj;
 extern const file_hint_t file_hint_asf;
 extern const file_hint_t file_hint_asm;
@@ -179,6 +180,7 @@ extern const file_hint_t file_hint_mb;
 extern const file_hint_t file_hint_mcd;
 extern const file_hint_t file_hint_mdb;
 extern const file_hint_t file_hint_mdf;
+extern const file_hint_t file_hint_mfa;
 extern const file_hint_t file_hint_mfg;
 extern const file_hint_t file_hint_mid;
 extern const file_hint_t file_hint_mkv;
@@ -838,6 +840,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_als  },
     { .enable=0, .file_hint=&file_hint_amd  },
     { .enable=0, .file_hint=&file_hint_amr  },
+    { .enable=0, .file_hint=&file_hint_ape  },
     { .enable=0, .file_hint=&file_hint_arj  },
     { .enable=0, .file_hint=&file_hint_asf  },
     { .enable=0, .file_hint=&file_hint_asm  },
@@ -906,6 +909,7 @@ int main( int argc, char **argv )
     { .enable=0, .file_hint=&file_hint_mcd  },
     { .enable=0, .file_hint=&file_hint_mdb  },
     { .enable=0, .file_hint=&file_hint_mdf  },
+    { .enable=0, .file_hint=&file_hint_mfa  },
     { .enable=0, .file_hint=&file_hint_mfg  },
     { .enable=0, .file_hint=&file_hint_mid  },
     { .enable=0, .file_hint=&file_hint_mkv  },
