@@ -202,11 +202,11 @@ static int list_dir_proc2(ext2_ino_t dir,
 			 int	offset,
 			 int	blocksize,
 			 char	*buf,
-			 void	*private)
+			 void	*privateinfo)
 {
   struct ext2_inode	inode;
   ext2_ino_t		ino;
-  struct ext2_dir_struct *ls = (struct ext2_dir_struct *) private;
+  struct ext2_dir_struct *ls = (struct ext2_dir_struct *) privateinfo;
   file_data_t *new_file;
   if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
     return 0;

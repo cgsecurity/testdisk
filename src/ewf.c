@@ -249,7 +249,7 @@ static int fewf_nowrite(disk_t *disk_car,const unsigned int count, const void *n
 const char*td_ewf_version(void)
 {
 #ifdef LIBEWF_VERSION_STRING
-  return LIBEWF_VERSION_STRING;
+  return (const char*)LIBEWF_VERSION_STRING;
 #elif defined(LIBEWF_VERSION)
   return LIBEWF_VERSION;
 #else

@@ -121,7 +121,7 @@ int main(int argc, char **argv)
       printf("posix_memalign failed\n");
       return 1;
     }
-    buffer=res;
+    buffer=(char*)res;
   }
   if(1==2)
   {
