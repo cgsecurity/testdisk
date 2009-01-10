@@ -85,47 +85,41 @@ int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partiti
 
 int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if (vh->signature==be16(HFSP_VOLHEAD_SIG) && be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks))
+  if (!(be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks)))
+    return 1;
+  /* http://developer.apple.com/technotes/tn/tn1150.html */
+  if (be16(vh->version)==4 && vh->signature==be16(HFSP_VOLHEAD_SIG))
   {
+    partition->upart_type=UP_HFSP;
     if(verbose>0 || dump_ind!=0)
     {
       log_info("\nHFS+ magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
     }
-    if(dump_ind!=0)
-    {
-      /* There is a little offset ... */
-      dump_log(vh,DEFAULT_SECTOR_SIZE);
-    }
-    if(verbose>1)
-    {
-      log_info("blocksize %u\n",(unsigned) be32(vh->blocksize));
-      log_info("total_blocks %u\n",(unsigned) be32(vh->total_blocks));
-      log_info("free_blocks  %u\n",(unsigned) be32(vh->free_blocks));
-    }
-    partition->upart_type=UP_HFSP;
-    return 0;
   }
-  if (vh->signature==be16(HFSX_VOLHEAD_SIG) && be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks))
+  else if (be16(vh->version)==5 && vh->signature==be16(HFSX_VOLHEAD_SIG))
   {
+    partition->upart_type=UP_HFSX;
     if(verbose>0 || dump_ind!=0)
     {
       log_info("\nHFSX magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
     }
-    if(dump_ind!=0)
-    {
-      /* There is a little offset ... */
-      dump_log(vh,DEFAULT_SECTOR_SIZE);
-    }
-    if(verbose>1)
-    {
-      log_info("blocksize %u\n",(unsigned) be32(vh->blocksize));
-      log_info("total_blocks %u\n",(unsigned) be32(vh->total_blocks));
-      log_info("free_blocks  %u\n",(unsigned) be32(vh->free_blocks));
-    }
-    partition->upart_type=UP_HFSX;
-    return 0;
   }
-  return 1;
+  else
+  {
+    return 1;
+  }
+  if(dump_ind!=0)
+  {
+    /* There is a little offset ... */
+    dump_log(vh,DEFAULT_SECTOR_SIZE);
+  }
+  if(verbose>1)
+  {
+    log_info("blocksize %u\n",(unsigned) be32(vh->blocksize));
+    log_info("total_blocks %u\n",(unsigned) be32(vh->total_blocks));
+    log_info("free_blocks  %u\n",(unsigned) be32(vh->free_blocks));
+  }
+  return 0;
 }
 
 static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh)

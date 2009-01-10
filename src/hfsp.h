@@ -25,6 +25,10 @@
  */   
 #ifndef _HFSP_H
 #define _HFSP_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define HFSP_BOOT_SECTOR_SIZE 512
 #define HFSP_BLOCKSZ            512	/* A sector for Apple is always 512 bytes */
 #define HFSP_BLOCKSZ_BITS       9	/* 1<<9 == 512  */
@@ -77,7 +81,7 @@ typedef struct {
  */
 typedef struct hfsp_vh {
         uint16_t         signature;   // must be HFSPLUS_VOLHEAD_SIG 'H+'
-        uint16_t         version;     // currently 4, ignored 
+        uint16_t         version;     // 4 for HFS+, 5 for HFSX
         uint32_t         attributes;  // See bit constants below
         uint32_t         last_mount_vers;
                 // Use a registered creator code here (See libhfsp.h)
@@ -148,4 +152,7 @@ int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose);
 int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind);
 int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind, const int backup);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif
