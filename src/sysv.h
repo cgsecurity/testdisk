@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SYSV4_SUPERBLOCK_SIZE 512
 
@@ -200,3 +203,6 @@ struct coh_super_block {
 int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_sysv(disk_t *disk_car, const struct sysv4_super_block *sbd, partition_t *partition,const int verbose, const int dump_ind);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

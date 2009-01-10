@@ -26,6 +26,9 @@
 
 #ifndef _MD_P_H
 #define _MD_P_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * RAID superblock.
@@ -251,5 +254,8 @@ static inline uint64_t md_event(mdp_super_t *sb) {
 int check_MD(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind);
 int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const int verbose);
-#endif 
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif 

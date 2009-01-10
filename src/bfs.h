@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* real size is 164 */
 #define BFS_SUPERBLOCK_SIZE 512
@@ -81,3 +84,7 @@ typedef struct disk_super_block          /* super block as it is on disk */
 /* int test_beos(struct disk_super_block *,partition_t); */
 int check_BeFS(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block,partition_t *partition,const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

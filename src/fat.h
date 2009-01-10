@@ -22,6 +22,10 @@
 
 #ifndef _FAT_H
 #define _FAT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FAT1X_PART_NAME 0x2B
 #define FAT32_PART_NAME 0x47
 #define FAT_NAME1       0x36
@@ -144,7 +148,6 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
 #define FAT16_EOC	0xFFF8
 #define FAT32_BAD	0x0FFFFFF7
 #define FAT32_EOC	0x0FFFFFF8
-#endif
 #define FAT1x_BOOT_SECTOR_SIZE 0x200
 
 int recover_FAT(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup);
@@ -155,3 +158,8 @@ int check_HPFS(disk_t *disk_car,partition_t *partition, const int verbose);
 int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
 int check_OS2MB(disk_t *disk_car,partition_t *partition, const int verbose);
 int check_VFAT_volume_name(const char *name, const unsigned int max_size);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

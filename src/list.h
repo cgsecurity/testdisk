@@ -370,5 +370,13 @@ struct alloc_list_s
   unsigned int data;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void list_truncate(alloc_list_t *list, const uint64_t file_size);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

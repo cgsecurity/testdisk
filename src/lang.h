@@ -65,5 +65,13 @@
 #define msg_MBR_ORDER_BAD "Partitions order: Bad"
 #define msg_NO_EXT_PART   "No extended partition\n"
 #define msg_ROOT_CLUSTER_RERR	"\nroot_cluster: read error"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const unsigned char *partition_type(const unsigned char type, const struct systypes *parttype_name_table);
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 

@@ -20,6 +20,10 @@
  */   
 #ifndef _HFS_H
 #define _HFS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* HFS superblock size is 162 */
 #define HFS_SUPERBLOCK_SIZE 512
 #define HFS_SUPER_MAGIC           0x4244 /* "BD": HFS MDB (super block) */
@@ -75,4 +79,7 @@ int check_HFS(disk_t *disk_car,partition_t *partition,const int verbose);
 int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind);
 int recover_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind, const int backup);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif /* _HFS_H */

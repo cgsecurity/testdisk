@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
   unsigned char info[128];   /* Informative text string */
@@ -77,3 +80,6 @@ typedef struct struct_sun_partition_i386 sun_partition_i386;
 int recover_sun_i386(disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition,const int verbose, const int dump_ind);
 int check_sun_i386(disk_t *disk_car,partition_t *partition,const int verbose);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

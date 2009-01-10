@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct disk_netware
 {
@@ -31,3 +34,7 @@ typedef struct disk_netware
 
 int check_netware(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_netware(disk_t *disk_car, const struct disk_netware *netware_block, partition_t *partition);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

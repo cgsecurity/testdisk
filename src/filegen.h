@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "list.h"
 
 #if defined(DJGPP)
@@ -108,10 +112,11 @@ typedef struct
   file_check_t file_checks[256];
 } file_check_list_t;
 
-void free_header_check(void);
 #define NL_BARENL       (1 << 0)
 #define NL_CRLF         (1 << 1)
 #define NL_BARECR       (1 << 2)
+
+void free_header_check(void);
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
@@ -125,4 +130,6 @@ void register_header_check(const unsigned int offset, const unsigned char *value
   file_stat_t *file_stat);
 void index_header_check(void);
 
-
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

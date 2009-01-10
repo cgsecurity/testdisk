@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct info_disk_struct
 {
   unsigned int disk;
@@ -30,3 +34,6 @@ struct info_disk_struct
 disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode);
 const char *disk_description(disk_t *disk_car);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

@@ -23,6 +23,9 @@
 
 #ifndef _BSD_H
 #define _BSD_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* BSD_DISKLABEL_SIZE is 276 */
 #define BSD_DISKLABEL_SIZE 512
 #define STANDALONE
@@ -167,5 +170,7 @@ struct disklabel {
 #define TST_FS_JFS2         21              /* IBM JFS2 */
 int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose,const unsigned int max_partitions);
 int recover_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind);
-
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

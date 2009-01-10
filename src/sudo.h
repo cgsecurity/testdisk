@@ -20,5 +20,11 @@
 
  */
 #ifdef SUDO_BIN
+#ifdef __cplusplus
+extern "C" {
+#endif
 void run_sudo(int argc, char **argv);
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

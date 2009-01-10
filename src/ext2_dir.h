@@ -19,6 +19,13 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 const char*td_ext2fs_version(void);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

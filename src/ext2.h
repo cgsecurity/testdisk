@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EXT2_SUPERBLOCK_SIZE 1024
 
 #define EXT2_SB(sb)     (sb)
@@ -149,3 +153,7 @@ struct ext2_super_block {
 };
 int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 /* real size is 76 */
 #define CRAMFS_SUPERBLOCK_SIZE 512
 #define CRAMFS_MAGIC		0x28cd3d45	/* some random number */
@@ -81,3 +84,7 @@ struct cramfs_super {
 
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

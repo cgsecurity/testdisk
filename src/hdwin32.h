@@ -21,7 +21,15 @@
  */
 #ifndef _HDWIN32_H
 #define _HDWIN32_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose);
+#endif
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
 #endif
 #endif

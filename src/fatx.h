@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct disk_fatx
 {
@@ -31,3 +34,7 @@ struct disk_fatx
 
 int check_FATX(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_FATX(disk_t *disk_car, const struct disk_fatx *fatx_block, partition_t *partition, const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

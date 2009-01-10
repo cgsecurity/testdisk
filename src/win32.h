@@ -21,10 +21,16 @@
  */
 #ifndef _WIN32_H
 #define _WIN32_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
 unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const int verbose);
 uint64_t disk_get_size_win32(HANDLE handle, const char *device, const int verbose);
 void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *device, const int verbose);
+#endif
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
 #endif
 #endif

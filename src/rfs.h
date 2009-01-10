@@ -20,7 +20,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define REISERFS_SUPER_MAGIC		"ReIsErFs"
 #define REISERFS2_SUPER_MAGIC		"ReIsEr2Fs"
@@ -107,3 +109,6 @@ struct format40_super {
 int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

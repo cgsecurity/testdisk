@@ -21,6 +21,9 @@
 
 #ifndef _LVM_H
 #define _LVM_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * structs & defines gathered from LVM 0.7/0.9 lvm.h and liblvm.h
@@ -118,4 +121,7 @@ struct lvm2_pv_header {
 int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partition,const int verbose, const int dump_ind);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif /* _LVM_H */

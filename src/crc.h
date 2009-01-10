@@ -20,6 +20,9 @@
 
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -33,3 +36,6 @@ unsigned int get_crc32_gen(const unsigned char *s, const unsigned int len, const
 #endif
 unsigned int get_crc32(const void *s, const unsigned int len, const uint32_t seed);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

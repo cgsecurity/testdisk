@@ -27,6 +27,9 @@
  * Fits into a sector-sized buffer at address 0 of each allocation group.
  * Only the first of these is ever updated except during growfs.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define XFS_SUPERBLOCK_SIZE	512
 
@@ -106,3 +109,6 @@ struct xfs_sb
 int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

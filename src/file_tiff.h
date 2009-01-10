@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TIFF_BIGENDIAN          	0x4d4d
 #define TIFF_LITTLEENDIAN       	0x4949
 #define TIFFTAG_IMAGEDESCRIPTION        270     /* info about image */
@@ -54,3 +58,6 @@ struct ifd_header {
 
 time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

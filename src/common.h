@@ -21,6 +21,10 @@
  */
 #ifndef _COMMON_H
 #define _COMMON_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct efi_guid_s efi_guid_t;
 struct efi_guid_s
 {
@@ -442,4 +446,8 @@ int strncasecmp(const char * s1, const char * s2, size_t len);
         typeof(y) _y = (y);     \
         (void) (&_x == &_y);            \
         _x > _y ? _x : _y; })
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

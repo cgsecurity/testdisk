@@ -20,5 +20,13 @@
 
  */
 #ifdef HAVE_NCURSES
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

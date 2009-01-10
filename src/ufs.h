@@ -21,6 +21,9 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ufs superblock size is 1377 but there is room for 8192 */
 #define UFS_SUPERBLOCK_SIZE 2048
@@ -468,3 +471,6 @@ struct ufs_super_block {
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

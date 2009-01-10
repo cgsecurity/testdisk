@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define PAGE_SIZE 0x1000        /* PAGE de 4K pour P_LINSWAP */
 #define SWAP_SIZE PAGE_SIZE
@@ -43,3 +46,7 @@ union swap_header {
 
 int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

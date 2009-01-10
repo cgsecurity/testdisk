@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S);
 uint64_t CHS2offset(const disk_t *disk_car,const CHS_t*CHS);
 unsigned int offset2sector(const disk_t *disk_car, const uint64_t offset);
@@ -41,3 +45,6 @@ int delete_list_disk(list_disk_t *list_disk);
 const char *size_to_unit(uint64_t disk_size, char *buffer);
 int is_part_overlapping(const list_part_t *list_part);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

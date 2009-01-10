@@ -20,6 +20,10 @@
 
     LUKS on-disk-format: http://luks.endorphin.org/spec
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LUKS_CIPHERNAME_L	32
 #define LUKS_CIPHERMODE_L	32
 #define LUKS_HASHSPEC_L		32
@@ -54,3 +58,7 @@ struct luks_phdr {
 
 int check_LUKS(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

@@ -19,6 +19,13 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
 int str2UCSle(uint16_t *to, const char *from, const unsigned int len);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

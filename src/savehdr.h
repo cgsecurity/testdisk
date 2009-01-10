@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "list.h"
 typedef struct backup_disk backup_disk_t;
 struct backup_disk
@@ -33,3 +37,6 @@ int save_header(disk_t *disk_car,partition_t *partition, const int verbose);
 int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose);
 backup_disk_t *partition_load(const disk_t *disk_car, const int verbose);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
