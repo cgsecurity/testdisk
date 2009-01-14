@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -38,7 +39,6 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
-#include "intrfn.h"
 #include "chgtype.h"
 #include "partmac.h"
 #include "savehdr.h"
@@ -57,9 +57,7 @@ static int check_part_mac(disk_t *disk_car, const int verbose,partition_t *parti
 static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int saveheader);
 static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
 static list_part_t *init_part_order_mac(const disk_t *disk_car, list_part_t *list_part);
-static list_part_t *add_partition_mac(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 static void set_next_status_mac(const disk_t *disk_car, partition_t *partition);
-static int test_structure_mac(list_part_t *list_part);
 static int set_part_type_mac(partition_t *partition, unsigned int part_type_mac);
 static int is_part_known_mac(const partition_t *partition);
 static void init_structure_mac(const disk_t *disk_car,list_part_t *list_part, const int verbose);
@@ -98,7 +96,6 @@ arch_fnct_t arch_mac=
   .get_geometry_from_mbr=NULL,
   .check_part=check_part_mac,
   .write_MBR_code=NULL,
-  .add_partition=add_partition_mac,
   .set_prev_status=set_next_status_mac,
   .set_next_status=set_next_status_mac,
   .test_structure=test_structure_mac,
@@ -205,41 +202,11 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
   return new_list_part;
 }
 
-#ifdef HAVE_NCURSES
-static void write_part_mac_warning_ncurses(void)
-{
-  /* not_implemented("write_part_mac"); */
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
-  aff_copy(window);
-  wmove(window,7,0);
-  wprintw(window,"Function write_part_mac not implemented");
-  log_warning("Function write_part_mac not implemented\n");
-  wmove(window,8,0);
-  wprintw(window,"Use pdisk to recreate the missing partition");
-  wmove(window,9,0);
-  wprintw(window,"using values displayed by TestDisk");
-  wmove(window,22,0);
-  wattrset(window, A_REVERSE);
-  wprintw(window,"[ Abort ]");
-  wattroff(window, A_REVERSE);
-  wrefresh(window);
-  while(wgetch(window)==ERR);
-  delwin(window);
-  (void) clearok(stdscr, TRUE);
-#ifdef HAVE_TOUCHWIN
-  touchwin(stdscr);
-#endif
-}
-#endif
-
 static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
-{ /* TODO: Implement it */
+{
+  /* TODO: Implement it */
   if(ro==0)
-  {
-#ifdef HAVE_NCURSES
-    write_part_mac_warning_ncurses();
-#endif
-  }
+    return -1;
   return 0;
 }
 
@@ -248,7 +215,7 @@ static list_part_t *init_part_order_mac(const disk_t *disk_car, list_part_t *lis
   return list_part;
 }
 
-static list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
   partition_t *new_partition=partition_new(&arch_mac);
   new_partition->part_offset=disk_car->sector_size;
@@ -286,7 +253,7 @@ static list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_par
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
       (*current_cmd)+=2;
-      change_part_type(disk_car,new_partition,current_cmd);
+      change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if(new_partition->part_size>0 && new_partition->part_type_mac>0)
     {
@@ -310,106 +277,6 @@ static list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_par
   }
 }
 
-#ifdef HAVE_NCURSES
-static list_part_t *add_partition_mac_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  int position=0;
-  int done = FALSE;
-  partition_t *new_partition=partition_new(&arch_mac);
-  new_partition->part_offset=disk_car->sector_size;
-  new_partition->part_size=disk_car->disk_size-disk_car->sector_size;
-  while (done==FALSE)
-  {
-    int command;
-    static struct MenuItem menuGeometry[]=
-    {
-      { 's', "Sector", 	"Change starting sector" },
-      { 'S', "Sector", 	"Change ending sector" },
-      { 'T' ,"Type",	"Change partition type"},
-      { 'd', "Done", "" },
-      { 0, NULL, NULL }
-    };
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    wmove(stdscr,10, 0);
-    wclrtoeol(stdscr);
-    aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
-    wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
-    wclrtoeol(stdscr);
-    wrefresh(stdscr);
-    command=wmenuSimple(stdscr,menuGeometry, position);
-    switch (command) {
-      case 's':
-	{
-	  uint64_t part_offset;
-	  part_offset=new_partition->part_offset;
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  new_partition->part_offset=(uint64_t)ask_number(
-	      new_partition->part_offset/disk_car->sector_size,
-	      4096/disk_car->sector_size,
-	      (disk_car->disk_size-1)/disk_car->sector_size,
-	      "Enter the starting sector ") *
-	    (uint64_t)disk_car->sector_size;
-	  new_partition->part_size=new_partition->part_size + part_offset - new_partition->part_offset;
-	  position=1;
-	}
-	break;
-      case 'S':
-	wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	new_partition->part_size=(uint64_t)ask_number(
-	      (new_partition->part_offset+new_partition->part_size-1)/disk_car->sector_size,
-	      new_partition->part_offset/disk_car->sector_size,
-	      (disk_car->disk_size-1)/disk_car->sector_size,
-	      "Enter the ending sector ") *
-	  (uint64_t)disk_car->sector_size +
-	  disk_car->sector_size - new_partition->part_offset;
-	position=2;
-	break;
-      case 'T':
-      case 't':
-	change_part_type(disk_car,new_partition, current_cmd);
-	position=3;
-	break;
-      case key_ESC:
-      case 'd':
-      case 'D':
-      case 'q':
-      case 'Q':
-	done = TRUE;
-	break;
-    }
-  }
-  if(new_partition->part_size>0 && new_partition->part_type_mac>0)
-  {
-    int insert_error=0;
-    list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
-    if(insert_error>0)
-    {
-      free(new_partition);
-      return new_list_part;
-    }
-    new_partition->status=STATUS_PRIM;
-    if(test_structure_mac(list_part)!=0)
-      new_partition->status=STATUS_DELETED;
-    return new_list_part;
-  }
-  free(new_partition);
-  return list_part;
-}
-#endif
-
-static list_part_t *add_partition_mac(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-    return add_partition_mac_cli(disk_car, list_part, verbose, current_cmd);
-#ifdef HAVE_NCURSES
-  return add_partition_mac_ncurses(disk_car, list_part, verbose, current_cmd);
-#else
-  return list_part;
-#endif
-}
-
 static void set_next_status_mac(const disk_t *disk_car, partition_t *partition)
 {
   if(partition->status==STATUS_DELETED)
@@ -418,7 +285,7 @@ static void set_next_status_mac(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_DELETED;
 }
 
-static int test_structure_mac(list_part_t *list_part)
+int test_structure_mac(list_part_t *list_part)
 { /* Return 1 if bad*/
   list_part_t *new_list_part;
   int res;

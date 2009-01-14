@@ -60,6 +60,7 @@
 #include "phrecn.h"
 #include "partauto.h"
 #include "log.h"
+#include "log_part.h"
 #include "hdaccess.h"
 #include "file_tar.h"
 #include "phcfg.h"
@@ -67,6 +68,7 @@
 #include "pdisksel.h"
 #include "pblocksize.h"
 #include "pfree_whole.h"
+#include "askloc.h"
 
 /* #define DEBUG */
 /* #define DEBUG_GET_NEXT_SECTOR */
@@ -284,18 +286,6 @@ static int photorec_progressbar(WINDOW *window, const unsigned int pass, const p
   photorec_info(window, file_stats);
   wrefresh(window);
   return check_enter_key_or_s(window);
-}
-
-void aff_copy(WINDOW *window)
-{
-  wclear(window);
-  keypad(window, TRUE); /* Need it to get arrow key */
-  wmove(window,0,0);
-  wprintw(window, "PhotoRec %s, Data Recovery Utility, %s\n",VERSION,TESTDISKDATE);
-  wmove(window,1,0);
-  wprintw(window, "Christophe GRENIER <grenier@cgsecurity.org>");
-  wmove(window,2,0);
-  wprintw(window, "http://www.cgsecurity.org");
 }
 #endif
 
@@ -720,61 +710,6 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
     td_list_add(&datanext->list, &data->list);
     return datanext;
   }
-}
-
-static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, const uint64_t file_size, const unsigned int sector_size, const unsigned int blocksize)
-{
-  struct td_list_head *tmp;
-  struct td_list_head *next;
-  uint64_t size=0;
-  const uint64_t file_size_on_disk=(file_size+blocksize-1)/blocksize*blocksize;
-  for(tmp=&file->list, next=tmp->next; tmp!=&space->list; tmp=next, next=tmp->next)
-  {
-    alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
-    if(size >= file_size)
-      return element;
-    if(element->data>0)
-    {
-      if(size + (element->end-element->start+1) <= file_size_on_disk)
-      {
-	size=size + (element->end-element->start+1);
-	log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
-	td_list_del(tmp);
-	free(element);
-      }
-      else
-      {
-	log_info(" %lu-%lu",
-	    (unsigned long)(element->start/sector_size),
-	    (unsigned long)((element->start + file_size_on_disk - size - 1)/sector_size));
-	element->start+=file_size_on_disk - size;
-	element->file_stat=NULL;
-	element->data=1;
-	return element;
-      }
-    }
-    else
-    {
-      log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
-      td_list_del(tmp);
-      free(element);
-    }
-  }
-  return space;
-}
-
-alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
-{
-  alloc_data_t *spacenext;
-  alloc_data_t *datanext;
-  if(file->filename!=NULL)
-    log_info("%s\t", file->filename);
-  else
-    log_info("?\t");
-  spacenext=file_truncate_aux(space, file->loc, file->file_size, sector_size, blocksize);
-  log_info("\n");
-  datanext=td_list_entry(&spacenext->list.next, alloc_data_t, list);
-  return datanext;
 }
 
 static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, const unsigned int expert)
@@ -1266,20 +1201,6 @@ static void recovery_finished(const unsigned int file_nbr, const char *recup_dir
   }
 }
 #endif
-
-
-void free_search_space(alloc_data_t *list_search_space)
-{
-  struct td_list_head *search_walker = NULL;
-  struct td_list_head *search_walker_next = NULL;
-  td_list_for_each_safe(search_walker,search_walker_next,&list_search_space->list)
-  {
-    alloc_data_t *current_search_space;
-    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-    td_list_del(search_walker);
-    free(current_search_space);
-  }
-}
 
 #if defined(HAVE_NCURSES) && (defined(__CYGWIN__) || defined(__MINGW32__))
 static int interface_cannot_create_file(void)

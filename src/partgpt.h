@@ -21,6 +21,9 @@
  */
 #ifndef _PARTGPT_H
 #define	_PARTGPT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct gpt_hdr
 {
@@ -59,5 +62,9 @@ struct systypes_gtp {
   const char *name;
 };
 
+list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif /* _PARTGPT_H */

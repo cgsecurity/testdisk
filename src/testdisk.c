@@ -79,20 +79,6 @@ void sighup_hdlr(int shup)
 }
 #endif
 
-#ifdef HAVE_NCURSES
-void aff_copy(WINDOW *window)
-{
-  wclear(window);
-  keypad(window, TRUE); /* Need it to get arrow key */
-  wmove(window,0,0);
-  wprintw(window, "TestDisk %s, Data Recovery Utility, %s",VERSION,TESTDISKDATE);
-  wmove(window,1,0);
-  wprintw(window,"Christophe GRENIER <grenier@cgsecurity.org>");
-  wmove(window,2,0);
-  wprintw(window,"http://www.cgsecurity.org");
-}
-#endif
-
 int main( int argc, char **argv )
 {
   int i;
@@ -123,7 +109,8 @@ int main( int argc, char **argv )
 #ifdef HAVE_SIGACTION
   struct sigaction action;
 #endif
-  /* random (weak is ok) is need fot GPT */
+  FILE *log_handle=NULL;
+  /* srand needed for GPT creation (weak is ok) */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
   /* set up the signal handler for SIGHUP */
@@ -150,13 +137,13 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
       if(create_log==TD_LOG_NONE)
-        create_log=log_open(logfile, TD_LOG_APPEND, 0, "TestDisk", argc, argv);
+        create_log=TD_LOG_APPEND;
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
       if(create_log==TD_LOG_NONE)
-        create_log=log_open(logfile, TD_LOG_APPEND, 0, "TestDisk", argc, argv);
+        create_log=TD_LOG_APPEND;
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
       testdisk_mode|=TESTDISK_O_ALL;
@@ -287,6 +274,8 @@ int main( int argc, char **argv )
     delete_list_disk(list_disk);
     return 0;
   }
+  if(create_log!=TD_LOG_NONE)
+    log_handle=log_open(logfile, create_log);
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {
@@ -300,17 +289,45 @@ int main( int argc, char **argv )
     }
   }
 #endif
+  if(create_log!=TD_LOG_NONE && log_handle==NULL)
+    log_handle=log_open_default(logfile, create_log);
 #ifdef HAVE_NCURSES
   /* ncurses need locale for correct unicode support */
   if(start_ncurses("TestDisk",argv[0]))
     return 1;
-#endif
   if(argc==1 && create_log==TD_LOG_NONE)
   {
     verbose=1;
     create_log=ask_testdisk_log_creation();
+    if(create_log==TD_LOG_CREATE || create_log==TD_LOG_APPEND)
+      log_handle=log_open(logfile, create_log);
   }
-  create_log=log_open(logfile, create_log, 1, "TestDisk", argc, argv);
+  {
+    const char*filename=logfile;
+    while(create_log!=TD_LOG_NONE && log_handle==NULL)
+    {
+      filename=ask_log_location(filename);
+      if(filename!=NULL)
+	log_handle=log_open(filename, create_log);
+      else
+	create_log=TD_LOG_NONE;
+    }
+  }
+#endif
+  if(log_handle!=NULL)
+  {
+    time_t my_time;
+#ifdef HAVE_DUP2
+    dup2(fileno(log_handle),2);
+#endif
+    my_time=time(NULL);
+    log_info("\n\n%s",ctime(&my_time));
+    log_info("Command line: PhotoRec");
+    for(i=1;i<argc;i++)
+      log_info(" %s", argv[i]);
+    log_info("\n\n");
+    log_flush();
+  }
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());

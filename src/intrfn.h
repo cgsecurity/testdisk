@@ -20,6 +20,10 @@
 
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef HAVE_NCURSES
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
@@ -46,4 +50,13 @@ int wmenuSelect(WINDOW *window, const int yinfo, int y, int x, const struct Menu
 int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, unsigned int menuDefault);
 int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
+int interface_partition_type_ncurses(disk_t *disk_car);
+int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
+char *ask_log_location(const char*filename);
+#endif
+
+void display_message(const char*msg);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
 #endif

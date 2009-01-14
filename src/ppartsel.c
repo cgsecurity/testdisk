@@ -41,16 +41,22 @@
 #include "fnctdsk.h"
 #include "dir.h"
 #include "list.h"
-#include "chgtype.h"
 #include "lang.h"
 #include "filegen.h"
 #include "photorec.h"
 #include "phrecn.h"
 #include "log.h"
+#include "log_part.h"
 #include "hdaccess.h"
 #include "ext2grp.h"
 #include "pfree_whole.h"
 #include "ppartsel.h"
+#include "askloc.h"
+#include "geometry.h"
+#include "addpart.h"
+#include "intrfn.h"
+
+extern const arch_fnct_t arch_none;
 
 enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE };
 
@@ -149,7 +155,11 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  res=(char *)recup_dir;
 	else
 	{
+#ifdef HAVE_NCURSES
 	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+#else
+	  res=get_default_location();
+#endif
 	  if(res!=NULL)
 	  {
 	    char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
@@ -167,10 +177,14 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  if(mode_init_space==INIT_SPACE_EXT2_GROUP)
 	  {
 	    blocksize=ext2_fix_group(list_search_space, disk_car, partition);
+	    if(blocksize==0)
+	      display_message("Not a valid ext2/ext3/ext4 filesystem");
 	  }
 	  else if(mode_init_space==INIT_SPACE_EXT2_INODE)
 	  {
 	    blocksize=ext2_fix_inode(list_search_space, disk_car, partition);
+	    if(blocksize==0)
+	      display_message("Not a valid ext2/ext3/ext4 filesystem");
 	  }
 	  if(td_list_empty(&list_search_space->list))
 	  {
@@ -416,9 +430,9 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  break;
       case 'a':
       case 'A':
-	if(disk_car->arch->add_partition!=NULL)
+	if(disk_car->arch != &arch_none)
 	{
-	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
+	  list_part=add_partition(disk_car, list_part, verbose, current_cmd);
 	  current_element=list_part;
 	  current_element_num=0;
 	}

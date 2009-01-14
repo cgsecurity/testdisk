@@ -24,6 +24,7 @@
 #endif
  
 #if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <stdio.h>
 #include "types.h"
 #include "common.h"
 #ifdef HAVE_STDLIB_H

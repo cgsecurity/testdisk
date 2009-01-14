@@ -2,7 +2,7 @@
 
     File: adv.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -35,21 +36,25 @@
 #include "intrf.h"
 #include "intrfn.h"
 #include "fnctdsk.h"
-#include "chgtype.h"
+#include "chgtypen.h"
 #include "dirpart.h"
 #include "fat.h"
 #include "ntfs.h"
 #include "adv.h"
 #include "analyse.h"
 #include "log.h"
+#include "log_part.h"
 #include "guid_cmp.h"
 #include "dimage.h"
 #include "ntfs_udl.h"
 #include "ext2_sb.h"
+#include "ext2_sbn.h"
 #include "fat1x.h"
 #include "fat32.h"
 #include "tntfs.h"
 #include "thfs.h"
+#include "askloc.h"
+#include "addpart.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -378,9 +383,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	break;
       case 'a':
       case 'A':
-	if(disk_car->arch->add_partition!=NULL)
+	if(disk_car->arch!=&arch_none)
 	{
-	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
+	  list_part=add_partition(disk_car, list_part, verbose, current_cmd);
 	  current_element=list_part;
 	  rewrite=1;
 	}
@@ -463,10 +468,14 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'C':
 	  {
 	    char *image_dd;
+#ifdef HAVE_NCURSES
 	    if(*current_cmd!=NULL)
 	      image_dd=get_default_location();
 	    else
 	      image_dd=ask_location("Do you want to save partition file image.dd in %s%s ? [Y/N]","");
+#else
+	    image_dd=get_default_location();
+#endif
 	    if(image_dd!=NULL)
 	    {
 	      char *new_recup_dir=(char *)MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);

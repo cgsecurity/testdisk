@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -39,6 +40,7 @@
 #include "fat.h"
 #include "io_redir.h"
 #include "log.h"
+#include "log_part.h"
 #include "fat_adv.h"
 #include "fat32.h"
 
@@ -262,6 +264,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	free(buffer_backup_bs);
 	return 0;
       case 'O': /* O : copy original boot sector over backup boot */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy original FAT32 boot sector over backup boot, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original boot sector over backup boot\n");
@@ -272,8 +275,10 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'B': /* B : copy backup boot sector over boot sector */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy backup FAT32 boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
@@ -284,6 +289,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'C':
 	repair_FAT_table(disk_car,partition,verbose);

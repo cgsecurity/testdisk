@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #include <ctype.h>      /* tolower */
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -48,6 +49,7 @@
 #include "next.h"
 #include "tpartwr.h"
 #include "log.h"
+#include "log_part.h"
 #include "fat32.h"
 #include "tntfs.h"
 #include "thfs.h"
@@ -711,7 +713,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           aff_part_buffer(AFF_PART_BASE, disk_car,partition);
           if(interface)
           {
+#ifdef HAVE_NCURSES
 	    screen_buffer_to_interface();
+#endif
           }
           if(disk_car->arch->is_part_known(partition)!=0 &&
               partition->part_size>1 &&
@@ -1342,9 +1346,31 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	switch(res_interface_write)
 	{
 	  case 'W':
-	    if(disk_car->arch->write_part!=NULL)
+	    if(disk_car->arch == &arch_mac)
 	    {
-	      if(no_confirm!=0 || ask_confirmation("Write partition table, confirm ? (Y/N)")!=0)
+#ifdef HAVE_NCURSES
+	      write_part_mac_warning_ncurses();
+#endif
+	    }
+	    else if(disk_car->arch == &arch_sun)
+	    {
+#ifdef HAVE_NCURSES
+	      not_implemented("write_part_sun");
+#endif
+	    }
+	    else if(disk_car->arch == &arch_xbox)
+	    {
+#ifdef HAVE_NCURSES
+	      not_implemented("write_part_xbox");
+#endif
+	    }
+	    else if(disk_car->arch->write_part!=NULL)
+	    {
+	      if(no_confirm!=0
+#ifdef HAVE_NCURSES
+		  || ask_confirmation("Write partition table, confirm ? (Y/N)")!=0
+#endif
+		)
 	      {
 		log_info("write!\n");
 		if(disk_car->arch->write_part(disk_car,list_part,RW,verbose,align))

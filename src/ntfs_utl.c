@@ -27,6 +27,7 @@
 #include <config.h>
 #endif
 #ifdef HAVE_LIBNTFS
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif

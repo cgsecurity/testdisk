@@ -48,6 +48,7 @@
 #include <stdio.h>
 #endif
 #include "dir.h"
+#include "dirn.h"
 #include "ext2_dir.h"
 #include "fat_dir.h"
 #include "ntfs_dir.h"
@@ -56,6 +57,7 @@
 #include "ntfs.h"
 #include "adv.h"
 #include "log.h"
+#include "log_part.h"
 
 int dir_partition(disk_t *disk_car, const partition_t *partition, const int verbose, char **current_cmd)
 {
@@ -172,7 +174,18 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 	if(recursive>0)
 	  dir_whole_partition_log(disk_car,partition,&dir_data,dir_data.current_inode);
 	else
-	  dir_partition_aff(disk_car,partition,&dir_data,dir_data.current_inode,current_cmd);
+	{
+#ifdef HAVE_NCURSES
+	  dir_partition_aff(disk_car, partition, &dir_data, dir_data.current_inode, current_cmd);
+#else
+	  {
+	    file_data_t *dir_list;
+	    dir_list=dir_data.get_dir(disk_car, partition, &dir_data, dir_data.current_inode);
+	    dir_aff_log(disk_car, partition, &dir_data, dir_list);
+	    delete_list_file(dir_list);
+	  }
+#endif
+	}
 	dir_data.close(&dir_data);
       }
       break;

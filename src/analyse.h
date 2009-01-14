@@ -33,7 +33,6 @@ int search_type_128(unsigned char *buffer, disk_t *disk_car,partition_t *partiti
 int search_FAT_backup(unsigned char *buffer, disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind);
 int search_HFS_backup(unsigned char *buffer, disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind);
 int search_NTFS_backup(unsigned char *buffer, disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind);
-list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, const int verbose, const int dump_ind, const int interface);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

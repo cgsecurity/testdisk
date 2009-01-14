@@ -120,12 +120,12 @@ int is_part_fat12(const partition_t *partition);
 int is_part_fat16(const partition_t *partition);
 int is_part_fat32(const partition_t *partition);
 unsigned int get_dir_entries(const struct fat_boot_sector *fat_header);
-int dump_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
-int dump_2fat_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size);
 unsigned int fat_sector_size(const struct fat_boot_sector *fat_header);
 unsigned int sectors(const struct fat_boot_sector *fat_header);
 unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
 int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
+unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
+unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
 
 #define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
 #define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)

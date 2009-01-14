@@ -283,7 +283,6 @@ struct arch_fnct_struct
   int (*get_geometry_from_mbr)(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
   int (*check_part)(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader);
   int (*write_MBR_code)(disk_t *disk_car);
-  list_part_t *(*add_partition)(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
   void (*set_prev_status)(const disk_t *disk_car, partition_t *partition);
   void (*set_next_status)(const disk_t *disk_car, partition_t *partition);
   int (*test_structure)(list_part_t *list_part);

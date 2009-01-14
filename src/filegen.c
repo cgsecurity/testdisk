@@ -30,6 +30,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
@@ -180,4 +181,118 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
   else if(taille > 0 && buffer[0]=='\r' && (nl_mode&NL_BARECR)==NL_BARECR)
     file_recovery->file_size++;
 }
+
+void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
+{
+  const unsigned int read_size=4096;
+  unsigned char*buffer;
+  int64_t file_size;
+  if(footer_length==0)
+    return ;
+  buffer=(unsigned char*)MALLOC(read_size+footer_length-1);
+  file_size=file_recovery->file_size;
+  memset(buffer+read_size,0,footer_length-1);
+  do
+  {
+    int i;
+    int taille;
+    if(file_size%read_size!=0)
+      file_size=file_size-(file_size%read_size);
+    else
+      file_size-=read_size;
+    if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
+      return;
+    taille=fread(buffer,1,read_size,file_recovery->handle);
+    for(i=taille-1;i>=0;i--)
+    {
+      if(buffer[i]==footer[0] && memcmp(buffer+i,footer,footer_length)==0)
+      {
+        file_recovery->file_size=file_size+i+footer_length;
+        free(buffer);
+        return;
+      }
+    }
+    memcpy(buffer+read_size,buffer,footer_length-1);
+  } while(file_size>0);
+  file_recovery->file_size=0;
+  free(buffer);
+}
+
+void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
+{
+  const unsigned int read_size=4096;
+  unsigned char*buffer;
+  int64_t file_size;
+  if(footer_length==0)
+    return ;
+  buffer=(unsigned char*)MALLOC(read_size+footer_length-1);
+  file_size=file_recovery->file_size;
+  memset(buffer+read_size,0,footer_length-1);
+  do
+  {
+    int i;
+    int taille;
+    if(file_size%read_size!=0)
+      file_size=file_size-(file_size%read_size);
+    else
+      file_size-=read_size;
+    if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
+      return;
+    taille=fread(buffer,1,read_size,file_recovery->handle);
+    for(i=0;i<taille;i++)
+      buffer[i]=tolower(buffer[i]);
+    for(i=taille-1;i>=0;i--)
+    {
+      if(buffer[i]==footer[0] && memcmp(buffer+i,footer,footer_length)==0)
+      {
+        file_recovery->file_size=file_size+i+footer_length;
+        free(buffer);
+        return;
+      }
+    }
+    memcpy(buffer+read_size,buffer,footer_length-1);
+  } while(file_size>0);
+  file_recovery->file_size=0;
+  free(buffer);
+}
+
+int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size>=file_recovery->calculated_file_size)
+  {
+    file_recovery->file_size=file_recovery->calculated_file_size;
+    return 2;
+  }
+  return 1;
+}
+
+void file_check_size(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size<file_recovery->calculated_file_size)
+    file_recovery->file_size=0;
+  else
+    file_recovery->file_size=file_recovery->calculated_file_size;
+}
+
+void reset_file_recovery(file_recovery_t *file_recovery)
+{
+  file_recovery->filename[0]='\0';
+  file_recovery->time=0;
+  file_recovery->file_stat=NULL;
+  file_recovery->handle=NULL;
+  file_recovery->file_size=0;
+  file_recovery->file_size_on_disk=0;
+  file_recovery->location.list.prev=&file_recovery->location.list;
+  file_recovery->location.list.next=&file_recovery->location.list;
+  file_recovery->location.start=0;
+  file_recovery->location.end=0;
+  file_recovery->location.data=0;
+  file_recovery->extension=NULL;
+  file_recovery->min_filesize=0;
+  file_recovery->calculated_file_size=0;
+  file_recovery->data_check=NULL;
+  file_recovery->file_check=NULL;
+  file_recovery->offset_error=0;
+}
+
 

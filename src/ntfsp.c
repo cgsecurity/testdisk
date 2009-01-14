@@ -42,12 +42,12 @@
 #include "ntfsp.h"
 #endif
 #include "intrf.h"
-#include "intrfn.h"
 #include "dir.h"
 #include "ntfs.h"
 #include "ntfs_dir.h"
 #include "ntfs_inc.h"
 #include "log.h"
+#include "log_part.h"
 
 #ifdef HAVE_LIBNTFS
 #define SIZEOF_BUFFER ((const unsigned int)512)
@@ -59,27 +59,8 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
   {
     case -2:
     case -1:
-      screen_buffer_reset();
-      {
-#ifdef HAVE_NCURSES
-	WINDOW *window;
-	window=newwin(0,0,0,0);	/* full screen */
-	aff_copy(window);
-	wmove(window,4,0);
-	aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-#endif
 	log_partition(disk_car,partition);
-	screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
-	screen_buffer_to_log();
-#ifdef HAVE_NCURSES
-	screen_buffer_display(window,"",NULL);
-	delwin(window);
-	(void) clearok(stdscr, TRUE);
-#ifdef HAVE_TOUCHWIN
-	touchwin(stdscr);
-#endif
-#endif
-      }
+	log_error("Can't open filesystem. Filesystem seems damaged.\n");
       return 0;
   }
   {

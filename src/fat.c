@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #include <ctype.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -41,12 +42,8 @@
 #include "fnctdsk.h"
 #include "testdisk.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
-#include "intrfn.h"
-#else
-#include <stdio.h>
-#endif
 #include "log.h"
+#include "log_part.h"
 /* #include "guid_cmp.h" */
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
@@ -57,8 +54,6 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
 static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
 static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
-static unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
-static unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
 
 #define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
 #define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
@@ -122,127 +117,6 @@ static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upa
         log_info("next_free    %lu\n",fat32_get_next_free((const unsigned char*)fh1,sector_size));
   }
   return 0;
-}
-
-#ifdef HAVE_NCURSES
-static int dump_fat_info_ncurses(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
-{
-  switch(upart_type)
-  {
-    case UP_FAT12:
-      wprintw(stdscr,"FAT : 12\n");
-      break;
-    case UP_FAT16:
-      wprintw(stdscr,"FAT : 16\n");
-      break;
-    case UP_FAT32:
-      wprintw(stdscr,"FAT : 32\n");
-      break;
-    default:
-      wprintw(stdscr,"Not a FAT\n");
-      return 0;
-  }
-  wprintw(stdscr,"cluster_size %u\n", fh1->sectors_per_cluster);
-  wprintw(stdscr,"reserved     %u\n", le16(fh1->reserved));
-  if(sectors(fh1)!=0)
-    wprintw(stdscr,"sectors      %u\n", sectors(fh1));
-  if(le32(fh1->total_sect)!=0)
-    wprintw(stdscr,"total_sect   %u\n", (unsigned int)le32(fh1->total_sect));
-  if(upart_type==UP_FAT32)
-  {
-    wprintw(stdscr,"fat32_length %u\n", (unsigned int)le32(fh1->fat32_length));
-    wprintw(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
-    wprintw(stdscr,"flags        %04X\n", le16(fh1->flags));
-    wprintw(stdscr,"version      %u.%u\n", fh1->version[0], fh1->version[1]);
-    wprintw(stdscr,"root_cluster %u\n", (unsigned int)le32(fh1->root_cluster));
-    wprintw(stdscr,"info_sector  %u\n", le16(fh1->info_sector));
-    wprintw(stdscr,"backup_boot  %u\n", le16(fh1->backup_boot));
-    if(fat32_get_free_count((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"free_count   uninitialised\n");
-    else
-      wprintw(stdscr,"free_count   %lu\n",fat32_get_free_count((const unsigned char*)fh1,sector_size));
-    if(fat32_get_next_free((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"next_free    uninitialised\n");
-    else
-      wprintw(stdscr,"next_free    %lu\n",fat32_get_next_free((const unsigned char*)fh1,sector_size));
-  } else {
-    wprintw(stdscr,"fat_length   %u\n", le16(fh1->fat_length));
-    wprintw(stdscr,"dir_entries  %u\n", get_dir_entries(fh1));
-  }
-  return 0;
-}
-#endif
-
-int dump_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
-{
-#ifdef HAVE_NCURSES
-  return dump_fat_info_ncurses(fh1, upart_type, sector_size);
-#else
-  return 0;
-#endif
-}
-
-#ifdef HAVE_NCURSES
-static int dump_2fat_info_ncurses(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size)
-{
-  switch(upart_type)
-  {
-    case UP_FAT12:
-      wprintw(stdscr,"FAT : 12\n");
-      break;
-    case UP_FAT16:
-      wprintw(stdscr,"FAT : 16\n");
-      break;
-    case UP_FAT32:
-      wprintw(stdscr,"FAT : 32\n");
-      break;
-    default:
-      wprintw(stdscr,"Not a FAT\n");
-      return 1;
-  }
-  wprintw(stdscr,"cluster_size %u %u\n", fh1->sectors_per_cluster, fh2->sectors_per_cluster);
-  wprintw(stdscr,"reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
-  if(sectors(fh1)!=0 || sectors(fh2)!=0)
-    wprintw(stdscr,"sectors      %u %u\n", sectors(fh1), sectors(fh2));
-  if(le32(fh1->total_sect)!=0 || le32(fh2->total_sect)!=0)
-    wprintw(stdscr,"total_sect   %u %u\n", (unsigned int)le32(fh1->total_sect), (unsigned int)le32(fh2->total_sect));
-  if(upart_type==UP_FAT32)
-  {
-    wprintw(stdscr,"fat32_length %u %u\n", (unsigned int)le32(fh1->fat32_length), (unsigned int)le32(fh2->fat32_length));
-    wprintw(stdscr,"root_cluster %u %u\n", (unsigned int)le32(fh1->root_cluster), (unsigned int)le32(fh2->root_cluster));
-    wprintw(stdscr,"free_count   ");
-    if(fat32_get_free_count((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"uninitialised ");
-    else
-      wprintw(stdscr,"%lu ",fat32_get_free_count((const unsigned char*)fh1,sector_size));
-    if(fat32_get_free_count((const unsigned char*)fh2,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"uninitialised\n");
-    else
-      wprintw(stdscr,"%lu\n",fat32_get_free_count((const unsigned char*)fh2,sector_size));
-    wprintw(stdscr,"next_free    ");
-    if(fat32_get_next_free((const unsigned char*)fh1,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"uninitialised ");
-    else
-      wprintw(stdscr,"%lu ",fat32_get_next_free((const unsigned char*)fh1,sector_size));
-    if(fat32_get_next_free((const unsigned char*)fh2,sector_size)==0xFFFFFFFF)
-      wprintw(stdscr,"uninitialised\n");
-    else
-      wprintw(stdscr,"%lu\n",fat32_get_next_free((const unsigned char*)fh2,sector_size));
-  } else {
-    wprintw(stdscr,"fat_length   %u %u\n", le16(fh1->fat_length), le16(fh2->fat_length));
-    wprintw(stdscr,"dir_entries  %u %u\n", get_dir_entries(fh1), get_dir_entries(fh2));
-  }
-  return 0;
-}
-#endif
-
-int dump_2fat_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size)
-{
-#ifdef HAVE_NCURSES
-  return dump_2fat_info_ncurses(fh1, fh2, upart_type, sector_size);
-#else
-  return 0;
-#endif
 }
 
 int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size)
@@ -493,7 +367,7 @@ int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_
   }
   if(disk_car->write(disk_car,buffer_size, buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
   {
-    display_message("Write error: set_next_cluster write error\n");
+    log_error("Write error: set_next_cluster write error\n");
     free(buffer);
     return 1;
   }
@@ -553,15 +427,13 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
         && (fat_header->ignored[0]==0xeb || fat_header->ignored[0]==0xe9)
         && (fat_header->fats==1 || fat_header->fats==2)))
     return 1;   /* Obviously not a FAT */
-  if(verbose>1)
+  if(verbose>1 || dump_ind!=0)
   {
     log_trace("test_FAT\n");
     log_partition(disk_car,partition);
   }
-#ifdef HAVE_NCURSES
   if(dump_ind!=0)
-    dump_ncurses(fat_header,DEFAULT_SECTOR_SIZE);
-#endif
+    dump_log(fat_header, DEFAULT_SECTOR_SIZE);
   if(!((fat_header->ignored[0]==0xeb && fat_header->ignored[2]==0x90)||fat_header->ignored[0]==0xe9))
   {
     screen_buffer_add(msg_CHKFAT_BAD_JUMP);
@@ -852,12 +724,12 @@ unsigned int get_dir_entries(const struct fat_boot_sector *fat_header)
 unsigned int sectors(const struct fat_boot_sector *fat_header)
 { return (fat_header->sectors[1]<<8)+fat_header->sectors[0]; }
 
-static unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
+unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
   return (boot_fat32[sector_size+0x1E8+3]<<24)+(boot_fat32[sector_size+0x1E8+2]<<16)+(boot_fat32[sector_size+0x1E8+1]<<8)+boot_fat32[sector_size+0x1E8];
 }
 
-static unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size)
+unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
   return (boot_fat32[sector_size+0x1EC+3]<<24)+(boot_fat32[sector_size+0x1EC+2]<<16)+(boot_fat32[sector_size+0x1EC+1]<<8)+boot_fat32[sector_size+0x1EC];
 }
@@ -954,7 +826,6 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
       { /* Test attribut volume name and check if the volume name is erased or not */
         if(((buffer[i*0x20+0xB] & ATTR_EXT) !=ATTR_EXT) && ((buffer[i*0x20+0xB] & ATTR_VOLUME) !=0) && (buffer[i*0x20]!=0xE5))
         {
-          /*      dump_ncurses(&buffer[i*0x20],0x20); */
           fat_set_part_name(partition,&buffer[i*0x20],11);
           if(check_VFAT_volume_name(partition->fsname, 11))
             partition->fsname[0]='\0';
@@ -1014,10 +885,8 @@ static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, 
             offset2head(disk_car,partition->part_offset),
             offset2sector(disk_car,partition->part_offset));
       }
-#ifdef HAVE_NCURSES
-      if(dump_ind)
-        dump_ncurses(buffer,DEFAULT_SECTOR_SIZE);
-#endif
+      if(dump_ind!=0)
+        dump_log(buffer, DEFAULT_SECTOR_SIZE);
       partition->part_size=(uint64_t)(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect)) *
         fat_sector_size(fat_header);
       partition->upart_type=UP_HPFS;
@@ -1078,12 +947,10 @@ static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header,
   {
     if(verbose||dump_ind)
     {
-      log_info("\nMarker (0xAA55) at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
+      log_info("OS2MB at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
     }
-#ifdef HAVE_NCURSES
     if(dump_ind)
-      dump_ncurses(buffer,DEFAULT_SECTOR_SIZE);
-#endif
+      dump_log(buffer,DEFAULT_SECTOR_SIZE);
     partition->upart_type=UP_OS2MB;
     return 0;
   }

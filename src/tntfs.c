@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -38,6 +39,7 @@
 #include "ntfs.h"
 #include "io_redir.h"
 #include "log.h"
+#include "log_part.h"
 #include "tntfs.h"
 
 #ifdef HAVE_NCURSES
@@ -239,6 +241,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
         free(buffer_backup_bs);
 	return 0;
       case 'O': /* O : copy original boot sector over backup boot */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy original NTFS boot sector over backup boot, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original boot sector over backup boot\n");
@@ -249,8 +252,10 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'B': /* B : copy backup boot sector over boot sector */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
@@ -261,6 +266,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'L':
 	if(strchr(options,'O')==NULL && strchr(options,'B')!=NULL)

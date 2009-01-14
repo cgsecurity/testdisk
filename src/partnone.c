@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -130,7 +131,6 @@ arch_fnct_t arch_none=
   .get_geometry_from_mbr=get_geometry_from_nonembr,
   .check_part=check_part_none,
   .write_MBR_code=NULL,
-  .add_partition=NULL,
   .set_prev_status=set_next_status_none,
   .set_next_status=set_next_status_none,
   .test_structure=test_structure_none,

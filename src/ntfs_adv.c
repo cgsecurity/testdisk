@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -40,6 +41,7 @@
 #include "lang.h"
 #include "io_redir.h"
 #include "log.h"
+#include "log_part.h"
 
 #define INTER_NTFS_X 0
 #define INTER_NTFS_Y 23
@@ -131,7 +133,11 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     else if(strncmp(*current_cmd,"write",5)==0)
     {
       (*current_cmd)+=5;
-      if(no_confirm!=0 || ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0)
+      if(no_confirm!=0
+#ifdef HAVE_NCURSES
+	|| ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0
+#endif
+	)
       {
 	log_info("Write new boot!\n");
 	/* Write boot sector and backup boot sector */
@@ -199,6 +205,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     {
       case 'w':
       case 'W':
+#ifdef HAVE_NCURSES
 	if(strchr(options,'W')!=NULL && ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("Write new boot!\n");
@@ -213,6 +220,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	  }
           disk_car->sync(disk_car);
 	}
+#endif
 	return;
       case 'd':
       case 'D':
@@ -472,7 +480,11 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	  {
 	    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
 	    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
-	    if(expert==0 || ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0)
+	    if(expert==0
+#ifdef HAVE_NCURSES
+		|| ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0
+#endif
+	      )
 	      ind_stop=1;
 	  }
 	  else if(tmp==3)
@@ -522,7 +534,11 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	  {
 	    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
 	    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
-	    if(expert==0 || ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0)
+	    if(expert==0
+#ifdef HAVE_NCURSES
+	      || ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0
+#endif
+	      )
 	      ind_stop=1;
 	  }
 	  else if(tmp==3)

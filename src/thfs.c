@@ -22,7 +22,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -38,6 +39,7 @@
 #include "hfs.h"
 #include "hfsp.h"
 #include "log.h"
+#include "log_part.h"
 #include "thfs.h"
 
 #ifdef HAVE_NCURSES
@@ -214,6 +216,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
         free(buffer_backup_bs);
 	return 0;
       case 'O': /* O : copy original superblock over backup boot */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy original HFS/HFS+ volume header over backup, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original superblock over backup boot\n");
@@ -224,8 +227,10 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'B': /* B : copy backup superblock over main superblock */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy backup HFS/HFS+ volume header over main volume header, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup superblock over main superblock\n");
@@ -236,6 +241,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
           disk_car->sync(disk_car);
 	  rescan=1;
 	}
+#endif
 	break;
       case 'D':
 	hfs_dump(disk_car, partition, buffer_bs, buffer_backup_bs);

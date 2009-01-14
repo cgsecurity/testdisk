@@ -38,6 +38,7 @@
 #include "testdisk.h"
 #include "analyse.h"
 #include "log.h"
+#include "log_part.h"
 #include "guid_cpy.h"
 
 static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, const list_part_t *list_part, const int verbose);

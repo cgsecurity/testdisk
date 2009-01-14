@@ -21,6 +21,9 @@
  */
 #ifndef _DIR_H
 #define _DIR_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -52,6 +55,7 @@ struct dir_data
 };
 
 #define	FILE_STATUS_DELETED	1
+#define	FILE_STATUS_MARKED	2
 
 /* TODO: add status to file_info and migrate file_data to file_info */
 struct file_data
@@ -75,7 +79,6 @@ int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_
 int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
 unsigned int delete_list_file(file_data_t *file_list);
 void delete_list_file_info(struct td_list_head *list);
-int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);
 void mode_string (const unsigned int mode, char *str);
 int set_date(const char *pathname, time_t actime, time_t modtime);
@@ -128,4 +131,7 @@ void mkdir_local_for_file(const char *filename);
 #define LINUX_S_ISSOCK(m)       (((m) & LINUX_S_IFMT) == LINUX_S_IFSOCK)
 
 int filesort(const struct td_list_head *a, const struct td_list_head *b);
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

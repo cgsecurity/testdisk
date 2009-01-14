@@ -20,6 +20,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct xbox_partition
 {
@@ -27,3 +30,9 @@ struct xbox_partition
 	char magic[4];
 	uint32_t bootnbr;
 } __attribute__ ((__packed__));
+
+list_part_t *add_partition_xbox_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

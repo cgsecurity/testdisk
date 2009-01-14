@@ -38,9 +38,9 @@
 #else
 #include <stdio.h>
 #endif
-#include "chgtype.h"
 #include "log.h"
 #include "hdaccess.h"
+#include "geometry.h"
 
 static inline void set_cylinders_from_size_up(disk_t *disk_car)
 {

@@ -47,6 +47,9 @@
 #include "tdiskop.h"
 #include "tdisksel.h"
 #include "hidden.h"
+#include "hiddenn.h"
+#include "nodisk.h"
+#include "chgtypen.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -73,7 +76,8 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   };
   if(list_disk==NULL)
   {
-    use_sudo=intrf_no_disk("TestDisk");
+    log_critical("No disk found\n");
+    use_sudo=intrf_no_disk_ncurses("TestDisk");
   }
   if(list_disk==NULL || use_sudo>0)
     return use_sudo;
@@ -179,7 +183,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	  autoset_unit(disk);
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
-	      interface_check_hidden(disk, current_cmd)==0 &&
+	      (!is_hpa_or_dco(disk) || interface_check_hidden_ncurses(disk)==0) &&
 	      interface_partition_type(disk, verbose, current_cmd)==0)
 	  {
 	    if(menu_disk(disk, verbose, dump_ind, saveheader, current_cmd))
@@ -215,7 +219,8 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
     current_disk=list_disk;
   if(current_disk==NULL)
   {
-    return intrf_no_disk("TestDisk");
+    log_critical("No disk found\n");
+    return 0;
   }
   if(*current_cmd!=NULL)
   {

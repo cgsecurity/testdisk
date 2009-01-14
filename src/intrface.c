@@ -2,7 +2,7 @@
 
     File: intrface.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,16 +37,19 @@
 #endif
 #include "godmode.h"
 #include "fnctdsk.h"
-#include "chgtype.h"
+#include "chgtypen.h"
 #include "savehdr.h"
 #include "dirpart.h"
 #include "log.h"
 #include "io_redir.h"
 #include "tload.h"
 #include "intrface.h"
+#include "addpart.h"
 
 #define INTER_DISK_X	0
 #define INTER_DISK_Y	7
+
+extern const arch_fnct_t arch_none;
 
 void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd)
 {
@@ -195,7 +198,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
     wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
     waddstr(stdscr,"Keys ");
     /* If the disk can't be partionned, there is no partition to add and no partition to save */
-    if(disk_car->arch->add_partition!=NULL)
+    if(disk_car->arch != &arch_none)
     {
       if(has_colors())
 	wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
@@ -321,9 +324,9 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	break;
       case 'a':
       case 'A':
-	if(disk_car->arch->add_partition!=NULL)
+	if(disk_car->arch != &arch_none)
 	{
-	  list_part=disk_car->arch->add_partition(disk_car,list_part, verbose, current_cmd);
+	  list_part=add_partition(disk_car,list_part, verbose, current_cmd);
 	  rewrite=1;
 	  offset=0;
 	  pos_num=0;
@@ -359,7 +362,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	break;
       case 'l':
       case 'L':
-	if(disk_car->arch->add_partition!=NULL)
+	if(disk_car->arch != &arch_none)
 	{
 	  list_part=interface_load(disk_car,list_part,verbose);
 	  rewrite=1;

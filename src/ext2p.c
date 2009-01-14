@@ -34,7 +34,6 @@
 #include "list.h"
 #include "filegen.h"
 #include "intrf.h"
-#include "intrfn.h"
 #include "dir.h"
 #ifdef HAVE_EXT2FS_EXT2_FS_H
 #include "ext2fs/ext2_fs.h"
@@ -46,6 +45,7 @@
 #include "ext2_inc.h"
 #include "ext2_dir.h"
 #include "log.h"
+#include "log_part.h"
 
 #ifdef HAVE_LIBEXT2FS
 unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space)
@@ -55,27 +55,8 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
   {
     case -2:
     case -1:
-      screen_buffer_reset();
-      {
-#ifdef HAVE_NCURSES
-	WINDOW *window;
-	window=newwin(0,0,0,0);	/* full screen */
-	aff_copy(window);
-	wmove(window,4,0);
-	aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
-#endif
-	log_partition(disk, partition);
-	screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
-	screen_buffer_to_log();
-#ifdef HAVE_NCURSES
-	screen_buffer_display(window,"",NULL);
-	delwin(window);
-	(void) clearok(stdscr, TRUE);
-#ifdef HAVE_TOUCHWIN
-	touchwin(stdscr);
-#endif
-#endif
-      }
+      log_partition(disk, partition);
+      log_error("Can't open filesystem. Filesystem seems damaged.\n");
       return 0;
   }
   {

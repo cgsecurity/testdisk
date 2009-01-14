@@ -28,6 +28,7 @@
 #include <config.h>
 #endif
 
+#include <stdio.h>
 #ifdef HAVE_FEATURES_H
 #include <features.h>
 #endif
@@ -68,6 +69,7 @@
 
 #include "list.h"
 #include "log.h"
+#include "log_part.h"
 #include "ntfs_udl.h"
 #include "intrf.h"
 #include "intrfn.h"
@@ -92,6 +94,7 @@
 #include "ntfs_dir.h"
 #include "ntfs_utl.h"
 #include "dir.h"
+#include "askloc.h"
 
 extern const char *monstr[];
 

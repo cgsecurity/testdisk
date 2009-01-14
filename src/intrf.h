@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct MenuItem
 {
@@ -72,7 +75,6 @@ int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1,
 unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 5, 6)));
 int display_message_aux(const char*_format,...) __attribute__ ((format (printf, 1, 2)));
-int display_message(const char*msg);
 int get_string(char *str, int len, char *def);
 void not_implemented(const char *msg);
 void screen_buffer_reset(void);
@@ -80,9 +82,11 @@ int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf,
 void screen_buffer_to_log(void);
 void screen_buffer_to_interface(void);
 void screen_buffer_to_stdout(void);
-int interface_partition_type(disk_t *disk_car, const int verbose, char**current_cmd);
 int intrf_no_disk(const char *prog_name);
-char *ask_log_location(const char*filename);
-char *ask_location(const char*msg, const char *src_dir);
 char *get_default_location(void);
 void dump_ncurses(const void *nom_dump, unsigned int lng);
+char *td_getcwd(char *buf, unsigned long size);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

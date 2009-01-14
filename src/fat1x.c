@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -37,6 +38,7 @@
 #include "dirpart.h"
 #include "fat.h"
 #include "log.h"
+#include "log_part.h"
 #include "fat_adv.h"
 #include "fat1x.h"
 

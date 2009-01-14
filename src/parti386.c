@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -38,7 +39,6 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
-#include "intrfn.h"
 #include "chgtype.h"
 #include "savehdr.h"
 #include "bfs.h"
@@ -61,9 +61,9 @@
 #include "ufs.h"
 #include "xfs.h"
 #include "log.h"
+#include "parti386.h"
 
 static int is_extended(const unsigned int part_type);
-static int can_be_ext(const disk_t *disk_car, const partition_t *partition);
 static int test_structure_i386(list_part_t *list_part);
 #define pt_offset_const(b, n) ((const struct partition_dos *)((b) + 0x1be + \
       (n) * sizeof(struct partition_dos)))
@@ -106,7 +106,6 @@ static int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const
 static list_part_t *init_part_order_i386(const disk_t *disk_car, list_part_t *list_part);
 static int write_MBR_code_i386(disk_t *disk_car);
 static int write_MBR_code_i386_aux(unsigned char *buffer);
-static list_part_t *add_partition_i386(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 static void set_prev_status_i386(const disk_t *disk_car, partition_t *partition);
 static void set_next_status_i386(const disk_t *disk_car, partition_t *partition);
 static int set_part_type_i386(partition_t *partition, unsigned int part_type);
@@ -228,7 +227,6 @@ arch_fnct_t arch_i386= {
   .get_geometry_from_mbr=get_geometry_from_i386mbr,
   .check_part=check_part_i386,
   .write_MBR_code=write_MBR_code_i386,
-  .add_partition=add_partition_i386,
   .set_prev_status=set_prev_status_i386,
   .set_next_status=set_next_status_i386,
   .test_structure=test_structure_i386,
@@ -1124,7 +1122,7 @@ static void log_dos_entry(const disk_t *disk_car, const struct partition_dos *en
 	  (long unsigned)get_start_sect(entree),(long unsigned)get_nr_sects(entree));
 }
 
-static int can_be_ext(const disk_t *disk_car, const partition_t *partition)
+int parti386_can_be_ext(const disk_t *disk_car, const partition_t *partition)
 {
   return((offset2head(disk_car,partition->part_offset)>0)&&
       (offset2cylinder(disk_car,partition->part_offset)!=0 ||
@@ -1181,7 +1179,7 @@ static int is_extended(const unsigned int part_type)
   return (part_type==(const unsigned char)P_EXTENDX || part_type==(const unsigned char)P_EXTENDED || part_type==(const unsigned char)P_LINUXEXTENDX);
 }
 
-static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, const int verbose, char **current_cmd)
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_i386);
@@ -1234,7 +1232,7 @@ static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_pa
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
       (*current_cmd)+=2;
-      change_part_type(disk_car,new_partition,current_cmd);
+      change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if((CHS2offset(disk_car,&end)>new_partition->part_offset) &&
 	new_partition->part_offset>0 &&
@@ -1249,7 +1247,7 @@ static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_pa
       }
       if(test_structure_i386(list_part)==0)
       { /* Check if the partition can be Logical, Bootable or Primary */
-	if(can_be_ext(disk_car,new_partition)!=0)
+	if(parti386_can_be_ext(disk_car,new_partition)!=0)
 	{
 	  new_partition->status=STATUS_LOG;
 	  if(test_structure_i386(new_list_part)==0)
@@ -1273,150 +1271,13 @@ static list_part_t *add_partition_i386_cli(disk_t *disk_car,list_part_t *list_pa
   }
 }
 
-#ifdef HAVE_NCURSES
-static list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  int position=0;
-  CHS_t start,end;
-  partition_t *new_partition=partition_new(&arch_i386);
-  start.cylinder=0;
-  start.head=0;
-  start.sector=1;
-  end.cylinder=disk_car->geom.cylinders-1;
-  end.head=disk_car->geom.heads_per_cylinder-1;
-  end.sector=disk_car->geom.sectors_per_head;
-  {
-    int done = 0;
-    while (done==0)
-    {
-      int command;
-      static struct MenuItem menuGeometry[]=
-      {
-	{ 'c', "Cylinder", 	"Change starting cylinder" },
-	{ 'h', "Head", 		"Change starting head" },
-	{ 's', "Sector", 	"Change starting sector" },
-	{ 'C', "Cylinder", 	"Change ending cylinder" },
-	{ 'H', "Head", 		"Change ending head" },
-	{ 'S', "Sector", 	"Change ending sector" },
-	{ 'T' ,"Type",		"Change partition type"},
-	{ 'd', "Done", "" },
-	{ 0, NULL, NULL }
-      };
-      aff_copy(stdscr);
-      wmove(stdscr,4,0);
-      wprintw(stdscr,"%s",disk_car->description(disk_car));
-      new_partition->part_offset=CHS2offset(disk_car,&start);
-      new_partition->part_size=CHS2offset(disk_car,&end) - new_partition->part_offset + disk_car->sector_size;
-      wmove(stdscr,10, 0);
-      wclrtoeol(stdscr);
-      aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
-      wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
-      wclrtoeol(stdscr);
-      wrefresh(stdscr);
-      command=wmenuSimple(stdscr,menuGeometry, position);
-      switch (command)
-      {
-	case 'c':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.cylinder=ask_number(start.cylinder,
-	      0, disk_car->geom.cylinders-1, "Enter the starting cylinder ");
-	  position=1;
-	  break;
-	case 'h':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.head=ask_number(start.head,
-	      0, disk_car->geom.heads_per_cylinder-1, "Enter the starting head ");
-	  position=2;
-	  break;
-	case 's':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.sector=ask_number(start.sector,
-	      1, disk_car->geom.sectors_per_head, "Enter the starting sector ");
-	  position=3;
-	  break;
-	case 'C':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.cylinder=ask_number(end.cylinder,
-	      start.cylinder, disk_car->geom.cylinders-1, "Enter the ending cylinder ");
-	  position=4;
-	  break;
-	case 'H':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.head=ask_number(end.head,
-	      0, disk_car->geom.heads_per_cylinder-1, "Enter the ending head ");
-	  position=5;
-	  break;
-	case 'S':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.sector=ask_number(end.sector,
-	      1, disk_car->geom.sectors_per_head, "Enter the ending sector ");
-	  position=6;
-	  break;
-	case 'T':
-	case 't':
-	  change_part_type(disk_car,new_partition,current_cmd);
-	  position=7;
-	  break;
-	case key_ESC:
-	case 'd':
-	case 'D':
-	case 'q':
-	case 'Q':
-	  done = 1;
-	  break;
-      }
-    }
-  }
-  if((CHS2offset(disk_car,&end)>new_partition->part_offset)&&(new_partition->part_offset>0)&& new_partition->part_type_i386!=P_NO_OS)
-  {
-    int insert_error=0;
-    list_part_t *new_list_part=insert_new_partition(list_part, new_partition,0, &insert_error);
-    if(insert_error>0)
-    {
-      free(new_partition);
-      return new_list_part;
-    }
-    if(test_structure_i386(list_part)==0)
-    { /* Check if the partition can be Logical, Bootable or Primary */
-      if(can_be_ext(disk_car,new_partition)!=0)
-      {
-	new_partition->status=STATUS_LOG;
-	if(test_structure_i386(new_list_part)==0)
-	  return new_list_part;
-      }
-      new_partition->status=STATUS_PRIM_BOOT;
-      if(test_structure_i386(new_list_part)==0)
-	return new_list_part;
-      new_partition->status=STATUS_PRIM;
-      if(test_structure_i386(new_list_part)==0)
-	return new_list_part;
-    }
-    new_partition->status=STATUS_DELETED;
-    return new_list_part;
-  }
-  free(new_partition);
-  return list_part;
-}
-#endif
-
-static list_part_t *add_partition_i386(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-    return add_partition_i386_cli(disk_car, list_part, verbose, current_cmd);
-#ifdef HAVE_NCURSES
-  return add_partition_i386_ncurses(disk_car, list_part, verbose, current_cmd);
-#else
-  return list_part;
-#endif
-}
-
 static void set_next_status_i386(const disk_t *disk_car, partition_t *partition)
 {
   if(partition->status==STATUS_LOG)
     partition->status=STATUS_DELETED;
   else
     partition->status++;
-  if(partition->status==STATUS_LOG && can_be_ext(disk_car,partition)==0)
+  if(partition->status==STATUS_LOG && parti386_can_be_ext(disk_car,partition)==0)
     partition->status=STATUS_DELETED;
 }
 
@@ -1426,7 +1287,7 @@ static void set_prev_status_i386(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_LOG;
   else
     partition->status--;
-  if(partition->status==STATUS_LOG && can_be_ext(disk_car,partition)==0)
+  if(partition->status==STATUS_LOG && parti386_can_be_ext(disk_car,partition)==0)
     partition->status--;
 }
 
@@ -1490,7 +1351,7 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
     /* Verify */
     for(element=new_list_part;element!=NULL;element=element->next)
     {
-      if(can_be_ext(disk_car,element->part)==0)
+      if(parti386_can_be_ext(disk_car,element->part)==0)
       {
 	nbr_prim++;
 	if((end_log_block!=NULL) && (end_log_block->next==element))
@@ -1524,7 +1385,7 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
     if(nbr_prim+nbr_log_block<=4)
     {
       int set_prim_bootable_done=0;
-      for(element=end_biggest_log_block;element!=NULL && can_be_ext(disk_car,element->part);element=element->prev)
+      for(element=end_biggest_log_block;element!=NULL && parti386_can_be_ext(disk_car,element->part);element=element->prev)
       {
 	element->part->status=STATUS_LOG;
       }

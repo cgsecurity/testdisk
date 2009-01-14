@@ -24,7 +24,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -46,7 +47,6 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
-#include "intrfn.h"
 #include "chgtype.h"
 #include "partgpt.h"
 #include "savehdr.h"
@@ -61,18 +61,19 @@
 #include "rfs.h"
 #include "xfs.h"
 #include "log.h"
+#include "log_part.h"
 #include "guid_cmp.h"
 #include "guid_cpy.h"
 #include "unicode.h"
 #include "crc.h"
-/* #include "partnone.h" */
+#include "partgptn.h"
+
 extern const arch_fnct_t arch_i386;
 
 static int check_part_gpt(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
 static list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int saveheader);
 static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
 static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *list_part);
-static list_part_t *add_partition_gpt(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition);
 static int test_structure_gpt(list_part_t *list_part);
 static int is_part_known_gpt(const partition_t *partition);
@@ -134,7 +135,6 @@ arch_fnct_t arch_gpt=
   .get_geometry_from_mbr=NULL,
   .check_part=check_part_gpt,
   .write_MBR_code=NULL,
-  .add_partition=add_partition_gpt,
   .set_prev_status=set_next_status_gpt,
   .set_next_status=set_next_status_gpt,
   .test_structure=test_structure_gpt,
@@ -527,7 +527,7 @@ static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *lis
   return list_part;
 }
 
-static list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
   partition_t *new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;
@@ -565,7 +565,7 @@ static list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_par
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
       (*current_cmd)+=2;
-      change_part_type(disk_car,new_partition,current_cmd);
+      change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if(new_partition->part_size>0 && guid_cmp(new_partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)!=0)
     {
@@ -587,106 +587,6 @@ static list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_par
       return list_part;
     }
   }
-}
-
-#ifdef HAVE_NCURSES
-static list_part_t *add_partition_gpt_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  int position=0;
-  int done = FALSE;
-  partition_t *new_partition=partition_new(&arch_gpt);
-  new_partition->part_offset=disk_car->sector_size;
-  new_partition->part_size=disk_car->disk_size-disk_car->sector_size;
-  while (done==FALSE)
-  {
-    int command;
-    static struct MenuItem menuGeometry[]=
-    {
-      { 's', "Sector", 	"Change starting sector" },
-      { 'S', "Sector", 	"Change ending sector" },
-      { 'T' ,"Type",	"Change partition type"},
-      { 'd', "Done", "" },
-      { 0, NULL, NULL }
-    };
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    wmove(stdscr,10, 0);
-    wclrtoeol(stdscr);
-    aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
-    wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
-    wclrtoeol(stdscr);
-    wrefresh(stdscr);
-    command=wmenuSimple(stdscr,menuGeometry, position);
-    switch (command) {
-      case 's':
-        {
-          uint64_t part_offset;
-          part_offset=new_partition->part_offset;
-          wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-          new_partition->part_offset=(uint64_t)ask_number(
-              new_partition->part_offset/disk_car->sector_size,
-              1,
-              (disk_car->disk_size-1)/disk_car->sector_size,
-              "Enter the starting sector ") *
-            (uint64_t)disk_car->sector_size;
-          new_partition->part_size=new_partition->part_size + part_offset - new_partition->part_offset;
-          position=1;
-        }
-        break;
-      case 'S':
-        wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-        new_partition->part_size=(uint64_t)ask_number(
-            (new_partition->part_offset+new_partition->part_size-1)/disk_car->sector_size,
-            new_partition->part_offset/disk_car->sector_size,
-            (disk_car->disk_size-1)/disk_car->sector_size,
-            "Enter the ending sector ") *
-          (uint64_t)disk_car->sector_size +
-          disk_car->sector_size - new_partition->part_offset;
-        position=2;
-        break;
-      case 'T':
-      case 't':
-        change_part_type(disk_car,new_partition, current_cmd);
-        position=3;
-        break;
-      case key_ESC:
-      case 'd':
-      case 'D':
-      case 'q':
-      case 'Q':
-        done = TRUE;
-        break;
-    }
-  }
-  if(new_partition->part_size>0 && guid_cmp(new_partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)!=0)
-  {
-    int insert_error=0;
-    list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
-    if(insert_error>0)
-    {
-      free(new_partition);
-      return new_list_part;
-    }
-    new_partition->status=STATUS_PRIM;
-    if(test_structure_gpt(list_part)!=0)
-      new_partition->status=STATUS_DELETED;
-    return new_list_part;
-  }
-  free(new_partition);
-  return list_part;
-}
-#endif
-
-static list_part_t *add_partition_gpt(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-    return add_partition_gpt_cli(disk_car, list_part, verbose, current_cmd);
-#ifdef HAVE_NCURSES
-  return add_partition_gpt_ncurses(disk_car, list_part, verbose, current_cmd);
-#else
-  return list_part;
-#endif
 }
 
 static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition)

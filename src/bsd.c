@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #endif
  
+#include <stdio.h>
 #include "types.h"
 #include "common.h"
 #include "bsd.h"

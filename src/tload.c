@@ -46,6 +46,7 @@
 #include "fnctdsk.h"
 #include "savehdr.h"
 #include "log.h"
+#include "log_part.h"
 #include "tload.h"
 
 #ifdef HAVE_NCURSES

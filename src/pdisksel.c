@@ -50,6 +50,9 @@
 #include "pdisksel.h"
 #include "ppartsel.h"
 #include "hidden.h"
+#include "hiddenn.h"
+#include "nodisk.h"
+#include "chgtypen.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -176,7 +179,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	{
 	  disk_t *disk=current_disk->disk;
 	  autodetect_arch(disk);
-	  if(interface_check_hidden(disk, &current_cmd)==0 &&
+	  if((!is_hpa_or_dco(disk) || interface_check_hidden_ncurses(disk)==0) &&
 	      interface_partition_type(disk, verbose, &current_cmd)==0)
 	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, &list_search_space);
 	}
@@ -201,8 +204,14 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
   };
   if(list_disk==NULL)
   {
-    return intrf_no_disk("PhotoRec");
+    log_critical("No disk found\n");
+#ifdef HAVE_NCURSES
+    return intrf_no_disk_ncurses("PhotoRec");
+#else
+    return 0;
+#endif
   }
+#ifdef HAVE_NCURSES
   if(cmd_device==NULL)
   {
     char *saved_device=NULL;
@@ -221,6 +230,7 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
       free_list_search_space(&list_search_space);
     }
   }
+#endif
   if(cmd_device!=NULL && *current_cmd!=NULL)
   {
     const list_disk_t *element_disk;
@@ -232,7 +242,12 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
     }
     if(disk==NULL)
     {
-      return intrf_no_disk("PhotoRec");
+      log_critical("No disk found\n");
+#ifdef HAVE_NCURSES
+      return intrf_no_disk_ncurses("PhotoRec");
+#else
+      return 0;
+#endif
     }
     {
       /* disk sector size is now known, fix the sector ranges */

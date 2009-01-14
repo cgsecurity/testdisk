@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -35,6 +36,7 @@
 #include "sun.h"
 #include "fnctdsk.h"
 #include "log.h"
+#include "log_part.h"
 
 #define SUN_LABEL_MAGIC          0xDABE
 extern const arch_fnct_t arch_sun;

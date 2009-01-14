@@ -42,8 +42,6 @@
 #include "types.h"
 #include "common.h"
 #include "log.h"
-#include "intrf.h"	/* ask_log_location */
-#include "fnctdsk.h"
 
 static FILE *log_handle=NULL;
 static int f_status=0;
@@ -58,62 +56,47 @@ int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
-int log_open(const char*default_filename, const int mode, const int ncurses_interface, const char *prog_name, int argc, char**argv)
+FILE *log_open(const char*default_filename, const int mode)
 {
-  const char*filename=default_filename;
-  if(mode!=TD_LOG_CREATE && mode!=TD_LOG_APPEND)
-    return mode;
-  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
-  if(log_handle==NULL && ncurses_interface==0)
-  {
-    printf("Can't create %s file\n", filename);
-  }
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-  if(log_handle==NULL)
-  {
-    char *path;
-    path = getenv("USERPROFILE");
-    if (path == NULL)
-      path = getenv("HOMEPATH");
-    if(path!=NULL)
-    {
-      FILE*handle;
-      filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
-      strcpy(filename, path);
-      strcat(filename, "\\");
-      strcat(filename, default_filename);
-      handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
-      /* WARN: filename: memory leak */
-    }
-  }
-#endif
-  if(log_handle==NULL && ncurses_interface==0)
-  {
-    return mode;
-  }
-  while(log_handle==NULL)
-  {
-    filename=ask_log_location(filename);
-    if(filename==NULL)
-      return TD_LOG_REFUSED;
-    log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
-  }
-  {
-    int i;
-    time_t my_time;
-#ifdef HAVE_DUP2
-    dup2(fileno(log_handle),2);
-#endif
-    my_time=time(NULL);
-    fprintf(log_handle,"\n\n%s",ctime(&my_time));
-    fprintf(log_handle,"Command line: %s", prog_name);
-    for(i=1;i<argc;i++)
-      fprintf(log_handle," %s", argv[i]);
-    fprintf(log_handle,"\n\n");
-    fflush(log_handle);
-  }
-  return TD_LOG_DONE;
+  log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
+  return log_handle;
 }
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+FILE *log_open_default(const char*default_filename, const int mode)
+{
+  char*filename;
+  char *path;
+  path = getenv("USERPROFILE");
+  if (path == NULL)
+    path = getenv("HOMEPATH");
+  if(path == NULL)
+    return NULL;
+  filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
+  strcpy(filename, path);
+  strcat(filename, "\\");
+  strcat(filename, default_filename);
+  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  free(filename);
+  return log_handle;
+}
+#else
+FILE *log_open_default(const char*default_filename, const int mode)
+{
+  char*filename;
+  char *path;
+  path = getenv("HOME");
+  if(path == NULL)
+    return NULL;
+  filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
+  strcpy(filename, path);
+  strcat(filename, "/");
+  strcat(filename, default_filename);
+  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  free(filename);
+  return log_handle;
+}
+#endif
 
 int log_flush(void)
 {
@@ -270,15 +253,3 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     log_info("\n");
   }
 }
-
-void log_partition(const disk_t *disk_car,const partition_t *partition)
-{
-  const char *msg;
-  char buffer_part_size[100];
-  msg=aff_part_aux(AFF_PART_ORDER|AFF_PART_STATUS, disk_car, partition);
-  log_info("%s",msg);
-  if(partition->info[0]!='\0')
-    log_info("\n     %s, %s",partition->info,size_to_unit(partition->part_size,buffer_part_size));
-  log_info("\n");
-}
-

@@ -20,6 +20,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define	BLOCK0_SIGNATURE	0x4552	/* Signature value.         */
 
@@ -88,4 +92,9 @@ struct dpme {
 };
 typedef struct dpme mac_DPME;
 
+int test_structure_mac(list_part_t *list_part);
+list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

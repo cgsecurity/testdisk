@@ -2,7 +2,7 @@
 
     File: tanalyse.c
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -30,14 +31,12 @@
 #include "common.h"
 #include "lang.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
-#endif
 #include "savehdr.h"
 #include "log.h"
 #include "tanalyse.h"
+
+extern const arch_fnct_t arch_none;
 
 static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbose, const int saveheader, char**current_cmd)
 {
@@ -91,7 +90,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
     log_flush();
 #ifdef HAVE_NCURSES
     command=screen_buffer_display(stdscr,
-	(list_part!=NULL && disk_car->arch->add_partition!=NULL?"QB":"Q"),
+	(list_part!=NULL && disk_car->arch != &arch_none?"QB":"Q"),
 	menuAnalyse);
 #endif
   }

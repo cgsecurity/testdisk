@@ -2,7 +2,7 @@
 
     File: log.h
 
-    Copyright (C) 2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,16 +21,18 @@
  */
 #ifndef _LOG_H
 #define _LOG_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int log_set_levels(const unsigned int levels);
-int log_open(const char*default_filename, const int mode, const int ncurses_interface, const char *prog_name, int argc, char**argv);
+FILE *log_open(const char*default_filename, const int mode);
+FILE *log_open_default(const char*default_filename, const int mode);
 int log_flush(void);
 int log_close(void);
 int log_redirect(unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 void dump_log(const void *nom_dump,unsigned int lng);
 void dump2_log(const void *dump_1, const void *dump_2,const unsigned int lng);
-#ifdef _COMMON_H
-void log_partition(const disk_t *disk_car,const partition_t *partition);
-#endif
 
 #define TD_LOG_NONE	0
 #define TD_LOG_CREATE	1
@@ -59,4 +61,8 @@ void log_partition(const disk_t *disk_car,const partition_t *partition);
 #define log_error(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_ERROR,FORMAT,##ARGS)
 #define log_perror(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_PERROR,FORMAT,##ARGS)
 #define log_critical(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_CRITICAL,FORMAT,##ARGS)
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

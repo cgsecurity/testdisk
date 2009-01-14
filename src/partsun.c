@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -36,10 +37,8 @@
 #include "common.h"
 #include "testdisk.h"
 #include "fnctdsk.h"
-//#include "analyse.h"
 #include "lang.h"
 #include "intrf.h"
-#include "intrfn.h"
 #include "chgtype.h"
 #include "sun.h"
 #include "swap.h"
@@ -57,13 +56,13 @@
 #include "xfs.h"
 #include "ufs.h"
 #include "log.h"
+#include "partsun.h"
 
 static int check_part_sun(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader);
 static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
 static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *list_part);
-static list_part_t *add_partition_sun(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
 static void set_next_status_sun(const disk_t *disk_car, partition_t *partition);
 static int test_structure_sun(list_part_t *list_part);
 static int set_part_type_sun(partition_t *partition, unsigned int part_type_sun);
@@ -103,7 +102,6 @@ arch_fnct_t arch_sun=
   .get_geometry_from_mbr=get_geometry_from_sunmbr,
   .check_part=check_part_sun,
   .write_MBR_code=NULL,
-  .add_partition=add_partition_sun,
   .set_prev_status=set_next_status_sun,
   .set_next_status=set_next_status_sun,
   .test_structure=test_structure_sun,
@@ -183,11 +181,10 @@ list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int savehe
 }
 
 static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
-{ /* TODO: Implement it */
+{
+  /* TODO: Implement it */
   if(ro==0)
-  {
-    not_implemented("write_part_sun");
-  }
+    return -1;
   return 0;
 }
 
@@ -224,7 +221,7 @@ static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *lis
   return list_part;
 }
 
-static list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_sun);
@@ -251,7 +248,7 @@ static list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_par
     else if(strncmp(*current_cmd,"T,",2)==0)
     {
       (*current_cmd)+=2;
-      change_part_type(disk_car,new_partition,current_cmd);
+      change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if((CHS2offset(disk_car,&end)>new_partition->part_offset) &&
       new_partition->part_type_sun>0)
@@ -274,99 +271,6 @@ static list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_par
       return list_part;
     }
   }
-}
-
-#ifdef HAVE_NCURSES
-static list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  CHS_t start,end;
-  partition_t *new_partition=partition_new(&arch_sun);
-  int position=0;
-  start.cylinder=0;
-  start.head=0;
-  start.sector=1;
-  end.cylinder=disk_car->geom.cylinders-1;
-  end.head=disk_car->geom.heads_per_cylinder-1;
-  end.sector=disk_car->geom.sectors_per_head;
-  {
-    int done = FALSE;
-    while (done==FALSE) {
-      int command;
-      static struct MenuItem menuGeometry[]=
-      {
-	{ 'c', "Cylinders", 	"Change starting cylinder" },
-	{ 'C', "Cylinders", 	"Change ending cylinder" },
-	{ 'T' ,"Type",		"Change partition type"},
-	{ 'd', "Done", "" },
-	{ 0, NULL, NULL }
-      };
-      aff_copy(stdscr);
-      wmove(stdscr,4,0);
-      wprintw(stdscr,"%s",disk_car->description(disk_car));
-      new_partition->part_offset=CHS2offset(disk_car,&start);
-      new_partition->part_size=CHS2offset(disk_car,&end) - new_partition->part_offset + disk_car->sector_size;
-      wmove(stdscr,10, 0);
-      wclrtoeol(stdscr);
-      aff_part(stdscr, AFF_PART_BASE, disk_car, new_partition);
-      wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
-      wclrtoeol(stdscr);
-      wrefresh(stdscr);
-      command=wmenuSimple(stdscr,menuGeometry, position);
-      switch (command) {
-	case 'c':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  start.cylinder=ask_number(start.cylinder,0,disk_car->geom.cylinders-1,"Enter the starting cylinder ");
-	  position=1;
-	  break;
-	case 'C':
-	  wmove(stdscr, INTER_GEOM_Y, INTER_GEOM_X);
-	  end.cylinder=ask_number(end.cylinder,start.cylinder,disk_car->geom.cylinders-1,"Enter the ending cylinder ");
-	  position=2;
-	  break;
-	case 'T':
-	case 't':
-	  change_part_type(disk_car, new_partition, current_cmd);
-	  position=3;
-	  break;
-	case key_ESC:
-	case 'd':
-	case 'D':
-	case 'q':
-	case 'Q':
-	  done = TRUE;
-	  break;
-      }
-    }
-  }
-  if((CHS2offset(disk_car,&end)>new_partition->part_offset) &&
-      new_partition->part_type_sun>0)
-  {
-    int insert_error=0;
-    list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
-    if(insert_error>0)
-    {
-      free(new_partition);
-      return new_list_part;
-    }
-    new_partition->status=STATUS_PRIM;
-    if(test_structure_sun(list_part)!=0)
-      new_partition->status=STATUS_DELETED;
-    return new_list_part;
-  }
-  free(new_partition);
-  return list_part;
-}
-#endif
-
-static list_part_t *add_partition_sun(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-    return add_partition_sun_cli(disk_car, list_part, verbose, current_cmd);
-#ifdef HAVE_NCURSES
-  return add_partition_sun_ncurses(disk_car, list_part, verbose, current_cmd);
-#else
-  return list_part;
-#endif
 }
 
 static void set_next_status_sun(const disk_t *disk_car, partition_t *partition)

@@ -21,6 +21,9 @@
  */
 #define MAX_FILES_PER_DIR	500
 #define DEFAULT_RECUP_DIR "recup_dir"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum photorec_status { STATUS_FIND_OFFSET, STATUS_EXT2_ON, STATUS_EXT2_ON_BF, STATUS_EXT2_OFF, STATUS_EXT2_OFF_BF, STATUS_EXT2_ON_SAVE_EVERYTHING, STATUS_EXT2_OFF_SAVE_EVERYTHING, STATUS_QUIT };
 typedef enum photorec_status photorec_status_t;
@@ -56,3 +59,9 @@ int sorfile_stat_ts(const void *p1, const void *p2);
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num);
 void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
+alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);
+void free_search_space(alloc_data_t *list_search_space);
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+

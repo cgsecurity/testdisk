@@ -2,7 +2,7 @@
 
     File: ext2grp.c
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include "ext2.h"
 #include "log.h"
 #include "phrecn.h"
+#include "photorec.h"
 
 unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition)
 {
@@ -51,7 +52,6 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, parti
       partition->upart_type!=UP_EXT4)
   {
     log_error("Not a valid ext2/ext3/ext4 filesystem");
-    display_message("Not a valid ext2/ext3/ext4 filesystem");
     free_search_space(list_search_space);
     return 0;
   }
@@ -89,7 +89,6 @@ unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, parti
       partition->upart_type!=UP_EXT4)
   {
     log_error("Not a valid ext2/ext3/ext4 filesystem");
-    display_message("Not a valid ext2/ext3/ext4 filesystem");
     free_search_space(list_search_space);
     return 0;
   }

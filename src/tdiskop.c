@@ -38,7 +38,6 @@
 #include "fnctdsk.h"
 #include "testdisk.h"
 #include "adv.h"
-#include "chgtype.h"
 #include "edit.h"
 #include "log.h"
 #include "hdaccess.h"
@@ -47,6 +46,7 @@
 #include "tmbrcode.h"
 #include "tdelete.h"
 #include "tdiskop.h"
+#include "geometry.h"
 
 extern const arch_fnct_t arch_i386;
 #define INTER_DISK_X	0

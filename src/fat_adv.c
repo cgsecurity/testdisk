@@ -2,7 +2,7 @@
 
     File: fat_adv.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #include <ctype.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -44,17 +45,17 @@
 #include "fnctdsk.h"
 #include "testdisk.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
-#endif
 #include "dir.h"
 #include "dirpart.h"
 #include "fat_dir.h"
 #include "io_redir.h"
 #include "log.h"
+#include "log_part.h"
 #include "fat_adv.h"
+#ifdef HAVE_NCURSES
+#include "fatn.h"
+#endif
 
 #define INTER_FAT_ASK_X 0
 #define INTER_FAT_ASK_Y	23
@@ -100,11 +101,11 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
 static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length,const int verbose, unsigned int root_size_max,const upart_type_t upart_type, const unsigned int fats);
 static int calcul_sectors_per_cluster(const upart_type_t upart_type, const unsigned long int data_size, const unsigned int fat_length, const unsigned int sector_size);
 static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int entry_nr);
-static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int sectors_per_cluster, const int verbose, file_data_t *rootdir_list, const unsigned int fats);
-
-static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate);
 static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_offset, const unsigned long int i);
+
 #ifdef HAVE_NCURSES
+static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate);
+static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int sectors_per_cluster, const int verbose, file_data_t *rootdir_list, const unsigned int fats);
 static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsigned int nbr_offset,unsigned int*reserved, unsigned int*fat_length, const unsigned long int max_sector_offset, unsigned int *fats);
 #endif
 
@@ -552,7 +553,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     else
     {
       dir_aff_log(disk_car, partition, NULL, rootdir_list);
-      /* && (ind_stop==0) */
+#ifdef HAVE_NCURSES
       if(interface && (expert>0))
       {
         if(ask_confirmation("Create a new root cluster with %u first-level directories (Expert only) (Y/N)",dir_nbr)!=0 && ask_confirmation("Write root cluster, confirm ? (Y/N)")!=0)
@@ -561,6 +562,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
           fat32_create_rootdir(disk_car, partition, reserved, fat_length, root_cluster, sectors_per_cluster, verbose, rootdir_list, fats);
         }
       }
+#endif
       delete_list_file(rootdir_list);
     }
     free(buffer);
@@ -568,6 +570,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
   return root_cluster;
 }
 
+#ifdef HAVE_NCURSES
 static int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
 		  /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
 
@@ -659,9 +662,15 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
       memset(buffer,0,cluster_size);
       /* FIXME need to write fat32_get_next_free_cluster */
       next_cluster=cluster++;
-      set_next_cluster(disk_car,partition,UP_FAT32,reserved,cluster,next_cluster);
-      set_next_cluster(disk_car,partition,UP_FAT32,reserved+fat_length,cluster,next_cluster);
-      cluster=next_cluster;
+      if(set_next_cluster(disk_car,partition,UP_FAT32,reserved,cluster,next_cluster))
+      {
+	display_message("Can't modify the FAT entries.\n");
+      }
+      if(set_next_cluster(disk_car,partition,UP_FAT32,reserved+fat_length,cluster,next_cluster))
+      {
+	display_message("Can't modify the FAT entries.\n");
+      }
+cluster=next_cluster;
     }
   }
   if(disk_car->write(disk_car,cluster_size, buffer,
@@ -669,8 +678,14 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
   {
     display_message("Write error: Can't create FAT32 root cluster.\n");
   }
-  set_next_cluster(disk_car,partition,UP_FAT32,reserved,cluster,FAT32_EOC);
-  set_next_cluster(disk_car,partition,UP_FAT32,reserved+fat_length,cluster,FAT32_EOC);
+  if(set_next_cluster(disk_car,partition,UP_FAT32,reserved,cluster,FAT32_EOC))
+  {
+    display_message("Can't modify the FAT entries.\n");
+  }
+  if(set_next_cluster(disk_car,partition,UP_FAT32,reserved+fat_length,cluster,FAT32_EOC))
+  {
+    display_message("Can't modify the FAT entries.\n");
+  }
 #ifdef DEBUG
   {
     file_data_t *dir_list;
@@ -682,6 +697,7 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
   free(buffer);
   return 0;
 }
+#endif
 
 static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset,const int verbose)
 {
@@ -901,7 +917,6 @@ static void fat32_dump(disk_t *disk_car, const partition_t *partition, const upa
 
 static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const upart_type_t upart_type, const unsigned char *orgboot, const unsigned char*newboot, const int error, char **current_cmd)
 {
-  const struct fat_boot_sector *org_fat_header=(const struct fat_boot_sector *)orgboot;
   const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)newboot;
 #ifdef HAVE_NCURSES
   struct MenuItem menuSaveBoot[]=
@@ -932,8 +947,9 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 #endif
     if(memcmp(newboot,orgboot,DEFAULT_SECTOR_SIZE))	/* Only compare the first sector */
     {
-      dump_2fat_info(fat_header, org_fat_header, upart_type,disk_car->sector_size);
 #ifdef HAVE_NCURSES
+      const struct fat_boot_sector *org_fat_header=(const struct fat_boot_sector *)orgboot;
+      dump_2fat_info_ncurses(fat_header, org_fat_header, upart_type,disk_car->sector_size);
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
       if(error)
 	wprintw(stdscr,"Warning: Extrapolated boot sector have incorrect values.\n");
@@ -944,8 +960,8 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     }
     else
     {
-      dump_fat_info(fat_header, upart_type,disk_car->sector_size);
 #ifdef HAVE_NCURSES
+      dump_fat_info_ncurses(fat_header, upart_type,disk_car->sector_size);
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
 #endif
     }
@@ -1013,7 +1029,11 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 	break;
     }
   } while(do_write==0 && do_exit==0);
-  if(do_write!=0 && (no_confirm!=0 || ask_confirmation("Write FAT boot sector, confirm ? (Y/N)")!=0))
+  if(do_write!=0 && (no_confirm!=0
+#ifdef HAVE_NCURSES
+    || ask_confirmation("Write FAT boot sector, confirm ? (Y/N)")!=0
+#endif
+    ))
   {
     int err=0;
     log_info("Write new boot!\n");
@@ -2395,6 +2415,7 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
     free(buffer);
     return 0;
   }
+#ifdef HAVE_NCURSES
   if(ask_confirmation("Initialize FAT root directory, confirm ? (Y/N)")!=0)
   {
     int err=0;
@@ -2415,6 +2436,7 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
       return 1;
     }
   }
+#endif
   free(buffer);
   return 0;
 }
@@ -2588,11 +2610,13 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                     }
                     if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
                     {
+#ifdef HAVE_NCURSES
                       if(ask_confirmation("Use FAT%u to repair FAT%u table, confirm ? (Y/N)",good_fat_nbr+1,fat_nbr+1)!=0)
                       {
                         allow_write[fat_nbr]=FAT_REPAIR_YES;
                       }
                       else
+#endif
                       {
                         allow_write[fat_nbr]=FAT_REPAIR_NO;
                         log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu) using FAT%u\n",fat_nbr+1,
@@ -2618,11 +2642,13 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                 {
                   if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
                   {
+#ifdef HAVE_NCURSES
                     if(ask_confirmation("Remove invalid cluster from FAT%u table, confirm ? (Y/N)",fat_nbr+1)!=0)
                     {
                       allow_write[fat_nbr]=FAT_REPAIR_YES;
                     }
                     else
+#endif
                     {
                       allow_write[fat_nbr]=FAT_REPAIR_NO;
                       log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu)\n",fat_nbr+1,
@@ -2656,6 +2682,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                   }
                   if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
                   {
+#ifdef HAVE_NCURSES
                     if(ask_confirmation("Remove invalid cluster from FAT%u table, confirm ? (Y/N)",fat_nbr+1)!=0)
                     {
                       allow_write[fat_nbr]=FAT_REPAIR_YES;
@@ -2663,6 +2690,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                           start_fat1+fat_length*fat_nbr+old_offset_s);
                     }
                     else
+#endif
                     {
                       allow_write[fat_nbr]=FAT_REPAIR_NO;
                       log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu)\n",fat_nbr+1,
@@ -2826,6 +2854,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                 }
                 if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
                 {
+#ifdef HAVE_NCURSES
                   if(ask_confirmation("Use FAT%u to repair FAT%u table, confirm ? (Y/N)",good_fat_nbr+1,fat_nbr+1)!=0)
                   {
                     allow_write[fat_nbr]=FAT_REPAIR_YES;
@@ -2833,6 +2862,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                         start_fat1+fat_length*fat_nbr+old_offset_s, good_fat_nbr+1);
                   }
                   else
+#endif
                   {
                     allow_write[fat_nbr]=FAT_REPAIR_NO;
                     log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu) using FAT%u\n",fat_nbr+1,
@@ -2856,6 +2886,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
             {
               if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
               {
+#ifdef HAVE_NCURSES
                 if(ask_confirmation("Remove invalid cluster from FAT%u table, confirm ? (Y/N)",fat_nbr+1)!=0)
                 {
                   allow_write[fat_nbr]=FAT_REPAIR_YES;
@@ -2863,6 +2894,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                       start_fat1+fat_length*fat_nbr+old_offset_s);
                 }
                 else
+#endif
                 {
                   allow_write[fat_nbr]=FAT_REPAIR_NO;
                   log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu)\n",fat_nbr+1,
@@ -2894,6 +2926,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
               }
               if(allow_write[fat_nbr]==FAT_REPAIR_ASK)
               {
+#ifdef HAVE_NCURSES
                 if(ask_confirmation("Remove invalid cluster from FAT%u table, confirm ? (Y/N)",fat_nbr+1)!=0)
                 {
                   allow_write[fat_nbr]=FAT_REPAIR_YES;
@@ -2901,6 +2934,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                       start_fat1+fat_length*fat_nbr+old_offset_s);
                 }
                 else
+#endif
                 {
                   allow_write[fat_nbr]=FAT_REPAIR_NO;
                   log_info("repair_FAT_table: doesn't correct FAT%u (sector %lu)\n",fat_nbr+1,
