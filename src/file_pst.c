@@ -56,9 +56,10 @@ static void register_header_check_pst(file_stat_t *file_stat)
   register_header_check(0, wab_header,sizeof(wab_header), &header_check_pst, file_stat);
 }
 
-#define INDEX_TYPE_OFFSET 0x0A
-#define FILE_SIZE_POINTER 0xA8
-#define FILE_SIZE_POINTER_64 0xB8
+#define INDEX_TYPE_OFFSET 	0x0A
+#define FILE_SIZE_POINTER 	0xA8
+#define FILE_SIZE_POINTER_64 	0xB8
+#define DBX_SIZE_POINTER	0x7C
 /*
    Outlook 2000
    0x0000 uchar signature[4];
@@ -96,6 +97,12 @@ static int header_check_pst(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="dbx";
+      file_recovery_new->calculated_file_size=(uint64_t)buffer[DBX_SIZE_POINTER] +
+	(((uint64_t)buffer[DBX_SIZE_POINTER+1])<<8) +
+	(((uint64_t)buffer[DBX_SIZE_POINTER+2])<<16) +
+	(((uint64_t)buffer[DBX_SIZE_POINTER+3])<<24);
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
     return 1;
   }
   if(memcmp(buffer,pst_header,sizeof(pst_header))==0)
