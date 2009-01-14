@@ -94,6 +94,7 @@ extern const file_hint_t file_hint_gho;
 extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gpg;
 extern const file_hint_t file_hint_gz;
+extern const file_hint_t file_hint_hds;
 extern const file_hint_t file_hint_ifo;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
@@ -118,6 +119,7 @@ extern const file_hint_t file_hint_mp3;
 extern const file_hint_t file_hint_mpg;
 extern const file_hint_t file_hint_mrw;
 extern const file_hint_t file_hint_mus;
+extern const file_hint_t file_hint_mxf;
 extern const file_hint_t file_hint_mysql;
 extern const file_hint_t file_hint_njx;
 extern const file_hint_t file_hint_ogg;
@@ -251,6 +253,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_gif  },
   { .enable=0, .file_hint=&file_hint_gpg  },
   { .enable=0, .file_hint=&file_hint_gz   },
+  { .enable=0, .file_hint=&file_hint_hds  },
   { .enable=0, .file_hint=&file_hint_ifo  },
   { .enable=0, .file_hint=&file_hint_imb  },
   { .enable=0, .file_hint=&file_hint_indd  },
@@ -276,6 +279,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_mrw  },
   { .enable=0, .file_hint=&file_hint_mus  },
   { .enable=0, .file_hint=&file_hint_mysql },
+  { .enable=0, .file_hint=&file_hint_mxf  },
   { .enable=0, .file_hint=&file_hint_njx  },
   { .enable=0, .file_hint=&file_hint_ogg  },
   { .enable=0, .file_hint=&file_hint_one  },
