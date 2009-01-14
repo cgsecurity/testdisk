@@ -28,6 +28,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -128,7 +129,8 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
       ntfs_header->dir_entries[0]!=0 || ntfs_header->dir_entries[1]!=0 ||
       ntfs_header->sectors[0]!=0 || ntfs_header->sectors[1]!=0 ||
       le16(ntfs_header->fat_length)!=0 || le32(ntfs_header->total_sect)!=0 ||
-      memcmp(ntfs_header->system_id,"NTFS",4)!=0)
+      memcmp(ntfs_header->system_id,"NTFS",4)!=0 ||
+      le64(ntfs_header->sectors_nbr)==0)
     return 1;
   switch(ntfs_header->sectors_per_cluster)
   {
