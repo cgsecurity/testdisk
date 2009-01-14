@@ -199,34 +199,38 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     io_redir_del_redir(disk_car,mft_pos);
     /* */
-    if(res1>res2)
+    if(res1>res2 && res1>0)
     {
       /* Use MFT */
-      if(ask_confirmation("Fix MFT mirror using MFT %s? (Y/N)", (res1>0?"":"(not recommanded) "))!=0)
+#ifdef HAVE_NCURSES
+      if(ask_confirmation("Fix MFT mirror using MFT ? (Y/N)")!=0)
 	use_MFT=1;
       else
+#endif
 	log_info("Don't fix MFT mirror.\n");
     }
-    else if(res1<res2)
+    else if(res1<res2 && res2>0)
     {
       /* Use MFT mirror */
-      if(ask_confirmation("Fix MFT using its mirror %s? (Y/N)", (res2>0?"":"(not recommanded) "))!=0)
+#ifdef HAVE_NCURSES
+      if(ask_confirmation("Fix MFT using its mirror ? (Y/N)")!=0)
 	use_MFT=2;
       else
+#endif
 	log_info("Don't fix MFT.\n");
     }
     else
     { /* res1==res2 */
-      if(res1<0)
-	log_error("MFT and MFT mirror are bad. Failed to repair them.\n");
-      else
+      if(res1>0 && res2>0)
 	log_error("Both MFT seems ok but they don't match, use chkdsk.\n");
+      else
+	log_error("MFT and MFT mirror are bad. Failed to repair them.\n");
       if(expert==0)
       {
-	if(res1<0)
-	  display_message("MFT and MFT mirror are bad. Failed to repair them.\n");
-	else
+	if(res1>0 && res2>0)
 	  display_message("Both MFT seems ok but they don't match, use chkdsk.\n");
+	else
+	  display_message("MFT and MFT mirror are bad. Failed to repair them.\n");
       }
       else
       {
@@ -248,10 +252,10 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	wmove(stdscr,6,0);
 	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 	wmove(stdscr,8,0);
-	if(res1<0)
-	  wprintw(stdscr, "MFT and MFT mirror are bad.\n");
-	else
+	if(res1>0 && res2>0)
 	  wprintw(stdscr, "Both MFT seems ok but they don't match.\n");
+	else
+	  wprintw(stdscr, "MFT and MFT mirror are bad.\n");
 	command=wmenuSelect_ext(stdscr, 23, INTER_MFT_Y, INTER_MFT_X, menuMFT, 10, "MBQ",
 	    MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu, &real_key);
 	switch(command)
@@ -276,13 +280,11 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   {
     if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mftmirr, mft_pos)!=0)
     {
-      log_error("Failed to fix MFT: write error.\n");
       display_message("Failed to fix MFT: write error.\n");
     }
     else
     {
       disk_car->sync(disk_car);
-      log_info("MFT fixed.\n");
       display_message("MFT fixed.\n");
     }
   }
@@ -290,13 +292,11 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   {
     if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mft, mftmirr_pos)!=0)
     {
-      log_error("Failed to fix MFT mirror: write error.\n");
       display_message("Failed to fix MFT mirror: write error.\n");
     }
     else
     {
       disk_car->sync(disk_car);
-      log_info("MFT mirror fixed.\n");
       display_message("MFT mirror fixed.\n");
     }
   }
