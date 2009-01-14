@@ -184,6 +184,15 @@ AC_ARG_ENABLE([missing-uuid-ok],
      esac],
      [missing_uuid_ok=false])
 
+AC_ARG_ENABLE([qt],
+    AS_HELP_STRING(--enable-qt,enable use of qt (default is NO)),
+    [case "${enableval}" in
+       yes) use_qt=true ;;
+       no)  use_qt=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-qt]) ;;
+     esac],
+     [use_qt=false])
+
 use_icon=no
 
 case "$target" in
@@ -215,15 +224,16 @@ case "$target" in
     ;;
 esac
 
+AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 AM_CONDITIONAL(USEICON, test "$use_icon" = yes)
 
 # Checks for programs.
 AC_PROG_CC
-#AC_PROG_CXX
+AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-
+PKG_PROG_PKG_CONFIG
 AC_ARG_VAR(WINDRES, [Windows Resource compiler tool path])
 AC_PATH_TOOL(WINDRES,windres,)
 AC_SUBST(WINDRES)
@@ -425,9 +435,11 @@ if test -z "${use_ncurses}"; then
  fi
  AC_DEFINE([HAVE_NCURSES],1,[Define to 1 if you have one of the ncursesw/ncurses/pdcurses/curses library.])
  if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a"; then
-   LIBS="$LIBS ${ncurses_lib_dir}/lib${ncurses_lib}.a"
+   testdisk_LDADD="$testdisk_LDADD ${ncurses_lib_dir}/lib${ncurses_lib}.a"
+   photorec_LDADD="$photorec_LDADD ${ncurses_lib_dir}/lib${ncurses_lib}.a"
  else
-   LIBS="$LIBS -l${ncurses_lib}"
+   testdisk_LDADD="$testdisk_LDADD -l${ncurses_lib}"
+   photorec_LDADD="$photorec_LDADD -l${ncurses_lib}"
  fi
   AC_CHECK_LIB(tinfo,keypad,[
       AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
@@ -435,10 +447,12 @@ if test -z "${use_ncurses}"; then
  if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a";
  then 
    if test -e "${ncurses_lib_dir}/libtinfo.a"; then
-     LIBS="$LIBS ${ncurses_lib_dir}/libtinfo.a"
+     testdisk_LDADD="$testdisk_LDADD ${ncurses_lib_dir}/libtinfo.a"
+     photorec_LDADD="$photorec_LDADD ${ncurses_lib_dir}/libtinfo.a"
    fi
  else
-   LIBS="$LIBS -ltinfo"
+   testdisk_LDADD="$testdisk_LDADD -ltinfo"
+   photorec_LDADD="$photorec_LDADD -ltinfo"
  fi
       ])
 else
@@ -484,8 +498,10 @@ if test -z "${use_jpeg}"; then
       AC_DEFINE([HAVE_LIBJPEG],1,[Define to 1 if you have the jpeg library (-ljpeg).])
       if test "${jpeg_lib_a}" = ""; then
         photorec_LDADD="$photorec_LDADD -ljpeg"
+        qphotorec_LDADD="$qphotorec_LDADD -ljpeg"
       else
         photorec_LDADD="$photorec_LDADD ${jpeg_lib_a}"
+        qphotorec_LDADD="$qphotorec_LDADD ${jpeg_lib_a}"
       fi
       ],AC_MSG_WARN(No jpeg library detected))
 #  )
@@ -653,6 +669,14 @@ AC_CHECK_FUNCS([reiserfs_fs_open_fast])
 LIBS="$OLDLIBS"
 AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
+if test "$use_qt" = "true";
+then
+  PKG_CHECK_MODULES(QTCORE, QtCore >= 4.0.1)
+  PKG_CHECK_MODULES(QTGUI,  QtGui  >= 4.0.1)
+  qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
+  CXXFLAGS="$CXXFLAGS $QTCORE_CFLAGS $QTGUI_CFLAGS"
+fi
+
 # e2fsprogs may be using pthread
 # checks for pthreads
 SAVE_CFLAGS="$CFLAGS"
@@ -661,10 +685,11 @@ ACX_PTHREAD([enable_threads="pthread"],[enable_threads="no"])
 CFLAGS="$SAVE_CFLAGS"
 
 AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
-
+AC_SUBST(qphotorec_LDADD)
 AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.1 doc_src/photorec.1])
 AC_OUTPUT
