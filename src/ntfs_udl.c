@@ -1215,6 +1215,8 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  wclrtoeol(window);	/* before addstr for BSD compatibility */
 	  if(file_walker==current_file)
 	    wattrset(window, A_REVERSE);
+	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
+	    wbkgdset(window,' ' | COLOR_PAIR(2));
 	  if(file_info->stat.st_mtime!=0)
 	  {
 	    tm_p = localtime(&file_info->stat.st_mtime);
@@ -1232,6 +1234,8 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  wprintw(window, "%7llu", (long long unsigned int)file_info->stat.st_size);
 	  /* screen may overlap due to long filename */
 	  wprintw(window, " %s %s", datestr, file_info->name);
+	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
+	    wbkgdset(window,' ' | COLOR_PAIR(0));
 	  if(file_walker==current_file)
 	    wattroff(window, A_REVERSE);
 	}
@@ -1260,13 +1264,25 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
       {
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"c");
+	waddstr(window,":");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
-	waddstr(window," to copy, ");
+	waddstr(window," to select the current file, ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"C");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy the selected files, ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	mvwaddstr(window,LINES-1,4,"c");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy the current file, ");
       }
+      if(has_colors())
+	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
       waddstr(window,"q");
       if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
@@ -1314,6 +1330,18 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->next;
 	    pos_num++;
+	  }
+	  break;
+	case ':':
+	  {
+	    file_info_t *file_info;
+	    file_info=td_list_entry(current_file, file_info_t, list);
+	    file_info->status^=FILE_STATUS_MARKED;
+	    if(current_file->next!=&dir_list->list)
+	    {
+	      current_file=current_file->next;
+	      pos_num++;
+	    }
 	  }
 	  break;
 	case 'c':
@@ -1368,6 +1396,63 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 	      }
 	    }
+	  }
+	  break;
+	case 'C':
+	  if(dir_data->local_dir==NULL)
+	  {
+	    char *res;
+	    res=ask_location("Are you sure you want to copy the %smarked files to the directory %s ? [Y/N]", "");
+	    dir_data->local_dir=res;
+	    opts.dest=res;
+	  }
+	  if(dir_data->local_dir!=NULL)
+	  {
+	    unsigned int file_ok=0;
+	    unsigned int file_bad=0;
+	    if(has_colors())
+	      wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
+	    wmove(window,5,0);
+	    wclrtoeol(window);
+	    wprintw(window,"Copying, please wait...");
+	    wrefresh(window);
+	    td_list_for_each(file_walker,&dir_list->list)
+	    {
+	      file_info_t *file_info;
+	      file_info=td_list_entry(file_walker, file_info_t, list);
+	      if((file_info->status&FILE_STATUS_MARKED)!=0)
+	      {
+		if(undelete_file(ls->vol, file_info->stat.st_ino) < 0)
+		  file_bad++;
+		else
+		{
+		  file_info->status^=FILE_STATUS_MARKED;
+		  file_ok++;
+		  wmove(window,5,0);
+		  wclrtoeol(window);
+		  wprintw(window,"Copying, please wait... %u files done", file_ok);
+		  wrefresh(window);
+		}
+	      }
+	    }
+	    if(has_colors())
+	      wbkgdset(window,' ' | COLOR_PAIR(0));
+	    wmove(window,5,0);
+	    wclrtoeol(window);
+	    if(file_ok==0)
+	    {
+	      if(has_colors())
+		wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
+	      wprintw(window,"Copy failed!");
+	    }
+	    else
+	    {
+	      if(has_colors())
+		wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
+	      wprintw(window,"Copy done! (%u/%u)", file_ok, (file_ok+file_bad));
+	    }
+	    if(has_colors())
+	      wbkgdset(window,' ' | COLOR_PAIR(0));
 	  }
 	  break;
       }
