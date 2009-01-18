@@ -499,9 +499,11 @@ if test -z "${use_jpeg}"; then
       if test "${jpeg_lib_a}" = ""; then
         photorec_LDADD="$photorec_LDADD -ljpeg"
         qphotorec_LDADD="$qphotorec_LDADD -ljpeg"
+        fidentify_LDADD="$fidentify_LDADD -ljpeg"
       else
         photorec_LDADD="$photorec_LDADD ${jpeg_lib_a}"
         qphotorec_LDADD="$qphotorec_LDADD ${jpeg_lib_a}"
+        fidentify_LDADD="$fidentify_LDADD ${jpeg_lib_a}"
       fi
       ],AC_MSG_WARN(No jpeg library detected))
 #  )
@@ -691,5 +693,6 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
 AC_SUBST(qphotorec_LDADD)
+AC_SUBST(fidentify_LDADD)
 AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.1 doc_src/photorec.1])
 AC_OUTPUT

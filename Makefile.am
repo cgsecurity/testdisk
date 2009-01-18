@@ -31,4 +31,7 @@ smallstatic:
 	$(MAKE) static
 	(cd src && $(MAKE) small) || exit 1;
 
+extras:
+	(cd src && $(MAKE) extras) || exit 1;
+
 DISTCLEANFILES = *~ core
