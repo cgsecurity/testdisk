@@ -72,8 +72,8 @@ extern const file_hint_t file_hint_dta;
 extern const file_hint_t file_hint_dump;
 extern const file_hint_t file_hint_dv;
 extern const file_hint_t file_hint_dwg;
-extern const file_hint_t file_hint_elf;
 extern const file_hint_t file_hint_dxf;
+extern const file_hint_t file_hint_elf;
 extern const file_hint_t file_hint_emf;
 extern const file_hint_t file_hint_evt;
 extern const file_hint_t file_hint_exe;
@@ -96,6 +96,7 @@ extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gpg;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_hds;
+extern const file_hint_t file_hint_ico;
 extern const file_hint_t file_hint_ifo;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
@@ -257,6 +258,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_gpg  },
   { .enable=0, .file_hint=&file_hint_gz   },
   { .enable=0, .file_hint=&file_hint_hds  },
+  { .enable=0, .file_hint=&file_hint_ico  },
   { .enable=0, .file_hint=&file_hint_ifo  },
   { .enable=0, .file_hint=&file_hint_imb  },
   { .enable=0, .file_hint=&file_hint_indd  },
