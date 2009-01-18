@@ -295,4 +295,35 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->offset_error=0;
 }
 
+file_stat_t * init_file_stats(file_enable_t *files_enable)
+{
+  file_stat_t *file_stats;
+  file_enable_t *file_enable;
+  unsigned int enable_count=1;	/* Lists are terminated by NULL */
+  for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
+  {
+    if(file_enable->enable>0)
+    {
+      enable_count++;
+    }
+  }
+  file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
+  enable_count=0;
+  for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
+  {
+    if(file_enable->enable>0)
+    {
+      file_stats[enable_count].file_hint=file_enable->file_hint;
+      file_stats[enable_count].not_recovered=0;
+      file_stats[enable_count].recovered=0;
+      if(file_enable->file_hint->register_header_check!=NULL)
+	file_enable->file_hint->register_header_check(&file_stats[enable_count]);
+      enable_count++;
+    }
+  }
+  index_header_check();
+  file_stats[enable_count].file_hint=NULL;
+  return file_stats;
+}
+
 

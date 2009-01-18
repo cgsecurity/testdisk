@@ -129,6 +129,7 @@ void register_header_check(const unsigned int offset, const unsigned char *value
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 void index_header_check(void);
+file_stat_t * init_file_stats(file_enable_t *files_enable);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
