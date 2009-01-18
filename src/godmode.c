@@ -53,6 +53,7 @@
 #include "fat32.h"
 #include "tntfs.h"
 #include "thfs.h"
+#include "partmacn.h"
 
 #define RO 1
 #define RW 0
