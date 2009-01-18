@@ -37,8 +37,8 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
-static int set_EXT2_info(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose);
+static int test_EXT2(const struct ext2_super_block *sb, partition_t *partition);
 
 int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -48,17 +48,17 @@ int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_EXT2(disk_car,(struct ext2_super_block*)buffer,partition,verbose,0)!=0)
+  if(test_EXT2((struct ext2_super_block*)buffer, partition)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_EXT2_info(disk_car,(struct ext2_super_block*)buffer,partition,verbose,0);
+  set_EXT2_info((struct ext2_super_block*)buffer, partition, verbose);
   free(buffer);
   return 0;
 }
 
-static int set_EXT2_info(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose)
 {
   set_part_name(partition,sb->s_volume_name,16);
   /* sb->s_last_mounted seems to be unemployed in kernel 2.2.16 */
@@ -100,11 +100,21 @@ Group 0 begin at s_first_data_block
 */
 int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_EXT2(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_EXT2(sb, partition)!=0)
     return 1;
+  if(dump_ind!=0)
+  {
+    if(partition!=NULL && disk_car!=NULL)
+      log_info("\nEXT2/EXT3 magic value at %u/%u/%u\n",
+	  offset2cylinder(disk_car,partition->part_offset),
+	  offset2head(disk_car,partition->part_offset),
+	  offset2sector(disk_car,partition->part_offset));
+    /* There is a little offset ... */
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
   if(partition==NULL)
     return 0;
-  set_EXT2_info(disk_car,sb,partition,verbose,dump_ind);
+  set_EXT2_info(sb, partition, verbose);
   partition->part_type_i386=P_LINUX;
   partition->part_type_mac=PMAC_LINUX;
   partition->part_type_sun=PSUN_LINUX;
@@ -150,21 +160,11 @@ int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t
   return 0;
 }
 
-static int test_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
 {
     /* There is a little offset ... */
   if(le16(sb->s_magic)!=EXT2_SUPER_MAGIC)
     return 1;
-  if(dump_ind!=0)
-  {
-    if(partition!=NULL && disk_car!=NULL)
-      log_info("\nEXT2/EXT3 magic value at %u/%u/%u\n",
-	  offset2cylinder(disk_car,partition->part_offset),
-	  offset2head(disk_car,partition->part_offset),
-	  offset2sector(disk_car,partition->part_offset));
-    /* There is a little offset ... */
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
-  }
   if (le32(sb->s_free_blocks_count) >= le32(sb->s_blocks_count)) return 2;
   if (le32(sb->s_free_inodes_count) >= le32(sb->s_inodes_count)) return 3;
   if (le16(sb->s_errors)!=0 &&
