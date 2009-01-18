@@ -54,12 +54,25 @@ static void register_header_check_ext2_sb(file_stat_t *file_stat)
 
 static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(recover_EXT2(NULL,(const struct ext2_super_block *)buffer,NULL,0,0)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ext2_sb.extension;
-    return 1;
-  }
-  return 0;
+  const struct ext2_super_block *sb=(const struct ext2_super_block *)buffer;
+  if(le16(sb->s_magic)!=EXT2_SUPER_MAGIC)
+    return 0;
+  if (le32(sb->s_free_blocks_count) >= le32(sb->s_blocks_count))
+    return 0;
+  if (le32(sb->s_free_inodes_count) >= le32(sb->s_inodes_count))
+    return 0;
+  if (le16(sb->s_errors)!=0 &&
+      (le16(sb->s_errors) != EXT2_ERRORS_CONTINUE) &&
+      (le16(sb->s_errors) != EXT2_ERRORS_RO) &&
+      (le16(sb->s_errors) != EXT2_ERRORS_PANIC))
+    return 0;
+  if ((le16(sb->s_state) & ~(EXT2_VALID_FS | EXT2_ERROR_FS))!=0)
+    return 0;
+  if (le32(sb->s_blocks_count) == 0) /* reject empty filesystem */
+    return 0;
+  if(le32(sb->s_log_block_size)>2)  /* block size max = 4096, can be 8192 on alpha */
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ext2_sb.extension;
+  return 1;
 }
-
