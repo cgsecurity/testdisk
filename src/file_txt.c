@@ -80,27 +80,31 @@ const file_hint_t file_hint_txt= {
   .register_header_check=&register_header_check_txt
 };
 
-static const unsigned char header_cls[24]	= {'V','E','R','S','I','O','N',' ','1','.','0',' ','C','L','A','S','S','\r','\n','B','E','G','I','N'};
-static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
-static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
-static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
-static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
-static const unsigned char header_perlm[7] 	= "package";
-static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
-static const unsigned char header_reg[8]  	= "REGEDIT4";
-static const unsigned char header_sh[9]  	= "#!/bin/sh";
-static const unsigned char header_bash[11]  	= "#!/bin/bash";
-static const unsigned char header_slk[10]  	= "ID;PSCALC3";
-static const unsigned char header_stp[13]  	= "ISO-10303-21;";
-static const unsigned char header_ram[7]	= "rtsp://";
-static const unsigned char header_xml[14]	= "<?xml version=";
-static const unsigned char header_dc[6]		= "SC V10";
-static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
-static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
-static const unsigned char header_stl[6]	= "solid ";
-static const unsigned char header_ers[19]	= "DatasetHeader Begin";
+static const unsigned char header_bash[11]  	= "#!/bin/bash";
+static const unsigned char header_cls[24]	= {'V','E','R','S','I','O','N',' ','1','.','0',' ','C','L','A','S','S','\r','\n','B','E','G','I','N'};
 static const unsigned char header_cue[10]	= "REM GENRE ";
+static const unsigned char header_dc[6]		= "SC V10";
+static const unsigned char header_dif[12]	= { 'T', 'A', 'B', 'L', 'E', '\r', '\n', '0', ',', '1', '\r', '\n'};
+static const unsigned char header_ers[19]	= "DatasetHeader Begin";
+static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
+static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
+static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
+static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
+static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
+static const unsigned char header_perlm[7] 	= "package";
+static const unsigned char header_ram[7]	= "rtsp://";
+static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
+static const unsigned char header_reg[8]  	= "REGEDIT4";
+static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
+static const unsigned char header_rpp[16]	= { '<', 'R', 'E', 'A', 'P', 'E', 'R', '_', 'P', 'R', 'O', 'J', 'E', 'C', 'T', ' '};
+static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
+static const unsigned char header_sh[9]  	= "#!/bin/sh";
+static const unsigned char header_slk[10]  	= "ID;PSCALC3";
+static const unsigned char header_stl[6]	= "solid ";
+static const unsigned char header_stp[13]  	= "ISO-10303-21;";
+static const unsigned char header_wpl[21]	= { '<', '?', 'w', 'p', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '=', '"', '1', '.', '0', '"', '?', '>' };
+static const unsigned char header_xml[14]	= "<?xml version=";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -114,20 +118,24 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
   register_header_check(0, header_cue,sizeof(header_cue), &header_check_fasttxt, file_stat);
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_dif, sizeof(header_dif), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_rpp,sizeof(header_rpp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_wpl,sizeof(header_wpl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
 }
 
@@ -358,6 +366,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="pm";
     return 1;
   }
+  if(memcmp(buffer,header_rpp,sizeof(header_rpp))==0)
+  {
+    /* Reaper Project */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="rpp";
+    return 1;
+  }
   if(memcmp(buffer,header_rtf,sizeof(header_rtf))==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -424,6 +441,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="stp";
     return 1;
   }
+  if(memcmp(buffer,header_wpl,sizeof(header_wpl))==0)
+  {
+    /* Windows Play List*/
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="wpl";
+    return 1;
+  }
   if(memcmp(buffer,header_ram,sizeof(header_ram))==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -463,6 +489,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="dc";
     return 1;
   }
+  if(memcmp(buffer,header_dif,sizeof(header_dif))==0)
+  { /*
+       Lotus Data Interchange Format
+     */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="dif";
+    return 1;
+  }
   if(memcmp(buffer, header_ics, sizeof(header_ics))==0)
   {
     const char *date_asc;
@@ -497,6 +533,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
       file_recovery_new->time=mktime(&tm_time);
     }
     free(buffer2);
+    return 1;
+  }
+  /* (Moving Picture Experts Group Audio Layer 3 Uniform Resource Locator */
+  if(memcmp(buffer, header_m3u, sizeof(header_m3u))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="m3u";
     return 1;
   }
   /* Mozilla, firefox, thunderbird msf (Mail Summary File) */
