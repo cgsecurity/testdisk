@@ -66,9 +66,6 @@
 #ifdef HAVE_SYS_DKIO_H
 #include <sys/dkio.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 /* linux/fs.h may not be needed because sys/mount.h is present */
 /* #ifdef HAVE_LINUX_FS_H */
 /* #include <linux/fs.h> */
