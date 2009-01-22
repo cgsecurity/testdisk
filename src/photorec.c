@@ -69,7 +69,6 @@
 #include "filegen.h"
 #include "photorec.h"
 #include "fat.h"
-#include "hdcache.h"
 #include "ext2p.h"
 #include "fatp.h"
 #include "ntfsp.h"
