@@ -73,8 +73,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 {
   const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
   const uint32_t *fat;
-  unsigned int block=le32(header->root_start_block);
   unsigned int fat_entries;
+  unsigned int block;
+  unsigned int i;
   if(buffer_size<512)
     return NULL;
   if(header->num_FAT_blocks==0)
@@ -93,7 +94,11 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
     else if(fat_offset+fat_entries>buffer_size)
       fat_entries=buffer_size-fat_offset;
   }
-  do
+  /* FFFFFFFE = ENDOFCHAIN
+   * Use a loop count i to avoid endless loop */
+  for(block=le32(header->root_start_block), i=0;
+      block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
+      block=le32(fat[block]), i++)
   {
     const unsigned int offset_root_dir=512+(block<<le16(header->uSectorShift));
 #ifdef DEBUG_OLE
@@ -134,7 +139,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* HP Photosmart Photo Printing Album */
 	if(memcmp(&dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
 	  return "albm";
-        if(memcmp(&dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
+	if(memcmp(&dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
 	  return "ppt";
 	/* Microsoft Works .wps */
 	if(memcmp(&dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
@@ -151,9 +156,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       }
       if(ext!=NULL)
 	return ext;
-      block=(block<fat_entries?le32(fat[block]):0);
     }
-  } while(block>0 && block!=0xFFFFFFFE);	/* FFFFFFFE = ENDOFCHAIN */
+  }
 #ifdef DEBUG_OLE
   log_info("Root Directory end\n");
 #endif
