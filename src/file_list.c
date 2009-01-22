@@ -39,6 +39,7 @@ extern const file_hint_t file_hint_all;
 extern const file_hint_t file_hint_als;
 extern const file_hint_t file_hint_amd;
 extern const file_hint_t file_hint_amr;
+extern const file_hint_t file_hint_apa;
 extern const file_hint_t file_hint_ape;
 extern const file_hint_t file_hint_arj;
 extern const file_hint_t file_hint_asf;
@@ -158,6 +159,7 @@ extern const file_hint_t file_hint_riff;
 extern const file_hint_t file_hint_rm;
 extern const file_hint_t file_hint_rns;
 extern const file_hint_t file_hint_rpm;
+extern const file_hint_t file_hint_ses;
 extern const file_hint_t file_hint_sib;
 extern const file_hint_t file_hint_sit;
 extern const file_hint_t file_hint_skp;
@@ -206,6 +208,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_als  },
   { .enable=0, .file_hint=&file_hint_amd  },
   { .enable=0, .file_hint=&file_hint_amr  },
+  { .enable=0, .file_hint=&file_hint_apa  },
   { .enable=0, .file_hint=&file_hint_ape  },
   { .enable=0, .file_hint=&file_hint_arj  },
   { .enable=0, .file_hint=&file_hint_asf  },
@@ -324,6 +327,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_rm   },
   { .enable=0, .file_hint=&file_hint_rns  },
   { .enable=0, .file_hint=&file_hint_rpm  },
+  { .enable=0, .file_hint=&file_hint_ses  },
   { .enable=0, .file_hint=&file_hint_sib  },
   { .enable=0, .file_hint=&file_hint_sit  },
   { .enable=0, .file_hint=&file_hint_skp  },

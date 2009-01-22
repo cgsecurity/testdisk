@@ -37,6 +37,7 @@ file_C			= filegen.c \
 			  file_als.c \
 			  file_amd.c \
 			  file_amr.c \
+			  file_apa.c \
 			  file_ape.c \
 			  file_arj.c \
 			  file_asf.c \
@@ -155,6 +156,7 @@ file_C			= filegen.c \
 			  file_rm.c \
 			  file_rns.c \
 			  file_rpm.c \
+			  file_ses.c \
 			  file_sib.c \
 			  file_sit.c \
 			  file_skp.c \
