@@ -43,7 +43,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_ico= {
   .extension="ico",
-  .description="Windows Icone",
+  .description="Windows Icon",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -85,10 +85,13 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
 {
   const struct ico_header *ico=(const struct ico_header*)buffer;
   const struct ico_directory *ico_dir=(const struct ico_directory*)(ico+1);
-  /* Recover icon with a single image */
+  /* Recover square icon with a single image */
   if(le16(ico->reserved)==0 && le16(ico->type)==1 && le16(ico->count)==1 &&
       (ico_dir->reserved==0 || ico_dir->reserved==255) &&
-      (ico_dir->color_planes==0 || ico_dir->color_planes==1)
+      (ico_dir->color_planes==0 || ico_dir->color_planes==1) &&
+      ico_dir->width==ico_dir->heigth &&
+      ico_dir->width>=16
+
     )
   {
     reset_file_recovery(file_recovery_new);
@@ -96,6 +99,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->calculated_file_size=le32(ico_dir->bitmap_size) + le32(ico_dir->bitmap_offset);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    return 1;
   }
-  return 1;
+  return 0;
 }
