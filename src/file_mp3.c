@@ -183,13 +183,13 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     if(buffer[potential_frame_offset+0]!=0xFF)
       return 0;
     {
-      unsigned int mpeg_version	=(buffer[potential_frame_offset+1]>>3)&0x03;
-      unsigned int mpeg_layer	=(buffer[potential_frame_offset+1]>>1)&0x03;
-      unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
-      unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
-      unsigned int padding		=(buffer[potential_frame_offset+2]>>1)&0x01;
-      unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
-      unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
+      const unsigned int mpeg_version	=(buffer[potential_frame_offset+1]>>3)&0x03;
+      const unsigned int mpeg_layer	=(buffer[potential_frame_offset+1]>>1)&0x03;
+      const unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
+      const unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
+      const unsigned int padding		=(buffer[potential_frame_offset+2]>>1)&0x01;
+      const unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
+      const unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
       unsigned int frameLengthInBytes=0;
       if(sample_rate>0 && bit_rate>0)
       {

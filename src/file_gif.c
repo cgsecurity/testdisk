@@ -94,15 +94,12 @@ static int data_check_gif(const unsigned char *buffer, const unsigned int buffer
     switch(buffer[i])
     {
       case 0x21:
-	{
-	  /* Plain Text Extension 	21 01 ...		*/
-	  /* Graphic Control Extension 	21 f9 04 XX XX XX XX 00 */
-	  /* Comment Extension 		21 fe ... 		*/
-	  /* Application Extension 	21 ff 			*/
-	  file_recovery->calculated_file_size+=2;
-	  return data_check_gif2(buffer, buffer_size, file_recovery);
-	}
-	break;
+	/* Plain Text Extension 	21 01 ...		*/
+	/* Graphic Control Extension 	21 f9 04 XX XX XX XX 00 */
+	/* Comment Extension 		21 fe ... 		*/
+	/* Application Extension 	21 ff 			*/
+	file_recovery->calculated_file_size+=2;
+	return data_check_gif2(buffer, buffer_size, file_recovery);
       case 0x2c:
 	{
 	  unsigned int j=i;
@@ -116,9 +113,8 @@ static int data_check_gif(const unsigned char *buffer, const unsigned int buffer
 	  /* Table Based Image Data */
 	  j++;	/* LZW Minimum Code Size  */
 	  file_recovery->calculated_file_size+=(j-i);
-	  return data_check_gif2(buffer, buffer_size, file_recovery);
 	}
-	break;
+	return data_check_gif2(buffer, buffer_size, file_recovery);
       case 0x3b:
 	/* Trailer */
 	file_recovery->calculated_file_size++;

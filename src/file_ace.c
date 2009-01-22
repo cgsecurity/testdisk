@@ -120,8 +120,8 @@ static void file_check_ace(file_recovery_t *file_recovery)
 
       while (len>0)
       {
-        int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
-        int bytes = fread(buffer, 1, count, file_recovery->handle);
+        const int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
+        const int bytes = fread(buffer, 1, count, file_recovery->handle);
 
         if (bytes != count)
         {

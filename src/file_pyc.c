@@ -42,7 +42,7 @@ static int header_check_pyc(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_pyc= {
   .extension="pyc",
-  .description="Java Class",
+  .description="Python Compiled Script",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,

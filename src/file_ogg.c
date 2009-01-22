@@ -76,7 +76,7 @@ static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 27 +255 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(memcmp(&buffer[i],ogg_header,sizeof(ogg_header))==0)
     {
       unsigned int number_page_segments;
