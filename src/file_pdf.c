@@ -59,33 +59,34 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
   {
     const unsigned char sig_illustrator[11]={'I','l','l','u','s','t','r','a','t','o','r'};
     const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
-    const unsigned char *linearized;
+    const unsigned char *src;
     reset_file_recovery(file_recovery_new);
     if(td_memmem(buffer, 512, sig_illustrator,sizeof(sig_illustrator)) != NULL)
       file_recovery_new->extension="ai";
     else
       file_recovery_new->extension=file_hint_pdf.extension;
-    if((linearized=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
+    if((src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
     {
-      linearized+=sizeof(sig_linearized);
-      while(*linearized!='>' && linearized<=buffer+512)
+      src+=sizeof(sig_linearized);
+      for(; src<=buffer+512 && *src!='>'; src++)
       {
-	if(*linearized=='/' && *(linearized+1)=='L')
+	if(*src=='/' && *(src+1)=='L')
 	{
-	  linearized+=2;
-	  while(*linearized==' ' || *linearized=='\t' || *linearized=='\n' || *linearized=='\r')
-	    linearized++;
+	  src+=2;
+	  while(src<buffer+512 &&
+	      (*src==' ' || *src=='\t' || *src=='\n' || *src=='\r'))
+	    src++;
 	  file_recovery_new->calculated_file_size=0;
-	  while(*linearized>='0' && *linearized<='9' && linearized<=buffer+512)
+	  while(src<buffer+512 &&
+	      *src>='0' && *src<='9')
 	  {
-	    file_recovery_new->calculated_file_size=file_recovery_new->calculated_file_size*10+(*linearized)-'0';
-	    linearized++;
+	    file_recovery_new->calculated_file_size=file_recovery_new->calculated_file_size*10+(*src)-'0';
+	    src++;
 	  }
 	  file_recovery_new->data_check=&data_check_size;
 	  file_recovery_new->file_check=&file_check_pdf_and_size;
 	  return 1;
 	}
-	linearized++;
       }
     }
     file_recovery_new->file_check=&file_check_pdf;

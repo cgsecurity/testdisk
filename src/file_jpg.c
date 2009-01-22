@@ -84,7 +84,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_jpg.extension;
     file_recovery_new->data_check=NULL;
     file_recovery_new->file_check=&file_check_jpg;
-    do
+    while(i<6*512 && i+4<buffer_size)
     {
       if(buffer[i]==0xff && buffer[i+1]==0xe0)
       { /* APP0 */
@@ -110,7 +110,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->min_filesize=288;
 	return 1;
       }
-    } while(i<6*512 && i<buffer_size);
+    }
     file_recovery_new->min_filesize=i;
     return 1;
   }
