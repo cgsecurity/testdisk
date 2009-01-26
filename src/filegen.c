@@ -98,8 +98,8 @@ static void index_header_check_aux(file_check_t *file_check_new)
     file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
     if(file_check_new->length>0 && pos->has_value==1)
     {
-      if(pos->offset>=file_check_new->offset &&
-	  pos->offset<=file_check_new->offset+file_check_new->length)
+      if(pos->offset >= file_check_new->offset &&
+	  pos->offset < file_check_new->offset+file_check_new->length)
       {
 	return td_list_add_sorted(&file_check_new->list,
 	    &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
@@ -147,12 +147,17 @@ void free_header_check(void)
     {
       td_list_for_each_safe(tmp, next, &pos->file_checks[i].list)
       {
+#ifdef DEBUG_HEADER_CHECK
+	unsigned int j;
+#endif
 	file_check_t *current_check;
 	current_check=td_list_entry(tmp, file_check_t, list);
 #ifdef DEBUG_HEADER_CHECK
-	log_info("%02x length=%u offset=%u", i, current_check->length, current_check->offset);
+	log_info("[%u]=%02x length=%u offset=%u", pos->offset, i, current_check->length, current_check->offset);
 	if(current_check->file_stat!=NULL && current_check->file_stat->file_hint!=NULL)
 	  log_info(" %s", current_check->file_stat->file_hint->description);
+	for(j=0; j<current_check->length; j++)
+	  log_info(" %02x", current_check->value[j]);
 	log_info("\n");
 #endif
 	td_list_del(tmp);
