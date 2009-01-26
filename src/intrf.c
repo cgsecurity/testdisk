@@ -182,9 +182,9 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " Unknown              ");
   if(disk_car->unit==UNIT_SECTOR)
   {
-    pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " %10lu %10lu ",
-        (long unsigned)(partition->part_offset/disk_car->sector_size),
-        (long unsigned)((partition->part_offset+partition->part_size-1)/disk_car->sector_size));
+    pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " %10llu %10llu ",
+        (long long unsigned)(partition->part_offset/disk_car->sector_size),
+        (long long unsigned)((partition->part_offset+partition->part_size-1)/disk_car->sector_size));
   }
   else
   {
@@ -196,7 +196,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
         offset2head(    disk_car,partition->part_offset+partition->part_size-1),
         offset2sector(  disk_car,partition->part_offset+partition->part_size-1));
   }
-  pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%10lu", (long unsigned)(partition->part_size/disk_car->sector_size));
+  pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%10llu", (long long unsigned)(partition->part_size/disk_car->sector_size));
   if(partition->partname[0]!='\0')
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->partname);
   if(partition->fsname[0]!='\0')
