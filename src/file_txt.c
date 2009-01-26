@@ -89,8 +89,9 @@ static const unsigned char header_dif[12]	= { 'T', 'A', 'B', 'L', 'E', '\r', '\n
 static const unsigned char header_ers[19]	= "DatasetHeader Begin";
 static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
-static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
+static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
+static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_perlm[7] 	= "package";
 static const unsigned char header_ram[7]	= "rtsp://";
@@ -122,8 +123,9 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
@@ -535,7 +537,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     free(buffer2);
     return 1;
   }
-  /* (Moving Picture Experts Group Audio Layer 3 Uniform Resource Locator */
+  /* Lyx http://www.lyx.org */
+  if(memcmp(buffer, header_lyx, sizeof(header_lyx))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="lyx";
+    return 1;
+  }
+  /* Moving Picture Experts Group Audio Layer 3 Uniform Resource Locator */
   if(memcmp(buffer, header_m3u, sizeof(header_m3u))==0)
   {
     reset_file_recovery(file_recovery_new);
