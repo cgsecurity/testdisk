@@ -212,43 +212,31 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	quit=1;
 	break;
       case KEY_UP:
-	if(list_part!=NULL)
+	if(pos->prev!=NULL)
 	{
-	  if(pos->prev!=NULL)
-	  {
-	    pos=pos->prev;
-	    pos_num--;
-	  }
+	  pos=pos->prev;
+	  pos_num--;
 	}
 	break;
       case KEY_DOWN:
-	if(list_part!=NULL)
+	if(pos->next!=NULL)
 	{
-	  if(pos->next!=NULL)
-	  {
-	    pos=pos->next;
-	    pos_num++;
-	  }
+	  pos=pos->next;
+	  pos_num++;
 	}
 	break;
       case KEY_PPAGE:
-	if(list_part!=NULL)
+	for(i=0; i<INTER_BAD_PART && pos->prev!=NULL; i++)
 	{
-	  for(i=0; i<INTER_BAD_PART && pos->prev!=NULL; i++)
-	  {
-	    pos=pos->prev;
-	    pos_num--;
-	  }
+	  pos=pos->prev;
+	  pos_num--;
 	}
 	break;
       case KEY_NPAGE:
-	if(list_part!=NULL)
+	for(i=0; i<INTER_BAD_PART && pos->next!=NULL; i++)
 	{
-	  for(i=0; i<INTER_BAD_PART && pos->next!=NULL; i++)
-	  {
-	    pos=pos->next;
-	    pos_num++;
-	  }
+	  pos=pos->next;
+	  pos_num++;
 	}
 	break;
       default:
