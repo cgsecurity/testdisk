@@ -38,7 +38,6 @@ void dump2_log(const void *dump_1, const void *dump_2,const unsigned int lng);
 #define TD_LOG_CREATE	1
 #define TD_LOG_APPEND	2
 #define TD_LOG_DONE	3
-#define TD_LOG_REFUSED	4
 
 #define LOG_LEVEL_DEBUG    (1 <<  0) /* x = 42 */
 #define LOG_LEVEL_TRACE    (1 <<  1) /* Entering function x() */

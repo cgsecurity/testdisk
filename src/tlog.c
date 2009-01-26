@@ -87,7 +87,7 @@ int ask_testdisk_log_creation()
         return TD_LOG_APPEND;
       case 'Q':
       case 'q':
-        return TD_LOG_REFUSED;
+        return TD_LOG_NONE;
       default:
         break;
     }
@@ -96,6 +96,6 @@ int ask_testdisk_log_creation()
 #else
 int ask_testdisk_log_creation()
 {
-  return TD_LOG_REFUSED;
+  return TD_LOG_NONE;
 }
 #endif
