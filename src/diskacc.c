@@ -84,7 +84,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
   wmove(stdscr,line++,0);
   wprintw(stdscr,"Open the Disk Utility (In Finder -> Application -> Utility folder)\n");
   wmove(stdscr,line++,0);
-  wprintw(stdscr,"and press Umount button for each volume from this disk\n");
+  wprintw(stdscr,"and press Unmount button for each volume from this disk\n");
 #endif
   wmove(stdscr,line,0);
   wprintw(stdscr,"- This media may be physically write-protected, check the jumpers.\n");
