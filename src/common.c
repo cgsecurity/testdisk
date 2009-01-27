@@ -59,13 +59,22 @@ void *MALLOC(size_t size)
     log_close();
     exit(EXIT_FAILURE);
   }
+  /* Warning, memory leak checker must be posix_memalign/memalign aware, otherwise  *
+   * reports may look strange. Aligned memory is required if the buffer is *
+   * used for read/write operation with a file opened with O_DIRECT        */
 #if defined(HAVE_POSIX_MEMALIGN)
   if(size>=512)
   {
-    /* Warning, memory leak checker must be posix_memalign aware, otherwise  *
-     * reports may look strange. Aligned memory is required if the buffer is *
-     * used for read/write operation with a file opened with O_DIRECT        */
     if(posix_memalign(&res,4096,size)==0)
+    {
+      memset(res,0,size);
+      return res;
+    }
+  }
+#elif defined(HAVE_MEMALIGN)
+  if(size>=512)
+  {
+    if((res=memalign(4096, size))!=NULL)
     {
       memset(res,0,size);
       return res;
