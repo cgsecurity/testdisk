@@ -119,10 +119,11 @@ char *dal_error(dal_t *dal) {
 static int file_read(dal_t *dal, void *buff, blk_t block, blk_t count) {
   uint64_t off;
   unsigned int blocklen;
-  my_data_t *my_data=(my_data_t*)dal->data;
+  my_data_t *my_data;
 /* log_trace("reiser file_read(dal=%p,buff=%p,block=%ld, count=%ld)\n",dal,buff,block,count); */
   if (!dal || !buff)
     return 0;
+  my_data=(my_data_t*)dal->data;
 #ifdef HAVE_DAL_T_BLOCK_SIZE
   off = (uint64_t)block * (uint64_t)dal->block_size;
   blocklen = count * dal->block_size;
@@ -212,9 +213,10 @@ static blk_t   file_len(dal_t *dal) {
 #else
 static count_t file_len(dal_t *dal) {
 #endif
-  my_data_t *my_data=(my_data_t*)dal->data;
+  my_data_t *my_data;
 /* log_trace("reiser file_len\n"); */
   if (!dal) return 0;
+  my_data=(my_data_t*)dal->data;
 #ifdef HAVE_DAL_T_BLOCK_SIZE
   return my_data->partition->part_size / dal->block_size;
 #else

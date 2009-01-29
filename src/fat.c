@@ -257,7 +257,9 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
         offset_o=(cluster+cluster/2)%disk_car->sector_size;
         if(disk_car->read(disk_car,2*disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
         {
-          log_error("get_next_cluster read error\n"); return 0;
+          log_error("get_next_cluster read error\n");
+	  free(buffer);
+	  return 0;
         }
         if((cluster&1)!=0)
           next_cluster=le16((*((uint16_t*)&buffer[offset_o])))>>4;
@@ -273,7 +275,9 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
         offset_o=cluster%(disk_car->sector_size/2);
         if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
         {
-          log_error("get_next_cluster read error\n"); return 0;
+          log_error("get_next_cluster read error\n");
+	  free(buffer);
+	  return 0;
         }
         next_cluster=le16(p16[offset_o]);
         free(buffer);
@@ -286,7 +290,9 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
         offset_o=cluster%(disk_car->sector_size/4);
         if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset+(uint64_t)(offset+offset_s)*disk_car->sector_size)!=0)
         {
-          log_error("get_next_cluster read error\n"); return 0;
+          log_error("get_next_cluster read error\n");
+	  free(buffer);
+	  return 0;
         }
         /* FAT32 used 28 bits, the 4 high bits are reserved
          * 0x00000000: free cluster
@@ -690,11 +696,15 @@ int comp_FAT(disk_t *disk_car,const partition_t *partition,const unsigned long i
     if(disk_car->read(disk_car,read_size*disk_car->sector_size, buffer, hd_offset))
     {
       log_error("comp_FAT: can't read FAT1\n");
+      free(buffer2);
+      free(buffer);
       return 1;
     }
     if(disk_car->read(disk_car,read_size*disk_car->sector_size, buffer2, hd_offset2))
     {
       log_error("comp_FAT: can't read FAT2\n");
+      free(buffer2);
+      free(buffer);
       return 1;
     }
     if(memcmp(buffer,buffer2,disk_car->sector_size*read_size)!=0)

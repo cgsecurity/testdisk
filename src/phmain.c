@@ -326,7 +326,9 @@ int main( int argc, char **argv )
   hd_update_all_geometry(list_disk,0,verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-    element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
+  {
+    element_disk->disk=new_diskcache(element_disk->disk, testdisk_mode);
+  }
   /* save disk parameters to rapport */
   log_info("Hard disk list\n");
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)

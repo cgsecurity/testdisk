@@ -462,6 +462,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
       }
     }
   }
+  free(buffer_start);
 #ifdef HAVE_NCURSES
   photorec_info(stdscr, file_stats);
 #endif

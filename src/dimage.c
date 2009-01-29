@@ -81,6 +81,7 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
   {
     log_error("Can't create file %s.\n",image_dd);
     display_message("Can't create file!\n");
+    free(buffer_disk);
     return -1;
   }
 #ifdef HAVE_NCURSES
@@ -142,6 +143,7 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
   if(ind_stop==2)
   {
     display_message("No space left for the file image.\n");
+    free(buffer_disk);
     return -2;
   }
   if(ind_stop)
@@ -150,11 +152,13 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
       display_message("Incomplete image created.\n");
     else
       display_message("Incomplete image created: read errors have occured.\n");
+    free(buffer_disk);
     return 0;
   }
   if(nbr_read_error==0)
     display_message("Image created successfully.\n");
   else
     display_message("Image created successfully but read errors have occured.\n");
+  free(buffer_disk);
   return 0;
 }

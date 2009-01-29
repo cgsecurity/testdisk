@@ -206,7 +206,10 @@ void file_search_footer(file_recovery_t *file_recovery, const unsigned char*foot
     else
       file_size-=read_size;
     if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
+    {
+      free(buffer);
       return;
+    }
     taille=fread(buffer,1,read_size,file_recovery->handle);
     for(i=taille-1;i>=0;i--)
     {
@@ -242,7 +245,10 @@ void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*f
     else
       file_size-=read_size;
     if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
+    {
+      free(buffer);
       return;
+    }
     taille=fread(buffer,1,read_size,file_recovery->handle);
     for(i=0;i<taille;i++)
       buffer[i]=tolower(buffer[i]);

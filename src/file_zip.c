@@ -161,6 +161,7 @@ static int zip_parse_file_entry(file_recovery_t *fr)
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in file_entry header: %u bytes expected\n", len);
 #endif
+      free(filename);
       return -1;
     }
     filename[len]='\0';
