@@ -322,7 +322,7 @@ int main( int argc, char **argv )
 #endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
-    log_info("Command line: PhotoRec");
+    log_info("Command line: TestDisk");
     for(i=1;i<argc;i++)
       log_info(" %s", argv[i]);
     log_info("\n\n");
