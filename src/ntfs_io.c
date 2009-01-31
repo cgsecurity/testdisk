@@ -101,7 +101,7 @@ static s64 ntfs_device_testdisk_io_read(struct ntfs_device *dev, void *buf,
 		s64 count)
 {
   my_data_t *my_data=(my_data_t*)dev->d_private;
-  if(my_data->disk_car->read(my_data->disk_car,count,buf,my_data->partition->part_offset+my_data->offset))
+  if(my_data->disk_car->pread(my_data->disk_car, buf, count, my_data->partition->part_offset + my_data->offset) != count)
     return 0;
   my_data->offset+=count;
   return count;
@@ -111,7 +111,7 @@ static s64 ntfs_device_testdisk_io_write(struct ntfs_device *dev, const void *bu
 		s64 count)
 {
   my_data_t *my_data=(my_data_t*)dev->d_private;
-  if(my_data->disk_car->write(my_data->disk_car,count,buf,my_data->partition->part_offset+my_data->offset))
+  if(my_data->disk_car->pwrite(my_data->disk_car, buf, count, my_data->partition->part_offset + my_data->offset) != count)
     return 0;
   my_data->offset+=count;
   return count;

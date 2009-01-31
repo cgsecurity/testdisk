@@ -70,7 +70,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     return -1;
   }
   ntfs_header=(struct ntfs_boot_sector *)MALLOC(DEFAULT_SECTOR_SIZE);
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, ntfs_header, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, ntfs_header, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
   {
     free(ntfs_header);
     display_message("Can't read NTFS boot sector.\n");
@@ -103,7 +103,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   /* Check if MFT mirror is identical to the beginning of MFT */
   buffer_mft=(unsigned char *)MALLOC(mftmirr_size_bytes);
-  if(disk_car->read(disk_car, mftmirr_size_bytes, buffer_mft, mft_pos)!=0)
+  if(disk_car->pread(disk_car, buffer_mft, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
   {
     display_message("Can't read NTFS MFT.\n");
     log_error("Can't read NTFS MFT.\n");
@@ -112,7 +112,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     return -1;
   }
   buffer_mftmirr=(unsigned char *)MALLOC(mftmirr_size_bytes);
-  if(disk_car->read(disk_car, mftmirr_size_bytes, buffer_mftmirr, mftmirr_pos)!=0)
+  if(disk_car->pread(disk_car, buffer_mftmirr, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
   {
     display_message("Can't read NTFS MFT mirror.\n");
     log_error("Can't read NTFS MFT mirror.\n");
@@ -278,7 +278,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   if(use_MFT==2)
   {
-    if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mftmirr, mft_pos)!=0)
+    if(disk_car->pwrite(disk_car, buffer_mftmirr, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
     {
       display_message("Failed to fix MFT: write error.\n");
     }
@@ -290,7 +290,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   else if(use_MFT==1)
   {
-    if(disk_car->write(disk_car, mftmirr_size_bytes, buffer_mft, mftmirr_pos)!=0)
+    if(disk_car->pwrite(disk_car, buffer_mft, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
     {
       display_message("Failed to fix MFT mirror: write error.\n");
     }

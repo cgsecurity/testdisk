@@ -102,7 +102,7 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
     int update=0;
     if(offset_end-offset < READ_SIZE)
       readsize=offset_end-offset;
-    if(disk_car->read(disk_car, readsize, buffer_disk, offset)<0)
+    if(disk_car->pread(disk_car, buffer_disk, readsize, offset) != readsize)
     {
       update=1;
       nbr_read_error++;

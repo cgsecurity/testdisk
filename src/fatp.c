@@ -57,7 +57,7 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
     offset_o=prev_cluster%(sector_size/2);
     if((offset_o==0)||(prev_cluster==2))
     {
-      if(disk_car->read(disk_car, sector_size, buffer, hd_offset)!=0)
+      if(disk_car->pread(disk_car, buffer, sector_size, hd_offset) != sector_size)
       {
 	/* Consider these FAT sectors points to free clusters */
       }
@@ -100,7 +100,7 @@ static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partitio
     offset_o=prev_cluster%(sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
-      if(disk_car->read(disk_car,sector_size, buffer, hd_offset)!=0)
+      if(disk_car->pread(disk_car, buffer, sector_size, hd_offset) != sector_size)
       {
 	/* Consider these FAT sectors points to free clusters */
       }
@@ -139,7 +139,7 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
     const struct fat_boot_sector *fat_header;
     buffer=(unsigned char *)MALLOC(3*disk_car->sector_size);
     fat_header=(const struct fat_boot_sector *)buffer;
-    if(disk_car->read(disk_car,3*disk_car->sector_size, buffer, partition->part_offset)!=0)
+    if(disk_car->pread(disk_car, buffer, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
     {
       free(buffer);
       return 0;

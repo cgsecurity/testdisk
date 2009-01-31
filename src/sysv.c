@@ -64,7 +64,7 @@ static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sb
 int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(SYSV4_SECTOR_SIZE);
-  if(disk_car->read(disk_car,SYSV4_SECTOR_SIZE, buffer, partition->part_offset+0x200)!=0)
+  if(disk_car->pread(disk_car, buffer, SYSV4_SECTOR_SIZE, partition->part_offset + 0x200) != SYSV4_SECTOR_SIZE)
   {
     free(buffer);
     return 1;

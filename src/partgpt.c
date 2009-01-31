@@ -164,7 +164,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
 
   gpt=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
-  if(disk_car->read(disk_car, disk_car->sector_size, gpt, disk_car->sector_size)!=0)
+  if(disk_car->pread(disk_car, gpt, disk_car->sector_size, disk_car->sector_size) != disk_car->sector_size)
   {
     free(gpt);
     return NULL;
@@ -262,7 +262,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   }
 
   gpt_entries=(struct gpt_ent*)MALLOC(gpt_entries_size);
-  if(disk_car->read(disk_car, gpt_entries_size, gpt_entries, gpt_entries_offset)!=0)
+  if(disk_car->pread(disk_car, gpt_entries, gpt_entries_size, gpt_entries_offset) != gpt_entries_size)
   {
     free(gpt_entries);
     free(gpt);
@@ -479,13 +479,13 @@ static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const 
   gpt->hdr_lba_alt=le64((disk_car->disk_size-1)/disk_car->sector_size);
   gpt->hdr_lba_table=le64(1+1);
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
-  if(disk_car->write(disk_car, gpt_entries_size, gpt_entries, le64(gpt->hdr_lba_table) * disk_car->sector_size))
+  if(disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
     free(gpt);
     free(gpt_entries);
     return 1;
   }
-  if(disk_car->write(disk_car, disk_car->sector_size, gpt, le64(gpt->hdr_lba_self) * disk_car->sector_size))
+  if(disk_car->pwrite(disk_car, gpt, disk_car->sector_size, le64(gpt->hdr_lba_self) * disk_car->sector_size) != disk_car->sector_size)
   {
     free(gpt);
     free(gpt_entries);
@@ -495,13 +495,13 @@ static int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const 
   gpt->hdr_lba_alt=le64(1);
   gpt->hdr_lba_table=le64((disk_car->disk_size-1 - gpt_entries_size)/disk_car->sector_size);
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
-  if(disk_car->write(disk_car, gpt_entries_size, gpt_entries, le64(gpt->hdr_lba_table) * disk_car->sector_size))
+  if(disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
     free(gpt);
     free(gpt_entries);
     return 1;
   }
-  if(disk_car->write(disk_car, disk_car->sector_size, gpt, le64(gpt->hdr_lba_self) * disk_car->sector_size))
+  if(disk_car->pwrite(disk_car, gpt, disk_car->sector_size, le64(gpt->hdr_lba_self) * disk_car->sector_size) != disk_car->sector_size)
   {
     free(gpt);
     free(gpt_entries);

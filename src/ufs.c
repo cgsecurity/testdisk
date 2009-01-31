@@ -46,7 +46,7 @@ int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose)
   unsigned char *buffer;
   buffer=(unsigned char*)MALLOC(UFS_SUPERBLOCK_SIZE);
   sb=(const struct ufs_super_block*)buffer;
-  if(disk_car->read(disk_car,UFS_SUPERBLOCK_SIZE, buffer, partition->part_offset+UFS_SBLOCK)!=0)
+  if(disk_car->pread(disk_car, buffer, UFS_SUPERBLOCK_SIZE, partition->part_offset + UFS_SBLOCK) != UFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

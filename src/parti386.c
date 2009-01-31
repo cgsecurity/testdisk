@@ -363,7 +363,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
-  if(disk_car->read(disk_car,disk_car->sector_size, buffer, (uint64_t)0))
+  if(disk_car->pread(disk_car, buffer, disk_car->sector_size, (uint64_t)0) != disk_car->sector_size)
   {
     screen_buffer_add( msg_PART_RD_ERR);
     free(buffer);
@@ -492,7 +492,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
     {
       unsigned char buffer[DEFAULT_SECTOR_SIZE];
       int nb_hidden=0, nb_mb=0, nb_part=0, nb_ext=0, nb_boot=0;
-      if(disk_car->read(disk_car,sizeof(buffer), &buffer, partition_ext->part_offset)!=0)
+      if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition_ext->part_offset) != sizeof(buffer))
 	return list_part;
       if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
       {
@@ -648,7 +648,7 @@ static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const 
   {
     log_trace("\nwrite_mbr_i386: starting...\n");
   }
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer_org, (uint64_t)0))
+  if(disk_car->pread(disk_car, buffer_org, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     log_error(msg_PART_RD_ERR);
     memset(buffer_org,0,DEFAULT_SECTOR_SIZE);
@@ -702,7 +702,7 @@ static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const 
   }
   if(ro==0)
   {
-    if(disk_car->write(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+    if(disk_car->pwrite(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
     {
       free(buffer_org);
       free(buffer);
@@ -755,7 +755,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
     {
       log_info("write_all_log_i386: CHS: %u/%u/%u,lba=%lu\n", offset2cylinder(disk_car,current_pos), offset2head(disk_car,current_pos), offset2sector(disk_car,current_pos),(long unsigned)(current_pos/disk_car->sector_size));
     }
-    if(disk_car->read(disk_car,sizeof(buffer_org), &buffer_org, current_pos))
+    if(disk_car->pread(disk_car, &buffer_org, sizeof(buffer_org), current_pos) != sizeof(buffer_org))
     {
       memset(buffer_org,0,DEFAULT_SECTOR_SIZE);
     }
@@ -770,7 +770,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
     }
     else
     {
-      if(disk_car->write(disk_car,sizeof(buffer), &buffer, current_pos))
+      if(disk_car->pwrite(disk_car, &buffer, sizeof(buffer), current_pos) != sizeof(buffer))
       {
         res=1;
       }
@@ -787,7 +787,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
       {
         log_info("write_all_log_i386: CHS: %u/%u/%u,lba=%lu\n", offset2cylinder(disk_car,current_pos), offset2head(disk_car,current_pos), offset2sector(disk_car,current_pos),(long unsigned)(current_pos/disk_car->sector_size));
       }
-      if(disk_car->read(disk_car,sizeof(buffer_org), &buffer_org, current_pos))
+      if(disk_car->pread(disk_car, &buffer_org, sizeof(buffer_org), current_pos) != sizeof(buffer_org))
       {
         memset(buffer_org,0,DEFAULT_SECTOR_SIZE);
       }
@@ -853,7 +853,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
       }
       else
       {
-        if(disk_car->write(disk_car,sizeof(buffer), &buffer, current_pos))
+        if(disk_car->pwrite(disk_car, &buffer, sizeof(buffer), current_pos) != sizeof(buffer))
         {
           res=1;
         }
@@ -896,13 +896,13 @@ static int diff(const disk_t *disk_car, const unsigned char buffer[DEFAULT_SECTO
 static int write_MBR_code_i386(disk_t *disk_car)
 {
   unsigned char buffer[DEFAULT_SECTOR_SIZE];
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     log_error(msg_PART_RD_ERR);
     memset(buffer,0,sizeof(buffer));
   }
   write_MBR_code_i386_aux(buffer);
-  if(disk_car->write(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+  if(disk_car->pwrite(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     return 1;
   }
@@ -1445,13 +1445,13 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
 static int erase_list_part_i386(disk_t *disk_car)
 {
   unsigned char buffer[DEFAULT_SECTOR_SIZE];
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     log_error(msg_PART_RD_ERR);
     memset(buffer,0,sizeof(buffer));
   }
   memset(buffer+TAB_PART,0,0x40);
-  if(disk_car->write(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+  if(disk_car->pwrite(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     return 1;
   }

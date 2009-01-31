@@ -47,7 +47,7 @@ static int test_netware(disk_t *disk_car, const struct disk_netware *netware_blo
 int check_netware(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(DEFAULT_SECTOR_SIZE);
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
   {
     free(buffer);
     return 1;

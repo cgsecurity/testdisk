@@ -19,7 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-static int align_read(int (*fnct_read)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+static int align_pread(int (*fnct_pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
            disk_t *disk_car, void*buf, const unsigned int count, const uint64_t offset)
 {
   const uint64_t offset_new=offset+disk_car->offset;
@@ -30,6 +30,7 @@ static int align_read(int (*fnct_read)(disk_t *disk_car, void *buf, const unsign
        (buf!=disk_car->rbuffer || disk_car->rbuffer_size<count_new))
     )
   {
+    int res;
     if(disk_car->rbuffer==NULL)
       disk_car->rbuffer_size=128*512;
     while(disk_car->rbuffer_size < count_new)
@@ -40,16 +41,15 @@ static int align_read(int (*fnct_read)(disk_t *disk_car, void *buf, const unsign
     }
     if(disk_car->rbuffer==NULL)
       disk_car->rbuffer=(char*)MALLOC(disk_car->rbuffer_size);
-    if(fnct_read(disk_car, disk_car->rbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
-      return -1;
+    res=fnct_pread(disk_car, disk_car->rbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
     memcpy(buf,(char*)disk_car->rbuffer+(offset_new%disk_car->sector_size),count);
-    return 0;
+    return (res < (signed)count ?  res : (signed)count );
   }
-  return fnct_read(disk_car, buf, count_new, offset_new);
+  return fnct_pread(disk_car, buf, count, offset_new);
 }
 
-static int align_write(int (*fnct_read)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
-    int (*fnct_write)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset),
+static int align_pwrite(int (*fnct_pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+    int (*fnct_pwrite)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset),
     disk_t *disk_car, const void*buf, const unsigned int count, const uint64_t offset)
 {
   const uint64_t offset_new=offset+disk_car->offset;
@@ -69,14 +69,14 @@ static int align_write(int (*fnct_read)(disk_t *disk_car, void *buf, const unsig
     }
     if(disk_car->wbuffer==NULL)
       disk_car->wbuffer=(char*)MALLOC(disk_car->wbuffer_size);
-    if(fnct_read(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
+    if(fnct_pread(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
     {
       log_error("read failed but try to write anyway");
       memset(disk_car->wbuffer,0, disk_car->wbuffer_size);
     }
     memcpy((char*)disk_car->wbuffer+(offset_new%disk_car->sector_size),buf,count);
-    return fnct_write(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
+    return fnct_pwrite(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
   }
-  return fnct_write(disk_car, buf, count_new, offset_new);
+  return fnct_pwrite(disk_car, buf, count, offset_new);
 }
 

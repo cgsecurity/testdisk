@@ -119,7 +119,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
   unsigned int i;
   unsigned int limit=1;
   screen_buffer_reset();
-  if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
+  if(disk_car->pread(disk_car, &buffer, sizeof(buffer), 0) != sizeof(buffer))
     return NULL;
   {
     mac_Block0 *maclabel=(mac_Block0*)&buffer;
@@ -133,7 +133,7 @@ list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int savehe
   for(i=1;i<=limit;i++)
   {
     mac_DPME *dpme=(mac_DPME *)buffer;
-    if(disk_car->read(disk_car,sizeof(buffer), &buffer, (uint64_t)i*PBLOCK_SIZE)!=0)
+    if(disk_car->pread(disk_car, &buffer, sizeof(buffer), (uint64_t)i * PBLOCK_SIZE) != sizeof(buffer))
       return new_list_part;
     if(be16(dpme->dpme_signature) != DPME_SIGNATURE)
     {

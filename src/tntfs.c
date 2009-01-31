@@ -116,7 +116,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       log_info("\nntfs_boot_sector\n");
       log_partition(disk_car,partition);
       screen_buffer_add("Boot sector\n");
-      if(disk_car->read(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset)!=0)
+      if(disk_car->pread(disk_car, buffer_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset) != NTFS_BOOT_SECTOR_SIZE)
       {
 	screen_buffer_add("ntfs_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,NTFS_BOOT_SECTOR_SIZE);
@@ -131,7 +131,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	screen_buffer_add("Status: Bad\n");
       }
       screen_buffer_add("\nBackup boot sector\n");
-      if(disk_car->read(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+      if(disk_car->pread(disk_car, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_BOOT_SECTOR_SIZE)
       {
 	screen_buffer_add("ntfs_boot_sector: Can't read backup boot sector.\n");
 	memset(buffer_backup_bs,0,NTFS_BOOT_SECTOR_SIZE);
@@ -245,7 +245,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	if(ask_confirmation("Copy original NTFS boot sector over backup boot, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original boot sector over backup boot\n");
-	  if(disk_car->write(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite NTFS backup boot sector\n");
 	  }
@@ -259,7 +259,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	if(ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
-	  if(disk_car->write(disk_car,NTFS_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset) != NTFS_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite NTFS boot sector\n");
 	  }

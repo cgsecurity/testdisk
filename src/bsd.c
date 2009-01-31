@@ -40,7 +40,7 @@ int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const u
 {
   unsigned char *buffer;
   buffer=(unsigned char*)MALLOC(BSD_DISKLABEL_SIZE);
-  if(disk_car->read(disk_car,BSD_DISKLABEL_SIZE, buffer, partition->part_offset+0x200))
+  if(disk_car->pread(disk_car, buffer, BSD_DISKLABEL_SIZE, partition->part_offset + 0x200) != BSD_DISKLABEL_SIZE)
   {
     free(buffer);
     return 1;

@@ -58,8 +58,8 @@
 static const char *fewf_description(disk_t *disk_car);
 static const char *fewf_description_short(disk_t *disk_car);
 static int fewf_clean(disk_t *disk_car);
-static int fewf_read(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t offset);
-static int fewf_nowrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
+static int fewf_pread(disk_t *disk_car, const unsigned int count, void *nom_buffer, const uint64_t offset);
+static int fewf_nopwrite(disk_t *disk_car, const unsigned int count, const void *nom_buffer, const uint64_t offset);
 static int fewf_sync(disk_t *disk_car);
 
 struct info_fewf_struct
@@ -129,8 +129,8 @@ disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch
   disk_car->data=data;
   disk_car->description=fewf_description;
   disk_car->description_short=fewf_description_short;
-  disk_car->read=fewf_read;
-  disk_car->write=fewf_nowrite;
+  disk_car->pread=fewf_pread;
+  disk_car->pwrite=fewf_nopwrite;
   disk_car->sync=fewf_sync;
   disk_car->access_mode=TESTDISK_O_RDONLY;
   disk_car->clean=fewf_clean;
@@ -216,14 +216,14 @@ static int fewf_sync(disk_t *disk_car)
   return -1;
 }
 
-static int fewf_read(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
+static int fewf_pread(disk_t *disk_car,const unsigned int count, void *nom_buffer, const uint64_t offset)
 {
   struct info_fewf_struct *data=(struct info_fewf_struct *)disk_car->data;
   int64_t taille;
   taille=libewf_read_random(data->handle, nom_buffer, count, offset);
   if(taille!=count)
   {
-    log_error("fewf_read(xxx,%u,buffer,%lu(%u/%u/%u)) read err: ",
+    log_error("fewf_pread(xxx,%u,buffer,%lu(%u/%u/%u)) read err: ",
 	(unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
 	offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
     if(taille<0)
@@ -235,12 +235,12 @@ static int fewf_read(disk_t *disk_car,const unsigned int count, void *nom_buffer
     if(taille<=0)
       return -1;
   }
-  return 0;
+  return taille;
 }
 
-static int fewf_nowrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
+static int fewf_nopwrite(disk_t *disk_car,const unsigned int count, const void *nom_buffer, const uint64_t offset)
 {
-  log_error("fewf_nowrite(xx,%u,buffer,%lu(%u/%u/%u)) write refused\n",
+  log_error("fewf_nopwrite(xx,%u,buffer,%lu(%u/%u/%u)) write refused\n",
       (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
   return -1;

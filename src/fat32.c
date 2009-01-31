@@ -119,7 +119,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       log_info("\nfat32_boot_sector\n");
       log_partition(disk_car,partition);
       screen_buffer_add("Boot sector\n");
-      if(disk_car->read(disk_car,3*disk_car->sector_size, buffer_bs, partition->part_offset)!=0)
+      if(disk_car->pread(disk_car, buffer_bs, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
       {
 	screen_buffer_add("fat32_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,3*disk_car->sector_size);
@@ -142,7 +142,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
         screen_buffer_add("Bad\n");
       }
       screen_buffer_add("\nBackup boot sector\n");
-      if(disk_car->read(disk_car,3*disk_car->sector_size, buffer_backup_bs, partition->part_offset+6*disk_car->sector_size)!=0)
+      if(disk_car->pread(disk_car, buffer_backup_bs, 3 * disk_car->sector_size, partition->part_offset + 6 * disk_car->sector_size) != 3 * disk_car->sector_size)
       {
 	screen_buffer_add("fat32_boot_sector: Can't read backup boot sector.\n");
 	memset(buffer_backup_bs,0,3*disk_car->sector_size);
@@ -268,7 +268,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	if(ask_confirmation("Copy original FAT32 boot sector over backup boot, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original boot sector over backup boot\n");
-	  if(disk_car->write(disk_car,3*disk_car->sector_size, buffer_bs, partition->part_offset+6*disk_car->sector_size)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_bs, 3 * disk_car->sector_size, partition->part_offset + 6 * disk_car->sector_size) != 3 * disk_car->sector_size)
 	  {
 	    display_message("Write error: Can't overwrite FAT32 backup boot sector\n");
 	  }
@@ -282,7 +282,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	if(ask_confirmation("Copy backup FAT32 boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
-	  if(disk_car->write(disk_car,3*disk_car->sector_size, buffer_backup_bs, partition->part_offset)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_backup_bs, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
 	  {
 	    display_message("Write error: Can't overwrite FAT32 boot sector\n");
 	  }

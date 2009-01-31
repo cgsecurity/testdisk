@@ -43,7 +43,7 @@ static int test_EXT2(const struct ext2_super_block *sb, partition_t *partition);
 int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(EXT2_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,EXT2_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x400)!=0)
+  if(disk_car->pread(disk_car, buffer, EXT2_SUPERBLOCK_SIZE, partition->part_offset + 0x400) != EXT2_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

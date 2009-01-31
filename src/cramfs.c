@@ -43,7 +43,7 @@ static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,par
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(CRAMFS_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,CRAMFS_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x200)!=0)
+  if(disk_car->pread(disk_car, buffer, CRAMFS_SUPERBLOCK_SIZE, partition->part_offset + 0x200) != CRAMFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

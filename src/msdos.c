@@ -52,9 +52,9 @@ static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description_short(disk_t *disk_car);
-static int disk_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t hd_offset);
-static int disk_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t hd_offset);
-static int disk_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int disk_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t hd_offset);
+static int disk_pwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t hd_offset);
+static int disk_nopwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
 static int disk_sync(disk_t *disk_car);
 static int disk_clean(disk_t *disk_car);
 
@@ -88,7 +88,7 @@ static void disk_reset_error(disk_t *disk_car)
   biosdisk(0, data->disk, 0, 0, 1, 1, NULL);
 }
 
-static int hd_read(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int hd_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   __dpmi_regs r;
   unsigned char buf_cmd[HD_RW_BUF_SIZ];
@@ -103,22 +103,25 @@ static int hd_read(disk_t *disk_car, void *buf, const unsigned int count, const 
     int head, track, sector;
     if(data->geo_phys.sectors_per_head==0)
     {
-      log_critical("hd_read: BUG geo_phys.sectors_per_head=0 !\n");
-      return 1;
+      log_critical("hd_pread: BUG geo_phys.sectors_per_head=0 !\n");
+      return -1;
     }
     sector=(hd_offset%data->geo_phys.sectors_per_head)+1;
     hd_offset/=data->geo_phys.sectors_per_head;
     head=hd_offset%data->geo_phys.heads_per_cylinder;
     track=hd_offset/data->geo_phys.heads_per_cylinder;
     if(track<1024)
-      return biosdisk(2, data->disk, head, track, sector, nsects, buf);
-    return 1;
+    {
+      const int res=biosdisk(2, data->disk, head, track, sector, nsects, buf);
+      return (res!=0 ? -res: count);
+    }
+    return -1;
   }
   if(cmd_dos_segment==0)
     if(alloc_cmd_dos_buffer())
-      return 1;
+      return -1;
   if ( (xfer_dos_segment=__dpmi_allocate_dos_memory((count + 15) >> 4, &xfer_dos_selector)) == -1 )
-    return 1;
+    return -1;
   *(uint16_t*)&buf_cmd[0]=HD_RW_BUF_SIZ;
   *(uint16_t*)&buf_cmd[2]=nsects;
   *(uint32_t*)&buf_cmd[0x4]=xfer_dos_segment<<16;
@@ -133,10 +136,10 @@ static int hd_read(disk_t *disk_car, void *buf, const unsigned int count, const 
   __dpmi_int(0x13, &r);
   dosmemget(xfer_dos_segment<<4, count, buf);
   __dpmi_free_dos_memory(xfer_dos_selector);
-  return r.h.ah;
+  return (r.h.ah!=0 ? -r.h.ah : count);
 }
 
-static int hd_write(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+static int hd_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   __dpmi_regs r;
   unsigned char buf_cmd[HD_RW_BUF_SIZ];
@@ -152,22 +155,25 @@ static int hd_write(disk_t *disk_car, const void *buf, const unsigned int count,
     int head, track, sector;
     if(data->geo_phys.sectors_per_head==0)
     {
-      log_critical("hd_write: BUG geo_phys.sectors_per_head=0 !\n");
-      return 1;
+      log_critical("hd_pwrite: BUG geo_phys.sectors_per_head=0 !\n");
+      return -1;
     }
     sector=(hd_offset%data->geo_phys.sectors_per_head)+1;
     hd_offset/=data->geo_phys.sectors_per_head;
     head=hd_offset%data->geo_phys.heads_per_cylinder;
     track=hd_offset/data->geo_phys.heads_per_cylinder;
     if(track<1024)
-      return biosdisk(3, data->disk, head, track, sector, nsects, buf);
-    return 1;
+    {
+      const int res=biosdisk(3, data->disk, head, track, sector, nsects, buf);
+      return (res!=0 ? -res : count);
+    }
+    return -1;
   }
   if(cmd_dos_segment==0)
     if(alloc_cmd_dos_buffer())
-      return 1;
+      return -1;
   if ( (xfer_dos_segment=__dpmi_allocate_dos_memory((count + 15) >> 4, &xfer_dos_selector)) == -1 )
-    return 1;
+    return -1;
   *(uint16_t*)&buf_cmd[0]=HD_RW_BUF_SIZ;
   *(uint16_t*)&buf_cmd[2]=nsects;
   *(uint32_t*)&buf_cmd[0x4]=xfer_dos_segment<<16;
@@ -182,7 +188,7 @@ static int hd_write(disk_t *disk_car, const void *buf, const unsigned int count,
   dosmemput(&buf_cmd, HD_RW_BUF_SIZ, cmd_dos_segment<<4);
   __dpmi_int(0x13, &r);
   __dpmi_free_dos_memory(xfer_dos_selector);
-  return r.h.ah;
+  return (r.h.ah!=0 ? -r.h.ah : count);
 }
 
 static int check_enh_bios(const unsigned int disk, const int verbose)
@@ -370,8 +376,8 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     disk_car->description=disk_description;
     disk_car->description_short=disk_description_short;
-    disk_car->read=disk_read;
-    disk_car->write=((testdisk_mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR?disk_write:disk_nowrite);
+    disk_car->pread=disk_pread;
+    disk_car->pwrite=((testdisk_mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR?disk_pwrite:disk_nopwrite);
     disk_car->sync=disk_sync;
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=disk_clean;
@@ -442,12 +448,12 @@ static const char *disk_description_short(disk_t *disk_car)
   return disk_car->description_short_txt;
 }
 
-static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   struct info_disk_struct*data=disk_car->data;
   if(data->geo_phys.cylinders>0 && offset+count>disk_car->disk_size)
   {
-    log_error("disk_read_aux: Don't read after the end of the disk\n");
+    log_error("disk_pread_aux: Don't read after the end of the disk\n");
     return -1;
   }
   {
@@ -460,30 +466,30 @@ static int disk_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
       read_size=count-read_offset>16*512?16*512:count-read_offset;
       do
       {
-        rc=hd_read(disk_car, (char*)buf+read_offset, read_size, offset+read_offset);
-        if(rc!=0)
+        rc=hd_pread(disk_car, (char*)buf+read_offset, read_size, offset+read_offset);
+        if(rc < 0)
           disk_reset_error(disk_car);
-      } while(rc!=0 && rc!=1 && ++i<MAX_IO_NBR);
-      // 0=successful completion
-      // 1=invalid function in AH or invalid parameter
-      if(rc!=0)
+      } while(rc!=read_size && rc!=-1 && ++i<MAX_IO_NBR);
+      // <0 invalid function in AH or invalid parameter
+      if(rc < 0)
       {
-        log_error("disk_read_aux failed ");
-        hd_report_error(disk_car, offset, count, rc);
-        return -rc;
+        log_error("disk_pread_aux failed ");
+        hd_report_error(disk_car, offset, count, -rc);
       }
+      if(rc != read_size)
+	return (read_offset==0 ? rc : read_offset);
       read_offset+=read_size;
     } while(read_offset<count);
   }
-  return 0;
+  return count;
 }
 
-static int disk_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset)
+static int disk_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset)
 {
-  return align_read(&disk_read_aux, disk_car, buf, count, offset);
+  return align_pread(&disk_pread_aux, disk_car, buf, count, offset);
 }
 
-static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
+static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
 {
 
   struct info_disk_struct*data=disk_car->data;
@@ -491,29 +497,28 @@ static int disk_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
   int rc;
   disk_car->write_used=1;
   {
-    rc=hd_write(disk_car, buf, count, hd_offset);
-    if(rc!=0)
+    rc=hd_pwrite(disk_car, buf, count, hd_offset);
+    if(rc < 0)
       disk_reset_error(disk_car);
-  } while(rc==4 && ++i<MAX_IO_NBR);
+  } while(rc==-4 && ++i<MAX_IO_NBR);
   /* 4=sector not found/read error */
-  if(rc!=0)
+  if(rc < 0)
   {
-    log_error("disk_write error\n");
-    hd_report_error(disk_car, hd_offset, count, rc);
-    return -rc;
+    log_error("disk_pwrite error\n");
+    hd_report_error(disk_car, hd_offset, count, -rc);
   }
-  return 0;
+  return rc;
 }
 
-static int disk_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
+static int disk_pwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
 {
-  return align_write(&disk_read_aux, &disk_write_aux, disk_car, buf, count, offset);
+  return align_pwrite(&disk_pread_aux, &disk_pwrite_aux, disk_car, buf, count, offset);
 }
 
-static int disk_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int disk_nopwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
   struct info_disk_struct *data=disk_car->data;
-  log_warning("disk_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->disk,
+  log_warning("disk_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->disk,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
   return -1;

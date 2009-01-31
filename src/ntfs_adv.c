@@ -141,11 +141,11 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
       {
 	log_info("Write new boot!\n");
 	/* Write boot sector and backup boot sector */
-	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset))
+	if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
 	{
 	  display_message("Write error: Can't write new NTFS boot sector\n");
 	}
-	if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+	if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_SECTOR_SIZE)
 	{
 	  display_message("Write error: Can't write new NTFS backup boot sector\n");
 	}
@@ -210,11 +210,11 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	{
 	  log_info("Write new boot!\n");
 	  /* Write boot sector and backup boot sector */
-	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset))
+	  if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't write new NTFS boot sector\n");
 	  }
-	  if(disk_car->write(disk_car,NTFS_SECTOR_SIZE, newboot, partition->part_offset+partition->part_size-disk_car->sector_size)!=0)
+	  if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't write new NTFS backup boot sector\n");
 	  }
@@ -277,7 +277,7 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
   struct ntfs_boot_sector *org_ntfs_header=(struct ntfs_boot_sector *)&orgboot;
   struct ntfs_boot_sector *ntfs_header=(struct ntfs_boot_sector *)&newboot;
   int error=0;
-  if(disk_car->read(disk_car,NTFS_SECTOR_SIZE, &orgboot, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, &orgboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
   {
     log_error("create_ntfs_boot_sector: Can't read boot sector.\n");
     memset(&orgboot,0,NTFS_SECTOR_SIZE);
@@ -355,7 +355,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
 {
   char buffer[8*DEFAULT_SECTOR_SIZE];
   const char *attr=buffer;
-  if(disk_car->read(disk_car,sizeof(buffer), &buffer, partition->part_offset+(uint64_t)mft_sector*disk_car->sector_size)!=0)
+  if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition->part_offset + (uint64_t)mft_sector * disk_car->sector_size) != sizeof(buffer))
   {
     display_message("NTFS: Can't read mft_sector\n");
     return 1;
@@ -464,7 +464,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   /* try to find MFT Backup first */
   for(sector=(partition->part_size/disk_car->sector_size/2-20>0?partition->part_size/disk_car->sector_size/2-20:1);(sector<partition->part_size/disk_car->sector_size)&&(sector<=partition->part_size/disk_car->sector_size/2+20)&&(ind_stop==0);sector++)
   {
-    if(disk_car->read(disk_car,2*DEFAULT_SECTOR_SIZE, &buffer, partition->part_offset+sector*(uint64_t)disk_car->sector_size)==0)
+    if(disk_car->pread(disk_car, &buffer, 2 * DEFAULT_SECTOR_SIZE, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 2 * DEFAULT_SECTOR_SIZE)
     {
       if(memcmp(buffer,"FILE",4)==0 && (NTFS_GETU16(buffer+ 0x14)%8==0) && (NTFS_GETU16(buffer+ 0x14)>=42)
 	  &&(NTFS_GETU16(buffer+22)==1))	/* MFT_RECORD_IN_USE */
@@ -519,7 +519,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
       }
     }
 #endif
-    if(disk_car->read(disk_car,2*DEFAULT_SECTOR_SIZE, &buffer, partition->part_offset+sector*(uint64_t)disk_car->sector_size)==0)
+    if(disk_car->pread(disk_car, &buffer, 2 * DEFAULT_SECTOR_SIZE, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 2 * DEFAULT_SECTOR_SIZE)
     {
       if(memcmp(buffer,"FILE",4)==0 && (NTFS_GETU16(buffer+ 0x14)%8==0) && (NTFS_GETU16(buffer+ 0x14)>=42))
       {
@@ -632,7 +632,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
     log_info("ntfs_find_mft: mft_record_size     %u\n",mft_record_size);
     /* Read "root directory" in MFT */
-    if(disk_car->read(disk_car,mft_record_size, &buffer, partition->part_offset+(uint64_t)mft_lcn*sectors_per_cluster*disk_car->sector_size+5*(uint64_t)mft_record_size)!=0)
+    if(disk_car->pread(disk_car, &buffer, mft_record_size, partition->part_offset + (uint64_t)mft_lcn * sectors_per_cluster * disk_car->sector_size + 5 * (uint64_t)mft_record_size) != mft_record_size)
     {
       display_message("NTFS Can't read \"root directory\" in MFT\n");
       return 1;

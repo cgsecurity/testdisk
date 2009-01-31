@@ -96,7 +96,7 @@ list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveh
   unsigned char buffer[0x800];
   list_part_t *new_list_part=NULL;
   screen_buffer_reset();
-  if(disk_car->read(disk_car,sizeof(buffer), &buffer, 0)!=0)
+  if(disk_car->pread(disk_car, &buffer, sizeof(buffer), 0) != sizeof(buffer))
     return new_list_part;
   {
     uint64_t offsets[]={ 0x00080000, 0x2ee80000, 0x5dc80000, 0x8ca80000, 0xabe80000 };

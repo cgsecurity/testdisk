@@ -43,7 +43,7 @@ static int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partit
 int check_JFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(JFS_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,JFS_SUPERBLOCK_SIZE, buffer, partition->part_offset+64*512)!=0)
+  if(disk_car->pread(disk_car, buffer, JFS_SUPERBLOCK_SIZE, partition->part_offset + 64 * 512) != JFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

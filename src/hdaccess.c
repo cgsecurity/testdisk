@@ -122,9 +122,9 @@ static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, con
 static const char *file_description(disk_t *disk_car);
 static const char *file_description_short(disk_t *disk_car);
 static int file_clean(disk_t *disk_car);
-static int file_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
-static int file_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
-static int file_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
+static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
+static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_sync(disk_t *disk_car);
 #ifndef DJGPP
 static uint64_t compute_device_size(const int hd_h, const char *device, const int verbose, const unsigned int sector_size);
@@ -1065,7 +1065,7 @@ static int file_clean(disk_t *disk_car)
   return generic_clean(disk_car);
 }
 
-static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int file_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret=-1;
   int fd=((struct info_file_struct *)disk_car->data)->handle;
@@ -1077,7 +1077,7 @@ static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
 #ifdef __MINGW32__
     if(_lseeki64(fd,offset,SEEK_SET)==-1)
     {
-      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
           (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
           strerror(errno));
@@ -1086,7 +1086,7 @@ static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
 #else
     if(lseek(fd,offset,SEEK_SET)==(off_t)-1)
     {
-      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n", fd,
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n", fd,
           (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
           strerror(errno));
@@ -1113,7 +1113,7 @@ static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
   {
     if(offset+count <= disk_car->disk_size && offset+count <= disk_car->disk_real_size)
     {
-      log_error("file_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", fd,
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", fd,
           (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
       if(ret<0)
@@ -1124,18 +1124,21 @@ static int file_read_aux(disk_t *disk_car, void *buf, const unsigned int count, 
         log_error("Partial read\n");
     }
     if(ret<=0)
+    {
+      memset(buf, 0, count);
       return -1;
+    }
     memset((char*)buf+ret,0,count-ret);
   }
-  return 0;
+  return ret;
 }
 
-static int file_read(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
+static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  return align_read(&file_read_aux, disk_car, buf, count, offset);
+  return align_pread(&file_pread_aux, disk_car, buf, count, offset);
 }
 
-static int file_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+static int file_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   int fd=((struct info_file_struct *)disk_car->data)->handle;
   long int ret=-1;
@@ -1147,7 +1150,7 @@ static int file_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
 #ifdef __MINGW32__
     if(_lseeki64(fd,offset,SEEK_SET)==-1)
     {
-      log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
+      log_error("file_pwrite(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
           (unsigned)(count/disk_car->sector_size),
           (long unsigned)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
@@ -1156,7 +1159,7 @@ static int file_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
 #else
     if(lseek(fd,offset,SEEK_SET)==-1)
     {
-      log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
+      log_error("file_pwrite(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),strerror(errno));
       return -1;
     }
@@ -1166,22 +1169,22 @@ static int file_write_aux(disk_t *disk_car, const void *buf, const unsigned int 
   disk_car->write_used=1;
   if(ret!=count)
   {
-    log_error("file_write(%d,%u,buffer,%lu(%u/%u/%u)) write err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
+    log_error("file_pwrite(%d,%u,buffer,%lu(%u/%u/%u)) write err %s\n", fd,(unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
         offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset),(ret<0?strerror(errno):"File truncated"));
     return -1;
   }
-  return 0;
+  return ret;
 }
 
-static int file_write(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
+static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
-  return align_write(&file_read_aux, &file_write_aux, disk_car, buf, count, offset);
+  return align_pwrite(&file_pread_aux, &file_pwrite_aux, disk_car, buf, count, offset);
 }
 
-static int file_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
-  log_warning("file_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->handle,
+  log_warning("file_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->handle,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
   return -1;
@@ -1354,8 +1357,8 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
   disk_car->data=data;
   disk_car->description=file_description;
   disk_car->description_short=file_description_short;
-  disk_car->read=file_read;
-  disk_car->write=((mode&O_RDWR)==O_RDWR?file_write:file_nowrite);
+  disk_car->pread=file_pread;
+  disk_car->pwrite=((mode&O_RDWR)==O_RDWR?file_pwrite:file_nopwrite);
   disk_car->sync=file_sync;
   disk_car->access_mode=((mode&O_RDWR)==O_RDWR?TESTDISK_O_RDWR:TESTDISK_O_RDONLY);
 #ifdef O_DIRECT
@@ -1474,7 +1477,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
   buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(disk_car->autodetect!=0)
   {
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, 0)==0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, 0) == disk_car->sector_size)
     {
       if(verbose>1)
       {
@@ -1506,7 +1509,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
       data->geo_phys.cylinders=0;
     }
 #endif
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, pos)>=0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, pos) == disk_car->sector_size)
     {
       disk_car->geom.cylinders++;
       if(disk_car->disk_size < (uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size)

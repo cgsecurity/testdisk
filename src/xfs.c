@@ -44,7 +44,7 @@ static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb,partition_t 
 int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(XFS_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,XFS_SUPERBLOCK_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, XFS_SUPERBLOCK_SIZE, partition->part_offset) != XFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

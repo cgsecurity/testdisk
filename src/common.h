@@ -311,8 +311,8 @@ struct param_disk_struct
   char description_short_txt[DISKDESCRIPTION_MAX];
   const char *(*description)(disk_t *disk_car);
   const char *(*description_short)(disk_t *disk_car);
-  int (*read)(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset);
-  int (*write)(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
+  int (*pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
+  int (*pwrite)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
   int (*sync)(disk_t *disk_car);
   int (*clean)(disk_t *disk_car);
   const arch_fnct_t *arch;

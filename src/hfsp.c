@@ -41,7 +41,7 @@ static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh);
 int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(HFSP_BOOT_SECTOR_SIZE);
-  if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer, partition->part_offset+0x400)!=0)
+  if(disk_car->pread(disk_car, buffer, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + 0x400) != HFSP_BOOT_SECTOR_SIZE)
   {
     free(buffer);
     return 1;

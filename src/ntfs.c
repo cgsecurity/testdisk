@@ -58,7 +58,7 @@ int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const i
 {
   unsigned char *buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
 /*  log_trace("check_NTFS part_offset=%llu\n",(long long unsigned)partition->part_offset); */
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
   {
     free(buffer);
     return 1;
@@ -424,7 +424,7 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
     return 1;
   }
   buffer=(unsigned char *)MALLOC(mft_size);
-  if(disk_car->read(disk_car,mft_size, buffer, mft_pos)!=0)
+  if(disk_car->pread(disk_car, buffer, mft_size, mft_pos) != mft_size)
   {
     log_error("NTFS: Can't read MFT\n");
     free(buffer);

@@ -40,7 +40,7 @@ static int set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb);
 int check_HFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(HFS_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,HFS_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x400)!=0)
+  if(disk_car->pread(disk_car, buffer, HFS_SUPERBLOCK_SIZE, partition->part_offset + 0x400) != HFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;

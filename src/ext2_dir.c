@@ -168,7 +168,7 @@ static errcode_t my_read_blk(io_channel channel, unsigned long block, int count,
   log_trace("my_read_blk start size=%lu, offset=%lu name=%s\n",
       (long unsigned)size, (unsigned long)(block*channel->block_size), my_data->partition->fsname);
 #endif
-  if(my_data->disk_car->read(my_data->disk_car,size,buf,my_data->partition->part_offset+(uint64_t)block*channel->block_size)!=0)
+  if(my_data->disk_car->pread(my_data->disk_car, buf, size, my_data->partition->part_offset + (uint64_t)block * channel->block_size) != size)
     return 1;
 #ifdef DEBUG
   log_trace("my_read_blk done\n");
@@ -182,7 +182,7 @@ static errcode_t my_write_blk(io_channel channel, unsigned long block, int count
 #if 1
   {
     my_data_t *my_data=(my_data_t*)channel;
-    if(my_data->disk_car->write(my_data->disk_car,count*channel->block_size,buf,my_data->partition->part_offset+(uint64_t)block*channel->block_size)!=0)
+    if(my_data->disk_car->pwrite(my_data->disk_car, buf, count * channel->block_size, my_data->partition->part_offset + (uint64_t)block * channel->block_size) != count * channel->block_size)
       return 1;
     return 0;
   }

@@ -535,7 +535,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         {
           if(search_now_raid>0 || fast_mode>1)
           { /* Search Linux software RAID */
-            if(disk_car->read(disk_car,8*DEFAULT_SECTOR_SIZE, buffer_disk, search_location)!=0)
+            if(disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, search_location) != 8 * DEFAULT_SECTOR_SIZE)
             {
               res = -1;
             }
@@ -622,7 +622,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               if((disk_car->arch==&arch_i386 && start_ext2.sector==1 &&  (start_ext2.head<=2 || fast_mode>1)) ||
                   (disk_car->arch!=&arch_i386 && search_location%location_boundary==0))
               {
-                if(disk_car->read(disk_car,1024, buffer_disk, search_location)==0)
+                if(disk_car->pread(disk_car, buffer_disk, 1024, search_location) == 1024)
                 {
                   const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
                   if(le16(sb->s_block_group_nr)>0)
@@ -674,7 +674,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==11)
         {
           /* read to fill the cache */
-          disk_car->read(disk_car,8*DEFAULT_SECTOR_SIZE, buffer_disk, partition->part_offset+(63+16)*512);
+          disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE,
+	      partition->part_offset + (63 + 16) * 512);
           /* Try to catch disklabel before BSD FFS partition */
           res=search_type_128(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
@@ -832,7 +833,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         {
           partition->part_size=(uint64_t)0;
           partition->part_offset=element->part->part_offset - i * disk_car->sector_size;
-          if(disk_car->read(disk_car, DEFAULT_SECTOR_SIZE, buffer_disk, partition->part_offset)==0)
+          if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset) == DEFAULT_SECTOR_SIZE)
           {
             if(recover_NTFS(disk_car,(const struct ntfs_boot_sector*)buffer_disk,partition,verbose,dump_ind,0)==0)
             {

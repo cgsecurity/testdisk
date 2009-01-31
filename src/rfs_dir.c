@@ -132,7 +132,7 @@ static int file_read(dal_t *dal, void *buff, blk_t block, blk_t count) {
   blocklen = count * dal->blocksize;
 #endif
 /* log_debug("blocklen=%ld\n",blocklen); */
-  if(my_data->disk_car->read(my_data->disk_car,blocklen,buff,my_data->partition->part_offset+off))
+  if(my_data->disk_car->pread(my_data->disk_car, buff, blocklen, my_data->partition->part_offset + off) != blocklen)
     return 0;
   return 1;
 }
@@ -151,7 +151,7 @@ static int file_write(dal_t *dal, void *buff, blk_t block, blk_t count)
     off = (uint64_t)block * (uint64_t)dal->blocksize;
     blocklen = (uint64_t)count * (uint64_t)dal->blocksize;
 #endif
-    if(my_data->disk_car->write(my_data->disk_car,blocklen,buff,my_data->partition->part_offset+off))
+    if(my_data->disk_car->pwrite(my_data->disk_car, buff, blocklen, my_data->partition->part_offset + off) != blocklen)
       return 0;
     return 1;
   }

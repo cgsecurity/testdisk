@@ -48,7 +48,7 @@ int check_sun_i386(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(SUN_PARTITION_I386_SIZE);
   sun_partition_i386 *sunlabel=(sun_partition_i386*)buffer;
-  if(disk_car->read(disk_car,SUN_PARTITION_I386_SIZE, buffer, partition->part_offset+0x200)!=0)
+  if(disk_car->pread(disk_car, buffer, SUN_PARTITION_I386_SIZE, partition->part_offset + 0x200) != SUN_PARTITION_I386_SIZE)
   {
     free(buffer);
     return 1;

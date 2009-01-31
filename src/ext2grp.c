@@ -57,7 +57,7 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, parti
   }
 
   buffer=(unsigned char*)MALLOC(EXT2_SUPERBLOCK_SIZE);
-  if(disk->read(disk,EXT2_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x400)!=0)
+  if(disk->pread(disk, buffer, EXT2_SUPERBLOCK_SIZE, partition->part_offset + 0x400) != EXT2_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 0;
@@ -94,7 +94,7 @@ unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, parti
   }
 
   buffer=(unsigned char*)MALLOC(EXT2_SUPERBLOCK_SIZE);
-  if(disk->read(disk,EXT2_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x400)!=0)
+  if(disk->pread(disk, buffer, EXT2_SUPERBLOCK_SIZE, partition->part_offset + 0x400) != EXT2_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 0;

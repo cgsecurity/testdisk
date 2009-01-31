@@ -46,7 +46,7 @@ static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partit
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(LVM_PV_DISK_SIZE);
-  if(disk_car->read(disk_car,LVM_PV_DISK_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, LVM_PV_DISK_SIZE, partition->part_offset) != LVM_PV_DISK_SIZE)
   {
     free(buffer);
     return 1;
@@ -130,7 +130,7 @@ static int set_LVM_info(partition_t *partition, const pv_disk_t *pv)
 int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(DEFAULT_SECTOR_SIZE);
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, partition->part_offset+0x200)!=0)
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset + 0x200) != DEFAULT_SECTOR_SIZE)
   {
     free(buffer);
     return 1;

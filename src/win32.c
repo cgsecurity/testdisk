@@ -65,9 +65,9 @@ static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
 static int file_win32_clean(disk_t *disk_car);
-static int file_win32_read(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
-static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
-static int file_win32_nowrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_win32_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
+static int file_win32_pwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
+static int file_win32_nopwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
 static int file_win32_sync(disk_t *disk_car);
 static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device);
 
@@ -326,8 +326,8 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->data=data;
     disk_car->description=file_win32_description;
     disk_car->description_short=file_win32_description_short;
-    disk_car->read=file_win32_read;
-    disk_car->write=((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?file_win32_write:file_win32_nowrite);
+    disk_car->pread=file_win32_pread;
+    disk_car->pwrite=((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?file_win32_pwrite:file_win32_nopwrite);
     disk_car->sync=file_win32_sync;
     disk_car->access_mode=testdisk_mode;
     disk_car->clean=file_win32_clean;
@@ -429,7 +429,7 @@ static unsigned int file_win32_compute_sector_size(HANDLE handle)
   return 0;
 }
 
-static int file_win32_read_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int file_win32_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
   HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
@@ -448,7 +448,7 @@ static int file_win32_read_aux(disk_t *disk_car, void *buf, const unsigned int c
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (LPTSTR) &lpMsgBuf,
         0, NULL );
-    log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
+    log_error("file_win32_pread(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
         (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
         offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
         (char*)lpMsgBuf);
@@ -461,11 +461,11 @@ static int file_win32_read_aux(disk_t *disk_car, void *buf, const unsigned int c
     if(ret)
       ret=dwByteRead;
   }
-  if(ret!=count)
+  if(ret!=(signed)count)
   {
     if(ret>0 || offset<disk_car->disk_size)
     {
-      log_error("file_win32_read(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", (int)fd,
+      log_error("file_win32_pread(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", (int)fd,
           (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
           offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
       if(ret<0)
@@ -488,19 +488,18 @@ static int file_win32_read_aux(disk_t *disk_car, void *buf, const unsigned int c
       else
         log_error("Partial read\n");
     }
-    if(ret<=0)
-      return -1;
-    memset((char*)buf+ret,0,count-ret);
+    if(ret>0)
+      memset((char*)buf+ret,0,count-ret);
   }
-  return 0;
+  return ret;
 }
 
-static int file_win32_read(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
+static int file_win32_pread(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
 {
-  return align_read(&file_win32_read_aux, disk_car, buf, count, offset);
+  return align_pread(&file_win32_pread_aux, disk_car, buf, count, offset);
 }
 
-static int file_win32_write_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
+static int file_win32_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
   HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
@@ -519,7 +518,7 @@ static int file_win32_write_aux(disk_t *disk_car, const void *buf, const unsigne
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (LPTSTR) &lpMsgBuf,
         0, NULL );
-    log_error("file_win32_write(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
+    log_error("file_win32_pwrite(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", (int)fd,
         (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
         offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
         (char*)lpMsgBuf);
@@ -533,25 +532,24 @@ static int file_win32_write_aux(disk_t *disk_car, const void *buf, const unsigne
       ret=dwByteRead;
   }
   disk_car->write_used=1;
-  if(ret!=count)
+  if(ret!=(signed)count)
   {
-    log_error("file_win32_write(%u,%u,buffer,%lu(%u/%u/%u)) write err\n", (int)fd,
+    log_error("file_win32_pwrite(%u,%u,buffer,%lu(%u/%u/%u)) write err\n", (int)fd,
         (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
         offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
-    return -1;
   }
-  return 0;
+  return ret;
 }
 
-static int file_win32_write(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int file_win32_pwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
-  return align_write(&file_win32_read_aux, &file_win32_write_aux, disk_car, buf, count, offset);
+  return align_pwrite(&file_win32_pread_aux, &file_win32_pwrite_aux, disk_car, buf, count, offset);
 }
 
-static int file_win32_nowrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int file_win32_nopwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
 {
   const struct info_file_win32_struct *data=disk_car->data;
-  log_warning("file_win32_nowrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", (unsigned int)data->handle,
+  log_warning("file_win32_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", (unsigned int)data->handle,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
   return -1;

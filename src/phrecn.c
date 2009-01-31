@@ -332,7 +332,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
     buffer=buffer_olddata+blocksize;
     reset_file_recovery(&file_recovery);
     memset(buffer_olddata, 0, blocksize);
-    disk_car->read(disk_car,READ_SIZE, buffer, offset);
+    disk_car->pread(disk_car, buffer, READ_SIZE, offset);
 #ifdef DEBUG_BF
     info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
 #endif
@@ -448,7 +448,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
                 (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
                 (unsigned long)((partition->part_size-1)/disk_car->sector_size));
           }
-          disk_car->read(disk_car,READ_SIZE, buffer, offset);
+          disk_car->pread(disk_car, buffer, READ_SIZE, offset);
         }
       }
     } while(need_to_check_file==0);
@@ -507,7 +507,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
   file_recovery->file_size=0;
   for(i=0; i<(original_offset_error+blocksize-1)/blocksize; i++)
   {
-    disk_car->read(disk_car,blocksize, block_buffer, offset);
+    disk_car->pread(disk_car, block_buffer, blocksize, offset);
     fwrite(block_buffer, blocksize, 1, file_recovery->handle);
     list_append_block(&file_recovery->location, offset, blocksize, 1);
     file_recovery->file_size+=blocksize;
@@ -595,7 +595,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
                 file_recovery->file_size+=blocksize)
             {
               /* FIXME: handle fwrite return value */
-              disk_car->read(disk_car, blocksize, block_buffer, offset);
+              disk_car->pread(disk_car, block_buffer, blocksize, offset);
               fwrite(block_buffer, blocksize, 1, file_recovery->handle);
               list_append_block(&file_recovery->location, offset, blocksize, 1);
               get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
@@ -738,7 +738,7 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
     offset=current_search_space->start;
   if(verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
-  disk_car->read(disk_car,READ_SIZE, buffer, offset);
+  disk_car->pread(disk_car, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
     uint64_t old_offset=offset;
@@ -825,7 +825,7 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
       {
         log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)((partition->part_size-1)/disk_car->sector_size));
       }
-      if(disk_car->read(disk_car,READ_SIZE, buffer, offset)<0)
+      if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
         if(interface!=0)
@@ -894,7 +894,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
     offset=current_search_space->start;
   if(verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
-  disk_car->read(disk_car,READ_SIZE, buffer, offset);
+  disk_car->pread(disk_car, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
     int move_next=1;
@@ -1123,7 +1123,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       {
         log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)((partition->part_size-1)/disk_car->sector_size));
       }
-      if(disk_car->read(disk_car,READ_SIZE, buffer, offset)<0)
+      if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
         if(interface!=0)

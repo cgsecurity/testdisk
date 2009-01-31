@@ -40,7 +40,7 @@ static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_heade
 int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(SWAP_SIZE);
-  if(disk_car->read(disk_car,SWAP_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, SWAP_SIZE, partition->part_offset) != SWAP_SIZE)
   {
     free(buffer);
     return 1;

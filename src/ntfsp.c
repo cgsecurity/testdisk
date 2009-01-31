@@ -75,7 +75,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     buffer=(unsigned char *)MALLOC(SIZEOF_BUFFER);
     {
       const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
-      if(disk_car->read(disk_car,512, buffer, partition->part_offset)!=0)
+      if(disk_car->pread(disk_car, buffer, 512, partition->part_offset) != 512)
       {
 	free(buffer);
 	return 0;

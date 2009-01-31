@@ -47,7 +47,7 @@ static int set_rfs4_info(const disk_t *disk_car, const struct reiser4_master_sb*
 int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(REISERFS_SUPER_BLOCK_SIZE);
-  if(disk_car->read(disk_car,REISERFS_SUPER_BLOCK_SIZE, buffer, partition->part_offset+128*512)!=0) /* 64k offset */
+  if(disk_car->pread(disk_car, buffer, REISERFS_SUPER_BLOCK_SIZE, partition->part_offset + 128 * 512) != REISERFS_SUPER_BLOCK_SIZE) /* 64k offset */
   {
     free(buffer);
     return 1;

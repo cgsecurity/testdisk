@@ -144,7 +144,7 @@ list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int savehe
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
   sunlabel=(sun_partition*)buffer;
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, (uint64_t)0))
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     screen_buffer_add( msg_PART_RD_ERR);
     free(buffer);

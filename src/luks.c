@@ -43,7 +43,7 @@ static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
 int check_LUKS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
-  if(disk_car->read(disk_car,DEFAULT_SECTOR_SIZE, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
   {
     free(buffer);
     return 1;

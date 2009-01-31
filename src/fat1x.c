@@ -111,7 +111,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       log_info("\nfat1x_boot_sector\n");
       log_partition(disk_car,partition);
       screen_buffer_add("Boot sector\n");
-      if(disk_car->read(disk_car,FAT1x_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset)!=0)
+      if(disk_car->pread(disk_car, buffer_bs, FAT1x_BOOT_SECTOR_SIZE, partition->part_offset) != FAT1x_BOOT_SECTOR_SIZE)
       {
 	screen_buffer_add("fat1x_boot_sector: Can't read boot sector.\n");
 	memset(buffer_bs,0,FAT1x_BOOT_SECTOR_SIZE);

@@ -98,7 +98,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
       hd_offset%(5*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2))==0 ||
       hd_offset%(7*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2))==0)
     {
-      if(disk_car->read(disk_car,1024, buffer, partition->part_offset+hd_offset)==0)
+      if(disk_car->pread(disk_car, buffer, 1024, partition->part_offset + hd_offset) == 1024)
       {
 	if(le16(sb->s_magic)==EXT2_SUPER_MAGIC)
 	{

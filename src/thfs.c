@@ -116,7 +116,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
       log_info("\nHFS_HFSP_boot_sector\n");
       log_partition(disk_car,partition);
       screen_buffer_add("Volume header\n");
-      if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+0x400)!=0)
+      if(disk_car->pread(disk_car, buffer_bs, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + 0x400) != HFSP_BOOT_SECTOR_SIZE)
       {
 	screen_buffer_add("Bad: can't read HFS/HFS+ volume header.\n");
 	memset(buffer_bs,0,HFSP_BOOT_SECTOR_SIZE);
@@ -136,7 +136,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
       else
 	screen_buffer_add("Bad\n");
       screen_buffer_add("\nBackup volume header\n");
-      if(disk_car->read(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+partition->part_size-0x400)!=0)
+      if(disk_car->pread(disk_car, buffer_backup_bs, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - 0x400) != HFSP_BOOT_SECTOR_SIZE)
       {
 	screen_buffer_add("Bad: can't read HFS/HFS+ backup volume header.\n");
 	memset(buffer_backup_bs,0,HFSP_BOOT_SECTOR_SIZE);
@@ -220,7 +220,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 	if(ask_confirmation("Copy original HFS/HFS+ volume header over backup, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original superblock over backup boot\n");
-	  if(disk_car->write(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_bs, partition->part_offset+partition->part_size-0x400)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_bs, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - 0x400) != HFSP_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite HFS/HFS+ backup volume header\n");
 	  }
@@ -234,7 +234,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 	if(ask_confirmation("Copy backup HFS/HFS+ volume header over main volume header, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup superblock over main superblock\n");
-	  if(disk_car->write(disk_car,HFSP_BOOT_SECTOR_SIZE, buffer_backup_bs, partition->part_offset+0x400)!=0)
+	  if(disk_car->pwrite(disk_car, buffer_backup_bs, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + 0x400) != HFSP_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite HFS/HFS+ main volume header\n");
 	  }

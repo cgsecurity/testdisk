@@ -44,7 +44,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(MD_SB_BYTES);
   /* MD version 1.1 */
-  if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset)==0)
+  if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset) == MD_SB_BYTES)
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
     if(le32(sb1->md_magic)==(unsigned int)MD_SB_MAGIC &&
@@ -69,7 +69,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
     }
   }
   /* MD version 1.2 */
-  if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+4096)==0)
+  if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + 4096) == MD_SB_BYTES)
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
     if(le32(sb1->md_magic)==(unsigned int)MD_SB_MAGIC &&
@@ -101,7 +101,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
     {
       log_verbose("Raid md 0.90 offset %llu\n", (long long unsigned)offset/512);
     }
-    if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
+    if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       if(le32(sb->md_magic)==(unsigned int)MD_SB_MAGIC &&
 	  le32(sb->major_version)==0 &&
@@ -131,7 +131,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
     {
       log_verbose("Raid md 1.0 offset %llu\n", (long long unsigned)offset/512);
     }
-    if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
+    if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
       if(le32(sb1->md_magic)==(unsigned int)MD_SB_MAGIC &&
@@ -166,7 +166,7 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   /* MD version 0.90 */
   {
     uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
-    if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
+    if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       if(recover_MD(disk_car,(struct mdp_superblock_s*)buffer,partition,verbose,0)==0)
       {
@@ -179,7 +179,7 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   if(partition->part_size > 8*2*512)
   {
     uint64_t offset=(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
-    if(disk_car->read(disk_car,MD_SB_BYTES, buffer, partition->part_offset+offset)==0)
+    if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
       if(le32(sb1->major_version)==1 &&

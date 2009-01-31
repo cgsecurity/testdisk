@@ -172,7 +172,7 @@ static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int en
 static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_offset,const unsigned long int i)
 {
   unsigned char buffer[DEFAULT_SECTOR_SIZE];
-  if(disk_car->read(disk_car,sizeof(buffer), &buffer, hd_offset)!=0)
+  if(disk_car->pread(disk_car, &buffer, sizeof(buffer), hd_offset) != sizeof(buffer))
   {
     log_error("fat_dir, get_subdirectory(), can't read directory\n");
     return 1;
@@ -356,8 +356,9 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
         ind_stop|=check_enter_key_or_s(stdscr);
       }
 #endif
-      if(disk_car->read(disk_car,cluster_size, buffer,
-            partition->part_offset+(start_data+(uint64_t)(root_cluster-2)*sectors_per_cluster)*disk_car->sector_size)==0)
+      if(disk_car->pread(disk_car, buffer, cluster_size,
+	    partition->part_offset + (start_data + (uint64_t)(root_cluster - 2) * sectors_per_cluster) *
+	    disk_car->sector_size) == cluster_size)
       {
         if(verbose>1)
         {
@@ -475,8 +476,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
                     return new_root_cluster;
                   }
                   /* Read the cluster */
-                  if(disk_car->read(disk_car,cluster_size, buffer,
-                        partition->part_offset+(start_data+(uint64_t)(tmp-2)*sectors_per_cluster)*disk_car->sector_size)!=0)
+                  if(disk_car->pread(disk_car, buffer, cluster_size,
+			partition->part_offset + (start_data + (uint64_t)(tmp - 2) * sectors_per_cluster) * disk_car->sector_size) != cluster_size)
                   {
                     log_critical("cluster can't be read\n");
                     free(buffer);
@@ -653,8 +654,8 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
     if(++current_entry==(cluster_size/sizeof(struct msdos_dir_entry)))
     {
       unsigned int next_cluster;
-      if(disk_car->write(disk_car,cluster_size, buffer,
-            partition->part_offset+(start_data+(uint64_t)(cluster-2)*sectors_per_cluster)*disk_car->sector_size)!=0)
+      if(disk_car->pwrite(disk_car, buffer, cluster_size,
+	    partition->part_offset + (start_data + (uint64_t)(cluster - 2) * sectors_per_cluster) * disk_car->sector_size) != cluster_size)
       {
 	display_message("Write error: Can't create FAT32 root cluster.\n");
       }
@@ -673,8 +674,8 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
 cluster=next_cluster;
     }
   }
-  if(disk_car->write(disk_car,cluster_size, buffer,
-        partition->part_offset+(start_data+(uint64_t)(cluster-2)*sectors_per_cluster)*disk_car->sector_size)!=0)
+  if(disk_car->pwrite(disk_car, buffer, cluster_size, partition->part_offset + (start_data + (uint64_t)(cluster - 2) * sectors_per_cluster) * disk_car->sector_size) != cluster_size
+        )
   {
     display_message("Write error: Can't create FAT32 root cluster.\n");
   }
@@ -708,7 +709,7 @@ static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const
   hd_offset=partition->part_offset+(uint64_t)offset*disk_car->sector_size;
   for(i=0; i<200 && i<offset; i++)
   {
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, hd_offset)!=0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
     {
       log_error("dir_entries: read error, dir_entries>=%u (%u sectors)\n",i*(disk_car->sector_size/32),i);
     }
@@ -763,7 +764,7 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
   hd_offset=partition->part_offset+(uint64_t)offset*disk_car->sector_size;
   for(i=0;i<200;i++)
   {
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, hd_offset)!=0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
     {
       log_error("dir_entries: read error, dir_entries>=%u (%u sectors)\n",i*(disk_car->sector_size/32),i);
     }
@@ -821,7 +822,8 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
   }
   root_dir_size=(root_size_max*32+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
   buffer_dir=(unsigned char *)MALLOC(root_dir_size);
-  if(disk_car->read(disk_car, root_dir_size, buffer_dir, partition->part_offset+(uint64_t)(reserved+fats*fat_length)*disk_car->sector_size)!=0)
+  if(disk_car->pread(disk_car, buffer_dir, root_dir_size,
+	partition->part_offset + (uint64_t)(reserved + fats * fat_length) * disk_car->sector_size) != root_dir_size)
   {
     log_error("FAT 1x can't read root directory\n");
     free(buffer_dir);
@@ -854,8 +856,8 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
       {
         log_verbose("dir_entries %u, sectors_per_cluster %u\n",dir_entries,sectors_per_cluster);
       }
-      if(disk_car->read(disk_car, disk_car->sector_size, buffer_dir,
-            partition->part_offset+(start_data+(uint64_t)(new_inode-2)*sectors_per_cluster)*disk_car->sector_size)==0)
+      if(disk_car->pread(disk_car, buffer_dir, disk_car->sector_size,
+	    partition->part_offset + (start_data + (uint64_t)(new_inode - 2) * sectors_per_cluster) * disk_car->sector_size) == disk_car->sector_size)
       {
         if((memcmp(&buffer_dir[0],".          ",8+3)==0)&&(memcmp(&buffer_dir[0x20],"..         ",8+3)==0))
         {
@@ -1040,13 +1042,13 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     /* Write boot sector and backup boot sector */
     if(upart_type==UP_FAT32)
     {
-      if(disk_car->write(disk_car,3*disk_car->sector_size, newboot, partition->part_offset)!=0 ||
-	  disk_car->write(disk_car,3*disk_car->sector_size, newboot, partition->part_offset+(uint64_t)le16(fat_header->backup_boot)*disk_car->sector_size)!=0)
+      if(disk_car->pwrite(disk_car, newboot, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size ||
+	  disk_car->pwrite(disk_car, newboot, 3 * disk_car->sector_size, partition->part_offset + (uint64_t)le16(fat_header->backup_boot) * disk_car->sector_size) != 3 * disk_car->sector_size)
 	err=1;
     }
     else
     {
-      if(disk_car->write(disk_car,DEFAULT_SECTOR_SIZE, newboot, partition->part_offset)!=0)
+      if(disk_car->pwrite(disk_car, newboot, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
 	err=1;
     }
     disk_car->sync(disk_car);
@@ -1072,7 +1074,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   newboot=(unsigned char *)MALLOC(3*disk_car->sector_size);
   org_fat_header=(struct fat_boot_sector *)orgboot;
   fat_header=(struct fat_boot_sector *)newboot;
-  if(disk_car->read(disk_car,3*disk_car->sector_size, orgboot, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, orgboot, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
   {
     log_error("create_fat_boot_sector: Can't read old boot sector\n");
     memset(orgboot,0,3*disk_car->sector_size);
@@ -1593,7 +1595,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
       ind_stop|=check_enter_key_or_s(stdscr);
     }
 #endif
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset+offset)==0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
     {
       unsigned long int fat_offset=0;
       unsigned int fat_type;
@@ -1665,7 +1667,7 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
     if(dump_ind>0 && interface>0)
     {
       unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-      if(disk_car->read(disk_car,disk_car->sector_size, &buffer, end)==0)
+      if(disk_car->pread(disk_car, &buffer, disk_car->sector_size, end) == disk_car->sector_size)
       {
 	dump_ncurses(buffer,disk_car->sector_size);
       }
@@ -1904,7 +1906,7 @@ static int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, co
         ind_stop|=check_enter_key_or_s(stdscr);
       }
 #endif
-      if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset+offset)==0)
+      if(disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
       {
         if(memcmp(&buffer[0],".          ",8+3)==0 && memcmp(&buffer[0x20],"..         ",8+3)==0)
         {
@@ -2382,7 +2384,7 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
   }
   buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   fat_header=(struct fat_boot_sector *)buffer;
-  if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset)!=0)
+  if(disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
   {
     display_message("FAT_init_rootdir: Can't read boot sector\n");
     free(buffer);
@@ -2393,7 +2395,8 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
   start_data=start_rootdir+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
   for(sector=start_rootdir;error==0 && sector<start_data;sector++)
   {
-    if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset+(uint64_t)sector*disk_car->sector_size)!=0)
+    if(disk_car->pread(disk_car, buffer, disk_car->sector_size,
+	  partition->part_offset + (uint64_t)sector * disk_car->sector_size) != disk_car->sector_size)
     {
       log_error("FAT_init_rootdir: read error at sector %lu\n", sector);
     }
@@ -2423,8 +2426,8 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
     memset(buffer,0,disk_car->sector_size);
     for(sector=start_rootdir;sector<start_data;sector++)
     {
-      if(disk_car->write(disk_car,disk_car->sector_size, buffer, 
-	    partition->part_offset+(uint64_t)sector*disk_car->sector_size)!=0)
+      if(disk_car->pwrite(disk_car, buffer, disk_car->sector_size,
+	    partition->part_offset + (uint64_t)sector * disk_car->sector_size) != disk_car->sector_size)
       {
 	err=1;
       }
@@ -2466,7 +2469,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
       unsigned char *buffer;
       buffer=(unsigned char *)MALLOC(disk_car->sector_size);
       fat_header=(struct fat_boot_sector *)buffer;
-      if(disk_car->read(disk_car,disk_car->sector_size, buffer, partition->part_offset)!=0)
+      if(disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
       {
         display_message("repair_FAT_table: Can't read boot sector\n");
         return 1;
@@ -2627,8 +2630,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                     {
                       log_info("repair_FAT_table: correcting FAT%u (sector %lu) using FAT%u\n",fat_nbr+1,
                           start_fat1+fat_length*fat_nbr+old_offset_s, good_fat_nbr+1);
-                      if(disk_car->write(disk_car, rw_size, buffer_fat[good_fat_nbr], 
-                            partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                      if(disk_car->pwrite(disk_car, buffer_fat[good_fat_nbr], rw_size,
+			    partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size)
                       {
                         display_message("repair_FAT_table: write failed.\n");
                       }
@@ -2659,8 +2662,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                   {
                     log_info("repair_FAT_table: correcting FAT%u (sector %lu)\n",fat_nbr+1,
                         start_fat1+fat_length*fat_nbr+old_offset_s);
-                    if(disk_car->write(disk_car, rw_size, buffer_fat[fat_nbr], 
-                          partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                    if(disk_car->pwrite(disk_car, buffer_fat[fat_nbr], rw_size,
+			  partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size)
                     {
                       display_message("repair_FAT_table: write failed.\n");
                     }
@@ -2699,8 +2702,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                   }
                   if(allow_write[fat_nbr]==FAT_REPAIR_YES)
                   {
-                    if(disk_car->write(disk_car, rw_size, buffer_fat[fat_nbr], 
-                          partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                    if(disk_car->pwrite(disk_car, buffer_fat[fat_nbr], rw_size,
+			  partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size )
                     {
                       display_message("repair_FAT_table: write failed.\n");
                     }
@@ -2717,8 +2720,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
             {
               log_info("repair_FAT_table: read sector %lu (FAT%u)\n",(start_fat1+fat_length*fat_nbr+offset_s),fat_nbr+1);
             }
-            if(disk_car->read(disk_car, rw_size,
-                  buffer_fat[fat_nbr], partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+offset_s)*disk_car->sector_size)!=0)
+            if(disk_car->pread(disk_car, buffer_fat[fat_nbr], rw_size,
+		  partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + offset_s) * disk_car->sector_size) != rw_size)
             {
               log_error("repair_FAT_table: read error sector %lu\n",(start_fat1+fat_length*fat_nbr+offset_s));
               memset(buffer_fat[fat_nbr],0, rw_size);
@@ -2871,8 +2874,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
                 }
                 if(allow_write[fat_nbr]==FAT_REPAIR_YES)
                 {
-                  if(disk_car->write(disk_car, rw_size, buffer_fat[good_fat_nbr], 
-                        partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                  if(disk_car->pwrite(disk_car, buffer_fat[good_fat_nbr], rw_size,
+			partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size)
                   {
                     display_message("repair_FAT_table: write failed.\n");
                   }
@@ -2903,8 +2906,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
               }
               if(allow_write[fat_nbr]==FAT_REPAIR_YES)
               {
-                if(disk_car->write(disk_car, rw_size, buffer_fat[fat_nbr], 
-                      partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                if(disk_car->pwrite(disk_car, buffer_fat[fat_nbr], rw_size,
+		      partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size)
                 {
                   display_message("repair_FAT_table: write failed.\n");
                 }
@@ -2943,8 +2946,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
               }
               if(allow_write[fat_nbr]==FAT_REPAIR_YES)
               {
-                if(disk_car->write(disk_car, rw_size, buffer_fat[fat_nbr], 
-                      partition->part_offset+(uint64_t)(start_fat1+fat_length*fat_nbr+old_offset_s)*disk_car->sector_size)!=0)
+                if(disk_car->pwrite(disk_car, buffer_fat[fat_nbr], rw_size,
+		      partition->part_offset + (uint64_t)(start_fat1 + fat_length * fat_nbr + old_offset_s) * disk_car->sector_size) != rw_size)
                 {
                   display_message("repair_FAT_table: write failed.\n");
                 }

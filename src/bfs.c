@@ -41,7 +41,7 @@ int check_BeFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer;
   buffer=(unsigned char*)MALLOC(BFS_SUPERBLOCK_SIZE);
-  if(disk_car->read(disk_car,BFS_SUPERBLOCK_SIZE, buffer, partition->part_offset+0x200)!=0)
+  if(disk_car->pread(disk_car, buffer, BFS_SUPERBLOCK_SIZE, partition->part_offset + 0x200) != BFS_SUPERBLOCK_SIZE)
   {
     free(buffer);
     return 1;
