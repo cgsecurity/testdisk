@@ -29,6 +29,9 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
@@ -185,7 +188,8 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
       tag_make=find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE);
       if(tag_make!=NULL)
       {
-	if(strcmp(tag_make, "PENTAX Corporation ")==0)
+	if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
+	    strcmp(tag_make, "PENTAX             ")==0)
 	  file_recovery_new->extension="pef";
 	else if(strcmp(tag_make, "NIKON CORPORATION")==0)
 	  file_recovery_new->extension="nef";
