@@ -680,7 +680,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   return 0;
 }
 
-int comp_FAT(disk_t *disk_car,const partition_t *partition,const unsigned long int fat_size,const unsigned long int sect_res)
+int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int fat_size, const unsigned long int sect_res)
 {
   /*
   return 0 if FATs match
@@ -688,43 +688,42 @@ int comp_FAT(disk_t *disk_car,const partition_t *partition,const unsigned long i
   unsigned int reste;
   uint64_t hd_offset, hd_offset2;
   unsigned char *buffer, *buffer2;
-  buffer=(unsigned char *)MALLOC(NBR_SECT*disk_car->sector_size);
-  buffer2=(unsigned char *)MALLOC(NBR_SECT*disk_car->sector_size);
-  hd_offset=partition->part_offset+(uint64_t)sect_res*disk_car->sector_size;
-  hd_offset2=hd_offset+(uint64_t)fat_size*disk_car->sector_size;
+  buffer=(unsigned char *)MALLOC(16*disk->sector_size);
+  buffer2=(unsigned char *)MALLOC(16*disk->sector_size);
+  hd_offset=partition->part_offset+(uint64_t)sect_res*disk->sector_size;
+  hd_offset2=hd_offset+(uint64_t)fat_size*disk->sector_size;
   reste=(fat_size>1000?1000:fat_size); /* Quick check ! */
+  reste*=disk->sector_size;
   while(reste>0)
   {
-    const unsigned int read_size=reste>NBR_SECT?NBR_SECT:reste;
+    const unsigned int read_size=(reste > 16 * disk->sector_size ? 16 * disk->sector_size :reste);
     reste-=read_size;
-    if(disk_car->pread(disk_car, buffer, read_size * disk_car->sector_size,
-	  hd_offset) != read_size * disk_car->sector_size)
+    if(disk->pread(disk, buffer, read_size, hd_offset) != read_size)
     {
       log_error("comp_FAT: can't read FAT1\n");
       free(buffer2);
       free(buffer);
       return 1;
     }
-    if(disk_car->pread(disk_car, buffer2, read_size * disk_car->sector_size,
-	  hd_offset2) != read_size * disk_car->sector_size)
+    if(disk->pread(disk, buffer2, read_size, hd_offset2) != read_size)
     {
       log_error("comp_FAT: can't read FAT2\n");
       free(buffer2);
       free(buffer);
       return 1;
     }
-    if(memcmp(buffer,buffer2,disk_car->sector_size*read_size)!=0)
+    if(memcmp(buffer, buffer2, read_size)!=0)
     {
       log_error("FAT differs, FAT sectors=%lu-%lu/%lu\n",
-          (unsigned long) ((hd_offset-partition->part_offset)/disk_car->sector_size-sect_res),
-          (unsigned long) ((hd_offset-partition->part_offset)/disk_car->sector_size-sect_res+read_size),
+          (unsigned long) ((hd_offset-partition->part_offset)/disk->sector_size-sect_res),
+          (unsigned long) ((hd_offset-partition->part_offset+read_size)/disk->sector_size-sect_res),
           fat_size); 
       free(buffer2);
       free(buffer);
       return 1;
     }
-    hd_offset+=read_size*disk_car->sector_size;
-    hd_offset2+=read_size*disk_car->sector_size;
+    hd_offset+=read_size;
+    hd_offset2+=read_size;
   }
   free(buffer2);
   free(buffer);

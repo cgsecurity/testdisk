@@ -33,8 +33,6 @@ extern "C" {
 #define NTFS_NAME       0x03
 #define OS2_NAME        0x03
 
-#define NBR_SECT        8
-
 /*
  * FAT partition boot sector information, taken from the Linux
  * kernel sources.
