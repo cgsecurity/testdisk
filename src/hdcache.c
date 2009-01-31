@@ -86,9 +86,11 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
 #endif
   {
     unsigned int i;
-    /* Data is probably in the last two buffers */
-    unsigned int cache_buffer_nbr=(data->cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR;
-    for(i=0;i<CACHE_BUFFER_NBR;i++,cache_buffer_nbr=(cache_buffer_nbr+1)%CACHE_BUFFER_NBR)
+    unsigned int cache_buffer_nbr;
+    /* Data is probably in the last buffers */
+    for(i=0, cache_buffer_nbr=data->cache_buffer_nbr;
+	i<CACHE_BUFFER_NBR;
+	i++, cache_buffer_nbr=(cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR)
     {
       const struct cache_buffer_struct *cache=&data->cache[cache_buffer_nbr];
       if(cache->buffer!=NULL && cache->cache_size>0 &&
@@ -97,12 +99,6 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
       {
 	const unsigned int data_available= cache->cache_size + cache->cache_offset - offset;
 	const int res=cache->cache_status + cache->cache_offset - offset;
-#ifdef DEBUG_CACHE
-	if(cache_buffer_nbr==data->cache_buffer_nbr)
-	  log_info("hit ");
-	else
-	  log_info("bid ");
-#endif
 	if(count<=data_available)
 	{
 #ifdef DEBUG_CACHE
