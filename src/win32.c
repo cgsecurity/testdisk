@@ -38,13 +38,6 @@
 #include <winbase.h>
 #endif
 #include <ctype.h>	/* isspace */
-#ifdef HAVE_WINDEF_H
-#include <windef.h>
-#endif
-#ifdef HAVE_WINBASE_H
-#include <stdarg.h>
-#include <winbase.h>
-#endif
 #ifdef HAVE_WINIOCTL_H
 #include <winioctl.h>
 #endif

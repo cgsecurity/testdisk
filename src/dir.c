@@ -40,6 +40,9 @@
 #include <utime.h>
 #endif
 #include <errno.h>
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
 #include "common.h"
 #include "fat.h"
 #include "lang.h"

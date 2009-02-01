@@ -33,11 +33,7 @@
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
-#include "intrfn.h"
-#else
 #include <stdio.h>
-#endif
 #include "fnctdsk.h"
 #include "dir.h"
 #include "list.h"

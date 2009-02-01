@@ -48,6 +48,13 @@
 #include <stdio.h>
 #endif
 #include <errno.h>
+#ifdef HAVE_WINDEF_H
+#include <windef.h>
+#endif
+#ifdef HAVE_WINBASE_H
+#include <stdarg.h>
+#include <winbase.h>
+#endif
 #include "fnctdsk.h"
 #include "dir.h"
 #include "fat_dir.h"

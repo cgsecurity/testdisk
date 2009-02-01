@@ -96,11 +96,15 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     }
     if((flags&GZ_FNAME)!=0)
     {
-      while(off<buffer_size && buffer[off++]!='\0');
+      while(off<buffer_size && buffer[off++]!='\0')
+      {
+      }
     }
     if((flags&GZ_FCOMMENT)!=0)
     {
-      while(off<buffer_size && buffer[off++]!='\0');
+      while(off<buffer_size && buffer[off++]!='\0')
+      {
+      }
     }
     if((flags&GZ_FHCRC)!=0)
     {

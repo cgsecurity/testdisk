@@ -55,11 +55,11 @@ const file_hint_t file_hint_dxf= {
 
 static const unsigned char header_dxflib[10]= 	{'9', '9', '9', '\n',
   'd', 'x', 'f', 'l', 'i', 'b'};
-static const unsigned char header_dxflib_dos[10]= 	{'9', '9', '9', '\r', '\n',
+static const unsigned char header_dxflib_dos[11]= 	{'9', '9', '9', '\r', '\n',
   'd', 'x', 'f', 'l', 'i', 'b'};
 static const unsigned char header_dxf[11]= 	{' ', ' ', '0', '\n',
   'S', 'E', 'C', 'T', 'I', 'O', 'N'};
-static const unsigned char header_dxf_dos[11]= 	{' ', ' ', '0', '\r', '\n',
+static const unsigned char header_dxf_dos[12]= 	{' ', ' ', '0', '\r', '\n',
   'S', 'E', 'C', 'T', 'I', 'O', 'N'};
 
 static void register_header_check_dxf(file_stat_t *file_stat)
