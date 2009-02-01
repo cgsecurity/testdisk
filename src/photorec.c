@@ -89,8 +89,9 @@
 
 static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
 static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
-
+static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);
 static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
+static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 
 #ifdef HAVE_SIGACTION
 void sighup_hdlr(int shup)
@@ -101,7 +102,7 @@ void sighup_hdlr(int shup)
 }
 #endif
 
-void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
+static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
 {
   struct td_list_head *tmp;
   uint64_t file_size=0;
@@ -417,20 +418,6 @@ void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space)
     }
     else
       nbr++;
-  }
-}
-
-void list_cluster_free(list_cluster_t *list_cluster)
-{
-  struct td_list_head *dir_walker = NULL;
-  struct td_list_head *dir_walker_next = NULL;
-  td_list_for_each_safe(dir_walker,dir_walker_next,&list_cluster->list)
-  {
-    list_cluster_t *info;
-    info=td_list_entry(dir_walker, list_cluster_t, list);
-    delete_list_file(info->dir_list);
-    td_list_del(dir_walker);
-    free(info);
   }
 }
 
@@ -883,7 +870,7 @@ static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, 
   return space;
 }
 
-alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
+static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
 {
   alloc_data_t *spacenext;
   alloc_data_t *datanext;

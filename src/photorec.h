@@ -50,16 +50,13 @@ void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset);
 alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
-void list_cluster_free(list_cluster_t *list_cluster);
 void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space);
 void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition);
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space);
 void free_list_search_space(alloc_data_t *list_search_space);
 int sorfile_stat_ts(const void *p1, const void *p2);
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num);
-void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
-alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);
 void free_search_space(alloc_data_t *list_search_space);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

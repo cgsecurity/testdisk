@@ -126,12 +126,13 @@ static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, con
 static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_sync(disk_t *disk_car);
+static int generic_clean(disk_t *disk_car);
 #ifndef DJGPP
 static uint64_t compute_device_size(const int hd_h, const char *device, const int verbose, const unsigned int sector_size);
 static void disk_get_model(const int hd_h, disk_t *disk_car, const int verbose);
 #endif
 
-int generic_clean(disk_t *disk_car)
+static int generic_clean(disk_t *disk_car)
 {
   free(disk_car->data);
   disk_car->data=NULL;

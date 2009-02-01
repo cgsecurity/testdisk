@@ -634,9 +634,6 @@ static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, co
     if(element->to_be_removed==0)
       new_list_part=insert_new_partition(new_list_part, element->part, 0, &insert_error);
   }
-#ifdef DEBUG
-  check_list_part(new_list_part);
-#endif
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_PRIM;
   if(disk_car->arch->test_structure(new_list_part))
@@ -645,9 +642,6 @@ static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, co
       element->part->status=STATUS_DELETED;
   }
   part_free_list_only(new_list_part);
-#ifdef DEBUG
-  check_list_part(list_part);
-#endif
 }
 
 static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader)

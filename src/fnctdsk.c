@@ -209,45 +209,11 @@ int delete_list_disk(list_disk_t *list_disk)
   return write_used;
 }
 
-int check_list_part(list_part_t *list_part)
-{
-  list_part_t *prev=NULL;
-  list_part_t *parts;
-  if((list_part!=NULL) && (list_part->prev!=NULL))
-  {
-    log_critical("\ncheck_list_part error: list_part->prev!=NULL\n");
-    log_close();
-    exit(EXIT_FAILURE);
-  }
-  log_trace("check_list_part\n");
-  for(parts=list_part;parts!=NULL;parts=parts->next)
-  {
-    log_info("%p %p %p\n",parts->prev, parts, parts->next);
-    if(prev!=parts->prev)
-    {
-      log_critical("\ncheck_list_part error: prev!=parts->prev\n");
-      log_close();
-      exit(EXIT_FAILURE);
-    }
-    prev=parts;
-  }
-  if((prev!=NULL) && (prev->next!=NULL))
-  {
-    log_critical("\ncheck_list_part error: prev->next!=NULL\n");
-    log_close();
-    exit(EXIT_FAILURE);
-  }
-  return 0;
-}
-
 list_part_t *sort_partition_list(list_part_t *list_part)
 {
   list_part_t *new_list_part=NULL;
   list_part_t *element;
   list_part_t *next;
-#ifdef DEBUG
-  check_list_part(list_part);
-#endif
   for(element=list_part;element!=NULL;element=next)
   {
     int insert_error=0;
@@ -257,9 +223,6 @@ list_part_t *sort_partition_list(list_part_t *list_part)
       free(element->part);
     free(element);
   }
-#ifdef DEBUG
-  check_list_part(new_list_part);
-#endif
   return new_list_part;
 }
 
@@ -280,9 +243,6 @@ list_part_t *gen_sorted_partition_list(const list_part_t *list_part)
 void part_free_list(list_part_t *list_part)
 {
   list_part_t *element;
-#ifdef DEBUG
-  check_list_part(list_part);
-#endif
   element=list_part;
   while(element!=NULL)
   {
@@ -297,9 +257,6 @@ void part_free_list(list_part_t *list_part)
 void part_free_list_only(list_part_t *list_part)
 {
   list_part_t *element;
-#ifdef DEBUG
-  check_list_part(list_part);
-#endif
   element=list_part;
   while(element!=NULL)
   {

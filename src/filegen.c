@@ -46,6 +46,8 @@ file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
+static void index_header_check(void);
+
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const file_check_t *fc_a=td_list_entry(a, const file_check_t, list);
@@ -120,7 +122,7 @@ static void index_header_check_aux(file_check_t *file_check_new)
   file_check_add_tail(file_check_new, &file_check_list);
 }
 
-void index_header_check(void)
+static void index_header_check(void)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;

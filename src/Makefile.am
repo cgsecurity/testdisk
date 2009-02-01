@@ -14,7 +14,7 @@ sbin_PROGRAMS		= testdisk photorec $(QPHOTOREC)
 EXTRA_PROGRAMS		= fidentify
 
 base_C			= common.c crc.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c log.c log_part.c misc.c msdos.c parti386.c partgpt.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
-base_H			= alignio.h common.h crc.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h lang.h log.h log_part.h misc.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h partmac.h partnone.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
+base_H			= alignio.h common.h crc.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h lang.h log.h log_part.h misc.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
 
 fs_C			= analyse.c bfs.c bsd.c cramfs.c fat.c fatx.c ext2.c jfs.c hfs.c hfsp.c luks.c lvm.c md.c netware.c ntfs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c xfs.c 
 fs_H			= analyse.h bfs.h bsd.h cramfs.h fat.h fatx.h ext2.h jfs_superblock.h jfs.h hfs.h hfsp.h luks.h lvm.h md.h netware.h ntfs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h xfs.h 

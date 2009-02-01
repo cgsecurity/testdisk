@@ -1428,18 +1428,12 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
 	element->part->status=STATUS_LOG;
     }
   }
-#ifdef DEBUG
-  check_list_part(new_list_part);
-#endif
   if(disk_car->arch->test_structure(new_list_part))
   {
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_DELETED;
   }
   part_free_list_only(new_list_part);
-#ifdef DEBUG
-  check_list_part(list_part);
-#endif
 }
 
 static int erase_list_part_i386(disk_t *disk_car)

@@ -64,7 +64,6 @@
 #include "ufs.h"
 #include "xfs.h"
 #include "log.h"
-#include "partnone.h"
 
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
 static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
@@ -76,6 +75,8 @@ static int is_part_known_none(const partition_t *partition);
 static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, const int verbose);
 static const char *get_partition_typename_none_aux(const unsigned int part_type_none);
 static int set_part_type_none(partition_t *partition, unsigned int part_type);
+static unsigned int get_part_type_none(const partition_t *partition);
+static const char *get_partition_typename_none(const partition_t *partition);
 
 static const struct systypes none_sys_types[] = {
   {UP_BEOS,	"BeFS"},
@@ -142,7 +143,7 @@ arch_fnct_t arch_none=
   .is_part_known=is_part_known_none
 };
 
-unsigned int get_part_type_none(const partition_t *partition)
+static unsigned int get_part_type_none(const partition_t *partition)
 {
   return partition->upart_type;
 }

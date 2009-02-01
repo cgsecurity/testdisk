@@ -44,7 +44,6 @@
 #include "intrf.h"
 #include "log.h"
 #include "log_part.h"
-/* #include "guid_cmp.h" */
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
@@ -54,6 +53,9 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
 static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
 static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+static int is_fat12(const partition_t *partition);
+static int is_fat16(const partition_t *partition);
+static int is_fat32(const partition_t *partition);
 
 #define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
 #define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
@@ -1003,7 +1005,7 @@ int is_part_fat12(const partition_t *partition)
   return 0;
 }
 
-int is_fat12(const partition_t *partition)
+static int is_fat12(const partition_t *partition)
 {
   return (is_part_fat12(partition) || partition->upart_type==UP_FAT12);
 }
@@ -1035,7 +1037,7 @@ int is_part_fat16(const partition_t *partition)
   return 0;
 }
 
-int is_fat16(const partition_t *partition)
+static int is_fat16(const partition_t *partition)
 {
   return (is_part_fat16(partition) || partition->upart_type==UP_FAT16);
 }
@@ -1070,7 +1072,7 @@ int is_part_fat32(const partition_t *partition)
   return 0;
 }
 
-int is_fat32(const partition_t *partition)
+static int is_fat32(const partition_t *partition)
 {
   return (is_part_fat32(partition) || partition->upart_type==UP_FAT32);
 }

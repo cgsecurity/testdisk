@@ -110,9 +110,6 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
 int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster, const unsigned int next_cluster);
 
 int is_fat(const partition_t *partition);
-int is_fat12(const partition_t *partition);
-int is_fat16(const partition_t *partition);
-int is_fat32(const partition_t *partition);
 int is_part_fat(const partition_t *partition);
 int is_part_fat12(const partition_t *partition);
 int is_part_fat16(const partition_t *partition);
