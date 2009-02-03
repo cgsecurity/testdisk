@@ -211,13 +211,48 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     {
       file_recovery_new->extension="doc";
     }
+    else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
+    {
+      file_recovery_new->extension="sda";
+    }
+    else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
+    {
+      file_recovery_new->extension="sdc";
+    }
+    else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+    {
+      file_recovery_new->extension="sdd";
+    }
+    else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
+	td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
+	td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
+	td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
+    {
+      file_recovery_new->extension="xls";
+    }
+    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
+    {
+      file_recovery_new->extension="ppt";
+    }
     else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
     {
       file_recovery_new->extension="mdb";
     }
+    else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
+    {
+      file_recovery_new->extension="vsd";
+    }
+    else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
+    {
+      file_recovery_new->extension="sdw";
+    }
     else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
     {	/* Flash */
       file_recovery_new->extension="fla";
+    }
+    else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+    { /* Publisher */
+      file_recovery_new->extension="pub";
     }
     else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
 	|| td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
