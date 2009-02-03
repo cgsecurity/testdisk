@@ -125,6 +125,7 @@ file_C			= filegen.c \
 			  file_mxf.c \
 			  file_mysql.c \
 			  file_njx.c \
+			  file_nk2.c \
 			  file_ogg.c \
 			  file_one.c \
 			  file_orf.c \
