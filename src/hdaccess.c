@@ -128,7 +128,7 @@ static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int c
 static int file_sync(disk_t *disk_car);
 #ifndef DJGPP
 static uint64_t compute_device_size(const int hd_h, const char *device, const int verbose, const unsigned int sector_size);
-static void disk_get_model(const int hd_h, disk_t *disk);
+static void disk_get_model(const int hd_h, disk_t *disk, const unsigned int verbose);
 #endif
 
 int generic_clean(disk_t *disk_car)
@@ -907,7 +907,7 @@ static int scsi_query_product_info (const int hd_h, char **vendor, char **produc
 #endif
 
 #ifndef DJGPP
-static void disk_get_model(const int hd_h, disk_t *dev)
+static void disk_get_model(const int hd_h, disk_t *dev, const unsigned int verbose)
 {
 #ifdef TARGET_LINUX
   if(dev->model!=NULL)
@@ -970,7 +970,7 @@ static void disk_get_model(const int hd_h, disk_t *dev)
 #else
     handle=(HANDLE)_get_osfhandle(hd_h);
 #endif
-    file_win32_disk_get_model(handle, dev);
+    file_win32_disk_get_model(handle, dev, verbose);
   }
 #endif
 }
@@ -1390,7 +1390,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
        In order to avoid this, discard all blocks on /dev/hda. */
     ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
 #endif
-    disk_get_model(hd_h, disk_car);
+    disk_get_model(hd_h, disk_car, verbose);
     disk_get_hpa_dco(hd_h, disk_car, verbose);
   }
   else
