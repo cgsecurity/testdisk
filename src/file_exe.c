@@ -46,7 +46,7 @@ const file_hint_t file_hint_exe= {
   .register_header_check=&register_header_check_exe
 };
 
-static const unsigned char exe_header[]  = {'M','Z'};
+static const unsigned char exe_header[2]  = {'M','Z'};
 
 static void register_header_check_exe(file_stat_t *file_stat)
 {
@@ -55,23 +55,48 @@ static void register_header_check_exe(file_stat_t *file_stat)
 
 static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,exe_header,sizeof(exe_header))==0)
+  const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
+  if(memcmp(buffer,exe_header,sizeof(exe_header))==0 &&
+    le16(dos_hdr->bytes_in_last_block) <= 512 &&
+    le16(dos_hdr->blocks_in_file) > 0 &&
+    le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
+    )
   {
     const struct pe_image_file_hdr *pe_hdr;
-    uint32_t e_lfanew=buffer[0x3c]+ (buffer[0x3c+1]<<8) +
-      (buffer[0x3c+2]<<16) + (buffer[0x3c+3]<<24); /* address of new exe header */
-    if(e_lfanew==0 || e_lfanew>buffer_size-sizeof(struct pe_image_file_hdr))
+    pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
+    if(le32(dos_hdr->e_lfanew)==0 ||
+	le32(dos_hdr->e_lfanew) > buffer_size-sizeof(struct pe_image_file_hdr) ||
+	le32(pe_hdr->Magic) != IMAGE_NT_SIGNATURE)
     {
+      uint64_t coff_offset=0;
+      coff_offset=le16(dos_hdr->blocks_in_file)*512;
+      if(le16(dos_hdr->bytes_in_last_block))
+	coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
+
+      if(coff_offset+1 < buffer_size &&
+	  buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
+      { /*  COFF_I386MAGIC */
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension=file_hint_exe.extension;
+	return 1;
+      }
 #ifdef DEBUG_EXE
-      log_debug("EXE rejected, not PE (e_lfanew)\n");
-#endif
-      return 0;
-    }
-    pe_hdr=(const struct pe_image_file_hdr *)(buffer+e_lfanew);
-    if(le32(pe_hdr->Magic) != IMAGE_NT_SIGNATURE)
-    {
-#ifdef DEBUG_EXE
-      log_debug("EXE rejected, not PE (missing signature)\n");
+      {
+	unsigned int i;
+	const struct exe_reloc *exe_reloc;
+	log_info("Maybe a DOS EXE\n");
+	log_info("blocks %llu\n", (long long unsigned)coff_offset);
+	log_info("data start %llx\n", (long long unsigned)16*le16(dos_hdr->header_paragraphs));
+	log_info("reloc %u\n", le16(dos_hdr->num_relocs));
+	for(i=0, exe_reloc=(const struct exe_reloc *)(buffer+le16(dos_hdr->reloc_table_offset));
+	    i < le16(dos_hdr->num_relocs) &&
+	    le16(dos_hdr->reloc_table_offset)+ (i+1)*sizeof(struct exe_reloc) < buffer_size;
+	    i++, exe_reloc++)
+	{
+	  log_info("offset %x, segment %x\n",
+	      le16(exe_reloc->offset), le16(exe_reloc->segment));
+	}
+      }
 #endif
       return 0;
     }
@@ -81,7 +106,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension="dll";
     }
-    else if(le16(pe_hdr->Characteristics) & 0x01)
+    else if(le16(pe_hdr->Characteristics) & 0x02)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_exe.extension;
@@ -89,7 +114,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
     else
     {
 #ifdef DEBUG_EXE
-      log_debug("EXE rejected, bad characteristics\n");
+      log_warning("EXE rejected, bad characteristics %02x\n", le16(pe_hdr->Characteristics));
 #endif
       return 0;
     }

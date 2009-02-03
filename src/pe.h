@@ -25,6 +25,34 @@
 
 #define IMAGE_NT_SIGNATURE	    0x00004550
 
+struct dos_image_file_hdr
+{
+    uint16_t magic;         // Magic number
+    uint16_t bytes_in_last_block;
+    uint16_t blocks_in_file;
+    uint16_t num_relocs;
+    uint16_t header_paragraphs;
+    uint16_t min_extra_paragraphs;
+    uint16_t max_extra_paragraphs;
+    uint16_t ss;
+    uint16_t sp;
+    uint16_t checksum;
+    uint16_t ip;
+    uint16_t cs;
+    uint16_t reloc_table_offset;
+    uint16_t overlay_number;
+    uint16_t e_res[4];        // Reserved words
+    uint16_t e_oemid;         // OEM identifier (for e_oeminfo)
+    uint16_t e_oeminfo;       // OEM information; e_oemid specific
+    uint16_t e_res2[10];      // Reserved words
+    uint32_t e_lfanew;        // File address of new exe header
+} __attribute__ ((__packed__));
+
+struct exe_reloc{
+  uint16_t offset;
+  uint16_t segment;
+} __attribute__ ((__packed__));
+
 struct pe_image_file_hdr {
     uint32_t Magic;
     uint16_t Machine;
