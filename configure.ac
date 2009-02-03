@@ -360,6 +360,11 @@ AC_CHECK_HEADERS([ext2fs/ext2fs.h],,
 #endif
 ]])
 
+# libewf checks HAVE_OFF64_T, so defines it
+AC_CHECK_TYPE(
+ [off64_t],
+ [AC_DEFINE( [HAVE_OFF64_T], [1], [Define to 1 if off64_t is available])],
+ [AC_DEFINE( [HAVE_OFF64_T], [0], [Define to 1 if off64_t isn't available])])
 
 AC_CHECK_HEADERS([libewf.h],,
               use_ewf=no
