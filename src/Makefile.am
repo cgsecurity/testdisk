@@ -191,6 +191,7 @@ file_C			= filegen.c \
 			  file_xcf.c \
 			  file_xm.c \
 			  file_xsv.c \
+			  file_xpt.c \
 			  file_xv.c \
 			  file_zip.c 
 
