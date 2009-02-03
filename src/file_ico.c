@@ -23,9 +23,6 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -36,7 +33,6 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-#include "log.h"
 
 static void register_header_check_ico(file_stat_t *file_stat);
 static int header_check_ico(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);

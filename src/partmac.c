@@ -35,7 +35,6 @@
 #include <ctype.h>      /* tolower */
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
@@ -364,7 +363,7 @@ static int check_part_mac(disk_t *disk_car,const int verbose,partition_t *partit
     case PMAC_PRODOS:
       break;
     case PMAC_LINUX:
-      ret=check_JFS(disk_car,partition,verbose);
+      ret=check_JFS(disk_car, partition);
       if(ret!=0)
       {
 	ret=check_rfs(disk_car,partition,verbose);

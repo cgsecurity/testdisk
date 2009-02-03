@@ -24,7 +24,6 @@ extern "C" {
 #endif
 
 int test_MBR(disk_t *disk_car,int verbose);
-int analyse_file(char *);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

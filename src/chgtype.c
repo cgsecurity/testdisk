@@ -27,18 +27,11 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
 #include "types.h"
 #include "common.h"
-#include "lang.h"
-#include "intrf.h"
-#include "fnctdsk.h"
 #include "chgtype.h"
 #include "log.h"
 #include "log_part.h"
-#include "partgpt.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_none;

@@ -32,23 +32,16 @@
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include <stdarg.h>
 #include "types.h"
 #include "common.h"
-#include "lang.h"
-#include <ctype.h>      /* tolower */
 #ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
 #endif
 #ifdef __MINGW32__
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #endif
-#include "intrf.h"
 #include "log.h"
 
 static unsigned int up2power_aux(const unsigned int number);

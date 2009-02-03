@@ -36,7 +36,6 @@
 #include <fcntl.h> 	/* open */
 #endif
 #include <stdio.h>
-#include <errno.h>
 #include "types.h"
 #ifdef HAVE_LINUX_TYPES_H
 #include <linux/types.h>
@@ -47,9 +46,6 @@
 #endif
 #ifdef HAVE_LINUX_HDREG_H
 #include <linux/hdreg.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
 #endif
 #ifdef HAVE_FNCTL_H
 #include <fnctl.h>

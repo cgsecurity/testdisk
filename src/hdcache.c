@@ -32,7 +32,6 @@
 #include "types.h"
 #include "common.h"
 #include "hdcache.h"
-#include "fnctdsk.h"
 #include "log.h"
 
 #define CACHE_BUFFER_NBR 128

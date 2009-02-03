@@ -75,7 +75,7 @@ typedef struct
   unsigned int status;
 } file_info_t;
 
-int dir_aff_log(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list);
+int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list);
 int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
 unsigned int delete_list_file(file_data_t *file_list);
 void delete_list_file_info(struct td_list_head *list);

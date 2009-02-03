@@ -55,26 +55,19 @@
 #include <stdarg.h>
 #include <winbase.h>
 #endif
-#include "fnctdsk.h"
 #include "dir.h"
 #include "fat_dir.h"
 #include "list.h"
-#include "chgtype.h"
 #include "lang.h"
 #include "filegen.h"
 #include "photorec.h"
 #include "sessionp.h"
 #include "phrecn.h"
-#include "partauto.h"
 #include "log.h"
 #include "log_part.h"
-#include "hdaccess.h"
 #include "file_tar.h"
 #include "phcfg.h"
-#include "ext2grp.h"
-#include "pdisksel.h"
 #include "pblocksize.h"
-#include "pfree_whole.h"
 #include "askloc.h"
 
 /* #define DEBUG */
@@ -88,7 +81,7 @@ extern file_check_list_t file_check_list;
 
 #ifdef HAVE_NCURSES
 static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats);
-static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop, char **current_cmd);
+static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop);
 #endif
 
 static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass);
@@ -482,7 +475,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
   uint64_t original_offset_error, file_offset;
   long int save_seek;
   unsigned char *block_buffer;
-  int blocs_to_skip,i;
+  unsigned int blocs_to_skip, i;
   int ind_stop;
   int testbf=0;
   time_t previous_time=0;
@@ -585,7 +578,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int p
 #ifdef DEBUG_BF
         log_debug("Skip %u extra blocs\n", blocs_to_skip);
 #endif
-        for(i=0; i<blocs_to_skip;i++)
+        for(i=0; i<blocs_to_skip; i++)
         {
           get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
         }
@@ -995,7 +988,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
               dir_list=dir_fat_aux(buffer,read_size,0,0);
               if(dir_list!=NULL)
               {
-		dir_aff_log(disk_car, partition, NULL, dir_list);
+		dir_aff_log(NULL, dir_list);
                 delete_list_file(dir_list);
               }
             }
@@ -1164,7 +1157,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 }
 
 #ifdef HAVE_NCURSES
-static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop, char **current_cmd)
+static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop)
 {
   wmove(stdscr,9,0);
   wclrtoeol(stdscr);
@@ -1447,7 +1440,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
   free_search_space(list_search_space);
 #ifdef HAVE_NCURSES
   if(interface && *current_cmd==NULL)
-    recovery_finished(file_nbr, recup_dir, ind_stop, current_cmd);
+    recovery_finished(file_nbr, recup_dir, ind_stop);
 #endif
   free(file_stats);
   free_header_check();

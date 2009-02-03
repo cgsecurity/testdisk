@@ -50,13 +50,13 @@
 #include "tload.h"
 
 #ifdef HAVE_NCURSES
-static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *backup_part, const int verbose);
+static list_part_t *merge_partition_list(list_part_t *list_part, list_part_t *backup_part);
 
 #define INTER_LOAD	13
 #define INTER_LOAD_X    0
 #define INTER_LOAD_Y	22
 
-static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk_t *backup_list, const int verbose)
+static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk_t *backup_list)
 {
   int offset=0;
   int backup_current_num=0;
@@ -178,7 +178,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
   }
 }
 
-static list_part_t *merge_partition_list(list_part_t *list_part,list_part_t *backup_part, const int verbose)
+static list_part_t *merge_partition_list(list_part_t *list_part, list_part_t *backup_part)
 {
   list_part_t *partition;
   for(partition=backup_part;partition!=NULL;partition=partition->next)
@@ -209,7 +209,7 @@ list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int v
       log_partition(disk_car,element->part);
   }
 #ifdef HAVE_NCURSES
-  backup_current=interface_load_ncurses(disk_car, backup_list, verbose);
+  backup_current=interface_load_ncurses(disk_car, backup_list);
 #endif
   if(backup_current!=NULL)
   {
@@ -221,7 +221,7 @@ list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int v
       /* Check partition and load partition name */
       disk_car->arch->check_part(disk_car,verbose,partition->part,0);
     }
-    list_part=merge_partition_list(list_part,backup->list_part,verbose);
+    list_part=merge_partition_list(list_part, backup->list_part);
   } 
   { /* Cleanup */
     struct td_list_head *backup_walker_next = NULL;

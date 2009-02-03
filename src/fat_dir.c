@@ -41,8 +41,6 @@
 #include "common.h"
 #include "fat.h"
 #include "lang.h"
-#include "fnctdsk.h"
-#include "testdisk.h"
 #include "intrf.h"
 #include "dir.h"
 #include "fat_dir.h"
@@ -380,7 +378,7 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
       {
         log_info("FAT: cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/fat_sector_size(fat_header)));
       }
-      if(disk_car->pread(disk_car, buffer_dir + (uint64_t)cluster_size * nbr_cluster, cluster_size, start) != cluster_size)
+      if((unsigned)disk_car->pread(disk_car, buffer_dir + (uint64_t)cluster_size * nbr_cluster, cluster_size, start) != cluster_size)
       {
 	log_error("FAT: Can't read directory cluster.\n");
 	stop=1;
@@ -446,7 +444,7 @@ static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition
     unsigned char *buffer_dir;
     buffer_dir=(unsigned char*)MALLOC(root_size);
     start=partition->part_offset+(uint64_t)((le16(fat_header->reserved)+fat_header->fats*le16(fat_header->fat_length))*disk_car->sector_size);
-    if(disk_car->pread(disk_car, buffer_dir, root_size, start) != root_size)
+    if((unsigned)disk_car->pread(disk_car, buffer_dir, root_size, start) != root_size)
     {
       log_error("FAT 1x: Can't read root directory.\n");
       /* Don't return yet, it may have been a partial read */
@@ -555,7 +553,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     unsigned int toread = block_size;
     if (toread > file_size)
       toread = file_size;
-    if(disk_car->pread(disk_car, buffer_file, toread, start) != toread)
+    if((unsigned)disk_car->pread(disk_car, buffer_file, toread, start) != toread)
     {
       log_error("fat_copy: Can't read cluster %u.\n", cluster);
     }

@@ -44,7 +44,6 @@
 #ifdef HAVE_DDK_NTDDSTOR_H
 #include <ddk/ntddstor.h>
 #endif
-#include "fnctdsk.h"
 #include "log.h"
 #include "hdwin32.h"
 

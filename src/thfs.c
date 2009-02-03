@@ -71,7 +71,7 @@ static void hfs_dump(disk_t *disk_car, const partition_t *partition, const unsig
 #endif
 }
 
-int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd)
+int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
 {
   unsigned char *buffer_bs;
   unsigned char *buffer_backup_bs;

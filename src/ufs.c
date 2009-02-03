@@ -37,8 +37,8 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_ufs_info(const disk_t *disk_car, const struct ufs_super_block *sb,partition_t *partition, const int verbose, const int dump_ind);
-static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_ufs_info(const struct ufs_super_block *sb, partition_t *partition);
+static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition, const int verbose);
 
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -51,17 +51,17 @@ int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_ufs(disk_car,sb,partition,verbose,0)!=0)
+  if(test_ufs(disk_car, sb, partition, verbose)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_ufs_info(disk_car,sb,partition,verbose,0);
+  set_ufs_info(sb, partition);
   free(buffer);
   return 0;
 }
 
-static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition, const int verbose)
 {
   if(le32(sb->fs_magic)==UFS_MAGIC && le32(sb->fs_size) > 0 &&
     (le32(sb->fs_fsize)==512 || le32(sb->fs_fsize)==1024 || le32(sb->fs_fsize)==2048 || le32(sb->fs_fsize)==4096))
@@ -100,7 +100,7 @@ static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb,par
 
 int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_ufs(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_ufs(disk_car, sb, partition, verbose)!=0)
     return 1;
   if(dump_ind!=0)
   {
@@ -145,7 +145,7 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
       break;
   }
 
-  set_ufs_info(disk_car,sb,partition,verbose,dump_ind);
+  set_ufs_info(sb, partition);
   if(strcmp(partition->fsname,"/")==0)
   {
     partition->part_type_sun = (unsigned char)PSUN_ROOT;
@@ -174,7 +174,7 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
   return 0;
 }
 
-static int set_ufs_info(const disk_t *disk_car,const struct ufs_super_block *sb,partition_t *partition, const int verbose, const int dump_ind)
+static int set_ufs_info(const struct ufs_super_block *sb, partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';

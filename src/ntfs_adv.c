@@ -37,7 +37,6 @@
 #include "intrfn.h"
 #include "dirpart.h"
 #include "ntfs.h"
-#include "fnctdsk.h"
 #include "lang.h"
 #include "io_redir.h"
 #include "log.h"
@@ -312,10 +311,10 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
   ntfs_header->sectors_nbr=le64(partition->part_size/disk_car->sector_size-1);
   ntfs_header->mft_lcn=le64(mft_lcn);
   ntfs_header->mftmirr_lcn=le64(mftmirr_lcn);
-  ntfs_header->clusters_per_mft_record=(mft_record_size >= cluster_size?mft_record_size / cluster_size:
-      -(testdisk_ffs(mft_record_size) - 1));
-  ntfs_header->clusters_per_index_record =(index_block_size >= cluster_size?index_block_size / cluster_size:
-      -(testdisk_ffs(index_block_size) - 1));
+  ntfs_header->clusters_per_mft_record=(mft_record_size >= cluster_size ?
+      mft_record_size / cluster_size : -(testdisk_ffs(mft_record_size) - 1));
+  ntfs_header->clusters_per_index_record =(index_block_size >= cluster_size ?
+      index_block_size / cluster_size : -(testdisk_ffs(index_block_size) - 1));
   ntfs_header->reserved0[0]=0;
   ntfs_header->reserved0[1]=0;
   ntfs_header->reserved0[2]=0;
@@ -360,7 +359,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
     display_message("NTFS: Can't read mft_sector\n");
     return 1;
   }
-  *mft_lcn=ntfs_get_attr(attr,0x80,partition,buffer+8*DEFAULT_SECTOR_SIZE,verbose,0,NULL);
+  *mft_lcn=ntfs_get_attr(attr, 0x80, partition, buffer+8*DEFAULT_SECTOR_SIZE, verbose, NULL);
   *mft_record_size=NTFS_GETU32(attr + 0x1C);
   if(*mft_record_size==0)
   {
@@ -369,7 +368,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
     return 2;
   }
   attr+= NTFS_GETU32(attr + 0x1C);
-  *mftmirr_lcn=ntfs_get_attr(attr,0x80,partition,buffer+8*DEFAULT_SECTOR_SIZE,verbose,0,NULL);
+  *mftmirr_lcn=ntfs_get_attr(attr, 0x80, partition,buffer+8*DEFAULT_SECTOR_SIZE, verbose, NULL);
   /* Try to divide by the biggest number first */
   if(*mft_lcn<*mftmirr_lcn)
   {
@@ -434,7 +433,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
   return 3;
 }
 
-int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, const unsigned int expert, char **current_cmd)
+int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, const unsigned int expert, char **current_cmd)
 {
   uint64_t sector;
   char buffer[8*DEFAULT_SECTOR_SIZE];
@@ -470,7 +469,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	  &&(NTFS_GETU16(buffer+22)==1))	/* MFT_RECORD_IN_USE */
       {
 	int res;
-	res=ntfs_get_attr(buffer,0x30,partition,buffer+2*DEFAULT_SECTOR_SIZE,verbose,0,"$MFT");
+	res=ntfs_get_attr(buffer, 0x30, partition, buffer+2*DEFAULT_SECTOR_SIZE, verbose, "$MFT");
 	if(res==1)
 	{
 	  int tmp;
@@ -524,7 +523,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
       if(memcmp(buffer,"FILE",4)==0 && (NTFS_GETU16(buffer+ 0x14)%8==0) && (NTFS_GETU16(buffer+ 0x14)>=42))
       {
 	int res;
-	res=ntfs_get_attr(buffer,0x30,partition,buffer+2*DEFAULT_SECTOR_SIZE,verbose,0,"$MFT");
+	res=ntfs_get_attr(buffer, 0x30, partition, buffer+2*DEFAULT_SECTOR_SIZE, verbose, "$MFT");
 	if(res==1)
 	{
 	  int tmp;
@@ -632,12 +631,12 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
     log_info("ntfs_find_mft: mft_record_size     %u\n",mft_record_size);
     /* Read "root directory" in MFT */
-    if(disk_car->pread(disk_car, &buffer, mft_record_size, partition->part_offset + (uint64_t)mft_lcn * sectors_per_cluster * disk_car->sector_size + 5 * (uint64_t)mft_record_size) != mft_record_size)
+    if((unsigned)disk_car->pread(disk_car, &buffer, mft_record_size, partition->part_offset + (uint64_t)mft_lcn * sectors_per_cluster * disk_car->sector_size + 5 * (uint64_t)mft_record_size) != mft_record_size)
     {
       display_message("NTFS Can't read \"root directory\" in MFT\n");
       return 1;
     }
-    index_block_size=ntfs_get_attr(buffer,0x90,partition,buffer+mft_record_size,verbose,0,NULL);
+    index_block_size=ntfs_get_attr(buffer, 0x90, partition, buffer+mft_record_size, verbose, NULL);
     if(index_block_size%512!=0)
       index_block_size=4096;
     log_info("ntfs_find_mft: index_block_size    %u\n",index_block_size);

@@ -40,18 +40,16 @@
 #include "fat.h"
 #include "lang.h"
 #include "fnctdsk.h"
-#include "testdisk.h"
 #include "intrf.h"
 #include "log.h"
 #include "log_part.h"
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
-static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose);
+static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition);
 static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size);
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
-static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
 static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
 static int is_fat12(const partition_t *partition);
 static int is_fat16(const partition_t *partition);
@@ -183,7 +181,7 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer;
   buffer=(unsigned char *)MALLOC(3*disk_car->sector_size);
-  if(disk_car->pread(disk_car, buffer, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
+  if((unsigned)disk_car->pread(disk_car, buffer, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
   {
     screen_buffer_add("check_FAT: can't read FAT boot sector\n");
     log_error("check_FAT: can't read FAT boot sector\n");
@@ -201,13 +199,13 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  set_FAT_info(disk_car,(const struct fat_boot_sector *)buffer,partition,verbose);
+  set_FAT_info(disk_car,(const struct fat_boot_sector *)buffer,partition);
   /*  screen_buffer_add("Ok\n"); */
   free(buffer);
   return 0;
 }
 
-static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose)
+static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition)
 {
   const char*buffer=(const char*)fat_header;
   partition->fsname[0]='\0';
@@ -257,7 +255,7 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
       {
         offset_s=(cluster+cluster/2)/disk_car->sector_size;
         offset_o=(cluster+cluster/2)%disk_car->sector_size;
-        if(disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
+        if((unsigned)disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
 	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != 2 * disk_car->sector_size)
         {
           log_error("get_next_cluster read error\n");
@@ -276,7 +274,7 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
         const uint16_t *p16=(const uint16_t*)buffer;
         offset_s=cluster/(disk_car->sector_size/2);
         offset_o=cluster%(disk_car->sector_size/2);
-        if(disk_car->pread(disk_car, buffer, disk_car->sector_size,
+        if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
 	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != disk_car->sector_size)
         {
           log_error("get_next_cluster read error\n");
@@ -292,7 +290,7 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
         const uint32_t *p32=(const uint32_t*)buffer;
         offset_s=cluster/(disk_car->sector_size/4);
         offset_o=cluster%(disk_car->sector_size/4);
-        if(disk_car->pread(disk_car, buffer, disk_car->sector_size,
+        if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
 	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != disk_car->sector_size)
         {
           log_error("get_next_cluster read error\n");
@@ -342,7 +340,7 @@ int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_
       free(buffer);
       return 1;
   }
-  if(disk_car->pread(disk_car, buffer, buffer_size,
+  if((unsigned)disk_car->pread(disk_car, buffer, buffer_size,
 	partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != buffer_size)
   {
     log_error("set_next_cluster read error\n");
@@ -377,7 +375,7 @@ int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_
     default:	/* Avoid compiler warning */
       break;
   }
-  if(disk_car->pwrite(disk_car, buffer, buffer_size, partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != buffer_size)
+  if((unsigned)disk_car->pwrite(disk_car, buffer, buffer_size, partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != buffer_size)
   {
     log_error("Write error: set_next_cluster write error\n");
     free(buffer);
@@ -401,7 +399,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
     offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
-      if(disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
+      if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
       {
         log_error("fat32_get_prev_cluster error\n"); return 0;
       }
@@ -700,14 +698,14 @@ int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int
   {
     const unsigned int read_size=(reste > 16 * disk->sector_size ? 16 * disk->sector_size :reste);
     reste-=read_size;
-    if(disk->pread(disk, buffer, read_size, hd_offset) != read_size)
+    if((unsigned)disk->pread(disk, buffer, read_size, hd_offset) != read_size)
     {
       log_error("comp_FAT: can't read FAT1\n");
       free(buffer2);
       free(buffer);
       return 1;
     }
-    if(disk->pread(disk, buffer2, read_size, hd_offset2) != read_size)
+    if((unsigned)disk->pread(disk, buffer2, read_size, hd_offset2) != read_size)
     {
       log_error("comp_FAT: can't read FAT2\n");
       free(buffer2);
@@ -761,7 +759,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
   partition->sborg_offset=0;
   partition->sb_size=512;
   partition->sb_offset=0;
-  set_FAT_info(disk_car,fat_header,partition,verbose);
+  set_FAT_info(disk_car, fat_header, partition);
   switch(partition->upart_type)
   {
     case UP_FAT12:
@@ -827,7 +825,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   if((fat_header->sectors_per_cluster>0)&&(fat_header->sectors_per_cluster<=128))
   {
     unsigned char *buffer=(unsigned char*)MALLOC(fat_header->sectors_per_cluster*disk_car->sector_size);
-    if(disk_car->pread(disk_car, buffer,
+    if((unsigned)disk_car->pread(disk_car, buffer,
 	  fat_header->sectors_per_cluster * disk_car->sector_size,
 	  partition->part_offset + (le16(fat_header->reserved) + fat_header->fats * le32(fat_header->fat32_length) + (uint64_t)(le32(fat_header->root_cluster) - 2) * fat_header->sectors_per_cluster) * disk_car->sector_size) != fat_header->sectors_per_cluster * disk_car->sector_size)
     {
@@ -863,69 +861,10 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   return 0;
 }
 
-int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
-{
-  unsigned char buffer[512];
-  if(disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
-  {
-    screen_buffer_add("check_HPFS: Read error\n");
-    log_error("check_HPFS: Read error\n");
-    return 1;
-  }
-  if(test_HPFS(disk_car,(const struct fat_boot_sector *)buffer,partition,verbose,0)!=0)
-  {
-    if(verbose>0)
-    {
-      log_info("\n\ntest_HPFS()\n");
-      log_partition(disk_car,partition);
-    }
-    return 1;
-  }
-  return 0;
-}
-
-static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
-{
-  const char*buffer=(const char*)fat_header;
-  if(le16(fat_header->marker)==0xAA55)
-  {
-    if(memcmp(buffer+OS2_NAME,"IBM",3)==0)
-    {   /* D'apres une analyse de OS2 sur systeme FAT...
-           FAT_NAME1=FAT
-         */
-      if(verbose||dump_ind)
-      {
-        log_info("\nHPFS maybe at %u/%u/%u\n",
-            offset2cylinder(disk_car,partition->part_offset),
-            offset2head(disk_car,partition->part_offset),
-            offset2sector(disk_car,partition->part_offset));
-      }
-      if(dump_ind!=0)
-        dump_log(buffer, DEFAULT_SECTOR_SIZE);
-      partition->part_size=(uint64_t)(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect)) *
-        fat_sector_size(fat_header);
-      partition->upart_type=UP_HPFS;
-      return 0;
-    }
-  }     /* fin marqueur de fin :)) */
-  return 1;
-}
-
-int recover_HPFS(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind)
-{
-  if(test_HPFS(disk_car,fat_header,partition,verbose,0)!=0)
-    return 1;
-  partition->part_type_i386=P_HPFS;
-  partition->part_type_gpt=GPT_ENT_TYPE_MAC_HFS;
-  partition->fsname[0]='\0';
-  partition->info[0]='\0';
-  return 0;
-}
-
 int check_OS2MB(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char buffer[0x200];
-  if(disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
+  if((unsigned)disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
   {
     screen_buffer_add("check_OS2MB: Read error\n");
     log_error("check_OS2MB: Read error\n");
@@ -1094,7 +1033,7 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
     offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
-      if(disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
+      if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
       {
         log_error("fat32_free_info read error\n");
         *next_free=0xFFFFFFFF;

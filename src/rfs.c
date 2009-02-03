@@ -38,11 +38,11 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_rfs_info(const disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition, const int verbose, const int dump_ind);
-static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_rfs_info(const struct reiserfs_super_block *sb, partition_t *partition);
+static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb, partition_t *partition, const int verbose);
 
-static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb*sb,partition_t *partition,const int verbose, const int dump_ind);
-static int set_rfs4_info(const disk_t *disk_car, const struct reiser4_master_sb*sb,partition_t *partition, const int verbose, const int dump_ind);
+static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb*sb, partition_t *partition, const int verbose);
+static int set_rfs4_info(partition_t *partition);
 
 int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -52,15 +52,15 @@ int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_rfs(disk_car,(struct reiserfs_super_block*)buffer,partition,verbose,0)==0)
+  if(test_rfs(disk_car, (struct reiserfs_super_block*)buffer, partition, verbose)==0)
   {
-    set_rfs_info(disk_car,(struct reiserfs_super_block*)buffer,partition,verbose,0);
+    set_rfs_info((struct reiserfs_super_block*)buffer, partition);
     free(buffer);
     return 0;
   }
-  if(test_rfs4(disk_car,(struct reiser4_master_sb*)buffer,partition,verbose,0)==0)
+  if(test_rfs4(disk_car, (struct reiser4_master_sb*)buffer, partition, verbose)==0)
   {
-    set_rfs4_info(disk_car,(struct reiser4_master_sb*)buffer,partition,verbose,0);
+    set_rfs4_info(partition);
     free(buffer);
     return 0;
   }
@@ -68,7 +68,7 @@ int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
   return 1;
 }
 
-static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb, partition_t *partition, const int verbose)
 {
   if (memcmp(sb->s_magic,REISERFS_SUPER_MAGIC,sizeof(REISERFS_SUPER_MAGIC)) == 0)
   {
@@ -117,7 +117,7 @@ static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *s
   return 0;
 }
 
-static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb *sb, partition_t *partition, const int verbose)
 {
   if (memcmp(sb->magic,REISERFS4_SUPER_MAGIC,sizeof(REISERFS4_SUPER_MAGIC)) == 0)
   {
@@ -139,7 +139,7 @@ static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb *sb,
 int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
   const struct reiser4_master_sb *sb4=(const struct reiser4_master_sb *)sb;
-  if(test_rfs(disk_car,sb,partition,verbose,dump_ind)==0)
+  if(test_rfs(disk_car, sb, partition, verbose)==0)
   {
     if(verbose>0 || dump_ind!=0)
     {
@@ -157,10 +157,10 @@ int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partitio
     partition->part_type_sun= PSUN_LINUX;
     partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
     guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->s_uuid);
-    set_rfs_info(disk_car,sb,partition,verbose,dump_ind);
+    set_rfs_info(sb, partition);
     return 0;
   }
-  if(test_rfs4(disk_car,sb4,partition,verbose,dump_ind)==0)
+  if(test_rfs4(disk_car, sb4, partition, verbose)==0)
   {
     const struct format40_super *fmt40_super=(const struct format40_super *)((const char*)sb4+le16(sb4->blocksize));
     if(verbose>0 || dump_ind!=0)
@@ -179,13 +179,13 @@ int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partitio
     partition->part_type_sun= PSUN_LINUX;
     partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
     guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb4->uuid);
-    set_rfs4_info(disk_car,sb4,partition,verbose,dump_ind);
+    set_rfs4_info(partition);
     return 0;
   }
   return 1;
 }
 
-static int set_rfs_info(const disk_t *disk_car,const struct reiserfs_super_block *sb,partition_t *partition, const int verbose, const int dump_ind)
+static int set_rfs_info(const struct reiserfs_super_block *sb, partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';
@@ -217,7 +217,7 @@ static int set_rfs_info(const disk_t *disk_car,const struct reiserfs_super_block
   return 0;
 }
 
-static int set_rfs4_info(const disk_t *disk_car,const struct reiser4_master_sb *sb,partition_t *partition, const int verbose, const int dump_ind)
+static int set_rfs4_info(partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';

@@ -81,7 +81,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
   int allow_partial_last_cylinder=0;
   int paranoid=1;
   int keep_corrupted_file=0;
-  int current_element_num;
+  unsigned int current_element_num;
   unsigned int mode_ext2=0;
   unsigned int blocksize=0;
   unsigned int expert=0;
@@ -91,7 +91,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
   int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
 #ifdef HAVE_NCURSES
   int command;
-  int offset=0;
+  unsigned int offset=0;
   unsigned int menu=0;
   static const struct MenuItem menuMain[]=
   {
@@ -340,7 +340,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  }
 	  break;
 	case KEY_PPAGE:
-	  for(i=0; i<INTER_SELECT && current_element->prev!=NULL; i++)
+	  for(i=0; (signed)i<INTER_SELECT && current_element->prev!=NULL; i++)
 	  {
 	    current_element=current_element->prev;
 	    current_element_num--;
@@ -354,7 +354,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  }
 	  break;
 	case KEY_NPAGE:
-	  for(i=0; i<INTER_SELECT && current_element->next!=NULL; i++)
+	  for(i=0; (signed)i<INTER_SELECT && current_element->next!=NULL; i++)
 	  {
 	    current_element=current_element->next;
 	    current_element_num++;

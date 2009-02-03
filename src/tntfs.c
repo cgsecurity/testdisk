@@ -71,7 +71,7 @@ static void dump_NTFS(disk_t *disk_car, const partition_t *partition, const unsi
 #endif
 }
 
-int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd)
+int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd)
 {
   unsigned char *buffer_bs;
   unsigned char *buffer_backup_bs;
@@ -279,10 +279,10 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	  dir_partition(disk_car, partition, 0,current_cmd);
 	break;
       case 'M':
-        repair_MFT(disk_car, partition, verbose, expert, current_cmd);
+        repair_MFT(disk_car, partition, verbose, expert);
 	break;
       case 'R': /* R : rebuild boot sector */
-	rebuild_NTFS_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
+	rebuild_NTFS_BS(disk_car, partition, verbose, 1, expert, current_cmd);
 	rescan=1;
 	break;
       case 'D':

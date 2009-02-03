@@ -33,11 +33,10 @@
 #include "types.h"
 #include "common.h"
 #include "swap.h"
-#include "fnctdsk.h"
 static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t *partition);
-static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);
+static int test_Linux_SWAP(const union swap_header *swap_header, partition_t *partition);
 
-int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_Linux_SWAP(disk_t *disk_car, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(SWAP_SIZE);
   if(disk_car->pread(disk_car, buffer, SWAP_SIZE, partition->part_offset) != SWAP_SIZE)
@@ -45,7 +44,7 @@ int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_Linux_SWAP(disk_car,(union swap_header*)buffer,partition,verbose,0)!=0)
+  if(test_Linux_SWAP((union swap_header*)buffer, partition)!=0)
   {
     free(buffer);
     return 1;
@@ -74,7 +73,7 @@ static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t 
   return 0;
 }
 
-static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind)
+static int test_Linux_SWAP(const union swap_header *swap_header, partition_t *partition)
 {
   if(memcmp(swap_header->magic.magic,"SWAP-SPACE",10)==0)
   {
@@ -91,9 +90,9 @@ static int test_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_heade
   return 1;
 }
 
-int recover_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind)
+int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partition)
 {
-  if(test_Linux_SWAP(disk_car,swap_header,partition,verbose,dump_ind)!=0)
+  if(test_Linux_SWAP(swap_header, partition)!=0)
     return 1;
   set_Linux_SWAP_info(swap_header,partition);
   partition->part_type_i386=P_LINSWAP;

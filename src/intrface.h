@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd);
-void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd);
+void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

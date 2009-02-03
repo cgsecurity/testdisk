@@ -30,9 +30,6 @@
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 
 #ifdef HAVE_EXT2FS_EXT2_FS_H
 #include "ext2fs/ext2_fs.h"
@@ -159,7 +156,7 @@ static errcode_t my_set_blksize(io_channel channel, int blksize)
 
 static errcode_t my_read_blk(io_channel channel, unsigned long block, int count, void *buf)
 {
-  size_t size;
+  ssize_t size;
   my_data_t *my_data=(my_data_t*)channel->private_data;
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 

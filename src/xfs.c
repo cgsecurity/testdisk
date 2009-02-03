@@ -38,8 +38,8 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_xfs_info(const disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition, const int verbose, const int dump_ind);
-static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_xfs_info(const struct xfs_sb *sb, partition_t *partition);
+static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *partition, const int verbose);
 
 int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -49,17 +49,17 @@ int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_xfs(disk_car,(struct xfs_sb*)buffer,partition,verbose,0)!=0)
+  if(test_xfs(disk_car, (struct xfs_sb*)buffer, partition, verbose)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_xfs_info(disk_car,(struct xfs_sb*)buffer,partition,verbose,0);
+  set_xfs_info((struct xfs_sb*)buffer, partition);
   free(buffer);
   return 0;
 }
 
-static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *partition, const int verbose)
 {
   if (sb->sb_magicnum==be32(XFS_SB_MAGIC))
   {
@@ -92,7 +92,7 @@ static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb,partition_t 
 
 int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_xfs(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_xfs(disk_car, sb, partition, verbose)!=0)
     return 1;
   if(verbose>0 || dump_ind!=0)
   {
@@ -108,12 +108,12 @@ int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition
   partition->part_type_mac=PMAC_LINUX;
   partition->part_type_sun=PSUN_LINUX;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
-  set_xfs_info(disk_car,sb,partition,verbose,dump_ind);
+  set_xfs_info(sb, partition);
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->sb_uuid);
   return 0;
 }
 
-static int set_xfs_info(const disk_t *disk_car,const struct xfs_sb *sb,partition_t *partition, const int verbose, const int dump_ind)
+static int set_xfs_info(const struct xfs_sb *sb, partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';

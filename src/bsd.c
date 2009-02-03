@@ -32,7 +32,6 @@
 #include "common.h"
 #include "bsd.h"
 #include "intrf.h"
-#include "fnctdsk.h"
 #include "log.h"
 static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions);
 

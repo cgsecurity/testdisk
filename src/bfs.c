@@ -34,10 +34,10 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_BeFS_info(disk_t *disk_car, const struct disk_super_block *beos_block,partition_t *partition,const int verbose, const int dump_ind);
-static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,partition_t *partition,const int verbose, const int dump_ind);
+static int set_BeFS_info(const struct disk_super_block *beos_block, partition_t *partition);
+static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,partition_t *partition, const int dump_ind);
 
-int check_BeFS(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_BeFS(disk_t *disk_car,partition_t *partition)
 {
   unsigned char *buffer;
   buffer=(unsigned char*)MALLOC(BFS_SUPERBLOCK_SIZE);
@@ -46,27 +46,27 @@ int check_BeFS(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_BeFS(disk_car,(struct disk_super_block*)buffer,partition,verbose,0)!=0)
+  if(test_BeFS(disk_car,(struct disk_super_block*)buffer,partition,0)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_BeFS_info(disk_car,(struct disk_super_block*)buffer,partition,verbose,0);
+  set_BeFS_info((struct disk_super_block*)buffer, partition);
   free(buffer);
   return 0;
 }
 
-int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block,partition_t *partition,const int verbose, const int dump_ind)
+int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block, partition_t *partition, const int dump_ind)
 {
-  if(test_BeFS(disk_car,beos_block,partition,verbose,dump_ind)!=0)
+  if(test_BeFS(disk_car,beos_block,partition,dump_ind)!=0)
     return 1;
-  set_BeFS_info(disk_car,beos_block,partition,verbose,0);
+  set_BeFS_info(beos_block, partition);
   partition->part_size=le64(beos_block->num_blocks) * (1<<le32(beos_block->block_shift));
   partition->part_type_i386=(unsigned char)P_BEOS;
   return 0;
 }
 
-static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,partition_t *partition,const int verbose, const int dump_ind)
+static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,partition_t *partition, const int dump_ind)
 {
   if(beos_block->magic1==le32(SUPER_BLOCK_MAGIC1) &&
       beos_block->magic2==(signed)le32(SUPER_BLOCK_MAGIC2) &&
@@ -83,7 +83,7 @@ static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,
   return 1;
 }
 
-static int set_BeFS_info(disk_t *disk_car, const struct disk_super_block *beos_block,partition_t *partition,const int verbose, const int dump_ind)
+static int set_BeFS_info(const struct disk_super_block *beos_block, partition_t *partition)
 {
   partition->info[0]='\0';
   set_part_name(partition,beos_block->name,B_OS_NAME_LENGTH);

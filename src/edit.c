@@ -79,7 +79,7 @@ static void interface_editor_ncurses(disk_t *disk_car)
 	    wclrtoeol(stdscr);
 	    wprintw(stdscr,"%lu ", (unsigned long)(hd_offset/disk_car->sector_size));
 	    aff_LBA2CHS(disk_car,hd_offset/disk_car->sector_size);
-	    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
+	    if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
 	    {
 	      wprintw(stdscr,msg_PART_RD_ERR);
 	    }

@@ -53,9 +53,6 @@
 #ifdef HAVE_LIBGEN_H
 #include <libgen.h>
 #endif
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
 #include <errno.h>
 #include "types.h"
 #include "common.h"

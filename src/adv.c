@@ -41,7 +41,6 @@
 #include "fat.h"
 #include "ntfs.h"
 #include "adv.h"
-#include "analyse.h"
 #include "log.h"
 #include "log_part.h"
 #include "guid_cmp.h"
@@ -180,7 +179,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 #ifdef HAVE_NCURSES
   int offset=0;
   int current_element_num=0;
-  unsigned int old_LINES=LINES;
+  int old_LINES=LINES;
 #endif
   int rewrite=1;
   const char *options;
@@ -444,7 +443,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    }
 	    else if(is_part_ntfs(partition))
 	    {
-	      ntfs_boot_sector(disk_car, partition, verbose, dump_ind, expert, current_cmd);
+	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
 	      rewrite=1;
 	    }
 	    else if(partition->upart_type==UP_FAT32)
@@ -459,7 +458,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    }
 	    else if(partition->upart_type==UP_NTFS)
 	    {
-	      ntfs_boot_sector(disk_car, partition, verbose, dump_ind, expert, current_cmd);
+	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
 	      rewrite=1;
 	    }
 	  }
@@ -520,7 +519,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    }
 	    if(is_hfs(current_element->part) || is_hfsp(current_element->part))
 	    {
-	      HFS_HFSP_boot_sector(disk_car, current_element->part, verbose, dump_ind, expert, current_cmd);
+	      HFS_HFSP_boot_sector(disk_car, current_element->part, verbose, current_cmd);
 	    }
 	    rewrite=1;
 	  }

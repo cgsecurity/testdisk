@@ -126,13 +126,12 @@ static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, con
 static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_sync(disk_t *disk_car);
-static int generic_clean(disk_t *disk_car);
 #ifndef DJGPP
 static uint64_t compute_device_size(const int hd_h, const char *device, const int verbose, const unsigned int sector_size);
-static void disk_get_model(const int hd_h, disk_t *disk_car, const int verbose);
+static void disk_get_model(const int hd_h, disk_t *disk);
 #endif
 
-static int generic_clean(disk_t *disk_car)
+int generic_clean(disk_t *disk_car)
 {
   free(disk_car->data);
   disk_car->data=NULL;
@@ -908,7 +907,7 @@ static int scsi_query_product_info (const int hd_h, char **vendor, char **produc
 #endif
 
 #ifndef DJGPP
-static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
+static void disk_get_model(const int hd_h, disk_t *dev)
 {
 #ifdef TARGET_LINUX
   if(dev->model!=NULL)
@@ -971,7 +970,7 @@ static void disk_get_model(const int hd_h, disk_t *dev, const int verbose)
 #else
     handle=(HANDLE)_get_osfhandle(hd_h);
 #endif
-    file_win32_disk_get_model(handle, dev, verbose);
+    file_win32_disk_get_model(handle, dev);
   }
 #endif
 }
@@ -1391,7 +1390,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
        In order to avoid this, discard all blocks on /dev/hda. */
     ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
 #endif
-    disk_get_model(hd_h, disk_car, verbose);
+    disk_get_model(hd_h, disk_car);
     disk_get_hpa_dco(hd_h, disk_car, verbose);
   }
   else
@@ -1478,7 +1477,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
   buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   if(disk_car->autodetect!=0)
   {
-    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, 0) == disk_car->sector_size)
+    if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, 0) == disk_car->sector_size)
     {
       if(verbose>1)
       {
@@ -1510,7 +1509,7 @@ void hd_update_geometry(disk_t *disk_car, const int allow_partial_last_cylinder,
       data->geo_phys.cylinders=0;
     }
 #endif
-    if(disk_car->pread(disk_car, buffer, disk_car->sector_size, pos) == disk_car->sector_size)
+    if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, pos) == disk_car->sector_size)
     {
       disk_car->geom.cylinders++;
       if(disk_car->disk_size < (uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size)

@@ -24,22 +24,17 @@
 #endif
  
 #ifdef HAVE_NCURSES
-#include <stdarg.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#include <ctype.h>
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -59,7 +54,6 @@
 #include "intrfn.h"
 #include "list.h"
 #include "dir.h"
-#include "log.h"
 #include "askloc.h"
 
 extern const char *monstr[];

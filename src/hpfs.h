@@ -1,8 +1,8 @@
 /*
 
-    File: fatx.h
+    File: hpfs.h
 
-    Copyright (C) 2005 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,22 +19,17 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
+#ifndef _HPFS_H
+#define _HPFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct disk_fatx
-{
-  char		magic[4];
-  uint32_t 	volume_id;
-  uint32_t	cluster_size_in_sector;
-  uint16_t	fats;
-  uint32_t	unknown;
-} __attribute__ ((__packed__));
-
-int check_FATX(disk_t *disk_car, partition_t *partition);
-int recover_FATX(const struct disk_fatx *fatx_block, partition_t *partition);
+int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, partition_t *partition, const int verbose);
+int check_HPFS(disk_t *disk_car,partition_t *partition, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

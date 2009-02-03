@@ -27,31 +27,15 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_LOCALE_H
-#include <locale.h>	/* setlocale */
-#endif
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "intrf.h"
 #include "intrfn.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "intrface.h"
-#include "fnctdsk.h"
 #include "log.h"
 #include "dimage.h"
 
@@ -102,7 +86,7 @@ int disk_image(disk_t *disk_car, const partition_t *partition, const char *image
     int update=0;
     if(offset_end-offset < READ_SIZE)
       readsize=offset_end-offset;
-    if(disk_car->pread(disk_car, buffer_disk, readsize, offset) != readsize)
+    if((unsigned)disk_car->pread(disk_car, buffer_disk, readsize, offset) != readsize)
     {
       update=1;
       nbr_read_error++;

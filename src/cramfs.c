@@ -37,8 +37,8 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_cramfs_info(const disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition, const int verbose, const int dump_ind);
-static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int set_cramfs_info(const struct cramfs_super *sb, partition_t *partition);
+static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partition_t *partition, const int verbose);
 
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -48,9 +48,9 @@ int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_cramfs(disk_car,(struct cramfs_super*)buffer,partition,verbose,0)==0)
+  if(test_cramfs(disk_car, (struct cramfs_super*)buffer, partition, verbose)==0)
   {
-    set_cramfs_info(disk_car,(struct cramfs_super*)buffer,partition,verbose,0);
+    set_cramfs_info((struct cramfs_super*)buffer, partition);
     free(buffer);
     return 0;
   }
@@ -58,7 +58,7 @@ int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
   return 1;
 }
 
-static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition, const int verbose)
 {
   if (sb->magic==le32(CRAMFS_MAGIC))
   {
@@ -73,7 +73,7 @@ static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,par
 
 int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_cramfs(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_cramfs(disk_car, sb, partition, verbose)!=0)
     return 1;
   if(verbose>0 || dump_ind!=0)
   {
@@ -88,11 +88,11 @@ int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *
   partition->part_type_mac= PMAC_LINUX;
   partition->part_type_sun= PSUN_LINUX;
   partition->part_type_gpt= GPT_ENT_TYPE_LINUX_DATA;
-  set_cramfs_info(disk_car,sb,partition,verbose,dump_ind);
+  set_cramfs_info(sb, partition);
   return 0;
 }
 
-static int set_cramfs_info(const disk_t *disk_car,const struct cramfs_super *sb,partition_t *partition, const int verbose, const int dump_ind)
+static int set_cramfs_info(const struct cramfs_super *sb, partition_t *partition)
 {
   set_part_name(partition, (const char*)sb->name, 16);
   switch(partition->upart_type)

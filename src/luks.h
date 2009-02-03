@@ -56,7 +56,7 @@ struct luks_phdr {
   luks_keyslot_t keyslot[LUKS_NUMKEYS];
 };
 
-int check_LUKS(disk_t *disk_car,partition_t *partition,const int verbose);
+int check_LUKS(disk_t *disk_car, partition_t *partition);
 int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus

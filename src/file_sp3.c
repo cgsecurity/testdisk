@@ -34,7 +34,6 @@
 #include "filegen.h"
 #include "file_sp3.h"
 #include "common.h"
-#include "log.h"
 
 static void register_header_check_sp3(file_stat_t *file_stat);
 static int header_check_sp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);

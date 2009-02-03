@@ -33,26 +33,11 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include "types.h"
-#ifdef HAVE_UTIME_H
-#include <utime.h>
-#endif
-#include <errno.h>
 #include "common.h"
-#include "fat.h"
-#include "lang.h"
-#include "fnctdsk.h"
-#include "testdisk.h"
 #include "intrf.h"
 #include "intrfn.h"
 #include "dir.h"
-#include "ext2_dir.h"
-#include "fat_dir.h"
-#include "ntfs_dir.h"
-#include "rfs_dir.h"
 #include "log.h"
 #include "log_part.h"
 #include "dirn.h"
@@ -366,7 +351,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
     /* Not perfect for FAT32 root cluster */
     inode_known[depth]=inode;
     dir_list=dir_data->get_dir(disk, partition, dir_data, inode);
-    dir_aff_log(disk, partition, dir_data, dir_list);
+    dir_aff_log(dir_data, dir_list);
     if(*current_cmd!=NULL)
     {
       dir_data->current_directory[current_directory_namelength]='\0';
@@ -384,7 +369,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
       unsigned int new_inode_ok=1;
       unsigned int i;
       for(i=0;i<=depth && new_inode_ok!=0;i++)
-	if(new_inode==inode_known[i]) /* Avoid loop */
+	if((unsigned)new_inode==inode_known[i]) /* Avoid loop */
 	  new_inode_ok=0;
       if(new_inode_ok>0)
       {

@@ -39,7 +39,6 @@
 #include "filegen.h"
 #include "log.h"
 #include "memmem.h"
-#include "log.h"
 
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;

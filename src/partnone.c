@@ -35,13 +35,10 @@
 #include <ctype.h>      /* tolower */
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "fnctdsk.h"
 #include "analyse.h"
 #include "lang.h"
 #include "intrf.h"
-#include "chgtype.h"
-#include "savehdr.h"
 #include "bfs.h"
 #include "bsd.h"
 #include "cramfs.h"
@@ -50,6 +47,7 @@
 #include "fatx.h"
 #include "hfs.h"
 #include "hfsp.h"
+#include "hpfs.h"
 #include "jfs_superblock.h"
 #include "jfs.h"
 #include "luks.h"
@@ -250,7 +248,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
   switch(partition->upart_type)
   {
     case UP_BEOS:
-      ret=check_BeFS(disk_car,partition,verbose);
+      ret=check_BeFS(disk_car,partition);
       break;
     case UP_CRAMFS:
       ret=check_cramfs(disk_car,partition,verbose);
@@ -268,7 +266,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_FAT(disk_car,partition,verbose);
       break;
     case UP_FATX:
-      ret=check_FATX(disk_car,partition,verbose);
+      ret=check_FATX(disk_car, partition);
       break;
     case UP_FREEBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
@@ -284,14 +282,14 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_HPFS(disk_car,partition,verbose);
       break;
     case UP_JFS:
-      ret=check_JFS(disk_car,partition,verbose);
+      ret=check_JFS(disk_car, partition);
       break;
     case UP_LINSWAP:
     case UP_LINSWAP2:
-      ret=check_Linux_SWAP(disk_car,partition,verbose);
+      ret=check_Linux_SWAP(disk_car, partition);
       break;
     case UP_LUKS:
-    ret=check_LUKS(disk_car, partition, verbose);
+    ret=check_LUKS(disk_car, partition);
       break;
     case UP_LVM:
       ret=check_LVM(disk_car,partition,verbose);
@@ -300,7 +298,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_LVM2(disk_car,partition,verbose);
       break;
     case UP_NETWARE:
-      ret=check_netware(disk_car,partition,verbose);
+      ret=check_netware(disk_car, partition);
       break;
     case UP_NTFS:
       ret=check_NTFS(disk_car,partition,verbose,0);

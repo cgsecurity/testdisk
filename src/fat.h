@@ -148,8 +148,6 @@ unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const uns
 int recover_FAT(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup);
 int check_FAT(disk_t *disk_car,partition_t *partition, const int verbose);
 int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
-int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
-int check_HPFS(disk_t *disk_car,partition_t *partition, const int verbose);
 int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
 int check_OS2MB(disk_t *disk_car,partition_t *partition, const int verbose);
 int check_VFAT_volume_name(const char *name, const unsigned int max_size);

@@ -29,10 +29,10 @@
 #include "types.h"
 #include "common.h"
 #include "fatx.h"
-static void set_FATX_info(disk_t *disk_car, const struct disk_fatx *fatx_block,partition_t *partition);
-static int test_fatx(disk_t *disk_car, const struct disk_fatx *fatx_block,partition_t *partition,const int verbose, const int dump_ind);
+static void set_FATX_info(partition_t *partition);
+static int test_fatx(const struct disk_fatx *fatx_block, partition_t *partition);
 
-static int test_fatx(disk_t *disk_car, const struct disk_fatx *fatx_block,partition_t *partition,const int verbose, const int dump_ind)
+static int test_fatx(const struct disk_fatx *fatx_block, partition_t *partition)
 {
   if(memcmp(fatx_block->magic,"FATX",4)==0)
   {
@@ -42,29 +42,29 @@ static int test_fatx(disk_t *disk_car, const struct disk_fatx *fatx_block,partit
   return 1;
 }
 
-int check_FATX(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_FATX(disk_t *disk_car,partition_t *partition)
 {
   unsigned char buffer[8*DEFAULT_SECTOR_SIZE];
   if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition->part_offset) != sizeof(buffer))
   { return 1; }
-  if(test_fatx(disk_car,(const struct disk_fatx *)&buffer,partition,verbose,0)!=0)
+  if(test_fatx((const struct disk_fatx *)&buffer, partition)!=0)
     return 1;
-  set_FATX_info(disk_car,(const struct disk_fatx *)&buffer,partition);
+  set_FATX_info(partition);
   return 0;
 }
 
-int recover_FATX(disk_t *disk_car, const struct disk_fatx *fatx_block,partition_t *partition, const int verbose, const int dump_ind)
+int recover_FATX(const struct disk_fatx *fatx_block, partition_t *partition)
 {
-  if(test_fatx(disk_car,fatx_block,partition,0,0)!=0)
+  if(test_fatx(fatx_block, partition)!=0)
     return 1;
-  set_FATX_info(disk_car,fatx_block,partition);
+  set_FATX_info(partition);
   partition->part_type_xbox=PXBOX_FATX;
   /* FIXME: Locate the partition but cannot get the part_size unfortunatly */
   partition->part_size=(uint64_t)le32(fatx_block->cluster_size_in_sector)*512;
   return 0;
 }
 
-static void set_FATX_info(disk_t *disk_car, const struct disk_fatx *fatx_block,partition_t *partition)
+static void set_FATX_info(partition_t *partition)
 {
   partition->fsname[0]='\0';
   strncpy(partition->info,"FATX",sizeof(partition->info));

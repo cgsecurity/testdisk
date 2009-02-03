@@ -153,6 +153,22 @@ int main(int argc, char **argv)
   FILE *log_handle=NULL;
   file_stat_t *file_stats;
   log_handle=log_open("fidentify.log", TD_LOG_CREATE);
+  if(log_handle!=NULL)
+  {
+    unsigned int i;
+    time_t my_time;
+#ifdef HAVE_DUP2
+    dup2(fileno(log_handle),2);
+#endif
+    my_time=time(NULL);
+    log_info("\n\n%s",ctime(&my_time));
+    log_info("Command line: PhotoRec");
+    for(i=1;i<argc;i++)
+      log_info(" %s", argv[i]);
+    log_info("\n\n");
+    log_flush();
+  }
+  log_info("fidentify%s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   reset_list_file_enable(list_file_enable);
   file_stats=init_file_stats(list_file_enable);
   if(argc>1)

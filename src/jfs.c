@@ -37,10 +37,10 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind);
-static int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition_t *partition, const int dump_ind);
+static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition);
 
-int check_JFS(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_JFS(disk_t *disk_car, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(JFS_SUPERBLOCK_SIZE);
   if(disk_car->pread(disk_car, buffer, JFS_SUPERBLOCK_SIZE, partition->part_offset + 64 * 512) != JFS_SUPERBLOCK_SIZE)
@@ -48,17 +48,17 @@ int check_JFS(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_JFS(disk_car,(struct jfs_superblock*)buffer,partition,verbose,0)!=0)
+  if(test_JFS(disk_car, (struct jfs_superblock*)buffer, partition,0)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_JFS_info(disk_car,(struct jfs_superblock*)buffer,partition,verbose,0);
+  set_JFS_info((struct jfs_superblock*)buffer, partition);
   free(buffer);
   return 0;
 }
 
-static int set_JFS_info(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
 {
   snprintf(partition->info,sizeof(partition->info),"JFS %u",(unsigned int)le32(sb->s_version));
   partition->fsname[0]='\0';
@@ -74,9 +74,9 @@ Primary superblock is at 0x8000
 */
 int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_JFS(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_JFS(disk_car, sb, partition, dump_ind)!=0)
     return 1;
-  set_JFS_info(disk_car,sb,partition,verbose,dump_ind);
+  set_JFS_info(sb, partition);
   partition->part_type_i386=P_LINUX;
   partition->part_type_sun=PSUN_LINUX;
   partition->part_type_mac=PMAC_LINUX;
@@ -100,7 +100,7 @@ int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *p
   return 0;
 }
 
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition_t *partition, const int dump_ind)
 {
   if(memcmp(sb->s_magic,"JFS1",4)!=0)
     return 1;

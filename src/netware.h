@@ -32,7 +32,7 @@ typedef struct disk_netware
   int32_t nbr_sectors;
 } disk_netware;
 
-int check_netware(disk_t *disk_car,partition_t *partition,const int verbose);
+int check_netware(disk_t *disk_car, partition_t *partition);
 int recover_netware(disk_t *disk_car, const struct disk_netware *netware_block, partition_t *partition);
 
 #ifdef __cplusplus

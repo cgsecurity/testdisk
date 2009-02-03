@@ -287,18 +287,18 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   if(tiff_diroff == 0)
     return 0;
   if(tiff_diroff % 2 != 0)
-    return -1;
+    return 0;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
-    return -1;
+    return 0;
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
-    return -1;
+    return 0;
   n=buffer[0]+(buffer[1]<<8);
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_le(in, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
   //sizeof(TIFFDirEntry)=12;
-  if(n > (data_read-2)/12)
+  if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
     return 0;
@@ -319,8 +319,8 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
     if(val>4)
     {
       const uint64_t new_offset=le32(entry->tdir_offset)+val;
-      if(new_offset==-1)
-	return -1;
+      if(new_offset==0)
+	return 0;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -344,8 +344,8 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	if(val==4)
 	{
 	  uint64_t new_offset=header_check_tiff_le(in, le32(entry->tdir_offset), depth+1, 0);
-	  if(new_offset==-1)
-	    return -1;
+	  if(new_offset==0)
+	    return 0;
 	  if(max_offset < new_offset)
 	    max_offset=new_offset;
 	}
@@ -360,20 +360,20 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	    if(fseek(in, le32(entry->tdir_offset), SEEK_SET) < 0)
 	    {
 	      free(subifd_offsetp);
-	      return -1;
+	      return 0;
 	    }
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
 	    {
 	      free(subifd_offsetp);
-	      return -1;
+	      return 0;
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
 	      const uint64_t new_offset=header_check_tiff_le(in, le32(subifd_offsetp[j]), depth+1, 0);
-	      if(new_offset==-1)
+	      if(new_offset==0)
 	      {
 		free(subifd_offsetp);
-		return -1;
+		return 0;
 	      }
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
@@ -392,8 +392,8 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_le(in, le32(*tiff_next_diroff), depth, count+1);
-    if(new_offset==-1)
-      return -1;
+    if(new_offset==0)
+      return 0;
     if(max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -419,18 +419,18 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   if(tiff_diroff == 0)
     return 0;
   if(tiff_diroff % 2 != 0)
-    return -1;
+    return 0;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
-    return -1;
+    return 0;
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
-    return -1;
+    return 0;
   n=(buffer[0]<<8)+buffer[1];
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_be(in, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
   //sizeof(TIFFDirEntry)=12;
-  if(n > (data_read-2)/12)
+  if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
     return 0;
@@ -451,8 +451,8 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
     if(val>4)
     {
       const uint64_t new_offset=be32(entry->tdir_offset)+val;
-      if(new_offset==-1)
-	return -1;
+      if(new_offset==0)
+	return 0;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -476,8 +476,8 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
 	if(val==4)
 	{
 	  uint64_t new_offset=header_check_tiff_be(in, be32(entry->tdir_offset), depth+1, 0);
-	  if(new_offset==-1)
-	    return -1;
+	  if(new_offset==0)
+	    return 0;
 	  if(max_offset < new_offset)
 	    max_offset=new_offset;
 	}
@@ -492,20 +492,20 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
 	    if(fseek(in, be32(entry->tdir_offset), SEEK_SET) < 0)
 	    {
 	      free(subifd_offsetp);
-	      return -1;
+	      return 0;
 	    }
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
 	    {
 	      free(subifd_offsetp);
-	      return -1;
+	      return 0;
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
 	      const uint64_t new_offset=header_check_tiff_be(in, be32(subifd_offsetp[j]), depth+1, 0);
-	      if(new_offset==-1)
+	      if(new_offset==0)
 	      {
 		free(subifd_offsetp);
-		return -1;
+		return 0;
 	      }
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
@@ -524,8 +524,8 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_be(in, be32(*tiff_next_diroff), depth, count+1);
-    if(new_offset==-1)
-      return -1;
+    if(new_offset==0)
+      return 0;
     if(max_offset < new_offset)
       max_offset=new_offset;
   }

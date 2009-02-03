@@ -51,7 +51,7 @@
 
 extern const arch_fnct_t arch_none;
 
-void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup, char **current_cmd)
+void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup)
 {
   list_part_t *list_part;
   log_info("\nAnalyse ");

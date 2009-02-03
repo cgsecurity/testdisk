@@ -32,7 +32,6 @@
 #endif
 #include "types.h"
 #include "common.h"
-#include "lang.h"
 #include "intrf.h"
 #include "intrfn.h"
 #include "fnctdsk.h"

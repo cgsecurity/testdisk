@@ -60,7 +60,7 @@ int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_se
 int log_ntfs_info(const struct ntfs_boot_sector *ntfs_header);
 int is_ntfs(const partition_t *partition);
 int is_part_ntfs(const partition_t *partition);
-int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find);
+int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find);
 int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind, const int backup);
 int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind);
 #define NTFS_GETU8(p)      (*(const uint8_t*)(p))
@@ -68,8 +68,8 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
 #define NTFS_GETU32(p)     (le32(*(const uint32_t*)(p)))
 #define NTFS_GETU64(p)     (le64(*(const uint64_t*)(p)))
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header);
-int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind,const int interface, const unsigned int expert, char**current_cmd);
-int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd);
+int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int interface, const unsigned int expert, char**current_cmd);
+int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert);
 int repair_MFT_Vol(disk_t *disk_car, partition_t *partition, const int verbose);
 
 #ifdef __cplusplus

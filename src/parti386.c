@@ -35,7 +35,6 @@
 #include <ctype.h>      /* tolower */
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
@@ -58,7 +57,6 @@
 #include "rfs.h"
 #include "sun.h"
 #include "swap.h"
-#include "ufs.h"
 #include "xfs.h"
 #include "log.h"
 #include "parti386.h"
@@ -85,21 +83,19 @@ struct partition_dos {
 
 
 #define s_cyl(p) (((p)->cyl & (unsigned)0xff) | (((p)->sector << 2) & (unsigned)0x300))
-#define s_head(p) ((p)->head)
 #define s_sect(p) ((p)->sector & (unsigned)0x3f)
 #define e_cyl(p) (((p)->end_cyl & (unsigned)0xff) | (((p)->end_sector << 2) & (unsigned)0x300))
-#define e_head(p) ((p)->end_head)
 #define e_sect(p) ((p)->end_sector & (unsigned)0x3f)
 static uint64_t get_start_sect(const struct partition_dos *p);
 static uint64_t get_nr_sects(const struct partition_dos *p);
-static void log_dos_entry(const disk_t *disk_car, const struct partition_dos*);
+static void log_dos_entry(const struct partition_dos*);
 static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader);
 static void test_MBR_data(list_part_t *list_part);
 static int test_MBR_over(disk_t *disk_car,list_part_t *list_part);
 static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose);
-static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
-static int diff(const disk_t *disk_car,const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE]);
+static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
+static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE]);
 
 static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const int saveheader);
 static int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
@@ -301,8 +297,8 @@ int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CH
     {
       if(geometry->cylinders<e_cyl(p)+1)
 	geometry->cylinders=e_cyl(p)+1;
-      if(geometry->heads_per_cylinder<e_head(p)+1)
-	geometry->heads_per_cylinder=e_head(p)+1;
+      if(geometry->heads_per_cylinder < (unsigned int)p->end_head+1)
+	geometry->heads_per_cylinder= (unsigned int)p->end_head+1;
       if(geometry->sectors_per_head<e_sect(p))
 	geometry->sectors_per_head=e_sect(p);
     }
@@ -363,7 +359,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
-  if(disk_car->pread(disk_car, buffer, disk_car->sector_size, (uint64_t)0) != disk_car->sector_size)
+  if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, (uint64_t)0) != disk_car->sector_size)
   {
     screen_buffer_add( msg_PART_RD_ERR);
     free(buffer);
@@ -397,7 +393,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
 	  partition_t *new_partition=partition_new(&arch_i386);
 	  i386_entry2partition(disk_car, (uint64_t)0, new_partition, p, status,i+1,verbose,saveheader);
 	  if(verbose>1)
-	    log_dos_entry(disk_car,p);
+	    log_dos_entry(p);
 	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	  if(new_partition->errcode!=BAD_NOERR)
 	  {
@@ -545,7 +541,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	  partition_t *new_partition=partition_new(&arch_i386);
 	  new_partition->order=order;
 	  if(verbose>1)
-	    log_dos_entry(disk_car,p);
+	    log_dos_entry(p);
 	  if(is_extended(p->sys_ind))
 	  {
 	    partition_next_ext=new_partition;
@@ -587,7 +583,7 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    i386_entry2partition(disk_car,partition_ext->part_offset, new_partition, p, STATUS_LOG,order,verbose,saveheader);
 	    order++;
 	    if(verbose>1)
-	      log_dos_entry(disk_car,p);
+	      log_dos_entry(p);
 	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
 	    {
@@ -634,7 +630,7 @@ int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro
 {
   int res=0;
   res+=write_mbr_i386(disk_car,list_part,ro,verbose);
-  res+=write_all_log_i386(disk_car,list_part,ro,verbose,align);
+  res+=write_all_log_i386(disk_car,list_part,ro,verbose);
   disk_car->sync(disk_car);
   return res;
 }
@@ -696,9 +692,9 @@ static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const 
     for(i=0;i<4;i++)
     {
       const struct partition_dos *p=pt_offset(buffer,i);
-      log_dos_entry(disk_car,p);
+      log_dos_entry(p);
     }
-    diff(disk_car,buffer,buffer_org);
+    diff(buffer, buffer_org);
   }
   if(ro==0)
   {
@@ -714,7 +710,7 @@ static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const 
   return 0;
 }
 
-static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   const list_part_t *element;
   const list_part_t *pos_ext=NULL;
@@ -766,7 +762,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
     if(ro)
     {
       if(verbose>1)
-        diff(disk_car,buffer,buffer_org);
+        diff(buffer, buffer_org);
     }
     else
     {
@@ -846,9 +842,9 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
           {
             const struct partition_dos *p=pt_offset(buffer,j);
             if(p->sys_ind!=0)
-              log_dos_entry(disk_car,p);
+              log_dos_entry(p);
           }
-          diff(disk_car,buffer,buffer_org);
+          diff(buffer, buffer_org);
         }
       }
       else
@@ -865,7 +861,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
   return res;
 }
 
-static int diff(const disk_t *disk_car, const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE])
+static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE])
 {
   int j;
   if(memcmp(buffer,buffer_org,DEFAULT_SECTOR_SIZE))
@@ -876,14 +872,14 @@ static int diff(const disk_t *disk_car, const unsigned char buffer[DEFAULT_SECTO
     {
       const struct partition_dos *p=pt_offset_const(buffer_org,j);
       if(p->sys_ind!=0)
-	log_dos_entry(disk_car,p);
+	log_dos_entry(p);
     }
     log_info("buffer\n");
     for(j=0;j<4;j++)
     {
       const struct partition_dos *p=pt_offset_const(buffer,j);
       if(p->sys_ind!=0)
-	log_dos_entry(disk_car,p);
+	log_dos_entry(p);
     }
     for(j=0;j<DEFAULT_SECTOR_SIZE;j++)
       if(buffer_org[j]!=buffer[j])
@@ -1014,10 +1010,10 @@ static int i386_entry2partition(disk_t *disk_car, const uint64_t offset, partiti
 
 
   start.cylinder=s_cyl(p);
-  start.head=s_head(p);
+  start.head=p->head;
   start.sector=s_sect(p);
   end.cylinder=e_cyl(p);
-  end.head=e_head(p);
+  end.head=p->end_head;
   end.sector=e_sect(p);
   switch(status)
   {
@@ -1107,7 +1103,7 @@ static const char* errmsg_i386_entry2partition(const errcode_type_t errcode)
   return "";
 }
 
-static void log_dos_entry(const disk_t *disk_car, const struct partition_dos *entree)
+static void log_dos_entry(const struct partition_dos *entree)
 {
   if(get_partition_typename_i386_aux(entree->sys_ind)!=NULL)
     log_info(" %-20s ", get_partition_typename_i386_aux(entree->sys_ind));
@@ -1117,8 +1113,8 @@ static void log_dos_entry(const disk_t *disk_car, const struct partition_dos *en
 	 " %4u %3u %2u"
 	 " %10lu"
 	 " %10lu\n",
-	  s_cyl(entree),s_head(entree),s_sect(entree),
-	  e_cyl(entree),e_head(entree),e_sect(entree),
+	  s_cyl(entree), entree->head, s_sect(entree),
+	  e_cyl(entree), entree->end_head, e_sect(entree),
 	  (long unsigned)get_start_sect(entree),(long unsigned)get_nr_sects(entree));
 }
 
@@ -1459,7 +1455,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
   switch(partition->part_type_i386)
   {
     case P_BEOS:
-      ret=check_BeFS(disk_car,partition,verbose);
+      ret=check_BeFS(disk_car,partition);
       break;
     case P_12FAT:
     case P_16FAT:
@@ -1490,7 +1486,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       }
       break;
     case P_LINUX:
-      ret=check_JFS(disk_car,partition,verbose);
+      ret=check_JFS(disk_car, partition);
       if(ret!=0)
       {
 	ret=check_rfs(disk_car,partition,verbose);
@@ -1509,13 +1505,13 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       }
       if(ret!=0)
       {
-	ret=check_LUKS(disk_car,partition,verbose);
+	ret=check_LUKS(disk_car,partition);
       }
       if(ret!=0)
       { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
       break;
     case P_LINSWAP:
-      ret=check_Linux_SWAP(disk_car,partition,verbose);
+      ret=check_Linux_SWAP(disk_car, partition);
       break;
     case P_LVM:
       ret=check_LVM(disk_car,partition,verbose);
@@ -1549,7 +1545,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_LINUXEXTENDX:
       break;
     case P_NETWARE:
-      /* res=check_netware(disk_car, partition, verbose); */
+      /* res=check_netware(disk_car, partition); */
       break;
     default:
       if(verbose>0)

@@ -37,8 +37,6 @@
 #else
 #include <stdio.h>
 #endif
-#include "fnctdsk.h"
-#include "testdisk.h"
 #include "partauto.h"
 #include "log.h"
 #include "hdaccess.h"

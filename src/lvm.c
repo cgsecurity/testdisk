@@ -37,10 +37,10 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_LVM_info(partition_t *partition, const pv_disk_t *pv);
+static int set_LVM_info(partition_t *partition);
 static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
 
-static int set_LVM2_info(partition_t*partition, const unsigned char *buf);
+static int set_LVM2_info(partition_t*partition);
 static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind);
 
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose)
@@ -56,7 +56,7 @@ int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  set_LVM_info(partition,(pv_disk_t *)buffer);
+  set_LVM_info(partition);
   free(buffer);
   return 0;
 }
@@ -65,7 +65,7 @@ int recover_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,con
 {
   if(test_LVM(disk_car,pv,partition,verbose,dump_ind)!=0)
     return 1;
-  set_LVM_info(partition,pv);
+  set_LVM_info(partition);
   partition->part_type_i386=P_LVM;
   partition->part_type_sun=PSUN_LVM;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_LVM;
@@ -119,7 +119,7 @@ static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition
   return 1;
 }
 
-static int set_LVM_info(partition_t *partition, const pv_disk_t *pv)
+static int set_LVM_info(partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';
@@ -140,7 +140,7 @@ int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  set_LVM2_info(partition,buffer);
+  set_LVM2_info(partition);
   free(buffer);
   return 0;
 }
@@ -150,7 +150,7 @@ int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partiti
   const struct lvm2_label_header *lh=(const struct lvm2_label_header *)buf;
   if(test_LVM2(disk_car,lh,partition,verbose,dump_ind)!=0)
     return 1;
-  set_LVM2_info(partition,buf);
+  set_LVM2_info(partition);
   partition->part_type_i386=P_LVM;
   partition->part_type_sun=PSUN_LVM;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_LVM;
@@ -187,7 +187,7 @@ static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partit
   return 1;
 }
 
-static int set_LVM2_info(partition_t*partition, const unsigned char *buf)
+static int set_LVM2_info(partition_t*partition)
 {
   partition->fsname[0]='\0';
   partition->info[0]='\0';

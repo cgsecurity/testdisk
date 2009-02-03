@@ -40,7 +40,6 @@
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h" /* get_LBA_part */
-#include "analyse.h"
 #include "savehdr.h"
 #include "log.h"
 #define BACKUP_MAXSIZE 5120

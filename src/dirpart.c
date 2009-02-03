@@ -26,21 +26,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
 #include "types.h"
 #include "common.h"
 #include "fat.h"
-#include "lang.h"
-#include "fnctdsk.h"
-#include "testdisk.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"

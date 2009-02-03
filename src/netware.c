@@ -32,9 +32,9 @@
 #include "types.h"
 #include "common.h"
 #include "netware.h"
-static int test_netware(disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition,const int verbose, const int dump_ind);
+static int test_netware(const struct disk_netware *netware_block, partition_t *partition);
 
-static int test_netware(disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition,const int verbose, const int dump_ind)
+static int test_netware(const struct disk_netware *netware_block, partition_t *partition)
 {
   if(memcmp(netware_block->magic,"Nw_PaRtItIoN",12)==0)
   {
@@ -44,7 +44,7 @@ static int test_netware(disk_t *disk_car, const struct disk_netware *netware_blo
   return 1;
 }
 
-int check_netware(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_netware(disk_t *disk_car, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(DEFAULT_SECTOR_SIZE);
   if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
@@ -52,7 +52,7 @@ int check_netware(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_netware(disk_car,(const struct disk_netware *)buffer,partition,verbose,0)!=0)
+  if(test_netware((const struct disk_netware *)buffer, partition)!=0)
   {
     free(buffer);
     return 1;
@@ -63,7 +63,7 @@ int check_netware(disk_t *disk_car,partition_t *partition,const int verbose)
 
 int recover_netware(disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition)
 {
-  if(test_netware(disk_car,netware_block,partition,0,0)!=0)
+  if(test_netware(netware_block, partition)!=0)
     return 1;
   partition->part_type_i386=P_NETWARE;
   partition->part_size=(uint64_t)le32(netware_block->nbr_sectors) * disk_car->sector_size;

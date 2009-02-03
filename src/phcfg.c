@@ -37,9 +37,6 @@
 #endif
 #include <stdio.h>
 #include <errno.h>
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
 #include "types.h"
 #include "common.h"
 #include "filegen.h"

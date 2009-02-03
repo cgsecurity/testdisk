@@ -32,7 +32,6 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#include <ctype.h>      /* tolower */
 #include "types.h"
 #if defined(HAVE_UUID_H)
 #include <uuid.h>
@@ -43,30 +42,11 @@
 #include <sys/uuid.h>
 #endif
 #include "common.h"
-#include "testdisk.h"
 #include "fnctdsk.h"
-#include "lang.h"
 #include "intrf.h"
 #include "intrfn.h"
 #include "chgtypen.h"
-#include "partgpt.h"
-#include "savehdr.h"
-#include "cramfs.h"
-#include "ext2.h"
-#include "fat.h"
-#include "hfs.h"
-#include "hfsp.h"
-#include "jfs_superblock.h"
-#include "jfs.h"
-#include "ntfs.h"
-#include "rfs.h"
-#include "xfs.h"
-#include "log.h"
-#include "log_part.h"
 #include "guid_cmp.h"
-#include "guid_cpy.h"
-#include "unicode.h"
-#include "crc.h"
 #include "partgptn.h"
 
 extern const arch_fnct_t arch_gpt;

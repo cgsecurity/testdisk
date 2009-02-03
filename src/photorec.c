@@ -26,62 +26,24 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#include <stdarg.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>	/* unlink, ftruncate */
 #endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-#include <ctype.h>      /* tolower */
-#ifdef HAVE_LOCALE_H
-#include <locale.h>	/* setlocale */
-#endif
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>
-#endif
 #include <errno.h>
-#ifdef HAVE_TIME_H
-#include <time.h>
-#endif
 #include "types.h"
 #include "common.h"
-#include "intrf.h"
-#include "godmode.h"
 #include "fnctdsk.h"
 #include <stdio.h>
-#ifdef HAVE_JPEGLIB_H
-#include <jpeglib.h>
-#endif
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
-#include "fat.h"
 #include "ext2p.h"
 #include "fatp.h"
 #include "ntfsp.h"
-#include "ewf.h"
 #include "log.h"
-#include "phrecn.h"
-#include "hdaccess.h"
-#include "sudo.h"
-#include "phcfg.h"
-#include "misc.h"
-#include "ext2_dir.h"
-#include "ntfs_dir.h"
-#include "pdisksel.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */

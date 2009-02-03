@@ -53,21 +53,16 @@
 #ifdef HAVE_LIBGEN_H
 #include <libgen.h>
 #endif
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
 #include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "lang.h"
 #include "intrf.h"
 #include "intrfn.h"
-#include "fnctdsk.h"
 #include "list.h"
 #include "dir.h"
 #include "log.h"
 #include "hdaccess.h"
-#include "askloc.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_gpt;
@@ -257,7 +252,7 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
     {
       x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
       if( menuType & MENU_BUTTON ) x += 2;
-      if( x > COLUMNS - lmargin - 12 )
+      if( x + lmargin + 12 > COLUMNS )
       {
         x = lmargin;
         y ++ ;

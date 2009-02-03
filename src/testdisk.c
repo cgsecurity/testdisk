@@ -40,7 +40,6 @@
 #endif
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
@@ -269,7 +268,7 @@ int main( int argc, char **argv )
 	autoset_unit(element_disk->disk);
       else
 	element_disk->disk->unit=unit;
-      interface_list(element_disk->disk, verbose, saveheader, create_backup, &cmd_run);
+      interface_list(element_disk->disk, verbose, saveheader, create_backup);
     }
     delete_list_disk(list_disk);
     return 0;
@@ -404,7 +403,7 @@ int main( int argc, char **argv )
     {
       case 'L':
 	for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-	  interface_list(element_disk->disk, verbose, saveheader, create_backup, &cmd_run);
+	  interface_list(element_disk->disk, verbose, saveheader, create_backup);
 	break;
       case 'q':
       case 'Q':

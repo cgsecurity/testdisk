@@ -31,6 +31,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 void autoset_unit(disk_t *disk_car);
 void update_disk_car_fields(disk_t *disk_car);
 void init_disk(disk_t *disk);
+int generic_clean(disk_t *disk_car);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -33,7 +33,6 @@
 #include <errno.h>
 #include "types.h"
 #include "common.h"
-#include "fnctdsk.h"
 #include "io_redir.h"
 #include "log.h"
 
@@ -209,7 +208,7 @@ static int io_redir_pread(disk_t *disk_car, void *buffer, const unsigned int cou
 #endif
       res=data->disk_car->pread(data->disk_car, buffer, read_size, current_offset);
     }
-    if(res!=read_size)
+    if((unsigned)res!=read_size)
       return res;
     current_count-=read_size;
     current_offset+=read_size;

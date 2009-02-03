@@ -36,11 +36,11 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
-static int set_LUKS_info(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
+static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind);
+static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition);
 static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
 
-int check_LUKS(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_LUKS(disk_t *disk_car,partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
   if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
@@ -48,17 +48,17 @@ int check_LUKS(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_LUKS(disk_car,(struct luks_phdr*)buffer,partition,verbose,0)!=0)
+  if(test_LUKS(disk_car, (struct luks_phdr*)buffer, partition, 0)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_LUKS_info(disk_car,(struct luks_phdr*)buffer,partition,verbose,0);
+  set_LUKS_info((struct luks_phdr*)buffer, partition);
   free(buffer);
   return 0;
 }
 
-static int set_LUKS_info(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition)
 {
   sprintf(partition->info,"LUKS %u (Data size unknown)",be16(sb->version));
   return 0;
@@ -66,11 +66,11 @@ static int set_LUKS_info(disk_t *disk_car, const struct luks_phdr *sb,partition_
 
 int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_LUKS(disk_car,sb,partition,verbose,dump_ind)!=0)
+  if(test_LUKS(disk_car, sb, partition, dump_ind)!=0)
     return 1;
   if(partition==NULL)
     return 0;
-  set_LUKS_info(disk_car,sb,partition,verbose,dump_ind);
+  set_LUKS_info(sb, partition);
   partition->part_type_i386=P_LINUX;
   partition->part_type_mac=PMAC_LINUX;
   partition->part_type_sun=PSUN_LINUX;
@@ -88,7 +88,7 @@ int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *parti
   return 0;
 }
 
-static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind)
+static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind)
 {
   if(memcmp(sb->magic,LUKS_MAGIC,LUKS_MAGIC_L)!=0)
     return 1;

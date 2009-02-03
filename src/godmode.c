@@ -24,12 +24,8 @@
 #endif
  
 #include <stdio.h>
-#include <ctype.h>      /* tolower */
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
 #endif
 #include "types.h"
 #include "common.h"
@@ -37,14 +33,11 @@
 #include "analyse.h"
 #include "lang.h"
 #include "godmode.h"
-#include "testdisk.h"
 #include "intrface.h"
-#include "fat.h"
 #include "ext2.h"
 #include "intrf.h"
 #include "intrfn.h"
 #include "md.h"
-#include "adv.h"
 #include "ntfs.h"
 #include "next.h"
 #include "tpartwr.h"
@@ -1184,12 +1177,12 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
 	  fat32_boot_sector(disk_car, element->part, verbose, dump_ind, expert,current_cmd);
 	  break;
 	case UP_NTFS:
-	  ntfs_boot_sector(disk_car, element->part, verbose, dump_ind, expert, current_cmd);
+	  ntfs_boot_sector(disk_car, element->part, verbose, expert, current_cmd);
 	  break;
 	case UP_HFS:
 	case UP_HFSP:
 	case UP_HFSX:
-	  HFS_HFSP_boot_sector(disk_car, element->part, verbose, dump_ind, expert, current_cmd);
+	  HFS_HFSP_boot_sector(disk_car, element->part, verbose, current_cmd);
 	  break;
 	default:
 	  log_warning("Need to fix\n");

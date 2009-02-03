@@ -47,9 +47,9 @@
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
-static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind);
-static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header,const int my_type,const int verbose, const int dump_ind);
-static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find);
+static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose);
+static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header, const int my_type, const int verbose);
+static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find);
 
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header)
 { return (ntfs_header->sector_size[1]<<8)+ntfs_header->sector_size[0]; }
@@ -68,7 +68,7 @@ int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const i
     free(buffer);
     return 1;
   }
-  set_NTFS_info(disk_car,(struct ntfs_boot_sector*)buffer,partition,verbose,dump_ind);
+  set_NTFS_info(disk_car, (struct ntfs_boot_sector*)buffer, partition, verbose);
   free(buffer);
   return 0;
 }
@@ -107,18 +107,18 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
   partition->part_size=part_size;
   partition->part_type_i386=P_NTFS;
   partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
-  set_NTFS_info(disk_car,ntfs_header,partition,verbose,dump_ind);
+  set_NTFS_info(disk_car, ntfs_header, partition, verbose);
   return 0;
 }
 
-static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind)
+static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose)
 {
   partition->fsname[0]='\0';
   if(partition->sb_offset==0)
     strncpy(partition->info, "NTFS", sizeof(partition->info));
   else
     strncpy(partition->info, "NTFS found using backup sector!", sizeof(partition->info));
-  return ntfs_read_MFT(disk_car, partition, ntfs_header,0x60,verbose,dump_ind);
+  return ntfs_read_MFT(disk_car, partition, ntfs_header, 0x60, verbose);
 }
 
 int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind)
@@ -186,7 +186,7 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
 }
 
 /* */
-int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find)
+int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find)
 {
   const char *attr_record;
   /* Only check for magic DWORD here, fixup should have happened before */
@@ -200,10 +200,10 @@ int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partit
   /*	screen_buffer_add("main MFT record %lu ",NTFS_GETU64(mft_record+0x20)); */
   /* location of first attribute */
   attr_record= mft_record + NTFS_GETU16(mft_record + 0x14);
-  return ntfs_get_attr_aux(attr_record, my_type, partition, end, verbose, dump_ind, file_name_to_find);
+  return ntfs_get_attr_aux(attr_record, my_type, partition, end, verbose, file_name_to_find);
 }
 
-static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const int dump_ind, const char*file_name_to_find)
+static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find)
 {
   int attr_type;
   while(1)
@@ -398,7 +398,7 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
   }
 }
 
-static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header,const int my_type,const int verbose, const int dump_ind)
+static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header, const int my_type, const int verbose)
 {
   unsigned char *buffer;
   char *attr;
@@ -424,7 +424,7 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
     return 1;
   }
   buffer=(unsigned char *)MALLOC(mft_size);
-  if(disk_car->pread(disk_car, buffer, mft_size, mft_pos) != mft_size)
+  if((unsigned)disk_car->pread(disk_car, buffer, mft_size, mft_pos) != mft_size)
   {
     log_error("NTFS: Can't read MFT\n");
     free(buffer);
@@ -433,7 +433,7 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
   attr=(char*)buffer;
   while(attr+0x30<=(char*)(buffer+mft_size))
   {
-    int res=ntfs_get_attr(attr,my_type,partition,(char*)buffer+mft_size,verbose,dump_ind,NULL);
+    int res=ntfs_get_attr(attr, my_type, partition, (char*)buffer+mft_size, verbose, NULL);
     if((res>0)|| (NTFS_GETU32(attr + 0x1C)<0x30))
     {
       free(buffer);

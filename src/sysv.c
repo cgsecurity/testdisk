@@ -58,8 +58,8 @@
 #define SYSV4_CIGAM_4GB   0x94192305
 
 
-static int set_sysv4_info(const disk_t *disk_car, const struct sysv4_super_block *sbd,partition_t *partition, const int verbose, const int dump_ind);
-static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sbd,partition_t *partition,const int verbose, const int dump_ind);
+static int set_sysv4_info(const struct sysv4_super_block *sbd, partition_t *partition);
+static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sbd, partition_t *partition, const int verbose);
 
 int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -69,9 +69,9 @@ int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  if(test_sysv4(disk_car,(const struct sysv4_super_block *)buffer,partition,verbose,0)==0)
+  if(test_sysv4(disk_car, (const struct sysv4_super_block *)buffer, partition, verbose)==0)
   {
-    set_sysv4_info(disk_car,(const struct sysv4_super_block *)buffer,partition,verbose,0);
+    set_sysv4_info((const struct sysv4_super_block *)buffer, partition);
     free(buffer);
     return 0;
   }
@@ -79,9 +79,9 @@ int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose)
   return 1;
 }
 
-static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sbd,partition_t *partition,const int verbose, const int dump_ind)
+static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sbd, partition_t *partition, const int verbose)
 {
-  if ((sbd->s_magic== le32(0xfd187e20))||(sbd->s_magic== be32(0xfd187e20)))
+  if (sbd->s_magic == (signed)le32(0xfd187e20) || sbd->s_magic == (signed)be32(0xfd187e20))
   {
     partition->upart_type = UP_SYSV4;
   }
@@ -97,7 +97,7 @@ static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sb
 
 int recover_sysv(disk_t *disk_car,  const struct sysv4_super_block *sbd, partition_t *partition,const int verbose, const int dump_ind)
 {
-  if(test_sysv4(disk_car,sbd,partition,verbose,dump_ind)==0)
+  if(test_sysv4(disk_car, sbd,partition, verbose)==0)
   {
     if(verbose>0 || dump_ind!=0)
     {
@@ -116,14 +116,14 @@ int recover_sysv(disk_t *disk_car,  const struct sysv4_super_block *sbd, partiti
 	partition->part_size = (uint64_t)be32(sbd->s_fsize)*(512<<(be32(sbd->s_type)-1));
 	break;
     }
-    set_sysv4_info(disk_car,sbd,partition,verbose,dump_ind);
+    set_sysv4_info(sbd, partition);
     partition->part_type_i386 = P_SYSV;
     return 0;
   }
   return 1;
 }
 
-static int set_sysv4_info(const disk_t *disk_car,const struct sysv4_super_block *sbd,partition_t *partition, const int verbose, const int dump_ind)
+static int set_sysv4_info(const struct sysv4_super_block *sbd, partition_t *partition)
 {
   strncpy(partition->info,"SysV4",sizeof(partition->info));
   set_part_name(partition,sbd->s_fname,sizeof(sbd->s_fname));

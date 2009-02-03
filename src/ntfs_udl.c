@@ -32,7 +32,6 @@
 #ifdef HAVE_FEATURES_H
 #include <features.h>
 #endif
-#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -93,7 +92,6 @@
 #include "ntfs_inc.h"
 #include "ntfs_dir.h"
 #include "ntfs_utl.h"
-#include "dir.h"
 #include "askloc.h"
 
 extern const char *monstr[];
@@ -319,7 +317,7 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 	    free(name->parent_name);
 	    name->parent_name=npn;
 	  }
-	  if(inode_num!=MREF(filename_attr->parent_directory))
+	  if((unsigned)inode_num!=MREF(filename_attr->parent_directory))
 	  {
 	    inode_num=MREF(filename_attr->parent_directory);
 	    ok=1;
@@ -1052,7 +1050,7 @@ free:
 static file_info_t *ufile_to_file_data(const struct ufile *file)
 {
   file_info_t *new_file;
-  int len;
+  unsigned int len;
   if(file->pref_name==NULL)
     return NULL;
   new_file=(file_info_t *)MALLOC(sizeof(*new_file));

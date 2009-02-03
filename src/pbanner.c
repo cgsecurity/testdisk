@@ -26,7 +26,6 @@
 #ifdef HAVE_NCURSES
 #include "types.h"
 #include "common.h"
-#include "testdisk.h"
 #include "intrf.h"
 #include "intrfn.h"
 

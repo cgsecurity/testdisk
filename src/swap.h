@@ -44,8 +44,8 @@ union swap_header {
   } info;
 };
 
-int check_Linux_SWAP(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_Linux_SWAP(disk_t *disk_car, const union swap_header *swap_header,partition_t *partition,const int verbose, const int dump_ind);
+int check_Linux_SWAP(disk_t *disk_car, partition_t *partition);
+int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

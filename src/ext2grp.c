@@ -26,20 +26,14 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
 #include "types.h"
 #include "common.h"
 #include "list.h"
 #include "filegen.h"
-#include "intrf.h"
-#include "intrfn.h"
 #include "dir.h"
 #include "ext2grp.h"
 #include "ext2.h"
 #include "log.h"
-#include "phrecn.h"
 #include "photorec.h"
 
 unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition)

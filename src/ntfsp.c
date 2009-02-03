@@ -87,7 +87,7 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     {
       static long long int bmplcn = - (SIZEOF_BUFFER << 3);	/* Which bit of $Bitmap is in the buffer */
       int byte, bit;
-      if ((lcn < bmplcn) || (lcn >= (bmplcn + (SIZEOF_BUFFER << 3))))
+      if ((bmplcn < 0) || (lcn < (unsigned)bmplcn) || (lcn >= ((unsigned)bmplcn + (SIZEOF_BUFFER << 3))))
       {
 	ntfs_attr *attr;
 	/* Mark the buffer as not in use, in case the read is shorter. */

@@ -49,7 +49,7 @@
 #define INTER_MFT_X		0
 #define INTER_MFT_Y  		18
 
-int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd)
+int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert)
 {
   struct ntfs_boot_sector *ntfs_header;
   unsigned char *buffer_mft;
@@ -103,7 +103,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   /* Check if MFT mirror is identical to the beginning of MFT */
   buffer_mft=(unsigned char *)MALLOC(mftmirr_size_bytes);
-  if(disk_car->pread(disk_car, buffer_mft, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
+  if((unsigned)disk_car->pread(disk_car, buffer_mft, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
   {
     display_message("Can't read NTFS MFT.\n");
     log_error("Can't read NTFS MFT.\n");
@@ -112,7 +112,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     return -1;
   }
   buffer_mftmirr=(unsigned char *)MALLOC(mftmirr_size_bytes);
-  if(disk_car->pread(disk_car, buffer_mftmirr, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
+  if((unsigned)disk_car->pread(disk_car, buffer_mftmirr, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
   {
     display_message("Can't read NTFS MFT mirror.\n");
     log_error("Can't read NTFS MFT mirror.\n");
@@ -174,7 +174,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
       if(dir_list!=NULL)
       {
 	log_info("NTFS listing using MFT:\n");
-	dir_aff_log(disk_car, partition, &dir_data, dir_list);
+	dir_aff_log(&dir_data, dir_list);
 	if(delete_list_file(dir_list)>2)
 	  res1++;
       }
@@ -191,7 +191,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
       if(dir_list!=NULL)
       {
 	log_info("NTFS listing using MFT mirror:\n");
-	dir_aff_log(disk_car, partition, &dir_data, dir_list);
+	dir_aff_log(&dir_data, dir_list);
 	if(delete_list_file(dir_list)>2)
 	  res2++;
       }
@@ -278,7 +278,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   if(use_MFT==2)
   {
-    if(disk_car->pwrite(disk_car, buffer_mftmirr, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
+    if((unsigned)disk_car->pwrite(disk_car, buffer_mftmirr, mftmirr_size_bytes, mft_pos) != mftmirr_size_bytes)
     {
       display_message("Failed to fix MFT: write error.\n");
     }
@@ -290,7 +290,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   else if(use_MFT==1)
   {
-    if(disk_car->pwrite(disk_car, buffer_mft, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
+    if((unsigned)disk_car->pwrite(disk_car, buffer_mft, mftmirr_size_bytes, mftmirr_pos) != mftmirr_size_bytes)
     {
       display_message("Failed to fix MFT mirror: write error.\n");
     }

@@ -24,19 +24,12 @@
 #endif
 
 #include <stdio.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 #include "types.h"
 #include "common.h"
-#include "fnctdsk.h"
 #include "analyse.h"
-#include "intrf.h"
-#include "savehdr.h"
-#include "lang.h"
 #include "bfs.h"
 #include "bsd.h"
 #include "cramfs.h"
@@ -47,6 +40,7 @@
 #include "hfsp.h"
 #include "jfs_superblock.h"
 #include "jfs.h"
+#include "hpfs.h"
 #include "luks.h"
 #include "lvm.h"
 #include "md.h"
@@ -120,15 +114,15 @@ int search_type_0(unsigned char *buffer,disk_t *disk_car,partition_t *partition,
   }
   if(disk_car->pread(disk_car, buffer, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) != 8 * DEFAULT_SECTOR_SIZE)
     return -1;
-  if(recover_Linux_SWAP(disk_car,(const union swap_header *)buffer,partition,verbose,dump_ind)==0) return 1;
+  if(recover_Linux_SWAP((const union swap_header *)buffer, partition)==0) return 1;
   if(recover_LVM(disk_car,(const pv_disk_t*)buffer,partition,verbose,dump_ind)==0) return 1;
   if(recover_FAT(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose,dump_ind,0)==0) return 1;
-  if(recover_HPFS(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose,dump_ind)==0) return 1;
+  if(recover_HPFS(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose)==0) return 1;
   if(recover_OS2MB(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose,dump_ind)==0) return 1;
   if(recover_NTFS(disk_car,(const struct ntfs_boot_sector*)buffer,partition,verbose,dump_ind,0)==0) return 1;
   if(recover_netware(disk_car,(const struct disk_netware *)buffer,partition)==0) return 1;
   if(recover_xfs(disk_car,(const struct xfs_sb*)buffer,partition,verbose,dump_ind)==0) return 1;
-  if(recover_FATX(disk_car,(const struct disk_fatx*)buffer,partition,verbose,dump_ind)==0) return 1;
+  if(recover_FATX((const struct disk_fatx*)buffer, partition)==0) return 1;
   if(recover_LUKS(disk_car,(const struct luks_phdr*)buffer,partition,verbose,dump_ind)==0) return 1;
   { /* MD 1.1 */
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
@@ -156,7 +150,7 @@ int search_type_1(unsigned char *buffer, disk_t *disk_car,partition_t *partition
   if(disk_car->pread(disk_car, buffer, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) != 8 * DEFAULT_SECTOR_SIZE)
     return -1;
   if(recover_BSD(disk_car,(const struct disklabel *)(buffer+0x200),partition,verbose,dump_ind)==0) return 1;
-  if(recover_BeFS(disk_car,(const struct disk_super_block *)(buffer+0x200),partition,verbose,dump_ind)==0) return 1;
+  if(recover_BeFS(disk_car, (const struct disk_super_block *)(buffer+0x200), partition, dump_ind)==0) return 1;
   if(recover_cramfs(disk_car,(const struct cramfs_super*)(buffer+0x200),partition,verbose,dump_ind)==0) return 1;
   if(recover_sysv(disk_car,(const struct sysv4_super_block*)(buffer+0x200),partition,verbose,dump_ind)==0) return 1;
   if(recover_LVM2(disk_car,(const unsigned char*)(buffer+0x200),partition,verbose,dump_ind)==0) return 1;

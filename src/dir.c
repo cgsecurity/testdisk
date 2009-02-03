@@ -44,17 +44,8 @@
 #include <io.h>
 #endif
 #include "common.h"
-#include "fat.h"
-#include "lang.h"
-#include "fnctdsk.h"
-#include "testdisk.h"
-#include "intrf.h"
 #include <stdio.h>
 #include "dir.h"
-#include "ext2_dir.h"
-#include "fat_dir.h"
-#include "ntfs_dir.h"
-#include "rfs_dir.h"
 #include "log.h"
 #include "log_part.h"
 
@@ -161,7 +152,7 @@ void mode_string (const unsigned int mode, char *str)
 #endif
 }
 
-int dir_aff_log(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_data_t*dir_list)
+int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
 {
   int test_date=0;
   const file_data_t *current_file;
@@ -300,7 +291,7 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
   if(dir_data->verbose>0)
     log_info("\ndir_partition inode=%lu\n",inode);
   dir_list=dir_data->get_dir(disk, partition, dir_data, inode);
-  dir_aff_log(disk, partition, dir_data, dir_list);
+  dir_aff_log(dir_data, dir_list);
   /* Not perfect for FAT32 root cluster */
   inode_known[dir_nbr++]=inode;
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd);
+int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
