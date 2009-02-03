@@ -44,7 +44,7 @@ static uint64_t test_OLE(FILE *file);
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
-  .description="Microsoft Office Document (doc/xls/ppt/vis/...), 3ds Max, MetaStock",
+  .description="Microsoft Office Document (doc/xls/ppt/vsd/...), 3ds Max, MetaStock",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -114,10 +114,10 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;sid++,dir_entry++)
       {
 #ifdef DEBUG_OLE
-	unsigned int i;
-	for(i=0;i<64 && dir_entry->name[i]!='\0' && i<dir_entry->namsiz;i+=2)
+	unsigned int j;
+	for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
 	{
-	  log_info("%c",dir_entry->name[i]);
+	  log_info("%c",dir_entry->name[j]);
 	}
 	log_info(" type %u",dir_entry->type);
 	log_info(" sector %llu\n",(long long unsigned)le32(dir_entry->start_block));
@@ -153,6 +153,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* Note: False positive with StarImpress sdd files */
 	if(memcmp(&dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
 	  return "sdw";
+	/* Visio */
+	if(memcmp(&dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
+	  return "vsd";
       }
       if(ext!=NULL)
 	return ext;
@@ -196,54 +199,25 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
 	else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
 	  file_recovery_new->extension="sdc";
       }
+      if(strcmp(file_recovery_new->extension,"wps")==0)
+      {
+	/* Distinguish between MS Works .wps and MS Publisher .pub */
+	if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+	  file_recovery_new->extension="pub";
+      }
       return 1;
     }
     if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
     {
       file_recovery_new->extension="doc";
     }
-    else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
-    {
-      file_recovery_new->extension="sda";
-    }
-    else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
-    {
-      file_recovery_new->extension="sdc";
-    }
-    else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
-    {
-      file_recovery_new->extension="sdd";
-    }
-    else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
-	td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
-	td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
-	td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
-    {
-      file_recovery_new->extension="xls";
-    }
-    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
-    {
-      file_recovery_new->extension="ppt";
-    }
     else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
     {
       file_recovery_new->extension="mdb";
     }
-    else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
-    {
-      file_recovery_new->extension="vis";
-    }
-    else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
-    {
-      file_recovery_new->extension="sdw";
-    }
     else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
     {	/* Flash */
       file_recovery_new->extension="fla";
-    }
-    else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-    { /* Publisher */
-      file_recovery_new->extension="pub";
     }
     else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
 	|| td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
