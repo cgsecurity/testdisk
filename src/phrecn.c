@@ -406,7 +406,7 @@ static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbo
 	{
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	  { 
-	    log_critical("Cannot write to file %s\n", file_recovery.filename);
+	    log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
 	    ind_stop=3;
 	  }
 	}
@@ -1038,7 +1038,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 	{
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	  { 
-	    log_critical("Cannot write file %s:%s\n", file_recovery.filename, strerror(errno));
+	    log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
 	    ind_stop=3;
 	  }
 	}
