@@ -49,8 +49,8 @@
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
 /* #define DEBUG_FREE */
 
-static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
-static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
+static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
+static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);
 static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
 static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
@@ -123,7 +123,11 @@ static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *li
   }
 }
 
-static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
+/*
+ * new_current_search_space!=NULL
+ * offset!=NULL
+ */
+static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   struct td_list_head *search_walker = NULL;
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
@@ -145,37 +149,36 @@ static alloc_data_t *update_search_space(const file_recovery_t *file_recovery, a
       {
 	const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
         uint64_t end=(element->end-(element->start%blocksize)+blocksize-1+1)/blocksize*blocksize+(element->start%blocksize)-1;
-        list_search_space=update_search_space_aux(list_search_space, element->start, end, new_current_search_space, offset);
+        update_search_space_aux(list_search_space, element->start, end, new_current_search_space, offset);
       }
-      return list_search_space;
+      return ;
     }
   }
-  return list_search_space;
 }
 
-alloc_data_t *del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end)
+void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end)
 {
-  return update_search_space_aux(list_search_space, start, end, NULL, NULL);
+  update_search_space_aux(list_search_space, start, end, NULL, NULL);
 }
 
-static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
+static void update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
   struct td_list_head *search_walker = NULL;
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
   log_trace("update_search_space_aux offset=%llu remove [%llu-%llu]\n",
-      (long long unsigned)((*offset)/512),
+      (long long unsigned)(offset==NULL?0:((*offset)/512)),
       (unsigned long long)(start/512),
       (unsigned long long)(end/512));
 #endif
-  if(start >= end)
-    return list_search_space;
+  if(start > end)
+    return ;
   td_list_for_each(search_walker, &list_search_space->list)
   {
     alloc_data_t *current_search_space;
     current_search_space=td_list_entry(search_walker, alloc_data_t, list);
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
     log_trace("update_search_space_aux offset=%llu remove [%llu-%llu] in [%llu-%llu]\n",
-        (long long unsigned)((*offset)/512),
+	(long long unsigned)(offset==NULL?0:((*offset)/512)),
         (unsigned long long)(start/512),
         (unsigned long long)(end/512),
         (unsigned long long)(current_search_space->start/512),
@@ -184,8 +187,8 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
     if(current_search_space->start==start)
     {
       const uint64_t pivot=current_search_space->end+1;
-      if(end+1<current_search_space->end)
-      { /* current_search_space->start==start end+1<current_search_space->end */
+      if(end < current_search_space->end)
+      { /* current_search_space->start==start end<current_search_space->end */
         if(offset!=NULL && new_current_search_space!=NULL &&
             current_search_space->start<=*offset && *offset<=end)
         {
@@ -194,11 +197,9 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
         }
         current_search_space->start=end+1;
         current_search_space->file_stat=NULL;
-        return list_search_space;
+        return ;
       }
       /* current_search_space->start==start current_search_space->end<=end */
-      if(list_search_space==current_search_space)
-        list_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
       if(offset!=NULL && new_current_search_space!=NULL &&
           current_search_space->start<=*offset && *offset<=current_search_space->end)
       {
@@ -207,7 +208,8 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
       }
       td_list_del(search_walker);
       free(current_search_space);
-      return update_search_space_aux(list_search_space, pivot, end, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, pivot, end, new_current_search_space, offset);
+      return ;
     }
     if(current_search_space->end==end)
     {
@@ -215,7 +217,7 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
 #ifdef DEBUG_UPDATE_SEARCH_SPACE
       log_trace("current_search_space->end==end\n");
 #endif
-      if(current_search_space->start+1<start)
+      if(current_search_space->start < start)
       { /* current_search_space->start<start current_search_space->end==end */
         if(offset!=NULL && new_current_search_space!=NULL &&
             start<=*offset && *offset<=current_search_space->end)
@@ -224,11 +226,9 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
           *offset=(*new_current_search_space)->start;
         }
         current_search_space->end=start-1;
-        return list_search_space;
+        return ;
       }
       /* start<=current_search_space->start current_search_space->end==end */
-      if(list_search_space==current_search_space)
-        list_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
       if(offset!=NULL && new_current_search_space!=NULL &&
           current_search_space->start<=*offset && *offset<=current_search_space->end)
       {
@@ -237,19 +237,22 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
       }
       td_list_del(search_walker);
       free(current_search_space);
-      return update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
+      return ;
     }
     if(start < current_search_space->start && current_search_space->start <= end)
     {
       const uint64_t pivot=current_search_space->start;
-      list_search_space=update_search_space_aux(list_search_space, start, pivot-1,  new_current_search_space, offset);
-      return update_search_space_aux(list_search_space, pivot, end, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, start, pivot-1,  new_current_search_space, offset);
+      update_search_space_aux(list_search_space, pivot, end,      new_current_search_space, offset);
+      return ;
     }
     if(start <= current_search_space->end && current_search_space->end < end)
     {
       const uint64_t pivot=current_search_space->end;
-      list_search_space=update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
-      return update_search_space_aux(list_search_space, pivot+1, end, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, start, pivot, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, pivot+1, end, new_current_search_space, offset);
+      return ;
     }
     if(current_search_space->start < start && end < current_search_space->end)
     {
@@ -265,10 +268,10 @@ static alloc_data_t *update_search_space_aux(alloc_data_t *list_search_space, co
       {
         *new_current_search_space=new_free_space;
       }
-      return update_search_space_aux(list_search_space, start, end, new_current_search_space, offset);
+      update_search_space_aux(list_search_space, start, end, new_current_search_space, offset);
+      return ;
     }
   }
-  return list_search_space;
 }
 
 void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition)
@@ -658,7 +661,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     }
     else if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING && status!=STATUS_FIND_OFFSET)
     {
-      list_search_space=update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
+      update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
       file_recovered=1;
     }
     free_list_allocation(&file_recovery->location);
