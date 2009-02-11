@@ -539,13 +539,15 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     return -1;
   }
   cluster = file->stat.st_ino;
-  log_trace("fat_copy dst=%s first_cluster=%u size=%lu\n", new_file,
-      cluster, (long unsigned)file_size);
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
   part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
   no_of_cluster=(part_size-start_data)/sectors_per_cluster;
+  log_trace("fat_copy dst=%s first_cluster=%u (%llu) size=%lu\n", new_file,
+      cluster,
+      (long long unsigned)start_data+(cluster-2)*sectors_per_cluster,
+      (long unsigned)file_size);
 
   while(cluster>=2 && cluster<=no_of_cluster+2 && file_size>0)
   {
