@@ -78,10 +78,18 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
       if(disk_car->pread(disk_car, buffer, 512, partition->part_offset) != 512)
       {
 	free(buffer);
+	dir_data.close(&dir_data);
 	return 0;
       }
-      no_of_cluster=le64(ntfs_header->sectors_nbr)/ntfs_header->sectors_per_cluster;
       cluster_size=ntfs_header->sectors_per_cluster*ntfs_sector_size(ntfs_header);
+      if(cluster_size==0)
+      {
+	free(buffer);
+	dir_data.close(&dir_data);
+	return 0;
+      }
+      no_of_cluster=(le64(ntfs_header->sectors_nbr) < partition->part_size ? le64(ntfs_header->sectors_nbr) : partition->part_size);
+      no_of_cluster/=ntfs_header->sectors_per_cluster;
     }
     for(lcn=0;lcn<no_of_cluster;lcn++)
     {
@@ -94,18 +102,22 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	memset(buffer, 0x00, SIZEOF_BUFFER);
 	bmplcn = lcn & (~((SIZEOF_BUFFER << 3) - 1));
 	attr = ntfs_attr_open(ls->vol->lcnbmp_ni, AT_DATA, AT_UNNAMED, 0);
-	if(attr)
-	{
-	  if (ntfs_attr_pread(attr, (bmplcn>>3), SIZEOF_BUFFER, buffer) < 0)
-	  {
-	    log_error("Couldn't read $Bitmap\n");
-	  }
-	  ntfs_attr_close(attr);
-	}
-	else
+	if(attr==NULL)
 	{
 	  log_error("Couldn't open $Bitmap\n");
+	  free(buffer);
+	  dir_data.close(&dir_data);
+	  return 0;
 	}
+	if (ntfs_attr_pread(attr, (bmplcn>>3), SIZEOF_BUFFER, buffer) < 0)
+	{
+	  log_error("Couldn't read $Bitmap\n");
+	  ntfs_attr_close(attr);
+	  free(buffer);
+	  dir_data.close(&dir_data);
+	  return 0;
+	}
+	ntfs_attr_close(attr);
       }
 
       bit  = 1 << (lcn & 7);
