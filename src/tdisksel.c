@@ -66,19 +66,18 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   const list_disk_t *current_disk;
   static struct MenuItem menuMain[]=
   {
-    { 'P', "Previous",""},
-    { 'N', "Next","" },
-    { 'O',"Proceed",""},
-    { 'Q',"Quit","Quit program"},
-    { 0,NULL,NULL}
+    { 'P', "Previous", ""},
+    { 'N', "Next", "" },
+    { 'O', "Proceed", ""},
+    { 'S', "Sudo", "Use the sudo command to restart as root"},
+    { 'Q', "Quit", "Quit program"},
+    {  0,  NULL, NULL}
   };
   if(list_disk==NULL)
   {
     log_critical("No disk found\n");
-    use_sudo=intrf_no_disk_ncurses("TestDisk");
+    return intrf_no_disk_ncurses("TestDisk");
   }
-  if(list_disk==NULL || use_sudo>0)
-    return use_sudo;
   current_disk=list_disk;
   /* ncurses interface */
   while(1)
@@ -110,10 +109,6 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	wattroff(stdscr, A_REVERSE);
       }
     }
-    if(i<=NBR_DISK_MAX && element_disk==NULL)
-      options="OQ";
-    else
-      options="PNOQ";
     {
       int line=INTER_NOTE_Y;
       mvwaddstr(stdscr,line++,0,"Note: ");
@@ -128,6 +123,9 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
         if(has_colors())
           wbkgdset(stdscr,' ' | COLOR_PAIR(0));
         wmove(stdscr,line++,0);
+#ifdef SUDO_BIN
+	use_sudo=1;
+#endif
       }
 #endif
 #endif
@@ -136,6 +134,20 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
       wmove(stdscr,line,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
+    }
+    if(use_sudo > 0)
+    {
+      if(i<=NBR_DISK_MAX && element_disk==NULL)
+	options="OSQ";
+      else
+	options="PNOSQ";
+    }
+    else
+    {
+      if(i<=NBR_DISK_MAX && element_disk==NULL)
+	options="OQ";
+      else
+	options="PNOQ";
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,NULL);
@@ -189,6 +201,9 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	  }
 	}
 	break;
+      case 's':
+      case 'S':
+	return 1;
       case 'q':
       case 'Q':
 	return 0;

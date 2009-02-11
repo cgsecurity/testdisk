@@ -69,6 +69,7 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
   unsigned int menu=0;
   int offset=0;
   int pos_num=0;
+  int use_sudo=0;
   const list_disk_t *element_disk;
   const list_disk_t *current_disk=list_disk;
   static const struct MenuItem menuMain[]=
@@ -112,10 +113,6 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	wattroff(stdscr, A_REVERSE);
       }
     }
-    if(i<=NBR_DISK_MAX && element_disk==NULL)
-      options="OQ";
-    else
-      options="PNOQ";
     {
       mvwaddstr(stdscr, INTER_NOTE_Y,0,"Note: ");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -129,6 +126,9 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	wprintw(stdscr,"Some disks won't appear unless you're root user.");
         if(has_colors())
           wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+#ifdef SUDO_BIN
+	use_sudo=1;
+#endif
       }
 #endif
 #endif
@@ -139,6 +139,20 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
       wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
       wmove(stdscr, INTER_NOTE_Y+3, 0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
+    }
+    if(use_sudo > 0)
+    {
+      if(i<=NBR_DISK_MAX && element_disk==NULL)
+	options="OSQ";
+      else
+	options="PNOSQ";
+    }
+    else
+    {
+      if(i<=NBR_DISK_MAX && element_disk==NULL)
+	options="OQ";
+      else
+	options="PNOQ";
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,
 	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
