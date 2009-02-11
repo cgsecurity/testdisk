@@ -172,7 +172,7 @@ static void update_search_space_aux(alloc_data_t *list_search_space, const uint6
 #endif
   if(start > end)
     return ;
-  td_list_for_each(search_walker, &list_search_space->list)
+  td_list_for_each_prev(search_walker, &list_search_space->list)
   {
     alloc_data_t *current_search_space;
     current_search_space=td_list_entry(search_walker, alloc_data_t, list);
