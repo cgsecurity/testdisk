@@ -69,7 +69,6 @@ static void register_header_check_mov(file_stat_t *file_stat)
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i=0;
-  unsigned int prev_atom_skip=0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
       file_recovery->calculated_file_size == file_recovery->file_size)
@@ -173,7 +172,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 1;
       }
     }
-    if(prev_atom_skip==1 && buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t')
+    if(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t')
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
@@ -182,11 +181,6 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
     }
-    if(buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p')
-      prev_atom_skip=1;
-    else
-      prev_atom_skip=0;
-
     i+=atom_size;
   }
   return 0;
