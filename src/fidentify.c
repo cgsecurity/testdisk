@@ -155,7 +155,7 @@ int main(int argc, char **argv)
   log_handle=log_open("fidentify.log", TD_LOG_CREATE);
   if(log_handle!=NULL)
   {
-    unsigned int i;
+    int i;
     time_t my_time;
 #ifdef HAVE_DUP2
     dup2(fileno(log_handle),2);
