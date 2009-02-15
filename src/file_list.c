@@ -41,6 +41,7 @@ extern const file_hint_t file_hint_amd;
 extern const file_hint_t file_hint_amr;
 extern const file_hint_t file_hint_apa;
 extern const file_hint_t file_hint_ape;
+extern const file_hint_t file_hint_apple;
 extern const file_hint_t file_hint_arj;
 extern const file_hint_t file_hint_asf;
 extern const file_hint_t file_hint_asm;
@@ -93,6 +94,7 @@ extern const file_hint_t file_hint_fasttxt;
 extern const file_hint_t file_hint_flp;
 extern const file_hint_t file_hint_flv;
 extern const file_hint_t file_hint_fob;
+extern const file_hint_t file_hint_fp7;
 extern const file_hint_t file_hint_frm;
 extern const file_hint_t file_hint_fs;
 extern const file_hint_t file_hint_gho;
@@ -100,6 +102,7 @@ extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gpg;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_hds;
+extern const file_hint_t file_hint_hr9;
 extern const file_hint_t file_hint_ico;
 extern const file_hint_t file_hint_ifo;
 extern const file_hint_t file_hint_imb;
@@ -108,6 +111,7 @@ extern const file_hint_t file_hint_iso;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
+extern const file_hint_t file_hint_ldf;
 extern const file_hint_t file_hint_logic;
 extern const file_hint_t file_hint_lnk;
 extern const file_hint_t file_hint_m2ts;
@@ -214,6 +218,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_amr  },
   { .enable=0, .file_hint=&file_hint_apa  },
   { .enable=0, .file_hint=&file_hint_ape  },
+  { .enable=0, .file_hint=&file_hint_apple },
   { .enable=0, .file_hint=&file_hint_arj  },
   { .enable=0, .file_hint=&file_hint_asf  },
   { .enable=0, .file_hint=&file_hint_asm  },
@@ -265,6 +270,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_flp  },
   { .enable=0, .file_hint=&file_hint_flv  },
   { .enable=0, .file_hint=&file_hint_fob  },
+  { .enable=0, .file_hint=&file_hint_fp7  },
   { .enable=0, .file_hint=&file_hint_frm  },
   { .enable=0, .file_hint=&file_hint_fs   },
   { .enable=0, .file_hint=&file_hint_gho  },
@@ -272,6 +278,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_gpg  },
   { .enable=0, .file_hint=&file_hint_gz   },
   { .enable=0, .file_hint=&file_hint_hds  },
+  { .enable=0, .file_hint=&file_hint_hr9  },
   { .enable=0, .file_hint=&file_hint_ico  },
   { .enable=0, .file_hint=&file_hint_ifo  },
   { .enable=0, .file_hint=&file_hint_imb  },
@@ -280,6 +287,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_itunes  },
   { .enable=0, .file_hint=&file_hint_jpg  },
   { .enable=0, .file_hint=&file_hint_kdb  },
+  { .enable=0, .file_hint=&file_hint_ldf  },
   { .enable=0, .file_hint=&file_hint_logic},
   { .enable=0, .file_hint=&file_hint_lnk  },
   { .enable=0, .file_hint=&file_hint_m2ts },

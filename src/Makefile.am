@@ -39,6 +39,7 @@ file_C			= filegen.c \
 			  file_amr.c \
 			  file_apa.c \
 			  file_ape.c \
+			  file_apple.c \
 			  file_arj.c \
 			  file_asf.c \
 			  file_asm.c \
@@ -90,6 +91,7 @@ file_C			= filegen.c \
 			  file_flp.c \
 			  file_flv.c \
 			  file_fob.c \
+			  file_fp7.c \
 			  file_frm.c \
 			  file_fs.c \
 			  file_gho.c \
@@ -97,6 +99,7 @@ file_C			= filegen.c \
 			  file_gpg.c \
 			  file_gz.c \
 			  file_hds.c \
+			  file_hr9.c \
 			  file_ico.c \
 			  file_ifo.c \
 			  file_imb.c \
@@ -105,6 +108,7 @@ file_C			= filegen.c \
 			  file_itu.c \
 			  file_jpg.c \
 			  file_kdb.c \
+			  file_ldf.c \
 			  file_lnk.c \
 			  file_logic.c \
 			  file_m2ts.c \
