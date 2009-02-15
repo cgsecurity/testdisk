@@ -43,10 +43,16 @@ const file_hint_t file_hint_als= {
   .register_header_check=&register_header_check_als
 };
 
-static const unsigned char als_header[24]= {
-  0xab, 0x1e,  'V',  'x', 0x03, 'W', 0x00, 0x00,
-  0x00, 0x00, 0x06, 0x0c,  'L', 'i',  'v',  'e',
-   'D',  'o',  'c',  'u',  'm', 'e',  'n',  't'
+/* Header
+ * 0000  ab 1e 56 78 03 XX 00 00  00 00 XX 0c 4c 69 76 65  |  Vx        Live|
+ * 0010  44 6f 63 75 6d 65 6e 74  XX 00 00 00 00 XX XX XX  |Document        |
+ */
+static const unsigned char als_header[5]= {
+  0xab, 0x1e,  'V',  'x', 0x03
+};
+static const unsigned char als_header2[12]= {
+  0x0c, 'L', 'i', 'v', 'e', 'D',  'o',  'c',
+   'u', 'm', 'e', 'n', 't'
 };
 
 static void register_header_check_als(file_stat_t *file_stat)
@@ -56,7 +62,8 @@ static void register_header_check_als(file_stat_t *file_stat)
 
 static int header_check_als(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,als_header,sizeof(als_header))==0)
+  if(memcmp(buffer,als_header,sizeof(als_header))==0 &&
+      memcmp(buffer+11,als_header2,sizeof(als_header2))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_als.extension;
