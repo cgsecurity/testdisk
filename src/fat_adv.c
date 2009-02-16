@@ -52,6 +52,7 @@
 #include "log.h"
 #include "log_part.h"
 #include "fat_adv.h"
+#include "fat_cluster.h"
 #ifdef HAVE_NCURSES
 #include "fatn.h"
 #endif
@@ -60,15 +61,7 @@
 #define INTER_FAT_ASK_Y	23
 extern const char *monstr[];
 
-typedef struct sector_cluster_struct sector_cluster_t;
 typedef struct info_offset_struct info_offset_t;
-typedef struct cluster_offset_struct cluster_offset_t;
-
-struct sector_cluster_struct
-{
-  unsigned int sector;
-  unsigned int cluster;
-};
 
 struct info_offset_struct
 {
@@ -77,25 +70,15 @@ struct info_offset_struct
   unsigned int  fat_type;
 };
 
-struct cluster_offset_struct
-{
-  unsigned int  sectors_per_cluster;
-  unsigned long int offset;
-  unsigned int  nbr;
-  unsigned int  first_sol;
-};
 static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface, const unsigned int expert, unsigned int *fats);
 static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface,unsigned int *nbr_offset,info_offset_t *info_offset, const unsigned int max_nbr_offset);
 
 static unsigned int fat_find_fat_start(const unsigned char *buffer,const int p_fat12, const int p_fat16, const int p_fat32,unsigned long int*fat_offset, const unsigned int sector_size);
 
-static upart_type_t no_of_cluster2part_type(const unsigned long int no_of_cluster);
 static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int sectors_per_cluster, const unsigned int fat_length,const int interface, const upart_type_t upart_type, const unsigned int fats, char **current_cmd);
 static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster, const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats);
 static int write_FAT_boot_code_aux(unsigned char *buffer);
-static int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset);
 static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset,const int verbose);
-static int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors);
 static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset, const int verbose);
 static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length,const int verbose, unsigned int root_size_max,const upart_type_t upart_type, const unsigned int fats);
 static int calcul_sectors_per_cluster(const upart_type_t upart_type, const unsigned long int data_size, const unsigned int fat_length, const unsigned int sector_size);
@@ -1865,181 +1848,6 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
   return UP_UNK;
 }
 #endif
-
-/* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
- * */
-static int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org)
-{
-  unsigned int nbr_subdir=0;
-  sector_cluster_t sector_cluster[10];
-  {
-    uint64_t offset;
-    uint64_t skip_offset;
-    int ind_stop=0;
-    unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-#ifdef HAVE_NCURSES
-    if(interface)
-    {
-      wmove(stdscr,22,0);
-      wattrset(stdscr, A_REVERSE);
-      waddstr(stdscr,"  Stop  ");
-      wattroff(stdscr, A_REVERSE);
-    }
-#endif
-    /* 2 fats, maximum cluster size=128 */
-    skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*1.5/disk_car->sector_size*2)*disk_car->sector_size;
-    if(verbose>0)
-    {
-      log_verbose("find_sectors_per_cluster skip_sectors=%lu (skip_offset=%lu)\n",
-          (unsigned long)(skip_offset/disk_car->sector_size),
-          (unsigned long)skip_offset);
-    }
-    for(offset=skip_offset;(offset<partition->part_size)&&!ind_stop&&(nbr_subdir<10);offset+=disk_car->sector_size)
-    {
-#ifdef HAVE_NCURSES
-      if(interface>0 && ((offset&(1024*disk_car->sector_size-1))==0))
-      {
-        wmove(stdscr,9,0);
-        wclrtoeol(stdscr);
-        wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size),nbr_subdir);
-        wrefresh(stdscr);
-        ind_stop|=check_enter_key_or_s(stdscr);
-      }
-#endif
-      if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
-      {
-        if(memcmp(&buffer[0],".          ",8+3)==0 && memcmp(&buffer[0x20],"..         ",8+3)==0)
-        {
-          unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
-            (buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
-          log_info("sector %lu, cluster %lu\n",
-              (unsigned long)(offset/disk_car->sector_size), cluster);
-          sector_cluster[nbr_subdir].cluster=cluster;
-          sector_cluster[nbr_subdir].sector=offset/disk_car->sector_size;
-          nbr_subdir++;
-#ifdef HAVE_NCURSES
-          if(dump_ind>0)
-            dump_ncurses(buffer,disk_car->sector_size);
-#endif
-        }
-      }
-    }
-    free(buffer);
-  }
-  return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk_car->sector_size);
-}
-
-static int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors)
-{
-  cluster_offset_t *cluster_offset;
-  unsigned int i,j;
-  unsigned int nbr_sol=0;
-  if(nbr_sector_cluster<2)
-    return 0;
-  cluster_offset=(cluster_offset_t *)MALLOC(nbr_sector_cluster*nbr_sector_cluster*sizeof(cluster_offset_t));
-  log_info("find_sectors_per_cluster_aux\n");
-  for(i=0;i<nbr_sector_cluster-1;i++)
-  {
-    for(j=i+1;j<nbr_sector_cluster;j++)
-    {
-      if(sector_cluster[j].cluster > sector_cluster[i].cluster)
-      {
-        unsigned int sectors_per_cluster_tmp=(sector_cluster[j].sector-sector_cluster[i].sector)/(sector_cluster[j].cluster-sector_cluster[i].cluster);
-        switch(sectors_per_cluster_tmp)
-        {
-          case 1:
-          case 2:
-          case 4:
-          case 8:
-          case 16:
-          case 32:
-          case 64:
-          case 128:
-            if(sector_cluster[i].sector > (uint64_t)(sector_cluster[i].cluster-2) * sectors_per_cluster_tmp)
-            {
-              unsigned int sol_cur;
-              unsigned int found=0;
-              uint64_t offset_tmp=sector_cluster[i].sector-(uint64_t)(sector_cluster[i].cluster-2)*sectors_per_cluster_tmp;
-              for(sol_cur=0;sol_cur<nbr_sol && !found;sol_cur++)
-              {
-                if(cluster_offset[sol_cur].sectors_per_cluster==sectors_per_cluster_tmp &&
-                    cluster_offset[sol_cur].offset==offset_tmp)
-                {
-                  if(cluster_offset[sol_cur].first_sol==i)
-                  {
-                    cluster_offset[sol_cur].nbr++;
-                  }
-                  /* log_debug("sectors_per_cluster=%u offset=%lu nbr=%u\n",cluster_offset[sol_cur].sectors_per_cluster,cluster_offset[sol_cur].offset,cluster_offset[sol_cur].nbr); */
-                  found=1;
-                }
-              }
-              if(!found)
-              {
-                cluster_offset[nbr_sol].sectors_per_cluster=sectors_per_cluster_tmp;
-                cluster_offset[nbr_sol].offset=offset_tmp;
-                cluster_offset[nbr_sol].nbr=1;
-                cluster_offset[nbr_sol].first_sol=i;
-                nbr_sol++;
-              }
-            }
-            break;
-        }
-      }
-    }
-  }
-  /* Show results */
-  {
-    unsigned int nbr_max=0;
-    for(i=0;i<nbr_sol;i++)
-    {
-      if(verbose>0)
-      {
-        log_verbose("sectors_per_cluster=%u offset=%lu nbr=%u ",
-            cluster_offset[i].sectors_per_cluster,
-            cluster_offset[i].offset,
-            cluster_offset[i].nbr);
-        switch(no_of_cluster2part_type((part_size_in_sectors-cluster_offset[i].offset)/cluster_offset[i].sectors_per_cluster))
-        {
-          case UP_FAT12:
-            log_info("FAT : 12\n");
-            break;
-          case UP_FAT16:
-            log_info("FAT : 16\n");
-            break;
-          case UP_FAT32:
-            log_info("FAT : 32\n");
-            break;
-          default:	/* No compiler warning */
-            break;
-        }
-      }
-      if(cluster_offset[i].nbr>nbr_max)
-      {
-	nbr_max=cluster_offset[i].nbr;
-	*sectors_per_cluster=cluster_offset[i].sectors_per_cluster;
-	*offset=cluster_offset[i].offset;
-      }
-    }
-    free(cluster_offset);
-    if(nbr_max==0)
-      return 0;
-    log_info("Selected: sectors_per_cluster=%u offset=%lu nbr=%u\n", *sectors_per_cluster,
-        (long unsigned int)(*offset),nbr_max);
-    return 1;
-  }
-}
-
-static upart_type_t no_of_cluster2part_type(const unsigned long int no_of_cluster)
-{
-  if(no_of_cluster<65525)
-  {
-    if(no_of_cluster<4085)
-      return UP_FAT12;
-    else
-      return UP_FAT16;
-  }
-  return UP_FAT32;
-}
 
 int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface,const unsigned int expert, char**current_cmd)
 {
