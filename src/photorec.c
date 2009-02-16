@@ -546,7 +546,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
   return blocksize;
 }
 
-alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset)
+void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset)
 {
   struct td_list_head *search_walker = NULL;
   struct td_list_head *search_walker_next = NULL;
@@ -558,12 +558,9 @@ alloc_data_t * update_blocksize(unsigned int blocksize, alloc_data_t *list_searc
     if(current_search_space->start>current_search_space->end)
     {
       td_list_del(search_walker);
-      if(list_search_space==current_search_space)
-        list_search_space=td_list_entry(search_walker_next, alloc_data_t, list);
       free(current_search_space);
     }
   }
-  return list_search_space;
 }
 
 static void free_list_allocation(alloc_list_t *list_allocation)
