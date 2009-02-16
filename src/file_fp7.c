@@ -34,7 +34,7 @@ static int header_check_fp7(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_fp7= {
   .extension="fp7",
-  .description="",
+  .description="File Maker Pro",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
