@@ -50,7 +50,7 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
   buffer=(unsigned char *)MALLOC(sector_size);
   p16=(const uint16_t*)buffer;
   del_search_space(list_search_space, partition->part_offset,
-      partition->part_offset+(uint64_t)(start_data*sector_size));
+      partition->part_offset+(uint64_t)(start_data*sector_size)-1);
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
     unsigned int offset_o;
