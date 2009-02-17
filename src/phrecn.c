@@ -69,9 +69,9 @@
 #include "phcfg.h"
 #include "pblocksize.h"
 #include "askloc.h"
+#include "pnext.h"
 
 /* #define DEBUG */
-/* #define DEBUG_GET_NEXT_SECTOR */
 /* #define DEBUG_BF */
 #define READ_SIZE 1024*512
 
@@ -114,58 +114,6 @@ static inline int ind_block(const unsigned char *buffer, const unsigned int bloc
     return 0;
   }
   return 1;	/* Ok: ind_block points to non-fragmented block */
-}
-
-static
-#ifndef DEBUG_GET_NEXT_SECTOR
-inline
-#endif
-void get_next_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
-{
-#ifdef DEBUG_GET_NEXT_SECTOR
-  log_trace(" get_next_header %llu (%llu-%llu)\n",
-      (unsigned long long)((*offset)/512),
-      (unsigned long long)((*current_search_space)->start/512),
-      (unsigned long long)((*current_search_space)->end)/512);
-#endif
-  if((*current_search_space) != list_search_space)
-    *current_search_space=td_list_entry((*current_search_space)->list.next, alloc_data_t, list);
-  *offset=(*current_search_space)->start;
-}
-
-static
-#ifndef DEBUG_GET_NEXT_SECTOR
-inline
-#endif
-void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
-{
-#ifdef DEBUG_GET_NEXT_SECTOR
-  log_debug(" get_next_sector %llu (%llu-%llu)\n",
-      (unsigned long long)((*offset)/512),
-      (unsigned long long)((*current_search_space)->start/512),
-      (unsigned long long)((*current_search_space)->end)/512);
-#endif
-  if((*current_search_space) == list_search_space)
-  {
-    return ;
-  }
-#ifdef DEBUG_GET_NEXT_SECTOR
-  if(! ((*current_search_space)->start <= *offset && (*offset)<=(*current_search_space)->end))
-  {
-    log_critical("BUG: get_next_sector stop everything %llu (%llu-%llu)\n",
-        (unsigned long long)((*offset)/512),
-        (unsigned long long)((*current_search_space)->start/512),
-        (unsigned long long)((*current_search_space)->end/512));
-    log_flush();
-    bug();
-    log_close();
-    exit(1);
-  }
-#endif
-  if((*offset)+blocksize <= (*current_search_space)->end)
-    *offset+=blocksize;
-  else
-    get_next_header(list_search_space, current_search_space, offset);
 }
 
 static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
@@ -1842,10 +1790,3 @@ void interface_file_select(file_enable_t *files_enable, char**current_cmd)
   interface_file_select_ncurses(files_enable);
 #endif
 }
-
-#ifdef DEBUG_GET_NEXT_SECTOR
-void bug(void)
-{
-  log_critical("bug\n");
-}
-#endif
