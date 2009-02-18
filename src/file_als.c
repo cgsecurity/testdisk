@@ -32,12 +32,13 @@
 
 static void register_header_check_als(file_stat_t *file_stat);
 static int header_check_als(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_check_als(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_als= {
   .extension="als",
   .description="Ableton Live Sets",
   .min_header_distance=0,
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .max_filesize=100*1024*1024,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_als
@@ -50,7 +51,7 @@ const file_hint_t file_hint_als= {
 static const unsigned char als_header[5]= {
   0xab, 0x1e,  'V',  'x', 0x03
 };
-static const unsigned char als_header2[12]= {
+static const unsigned char als_header2[13]= {
   0x0c, 'L', 'i', 'v', 'e', 'D',  'o',  'c',
    'u', 'm', 'e', 'n', 't'
 };
@@ -67,7 +68,20 @@ static int header_check_als(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_als.extension;
+    file_recovery_new->file_check=file_check_als;
     return 1;
   }
   return 0;
+}
+
+static void file_check_als(file_recovery_t *file_recovery)
+{
+  static const unsigned char als_footer[0x16]= {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,
+    0x80, 0x00, 0x00, 0x00, 0x80, 0x01
+  };
+  file_search_footer(file_recovery, als_footer, sizeof(als_footer));
+  if(file_recovery->file_size>0)
+    file_recovery->file_size+=7;
 }
