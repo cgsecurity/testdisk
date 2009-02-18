@@ -60,6 +60,7 @@ extern const file_hint_t file_hint_compress;
 extern const file_hint_t file_hint_crw;
 extern const file_hint_t file_hint_ctg;
 extern const file_hint_t file_hint_cwk;
+extern const file_hint_t file_hint_d2s;
 extern const file_hint_t file_hint_dat;
 extern const file_hint_t file_hint_dbf;
 extern const file_hint_t file_hint_dim;
@@ -123,6 +124,7 @@ extern const file_hint_t file_hint_mdf;
 extern const file_hint_t file_hint_mfa;
 extern const file_hint_t file_hint_mfg;
 extern const file_hint_t file_hint_mid;
+extern const file_hint_t file_hint_mk5;
 extern const file_hint_t file_hint_mkv;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_mp3;
@@ -237,6 +239,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_crw  },
   { .enable=0, .file_hint=&file_hint_ctg  },
   { .enable=0, .file_hint=&file_hint_cwk  },
+  { .enable=0, .file_hint=&file_hint_d2s  },
   { .enable=0, .file_hint=&file_hint_dat  },
   { .enable=0, .file_hint=&file_hint_dbf  },
   { .enable=0, .file_hint=&file_hint_dim  },
@@ -299,6 +302,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_mfa  },
   { .enable=0, .file_hint=&file_hint_mfg  },
   { .enable=0, .file_hint=&file_hint_mid  },
+  { .enable=0, .file_hint=&file_hint_mk5  },
   { .enable=0, .file_hint=&file_hint_mkv  },
   { .enable=0, .file_hint=&file_hint_mov  },
   { .enable=0, .file_hint=&file_hint_mp3  },

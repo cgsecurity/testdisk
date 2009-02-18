@@ -58,6 +58,7 @@ file_C			= filegen.c \
 			  file_crw.c \
 			  file_ctg.c \
 			  file_cwk.c \
+			  file_d2s.c \
 			  file_dat.c \
 			  file_dbf.c \
 			  file_dim.c \
@@ -120,6 +121,7 @@ file_C			= filegen.c \
 			  file_mfa.c \
 			  file_mfg.c \
 			  file_mid.c \
+			  file_mk5.c \
 			  file_mkv.c \
 			  file_mov.c \
 			  file_mp3.c \
@@ -206,8 +208,8 @@ photorec_C		= photorec.c phcfg.c ext2grp.c ext2_dir.c fat_dir.c fatp.c list.c nt
 
 photorec_H		= photorec.h phcfg.h dir.c dir.h ext2grp.h ext2p.c ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h sessionp.h
 
-photorec_ncurses_C	= addpart.c askloc.c chgtype.c chgtypen.c geometry.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdisksel.c pfree_whole.c phrecn.c ppartsel.c
-photorec_ncurses_H	= addpart.h askloc.h chgtype.h chgtypen.h geometry.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdisksel.h pfree_whole.h pnext.h phrecn.h ppartsel.h
+photorec_ncurses_C	= addpart.c askloc.c chgtype.c chgtypen.c fat_cluster.c geometry.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdisksel.c pfree_whole.c phrecn.c ppartsel.c
+photorec_ncurses_H	= addpart.h askloc.h chgtype.h chgtypen.h fat_cluster.h geometry.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdisksel.h pfree_whole.h pnext.h phrecn.h ppartsel.h
 
 photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) $(fs_C) $(fs_H) $(ICON_PHOTOREC)
 
