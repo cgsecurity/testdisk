@@ -35,6 +35,7 @@
 
 static void register_header_check_gz(file_stat_t *file_stat);
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_rename_gz(const char *old_filename);
 
 const file_hint_t file_hint_gz= {
   .extension="gz",
@@ -48,6 +49,21 @@ const file_hint_t file_hint_gz= {
 
 static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
 static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
+/* flags:
+   bit 0   FTEXT
+   bit 1   FHCRC
+   bit 2   FEXTRA
+   bit 3   FNAME
+   bit 4   FCOMMENT
+   bit 5   reserved
+   bit 6   reserved
+   bit 7   reserved
+ */
+#define GZ_FTEXT 	1
+#define GZ_FHCRC	2
+#define GZ_FEXTRA	4
+#define GZ_FNAME	8
+#define GZ_FCOMMENT     0x10
 
 static void register_header_check_gz(file_stat_t *file_stat)
 {
@@ -69,21 +85,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     unsigned int off=10;
     const unsigned int flags=buffer[3];
     int err;
-    /* flags:
-    bit 0   FTEXT
-    bit 1   FHCRC
-    bit 2   FEXTRA
-    bit 3   FNAME
-    bit 4   FCOMMENT
-    bit 5   reserved
-    bit 6   reserved
-    bit 7   reserved
-    */
-#define GZ_FTEXT 	1
-#define GZ_FHCRC	2
-#define GZ_FEXTRA	4
-#define GZ_FNAME	8
-#define GZ_FCOMMENT     0x10
+
     /*
        4,5,6,7: mtime
        8: xfl/extra flags
@@ -147,6 +149,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       reset_file_recovery(file_recovery_new);
       file_recovery_new->min_filesize=22;
       file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
+      file_recovery_new->file_rename=&file_rename_gz;
       if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
       {
 	file_recovery_new->extension="kmy";
@@ -171,9 +174,38 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=22;
     file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
+    file_recovery_new->file_rename=&file_rename_gz;
     file_recovery_new->extension=file_hint_gz.extension;
     return 1;
 #endif
   }
   return 0;
+}
+
+static void file_rename_gz(const char *old_filename)
+{
+  unsigned char buffer[512];
+  FILE *file;
+  int buffer_size;
+  int off=10;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  fclose(file);
+  if(buffer_size<10)
+    return;
+  if(!(buffer[0]==0x1F && buffer[1]==0x8B && buffer[2]==0x08 && (buffer[3]&0xe0)==0))
+    return ;
+  {
+    const unsigned int flags=buffer[3];
+    if((flags&GZ_FEXTRA)!=0)
+    {
+      off+=2;
+      off+=buffer[10]|(buffer[11]<<8);
+    }
+    if((flags&GZ_FNAME)!=0)
+    {
+      file_rename(old_filename, buffer, buffer_size, off);
+    }
+  }
 }
