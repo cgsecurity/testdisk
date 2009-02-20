@@ -31,6 +31,7 @@
 
 static void register_header_check_d2s(file_stat_t *file_stat);
 static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_rename_d2s(const char *old_filename);
 
 const file_hint_t file_hint_d2s= {
   .extension="d2s",
@@ -62,7 +63,20 @@ static int header_check_d2s(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->calculated_file_size=(buffer[8]<<0)+(buffer[9]<<8)+(buffer[10]<<16)+(buffer[11]<<24);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->file_rename=&file_rename_d2s;
     return 1;
   }
   return 0;
+}
+
+static void file_rename_d2s(const char *old_filename)
+{
+  unsigned char buffer[512];
+  FILE *file;
+  int buffer_size;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  fclose(file);
+  file_rename(old_filename, buffer, buffer_size, 0x14);
 }
