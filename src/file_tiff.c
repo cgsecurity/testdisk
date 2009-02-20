@@ -56,7 +56,6 @@ const file_hint_t file_hint_tiff= {
 
 static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
 static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
-#define TIFFTAG_MAKE                    271     /* scanner manufacturer name */
 
 static const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
 {
