@@ -78,6 +78,7 @@ struct file_recovery_struct
      It can modify file_recovery->calculated_file_size, not must not modify file_recovery->file_size
   */
   void (*file_check)(file_recovery_t *file_recovery);
+  void (*file_rename)(const char *old_filename);
 };
 
 struct file_hint_struct
@@ -129,6 +130,7 @@ void register_header_check(const unsigned int offset, const unsigned char *value
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 file_stat_t * init_file_stats(file_enable_t *files_enable);
+void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

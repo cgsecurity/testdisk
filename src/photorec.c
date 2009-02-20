@@ -724,6 +724,8 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     {
       if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
 	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
+      if(file_recovery->file_rename!=NULL)
+	file_recovery->file_rename(file_recovery->filename);
       if((++(*file_nbr))%MAX_FILES_PER_DIR==0)
       {
         *dir_num=photorec_mkdir(recup_dir,*dir_num+1);

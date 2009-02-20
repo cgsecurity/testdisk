@@ -2,7 +2,7 @@
 
     File: filegen.c
 
-    Copyright (C) 2007-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -339,4 +339,37 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   return file_stats;
 }
 
-
+/* The original filename begins at offset in buffer and is null terminated */
+void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset)
+{
+  /* new_filename is large enough to avoid a buffer overflow */
+  char new_filename[2048];
+  const char *src=old_filename;
+  const char *ext=src;
+  char *dst=&new_filename[0];
+  char *directory_sep=&new_filename[0];
+  int off=offset;
+  if(buffer_size <= offset)
+    return ;
+  *dst='\0';
+  while(*src!='\0')
+  {
+    if(*src=='/')
+      directory_sep=dst;
+    if(*src=='.')
+      ext=src;
+    *dst++ = *src++;
+  }
+  dst=directory_sep;
+  while(*dst!='.' && *dst!='\0')
+    dst++;
+  *dst++ = '_';
+  /* Add original filename */
+  while(off<buffer_size && buffer[off]!='\0')
+    *dst++ = buffer[off++];
+  /* Add extension */
+  while(*ext!='\0')
+    *dst++ = *ext++;
+  *dst='\0';
+  rename(old_filename, new_filename);
+}
