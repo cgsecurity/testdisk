@@ -38,89 +38,68 @@
 #include "log.h"
 #include "fat_cluster.h"
 
-typedef struct sector_cluster_struct sector_cluster_t;
-typedef struct cluster_offset_struct cluster_offset_t;
-
-struct sector_cluster_struct
-{
-  unsigned int sector;
-  unsigned int cluster;
-};
-
-struct cluster_offset_struct
-{
-  unsigned int  sectors_per_cluster;
-  unsigned long int offset;
-  unsigned int  nbr;
-  unsigned int  first_sol;
-};
-
-static int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors);
-
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
 int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org)
 {
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
+  uint64_t offset;
+  uint64_t skip_offset;
+  int ind_stop=0;
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+#ifdef HAVE_NCURSES
+  if(interface)
   {
-    uint64_t offset;
-    uint64_t skip_offset;
-    int ind_stop=0;
-    unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-#ifdef HAVE_NCURSES
-    if(interface)
-    {
-      wmove(stdscr,22,0);
-      wattrset(stdscr, A_REVERSE);
-      waddstr(stdscr,"  Stop  ");
-      wattroff(stdscr, A_REVERSE);
-    }
-#endif
-    /* 2 fats, maximum cluster size=128 */
-    skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*1.5/disk_car->sector_size*2)*disk_car->sector_size;
-    if(verbose>0)
-    {
-      log_verbose("find_sectors_per_cluster skip_sectors=%lu (skip_offset=%lu)\n",
-          (unsigned long)(skip_offset/disk_car->sector_size),
-          (unsigned long)skip_offset);
-    }
-    for(offset=skip_offset;(offset<partition->part_size)&&!ind_stop&&(nbr_subdir<10);offset+=disk_car->sector_size)
-    {
-#ifdef HAVE_NCURSES
-      if(interface>0 && ((offset&(1024*disk_car->sector_size-1))==0))
-      {
-        wmove(stdscr,9,0);
-        wclrtoeol(stdscr);
-        wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size),nbr_subdir);
-        wrefresh(stdscr);
-        ind_stop|=check_enter_key_or_s(stdscr);
-      }
-#endif
-      if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
-      {
-        if(memcmp(&buffer[0],".          ",8+3)==0 && memcmp(&buffer[0x20],"..         ",8+3)==0)
-        {
-          unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
-            (buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
-          log_info("sector %lu, cluster %lu\n",
-              (unsigned long)(offset/disk_car->sector_size), cluster);
-          sector_cluster[nbr_subdir].cluster=cluster;
-          sector_cluster[nbr_subdir].sector=offset/disk_car->sector_size;
-          nbr_subdir++;
-#ifdef HAVE_NCURSES
-          if(dump_ind>0)
-            dump_ncurses(buffer,disk_car->sector_size);
-#endif
-        }
-      }
-    }
-    free(buffer);
+    wmove(stdscr,22,0);
+    wattrset(stdscr, A_REVERSE);
+    waddstr(stdscr,"  Stop  ");
+    wattroff(stdscr, A_REVERSE);
   }
+#endif
+  /* 2 fats, maximum cluster size=128 */
+  skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*1.5/disk_car->sector_size*2)*disk_car->sector_size;
+  if(verbose>0)
+  {
+    log_verbose("find_sectors_per_cluster skip_sectors=%lu (skip_offset=%lu)\n",
+	(unsigned long)(skip_offset/disk_car->sector_size),
+	(unsigned long)skip_offset);
+  }
+  for(offset=skip_offset;(offset<partition->part_size)&&!ind_stop&&(nbr_subdir<10);offset+=disk_car->sector_size)
+  {
+#ifdef HAVE_NCURSES
+    if(interface>0 && ((offset&(1024*disk_car->sector_size-1))==0))
+    {
+      wmove(stdscr,9,0);
+      wclrtoeol(stdscr);
+      wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk_car->sector_size),(unsigned long)(partition->part_size/disk_car->sector_size),nbr_subdir);
+      wrefresh(stdscr);
+      ind_stop|=check_enter_key_or_s(stdscr);
+    }
+#endif
+    if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
+    {
+      if(memcmp(&buffer[0],".          ",8+3)==0 && memcmp(&buffer[0x20],"..         ",8+3)==0)
+      {
+	unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
+	  (buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
+	log_info("sector %lu, cluster %lu\n",
+	    (unsigned long)(offset/disk_car->sector_size), cluster);
+	sector_cluster[nbr_subdir].cluster=cluster;
+	sector_cluster[nbr_subdir].sector=offset/disk_car->sector_size;
+	nbr_subdir++;
+#ifdef HAVE_NCURSES
+	if(dump_ind>0)
+	  dump_ncurses(buffer,disk_car->sector_size);
+#endif
+      }
+    }
+  }
+  free(buffer);
   return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk_car->sector_size);
 }
 
-static int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors)
+int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors)
 {
   cluster_offset_t *cluster_offset;
   unsigned int i,j;
