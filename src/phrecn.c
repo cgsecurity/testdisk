@@ -69,6 +69,7 @@
 #include "phcfg.h"
 #include "pblocksize.h"
 #include "askloc.h"
+#include "fat_unformat.h"
 #include "pnext.h"
 
 /* #define DEBUG */
@@ -803,15 +804,6 @@ static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, con
 #endif
     }
   } /* end while(current_search_space!=list_search_space) */
-  {
-    uint64_t start_offset;
-    *blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
-#ifdef HAVE_NCURSES
-    if(expert>0)
-      *blocksize=menu_choose_blocksize(*blocksize, disk_car->sector_size, &start_offset);
-#endif
-    update_blocksize(*blocksize,list_search_space, start_offset);
-  }
   free(buffer_start);
   return 0;
 }
@@ -1216,6 +1208,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     switch(status)
     {
       case STATUS_FIND_OFFSET:			log_info("STATUS_FIND_OFFSET\n");	break;
+      case STATUS_UNFORMAT:			log_info("STATUS_UNFORMAT\n");	break;
       case STATUS_EXT2_ON:			log_info("STATUS_EXT2_ON\n");	break;
       case STATUS_EXT2_ON_BF:			log_info("STATUS_EXT2_ON_BF\n");	break;
       case STATUS_EXT2_OFF:			log_info("STATUS_EXT2_OFF\n");	break;
@@ -1242,30 +1235,24 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
 #endif
     if(status==STATUS_FIND_OFFSET && blocksize_is_known>0)
     {
-#ifdef HAVE_NCURSES
-      if(expert>0)
-      {
-	uint64_t offset=0;
-	if(!td_list_empty(&list_search_space->list))
-	{
-	  alloc_data_t *tmp;
-	  tmp=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-	  offset=tmp->start%blocksize;
-	}
-	blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &offset);
-	update_blocksize(blocksize,list_search_space, offset);
-      }
-#endif
       ind_stop=0;
+    }
+    else if(status==STATUS_UNFORMAT)
+    {
+      const unsigned int old_blocksize=blocksize;
+      blocksize=0;
+      ind_stop=fat_unformat(disk_car, partition, verbose, recup_dir, interface, &file_nbr, &blocksize, list_search_space, real_start_time, &dir_num, expert);
+      if(blocksize==0)
+	blocksize=old_blocksize;
+    }
+    else if(status==STATUS_FIND_OFFSET)
+    {
+      ind_stop=photorec_find_blocksize(disk_car, partition, verbose, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, expert);
     }
     else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
     {
       ind_stop=photorec_bf(disk_car, partition, verbose, paranoid, recup_dir, interface, file_stats, &file_nbr, blocksize, list_search_space, real_start_time, &dir_num, status, pass);
       session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose);
-    }
-    else if(status==STATUS_FIND_OFFSET)
-    {
-      ind_stop=photorec_find_blocksize(disk_car, partition, verbose, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, expert);
     }
     else
     {
@@ -1309,18 +1296,46 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
       switch(status)
       {
         case STATUS_FIND_OFFSET:
-          status=(mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-          file_nbr=0;
-          break;
-        case STATUS_EXT2_ON:
-          status=(paranoid>1?STATUS_EXT2_ON_BF:STATUS_EXT2_OFF);
-          break;
-        case STATUS_EXT2_ON_BF:
-          status=STATUS_EXT2_OFF;
-          break;
-        case STATUS_EXT2_OFF:
-          if(paranoid>1)
-          {
+	  {
+	    uint64_t start_offset;
+	    file_nbr=0;
+	    status=(mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+	    blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
+#ifdef HAVE_NCURSES
+	    if(expert>0)
+	    {
+	      if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
+		status=STATUS_UNFORMAT;
+	      else
+	      {
+		blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &start_offset);
+		update_blocksize(blocksize,list_search_space, start_offset);
+	      }
+	    }
+	    else
+	    {
+	      update_blocksize(blocksize,list_search_space, start_offset);
+	    }
+#else
+	    update_blocksize(blocksize,list_search_space, start_offset);
+#endif
+	  }
+	  break;
+	case STATUS_UNFORMAT:
+	  {
+	    status=(mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+	    file_nbr=0;
+	  }
+	  break;
+	case STATUS_EXT2_ON:
+	  status=(paranoid>1?STATUS_EXT2_ON_BF:STATUS_EXT2_OFF);
+	  break;
+	case STATUS_EXT2_ON_BF:
+	  status=STATUS_EXT2_OFF;
+	  break;
+	case STATUS_EXT2_OFF:
+	  if(paranoid>1)
+	  {
             status=STATUS_EXT2_OFF_BF;
           }
           else
@@ -1357,6 +1372,26 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
       switch(status)
       {
         case STATUS_FIND_OFFSET:
+	  file_nbr=0;
+          status=(mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
+#ifdef HAVE_NCURSES
+	  if(expert>0)
+	  {
+	    uint64_t offset=0;
+	    if(!td_list_empty(&list_search_space->list))
+	    {
+	      alloc_data_t *tmp;
+	      tmp=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+	      offset=tmp->start%blocksize;
+	    }
+	    blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &offset);
+	    update_blocksize(blocksize,list_search_space, offset);
+	    if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
+	      status=STATUS_UNFORMAT;
+	  }
+#endif
+	  break;
+	case STATUS_UNFORMAT:
           status=(mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
           file_nbr=0;
           break;
