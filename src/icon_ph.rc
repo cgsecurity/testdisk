@@ -1,4 +1,21 @@
-
 app                      ICON    DISCARDABLE     "../ico/photorec.ico"
 
-
+1 VERSIONINFO
+FILEVERSION 6, 11, 0, 0
+PRODUCTVERSION 6, 11, 0, 0
+FILEFLAGSMASK 0x3f
+FILEOS 0x4
+FILETYPE 0x1
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "000004b0"
+    BEGIN
+      VALUE "CompanyName", "CGSecurity"
+      VALUE "FileDescription", "PhotoRec"
+      VALUE "InternalName", "PhotoRec"
+      VALUE "LegalCopyright", "Copyright \251 2009"
+      VALUE "OriginalFilename", "photorec_win.exe"
+    END
+  END 
+END
