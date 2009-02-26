@@ -514,35 +514,25 @@ struct info_cluster_offset
 
 unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int default_blocksize, uint64_t *offset)
 {
-  int blocksize_ok=2;
-  unsigned int blocksize;
+  unsigned int blocksize=128*512;
+  struct td_list_head *search_walker = NULL;
   *offset=0;
-  for(blocksize=128*512;blocksize>=default_blocksize && blocksize_ok==2;blocksize=blocksize>>1)
+  if(td_list_empty(&list_search_space->list))
+    return default_blocksize;
+  *offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % blocksize;
+  td_list_for_each(search_walker, &list_search_space->list)
   {
-    struct td_list_head *search_walker = NULL;
-    blocksize_ok=0;
-    td_list_for_each(search_walker, &list_search_space->list)
+    alloc_data_t *tmp;
+    tmp=td_list_entry(search_walker, alloc_data_t, list);
+    if(tmp->file_stat!=NULL)
     {
-      alloc_data_t *tmp;
-      tmp=td_list_entry(search_walker, alloc_data_t, list);
-      if(tmp->file_stat!=NULL)
+      if(tmp->start%blocksize!=*offset && blocksize>default_blocksize)
       {
-	if(blocksize_ok==0)
-	{
-	  *offset=tmp->start%blocksize;
-	  blocksize_ok=1;
-	}
-	else if(tmp->start%blocksize!=*offset)
-	{
-	  blocksize_ok=2;
-	  break;
-	}
+	blocksize=blocksize>>1;
+	*offset=tmp->start%blocksize;
       }
     }
-    if(blocksize_ok==0)
-      return default_blocksize;
   }
-  blocksize=blocksize<<1;
   return blocksize;
 }
 
