@@ -373,3 +373,41 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   *dst='\0';
   rename(old_filename, new_filename);
 }
+
+/* The original filename begins at offset in buffer and is null terminated */
+void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const int force_ext)
+{
+  /* new_filename is large enough to avoid a buffer overflow */
+  char new_filename[2048];
+  const char *src=old_filename;
+  const char *ext=src;
+  char *dst=&new_filename[0];
+  char *directory_sep=&new_filename[0];
+  int off=offset;
+  if(buffer_size <= offset)
+    return ;
+  *dst='\0';
+  while(*src!='\0')
+  {
+    if(*src=='/')
+      directory_sep=dst;
+    if(*src=='.')
+      ext=src;
+    *dst++ = *src++;
+  }
+  dst=directory_sep;
+  while(*dst!='.' && *dst!='\0')
+    dst++;
+  *dst++ = '_';
+  /* Add original filename */
+  for(;off<buffer_size && buffer[off]!='\0'; off+=2)
+    *dst++ = buffer[off];
+  if(force_ext)
+  {
+    /* Add extension */
+    while(*ext!='\0')
+      *dst++ = *ext++;
+  }
+  *dst='\0';
+  rename(old_filename, new_filename);
+}

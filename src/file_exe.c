@@ -26,6 +26,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #include "common.h"
@@ -35,6 +38,7 @@
 
 static void register_header_check_exe(file_stat_t *file_stat);
 static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_rename_exe(const char *old_filename);
 
 const file_hint_t file_hint_exe= {
   .extension="exe",
@@ -184,8 +188,300 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
     }
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->file_rename=&file_rename_exe;
     return 1;
   }
   return 0;
 }
 
+struct rsrc_entries
+{
+  uint32_t Type;
+  uint32_t Pos;
+} __attribute__ ((__packed__));
+
+struct PE_index
+{
+  uint16_t len;
+  uint16_t val_len;
+  uint16_t type;
+} __attribute__ ((__packed__));
+
+static char vs_version_info[32]={
+  'V', 0x0, 'S', 0x0, '_', 0x0, 'V', 0x0, 'E', 0x0, 'R', 0x0, 'S', 0x0, 'I', 0x0,
+  'O', 0x0, 'N', 0x0, '_', 0x0, 'I', 0x0, 'N', 0x0, 'F', 0x0, 'O', 0x0, 0x0, 0x0
+};
+
+static char StringFileInfo[30]={
+  'S', 0x0, 't', 0x0, 'r', 0x0, 'i', 0x0, 'n', 0x0, 'g', 0x0, 'F', 0x0, 'i', 0x0,
+  'l', 0x0, 'e', 0x0, 'I', 0x0, 'n', 0x0, 'f', 0x0, 'o', 0x0, 0x0, 0x0
+};
+
+static char OriginalFilename[34]={
+  'O', 0x0, 'r', 0x0, 'i', 0x0, 'g', 0x0, 'i', 0x0, 'n', 0x0, 'a', 0x0, 'l', 0x0,
+  'F', 0x0, 'i', 0x0, 'l', 0x0, 'e', 0x0, 'n', 0x0, 'a', 0x0, 'm', 0x0, 'e', 0x0,
+  0x0, 0x0
+};
+static unsigned int ReadUnicodeStr(const char *buffer, unsigned int pos, const unsigned int len)
+{
+  for(; pos+2<len && (buffer[pos]!='\0' || buffer[pos+1]!='\0'); pos+=2)
+  {
+#ifdef DEBUG_EXE
+    log_info("%c", buffer[pos]);
+#endif
+  }
+  pos+=2;
+  if((pos & 0x03)!=0)
+    pos+=2;
+  return pos;
+}
+
+static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, const char *old_filename)
+{
+  char *buffer;
+  unsigned int pos=0;
+  unsigned int end=length;
+  if(length==0)
+    return;
+  if(fseek(file, offset, SEEK_SET)<0)
+    return ;
+  buffer=(char*)MALLOC(length);
+  if(fread(buffer, length, 1, file) != 1)
+  {
+    free(buffer);
+    return ;
+  }
+  while(1)
+  {
+    const struct PE_index *PE_index;
+    pos=(pos + 3) & 0xfffffffc;  /* align on a 4-byte boundary */
+    if(pos + 6 > end)
+    {
+      free(buffer);
+      return ;
+    }
+    PE_index=(const struct PE_index*)&buffer[pos];
+    if(le16(PE_index->len)==0 && le16(PE_index->val_len)==0)
+    {
+      free(buffer);
+      return ;
+    }
+    {
+      const char *stringName=&buffer[pos+6];
+      if(pos + 6 + sizeof(vs_version_info) < end &&
+	  memcmp(stringName, vs_version_info, sizeof(vs_version_info))==0)
+      {
+	pos+=6+sizeof(vs_version_info);
+	if((pos & 0x03)!=0)
+	  pos+=2;
+	pos+=le16(PE_index->val_len);
+      }
+      else if(pos + 6 + sizeof(StringFileInfo) < end &&
+	  memcmp(stringName, StringFileInfo, sizeof(StringFileInfo))==0 &&
+	  le16(PE_index->val_len)==0)
+      {
+	unsigned int i;
+	unsigned int pt=pos+6+sizeof(StringFileInfo);
+	pos+=le16(PE_index->len);
+	for(i=0; pt + 6 < pos; i++)
+	{
+	  if(i==0)
+	  {
+	    pt=ReadUnicodeStr(buffer, pt+6, pos);
+	  }
+	  else
+	  {
+	    int do_rename=0;
+	    PE_index=(const struct PE_index*)&buffer[pt];
+	    if(pt+6+sizeof(OriginalFilename) < end &&
+		memcmp(&buffer[pt+6], OriginalFilename, sizeof(OriginalFilename))==0)
+	    {
+	      do_rename=1;
+	    }
+	    pt=ReadUnicodeStr(buffer, pt+6, pos);
+	    if(le16(PE_index->val_len)>0)
+	    {
+	      if(do_rename)
+	      {
+		file_rename_unicode(old_filename, buffer, end, pt, 0);
+		free(buffer);
+		return ;
+	      }
+#ifdef DEBUG_EXE
+	      log_info(": ");
+#endif
+	      pt=ReadUnicodeStr(buffer, pt, pos);
+	    }
+	  }
+#ifdef DEBUG_EXE
+	  log_info("\n");
+#endif
+	}
+      }
+      else
+      {
+	pos+=le16(PE_index->len)+le16(PE_index->val_len);
+      }
+    }
+  }
+  free(buffer);
+}
+
+static void file_exe_ressource(FILE *file, const unsigned int base, const unsigned int dir_start, const unsigned int size, const unsigned int rsrcType, const unsigned int level, const struct pe_image_section_hdr *pe_sections, unsigned int nbr_sections, const char *old_filename)
+{
+  struct rsrc_entries *rsrc_entries;
+  struct rsrc_entries *rsrc_entry;
+  unsigned char buffer[16];
+  int buffer_size;
+  unsigned int nameEntries;
+  unsigned idEntries;
+  unsigned int count;
+  unsigned int i;
+#ifdef DEBUG_EXE
+  log_info("file_exe_ressource(file, %u, %u, %u, %u)\n", base, dir_start, size, level);
+#endif
+  if(level >= 10)
+    return ;
+  if(fseek(file, base + dir_start, SEEK_SET)<0)
+    return ;
+  buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  if(buffer_size<16)
+    return ;
+  nameEntries = buffer[12]+(buffer[13]<<8);
+  idEntries =  buffer[14]+(buffer[15]<<8);
+  count = nameEntries + idEntries;
+  if(count==0)
+    return ;
+  rsrc_entries=(struct rsrc_entries *)MALLOC(count * sizeof(struct rsrc_entries));
+  if(fread(rsrc_entries, sizeof(struct rsrc_entries), count, file) != count)
+  {
+    free(rsrc_entries);
+    return ;
+  }
+  for(i=0, rsrc_entry=rsrc_entries; i<count; i++, rsrc_entry++)
+  {
+    const unsigned int rsrcType_new=(level==0?le32(rsrc_entry->Type):rsrcType);
+#ifdef DEBUG_EXE
+    log_info("ressource %u, %x, offset %u\n",
+	rsrcType_new,
+	le32(rsrc_entry->Pos),
+	base + (le32(rsrc_entry->Pos) & 0x7fffffff));
+#endif
+    /* Only intersted by version resources */
+    if(rsrcType_new==16)
+    {
+      if((le32(rsrc_entry->Pos) & 0x80000000)!=0)
+      {
+	file_exe_ressource(file,
+	    base,
+	    le32(rsrc_entry->Pos) & 0x7fffffff,
+	    size,
+	    (level==0?le32(rsrc_entry->Type):rsrcType),
+	    level + 1,
+	    pe_sections, nbr_sections, old_filename);
+      }
+      if(level==2)
+      {
+	unsigned int off;
+	unsigned int len;
+	if(fseek(file, base + (le32(rsrc_entry->Pos) & 0x7fffffff), SEEK_SET)<0)
+	  return ;
+	buffer_size=fread(buffer, 1, sizeof(buffer), file);
+	if(buffer_size<16)
+	  return ;
+	off=buffer[0]+ (buffer[1]<<8) + (buffer[2]<<16) + (buffer[3]<<24);
+	len=buffer[4]+ (buffer[5]<<8) + (buffer[6]<<16) + (buffer[7]<<24);
+	{
+	  const struct pe_image_section_hdr *pe_section;
+	  for(i=0, pe_section=pe_sections; i<nbr_sections; i++,pe_section++)
+	  {
+	    if(le32(pe_section->VirtualAddress) <= off
+	      && off < le32(pe_section->VirtualAddress) + le32(pe_section->SizeOfRawData))
+	    {
+	      PEVersion(file, off - le32(pe_section->VirtualAddress) + base, len, old_filename);
+	      free(rsrc_entries);
+	      return ;
+	    }
+	  }
+	}
+	free(rsrc_entries);
+	return ;
+      }
+    }
+  }
+  free(rsrc_entries);
+}
+
+static void file_rename_exe(const char *old_filename)
+{
+  unsigned char buffer[4096];
+  FILE *file;
+  int buffer_size;
+  const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  if(!(memcmp(buffer,exe_header,sizeof(exe_header))==0 &&
+    le16(dos_hdr->bytes_in_last_block) <= 512 &&
+    le16(dos_hdr->blocks_in_file) > 0 &&
+    le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
+    ))
+  {
+    fclose(file);
+    return ;
+  }
+  {
+    const struct pe_image_file_hdr *pe_hdr;
+    pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
+    if(le32(dos_hdr->e_lfanew)==0 ||
+	le32(dos_hdr->e_lfanew) > buffer_size-sizeof(struct pe_image_file_hdr) ||
+	le32(pe_hdr->Magic) != IMAGE_NT_SIGNATURE)
+    {
+      fclose(file);
+      return ;
+    }
+    {
+      unsigned int i;
+      const struct pe_image_section_hdr *pe_sections;
+      const struct pe_image_section_hdr *pe_section;
+      unsigned int nbr_sections;
+      pe_sections=(const struct pe_image_section_hdr*)
+	((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
+      for(i=0, pe_section=pe_sections;
+		i<le16(pe_hdr->NumberOfSections) && (const unsigned char*)pe_section < buffer+buffer_size;
+		i++, pe_section++)
+      {
+#ifdef DEBUG_EXE
+        if(le32(pe_section->SizeOfRawData)>0)
+        {
+          log_info("%s 0x%lx-0x%lx\n", pe_section->Name,
+              (unsigned long)le32(pe_section->VirtualAddress),
+              (unsigned long)le32(pe_section->VirtualAddress)+le32(pe_section->VirtualSize)-1);
+        }
+#endif
+      }
+      nbr_sections=i;
+      for(i=0, pe_section=pe_sections;
+		i<le16(pe_hdr->NumberOfSections) && (const unsigned char*)pe_section < buffer+buffer_size;
+		i++, pe_section++)
+      {
+        if(le32(pe_section->SizeOfRawData)>0)
+        {
+	  if(strcmp((const char*)pe_section->Name, ".rsrc")==0)
+	  {
+	    file_exe_ressource(file,
+		le32(pe_section->PointerToRawData),
+		0,
+		le32(pe_section->SizeOfRawData),
+		0,
+		0,
+		pe_sections, nbr_sections, old_filename);
+	    fclose(file);
+	    return;
+	  }
+        }
+      }
+    }
+  }
+  fclose(file);
+}
