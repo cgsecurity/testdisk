@@ -662,7 +662,7 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
   }
 }
 
-static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, const unsigned int expert)
+static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time)
 {
   uint64_t offset=0;
   unsigned char *buffer_start;
@@ -1247,7 +1247,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     }
     else if(status==STATUS_FIND_OFFSET)
     {
-      ind_stop=photorec_find_blocksize(disk_car, partition, verbose, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time, expert);
+      ind_stop=photorec_find_blocksize(disk_car, partition, verbose, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time);
     }
     else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
     {
@@ -1300,7 +1300,12 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
 	    uint64_t start_offset;
 	    file_nbr=0;
 	    status=(mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-	    blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
+	    if(blocksize_is_known==0)
+	      blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
+	    else if(td_list_empty(&list_search_space->list))
+	      start_offset=0;
+	    else
+	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % blocksize;
 #ifdef HAVE_NCURSES
 	    if(expert>0)
 	    {
