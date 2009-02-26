@@ -19,7 +19,7 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-    VER_E2FSPROGS=1.41.0
+    VER_E2FSPROGS=1.41.4
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
   fi
