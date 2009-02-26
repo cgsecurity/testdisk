@@ -113,7 +113,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
 
     {
       /* Header hardly ever bigger than a filename */
-#define BUF_SIZE 256
+#define BUF_SIZE 4096
       unsigned char buffer[BUF_SIZE];
       int len=le16(h.size);
       uint32_t crc32=0xFFFFFFFF;
