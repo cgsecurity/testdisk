@@ -27,6 +27,7 @@ testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(t
 file_C			= filegen.c \
 			  file_list.c \
 			  file_7z.c \
+			  file_DB.c \
 			  file_a.c \
 			  file_ab.c \
 			  file_abcdp.c \
