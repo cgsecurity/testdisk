@@ -516,23 +516,29 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
 {
   unsigned int blocksize=128*512;
   struct td_list_head *search_walker = NULL;
+  int run_again;
   *offset=0;
   if(td_list_empty(&list_search_space->list))
     return default_blocksize;
   *offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % blocksize;
-  td_list_for_each(search_walker, &list_search_space->list)
+  do
   {
-    alloc_data_t *tmp;
-    tmp=td_list_entry(search_walker, alloc_data_t, list);
-    if(tmp->file_stat!=NULL)
+    run_again=0;
+    td_list_for_each(search_walker, &list_search_space->list)
     {
-      if(tmp->start%blocksize!=*offset && blocksize>default_blocksize)
+      alloc_data_t *tmp;
+      tmp=td_list_entry(search_walker, alloc_data_t, list);
+      if(tmp->file_stat!=NULL)
       {
-	blocksize=blocksize>>1;
-	*offset=tmp->start%blocksize;
+	if(tmp->start%blocksize!=*offset && blocksize>default_blocksize)
+	{
+	  blocksize=blocksize>>1;
+	  *offset=tmp->start%blocksize;
+	  run_again=1;
+	}
       }
     }
-  }
+  } while(run_again>0);
   return blocksize;
 }
 
