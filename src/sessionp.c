@@ -60,6 +60,8 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   int taille;
   struct stat stat_rec;
   unsigned int buffer_size;
+  time_t my_time;
+  char *info=NULL;
   f_session=fopen(SESSION_FILENAME,"rb");
   if(!f_session)
   {
@@ -81,74 +83,78 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
     free(buffer);
     return -1;
   }
+  pos++;
+  /* load time */
+  my_time=strtol(pos,&pos,10);
+  if(pos==NULL)
   {
-    time_t my_time;
-    char *info=NULL;
-    pos++;
-    /* load time */
-    my_time=strtol(pos,&pos,10);
-    if(pos==NULL)
-    {
-      free(buffer);
-      return 0;
-    }
-    pos=strstr(pos,"\n");
-    if(pos==NULL)
-    {
-      free(buffer);
-      return 0;
-    }
-    pos++;
-    /* get current disk */
-    info=pos;
-    pos=strstr(info," ");
-    if(pos==NULL)
-    {
-      free(buffer);
-      return 0;
-    }
-    *pos='\0';
-    pos++;
-    *cmd_device=strdup(info);
-    /* search part_name_option */
-    info=pos;
-    pos=strstr(pos,"\n");
-    if(pos==NULL)
-    {
-      free(buffer);
-      return 0;
-    }
-    *pos='\0';
-    pos++;
-    *current_cmd=strdup(info);
-    do
-    {
-      long unsigned start,end;
-      if(sscanf(pos,"%lu-%lu\n",&start,&end)==2)
-      {
-        if(start<=end)
-        {
-          alloc_data_t *new_free_space;
-          new_free_space=(alloc_data_t*)MALLOC(sizeof(*new_free_space));
-          /* Temporary storage, values need to be multiply by sector_size */
-          new_free_space->start=start;
-          new_free_space->end=end;
-          new_free_space->file_stat=NULL;
-          td_list_add_tail(&new_free_space->list, &list_free_space->list);
-#ifdef DEBUG
-          log_trace(">%lu-%lu<\n",start,end);
-#endif
-        }
-        pos=strstr(pos,"\n");
-        if(pos!=NULL)
-          pos++;
-      }
-      else
-        pos=NULL;
-    } while(pos!=NULL);
+    free(buffer);
+    return 0;
   }
-  free(buffer);
-  return 0;
+  pos=strstr(pos,"\n");
+  if(pos==NULL)
+  {
+    free(buffer);
+    return 0;
+  }
+  pos++;
+  /* get current disk */
+  info=pos;
+  pos=strstr(info," ");
+  if(pos==NULL)
+  {
+    free(buffer);
+    return 0;
+  }
+  *pos='\0';
+  pos++;
+  *cmd_device=strdup(info);
+  /* search part_name_option */
+  info=pos;
+  pos=strstr(pos,"\n");
+  if(pos==NULL)
+  {
+    free(buffer);
+    return 0;
+  }
+  *pos='\0';
+  pos++;
+  *current_cmd=strdup(info);
+  while(1)
+  {
+    long unsigned int start=0;
+    long unsigned int end=0;
+    while(*pos>='0' && *pos<='9')
+    {
+      start=start*10 + (*pos - '0');
+      pos++;
+    }
+    if(*pos++ != '-')
+    {
+      free(buffer);
+      return 0;
+    }
+    while(*pos >= '0' && *pos <= '9')
+    {
+      end=end*10+(*pos -'0');
+      pos++;
+    }
+    if(start <= end)
+    {
+      alloc_data_t *new_free_space;
+      new_free_space=(alloc_data_t*)MALLOC(sizeof(*new_free_space));
+      /* Temporary storage, values need to be multiplied by sector_size */
+      new_free_space->start=start;
+      new_free_space->end=end;
+      new_free_space->file_stat=NULL;
+      td_list_add_tail(&new_free_space->list, &list_free_space->list);
+#ifdef DEBUG
+      log_trace(">%lu-%lu<\n", start, end);
+#endif
+    }
+    while(*pos=='\n' || *pos=='\r')
+      pos++;
+  }
 }
 
 int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const unsigned int paranoid, const unsigned int keep_corrupted_file, const unsigned int mode_ext2, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only, const int verbose)
