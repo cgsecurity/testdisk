@@ -392,6 +392,10 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	      }
 	      if(carve_free_space_only>0)
 	      {
+		aff_copy(stdscr);
+		wmove(stdscr,5,0);
+		wprintw(stdscr, "Filesystem analysis, please wait...\n");
+		wrefresh(stdscr);
 		blocksize=remove_used_space(disk_car, partition, list_search_space);
 		/* Only free space is carved, list_search_space is modified.
 		 * To carve the whole space, need to quit and reselect the partition */

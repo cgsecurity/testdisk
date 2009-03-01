@@ -269,7 +269,7 @@ int main( int argc, char **argv )
   }
   aff_copy(stdscr);
   wmove(stdscr,5,0);
-  wprintw(stdscr, "Please wait...\n");
+  wprintw(stdscr, "Disk identification, please wait...\n");
   wrefresh(stdscr);
 #endif
   if(log_handle!=NULL)
