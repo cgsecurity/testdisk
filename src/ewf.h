@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
-disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch, const int testdisk_mode);
+disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int testdisk_mode);
 #endif
 const char*td_ewf_version(void);
 

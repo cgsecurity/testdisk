@@ -72,7 +72,7 @@ struct info_fewf_struct
   unsigned int buffer_size;
 };
 
-disk_t *fewf_init(const char *device, const int verbose, const arch_fnct_t *arch, const int mode)
+disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
 {
   unsigned int num_files=0;
   char **filenames= NULL;

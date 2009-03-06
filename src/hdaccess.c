@@ -1342,7 +1342,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     if(strncmp(device,"/dev/",5)!=0)
     {
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF) && defined(HAVE_GLOB_H)
-      return fewf_init(device,verbose,arch,testdisk_mode);
+      return fewf_init(device, arch, testdisk_mode);
 #endif
     }
     return disk_car;
@@ -1424,7 +1424,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       free(disk_car);
       close(hd_h);
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
-      return fewf_init(device,verbose,arch,testdisk_mode);
+      return fewf_init(device, arch, testdisk_mode);
 #else
       return NULL;
 #endif
