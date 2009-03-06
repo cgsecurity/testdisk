@@ -95,7 +95,7 @@ int screen_buffer_add(const char *_format, ...)
   /*	log_trace("aff_intr_buffer_screen %d =>%s<=\n",intr_nbr_line,tmp_line); */
   if(intr_nbr_line==MAX_LINES)
   {
-    log_warning("Buffer can't store more than %u lines.\n", MAX_LINES);
+    log_warning("Buffer can't store more than %d lines.\n", MAX_LINES);
     intr_nbr_line++;
   }
   return 0;
@@ -147,7 +147,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   if((newline&AFF_PART_ORDER)==AFF_PART_ORDER)
   {
     if((partition->status!=STATUS_EXT_IN_EXT) && (partition->order!=NO_ORDER))
-      pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%2d ", partition->order);
+      pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%2u ", partition->order);
     else
       pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"   ");
   }

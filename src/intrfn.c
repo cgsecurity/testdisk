@@ -1083,7 +1083,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
   {
     end_ncurses();
     printf("%s need 24 lines to work.\nPlease enlarge the terminal and restart %s.\n",prog_name,prog_name);
-    log_critical("Terminal has only %u lines\n",LINES);
+    log_critical("Terminal has only %d lines\n",LINES);
     return 1;
   }
   return 0;

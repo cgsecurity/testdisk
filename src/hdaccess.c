@@ -196,7 +196,7 @@ static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_
 
 list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct_t *arch, const int testdisk_mode)
 {
-  int i;
+  unsigned int i;
 #ifdef DJGPP
   int ind_stop=0;
   for(i=0x80;(i<0x88)&&!ind_stop;i++)

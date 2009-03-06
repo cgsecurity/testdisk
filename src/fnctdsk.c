@@ -287,7 +287,6 @@ int is_part_overlapping(const list_part_t *list_part)
       return 1;
     element=next;
   }
-  return 0;
 }
 
 void  partition_reset(partition_t *partition, const arch_fnct_t *arch)

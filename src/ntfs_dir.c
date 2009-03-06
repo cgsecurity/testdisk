@@ -179,7 +179,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 {
   char *filename = NULL;
   int result = 0;
-  filename = calloc (1, MAX_PATH);
+  filename = (char *)calloc (1, MAX_PATH);
   if (!filename)
   {
     log_critical("ntfs_td_list_entry calloc failed\n");
@@ -319,6 +319,8 @@ static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir
   return ls->dir_list;
 }
 
+enum { bufsize = 4096 };
+
 static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
 {
   const unsigned long int first_inode=file->stat.st_ino;
@@ -330,7 +332,6 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     return -1;
   }
   {
-    const int bufsize = 4096;
     char *buffer;
     char *new_file;
     ntfs_attr *attr;

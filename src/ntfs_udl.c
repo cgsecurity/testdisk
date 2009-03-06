@@ -395,13 +395,8 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
 		}
 
 		name->parent_name = NULL;
-
-		{
-		  	long long inode_num;
-			name->parent_mref = attr->parent_directory;
-			inode_num = MREF(name->parent_mref);
-			get_parent_name(name, vol);
-		}
+		name->parent_mref = attr->parent_directory;
+		get_parent_name(name, vol);
 
 		if (name->name_space < space) {
 			file->pref_name = name->name;

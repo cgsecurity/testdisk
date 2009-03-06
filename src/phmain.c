@@ -210,7 +210,7 @@ int main( int argc, char **argv )
 	td_ext2fs_version(), td_ntfs_version(), td_ewf_version());
 #if defined(HAVE_LIBJPEG)
 #if defined(JPEG_LIB_VERSION)
-    printf("%u", JPEG_LIB_VERSION);
+    printf("%d", JPEG_LIB_VERSION);
 #else
     printf("yes");
 #endif
@@ -293,7 +293,7 @@ int main( int argc, char **argv )
       td_ext2fs_version(), td_ntfs_version(), td_ewf_version());
 #if defined(HAVE_LIBJPEG)
 #if defined(JPEG_LIB_VERSION)
-  log_info("%u", JPEG_LIB_VERSION);
+  log_info("%d", JPEG_LIB_VERSION);
 #else
   log_info("yes");
 #endif
