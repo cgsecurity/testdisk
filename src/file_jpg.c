@@ -43,6 +43,7 @@
 #include "file_tiff.h"
 
 extern const file_hint_t file_hint_indd;
+extern const file_hint_t file_hint_riff;
 
 static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -62,6 +63,10 @@ static const unsigned char jpg_header_app0[4]= { 0xff,0xd8,0xff,0xe0};
 static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
 static const unsigned char jpg_header_com[4]= { 0xff,0xd8,0xff,0xfe};
 static const unsigned char jpg_footer[2]= { 0xff,0xd9};
+static const unsigned char jpg_header_app0_avi[0x14]= {
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
 static void register_header_check_jpg(file_stat_t *file_stat)
 {
@@ -74,6 +79,11 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 {
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_indd)
+    return 0;
+  /* Don't extract jpg inside AVI */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_riff &&
+    memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0)
     return 0;
   if(memcmp(buffer,  jpg_header_app0, sizeof(jpg_header_app0))==0 ||
       memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 ||
