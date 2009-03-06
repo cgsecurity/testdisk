@@ -1391,7 +1391,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
 #endif
     disk_get_model(hd_h, disk_car, verbose);
-    disk_get_hpa_dco(hd_h, disk_car, verbose);
+    disk_get_hpa_dco(hd_h, disk_car);
   }
   else
 #endif

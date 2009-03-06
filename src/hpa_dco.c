@@ -231,7 +231,7 @@ static uint64_t sg_device_configuration_identify(int fd)
 #endif
 }
 
-void disk_get_hpa_dco(const int fd, disk_t *disk, const int verbose)
+void disk_get_hpa_dco(const int fd, disk_t *disk)
 {
 #ifdef HDIO_DRIVE_CMD
   unsigned char id_args[4 + 512];
@@ -310,7 +310,7 @@ void disk_get_hpa_dco(const int fd, disk_t *disk, const int verbose)
 #endif
 }
 #else
-void disk_get_hpa_dco(const int fd, disk_t *disk, const int verbose)
+void disk_get_hpa_dco(const int fd, disk_t *disk)
 {
 }
 #endif
