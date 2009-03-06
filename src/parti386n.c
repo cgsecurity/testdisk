@@ -40,7 +40,7 @@
 
 extern const arch_fnct_t arch_i386;
 
-list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
   int position=0;
   CHS_t start,end;

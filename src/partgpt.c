@@ -523,7 +523,7 @@ static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *lis
   return list_part;
 }
 
-list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
   partition_t *new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;

@@ -326,7 +326,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       case 'A':
 	if(disk_car->arch != &arch_none)
 	{
-	  list_part=add_partition(disk_car,list_part, verbose, current_cmd);
+	  list_part=add_partition(disk_car,list_part, current_cmd);
 	  rewrite=1;
 	  offset=0;
 	  pos_num=0;

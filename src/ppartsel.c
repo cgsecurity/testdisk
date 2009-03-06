@@ -432,7 +432,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       case 'A':
 	if(disk_car->arch != &arch_none)
 	{
-	  list_part=add_partition(disk_car, list_part, verbose, current_cmd);
+	  list_part=add_partition(disk_car, list_part, current_cmd);
 	  current_element=list_part;
 	  current_element_num=0;
 	}

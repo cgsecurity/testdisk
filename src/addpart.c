@@ -47,32 +47,32 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 
-list_part_t *add_partition(disk_t *disk_car, list_part_t *list_part, const int verbose, char **current_cmd)
+list_part_t *add_partition(disk_t *disk_car, list_part_t *list_part, char **current_cmd)
 {
   if(*current_cmd!=NULL)
   {
     if(disk_car->arch==&arch_gpt)
-      return add_partition_gpt_cli(disk_car, list_part, verbose, current_cmd);
+      return add_partition_gpt_cli(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_i386)
-      return add_partition_i386_cli(disk_car, list_part, verbose, current_cmd);
+      return add_partition_i386_cli(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_mac)
-      return add_partition_mac_cli(disk_car, list_part, verbose, current_cmd);
+      return add_partition_mac_cli(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_sun)
-      return add_partition_sun_cli(disk_car, list_part, verbose, current_cmd);
+      return add_partition_sun_cli(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_xbox)
-      return add_partition_xbox_cli(disk_car, list_part, verbose, current_cmd);
+      return add_partition_xbox_cli(disk_car, list_part, current_cmd);
   }
 #ifdef HAVE_NCURSES
     if(disk_car->arch==&arch_gpt)
-      return add_partition_gpt_ncurses(disk_car, list_part, verbose, current_cmd);
+      return add_partition_gpt_ncurses(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_i386)
-      return add_partition_i386_ncurses(disk_car, list_part, verbose, current_cmd);
+      return add_partition_i386_ncurses(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_mac)
-      return add_partition_mac_ncurses(disk_car, list_part, verbose, current_cmd);
+      return add_partition_mac_ncurses(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_sun)
-      return add_partition_sun_ncurses(disk_car, list_part, verbose, current_cmd);
+      return add_partition_sun_ncurses(disk_car, list_part, current_cmd);
     else if(disk_car->arch==&arch_xbox)
-      return add_partition_xbox_ncurses(disk_car, list_part, verbose, current_cmd);
+      return add_partition_xbox_ncurses(disk_car, list_part, current_cmd);
 #endif
   return list_part;
 }

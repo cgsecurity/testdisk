@@ -20,4 +20,4 @@
 
  */
 
-list_part_t *add_partition(disk_t *disk_car, list_part_t *list_part, const int verbose, char **current_cmd);
+list_part_t *add_partition(disk_t *disk_car, list_part_t *list_part, char **current_cmd);
