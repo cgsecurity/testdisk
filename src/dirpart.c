@@ -184,6 +184,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #ifdef HAVE_TOUCHWIN
   touchwin(stdscr);
 #endif
+  wrefresh(stdscr);
 #endif
   return res;
 }

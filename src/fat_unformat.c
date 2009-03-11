@@ -92,7 +92,6 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       ind_stop|=check_enter_key_or_s(stdscr);
     }
 #endif
-    get_next_sector(list_search_space, &current_search_space, &offset, 512);
     if(memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
@@ -105,6 +104,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       log_flush();
       nbr_subdir++;
     }
+    get_next_sector(list_search_space, &current_search_space, &offset, 512);
     buffer+=512;
     if( old_offset+512!=offset ||
         buffer+512>buffer_start+READ_SIZE)
@@ -320,25 +320,31 @@ int fat_unformat(disk_t *disk, partition_t *partition, const int verbose, const 
   unsigned int sectors_per_cluster=0;
   uint64_t start_data=0;
   *blocksize=0;
-//  if(find_sectors_per_cluster(disk, partition, verbose, 0, interface, &sectors_per_cluster, &start_data)==0)
   if(pfind_sectors_per_cluster(disk, partition, verbose, interface, &sectors_per_cluster, &start_data, list_search_space)==0)
   {
     display_message("Can't find FAT cluster size\n");
     return 0;
   }
-  del_search_space(list_search_space, partition->part_offset,
-      partition->part_offset+(uint64_t)(start_data * disk->sector_size)-1);
+  if(start_data <= partition->part_offset)
   {
-    uint64_t start_offset;
+    display_message("FAT filesystem was beginning before the actual partition.");
+    return 0;
+  }
+  start_data *= disk->sector_size;
+  del_search_space(list_search_space, partition->part_offset, start_data - 1);
+  {
+    uint64_t offset=start_data;
     *blocksize=sectors_per_cluster * disk->sector_size;
-    start_offset=start_data * disk->sector_size + partition->part_offset;
 #ifdef HAVE_NCURSES
     if(expert>0)
-      *blocksize=menu_choose_blocksize(*blocksize, disk->sector_size, &start_offset);
+      *blocksize=menu_choose_blocksize(*blocksize, disk->sector_size, &offset);
 #endif
-    update_blocksize(*blocksize,list_search_space, start_offset);
-    fat_unformat_aux(disk, partition, verbose, recup_dir, interface, file_nbr, *blocksize, start_offset, list_search_space, real_start_time, dir_num);
+    update_blocksize(*blocksize,list_search_space, offset);
   }
+  /* start_data is relative to the disk */
+  fat_unformat_aux(disk, partition, verbose, recup_dir, interface, file_nbr,
+      *blocksize, start_data, list_search_space,
+      real_start_time, dir_num);
   return 0;
 }
 

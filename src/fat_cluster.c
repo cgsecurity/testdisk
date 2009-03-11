@@ -193,8 +193,8 @@ int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const u
     free(cluster_offset);
     if(nbr_max==0)
       return 0;
-    log_info("Selected: sectors_per_cluster=%u offset=%lu nbr=%u\n", *sectors_per_cluster,
-        (long unsigned int)(*offset),nbr_max);
+    log_info("Selected: sectors_per_cluster=%u, cluster 2 at sector %lu, nbr=%u\n",
+	*sectors_per_cluster, (long unsigned int)(*offset), nbr_max);
     return 1;
   }
 }
