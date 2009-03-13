@@ -421,6 +421,11 @@ static void file_rename_exe(const char *old_filename)
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  if(buffer_size < (int)sizeof(struct dos_image_file_hdr))
+  {
+    fclose(file);
+    return ;
+  }
   if(!(memcmp(buffer,exe_header,sizeof(exe_header))==0 &&
     le16(dos_hdr->bytes_in_last_block) <= 512 &&
     le16(dos_hdr->blocks_in_file) > 0 &&
@@ -432,6 +437,11 @@ static void file_rename_exe(const char *old_filename)
   }
   {
     const struct pe_image_file_hdr *pe_hdr;
+    if((unsigned int)buffer_size < le32(dos_hdr->e_lfanew)+sizeof(struct pe_image_file_hdr))
+    {
+      fclose(file);
+      return ;
+    }
     pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
     if(le32(dos_hdr->e_lfanew)==0 ||
 	le32(dos_hdr->e_lfanew) > buffer_size-sizeof(struct pe_image_file_hdr) ||
