@@ -37,6 +37,7 @@
 #include "filegen.h"
 #include "common.h"
 #include "file_tiff.h"
+#include "log.h"
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -391,8 +392,6 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_le(in, le32(*tiff_next_diroff), depth, count+1);
-    if(new_offset==0)
-      return 0;
     if(max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -523,8 +522,6 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_be(in, be32(*tiff_next_diroff), depth, count+1);
-    if(new_offset==0)
-      return 0;
     if(max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -543,6 +540,10 @@ static void file_check_tiff(file_recovery_t *fr)
     calculated_file_size=header_check_tiff_le(fr->handle, le32(header.tiff_diroff), 0, 0);
   else if(header.tiff_magic==TIFF_BIGENDIAN)
     calculated_file_size=header_check_tiff_be(fr->handle, be32(header.tiff_diroff), 0, 0);
+#ifdef DEBUG_TIFF
+  log_info("TIFF Current   %llu\n", fr->file_size);
+  log_info("TIFF Estimated %llu\n", calculated_file_size);
+#endif
   if(fr->file_size < calculated_file_size)
     fr->file_size=0;
     /* PhotoRec isn't yet capable to find the correct Sony arw filesize,
