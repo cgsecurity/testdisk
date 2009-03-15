@@ -241,7 +241,7 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
   char *buffer;
   unsigned int pos=0;
   unsigned int end=length;
-  if(length==0)
+  if(length==0 || length > 1024*1024)
     return;
   if(fseek(file, offset, SEEK_SET)<0)
     return ;
@@ -340,7 +340,7 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
 #ifdef DEBUG_EXE
   log_info("file_exe_ressource(file, %u, %u, %u, %u)\n", base, dir_start, size, level);
 #endif
-  if(level >= 10)
+  if(level > 2)
     return ;
   if(fseek(file, base + dir_start, SEEK_SET)<0)
     return ;
@@ -350,7 +350,7 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
   nameEntries = buffer[12]+(buffer[13]<<8);
   idEntries =  buffer[14]+(buffer[15]<<8);
   count = nameEntries + idEntries;
-  if(count==0)
+  if(count==0 || count > 1024)
     return ;
   rsrc_entries=(struct rsrc_entries *)MALLOC(count * sizeof(struct rsrc_entries));
   if(fread(rsrc_entries, sizeof(struct rsrc_entries), count, file) != count)
