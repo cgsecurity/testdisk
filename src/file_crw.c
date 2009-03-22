@@ -33,7 +33,7 @@
 
 static void register_header_check_crw(file_stat_t *file_stat);
 static int header_check_crw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_crw(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static void file_check_crw(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_crw= {
   .extension="crw",
@@ -61,26 +61,16 @@ static int header_check_crw(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_crw.extension;
-    file_recovery_new->data_check=&data_check_crw;
-    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->file_check=&file_check_crw;
     return 1;
   }
   return 0;
 }
 
-static int data_check_crw(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static void file_check_crw(file_recovery_t *file_recovery)
 {
-  unsigned int i;
-  for(i=(buffer_size/2)-13;i+13<buffer_size;i++)
-  {
-    if(buffer[i]==0x0A && buffer[i+1]==0x30 && buffer[i+2]==0xFE && buffer[i+3]==0x17 && buffer[i+13]==0)
-    {
-      file_recovery->calculated_file_size=file_recovery->file_size+i+14-(buffer_size/2);
-      log_debug("EOF CRW found\n");
-      return 2;
-    }
-  }
-  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  const unsigned char crw_footer[2]= { 0x0A, 0x30};
+  file_search_footer(file_recovery, crw_footer, sizeof(crw_footer));
+  if(file_recovery->file_size>0)
+    file_recovery->file_size+=12;
 }
-
