@@ -44,6 +44,7 @@ unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part
 int delete_list_disk(list_disk_t *list_disk);
 const char *size_to_unit(uint64_t disk_size, char *buffer);
 int is_part_overlapping(const list_part_t *list_part);
+void dup_partition_t(partition_t *dest, const partition_t *src);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

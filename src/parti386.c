@@ -43,6 +43,7 @@
 #include "bfs.h"
 #include "bsd.h"
 #include "cramfs.h"
+#include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
 #include "hfs.h"
@@ -1527,7 +1528,11 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_NTFSH:
       ret=check_NTFS(disk_car,partition,verbose,0);
       if(ret!=0)
-      { screen_buffer_add("Invalid NTFS boot\n"); }
+      {
+	ret=check_EXFAT(disk_car, partition);
+      }
+      if(ret!=0)
+      { screen_buffer_add("Invalid NTFS or EXFAT boot\n"); }
       break;
     case P_OPENBSD:
       ret=check_BSD(disk_car,partition,verbose,OPENBSD_MAXPARTITIONS);

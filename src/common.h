@@ -53,6 +53,7 @@ struct efi_guid_s
 #define P_16FATBD       0x06
 #define P_NTFS          0x07
 #define P_HPFS          0x07
+#define P_EXFAT		0x07
 #define P_OS2MB         0x0A
 #define P_32FAT         0x0B
 #define P_32FAT_LBA     0x0C
@@ -216,7 +217,7 @@ struct efi_guid_s
 #define TESTDISK_O_READAHEAD_32K 010
 #define TESTDISK_O_ALL		020
 
-enum upart_type { UP_UNK, UP_BEOS, UP_CRAMFS, UP_EXT2, UP_EXT3, UP_EXT4, UP_EXTENDED, UP_FAT12, UP_FAT16, UP_FAT32, UP_FATX, UP_FREEBSD,  UP_HFS, UP_HFSP, UP_HFSX, UP_HPFS, UP_JFS, UP_LINSWAP, UP_LINSWAP2, UP_LUKS, UP_LVM, UP_LVM2, UP_MD, UP_MD1, UP_NETWARE, UP_NTFS, UP_OPENBSD, UP_OS2MB, UP_RFS, UP_RFS2, UP_RFS3, UP_RFS4, UP_SUN, UP_SYSV4, UP_UFS, UP_UFS2, UP_XFS, UP_XFS2, UP_XFS3, UP_XFS4};
+enum upart_type { UP_UNK, UP_BEOS, UP_CRAMFS, UP_EXT2, UP_EXT3, UP_EXT4, UP_EXTENDED, UP_EXFAT, UP_FAT12, UP_FAT16, UP_FAT32, UP_FATX, UP_FREEBSD,  UP_HFS, UP_HFSP, UP_HFSX, UP_HPFS, UP_JFS, UP_LINSWAP, UP_LINSWAP2, UP_LUKS, UP_LVM, UP_LVM2, UP_MD, UP_MD1, UP_NETWARE, UP_NTFS, UP_OPENBSD, UP_OS2MB, UP_RFS, UP_RFS2, UP_RFS3, UP_RFS4, UP_SUN, UP_SYSV4, UP_UFS, UP_UFS2, UP_XFS, UP_XFS2, UP_XFS3, UP_XFS4};
 typedef enum upart_type upart_type_t;
 enum status_type { STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG, STATUS_EXT, STATUS_EXT_IN_EXT};
 typedef enum status_type status_type_t;
@@ -360,14 +361,8 @@ struct my_data_struct
   uint64_t offset;
 };
 
-void dup_partition_t(partition_t *dest, const partition_t *src);
-int read_line(void);
-char read_char(const char *);
 void *MALLOC(size_t size);
-char read_key(void);
-char test_key(void);
 unsigned int up2power(const unsigned int number);
-void my_sort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
 void set_part_name(partition_t *partition,const char *src,const int max_size);
 #ifndef BSD_MAXPARTITIONS
 #define	BSD_MAXPARTITIONS	8

@@ -42,6 +42,7 @@
 #include "bfs.h"
 #include "bsd.h"
 #include "cramfs.h"
+#include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
@@ -83,6 +84,7 @@ static const struct systypes none_sys_types[] = {
   {UP_EXT3,	"ext3"},
   {UP_EXT4,	"ext4"},
 /*  {UP_EXTENDED,	"Extended"}, */
+  {UP_EXFAT,	"EXFAT"},
   {UP_FAT12,	"FAT12"},
   {UP_FAT16,	"FAT16"},
   {UP_FAT32,	"FAT32"},
@@ -259,6 +261,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_EXT2(disk_car,partition,verbose);
       break;
     case UP_EXTENDED:
+      break;
+    case UP_EXFAT:
+      ret=check_EXFAT(disk_car, partition);
       break;
     case UP_FAT12:
     case UP_FAT16:

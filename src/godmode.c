@@ -562,7 +562,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==2)
         {
           if(fast_mode==0)
-            test_nbr=6;
+            test_nbr=7;
           else
           {
             if((disk_car->arch==&arch_i386 &&
@@ -575,6 +575,20 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         }
         if(res<=0 && test_nbr==3)
         {
+          if(fast_mode==0)
+            test_nbr=7;
+          else
+          {
+            if((disk_car->arch==&arch_i386 &&
+                  ((start.sector==13 && (start.head<=2 || fast_mode>1)) ||
+                   (search_vista_part>0 && search_location%(2048*512)==(13-1)*512))) ||
+                (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*512)))
+              res=search_EXFAT_backup(buffer_disk, disk_car, partition);
+            test_nbr++;
+          }
+        }
+        if(res<=0 && test_nbr==4)
+        {
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
 		  (start.head==disk_car->geom.heads_per_cylinder-1 || fast_mode>1)) ||
@@ -584,7 +598,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             res=search_NTFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==4)
+        if(res<=0 && test_nbr==5)
         {
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
@@ -595,7 +609,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             res=search_HFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==5)
+        if(res<=0 && test_nbr==6)
         {
           int s_log_block_size;
           /* try backup superblock */
@@ -633,7 +647,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           }
           test_nbr++;
         }
-        if(res<=0 && test_nbr==6)
+        if(res<=0 && test_nbr==7)
         {
           if(search_now>0)
           {
@@ -643,28 +657,28 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           else
             test_nbr=12;
         }
-        if(res<=0 && test_nbr==7)
+        if(res<=0 && test_nbr==8)
         {
           res=search_type_0(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==8)
+        if(res<=0 && test_nbr==9)
         {
           res=search_type_8(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==9)
+        if(res<=0 && test_nbr==10)
         {
           /* Try to catch disklabel before BSD FFS partition */
           res=search_type_16(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==10)
+        if(res<=0 && test_nbr==11)
         {
           res=search_type_64(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==11)
+        if(res<=0 && test_nbr==12)
         {
           /* read to fill the cache */
           disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE,
@@ -673,7 +687,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           res=search_type_128(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(test_nbr==12)
+        if(test_nbr==13)
         {
           sector_inc=1;
           test_nbr=0;

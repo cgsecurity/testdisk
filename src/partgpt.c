@@ -50,6 +50,7 @@
 #include "partgpt.h"
 #include "savehdr.h"
 #include "cramfs.h"
+#include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
 #include "jfs_superblock.h"
@@ -649,6 +650,8 @@ static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partit
       guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_MS_RESERVED)==0)
   {
     ret=check_FAT(disk_car,partition,verbose);
+    if(ret!=0)
+      ret=check_EXFAT(disk_car, partition);
     if(ret!=0)
       ret=check_NTFS(disk_car,partition,verbose,0);
     if(ret!=0)

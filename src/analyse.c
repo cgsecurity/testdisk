@@ -33,6 +33,7 @@
 #include "bfs.h"
 #include "bsd.h"
 #include "cramfs.h"
+#include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
@@ -85,6 +86,21 @@ int search_HFS_backup(unsigned char *buffer, disk_t *disk_car,partition_t *parti
   return 0;
 }
 
+int search_EXFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partition)
+{
+  if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
+    return -1;
+  /* EXFAT recovery using backup sector */
+  if(recover_EXFAT(disk, (const struct exfat_super_block *)buffer, partition)==0)
+  {
+    strncpy(partition->info,"EXFAT found using backup sector!",sizeof(partition->info));
+    partition->sb_offset=6*512;
+    partition->part_offset-=partition->sb_offset;  /* backup sector */
+    return 1;
+  }
+  return 0;
+}
+
 int search_FAT_backup(unsigned char *buffer, disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind)
 {
 //  assert(sizeof(struct fat_boot_sector)==DEFAULT_SECTOR_SIZE);
@@ -117,6 +133,7 @@ int search_type_0(unsigned char *buffer,disk_t *disk_car,partition_t *partition,
   if(recover_Linux_SWAP((const union swap_header *)buffer, partition)==0) return 1;
   if(recover_LVM(disk_car,(const pv_disk_t*)buffer,partition,verbose,dump_ind)==0) return 1;
   if(recover_FAT(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose,dump_ind,0)==0) return 1;
+  if(recover_EXFAT(disk_car, (const struct exfat_super_block*)buffer, partition)==0) return 1;
   if(recover_HPFS(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose)==0) return 1;
   if(recover_OS2MB(disk_car,(const struct fat_boot_sector*)buffer,partition,verbose,dump_ind)==0) return 1;
   if(recover_NTFS(disk_car,(const struct ntfs_boot_sector*)buffer,partition,verbose,dump_ind,0)==0) return 1;
