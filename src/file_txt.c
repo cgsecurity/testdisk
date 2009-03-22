@@ -160,6 +160,7 @@ static int filtre(unsigned char car)
     case 0xa8:
     case 0xa9:	/* '©' */
     case 0xab:	/* '«' */
+    case 0xae:	/* '®' */
     case 0xb0:	/* '°' */
     case 0xb4:  /* '´' */
     case 0xb7:
