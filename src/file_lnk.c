@@ -198,7 +198,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     log_debug("LNK extra stuff at 0x%04x=%04x\n", i, len);
     i+=4;
     i+=len;
-    log_debug("LNK size %d (0x%04x)\n", i, i);
+    log_debug("LNK size %u (0x%04x)\n", i, i);
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_lnk.extension;
     file_recovery_new->calculated_file_size=i;

@@ -441,7 +441,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               /* Il faut ajouter un parcours arriere de la FAT 
                * car on localise le dernier cluster du root_cluster */
               if(verbose>0)
-                log_verbose("cluster %lu, etat=%d, found=%d,nb_subdir=%d,nb_subdir_ok=%d\n",root_cluster,etat,found,nb_subdir,nb_subdir_ok);
+                log_verbose("cluster %lu, etat=%d, found=%u,nb_subdir=%d,nb_subdir_ok=%d\n",
+		    root_cluster, etat, found, nb_subdir, nb_subdir_ok);
               do
               {
                 new_root_cluster=tmp;
@@ -484,8 +485,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
             {
               if(verbose>1)
               {
-                log_verbose("cluster %lu, etat=%d, found=%d,nb_subdir=%d,nb_subdir_ok=%d\n",
-                    root_cluster,etat,found,nb_subdir,nb_subdir_ok);
+                log_verbose("cluster %lu, etat=%d, found=%u, nb_subdir=%d, nb_subdir_ok=%d\n",
+                    root_cluster, etat, found, nb_subdir, nb_subdir_ok);
               }
             }
             {
@@ -703,7 +704,8 @@ static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const
       {
         if(verbose>1)
         {
-          log_verbose("find_dir_entries sector=%u entry=%d dir_entry_found=%d\n",offset-i,j,dir_entry_found);
+          log_verbose("find_dir_entries sector=%u entry=%u dir_entry_found=%d\n",
+	      offset-i, j, dir_entry_found);
         }
         if(dir_entry_found==0)
         { /* Should be between the last directory entries and the first cluster */
@@ -765,7 +767,7 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
             etat=1;
             sector_etat1=i;
             if(verbose>0)
-              log_verbose("dir_entries 0->1 %d\n",i*(disk_car->sector_size/32)+j);
+              log_verbose("dir_entries 0->1 %u\n", i*(disk_car->sector_size/32)+j);
           }
         }
         else
@@ -779,7 +781,7 @@ static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, co
             }
             /* Data found */
             if(verbose>0)
-              log_verbose("dir_entries 1->2 %d\n",i*(disk_car->sector_size/32)+j);
+              log_verbose("dir_entries 1->2 %u\n", i*(disk_car->sector_size/32)+j);
             return i*(disk_car->sector_size/32);
           }
         }
@@ -1791,7 +1793,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
   for(i=0;i<nbr_offset;i++)
   {
     if(nbr_offset<30 || info_offset[i].nbr>1)
-      screen_buffer_add(" %02d %8lu   %u\n",info_offset[i].fat_type,info_offset[i].offset,info_offset[i].nbr);
+      screen_buffer_add(" %02u %8lu   %u\n", info_offset[i].fat_type, info_offset[i].offset, info_offset[i].nbr);
   }
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -1917,8 +1919,8 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
     fat_length_max=fat_length_max/disk_car->sector_size*disk_car->sector_size;
     if(verbose>1)
     {
-      log_verbose("sectors_per_cluster_min %u sectors\n",sectors_per_cluster_min/disk_car->sector_size);
-      log_verbose("fat_length_max %ld sectors\n", fat_length_max/disk_car->sector_size);
+      log_verbose("sectors_per_cluster_min %u sectors\n", sectors_per_cluster_min/disk_car->sector_size);
+      log_verbose("fat_length_max %lu sectors\n", fat_length_max/disk_car->sector_size);
     }
     max_offset=fat_length_max+64*disk_car->sector_size;
   }

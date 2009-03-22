@@ -80,7 +80,7 @@ enum {
   SG_CDB2_TDIR_TO_DEV     = 0 << 3,
   SG_CDB2_TDIR_FROM_DEV   = 1 << 3,
 
-  SG_CDB2_CHECK_COND      = 1 << 5,
+  SG_CDB2_CHECK_COND      = 1 << 5
 };
 
 #ifndef WIN_READ_NATIVE_MAX 

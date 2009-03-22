@@ -76,7 +76,7 @@ ATTR_RECORD * find_attribute(const ATTR_TYPES type, ntfs_attr_search_ctx *ctx)
     return NULL;
   }
 
-  if (ntfs_attr_lookup(type, NULL, 0, 0, 0, NULL, 0, ctx) != 0) {
+  if (ntfs_attr_lookup(type, NULL, 0, CASE_SENSITIVE, 0, NULL, 0, ctx) != 0) {
 #ifdef DEBUG_NTFS
     log_debug("find_attribute didn't find an attribute of type: 0x%02x.\n", type);
 #endif
