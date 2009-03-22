@@ -305,6 +305,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->calculated_file_size=0;
   file_recovery->data_check=NULL;
   file_recovery->file_check=NULL;
+  file_recovery->file_rename=NULL;
   file_recovery->offset_error=0;
 }
 
