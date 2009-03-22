@@ -358,6 +358,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
             dir_partition(disk_car,partition,verbose, current_cmd);
             io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
           }
+	  rewrite=1;
         }
 	break;
       case 'l':
