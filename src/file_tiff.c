@@ -58,6 +58,64 @@ const file_hint_t file_hint_tiff= {
 static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
 static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
 
+static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
+{
+  const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->tiff_diroff));
+  const struct ifd_header *exififd=NULL;
+  const TIFFDirEntry *ifd;
+  unsigned int j;
+  for(j=0, ifd=&ifd0->ifd;
+      (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd0->nbr_fields);
+      j++, ifd++)
+  {
+    if(be16(ifd->tdir_tag)==tag)
+      return (const char*)tiff+be32(ifd->tdir_offset);
+    else if(be16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
+      exififd=(const struct ifd_header *)((const char*)tiff + be32(ifd->tdir_offset));
+  }
+  if(exififd!=NULL)
+  {	/* Exif */
+    for(j=0, ifd=&exififd->ifd;
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(exififd->nbr_fields);
+	j++, ifd++)
+    {
+      if(be16(ifd->tdir_tag)==tag)
+	return (const char*)tiff+be32(ifd->tdir_offset);
+    }
+  }
+  /* IFD1 not handled */
+  return NULL;
+}
+
+static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
+{
+  const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->tiff_diroff));
+  const struct ifd_header *exififd=NULL;
+  const TIFFDirEntry *ifd;
+  unsigned int j;
+  for(j=0, ifd=&ifd0->ifd;
+      (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd0->nbr_fields);
+      j++, ifd++)
+  {
+    if(le16(ifd->tdir_tag)==tag)
+      return (const char*)tiff+le32(ifd->tdir_offset);
+    else if(le16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
+      exififd=(const struct ifd_header *)((const char*)tiff + le32(ifd->tdir_offset));
+  }
+  if(exififd!=NULL)
+  {	/* Exif */
+    for(j=0, ifd=&exififd->ifd;
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(exififd->nbr_fields);
+	j++, ifd++)
+    {
+      if(le16(ifd->tdir_tag)==tag)		/* DateTimeOriginal */
+	return (const char*)tiff+le32(ifd->tdir_offset);
+    }
+  }
+  /* IFD1 not handled */
+  return NULL;
+}
+
 static const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
 {
   if(tiff_size < sizeof(TIFFHeader))
@@ -66,77 +124,13 @@ static const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsig
   {
     if(tiff_size < be32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
       return NULL;
-    {
-      const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->tiff_diroff));
-      const struct ifd_header *ifd1=NULL;
-      const TIFFDirEntry *ifd;
-      unsigned int j;
-      for(j=0, ifd=&ifd0->ifd;
-	  (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd0->nbr_fields);
-	  j++, ifd++)
-      {
-	if(be16(ifd->tdir_tag)==tag)
-	{
-	  if(be32(ifd->tdir_offset)+19 < tiff_size)
-	    return (const char*)tiff+be32(ifd->tdir_offset);
-	}
-	else if(be16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
-	{
-	  ifd1=(const struct ifd_header *)((const char*)tiff + be32(ifd->tdir_offset));
-	}
-      }
-      if(ifd1!=NULL)
-      {	/* Exif */
-	for(j=0, ifd=&ifd1->ifd;
-	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd1->nbr_fields);
-	    j++, ifd++)
-	{
-	  if(be16(ifd->tdir_tag)==tag)
-	  {
-	    if(be32(ifd->tdir_offset)+19 < tiff_size)
-	      return (const char*)tiff+be32(ifd->tdir_offset);
-	  }
-	}
-      }
-    }
+    return find_tag_from_tiff_header_be(tiff, tiff_size, tag);
   }
   else if(memcmp(&tiff->tiff_magic, tiff_header_le, sizeof(tiff_header_le))==0)
   {
     if(tiff_size < le32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
       return NULL;
-    {
-      const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->tiff_diroff));
-      const struct ifd_header *ifd1=NULL;
-      const TIFFDirEntry *ifd;
-      unsigned int j;
-      for(j=0, ifd=&ifd0->ifd;
-	   (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd0->nbr_fields);
-	  j++, ifd++)
-      {
-	if(le16(ifd->tdir_tag)==tag)
-	{
-	  if(le32(ifd->tdir_offset)+19 < tiff_size)
-	    return (const char*)tiff+le32(ifd->tdir_offset);
-	}
-	else if(le16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
-	{
-	  ifd1=(const struct ifd_header *)((const char*)tiff + le32(ifd->tdir_offset));
-	}
-      }
-      if(ifd1!=NULL)
-      {	/* Exif */
-	for(j=0, ifd=&ifd1->ifd;
-	    (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd1->nbr_fields);
-	    j++, ifd++)
-	{
-	  if(le16(ifd->tdir_tag)==tag)		/* DateTimeOriginal */
-	  {
-	    if(le32(ifd->tdir_offset)+19 < tiff_size)
-	      return (const char*)tiff+le32(ifd->tdir_offset);
-	  }
-	}
-      }
-    }
+    return find_tag_from_tiff_header_le(tiff, tiff_size, tag);
   }
   return NULL;
 }
@@ -148,11 +142,11 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
   /* DateTimeOriginal */
   date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x9003);
   /* DateTimeDigitalized*/
-  if(date_asc==NULL)
+  if(date_asc==NULL || &date_asc[18] >= (const char *)tiff + tiff_size)
     date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x9004);
-  if(date_asc==NULL)
+  if(date_asc==NULL || &date_asc[18] >= (const char *)tiff + tiff_size)
     date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x132);
-  if(date_asc==NULL)
+  if(date_asc==NULL || &date_asc[18] >= (const char *)tiff + tiff_size)
     return (time_t)0;
   memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
