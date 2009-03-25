@@ -166,7 +166,7 @@ then
   then
     if [ ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
     then
-      	$LYNX "https://www.uitwisselplatform.nl/frs/?group_id=53&release_id=262"
+      	$LYNX "http://sourceforge.net/project/platformdownload.php?group_id=167783"
     fi
   fi
   if [ -e libewf-$VER_LIBEWF.tar.gz ];
