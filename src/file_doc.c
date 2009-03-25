@@ -2,7 +2,7 @@
 
     File: file_doc.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -122,6 +122,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	log_info(" type %u",dir_entry->type);
 	log_info(" sector %llu\n",(long long unsigned)le32(dir_entry->start_block));
 #endif
+	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
+	  return "db";
 	/* 3ds max */
 	if(memcmp(&dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
 	  return "max";
