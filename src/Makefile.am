@@ -169,6 +169,7 @@ file_C			= filegen.c \
 			  file_ses.c \
 			  file_sib.c \
 			  file_sit.c \
+			  file_skd.c \
 			  file_skp.c \
 			  file_sp3.c \
 			  file_spe.c \
