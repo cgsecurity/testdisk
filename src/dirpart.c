@@ -169,7 +169,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 	  {
 	    file_data_t *dir_list;
 	    dir_list=dir_data.get_dir(disk_car, partition, &dir_data, dir_data.current_inode);
-	    dir_aff_log(disk_car, partition, &dir_data, dir_list);
+	    dir_aff_log(&dir_data, dir_list);
 	    delete_list_file(dir_list);
 	  }
 #endif

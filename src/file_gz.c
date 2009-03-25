@@ -118,7 +118,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       const unsigned char *buffer_compr=buffer+off;
       unsigned char buffer_uncompr[512];
       const unsigned int comprLen=(buffer_size<512?buffer_size:512)-off;
-      unsigned int uncomprLen=512-1;
+      const unsigned int uncomprLen=512-1;
       z_stream d_stream; /* decompression stream */
       d_stream.zalloc = (alloc_func)0;
       d_stream.zfree = (free_func)0;

@@ -35,14 +35,11 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#include <stdio.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
-#endif
 #include "dir.h"
 #include "fat_dir.h"
 #include "list.h"
@@ -127,10 +124,10 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 {
   char *new_file;	
   FILE *f_out;
-  unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
   unsigned int file_size=file->stat.st_size;
   unsigned long int no_of_cluster;
+  unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   cluster = file->stat.st_ino;
   new_file=(char *)MALLOC(1024);
   snprintf(new_file, 1024, "%s.%u/f%u-%s", recup_dir, dir_num,
@@ -213,6 +210,8 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
       if(dir_list!=NULL)
       {
 	const file_data_t *current_file;
+	log_info("Sector %llu\n", (long long unsigned)old_offset/disk->sector_size);
+	dir_aff_log(NULL, dir_list);
 	del_search_space(list_search_space, old_offset, old_offset + blocksize -1);
 	current_file=dir_list;
 	while(current_file!=NULL)
