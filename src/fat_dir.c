@@ -290,7 +290,8 @@ RecEnd:
     }
   }
   de++;
-  if((const void *)de<(const void *)(buffer+size-1))
+  if((const void *)de<(const void *)(buffer+size-1) &&
+      de->name[0] != (int8_t) 0)
     goto GetNew;
 EODir:
   return dir_list;
