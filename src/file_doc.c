@@ -110,6 +110,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       unsigned int sid;
       const struct OLE_DIR *dir_entry;
       const char *ext=NULL;
+      int is_db=0;
       for(sid=0,dir_entry=(const struct OLE_DIR *)&buffer[offset_root_dir];
 	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;sid++,dir_entry++)
       {
@@ -123,7 +124,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	log_info(" sector %llu\n",(long long unsigned)le32(dir_entry->start_block));
 #endif
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
-	  return "db";
+	  is_db++;
+	else if(sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+	  is_db++;
 	/* 3ds max */
 	if(memcmp(&dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
 	  return "max";
@@ -161,6 +164,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       }
       if(ext!=NULL)
 	return ext;
+      if(is_db==2)
+	return "db";
     }
   }
 #ifdef DEBUG_OLE
