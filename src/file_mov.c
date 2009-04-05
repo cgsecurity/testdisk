@@ -64,6 +64,7 @@ static void register_header_check_mov(file_stat_t *file_stat)
   register_header_check(4, (const unsigned char*)"stbl",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"trak",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"wide",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"jP  ",4, &header_check_mov, file_stat);
 }
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
