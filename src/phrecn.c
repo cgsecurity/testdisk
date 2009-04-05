@@ -242,13 +242,13 @@ static void set_filename(file_recovery_t *file_recovery, const char *recup_dir, 
 {
   if(file_recovery->extension==NULL || file_recovery->extension[0]=='\0')
   {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%u",recup_dir,
+    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u",recup_dir,
 	dir_num,(broken?'b':'f'),
 	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size));
   }
   else
   {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%u.%s",recup_dir,
+    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u.%s",recup_dir,
 	dir_num, (broken?'b':'f'),
 	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size), file_recovery->extension);
   }
