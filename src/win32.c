@@ -58,9 +58,9 @@ static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
 static int file_win32_clean(disk_t *disk_car);
-static int file_win32_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset);
-static int file_win32_pwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset);
-static int file_win32_nopwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
+static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
+static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count,  const uint64_t offset);
 static int file_win32_sync(disk_t *disk_car);
 static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device);
 
@@ -487,7 +487,7 @@ static int file_win32_pread_aux(disk_t *disk_car, void *buf, const unsigned int 
   return ret;
 }
 
-static int file_win32_pread(disk_t *disk_car,const unsigned int count, void *buf, const uint64_t offset)
+static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pread(&file_win32_pread_aux, disk_car, buf, count, offset);
 }
@@ -534,12 +534,12 @@ static int file_win32_pwrite_aux(disk_t *disk_car, const void *buf, const unsign
   return ret;
 }
 
-static int file_win32_pwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pwrite(&file_win32_pread_aux, &file_win32_pwrite_aux, disk_car, buf, count, offset);
 }
 
-static int file_win32_nopwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count,  const uint64_t offset)
 {
   const struct info_file_win32_struct *data=disk_car->data;
   log_warning("file_win32_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", (unsigned int)data->handle,
