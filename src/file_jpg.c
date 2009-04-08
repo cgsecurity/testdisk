@@ -29,6 +29,9 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #ifdef HAVE_SETJMP_H
@@ -48,6 +51,8 @@ extern const file_hint_t file_hint_riff;
 static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_jpg(file_recovery_t *file_recovery);
+static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb);
+static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
@@ -90,21 +95,19 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       memcmp(buffer, jpg_header_com,  sizeof(jpg_header_com))==0)
   {
     unsigned int i=2;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_jpg.extension;
-    file_recovery_new->data_check=NULL;
-    file_recovery_new->file_check=&file_check_jpg;
     while(i<6*512 && i+4<buffer_size)
     {
-      if(buffer[i]==0xff && buffer[i+1]==0xe0)
-      { /* APP0 */
-	i+=2+(buffer[i+2]<<8)+buffer[i+3];
+      if(buffer[i]!=0xff)
+	return 0;
+      /* 0xe0 APP0 */
+      /* 0xfe COM */
+      /* 0xdb DQT */
+      if(buffer[i+1]==0xe0 ||
+	 buffer[i+1]==0xfe ||
+	 buffer[i+1]==0xdb)
+      {
       }
-      else if(buffer[i]==0xff && buffer[i+1]==0xfe)
-      { /* COM */
-	i+=2+(buffer[i+2]<<8)+buffer[i+3];
-      }
-      else if(buffer[i]==0xff && buffer[i+1]==0xe1)
+      else if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
 	if(i+0x0A < buffer_size && 2+(buffer[i+2]<<8)+buffer[i+3] > 0x0A)
 	{
@@ -113,15 +116,25 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	    tiff_size=buffer_size - (i+0x0A);
 	  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
-	i+=2+(buffer[i+2]<<8)+buffer[i+3];
       }
       else
       {
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension=file_hint_jpg.extension;
+	file_recovery_new->file_check=&file_check_jpg;
 	file_recovery_new->min_filesize=288;
+	file_recovery_new->data_check=&data_check_jpg;
+	file_recovery_new->calculated_file_size=2;
 	return 1;
       }
+      i+=2+(buffer[i+2]<<8)+buffer[i+3];
     }
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_jpg.extension;
+    file_recovery_new->file_check=&file_check_jpg;
     file_recovery_new->min_filesize=i;
+    file_recovery_new->data_check=&data_check_jpg;
+    file_recovery_new->calculated_file_size=2;
     return 1;
   }
   return 0;
@@ -378,6 +391,14 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   file_recovery->file_size=0;
   file_recovery->offset_error=0;
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
+#else
+  /* Not accurate */
+  jpeg_size=ftell(infile);
+#endif
+  jpg_check_structure(file_recovery, 0);
+  if(file_recovery->offset_error!=0)
+    return ;
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   {
     JSAMPARRAY buffer;		/* Output row buffer */
     int row_stride;		/* physical row width in output buffer */
@@ -402,6 +423,9 @@ static void file_check_jpg(file_recovery_t *file_recovery)
       jpeg_destroy_decompress(&cinfo);
       if(jpeg_size>0)
 	file_recovery->offset_error=jpeg_size;
+#ifdef DEBUG_JPEG
+      jpg_check_structure(file_recovery, 1);
+#endif
       return;
     }
     jpeg_create_decompress(&cinfo);
@@ -429,9 +453,6 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     }
     jpeg_destroy_decompress(&cinfo);
   }
-#else
-  /* Not accurate */
-  jpeg_size=ftell(infile);
 #endif
 //    log_error("JPG size: %llu\n", (long long unsigned)jpeg_size);
   if(jpeg_size<=0)
@@ -440,9 +461,130 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   if(jerr.pub.num_warnings>0)
   {
     file_recovery->offset_error=jpeg_size;
+#ifdef DEBUG_JPEG
+    log_error("JPG warning: %llu\n", (long long unsigned)jpeg_size);
+    jpg_check_structure(file_recovery, 1);
+#endif
     return;
   }
 #endif
   file_recovery->file_size=jpeg_size;
   file_search_footer(file_recovery, jpg_footer,sizeof(jpg_footer));
 }
+
+static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)
+{
+  FILE* infile=file_recovery->handle;
+  unsigned char buffer[40*8192];
+  unsigned int offset=2;
+  int nbytes;
+  fseek(infile, 0, SEEK_SET);
+  if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
+  {
+    while(offset < nbytes)
+    {
+      const unsigned int i=offset;
+      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      if(buffer[i]!=0xff)
+      {
+	file_recovery->offset_error=i;
+	return;
+      }
+      offset+=2+size;
+      if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
+	return;
+      else if(buffer[i+1]==0xe1)
+      { /* APP1 Exif information */
+	if(i+0x0A < nbytes && 2+size > 0x0A)
+	{
+	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
+	  unsigned int tiff_size=2+size-0x0A;
+	  const char *info;
+	  const char *thumb_data=NULL;
+	  const char *ifbytecount=NULL;
+	  if(nbytes - (i+0x0A) < tiff_size)
+	    tiff_size=nbytes - (i+0x0A);
+	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET);
+	  if(thumb_data!=NULL)
+	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT);
+	  if(thumb_data!=NULL && ifbytecount!=NULL)
+	  {
+	    const unsigned int thumb_offset=thumb_data-(const char*)buffer;
+	    const unsigned int thumb_size=ifbytecount-(const char*)tiff;
+	    unsigned int j_old;
+	    if(thumb_offset+thumb_size < sizeof(buffer))
+	    {
+	      unsigned int j=thumb_offset+2;
+	      unsigned int thumb_sos_found=0;
+	      j_old=j;
+	      while(j+4<sizeof(buffer) && thumb_sos_found==0)
+	      {
+		if(buffer[j]!=0xff)
+		{
+		  file_recovery->offset_error=j;
+#ifdef DEBUG_JPEG
+		  log_error("%s Error between %u and %u\n", file_recovery->filename, j_old, j);
+#endif
+		  return;
+		}
+		if(buffer[j+1]==0xda)	/* Thumb SOS: Start Of Scan */
+		  thumb_sos_found=1;
+		j_old=j;
+		j+=2+(buffer[j+2]<<8)+buffer[j+3];
+	      }
+	      if(thumb_sos_found>0 && extract_thumb>0)
+	      {
+		char *thumbname;
+		char *sep;
+		thumbname=strdup(file_recovery->filename);
+		sep=strrchr(thumbname,'/');
+		if(sep!=NULL && *(sep+1)=='f' && thumb_offset+thumb_size < sizeof(buffer))
+		{
+		  FILE *out;
+		  *(sep+1)='t';
+		  if((out=fopen(thumbname,"wb"))!=NULL)
+		  {
+		    fwrite(thumb_data,  thumb_size, 1, out);
+		    fclose(out);
+		  }
+		  else
+		  {
+		    log_error("fopen %s failed\n", thumbname);
+		  }
+		}
+		free(thumbname);
+	      }
+	    }
+	  }
+	}
+	return ;
+      }
+    }
+  }
+}
+
+static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    if(buffer[i]==0xFF)
+    {
+      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      file_recovery->calculated_file_size+=2+size;
+      if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
+      {
+	file_recovery->data_check=NULL;
+	file_recovery->calculated_file_size=0;
+	return 1;
+      }
+    }
+    else
+    {
+      return 2;
+    }
+  }
+  return 1;
+}
+
