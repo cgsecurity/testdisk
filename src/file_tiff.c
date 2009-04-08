@@ -62,6 +62,7 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
 {
   const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->tiff_diroff));
   const struct ifd_header *exififd=NULL;
+  const uint32_t *tiff_next_diroff;
   const TIFFDirEntry *ifd;
   unsigned int j;
   for(j=0, ifd=&ifd0->ifd;
@@ -73,6 +74,7 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
     else if(be16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
       exififd=(const struct ifd_header *)((const char*)tiff + be32(ifd->tdir_offset));
   }
+  tiff_next_diroff=(const uint32_t *)ifd;
   if(exififd!=NULL)
   {	/* Exif */
     for(j=0, ifd=&exififd->ifd;
@@ -83,7 +85,18 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
 	return (const char*)tiff+be32(ifd->tdir_offset);
     }
   }
-  /* IFD1 not handled */
+  /* IFD1 */
+  if(be32(*tiff_next_diroff)>0)
+  {
+    const const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+be32(*tiff_next_diroff));
+    for(j=0, ifd=&ifd1->ifd;
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd1->nbr_fields);
+	j++, ifd++)
+    {
+      if(be16(ifd->tdir_tag)==tag)
+	return (const char*)tiff+be32(ifd->tdir_offset);
+    }
+  }
   return NULL;
 }
 
@@ -91,6 +104,7 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
 {
   const struct ifd_header *ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->tiff_diroff));
   const struct ifd_header *exififd=NULL;
+  const uint32_t *tiff_next_diroff;
   const TIFFDirEntry *ifd;
   unsigned int j;
   for(j=0, ifd=&ifd0->ifd;
@@ -102,6 +116,7 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
     else if(le16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
       exififd=(const struct ifd_header *)((const char*)tiff + le32(ifd->tdir_offset));
   }
+  tiff_next_diroff=(const uint32_t *)ifd;
   if(exififd!=NULL)
   {	/* Exif */
     for(j=0, ifd=&exififd->ifd;
@@ -112,11 +127,22 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
 	return (const char*)tiff+le32(ifd->tdir_offset);
     }
   }
-  /* IFD1 not handled */
+  /* IFD1 */
+  if(le32(*tiff_next_diroff)>0)
+  {
+    const const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+le32(*tiff_next_diroff));
+    for(j=0, ifd=&ifd1->ifd;
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<le16(ifd1->nbr_fields);
+	j++, ifd++)
+    {
+      if(le16(ifd->tdir_tag)==tag)
+	return (const char*)tiff+le32(ifd->tdir_offset);
+    }
+  }
   return NULL;
 }
 
-static const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
+const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag)
 {
   if(tiff_size < sizeof(TIFFHeader))
     return NULL;
@@ -189,9 +215,9 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
 	  file_recovery_new->extension="nef";
 	else if(strcmp(tag_make, "Kodak")==0)
 	  file_recovery_new->extension="dcr";
-	else if(strcmp(tag_make, "Sony")==0)
+	else if(strcmp(tag_make, "SONY")==0)
 	  file_recovery_new->extension="sr2";
-	else if(strcmp(tag_make, "Sony ")==0)
+	else if(strcmp(tag_make, "SONY ")==0)
 	  file_recovery_new->extension="arw";
       }
     }
