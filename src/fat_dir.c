@@ -242,7 +242,7 @@ RecEnd:
       status=FILE_STATUS_DELETED;
       if((de->attr&ATTR_DIR)==ATTR_DIR &&
 	((dir_list==NULL && unicode[1]=='\0') ||
-	 (dir_list->next==NULL && unicode[1]=='.' && unicode[2]=='\0')))
+	 (dir_list!=NULL && dir_list->next==NULL && unicode[1]=='.' && unicode[2]=='\0')))
 	unicode[0]='.';	/* "." and ".." are the first two entries */
       else
 	unicode[0]='_';
