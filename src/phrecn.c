@@ -1178,6 +1178,107 @@ static int interface_cannot_create_file(void)
 }
 #endif
 
+static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *list_search_space)
+{
+  struct td_list_head *search_walker = NULL;
+  const unsigned int buffer_size=64*512;
+  FILE *out;
+  unsigned char *buffer;
+  if(td_list_empty(&list_search_space->list))
+    return ;
+  if(!(out=fopen(filename,"w+b")))
+    return ;
+  buffer=(unsigned char *)MALLOC(buffer_size);
+  td_list_for_each(search_walker, &list_search_space->list)
+  {
+    uint64_t offset;
+    alloc_data_t *current_search_space;
+    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    for(offset=current_search_space->start; offset <= current_search_space->end; offset+=buffer_size)
+    {
+      const unsigned int read_size=(current_search_space->end - offset + 1 < buffer_size ?
+	  current_search_space->end - offset + 1 : buffer_size);
+      disk->pread(disk, buffer, read_size, offset);
+      fwrite(buffer, read_size, 1, out);
+    }
+  }
+  free(buffer);
+  fclose(out);
+}
+
+#if 0
+static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const uint64_t start, const uint64_t end)
+{
+  uint64_t datasize=end-start+1;
+  unsigned char *buffer=(unsigned char *) MALLOC(datasize);
+  disk->pread(disk, buffer, datasize, start);
+  if(file_recovery->file_stat==NULL)
+  {
+    struct td_list_head *tmpl;
+    td_list_for_each(tmpl, &file_check_list.list)
+    {
+      struct td_list_head *tmp;
+      const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+      td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
+      {
+	const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+	    file_check->header_check(buffer, datasize, 0, file_recovery, file_recovery)!=0)
+	{
+	  file_recovery->file_stat=file_check->file_stat;
+	  break;
+	}
+      }
+      if(file_recovery->file_stat!=NULL)
+	break;
+    }
+    if(file_recovery->file_stat==NULL)
+    {
+      free(buffer);
+      return ;
+    }
+    /* file_recovery->loc is used by file_truncate */
+    file_recovery->loc=NULL;
+    /* list_free_add, list_space_used, update_search_space, list_truncate, free_list_allocation */
+    file_recovery->location.start=start;
+  }
+  if(file_recovery->handle==NULL)
+  {
+    set_filename(file_recovery, recup_dir, dir_num, disk, partition, 0);
+    file_recovery->handle=fopen(file_recovery->filename, "w+b");
+    if(file_recovery->handle==NULL)
+    {
+      log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
+      free(buffer);
+      return;
+    }
+  }
+  fwrite(buffer, datasize, 1, file_recovery->handle);
+  list_append_block(&file_recovery->location, start, datasize, 1);
+  file_recovery->file_size+=datasize;
+  file_recovery->file_size_on_disk+=datasize;
+  free(buffer);
+}
+
+static void test_files(disk_t *disk, partition_t *partition, alloc_data_t *list_search_space, char *recup_dir, unsigned int *dir_num, unsigned int *file_nbr)
+{
+  alloc_data_t *current_search_space=list_search_space;
+  uint64_t offset;
+  file_recovery_t file_recovery;
+  offset=current_search_space->start;
+  /* Recover a file with a known location */
+  reset_file_recovery(&file_recovery);
+  test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 1289*512, (1304+1)*512-1);
+  test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 2881*512, (3259+1)*512-1);
+  file_finish(&file_recovery, recup_dir, 1, file_nbr, disk->sector_size, list_search_space, &current_search_space, &offset, dir_num, STATUS_EXT2_OFF, disk);
+
+  /* Exclude some sectors from the search space */
+  del_search_space(list_search_space, 121407*512, (121416+1)*512-1);
+  del_search_space(list_search_space, 121445*512, (121448+1)*512-1);
+  del_search_space(list_search_space, 121865*512, (122195+1)*512-1);
+}
+#endif
+
 int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, char *recup_dir, const int keep_corrupted_file, const int interface, file_enable_t *files_enable, unsigned int mode_ext2, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only)
 {
   char *new_recup_dir=NULL;
@@ -1200,6 +1301,9 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
 
   real_start_time=time(NULL);
   dir_num=photorec_mkdir(recup_dir,dir_num);
+#if 0
+  test_files(disk_car, partition, list_search_space, recup_dir, &dir_num, &file_nbr);
+#endif
   status=STATUS_FIND_OFFSET;
   for(pass=0;status!=STATUS_QUIT;pass++)
   {
@@ -1427,6 +1531,13 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
       fflush(stdout);
     }
   }
+#ifdef HAVE_NCURSES
+  if(expert>0)
+  {
+    if(ask_confirmation("Create a image_remaining.dd file with the unknown data (Answer N if not sure) (Y/N)")!=0)
+      gen_image("image_remaining.dd", disk_car, list_search_space);
+  }
+#endif
   info_list_search_space(list_search_space, NULL, disk_car->sector_size, keep_corrupted_file, verbose);
   /* Free memory */
   free_search_space(list_search_space);
