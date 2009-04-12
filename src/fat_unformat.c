@@ -57,7 +57,6 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   uint64_t offset=0;
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
-  int ind_stop=0;
   alloc_data_t *current_search_space;
   unsigned char *buffer_start=(unsigned char *)MALLOC(READ_SIZE);
   unsigned char *buffer=buffer_start;
@@ -86,7 +85,6 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       wclrtoeol(stdscr);
       wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk->sector_size),(unsigned long)(partition->part_size/disk->sector_size),nbr_subdir);
       wrefresh(stdscr);
-      ind_stop|=check_enter_key_or_s(stdscr);
     }
 #endif
     if(memcmp(buffer,         ".          ", 8+3)==0 &&

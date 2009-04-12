@@ -499,7 +499,6 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 	{
 	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
 	  unsigned int tiff_size=2+size-0x0A;
-	  const char *info;
 	  const char *thumb_data=NULL;
 	  const char *ifbytecount=NULL;
 	  if(nbytes - (i+0x0A) < tiff_size)
