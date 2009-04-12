@@ -1,7 +1,7 @@
 %define ver_progsreiserfs 0.3.1-rc8
 %define ver_libewf 20080501
 
-Summary:	Tool to check and undelete partition
+Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
 Summary(fr.UTF8):	Outil pour vérifier et restorer des partitions
 Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
@@ -27,6 +27,8 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
 NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid, Linux Swap,
 LVM, LVM2, NSS, ReiserFS, UFS, XFS
+PhotoRec is a signature based file recovery utility. It handles more than
+100 file formats including jpg, MSOffice, OpenOffice documents.
 
 %description -l pl.UTF8
 Narzędzie sprawdzające i odzyskujące partycje. Pracuje z partycjami:
@@ -34,9 +36,12 @@ FAT12, FAT16, FAT32, NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid,
 Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 
 %description -l fr.UTF8
-Outil pour vérifier et restorer des partitions. Fonctionne avec
+TestDisk vérifie et récupère les partitions effacées. Fonctionne avec
 FAT12, FAT16, FAT32, NTFS, EXT2, EXT3, BeFS, CramFS, HFS, JFS, Linux Raid,
 Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
+PhotoRec utilise un mécanisme de signature pour récupérer des fichiers perdus.
+Il gère plus d'une centaine de formats de fichiers dont les jpeg, les documents
+MSOffice ou OpenOffice.
 
 %description -l ru_RU.UTF8
 Программа для проверки и восстановления разделов диска.
