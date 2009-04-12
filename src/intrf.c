@@ -248,7 +248,7 @@ unsigned long long int ask_number_cli(char **current_cmd, const unsigned long lo
       va_list ap;
       va_start(ap,_format);
       vsnprintf(res,sizeof(res),_format,ap);
-      log_error(res);
+      log_error("%s", res);
       if(val_min!=val_max)
 	log_error("(%llu-%llu) :",val_min,val_max);
       log_error("Invalid value\n");
