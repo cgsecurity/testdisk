@@ -367,7 +367,19 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   *dst++ = '_';
   /* Add original filename */
   while(off<buffer_size && buffer[off]!='\0')
-    *dst++ = buffer[off++];
+  {
+    switch(buffer[off])
+    {
+      case '/':
+      case '\\':
+	*dst++ = '_';
+	break;
+      default:
+	*dst++ = buffer[off];
+	break;
+    }
+    off++;
+  }
   /* Add extension */
   while(*ext!='\0')
     *dst++ = *ext++;
