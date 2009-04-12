@@ -146,7 +146,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
   int done = 0;
   char def[LINE_LENGTH];
   char response[LINE_LENGTH];
-  int tmp_val=0;
+  long int tmp_val=0;
   int command;
   int default_option=4;
   int cyl_modified=0;
@@ -185,10 +185,10 @@ static void change_geometry_ncurses(disk_t *disk_car)
       case 'c':
       case 'C':
         {
-          sprintf(def, "%u", disk_car->geom.cylinders);
+          sprintf(def, "%lu", disk_car->geom.cylinders);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
           if (get_string(response, LINE_LENGTH, def) > 0) {
-            tmp_val = atoi(response);
+            tmp_val = atol(response);
             if (tmp_val > 0) {
               disk_car->geom.cylinders = tmp_val;
               cyl_modified=1;

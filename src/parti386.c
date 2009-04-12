@@ -810,7 +810,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
         }
         nextext_start.sector=1;
         if(verbose>1)
-          log_verbose("nextext_start %u/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
+          log_verbose("nextext_start %lu/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
               (long unsigned)(CHS2offset(disk_car,&nextext_start)/disk_car->sector_size),
               (long unsigned)((element->part->part_offset+element->part->part_size-1)/disk_car->sector_size));
         if(CHS2offset(disk_car,&nextext_start)<=element->part->part_offset+element->part->part_size-1)
@@ -818,7 +818,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
           offset2CHS(disk_car,bloc_nextext->part_offset,&nextext_start);
           nextext_start.sector=1;
           if(verbose>1)
-            log_verbose("nextext_start %u/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
+            log_verbose("nextext_start %lu/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
                 (long unsigned)(CHS2offset(disk_car,&nextext_start)/disk_car->sector_size),
                 (long unsigned)((element->part->part_offset+element->part->part_size-1)/disk_car->sector_size));
           if(CHS2offset(disk_car,&nextext_start)<=element->part->part_offset+element->part->part_size-1)
@@ -827,7 +827,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
           }
         }
         if(verbose>1)
-          log_verbose("nextext_start %u/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
+          log_verbose("nextext_start %lu/%u/%u %lu ? %lu\n", nextext_start.cylinder,nextext_start.head,nextext_start.sector,
               (long unsigned)(CHS2offset(disk_car,&nextext_start)/disk_car->sector_size),
               (long unsigned)((element->part->part_offset+element->part->part_size-1)/disk_car->sector_size));
         bloc_nextext->part_offset=CHS2offset(disk_car,&nextext_start);

@@ -124,7 +124,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
   int done = 0;
   char def[LINE_LENGTH];
   char response[LINE_LENGTH];
-  unsigned int tmp_val;
+  unsigned long int tmp_val;
   int command;
   position.cylinder=offset2cylinder(disk_car,*lba);
   position.head=offset2head(disk_car,*lba);
@@ -145,10 +145,10 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 	switch (command) {
 	  case 'c':
 	  case 'C':
-		sprintf(def, "%u", position.cylinder);
+		sprintf(def, "%lu", position.cylinder);
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
 		if (get_string(response, LINE_LENGTH, def) > 0) {
-		  tmp_val = atoi(response);
+		  tmp_val = atol(response);
 		  if (tmp_val < disk_car->geom.cylinders) {
 			position.cylinder = tmp_val;
 		  } else

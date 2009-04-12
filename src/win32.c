@@ -150,7 +150,7 @@ void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *dev
       if(geom->sectors_per_head!=0)
       {
 	if(verbose>1)
-	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY_EX %s Ok (%u, %u, %u)\n",
+	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY_EX %s Ok (%lu, %u, %u)\n",
 	      device, geom->cylinders, geom->heads_per_cylinder, geom->sectors_per_head);
 	return ;
       }
@@ -168,7 +168,7 @@ void disk_get_geometry_win32(CHSgeometry_t *geom, HANDLE handle, const char *dev
       if(geom->sectors_per_head!=0)
       {
 	if(verbose>1)
-	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY %s Ok (%u, %u, %u)\n",
+	  log_verbose("IOCTL_DISK_GET_DRIVE_GEOMETRY %s Ok (%lu, %u, %u)\n",
 	      device, geom->cylinders, geom->heads_per_cylinder, geom->sectors_per_head);
 	return ;
       }
@@ -346,12 +346,12 @@ static const char *file_win32_description(disk_t *disk_car)
   struct info_file_win32_struct *data=disk_car->data;
   char buffer_disk_size[100];
   if(disk_car->device[0]=='\\' && disk_car->device[1]=='\\' && disk_car->device[2]=='.' && disk_car->device[3]=='\\' && disk_car->device[5]==':')
-    snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Drive %c: - %s - CHS %u %u %u%s",
+    snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Drive %c: - %s - CHS %lu %u %u%s",
 	disk_car->device[4], size_to_unit(disk_car->disk_size,buffer_disk_size),
 	disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
 	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));
   else
-    snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
+    snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %lu %u %u%s",
 	disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
 	disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
 	((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?"":" (RO)"));

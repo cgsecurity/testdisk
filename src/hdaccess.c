@@ -756,13 +756,13 @@ void update_disk_car_fields(disk_t *disk_car)
   }
   else
   {
-    const unsigned int cylinder_num=disk_car->disk_real_size /
+    const unsigned long int cylinder_num=disk_car->disk_real_size /
       (uint64_t)disk_car->geom.heads_per_cylinder /
       (uint64_t)disk_car->geom.sectors_per_head /
       (uint64_t)disk_car->sector_size;
     if(cylinder_num>0 && disk_car->geom.cylinders != cylinder_num)
     {
-      log_debug("Fix cylinder count for %s: number of cylinders %u !=  %u (calculated)\n",
+      log_debug("Fix cylinder count for %s: number of cylinders %lu !=  %lu (calculated)\n",
 	  disk_car->device, disk_car->geom.cylinders, cylinder_num);
       disk_car->geom.cylinders = cylinder_num;
     }
@@ -1023,7 +1023,7 @@ static const char *file_description(disk_t *disk_car)
 {
   const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
   char buffer_disk_size[100];
-  snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %u %u %u%s",
+  snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %lu %u %u%s",
       disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
       disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));

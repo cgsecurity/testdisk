@@ -52,9 +52,9 @@ static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description_short(disk_t *disk_car);
-static int disk_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t hd_offset);
-static int disk_pwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t hd_offset);
-static int disk_nopwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset);
+static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t hd_offset);
+static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset);
+static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int disk_sync(disk_t *disk_car);
 static int disk_clean(disk_t *disk_car);
 
@@ -320,7 +320,7 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   }
   computed_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   if(verbose>0 || data->bad_geometry!=0)
-    log_info("LBA %lu, computed %lu (CHS=%u,%u,%u)\n",
+    log_info("LBA %lu, computed %lu (CHS=%lu,%u,%u)\n",
 	(long unsigned)(disk_car->disk_size/disk_car->sector_size),
 	(long unsigned)(computed_size/disk_car->sector_size),
 	disk_car->geom.cylinders,
@@ -432,7 +432,7 @@ const char *disk_description(disk_t *disk_car)
 {
   struct info_disk_struct*data=disk_car->data;
   char buffer_disk_size[100];
-  snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %2x - %s - CHS %u %u %u%s",
+  snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %2x - %s - CHS %lu %u %u%s",
       data->disk, size_to_unit(disk_car->disk_size,buffer_disk_size),
       disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       data->bad_geometry!=0?" (Buggy BIOS)":"");
@@ -484,14 +484,13 @@ static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count,
   return count;
 }
 
-static int disk_pread(disk_t *disk_car, const unsigned int count, void *buf, const uint64_t offset)
+static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pread(&disk_pread_aux, disk_car, buf, count, offset);
 }
 
 static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
 {
-
   struct info_disk_struct*data=disk_car->data;
   int i=0;
   int rc;
@@ -510,12 +509,12 @@ static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int
   return rc;
 }
 
-static int disk_pwrite(disk_t *disk_car, const unsigned int count, const void *buf, const uint64_t offset)
+static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pwrite(&disk_pread_aux, &disk_pwrite_aux, disk_car, buf, count, offset);
 }
 
-static int disk_nopwrite(disk_t *disk_car,const unsigned int count, const void *buf, const uint64_t offset)
+static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   struct info_disk_struct *data=disk_car->data;
   log_warning("disk_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->disk,

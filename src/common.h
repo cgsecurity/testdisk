@@ -237,7 +237,7 @@ typedef struct partition_struct partition_t;
 typedef struct CHS_struct CHS_t;
 typedef struct
 {
-  unsigned int cylinders;
+  unsigned long int cylinders;
   unsigned int heads_per_cylinder;
   unsigned int sectors_per_head;
 //  unsigned int bytes_per_sector;
@@ -245,7 +245,7 @@ typedef struct
 
 struct CHS_struct
 {
-  unsigned int cylinder;
+  unsigned long int cylinder;
   unsigned int head;
   unsigned int sector;
 };
