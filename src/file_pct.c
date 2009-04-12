@@ -102,14 +102,16 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_pct.extension;
     /* We only have the low 16bits of the filesystem */
-    file_recovery_new->min_filesize=0x200+(buffer[0x200]<<8)+buffer[0x201];
+    file_recovery_new->min_filesize=(buffer[0x200]<<8)+buffer[0x201];
     file_recovery_new->file_check=&file_check_pct;
+#ifdef DEBUG_PCT
     log_info("X %u-%u, Y %u-%u\n",
 	be16(pct->XMin), be16(pct->XMax),
 	be16(pct->YMin), be16(pct->YMax));
     log_info("X %u-%u, Y %u-%u\n",
 	be16(pct->OXMin), be16(pct->OXMax),
 	be16(pct->OYMin), be16(pct->OYMax));
+#endif
     return 1;
   }
   return 0;
