@@ -164,7 +164,11 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       if(d_stream.total_out>0x110 &&
 	memcmp(&buffer_uncompr[0x101],tar_header_posix,sizeof(tar_header_posix))==0)
       {
+#ifdef DJGPP
+	file_recovery_new->extension="tgz";
+#else
 	file_recovery_new->extension="tar.gz";
+#endif
 	return 1;
       }
       file_recovery_new->extension=file_hint_gz.extension;
