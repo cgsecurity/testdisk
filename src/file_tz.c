@@ -57,14 +57,25 @@ static const unsigned char tz_header[20]=
   0x00, 0x00, 0x00, 0x00, 
 };
 
+static const unsigned char tz2_header[20]=
+{ 
+  'T', 'Z', 'i', 'f',
+   '2', 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 
+};
+
 static void register_header_check_tz(file_stat_t *file_stat)
 {
   register_header_check(0, tz_header, sizeof(tz_header), &header_check_tz, file_stat);
+  register_header_check(0, tz2_header, sizeof(tz2_header), &header_check_tz, file_stat);
 }
 
 static int header_check_tz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,tz_header,sizeof(tz_header))==0)
+  if(memcmp(buffer,tz_header,sizeof(tz_header))==0 ||
+      memcmp(buffer,tz2_header,sizeof(tz2_header))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_tz.extension;
