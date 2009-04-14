@@ -490,6 +490,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	      free(image_dd);
 	    }
 	  }
+	  rewrite=1;
 	  break;
 	case 'u':
 	case 'U':
@@ -500,6 +501,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    else
 	      dir_partition(disk_car, partition, 0, current_cmd);
 	  }
+	  rewrite=1;
 	  break;
 	case 'l':
 	case 'L':

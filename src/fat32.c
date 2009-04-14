@@ -79,7 +79,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   unsigned char *buffer_bs;
   unsigned char *buffer_backup_bs;
   const char *options="DRC";
-  int rescan=1;
 #ifdef HAVE_NCURSES
   struct MenuItem menu_fat32[]=
   {
@@ -102,7 +101,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     unsigned int menu=0;
     int command;
     screen_buffer_reset();
-    if(rescan==1)
     {
       int opt_over=0;
       int opt_B=0;
@@ -205,7 +203,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	else
 	  options="DR";
       }
-      rescan=0;
     }
     screen_buffer_to_log();
     if(*current_cmd!=NULL)
@@ -273,7 +270,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	    display_message("Write error: Can't overwrite FAT32 backup boot sector\n");
 	  }
           disk_car->sync(disk_car);
-	  rescan=1;
 	}
 #endif
 	break;
@@ -287,7 +283,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	    display_message("Write error: Can't overwrite FAT32 boot sector\n");
 	  }
           disk_car->sync(disk_car);
-	  rescan=1;
 	}
 #endif
 	break;
@@ -309,7 +304,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	break;
       case 'R': /* R : rebuild boot sector */
 	rebuild_FAT_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
-	rescan=1;
 	break;
     }
   }

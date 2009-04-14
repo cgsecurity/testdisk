@@ -76,7 +76,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
   unsigned char *buffer_bs;
   unsigned char *buffer_backup_bs;
   const char *options="";
-  int rescan=1;
 #ifdef HAVE_NCURSES
   struct MenuItem menu_ntfs[]=
   {
@@ -100,7 +99,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
     unsigned int menu=0;
     int command;
     screen_buffer_reset();
-    if(rescan==1)
     {
       int identical_sectors=0;
       int opt_B=0;
@@ -183,7 +181,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
       }
       else
 	options="DR";
-      rescan=0;
     }
     screen_buffer_to_log();
     if(*current_cmd!=NULL)
@@ -250,7 +247,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	    display_message("Write error: Can't overwrite NTFS backup boot sector\n");
 	  }
           disk_car->sync(disk_car);
-	  rescan=1;
 	}
 #endif
 	break;
@@ -264,7 +260,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	    display_message("Write error: Can't overwrite NTFS boot sector\n");
 	  }
           disk_car->sync(disk_car);
-	  rescan=1;
 	}
 #endif
 	break;
@@ -283,7 +278,6 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	break;
       case 'R': /* R : rebuild boot sector */
 	rebuild_NTFS_BS(disk_car, partition, verbose, 1, expert, current_cmd);
-	rescan=1;
 	break;
       case 'D':
 	dump_NTFS(disk_car, partition, buffer_bs, buffer_backup_bs);

@@ -75,7 +75,6 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 {
   unsigned char *buffer_bs;
   const char *options="DR";
-  int rescan=1;
 #ifdef HAVE_NCURSES
   struct MenuItem menu_fat1x[]=
   {
@@ -98,7 +97,6 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #endif
     int command;
     screen_buffer_reset();
-    if(rescan==1)
     {
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
@@ -132,7 +130,6 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       screen_buffer_add("\n");
       screen_buffer_add("A valid FAT Boot sector must be present in order to access\n");
       screen_buffer_add("any data; even if the partition is not bootable.\n");
-      rescan=0;
     }
     screen_buffer_to_log();
     if(*current_cmd!=NULL)
@@ -185,7 +182,6 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	return 0;
       case 'R': /* R : rebuild boot sector */
 	rebuild_FAT_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
-	rescan=1;
 	break;
       case 'D':
 	dump_fat1x(disk_car, partition, buffer_bs);
