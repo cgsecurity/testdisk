@@ -202,6 +202,10 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
     /* Canon RAW */
     if(buffer[8]=='C' && buffer[9]=='R' && buffer[10]==2)
       file_recovery_new->extension="cr2";
+    else if(find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_DNGVERSION)!=NULL)
+    {
+      file_recovery_new->extension="dng";
+    }
     else
     {
       const char *tag_make;
@@ -566,8 +570,9 @@ static void file_check_tiff(file_recovery_t *fr)
 #endif
   if(fr->file_size < calculated_file_size)
     fr->file_size=0;
-    /* PhotoRec isn't yet capable to find the correct Sony arw filesize,
+    /* PhotoRec isn't yet capable to find the correct Sony arw and dng filesize,
      * so don't truncate them */
-  else if(strcmp(fr->extension,"arw")!=0)
+  else if(strcmp(fr->extension,"arw")!=0 &&
+      strcmp(fr->extension,"dng")!=0)
     fr->file_size=calculated_file_size;
 }
