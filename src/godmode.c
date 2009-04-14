@@ -655,7 +655,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             test_nbr++;
           }
           else
-            test_nbr=12;
+            test_nbr=13;
         }
         if(res<=0 && test_nbr==8)
         {
@@ -687,7 +687,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           res=search_type_128(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(test_nbr==13)
+        if(test_nbr>=13)
         {
           sector_inc=1;
           test_nbr=0;
@@ -702,6 +702,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             wprintw(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
           }
 #endif
+	  /* Stop reading after the end of the disk */
+	  if(search_location >= disk_car->disk_real_size)
+	    search_location = search_location_max;
         }
         else if(res>0)
         {
