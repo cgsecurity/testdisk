@@ -838,7 +838,6 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 	long long start, end;
 	runlist_element *rl;
 	struct td_list_head *item;
-	int fd = -1;
 	long long k;
 	int result = -2;
 	char *name;
@@ -888,6 +887,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 		//dir_data->local_dir;
 		create_pathname(opts.dest, file->pref_pname, name, d->name, pathname, sizeof(pathname));
 		if (d->resident) {
+		        int fd;
 			fd = open_file(pathname);
 			if (fd < 0) {
 				log_error("Couldn't create file %s\n", pathname);
@@ -904,8 +904,8 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 			if (close(fd) < 0) {
 				log_error("Close failed\n");
 			}
-			fd = -1;
 		} else {
+		        int fd;
 			rl = d->runlist;
 			if (!rl) {
 				log_verbose("File has no runlist, hence no data.\n");
@@ -1030,7 +1030,6 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 			if (close(fd) < 0) {
 				log_error("Close failed\n");
 			}
-			fd = -1;
 
 		}
 		set_date(pathname, file->date, file->date);

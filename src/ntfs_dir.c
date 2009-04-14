@@ -408,12 +408,8 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
 
 static void dir_partition_ntfs_close(dir_data_t *dir_data)
 {
-  const partition_t *partition;
-  disk_t *disk_car;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
   /* ntfs_umount() will invoke ntfs_device_free() for us. */
-  disk_car=ls->my_data->disk_car;
-  partition=ls->my_data->partition;
   ntfs_umount(ls->vol, FALSE);
   free(ls->my_data);
 #ifdef HAVE_ICONV
