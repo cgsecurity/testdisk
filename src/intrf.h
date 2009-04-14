@@ -36,11 +36,6 @@ struct MenuItem
 #define WARNING_START 		23
 #define COLUMNS 		80
 
-#define DUMP_X			0
-#define DUMP_Y			7
-#define DUMP_MAX_LINES		14
-#define INTER_DUMP_X		DUMP_X
-#define INTER_DUMP_Y		22
 #define INTER_OPTION_X  	0
 #define INTER_OPTION_Y		10
 #define INTER_PARTITION_X  	0

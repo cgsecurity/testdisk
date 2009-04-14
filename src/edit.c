@@ -44,6 +44,12 @@
 #include "log.h"
 
 #ifdef HAVE_NCURSES
+#define EDIT_X			0
+#define EDIT_Y			7
+#define EDIT_MAX_LINES		14
+#define INTER_EDIT_X		EDIT_X
+#define INTER_EDIT_Y		22
+
 static void interface_editor_position(const disk_t *disk_car, uint64_t *lba);
 static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, const int menu_pos);
 static void interface_editor_ncurses(disk_t *disk_car);
@@ -63,7 +69,7 @@ static void interface_editor_ncurses(disk_t *disk_car)
       { 'Q', "Quit",""},
       { 0, NULL, NULL }
     };
-    switch ( wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuEditor, 8, "CDQ", MENU_HORIZ | MENU_BUTTON, 0))
+    switch ( wmenuSelect(stdscr, INTER_EDIT_Y+1, INTER_EDIT_Y, INTER_EDIT_X, menuEditor, 8, "CDQ", MENU_HORIZ | MENU_BUTTON, 0))
     {
       case 'c':
       case 'C':
@@ -206,14 +212,14 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
   /* write dump to log file*/
   dump_log(nom_dump, lng);
   /* ncurses interface */
-  pos=(menu_pos==KEY_DOWN?0:lng/0x10-DUMP_MAX_LINES);
+  pos=(menu_pos==KEY_DOWN?0:lng/0x10-EDIT_MAX_LINES);
   menu=(menu_pos==KEY_DOWN?1:0);
-  mvwaddstr(stdscr,DUMP_Y,DUMP_X,msg_DUMP_HEXA);
+  mvwaddstr(stdscr, EDIT_Y, EDIT_X, msg_DUMP_HEXA);
   do
   {
-	for (i=pos; (i<lng/0x10)&&((i-pos)<DUMP_MAX_LINES); i++)
+	for (i=pos; (i<lng/0x10)&&((i-pos)<EDIT_MAX_LINES); i++)
 	{
-	  wmove(stdscr,DUMP_Y+i-pos,DUMP_X);
+	  wmove(stdscr,EDIT_Y+i-pos,EDIT_X);
 	  wclrtoeol(stdscr);
 	  wprintw(stdscr,"%04X ",i*0x10);
 	  for(j=0; j< 0x10;j++)
@@ -233,7 +239,7 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 		  wprintw(stdscr,"%c",  car);
 	  }
 	}
-	switch (wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuDump, 8, "PNQ", MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
+	switch (wmenuSelect(stdscr, INTER_EDIT_Y+1, INTER_EDIT_Y, INTER_EDIT_X, menuDump, 8, "PNQ", MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu))
 	{
 	  case 'p':
 	  case 'P':
@@ -248,7 +254,7 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 	  case 'N':
 	  case KEY_DOWN:
 		menu=1;
-		if(pos<lng/0x10-DUMP_MAX_LINES)
+		if(pos<lng/0x10-EDIT_MAX_LINES)
 		  pos++;
 		else
 		  done = KEY_DOWN;
@@ -257,19 +263,19 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 		menu=0;
 		if(pos==0)
 		  done=KEY_UP;
-		if(pos>DUMP_MAX_LINES-1)
-		  pos-=DUMP_MAX_LINES-1;
+		if(pos>EDIT_MAX_LINES-1)
+		  pos-=EDIT_MAX_LINES-1;
 		else
 		  pos=0;
 		break;
 	  case KEY_NPAGE:
 		menu=1;
-		if(pos==lng/0x10-DUMP_MAX_LINES)
+		if(pos==lng/0x10-EDIT_MAX_LINES)
 		  done=KEY_DOWN;
-		if(pos<lng/0x10-DUMP_MAX_LINES-(DUMP_MAX_LINES-1))
-		  pos+=DUMP_MAX_LINES-1;
+		if(pos<lng/0x10-EDIT_MAX_LINES-(EDIT_MAX_LINES-1))
+		  pos+=EDIT_MAX_LINES-1;
 		else
-		  pos=lng/0x10-DUMP_MAX_LINES;
+		  pos=lng/0x10-EDIT_MAX_LINES;
 		break;
 	  case key_ESC:
 	  case 'q':

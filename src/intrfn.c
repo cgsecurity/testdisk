@@ -74,7 +74,7 @@ extern char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
 extern int intr_nbr_line;
 
 /* Use COLS (actual number of columns) or COLUMNS (number of columns the program has been designed for) ? */
-#define INTER_DIR (LINES-25+16)
+#define INTER_DIR (LINES+16-25)
 #define GS_DEFAULT -1
 #define GS_key_ESCAPE -2
 
@@ -482,6 +482,11 @@ void dump_ncurses(const void *nom_dump, unsigned int lng)
   touchwin(stdscr);
 #endif
 }
+#define DUMP_MAX_LINES		(LINES+15-25)
+#define DUMP_X			0
+#define DUMP_Y			7
+#define INTER_DUMP_X		DUMP_X
+#define INTER_DUMP_Y		(LINES+23-25)
 
 void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
 {

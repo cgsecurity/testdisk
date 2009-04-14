@@ -59,6 +59,8 @@
 
 #define INTER_FAT_ASK_X 0
 #define INTER_FAT_ASK_Y	23
+#define INTER_FATBS_X		0
+#define INTER_FATBS_Y		22
 extern const char *monstr[];
 
 typedef struct info_offset_struct info_offset_t;
@@ -980,7 +982,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     else
     {
 #ifdef HAVE_NCURSES
-      command=wmenuSelect(stdscr, INTER_DUMP_Y+1, INTER_DUMP_Y, INTER_DUMP_X, menuSaveBoot,8,options,MENU_HORIZ|MENU_BUTTON, 1);
+      command=wmenuSelect(stdscr, INTER_FATBS_Y+1, INTER_FATBS_Y, INTER_FATBS_X, menuSaveBoot,8,options,MENU_HORIZ|MENU_BUTTON, 1);
 #else
       command=0;
 #endif
