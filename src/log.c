@@ -128,6 +128,7 @@ int log_close(void)
   {
     if(fclose(log_handle))
       f_status=1;
+    log_handle=NULL;
   }
   return f_status;
 }
