@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.11-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="January 2009"
+TESTDISKDATE="April 2009"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -655,7 +655,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([atexit atoll chdir chmod delscreen dirname dup2 execv ftruncate fsync getcwd geteuid lstat memalign memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale signal sleep snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
+AC_CHECK_FUNCS([atexit atoll chdir chmod delscreen dirname dup2 execv ftruncate fsync getcwd geteuid lstat memalign memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strchr strdup strerror strncasecmp strtol touchwin utime vsnprintf])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi

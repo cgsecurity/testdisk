@@ -85,6 +85,23 @@ extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 extern file_enable_t list_file_enable[];
 
+#ifdef HAVE_SIGACTION
+struct sigaction action;
+void sighup_hdlr(int sig);
+
+void sighup_hdlr(int sig)
+{
+  if(sig == SIGINT)
+    log_critical("SIGINT detected! PhotoRec has been killed.\n");
+  else
+    log_critical("SIGHUP detected! PhotoRec has been killed.\n");
+  log_flush();
+  action.sa_handler=SIG_DFL;
+  sigaction(sig,&action,NULL);
+  kill(0, sig);
+}
+#endif
+
 int main( int argc, char **argv )
 {
   int i;
@@ -106,17 +123,22 @@ int main( int argc, char **argv )
 #else
   const arch_fnct_t *arch=&arch_i386;
 #endif
-#ifdef HAVE_SIGACTION
-  struct sigaction action, old_action;
-#endif
   FILE *log_handle=NULL;
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
-  /* set up the signal handler for SIGHUP */
+  /* set up the signal handler for SIGINT & SIGHUP */
+  sigemptyset(&action.sa_mask);
+  sigaddset(&action.sa_mask, SIGINT);
+  sigaddset(&action.sa_mask, SIGHUP);
   action.sa_handler  = sighup_hdlr;
   action.sa_flags = 0;
-  if(sigaction(SIGHUP, &action, &old_action)==-1)
+  if(sigaction(SIGINT, &action, NULL)==-1)
+  {
+    printf("Error on SIGACTION call\n");
+    return -1;
+  }
+  if(sigaction(SIGHUP, &action, NULL)==-1)
   {
     printf("Error on SIGACTION call\n");
     return -1;

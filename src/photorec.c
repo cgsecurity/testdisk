@@ -55,15 +55,6 @@ static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, c
 static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
 static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 
-#ifdef HAVE_SIGACTION
-void sighup_hdlr(int shup)
-{
-  log_critical("SIGHUP detected! PhotoRec has been killed.\n");
-  log_close();
-  exit(1);
-}
-#endif
-
 static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
 {
   struct td_list_head *tmp;

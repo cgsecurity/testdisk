@@ -70,11 +70,19 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_sun;
 
 #ifdef HAVE_SIGACTION
-void sighup_hdlr(int shup)
+struct sigaction action;
+void sighup_hdlr(int sig);
+
+void sighup_hdlr(int sig)
 {
-  log_critical("SIGHUP detected! TestDisk has been killed.\n");
-  log_close();
-  exit(1);
+  if(sig == SIGINT)
+    log_critical("SIGINT detected! TestDisk has been killed.\n");
+  else
+    log_critical("SIGHUP detected! TestDisk has been killed.\n");
+  log_flush();
+  action.sa_handler=SIG_DFL;
+  sigaction(sig,&action,NULL);
+  kill(0, sig);
 }
 #endif
 
@@ -105,16 +113,21 @@ int main( int argc, char **argv )
 #else
   const arch_fnct_t *arch=&arch_i386;
 #endif
-#ifdef HAVE_SIGACTION
-  struct sigaction action;
-#endif
   FILE *log_handle=NULL;
   /* srand needed for GPT creation (weak is ok) */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
-  /* set up the signal handler for SIGHUP */
+  /* set up the signal handler for SIGINT & SIGHUP */
+  sigemptyset(&action.sa_mask);
+  sigaddset(&action.sa_mask, SIGINT);
+  sigaddset(&action.sa_mask, SIGHUP);
   action.sa_handler  = sighup_hdlr;
   action.sa_flags = 0;
+  if(sigaction(SIGINT, &action, NULL)==-1)
+  {
+    printf("Error on SIGACTION call\n");
+    return -1;
+  }
   if(sigaction(SIGHUP, &action, NULL)==-1)
   {
     printf("Error on SIGACTION call\n");
