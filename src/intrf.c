@@ -63,7 +63,7 @@
 #include "dir.h"
 #include "log.h"
 
-char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
+char intr_buffer_screen[MAX_LINES][BUFFER_LINE_LENGTH+1];
 int intr_nbr_line=0;
 
 int screen_buffer_add(const char *_format, ...)
@@ -71,14 +71,14 @@ int screen_buffer_add(const char *_format, ...)
   char tmp_line[BUFFER_LINE_LENGTH+1];
   char *pos_in_tmp_line=tmp_line;
   va_list ap;
+  memset(tmp_line, '\0', sizeof(tmp_line));
   va_start(ap,_format);
-  memset(tmp_line,'\0',sizeof(tmp_line));
-  vsnprintf(tmp_line,BUFFER_LINE_LENGTH,_format,ap);
+  vsnprintf(tmp_line, sizeof(tmp_line), _format, ap);
   va_end(ap);
   while(pos_in_tmp_line!=NULL && (intr_nbr_line<MAX_LINES))
   {
-    unsigned int len=strlen(intr_buffer_screen[intr_nbr_line]);
-    unsigned int nbr=LINE_LENGTH-len;
+    const unsigned int len=strlen(intr_buffer_screen[intr_nbr_line]);
+    unsigned int nbr=BUFFER_LINE_LENGTH-len;
     char *ret_ligne= strchr(pos_in_tmp_line,'\n');
     if(ret_ligne!=NULL && ret_ligne-pos_in_tmp_line < nbr)
       nbr=ret_ligne-pos_in_tmp_line;
@@ -116,10 +116,8 @@ void screen_buffer_to_stdout()
 
 void screen_buffer_reset()
 {
-  int i;
   intr_nbr_line=0;
-  for(i=0;i<MAX_LINES;i++)
-    memset(intr_buffer_screen[i],0,LINE_LENGTH+1);
+  memset(intr_buffer_screen, 0, sizeof(intr_buffer_screen));
 }
 
 void screen_buffer_to_log()

@@ -53,6 +53,7 @@ int end_ncurses(void);
 int interface_partition_type_ncurses(disk_t *disk_car);
 int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
 char *ask_log_location(const char*filename);
+int get_string(char *str, const int len, const char *def);
 #endif
 
 void display_message(const char*msg);

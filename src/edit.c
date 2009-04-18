@@ -128,8 +128,8 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 {
   CHS_t position;
   int done = 0;
-  char def[LINE_LENGTH];
-  char response[LINE_LENGTH];
+  char def[128];
+  char response[128];
   unsigned long int tmp_val;
   int command;
   position.cylinder=offset2cylinder(disk_car,*lba);
@@ -153,7 +153,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 	  case 'C':
 		sprintf(def, "%lu", position.cylinder);
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
-		if (get_string(response, LINE_LENGTH, def) > 0) {
+		if (get_string(response, sizeof(response), def) > 0) {
 		  tmp_val = atol(response);
 		  if (tmp_val < disk_car->geom.cylinders) {
 			position.cylinder = tmp_val;
@@ -165,7 +165,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 	  case 'H':
 		sprintf(def, "%u", position.head);
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
-		if (get_string(response, LINE_LENGTH, def) > 0) {
+		if (get_string(response, sizeof(response), def) > 0) {
 		  tmp_val = atoi(response);
 		  if (tmp_val < disk_car->geom.heads_per_cylinder) {
 			position.head = tmp_val;
@@ -177,7 +177,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 	  case 'S':
 		sprintf(def, "%u", position.sector);
 		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track: ");
-		if (get_string(response, LINE_LENGTH, def) > 0) {
+		if (get_string(response, sizeof(response), def) > 0) {
 		  tmp_val = atoi(response);
 		  if (tmp_val > 0 && tmp_val <= disk_car->geom.sectors_per_head ) {
 			position.sector = tmp_val;

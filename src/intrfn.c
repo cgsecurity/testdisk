@@ -70,9 +70,10 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
-extern char intr_buffer_screen[MAX_LINES][LINE_LENGTH+1];
+extern char intr_buffer_screen[MAX_LINES][BUFFER_LINE_LENGTH+1];
 extern int intr_nbr_line;
 
+#define COLUMNS 		80
 /* Use COLS (actual number of columns) or COLUMNS (number of columns the program has been designed for) ? */
 #define INTER_DIR (LINES+16-25)
 #define GS_DEFAULT -1
@@ -81,7 +82,7 @@ extern int intr_nbr_line;
 static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current);
 static int wgetch_nodelay(WINDOW *window);
 
-int get_string(char *str, int len, char *def)
+int get_string(char *str, const int len, const char *def)
 {
     int c;
     int i = 0;
@@ -442,8 +443,8 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
 {
   char res[200];
   char res2[200];
-  char response[LINE_LENGTH];
-  char def[LINE_LENGTH];
+  char response[128];
+  char def[128];
   unsigned long int tmp_val;
   va_list ap;
   va_start(ap,_format);
@@ -456,7 +457,7 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
   waddstr(stdscr, res);
   waddstr(stdscr, res2);
   sprintf(def, "%llu", val_cur);
-  if (get_string(response, LINE_LENGTH, def) > 0)
+  if (get_string(response, sizeof(response), def) > 0)
   {
 #ifdef HAVE_ATOLL
     tmp_val = atoll(response);
@@ -797,7 +798,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
 	wclrtoeol(window);
 	if(i==current_line)
 	  wattrset(window, A_REVERSE);
-	wprintw(window,"%s",intr_buffer_screen[i]);
+	wprintw(window, "%-*s", COLS, intr_buffer_screen[i]);
 	if(i==current_line)
 	  wattroff(window, A_REVERSE);
       }
@@ -808,7 +809,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
       {
 	wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
 	wclrtoeol(window);
-	wprintw(window,"%s",intr_buffer_screen[i]);
+	wprintw(window, "%-*s", COLS, intr_buffer_screen[i]);
       }
     }
     wmove(window, INTER_ANALYSE_Y+INTER_MAX_LINES, INTER_ANALYSE_X+4);
@@ -1112,7 +1113,7 @@ int end_ncurses()
 
 char *ask_log_location(const char*filename)
 {
-  static char response[LINE_LENGTH];
+  static char response[128];
   aff_copy(stdscr);
   if(filename!=NULL)
   {
@@ -1128,7 +1129,7 @@ char *ask_log_location(const char*filename)
     wbkgdset(stdscr,' ' | COLOR_PAIR(0));
   wmove(stdscr,9,0);
   wprintw(stdscr,"to abort log file creation.\n");
-  if (get_string(response, LINE_LENGTH, NULL) > 0)
+  if (get_string(response, sizeof(response), NULL) > 0)
     return response;
   return NULL;
 }
@@ -1233,7 +1234,7 @@ void screen_buffer_to_interface()
     {
       wmove(stdscr,DUMP_Y+1+i-pos,DUMP_X);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"%s",intr_buffer_screen[i]);
+      wprintw(stdscr, "%-*s", COLS, intr_buffer_screen[i]);
     }
     wrefresh(stdscr);
   }

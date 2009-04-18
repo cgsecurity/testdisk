@@ -30,11 +30,9 @@ struct MenuItem
     const char *desc; /* Item description to be printed when item is selected */
 };
 #define MAX_LINES		200
-#define LINE_LENGTH 		80
-#define BUFFER_LINE_LENGTH 	4*LINE_LENGTH
+#define BUFFER_LINE_LENGTH 	255
 #define MAXIMUM_PARTS 		60
 #define WARNING_START 		23
-#define COLUMNS 		80
 
 #define INTER_OPTION_X  	0
 #define INTER_OPTION_Y		10
@@ -70,7 +68,6 @@ int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1,
 unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 5, 6)));
 int display_message_aux(const char*_format,...) __attribute__ ((format (printf, 1, 2)));
-int get_string(char *str, int len, char *def);
 void not_implemented(const char *msg);
 void screen_buffer_reset(void);
 int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf, 1, 2)));
