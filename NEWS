@@ -1,6 +1,12 @@
 Current news
 ============
-6.11-WIP
+6.11
+TestDisk & PhotoRec 6.11 should use less CPU.
+This new TestDisk version can undelete files for NTFS filesystem and recover deleted exFAT and ext4.
+PhotoRec
+- Performance improvement when scanning for numerous file type
+- Fix several bugs including an endless loop, several memory leaks and several out-of-bound memory access
+- 50 file formats have been added
 
 6.10
 TestDisk & PhotoRec 6.10 comes with severals improvements:
