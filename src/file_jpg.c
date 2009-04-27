@@ -100,14 +100,10 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       if(buffer[i]!=0xff)
 	return 0;
       /* 0xe0 APP0 */
+      /* 0xef APP15 */
       /* 0xfe COM */
       /* 0xdb DQT */
-      if(buffer[i+1]==0xe0 ||
-	 buffer[i+1]==0xfe ||
-	 buffer[i+1]==0xdb)
-      {
-      }
-      else if(buffer[i+1]==0xe1)
+      if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
 	if(i+0x0A < buffer_size && 2+(buffer[i+2]<<8)+buffer[i+3] > 0x0A)
 	{
@@ -117,12 +113,17 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
       }
+      else if((buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||
+	 buffer[i+1]==0xfe ||
+	 buffer[i+1]==0xdb)
+      {
+      }
       else
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_jpg.extension;
 	file_recovery_new->file_check=&file_check_jpg;
-	file_recovery_new->min_filesize=288;
+	file_recovery_new->min_filesize=(i>288?i:288);
 	file_recovery_new->data_check=&data_check_jpg;
 	file_recovery_new->calculated_file_size=2;
 	return 1;
@@ -511,7 +512,7 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 	    const unsigned int thumb_offset=thumb_data-(const char*)buffer;
 	    const unsigned int thumb_size=ifbytecount-(const char*)tiff;
 	    unsigned int j_old;
-	    if(thumb_offset+thumb_size < sizeof(buffer))
+	    if(thumb_offset < sizeof(buffer) && thumb_offset+thumb_size < sizeof(buffer))
 	    {
 	      unsigned int j=thumb_offset+2;
 	      unsigned int thumb_sos_found=0;
