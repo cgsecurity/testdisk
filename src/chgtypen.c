@@ -363,7 +363,10 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
 void change_part_type(const disk_t *disk_car,partition_t *partition, char **current_cmd)
 {
   if(*current_cmd!=NULL)
-    return change_part_type_cli(disk_car, partition, current_cmd);
+  {
+    change_part_type_cli(disk_car, partition, current_cmd);
+    return;
+  }
   if(partition->arch==NULL)
   {
     log_error("change_part_type arch==NULL\n");

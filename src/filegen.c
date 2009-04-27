@@ -103,20 +103,23 @@ static void index_header_check_aux(file_check_t *file_check_new)
       if(pos->offset >= file_check_new->offset &&
 	  pos->offset < file_check_new->offset+file_check_new->length)
       {
-	return td_list_add_sorted(&file_check_new->list,
+	td_list_add_sorted(&file_check_new->list,
 	    &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
 	    file_check_cmp);
+	return ;
       }
       if(pos->offset>file_check_new->offset)
       {
-	return file_check_add_tail(file_check_new, pos);
+	file_check_add_tail(file_check_new, pos);
+	return ;
       }
     }
     else if(file_check_new->length==0 && pos->has_value==0)
     {
-      return td_list_add_sorted(&file_check_new->list,
+      td_list_add_sorted(&file_check_new->list,
 	  &pos->file_checks[0].list,
 	  file_check_cmp);
+      return;
     }
   }
   file_check_add_tail(file_check_new, &file_check_list);
