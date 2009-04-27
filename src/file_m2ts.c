@@ -48,13 +48,15 @@ const file_hint_t file_hint_m2ts= {
   .register_header_check=&register_header_check_m2ts
 };
 
-static const unsigned char m2ts_header[4]=  { 'H','D','M','V'};
-static const unsigned char m2t_header[4] =  { 'T','S','H','V'};
+static const unsigned char hdmv_header[4] = { 'H','D','M','V'};
+static const unsigned char tshv_header[4] = { 'T','S','H','V'};
+static const unsigned char sdvs_header[4] = { 'S','D','V','S'};
 
 static void register_header_check_m2ts(file_stat_t *file_stat)
 {
-  register_header_check(0xd7, m2ts_header, sizeof(m2ts_header), &header_check_m2ts, file_stat);
-  register_header_check(0x18b, m2t_header, sizeof(m2t_header),  &header_check_m2t,  file_stat);
+  register_header_check(0xd7, hdmv_header, sizeof(hdmv_header), &header_check_m2ts, file_stat);
+  register_header_check(0xd7, sdvs_header, sizeof(sdvs_header), &header_check_m2ts, file_stat);
+  register_header_check(0x18b, tshv_header, sizeof(tshv_header),  &header_check_m2t,  file_stat);
 }
 
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -64,12 +66,24 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
     return 0;
   /* BDAV MPEG-2 transport stream */
   /* Each frame is 192 byte long and begins by a TS_SYNC_BYTE */
-  if(buffer[4]==0x47 && buffer[4+192]==0x47 && buffer[4+2*192]==0x47 &&
-      memcmp(&buffer[0xd7], m2ts_header, sizeof(m2ts_header))==0 &&
-      memcmp(&buffer[0xe8], m2ts_header, sizeof(m2ts_header))==0)
+  if(!(buffer[4]==0x47 && buffer[4+192]==0x47 && buffer[4+2*192]==0x47))
+    return 0;
+  if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 &&
+      memcmp(&buffer[0xe8], hdmv_header, sizeof(hdmv_header))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_m2ts.extension;
+    file_recovery_new->min_filesize=192;
+    file_recovery_new->calculated_file_size=192;
+    file_recovery_new->data_check=&data_check_m2ts;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
+  if( memcmp(&buffer[0xd7], sdvs_header, sizeof(sdvs_header))==0 &&
+      memcmp(&buffer[0xe8], sdvs_header, sizeof(sdvs_header))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="tod";
     file_recovery_new->min_filesize=192;
     file_recovery_new->calculated_file_size=192;
     file_recovery_new->data_check=&data_check_m2ts;
@@ -87,7 +101,7 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
     return 0;
   /* Each frame is 188 byte long and begins by a TS_SYNC_BYTE */
   if(buffer[0]==0x47 && buffer[188]==0x47 && buffer[2*188]==0x47 &&
-      memcmp(&buffer[0x18b], m2t_header, sizeof(m2t_header))==0)
+      memcmp(&buffer[0x18b], tshv_header, sizeof(tshv_header))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="m2t";
