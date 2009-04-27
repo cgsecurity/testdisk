@@ -848,7 +848,10 @@ Doc: \r (0xD)
           /* Text should not be found in JPEG */
           (file_recovery->file_stat->file_hint==&file_hint_jpg &&
            td_memmem(buffer, buffer_size_test, "8BIM", 4)==NULL &&
-           td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL) ||
+           td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL &&
+           td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
+           td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
+           td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL) ||
           /* Text should not be found in zip because of compression */
           (file_recovery->file_stat->file_hint==&file_hint_zip &&
 	  td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
