@@ -161,6 +161,15 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* Visio */
 	if(memcmp(&dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
 	  return "vsd";
+	/* SolidWorks */
+	if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
+	{
+#ifdef DJGPP
+	  return "sld";
+#else
+	  return "sldprt";
+#endif
+	}
       }
       if(ext!=NULL)
 	return ext;

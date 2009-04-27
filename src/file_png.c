@@ -2,7 +2,7 @@
 
     File: file_png.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
     Thanks to Holger Klemm for JNG (JPEG Network Graphics) and
     MNG (Multiple-Image Network Graphics) support (2006)
   
@@ -36,6 +36,7 @@
 #include "types.h"
 #include "filegen.h"
 
+extern const file_hint_t file_hint_doc;
 
 static void register_header_check_png(file_stat_t *file_stat);
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -64,14 +65,6 @@ static void register_header_check_png(file_stat_t *file_stat)
 
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,png_header,sizeof(png_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=92;
-    file_recovery_new->file_check=file_check_png;
-    file_recovery_new->extension=file_hint_png.extension;
-    return 1;
-  }
   if(memcmp(buffer,jng_header,sizeof(jng_header))==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -86,6 +79,20 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->min_filesize=92;
     file_recovery_new->file_check=file_check_png;
     file_recovery_new->extension="mng";
+    return 1;
+  }
+  /* SolidWorks files contains a png */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc &&
+      (strcmp(file_recovery->extension,"sld")==0 ||
+       strcmp(file_recovery->extension,"sldprt")==0))
+    return 0;
+  if(memcmp(buffer,png_header,sizeof(png_header))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->min_filesize=92;
+    file_recovery_new->file_check=file_check_png;
+    file_recovery_new->extension=file_hint_png.extension;
     return 1;
   }
   return 0;
