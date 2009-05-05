@@ -184,7 +184,8 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/direct")==0) || (strcmp(argv[i],"-direct")==0))
       testdisk_mode|=TESTDISK_O_DIRECT;
     else if((strcmp(argv[i],"/help")==0) || (strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"--help")==0) ||
-      (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0))
+      (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0) ||
+      (strcmp(argv[i],"/?")==0) || (strcmp(argv[i],"-?")==0))
       help=1;
     else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
       (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
