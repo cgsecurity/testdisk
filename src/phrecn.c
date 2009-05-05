@@ -2,7 +2,7 @@
 
     File: phrecn.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,6 +71,10 @@
 #include "askloc.h"
 #include "fat_unformat.h"
 #include "pnext.h"
+#include "phbf.h"
+#include "phnc.h"
+#include "phbs.h"
+#include "file_found.h"
 
 /* #define DEBUG */
 /* #define DEBUG_BF */
@@ -81,13 +85,10 @@ extern const file_hint_t file_hint_dir;
 extern file_check_list_t file_check_list;
 
 #ifdef HAVE_NCURSES
-static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats);
 static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop);
 #endif
 
-static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass);
 static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int lowmem);
-static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *current_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status);
 static int interface_cannot_create_file(void);
 
 /* ==================== INLINE FUNCTIONS ========================= */
@@ -120,23 +121,8 @@ static inline int ind_block(const unsigned char *buffer, const unsigned int bloc
 static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
-#if 0
-  if(td_list_empty(&src->location.list))
-  {
-    dst->location.list.prev=&dst->location.list;
-    dst->location.list.next=&dst->location.list;
-  }
-  else
-  {
-    src->location.list.prev=&src->location.list;
-    src->location.list.next=&src->location.list;
-    dst->location.list.prev->next=&dst->location.list;
-    dst->location.list.next->prev=&dst->location.list;
-  }
-#else
   dst->location.list.prev=&dst->location.list;
   dst->location.list.next=&dst->location.list;
-#endif
 }
 
 static inline void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
@@ -160,417 +146,6 @@ static inline void list_append_block(alloc_list_t *list, const uint64_t offset, 
 }
 
 /* ==================== INLINE FUNCTIONS ========================= */
-
-#ifdef HAVE_NCURSES
-static void photorec_info(WINDOW *window, const file_stat_t *file_stats)
-{
-  unsigned int i;
-  unsigned int nbr;
-  unsigned int others=0;
-  file_stat_t *new_file_stats;
-  for(i=0;file_stats[i].file_hint!=NULL;i++);
-  nbr=i;
-  if(nbr==0)
-    return ;
-  new_file_stats=(file_stat_t*)MALLOC(nbr*sizeof(file_stat_t));
-  memcpy(new_file_stats, file_stats, nbr*sizeof(file_stat_t));
-  qsort(new_file_stats, nbr, sizeof(file_stat_t), sorfile_stat_ts);
-  for(i=0;i<nbr && new_file_stats[i].recovered>0;i++)
-  {
-    if(i<10)
-    {
-      wmove(window,11+i,0);
-      wclrtoeol(window);
-      wprintw(window, "%s: %u recovered\n",
-          (new_file_stats[i].file_hint->extension!=NULL?
-           new_file_stats[i].file_hint->extension:""),
-          new_file_stats[i].recovered);
-    }
-    else
-      others+=new_file_stats[i].recovered;
-  }
-  if(others>0)
-  {
-    wmove(window,11+10,0);
-    wclrtoeol(window);
-    wprintw(window, "others: %u recovered\n", others);
-  }
-  free(new_file_stats);
-}
-
-static int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats)
-{
-  wmove(window,9,0);
-  wclrtoeol(window);
-  if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
-  {
-    wprintw(window,"Bruteforce %10lu sectors remaining (test %u), %u files found\n",
-        (unsigned long)((offset-partition->part_offset)/disk_car->sector_size), pass, file_nbr);
-  }
-  else
-  {
-    wprintw(window, "Pass %u - ", pass);
-    if(status==STATUS_FIND_OFFSET)
-      wprintw(window,"Reading sector %10lu/%lu, %u/10 headers found\n",
-          (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
-    else
-      wprintw(window,"Reading sector %10lu/%lu, %u files found\n",
-          (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
-  }
-  wmove(window,10,0);
-  wclrtoeol(window);
-  wprintw(window,"Elapsed time %uh%02um%02us",
-      (unsigned)(elapsed_time/60/60),
-      (unsigned)(elapsed_time/60%60),
-      (unsigned)(elapsed_time%60));
-  if(offset-partition->part_offset!=0 && (status!=STATUS_EXT2_ON_BF && status!=STATUS_EXT2_OFF_BF))
-  {
-    wprintw(window," - Estimated time for achievement %uh%02um%02u\n",
-        (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
-        (unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
-        (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
-  }
-  photorec_info(window, file_stats);
-  wrefresh(window);
-  return check_enter_key_or_s(window);
-}
-#endif
-
-static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass)
-{
-  struct td_list_head *search_walker = NULL;
-  struct td_list_head *n= NULL;
-  unsigned char *buffer_start;
-  const unsigned int read_size=(blocksize>65536?blocksize:65536);
-  unsigned int buffer_size;
-  int ind_stop=0;
-  int pass2=pass;
-  buffer_size=blocksize+READ_SIZE;
-  buffer_start=(unsigned char *)MALLOC(buffer_size);
-  for(search_walker=list_search_space->list.prev, n=search_walker->prev;
-      search_walker!=&list_search_space->list && ind_stop==0;
-      search_walker=n,n=search_walker->prev)
-  {
-    alloc_data_t *current_search_space;
-    unsigned char *buffer;
-    unsigned char *buffer_olddata;
-    uint64_t offset;
-    int need_to_check_file;
-    file_recovery_t file_recovery;
-    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-    offset=current_search_space->start;
-    buffer_olddata=buffer_start;
-    buffer=buffer_olddata+blocksize;
-    reset_file_recovery(&file_recovery);
-    memset(buffer_olddata, 0, blocksize);
-    disk_car->pread(disk_car, buffer, READ_SIZE, offset);
-#ifdef DEBUG_BF
-    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
-#endif
-    log_flush();
-
-    do
-    {
-      uint64_t old_offset=offset;
-      need_to_check_file=0;
-      if(offset==current_search_space->start)
-      {
-        file_recovery_t file_recovery_new;
-	struct td_list_head *tmpl;
-        file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmpl, &file_check_list.list)
-	{
-	  struct td_list_head *tmp;
-	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
-	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
-	  {
-	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
-	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-		file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
-	    {
-	      file_recovery_new.file_stat=file_check->file_stat;
-	      break;
-	    }
-	  }
-	  if(file_recovery_new.file_stat!=NULL)
-	    break;
-	}
-        if(file_recovery_new.file_stat!=NULL)
-        {
-	  file_recovery_new.location.start=offset;
-          if(verbose>0)
-          {
-            log_info("%s header found at sector %lu\n",
-                ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
-                 file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description),
-                (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
-          }
-          if(file_recovery.file_stat==NULL)
-          { /* Header found => file found */
-            file_recovery_cpy(&file_recovery, &file_recovery_new);
-          }
-          else if(file_recovery_new.file_stat->file_hint!=NULL)
-          {
-            if(verbose>0)
-              log_verbose("New file found => stop the recovery of current file\n");
-            need_to_check_file=1;
-          }
-        }
-        else if(file_recovery.file_stat==NULL)
-          need_to_check_file=1;	/* No header found => no file => stop */
-      }
-      if(file_recovery.file_stat!=NULL && file_recovery.handle==NULL)
-      { /* Create new file */
-	set_filename(&file_recovery, recup_dir, *dir_num, disk_car, partition, 0);
-        if(file_recovery.file_stat->file_hint->recover==1)
-        {
-          if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
-          { 
-            log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
-            ind_stop=2;
-          }
-        }
-      }
-      if(file_recovery.handle!=NULL)
-      {
-	if(file_recovery.handle!=NULL)
-	{
-	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
-	  { 
-	    log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
-	    ind_stop=3;
-	  }
-	}
-	if(file_recovery.file_stat!=NULL)
-	{
-	  int res=1;
-	  list_append_block(&file_recovery.location, offset, blocksize,1);
-	  if(file_recovery.data_check!=NULL)
-	    res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
-	  file_recovery.file_size+=blocksize;
-	  file_recovery.file_size_on_disk+=blocksize;
-	  if(res==2)
-	  { /* EOF found */
-	    need_to_check_file=1;
-	  }
-	}
-	if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
-	{
-	  log_verbose("File should not be bigger than %llu, stop adding data\n",
-	      (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
-          need_to_check_file=1;
-        }
-      }
-      get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-      if(current_search_space==list_search_space)
-        need_to_check_file=1;
-      if(need_to_check_file==0)
-      {
-        buffer_olddata+=blocksize;
-        buffer+=blocksize;
-        if(old_offset+blocksize!=offset || buffer+read_size>buffer_start+buffer_size)
-        {
-          memcpy(buffer_start, buffer_olddata, blocksize);
-          buffer_olddata=buffer_start;
-          buffer=buffer_olddata+blocksize;
-          if(verbose>1)
-          {
-            log_verbose("Reading sector %10lu/%lu\n",
-                (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-                (unsigned long)((partition->part_size-1)/disk_car->sector_size));
-          }
-          disk_car->pread(disk_car, buffer, READ_SIZE, offset);
-        }
-      }
-    } while(need_to_check_file==0);
-    if(need_to_check_file==1)
-    {
-      if(file_finish(&file_recovery,recup_dir,paranoid,file_nbr, blocksize, list_search_space, &current_search_space, &offset, dir_num,status,disk_car)<0)
-      { /* BF */
-        current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-        ind_stop=photorec_bf_aux(disk_car, partition, paranoid, recup_dir, interface, file_stats, file_nbr, &file_recovery, blocksize, list_search_space, current_search_space, real_start_time, dir_num, status);
-        pass2++;
-      }
-    }
-  }
-  free(buffer_start);
-#ifdef HAVE_NCURSES
-  photorec_info(stdscr, file_stats);
-#endif
-  return ind_stop;
-}
-
-static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status)
-{
-  uint64_t offset;
-  uint64_t original_offset_error, file_offset;
-  long int save_seek;
-  unsigned char *block_buffer;
-  unsigned int blocs_to_skip, i;
-  int ind_stop;
-  int testbf=0;
-  time_t previous_time=0;
-  alloc_data_t *current_search_space;
-  //Init. of the brute force
-#ifdef DEBUG_BF
-  log_trace("photorec_bf_aux location.start=%lu\n",
-      (long unsigned)(file_recovery->location.start/disk_car->sector_size));
-#endif
-  original_offset_error=file_recovery->offset_error;
-
-  file_recovery->handle=fopen(file_recovery->filename, "w+b");
-  if(file_recovery->handle==NULL)
-  {
-    log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
-    return 2;
-  }
-  block_buffer=(unsigned char *) MALLOC(sizeof(unsigned char)*blocksize);
-
-  current_search_space=start_search_space;
-  /* We have offset==start_search_space->start==file_recovery->location.start */
-  offset=start_search_space->start;;
-
-  // Writing the file until the error location
-#ifdef DEBUG_BF
-  log_debug("Writing the file until the error location %llu\n", (long long unsigned)original_offset_error);
-#endif
-  //FIXME: Handle ext2/ext3, handle fwrite return value
-  file_recovery->file_size=0;
-  for(i=0; i<(original_offset_error+blocksize-1)/blocksize; i++)
-  {
-    disk_car->pread(disk_car, block_buffer, blocksize, offset);
-    fwrite(block_buffer, blocksize, 1, file_recovery->handle);
-    list_append_block(&file_recovery->location, offset, blocksize, 1);
-    file_recovery->file_size+=blocksize;
-    get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-  }
-#ifdef DEBUG_BF
-  log_trace("BF Amorce ");
-  list_space_used(file_recovery, blocksize);
-  log_trace("\n");
-#endif
-  //Main Loop
-  do
-  {
-    ind_stop=0;
-    for(file_offset=(original_offset_error+blocksize-1)/blocksize*blocksize;
-        file_offset >= blocksize && (original_offset_error+blocksize-1)/blocksize*blocksize<file_offset+8*512 && ind_stop==0;
-        file_offset -= blocksize)
-    {
-      alloc_data_t *extractblock_search_space;
-      uint64_t extrablock_offset;
-      /* Set extractblock_search_space & extrablock_offset to the begining of the potential extra block */
-#ifdef DEBUG_BF
-      log_debug("Set extractblock_search_space & extrablock_offset to the begining of the potential extra block\n");
-#endif
-      /* Get the last block added to the file */
-      extrablock_offset=0;
-      if(!td_list_empty(&file_recovery->location.list))
-      {
-	const alloc_list_t *element=td_list_entry(file_recovery->location.list.prev, alloc_list_t, list);
-	extrablock_offset=element->end/blocksize*blocksize;
-      }
-      /* Get the corresponding search_place */
-      extractblock_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-      while(extractblock_search_space != list_search_space &&
-          !(extractblock_search_space->start <= extrablock_offset &&
-            extrablock_offset <= extractblock_search_space->end))
-        extractblock_search_space=td_list_entry(extractblock_search_space->list.next, alloc_data_t, list);
-      /* Update extractblock_search_space & extrablock_offset */
-      get_next_sector(list_search_space, &extractblock_search_space, &extrablock_offset, blocksize);
-      /* */
-      for(blocs_to_skip=1; blocs_to_skip<=250 && ind_stop==0; blocs_to_skip++)
-      {
-        offset=extrablock_offset;
-        current_search_space=extractblock_search_space;
-        testbf++;
-        if(interface!=0)
-        {
-          time_t current_time;
-          current_time=time(NULL);
-          if(current_time>previous_time)
-          {
-            previous_time=current_time;
-#ifdef HAVE_NCURSES
-            ind_stop=photorec_progressbar(stdscr, testbf, status, file_recovery->location.start, disk_car, partition, *file_nbr, current_time-real_start_time, file_stats);
-#endif
-            if(ind_stop!=0)
-            {
-              file_finish(file_recovery, recup_dir, paranoid, file_nbr, blocksize, list_search_space, &current_search_space, &offset, dir_num, status, disk_car);
-              free(block_buffer);
-              return ind_stop;
-            }
-          }
-        }
-        fseek(file_recovery->handle,file_offset,SEEK_SET);
-        list_truncate(&file_recovery->location,file_offset);
-        file_recovery->file_size=file_offset;
-        /* Skip extra blocs */
-#ifdef DEBUG_BF
-        log_debug("Skip %u extra blocs\n", blocs_to_skip);
-#endif
-        for(i=0; i<blocs_to_skip; i++)
-        {
-          get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-        }
-        { /* Add remaining data blocs */
-          uint64_t offset_error_tmp;
-          file_recovery->offset_error=original_offset_error;
-          do
-          {
-            offset_error_tmp=file_recovery->offset_error;
-            file_recovery->file_size=file_offset;
-
-            for (;file_recovery->file_size < file_recovery->offset_error+100*blocksize &&
-                current_search_space != list_search_space;
-                file_recovery->file_size+=blocksize)
-            {
-              /* FIXME: handle fwrite return value */
-              disk_car->pread(disk_car, block_buffer, blocksize, offset);
-              fwrite(block_buffer, blocksize, 1, file_recovery->handle);
-              list_append_block(&file_recovery->location, offset, blocksize, 1);
-              get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-            }
-            save_seek=ftell(file_recovery->handle);
-#ifdef DEBUG_BF
-            log_trace("BF ");
-            list_space_used(file_recovery, blocksize);
-#endif
-            file_recovery->file_check(file_recovery);
-#ifdef DEBUG_BF
-            log_trace("offset_error %llu %llu\n",
-                (long long unsigned) file_recovery->offset_error,
-                (long long unsigned) offset_error_tmp);
-            log_flush();
-#endif
-            fseek(file_recovery->handle, save_seek, SEEK_SET);
-          } while(file_recovery->offset_error/blocksize*blocksize > offset_error_tmp/blocksize*blocksize);
-        }
-        if(file_recovery->offset_error==0)
-        { /* Recover the file */
-          file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
-          free(block_buffer);
-          return ind_stop;
-        }
-        else if(file_recovery->offset_error/blocksize*blocksize >= original_offset_error+4096)
-        { /* Try to recover file composed of multiple fragments */
-          log_info("%s multiple fragment %llu -> %llu\n", file_recovery->filename,
-              (unsigned long long)original_offset_error,
-              (unsigned long long)file_recovery->offset_error);
-          log_flush();
-          original_offset_error=file_recovery->offset_error;
-          ind_stop=2;
-        }
-      }
-    }
-  } while(ind_stop==2);
-  /* Cleanup */
-  file_finish(file_recovery,recup_dir,paranoid,file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
-  free(block_buffer);
-  return ind_stop;
-}
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 /* Live antivirus protection may open file as soon as they are created by *
@@ -597,29 +172,6 @@ static FILE *fopen_with_retry(const char *path, const char *mode)
 }
 #endif
 
-static alloc_data_t *file_found(alloc_data_t *current_search_space, const uint64_t offset, file_stat_t *file_stat)
-{
-  if(current_search_space==NULL)
-    return current_search_space;
-  if(current_search_space->start == offset)
-  {
-    current_search_space->file_stat=file_stat;
-    return current_search_space;
-  }
-  if(current_search_space->start < offset && offset <= current_search_space->end)
-  {
-    alloc_data_t *next_search_space;
-    next_search_space=(alloc_data_t*)MALLOC(sizeof(*next_search_space));
-    memcpy(next_search_space, current_search_space, sizeof(*next_search_space));
-    current_search_space->end=offset-1;
-    next_search_space->start=offset;
-    next_search_space->file_stat=file_stat;
-    td_list_add(&next_search_space->list, &current_search_space->list);
-    return next_search_space;
-  }
-  return current_search_space;
-}
-
 static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, const unsigned int content)
 {
   if(!(data->start <= offset && offset <= data->end))
@@ -644,152 +196,6 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
     td_list_add(&datanext->list, &data->list);
     return datanext;
   }
-}
-
-static int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time)
-{
-  uint64_t offset=0;
-  unsigned char *buffer_start;
-  unsigned char *buffer_olddata;
-  unsigned char *buffer;
-  time_t start_time;
-  time_t previous_time;
-  unsigned int buffer_size;
-  const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
-  alloc_data_t *current_search_space;
-  file_recovery_t file_recovery;
-  buffer_size=(*blocksize)+READ_SIZE;
-  buffer_start=(unsigned char *)MALLOC(buffer_size);
-  buffer_olddata=buffer_start;
-  buffer=buffer_olddata+(*blocksize);
-  reset_file_recovery(&file_recovery);
-  start_time=time(NULL);
-  previous_time=start_time;
-  memset(buffer_olddata,0,(*blocksize));
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-  if(current_search_space!=list_search_space)
-    offset=current_search_space->start;
-  if(verbose>0)
-    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
-  disk_car->pread(disk_car, buffer, READ_SIZE, offset);
-  while(current_search_space!=list_search_space)
-  {
-    uint64_t old_offset=offset;
-    {
-      file_recovery_t file_recovery_new;
-      if(file_recovery.file_stat!=NULL &&
-          file_recovery.file_stat->file_hint->min_header_distance > 0 &&
-          file_recovery.file_size<=file_recovery.file_stat->file_hint->min_header_distance)
-      {
-      }
-      else if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
-          header_check_tar(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
-      { /* Currently saving a tar, do not check the data for know header */
-      }
-      else
-      {
-	struct td_list_head *tmpl;
-        file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmpl, &file_check_list.list)
-	{
-	  struct td_list_head *tmp;
-	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
-	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
-	  {
-	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
-	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-		file_check->header_check(buffer, read_size, 1, &file_recovery, &file_recovery_new)!=0)
-	    {
-	      file_recovery_new.file_stat=file_check->file_stat;
-	      break;
-	    }
-	  }
-	  if(file_recovery_new.file_stat!=NULL)
-	    break;
-	}
-        if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
-	{
-	  /* A new file begins, backup file offset */
-	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
-	  (*file_nbr)++;
-	}
-      }
-    }
-    /* Check for data EOF */
-    if(file_recovery.file_stat!=NULL)
-    {
-      int res=1;
-      if(file_recovery.data_check!=NULL)
-	res=file_recovery.data_check(buffer_olddata,2*(*blocksize),&file_recovery);
-      file_recovery.file_size+=*blocksize;
-      file_recovery.file_size_on_disk+=*blocksize;
-      if(res==2)
-      {
-	/* EOF found */
-	reset_file_recovery(&file_recovery);
-      }
-    }
-    /* Check for maximum filesize */
-    if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
-    {
-      reset_file_recovery(&file_recovery);
-    }
-
-    if(*file_nbr>=10)
-    {
-      current_search_space=list_search_space;
-    }
-    else
-      get_next_sector(list_search_space, &current_search_space,&offset,*blocksize);
-    if(current_search_space==list_search_space)
-    {
-      /* End of disk found => EOF */
-      reset_file_recovery(&file_recovery);
-    }
-    buffer_olddata+=*blocksize;
-    buffer+=*blocksize;
-    if( old_offset+*blocksize!=offset ||
-        buffer+read_size>buffer_start+buffer_size)
-    {
-      memcpy(buffer_start,buffer_olddata,*blocksize);
-      buffer_olddata=buffer_start;
-      buffer=buffer_olddata+*blocksize;
-      if(verbose>1)
-      {
-        log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)((partition->part_size-1)/disk_car->sector_size));
-      }
-      if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
-      {
-#ifdef HAVE_NCURSES
-        if(interface!=0)
-        {
-          wmove(stdscr,11,0);
-          wclrtoeol(stdscr);
-          wprintw(stdscr,"Error reading sector %10lu\n",
-              (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
-        }
-#endif
-      }
-#ifdef HAVE_NCURSES
-      if(interface!=0)
-      {
-        time_t current_time;
-        current_time=time(NULL);
-        if(current_time>previous_time)
-        {
-          previous_time=current_time;
-          if(photorec_progressbar(stdscr, 0, STATUS_FIND_OFFSET, offset, disk_car, partition, *file_nbr, current_time-real_start_time, file_stats))
-	  {
-	    log_info("PhotoRec has been stopped\n");
-	    current_search_space=list_search_space;
-	  }
-	}
-      }
-#endif
-    }
-  } /* end while(current_search_space!=list_search_space) */
-  free(buffer_start);
-  return 0;
 }
 
 static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int lowmem)
@@ -1239,6 +645,7 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
   }
   fwrite(buffer, datasize, 1, file_recovery->handle);
   list_append_block(&file_recovery->location, start, datasize, 1);
+  file_recovery->calculated_file_size=0;
   file_recovery->file_size+=datasize;
   file_recovery->file_size_on_disk+=datasize;
   free(buffer);
@@ -1514,6 +921,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
       write_stats_stdout(file_stats);
       fflush(stdout);
     }
+    log_flush();
   }
 #ifdef HAVE_NCURSES
   if(expert>0)
