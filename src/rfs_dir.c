@@ -429,7 +429,6 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
   }
   while (reiserfs_dir_read(dir, &entry))
   {
-    unsigned int thislen;
     char name[MAX_NAME_LEN(DEFAULT_BLOCK_SIZE)];
     reiserfs_object_t *entity;
     strncpy(name,dir_data->current_directory,sizeof(name));
@@ -437,6 +436,7 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
     strcat(name,entry.de_name);
     if((entity=reiserfs_object_create(ls->current_fs,name,1)))
     {
+      unsigned int thislen;
       file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
       thislen=(MAX_NAME_LEN(DEFAULT_BLOCK_SIZE)<DIR_NAME_LEN?MAX_NAME_LEN(DEFAULT_BLOCK_SIZE):DIR_NAME_LEN);
       memcpy(new_file->name,entry.de_name,thislen);

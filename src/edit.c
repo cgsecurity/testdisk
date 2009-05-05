@@ -197,9 +197,7 @@ static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
 
 static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, const int menu_pos)
 {
-  unsigned int i,j;
   unsigned int pos;
-  unsigned char car;
   int done=0;
   unsigned int menu;
   struct MenuItem menuDump[]=
@@ -217,6 +215,8 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
   mvwaddstr(stdscr, EDIT_Y, EDIT_X, msg_DUMP_HEXA);
   do
   {
+    	unsigned int i,j;
+  	unsigned char car;
 	for (i=pos; (i<lng/0x10)&&((i-pos)<EDIT_MAX_LINES); i++)
 	{
 	  wmove(stdscr,EDIT_Y+i-pos,EDIT_X);

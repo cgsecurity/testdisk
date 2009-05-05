@@ -243,9 +243,9 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
 
 static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
 {
-  unsigned int i,d;
   if(le32(sb->major_version)==0)
   {
+    unsigned int i;
     sprintf(partition->fsname,"md%u",(unsigned int)le32(sb->md_minor));
     sprintf(partition->info,"md %u.%u.%u Raid %u: devices",
         (unsigned int)le32(sb->major_version),
@@ -271,6 +271,7 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
   }
   else
   {
+    unsigned int i,d;
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
     sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu (",
@@ -301,9 +302,9 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
 
 static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
 {
-  unsigned int i,d;
   if(be32(sb->major_version)==0)
   {
+    unsigned int i;
     sprintf(partition->fsname,"md%u",(unsigned int)be32(sb->md_minor));
     sprintf(partition->info,"md %u.%u.%u Raid %u: devices",
         (unsigned int)be32(sb->major_version),
@@ -329,6 +330,7 @@ static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partit
   }
   else
   {
+    unsigned int i,d;
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
     sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu (",

@@ -62,9 +62,9 @@ static void register_header_check_7z(file_stat_t *file_stat)
 
 static int header_check_7z(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery,  file_recovery_t *file_recovery_new)
 {
-  const struct header_7z *buffer_7z=(const struct header_7z *)buffer;
-  if(memcmp(buffer,header_7z,sizeof(header_7z))==0)
+  if(memcmp(buffer, header_7z, sizeof(header_7z))==0)
   {
+    const struct header_7z *buffer_7z=(const struct header_7z *)buffer;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_7z.extension;
     file_recovery_new->min_filesize=31;

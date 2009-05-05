@@ -483,12 +483,12 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
   {
     partition_t *partition_ext=partition_main_ext;
     partition_t *partition_next_ext=NULL;
-    unsigned int i;
     unsigned int order=5;
     do
     {
       unsigned char buffer[DEFAULT_SECTOR_SIZE];
       int nb_hidden=0, nb_mb=0, nb_part=0, nb_ext=0, nb_boot=0;
+      unsigned int i;
       if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition_ext->part_offset) != sizeof(buffer))
 	return list_part;
       if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
@@ -777,7 +777,6 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
   {
     for(element=pos_ext->next;(element!=NULL) && (element->part->status==STATUS_LOG);element=element->next)
     {
-      int j;
       unsigned char buffer[DEFAULT_SECTOR_SIZE];
       unsigned char buffer_org[DEFAULT_SECTOR_SIZE];
       if(verbose>0)
@@ -839,6 +838,7 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
       {
         if(verbose>1)
         {
+	  int j;
           for(j=0;j<4;j++)
           {
             const struct partition_dos *p=pt_offset(buffer,j);
@@ -864,9 +864,9 @@ static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, co
 
 static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE])
 {
-  int j;
   if(memcmp(buffer,buffer_org,DEFAULT_SECTOR_SIZE))
   {
+    int j;
     log_info("\nSectors are different.\n");
     log_info("buffer_org\n");
     for(j=0;j<4;j++)

@@ -457,12 +457,12 @@ static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count,
     return -1;
   }
   {
-    unsigned int read_size;
     uint64_t read_offset=0;
     do
     {
       int i=0;
       int rc;
+      unsigned int read_size;
       read_size=count-read_offset>16*512?16*512:count-read_offset;
       do
       {

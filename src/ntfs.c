@@ -326,70 +326,68 @@ static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partiti
         switch(attr_type)
         {
           case 0x80:	/* AT_DATA */
-            {
-              /* buf must be unsigned! */
-              const unsigned char *buf;
-              uint8_t b;                   	/* Current byte offset in buf. */
-              uint16_t mapping_pairs_offset;
-              const unsigned char*attr_end;     /* End of attribute. */
-              long lcn;
-              int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
-              mapping_pairs_offset=NTFS_GETU16(attr_record+32);
-              buf=(const unsigned char*)attr_record + mapping_pairs_offset;
-              attr_end = (const unsigned char*)attr_record + attr_len;
-              lcn = 0;
-              /* return first element of the run_list */
-              {
-                b = *buf & 0xf;
-                if (b){
-                  if (buf + b > attr_end)
-                  {
-                    log_error("Attribut AT_DATA: bad size\n");
-                    return 0;
-                  }
-                  for (deltaxcn = (int8_t)buf[b--]; b; b--)
-                    deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
-                  /* Assume a negative length to indicate data corruption */
-                  if (deltaxcn < 0)
-                    log_error("Invalid length in mapping pairs array.\n");
-                } else { /* The length entry is compulsory. */
-                  log_error("Missing length entry in mapping pairs array.\n");
-                }
-                if (deltaxcn >= 0)
-                {
-                  if (!(*buf & 0xf0))
-                  {
-                    log_info("LCN_HOLE\n");
-                  }
-                  else
-                  {
-                    /* Get the lcn change which really can be negative. */
-                    uint8_t b2 = *buf & 0xf;
-                    b = b2 + ((*buf >> 4) & 0xf);
-                    if (buf + b > attr_end)
-                    {
-                      log_error("Attribut AT_DATA: bad size\n");
-                      return 0;
-                    }
-                    for (deltaxcn = (int8_t)buf[b--]; b > b2; b--)
-                      deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
-                    /* Change the current lcn to it's new value. */
-                    lcn += deltaxcn;
-                    /* Check lcn is not below -1. */
-                    if (lcn < -1) {
-                      log_error("Invalid LCN < -1 in mapping pairs array.");
-                      return 0;
-                    }
-                    if(verbose>1)
-                    {
-                      log_verbose("LCN %ld\n",lcn);
-                    }
-                    if(attr_type==my_type)
-                      return lcn;
-                  }
-                }
-              }
-            }
+	    {
+	      /* buf must be unsigned! */
+	      const unsigned char *buf;
+	      uint8_t b;                   	/* Current byte offset in buf. */
+	      uint16_t mapping_pairs_offset;
+	      const unsigned char*attr_end;     /* End of attribute. */
+	      long lcn;
+	      int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
+	      mapping_pairs_offset=NTFS_GETU16(attr_record+32);
+	      buf=(const unsigned char*)attr_record + mapping_pairs_offset;
+	      attr_end = (const unsigned char*)attr_record + attr_len;
+	      lcn = 0;
+	      /* return first element of the run_list */
+	      b = *buf & 0xf;
+	      if (b){
+		if (buf + b > attr_end)
+		{
+		  log_error("Attribut AT_DATA: bad size\n");
+		  return 0;
+		}
+		for (deltaxcn = (int8_t)buf[b--]; b; b--)
+		  deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
+		/* Assume a negative length to indicate data corruption */
+		if (deltaxcn < 0)
+		  log_error("Invalid length in mapping pairs array.\n");
+	      } else { /* The length entry is compulsory. */
+		log_error("Missing length entry in mapping pairs array.\n");
+	      }
+	      if (deltaxcn >= 0)
+	      {
+		if (!(*buf & 0xf0))
+		{
+		  log_info("LCN_HOLE\n");
+		}
+		else
+		{
+		  /* Get the lcn change which really can be negative. */
+		  uint8_t b2 = *buf & 0xf;
+		  b = b2 + ((*buf >> 4) & 0xf);
+		  if (buf + b > attr_end)
+		  {
+		    log_error("Attribut AT_DATA: bad size\n");
+		    return 0;
+		  }
+		  for (deltaxcn = (int8_t)buf[b--]; b > b2; b--)
+		    deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
+		  /* Change the current lcn to it's new value. */
+		  lcn += deltaxcn;
+		  /* Check lcn is not below -1. */
+		  if (lcn < -1) {
+		    log_error("Invalid LCN < -1 in mapping pairs array.");
+		    return 0;
+		  }
+		  if(verbose>1)
+		  {
+		    log_verbose("LCN %ld\n",lcn);
+		  }
+		  if(attr_type==my_type)
+		    return lcn;
+		}
+	      }
+	    }
             break;
         }
       }

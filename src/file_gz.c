@@ -84,7 +84,6 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   {
     unsigned int off=10;
     const unsigned int flags=buffer[3];
-    int err;
 
     /*
        4,5,6,7: mtime
@@ -119,6 +118,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       unsigned char buffer_uncompr[512];
       const unsigned int comprLen=(buffer_size<512?buffer_size:512)-off;
       const unsigned int uncomprLen=512-1;
+      int err;
       z_stream d_stream; /* decompression stream */
       d_stream.zalloc = (alloc_func)0;
       d_stream.zfree = (free_func)0;
