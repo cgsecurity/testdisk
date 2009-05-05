@@ -238,22 +238,6 @@ static int photorec_progressbar(WINDOW *window, const unsigned int pass, const p
 }
 #endif
 
-static void set_filename(file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const disk_t *disk, const partition_t *partition, const int broken)
-{
-  if(file_recovery->extension==NULL || file_recovery->extension[0]=='\0')
-  {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u",recup_dir,
-	dir_num,(broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size));
-  }
-  else
-  {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u.%s",recup_dir,
-	dir_num, (broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size), file_recovery->extension);
-  }
-}
-
 static int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass)
 {
   struct td_list_head *search_walker = NULL;

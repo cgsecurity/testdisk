@@ -58,6 +58,7 @@ int sorfile_stat_ts(const void *p1, const void *p2);
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num);
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
 void free_search_space(alloc_data_t *list_search_space);
+void set_filename(file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const disk_t *disk, const partition_t *partition, const int broken);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
