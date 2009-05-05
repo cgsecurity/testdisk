@@ -229,7 +229,7 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
     {
       const char *tag_make;
       tag_make=find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE);
-      if(tag_make!=NULL)
+      if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
       {
 	if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
 	    strcmp(tag_make, "PENTAX             ")==0)
