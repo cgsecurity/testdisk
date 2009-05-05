@@ -57,6 +57,7 @@ static int data_check_txt(const unsigned char *buffer, const unsigned int buffer
 static void file_check_emlx(file_recovery_t *file_recovery);
 static void file_check_ers(file_recovery_t *file_recovery);
 static void file_check_html(file_recovery_t *file_recovery);
+static void file_check_svg(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fasttxt= {
@@ -334,6 +335,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   const char sign_grisbi[14]		= "Version_grisbi";
   const char sign_fst[5]                = "QBFSD";
   const char sign_html[5]		= "<html";
+  const char sign_svg[4]		= "<svg";
   static const unsigned char spaces[16]={
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
@@ -472,9 +474,12 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     else if(td_memmem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
       file_recovery_new->extension="fst";
     else if(td_memmem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
-    {
       file_recovery_new->extension="html";
-      file_recovery_new->file_check=&file_check_html;
+    else if(td_memmem(buffer, buffer_size, sign_svg, sizeof(sign_svg))!=NULL)
+    {
+      file_recovery_new->extension="svg";
+      file_recovery_new->file_check=&file_check_svg;
+      return 1;
     }
     else
       file_recovery_new->extension="xml";
@@ -961,3 +966,11 @@ static void file_check_ers(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, ers_footer, sizeof(ers_footer));
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
+
+static void file_check_svg(file_recovery_t *file_recovery)
+{
+  const unsigned char svg_footer[6]= { '<', '/', 's', 'v', 'g', '>'};
+  file_search_footer(file_recovery, svg_footer, sizeof(svg_footer));
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+}
+
