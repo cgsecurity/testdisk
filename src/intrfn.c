@@ -63,6 +63,7 @@
 #include "dir.h"
 #include "log.h"
 #include "hdaccess.h"
+#include "autoset.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_gpt;
@@ -491,9 +492,7 @@ void dump_ncurses(const void *nom_dump, unsigned int lng)
 
 void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
 {
-  unsigned int i,j;
   unsigned int nbr_line;
-  unsigned char car;
   unsigned int pos=0;
   int done=0;
   unsigned int menu=2;   /* default : quit */
@@ -515,6 +514,8 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
   /* On pourrait utiliser wscrl */
   do
   {
+    unsigned char car;
+    unsigned int i,j;
     for (i=pos; (i<nbr_line)&&((i-pos)<DUMP_MAX_LINES); i++)
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
@@ -600,7 +601,6 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
 
 void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigned int lng)
 {
-  unsigned int i,j;
   unsigned int nbr_line;
   unsigned int pos=0;
   int done=0;
@@ -621,6 +621,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
   }
   do
   {
+    unsigned int i,j;
     for (i=pos; (i<nbr_line)&&((i-pos)<DUMP_MAX_LINES); i++)
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
@@ -764,7 +765,6 @@ int screen_buffer_display(WINDOW *window, const char *options_org, const struct 
 #define INTER_MAX_LINES 	(INTER_ANALYSE_MENU_Y-INTER_ANALYSE_Y-2)
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu)
 {
-  int i;
   int first_line_to_display=0;
   int current_line=0;
   int done=0;
@@ -785,6 +785,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
   /* curses interface */
   do
   {
+    int i;
     int key;
     wmove(window, INTER_ANALYSE_Y-1, INTER_ANALYSE_X+4);
     wclrtoeol(window);

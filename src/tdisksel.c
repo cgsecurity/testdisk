@@ -48,6 +48,7 @@
 #include "hiddenn.h"
 #include "nodisk.h"
 #include "chgtypen.h"
+#include "autoset.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)

@@ -108,9 +108,6 @@
 #include "alignio.h"
 #include "hpa_dco.h"
 
-extern const arch_fnct_t arch_gpt;
-extern const arch_fnct_t arch_mac;
-
 struct info_file_struct
 {
   int handle;
@@ -792,21 +789,24 @@ static char* strip_name(char* str)
 /* This function reads the /sys entry named "file" for device "disk_car". */
 static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
 {
-        FILE *f;
-        char name_buf[128];
-        char buf[256];
+  FILE *f;
+  char name_buf[128];
+  char buf[256];
 
-        snprintf (name_buf, 127, "/sys/block/%s/device/%s",
-                  basename (disk_car->device), file);
+  snprintf (name_buf, 127, "/sys/block/%s/device/%s",
+      basename (disk_car->device), file);
 
-        if ((f = fopen (name_buf, "r")) == NULL)
-                return NULL;
+  if ((f = fopen (name_buf, "r")) == NULL)
+    return NULL;
 
-        if (fgets (buf, 255, f) == NULL)
-                return NULL;
+  if (fgets (buf, 255, f) == NULL)
+  {
+    fclose (f);
+    return NULL;
+  }
 
-        fclose (f);
-        return strip_name (buf);
+  fclose (f);
+  return strip_name (buf);
 }
 #endif
 
@@ -1538,18 +1538,6 @@ void hd_update_all_geometry(const list_disk_t * list_disk, const int allow_parti
   }
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     hd_update_geometry(element_disk->disk,allow_partial_last_cylinder,verbose);
-}
-
-void autoset_unit(disk_t *disk_car)
-{
-  if(disk_car==NULL)
-    return ;
-  if(disk_car->arch==&arch_mac || 
-      disk_car->arch==&arch_gpt || 
-      (disk_car->geom.heads_per_cylinder==1 && disk_car->geom.sectors_per_head==1))
-    disk_car->unit=UNIT_SECTOR;
-  else
-    disk_car->unit=UNIT_CHS;
 }
 
 void init_disk(disk_t *disk)

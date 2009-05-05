@@ -40,6 +40,7 @@
 #include "log.h"
 #include "hdaccess.h"
 #include "geometry.h"
+#include "autoset.h"
 
 static inline void set_cylinders_from_size_up(disk_t *disk_car)
 {

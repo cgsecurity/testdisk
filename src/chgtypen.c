@@ -43,6 +43,7 @@
 #include "guid_cpy.h"
 #include "partgpt.h"
 #include "hdaccess.h"
+#include "autoset.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
