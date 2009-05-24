@@ -41,7 +41,6 @@
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_tiff(file_recovery_t *file_recovery);
 static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 
@@ -165,13 +164,13 @@ const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int
 {
   if(tiff_size < sizeof(TIFFHeader))
     return NULL;
-  if(memcmp(&tiff->tiff_magic, tiff_header_be, sizeof(tiff_header_be))==0)
+  if(tiff->tiff_magic==TIFF_BIGENDIAN)
   {
     if(tiff_size < be32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
       return NULL;
     return find_tag_from_tiff_header_be(tiff, tiff_size, tag);
   }
-  else if(memcmp(&tiff->tiff_magic, tiff_header_le, sizeof(tiff_header_le))==0)
+  else if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
   {
     if(tiff_size < le32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
       return NULL;
@@ -207,8 +206,8 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
 
 static void register_header_check_tiff(file_stat_t *file_stat)
 {
-  register_header_check(0, tiff_header_be,sizeof(tiff_header_be), &header_check_tiff, file_stat);
-  register_header_check(0, tiff_header_le,sizeof(tiff_header_le), &header_check_tiff, file_stat);
+  register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff, file_stat);
+  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff, file_stat);
 }
 
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -428,7 +427,8 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
     }
     entry++;
   }
-  if(strip_bytecounts > 0 && max_offset < strip_offsets + strip_bytecounts)
+  if(strip_bytecounts > 0 && strip_offsets!=0xffffffff &&
+      max_offset < strip_offsets + strip_bytecounts)
     max_offset = strip_offsets + strip_bytecounts;
   if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
     max_offset = jpegifoffset + jpegifbytecount;
@@ -558,7 +558,8 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
     }
     entry++;
   }
-  if(strip_bytecounts > 0 && max_offset < strip_offsets + strip_bytecounts)
+  if(strip_bytecounts > 0 && strip_offsets!=0xffffffff &&
+      max_offset < strip_offsets + strip_bytecounts)
     max_offset = strip_offsets + strip_bytecounts;
   if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
     max_offset = jpegifoffset + jpegifbytecount;
@@ -571,7 +572,7 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   return max_offset;
 }
 
-static void file_check_tiff(file_recovery_t *fr)
+void file_check_tiff(file_recovery_t *fr)
 {
   static uint64_t calculated_file_size=0;
   TIFFHeader header;
@@ -584,14 +585,16 @@ static void file_check_tiff(file_recovery_t *fr)
   else if(header.tiff_magic==TIFF_BIGENDIAN)
     calculated_file_size=header_check_tiff_be(fr->handle, be32(header.tiff_diroff), 0, 0);
 #ifdef DEBUG_TIFF
-  log_info("TIFF Current   %llu\n", fr->file_size);
-  log_info("TIFF Estimated %llu\n", calculated_file_size);
+  log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
+  log_info("TIFF Estimated %llu\n", (unsigned long long)calculated_file_size);
 #endif
   if(fr->file_size < calculated_file_size)
     fr->file_size=0;
     /* PhotoRec isn't yet capable to find the correct Sony arw and dng filesize,
+     * same problem for panasonic raw/rw2,
      * so don't truncate them */
   else if(strcmp(fr->extension,"arw")!=0 &&
-      strcmp(fr->extension,"dng")!=0)
+      strcmp(fr->extension,"dng")!=0 &&
+      strcmp(fr->extension,"rw2")!=0)
     fr->file_size=calculated_file_size;
 }

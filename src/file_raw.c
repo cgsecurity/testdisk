@@ -36,7 +36,7 @@ static int header_check_raw(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_raw= {
   .extension="raw",	/* What is the correct extension ? */
-  .description="Contax picture, Panasonic/Leica RAW",
+  .description="Contax picture RAW",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -45,12 +45,10 @@ const file_hint_t file_hint_raw= {
 };
 
 static const unsigned char raw_header_contax[7]= {'A','R','E','C','O','Y','K'};
-static const unsigned char raw_header_panasonic[4]= {'I','I','U','\0'};
 
 static void register_header_check_raw(file_stat_t *file_stat)
 {
   register_header_check(25, raw_header_contax,sizeof(raw_header_contax), &header_check_raw, file_stat);
-  register_header_check(0, raw_header_panasonic,sizeof(raw_header_panasonic), &header_check_raw, file_stat);
 }
 
 static int header_check_raw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -60,13 +58,6 @@ static int header_check_raw(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_raw.extension;
-    return 1;
-  }
-  /* Panasonic/Leica */
-  if(memcmp(buffer, raw_header_panasonic, sizeof(raw_header_panasonic))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="raw";
     return 1;
   }
   return 0;
