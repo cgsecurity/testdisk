@@ -109,7 +109,7 @@ int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec
       (unsigned)(elapsed_time%60));
   if(offset-partition->part_offset!=0 && (status!=STATUS_EXT2_ON_BF && status!=STATUS_EXT2_OFF_BF))
   {
-    wprintw(window," - Estimated time for achievement %uh%02um%02u\n",
+    wprintw(window," - Estimated time to completion %uh%02um%02u\n",
         (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
         (unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
         (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);

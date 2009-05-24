@@ -292,7 +292,7 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 	      (unsigned)(elapsed_time%60));
 	  if(offset-partition->part_offset!=0)
 	  {
-	    wprintw(stdscr," - Estimated time for achievement %uh%02um%02u\n",
+	    wprintw(stdscr," - Estimated time to completion %uh%02um%02u\n",
 		(unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
 		(unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
 		(unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
