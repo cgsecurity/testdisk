@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-char *ask_location(const char*msg, const char *src_dir);
+char *ask_location(const char*msg, const char *src_dir, const char *dst_org);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

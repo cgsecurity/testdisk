@@ -152,7 +152,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	else
 	{
 #ifdef HAVE_NCURSES
-	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+	  res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 #else
 	  res=get_default_location();
 #endif
@@ -372,7 +372,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	      res=(char *)recup_dir;
 	    else
 	    {
-	      res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+	      res=ask_location("Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 	      if(res!=NULL)
 	      {
 		char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);

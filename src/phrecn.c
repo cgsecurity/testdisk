@@ -757,8 +757,17 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     if(ind_stop==3)
     { /* no more space */
 #ifdef HAVE_NCURSES
+      char *dst;
       char *res;
-      res=ask_location("Warning: no free space available. Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.","");
+      dst=strdup(recup_dir);
+      if(dst!=NULL)
+      {
+	res=strrchr(dst, '/');
+	if(res!=NULL)
+	  *res='\0';
+      }
+      res=ask_location("Warning: no free space available. Do you want to save recovered files in %s%s ? [Y/N]\nDo not choose to write the files to the same partition they were stored on.", "", dst);
+      free(dst);
       if(res==NULL)
         status=STATUS_QUIT;
       else

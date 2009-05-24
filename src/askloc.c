@@ -123,14 +123,17 @@ static void set_parent_directory(char *dst_directory)
 #endif
 }
 
-char *ask_location(const char*msg, const char *src_dir)
+char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 {
   char dst_directory[4096];
   char *res=NULL;
   int quit;
   WINDOW *window=newwin(0,0,0,0);	/* full screen */
   aff_copy(window);
-  td_getcwd(dst_directory, sizeof(dst_directory));
+  if(dst_org != NULL)
+    strncpy(dst_directory, dst_org, sizeof(dst_directory));
+  else
+    td_getcwd(dst_directory, sizeof(dst_directory));
   do
   {
     DIR* dir;

@@ -1348,10 +1348,10 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		char *res;
 		if(LINUX_S_ISDIR(file_info->stat.st_mode)!=0)
 		  res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
-		      file_info->name);
+		      file_info->name, NULL);
 		else
 		  res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",
-		      file_info->name);
+		      file_info->name, NULL);
 		dir_data->local_dir=res;
 		opts.dest=res;
 	      }
@@ -1394,7 +1394,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  if(dir_data->local_dir==NULL)
 	  {
 	    char *res;
-	    res=ask_location("Are you sure you want to copy the %smarked files to the directory %s ? [Y/N]", "");
+	    res=ask_location("Are you sure you want to copy the %smarked files to the directory %s ? [Y/N]", "", NULL);
 	    dir_data->local_dir=res;
 	    opts.dest=res;
 	  }

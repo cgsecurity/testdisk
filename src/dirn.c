@@ -273,10 +273,10 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		{
 		  if(LINUX_S_ISDIR(pos->stat.st_mode)!=0)
 		    dir_data->local_dir=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
-			dir_data->current_directory);
+			dir_data->current_directory, NULL);
 		  else
 		    dir_data->local_dir=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",
-			dir_data->current_directory);
+			dir_data->current_directory, NULL);
 		}
 		if(dir_data->local_dir!=NULL)
 		{
