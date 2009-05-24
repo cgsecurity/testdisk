@@ -73,7 +73,8 @@ int save_header(disk_t *disk_car,partition_t *partition, const int verbose)
       case STATUS_DELETED:        status='D'; break;
     }
     snprintf((char*)buffer,256*DEFAULT_SECTOR_SIZE,"%s\n%2u %c Sys=%02X %5u %3u %2u %5u %3u %2u %10lu\n",
-	disk_car->description(disk_car), partition->order,status,disk_car->arch->get_part_type(partition),
+	disk_car->description(disk_car), partition->order, status,
+	(disk_car->arch->get_part_type!=NULL ?  disk_car->arch->get_part_type(partition) : 0),
 	offset2cylinder(disk_car,partition->part_offset), offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset),
 	offset2cylinder(disk_car,partition->part_offset+partition->part_size-disk_car->sector_size), offset2head(disk_car,partition->part_offset+partition->part_size-disk_car->sector_size),offset2sector(disk_car,partition->part_offset+partition->part_size-disk_car->sector_size),
 	(unsigned long)(partition->part_size/disk_car->sector_size));
@@ -242,7 +243,8 @@ int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose)
 	  fprintf(f_backup,"%2d : start=%9lu, size=%9lu, Id=%02X, %c\n",
 	      parts->part->order, (unsigned long)(parts->part->part_offset/disk_car->sector_size),
 	      (unsigned long)(parts->part->part_size/disk_car->sector_size),
-	      disk_car->arch->get_part_type(parts->part), status);
+	      (disk_car->arch->get_part_type!=NULL ?  disk_car->arch->get_part_type(parts->part) : 0),
+	      status);
 	}
 	break;
       default:
