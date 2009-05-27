@@ -69,7 +69,5 @@ static int header_check_hr9(const unsigned char *buffer, const unsigned int buff
 static void file_check_hr9(file_recovery_t *file_recovery)
 {
   const unsigned char hr9_footer[4]= {0xc0, 0xde, 0xca, 0xfe};
-  file_search_footer(file_recovery, hr9_footer, sizeof(hr9_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=0x50-4;
+  file_search_footer(file_recovery, hr9_footer, sizeof(hr9_footer), 0x50-4);
 }

@@ -71,7 +71,5 @@ static void file_check_mfg(file_recovery_t *file_recovery)
   const unsigned char mfg_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
-  file_search_footer(file_recovery, mfg_footer,sizeof(mfg_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=12;	/* sizeof(mfg_footer) + nl*/
+  file_search_footer(file_recovery, mfg_footer, sizeof(mfg_footer), 1);
 }

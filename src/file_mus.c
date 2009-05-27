@@ -68,5 +68,5 @@ static int header_check_mus(const unsigned char *buffer, const unsigned int buff
 static void file_check_mus(file_recovery_t *file_recovery)
 {
   const unsigned char mus_footer[5]= {'-','^','e','n','d'};
-  file_search_footer(file_recovery, mus_footer,sizeof(mus_footer));
+  file_search_footer(file_recovery, mus_footer, sizeof(mus_footer), 0);
 }

@@ -70,7 +70,5 @@ static int header_check_crw(const unsigned char *buffer, const unsigned int buff
 static void file_check_crw(file_recovery_t *file_recovery)
 {
   const unsigned char crw_footer[2]= { 0x0A, 0x30};
-  file_search_footer(file_recovery, crw_footer, sizeof(crw_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=12;
+  file_search_footer(file_recovery, crw_footer, sizeof(crw_footer), 12);
 }

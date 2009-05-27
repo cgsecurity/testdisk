@@ -949,28 +949,28 @@ static void file_check_emlx(file_recovery_t *file_recovery)
   {
     if(file_recovery->file_size > file_recovery->calculated_file_size+2048)
       file_recovery->file_size=file_recovery->calculated_file_size+2048;
-    file_search_footer(file_recovery, emlx_footer,sizeof(emlx_footer));
+    file_search_footer(file_recovery, emlx_footer, sizeof(emlx_footer), 0);
   }
 }
 
 static void file_check_xml(file_recovery_t *file_recovery)
 {
   const unsigned char xml_footer[1]= { '>'};
-  file_search_footer(file_recovery, xml_footer, sizeof(xml_footer));
+  file_search_footer(file_recovery, xml_footer, sizeof(xml_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_ers(file_recovery_t *file_recovery)
 {
   const unsigned char ers_footer[17]= "DatasetHeader End";
-  file_search_footer(file_recovery, ers_footer, sizeof(ers_footer));
+  file_search_footer(file_recovery, ers_footer, sizeof(ers_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_svg(file_recovery_t *file_recovery)
 {
   const unsigned char svg_footer[6]= { '<', '/', 's', 'v', 'g', '>'};
-  file_search_footer(file_recovery, svg_footer, sizeof(svg_footer));
+  file_search_footer(file_recovery, svg_footer, sizeof(svg_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 

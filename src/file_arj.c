@@ -152,5 +152,5 @@ static int header_check_arj(const unsigned char *buffer, const unsigned int buff
 static void file_check_arj(file_recovery_t *file_recovery)
 {
   static const unsigned char arj_footer[4]={0x60, 0xEA, 0x00, 0x00 };
-  file_search_footer(file_recovery, arj_footer,sizeof(arj_footer));
+  file_search_footer(file_recovery, arj_footer, sizeof(arj_footer), 0);
 }

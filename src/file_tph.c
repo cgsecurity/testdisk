@@ -72,7 +72,5 @@ static void file_check_tph(file_recovery_t *file_recovery)
   const unsigned char tph_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
-  file_search_footer(file_recovery, tph_footer,sizeof(tph_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=12;	/* sizeof(tph_footer) + nl*/
+  file_search_footer(file_recovery, tph_footer, sizeof(tph_footer), 1);
 }

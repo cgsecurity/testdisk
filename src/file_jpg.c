@@ -470,7 +470,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   }
 #endif
   file_recovery->file_size=jpeg_size;
-  file_search_footer(file_recovery, jpg_footer,sizeof(jpg_footer));
+  file_search_footer(file_recovery, jpg_footer, sizeof(jpg_footer), 0);
 }
 
 static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)

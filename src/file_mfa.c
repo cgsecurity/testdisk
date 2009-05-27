@@ -66,7 +66,5 @@ static int header_check_mfa(const unsigned char *buffer, const unsigned int buff
 static void file_check_mfa(file_recovery_t *file_recovery)
 {
   const unsigned char mfa_footer[5]= {'!','D','N','E', '!'};
-  file_search_footer(file_recovery, mfa_footer,sizeof(mfa_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=0x84;
+  file_search_footer(file_recovery, mfa_footer, sizeof(mfa_footer), 0x84);
 }

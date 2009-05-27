@@ -103,9 +103,7 @@ static void file_check_png(file_recovery_t *file_recovery)
   const unsigned char mng_footer[4]= {'M','E','N','D'};
   const unsigned char png_footer[4]= {'I','E','N','D'};
   if(strstr(file_recovery->filename,".mng")!=NULL)
-    file_search_footer(file_recovery, mng_footer,sizeof(mng_footer));
+    file_search_footer(file_recovery, mng_footer, sizeof(mng_footer), 4);
   else
-    file_search_footer(file_recovery, png_footer,sizeof(png_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=4;
+    file_search_footer(file_recovery, png_footer, sizeof(png_footer), 4);
 }

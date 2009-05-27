@@ -68,5 +68,5 @@ static int header_check_rar(const unsigned char *buffer, const unsigned int buff
 static void file_check_rar(file_recovery_t *file_recovery)
 {
   static const unsigned char rar_footer[7]={0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00 };
-  file_search_footer(file_recovery, rar_footer,sizeof(rar_footer));
+  file_search_footer(file_recovery, rar_footer, sizeof(rar_footer), 0);
 }

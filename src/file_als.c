@@ -81,7 +81,5 @@ static void file_check_als(file_recovery_t *file_recovery)
     0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,
     0x80, 0x00, 0x00, 0x00, 0x80, 0x01
   };
-  file_search_footer(file_recovery, als_footer, sizeof(als_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=7;
+  file_search_footer(file_recovery, als_footer, sizeof(als_footer), 7);
 }

@@ -119,7 +119,7 @@ typedef struct
 
 void free_header_check(void);
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
-void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
+void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length, const unsigned int extra_length);
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
 void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
 int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);

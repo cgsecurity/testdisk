@@ -122,6 +122,6 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 static void file_check_pdf(file_recovery_t *file_recovery)
 {
   const unsigned char pdf_footer[4]= { '%', 'E', 'O', 'F'};
-  file_search_footer(file_recovery, pdf_footer, sizeof(pdf_footer));
+  file_search_footer(file_recovery, pdf_footer, sizeof(pdf_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }

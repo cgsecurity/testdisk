@@ -71,7 +71,5 @@ static void file_check_asm(file_recovery_t *file_recovery)
   const unsigned char asm_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
-  file_search_footer(file_recovery, asm_footer,sizeof(asm_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=12;	/* sizeof(asm_footer) + nl*/
+  file_search_footer(file_recovery, asm_footer, sizeof(asm_footer), 1);
 }

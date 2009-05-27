@@ -68,5 +68,5 @@ static int header_check_mid(const unsigned char *buffer, const unsigned int buff
 static void file_check_mid(file_recovery_t *file_recovery)
 {
   const unsigned char mid_footer[3]= {0xff, 0x2f, 0x00};
-  file_search_footer(file_recovery, mid_footer,sizeof(mid_footer));
+  file_search_footer(file_recovery, mid_footer, sizeof(mid_footer), 0);
 }

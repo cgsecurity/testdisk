@@ -82,7 +82,7 @@ static int header_check_gif(const unsigned char *buffer, const unsigned int buff
 static void file_check_gif(file_recovery_t *file_recovery)
 {
   const unsigned char gif_footer[2]= {0x00, 0x3b};
-  file_search_footer(file_recovery, gif_footer,sizeof(gif_footer));
+  file_search_footer(file_recovery, gif_footer, sizeof(gif_footer), 0);
 }
 
 static int data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)

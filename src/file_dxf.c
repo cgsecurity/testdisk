@@ -100,6 +100,6 @@ static int data_check_dxf(const unsigned char *buffer, const unsigned int buffer
 static void file_check_dxf(file_recovery_t *file_recovery)
 {
   const unsigned char dxf_footer[4]= {'\n', 'E', 'O', 'F'};
-  file_search_footer(file_recovery, dxf_footer, sizeof(dxf_footer));
+  file_search_footer(file_recovery, dxf_footer, sizeof(dxf_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF);
 }

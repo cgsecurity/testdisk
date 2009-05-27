@@ -71,7 +71,5 @@ static void file_check_frm(file_recovery_t *file_recovery)
   const unsigned char frm_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
-  file_search_footer(file_recovery, frm_footer,sizeof(frm_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=12;	/* sizeof(frm_footer) + nl*/
+  file_search_footer(file_recovery, frm_footer, sizeof(frm_footer), 1);
 }

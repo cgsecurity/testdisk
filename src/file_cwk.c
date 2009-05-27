@@ -66,7 +66,5 @@ static int header_check_cwk(const unsigned char *buffer, const unsigned int buff
 static void file_check_cwk(file_recovery_t *file_recovery)
 {
   const unsigned char cwk_footer[4]= {0xf0, 0xf1, 0xf2, 0xf3};
-  file_search_footer(file_recovery, cwk_footer,sizeof(cwk_footer));
-  if(file_recovery->file_size>0)
-    file_recovery->file_size+=4;
+  file_search_footer(file_recovery, cwk_footer, sizeof(cwk_footer), 4);
 }

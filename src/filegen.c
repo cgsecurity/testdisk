@@ -192,24 +192,21 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     file_recovery->file_size++;
 }
 
-void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
+void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length, const unsigned int extra_length)
 {
-  const unsigned int read_size=4096;
   unsigned char*buffer;
   int64_t file_size;
-  if(footer_length==0)
+  if(footer_length==0 || file_recovery->file_size <= extra_length)
     return ;
-  buffer=(unsigned char*)MALLOC(read_size+footer_length-1);
-  file_size=file_recovery->file_size;
-  memset(buffer+read_size,0,footer_length-1);
+  buffer=(unsigned char*)MALLOC(4096+footer_length-1);
+  file_size=file_recovery->file_size-extra_length;
+  memset(buffer+4096,0,footer_length-1);
   do
   {
     int i;
     int taille;
-    if(file_size%read_size!=0)
-      file_size=file_size-(file_size%read_size);
-    else
-      file_size-=read_size;
+    const unsigned int read_size=(file_size%4096!=0 ? file_size%4096 : 4096);
+    file_size-=read_size;
     if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
     {
       free(buffer);
@@ -220,7 +217,7 @@ void file_search_footer(file_recovery_t *file_recovery, const unsigned char*foot
     {
       if(buffer[i]==footer[0] && memcmp(buffer+i,footer,footer_length)==0)
       {
-        file_recovery->file_size=file_size+i+footer_length;
+        file_recovery->file_size=file_size + i + footer_length + extra_length;
         free(buffer);
         return;
       }
