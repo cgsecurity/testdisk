@@ -80,6 +80,13 @@
 extern const file_hint_t file_hint_tar;
 extern file_check_list_t file_check_list;
 
+static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
+{
+  memcpy(dst, src, sizeof(*dst));
+  dst->location.list.prev=&dst->location.list;
+  dst->location.list.next=&dst->location.list;
+}
+
 int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time)
 {
   uint64_t offset=0;
@@ -146,6 +153,7 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
 	  /* A new file begins, backup file offset */
 	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
 	  (*file_nbr)++;
+	  file_recovery_cpy(&file_recovery, &file_recovery_new);
 	}
       }
     }
