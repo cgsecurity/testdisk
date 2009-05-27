@@ -362,7 +362,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         {
           log_verbose("Skipping sector %10lu/%lu\n",
               (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-              (unsigned long)(partition->part_size/disk_car->sector_size));
+              (unsigned long)((partition->part_size-1)/disk_car->sector_size));
         }
         memcpy(buffer,buffer_olddata,blocksize);
       }
