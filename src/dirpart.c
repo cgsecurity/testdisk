@@ -54,6 +54,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   WINDOW *window;
 #endif
   int res=-3;
+  fflush(stderr);
   if(is_part_fat(partition))
     res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
   else if(is_part_ntfs(partition))
@@ -186,5 +187,6 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #endif
   wrefresh(stdscr);
 #endif
+  fflush(stderr);
   return res;
 }
