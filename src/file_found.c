@@ -50,6 +50,7 @@ alloc_data_t *file_found(alloc_data_t *current_search_space, const uint64_t offs
   if(current_search_space->start == offset)
   {
     current_search_space->file_stat=file_stat;
+    current_search_space->data=1;
     return current_search_space;
   }
   if(current_search_space->start < offset && offset <= current_search_space->end)
@@ -60,6 +61,7 @@ alloc_data_t *file_found(alloc_data_t *current_search_space, const uint64_t offs
     current_search_space->end=offset-1;
     next_search_space->start=offset;
     next_search_space->file_stat=file_stat;
+    next_search_space->data=1;
     td_list_add(&next_search_space->list, &current_search_space->list);
     return next_search_space;
   }
