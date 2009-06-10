@@ -24,7 +24,7 @@ uninstall-hook:
 	rm -rf $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 static:
-	rm -f src/testdisk src/photorec src/testdisk.exe src/photorec.exe
+	rm -f src/testdisk src/testdisk.exe src/photorec src/photorec.exe src/fidentify src/fidentify.exe
 	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)"
 
 smallstatic:
@@ -33,5 +33,9 @@ smallstatic:
 
 extras:
 	(cd src && $(MAKE) extras) || exit 1;
+
+extrasstatic:
+#	rm -f src/fidentify src/fidentify.exe
+	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)" extras
 
 DISTCLEANFILES = *~ core

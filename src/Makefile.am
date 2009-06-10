@@ -10,8 +10,8 @@ if USEQT
   QPHOTOREC=qphotorec
 endif
 
-sbin_PROGRAMS		= testdisk photorec $(QPHOTOREC)
-EXTRA_PROGRAMS		= fidentify
+sbin_PROGRAMS		= testdisk photorec fidentify $(QPHOTOREC)
+EXTRA_PROGRAMS		= 
 
 base_C			= autoset.c common.c crc.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c log.c log_part.c misc.c msdos.c parti386.c partgpt.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
 base_H			= alignio.h autoset.h common.h crc.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h lang.h log.h log_part.h misc.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
