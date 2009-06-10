@@ -271,29 +271,33 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
   }
   else
   {
-    unsigned int i,d;
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu (",
+    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu",
 	(unsigned int)le32(sb1->major_version),
 	(unsigned int)le32(sb1->level),
 	(long unsigned)le32(sb1->dev_number));
-    for (i= le32(sb1->max_dev); i> 0 ; i--)
-      if (le16(sb1->dev_roles[i-1]) != 0xffff)
-	break;
-    for (d=0; d < i; d++)
+    if(le32(sb1->max_dev) <= 384)
     {
-      int role = le16(sb1->dev_roles[d]);
-      if (d)
-	strcat(partition->info, ", ");
-      if (role == 0xffff)
-	strcat(partition->info, "empty");
-      else if(role == 0xfffe)
-	strcat(partition->info, "failed");
-      else
-	sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      unsigned int i,d;
+      for (i= le32(sb1->max_dev); i> 0 ; i--)
+	if (le16(sb1->dev_roles[i-1]) != 0xffff)
+	  break;
+      strcat(partition->info, " (");
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 7; d++)
+      {
+	const int role = le16(sb1->dev_roles[d]);
+	if (d)
+	  strcat(partition->info, ", ");
+	if (role == 0xffff)
+	  strcat(partition->info, "empty");
+	else if(role == 0xfffe)
+	  strcat(partition->info, "failed");
+	else
+	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      }
+      strcat(partition->info, ")");
     }
-    strcat(partition->info, ")");
   }
   if(verbose>0)
     log_info("%s %s\n", partition->fsname, partition->info);
@@ -330,29 +334,33 @@ static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partit
   }
   else
   {
-    unsigned int i,d;
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu (",
+    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu",
 	(unsigned int)be32(sb1->major_version),
 	(unsigned int)be32(sb1->level),
 	(long unsigned)be32(sb1->dev_number));
-    for (i= be32(sb1->max_dev); i> 0 ; i--)
-      if (be16(sb1->dev_roles[i-1]) != 0xffff)
-	break;
-    for (d=0; d < i; d++)
+    if(be32(sb1->max_dev) <= 384)
     {
-      int role = be16(sb1->dev_roles[d]);
-      if (d)
-	strcat(partition->info, ", ");
-      if (role == 0xffff)
-	strcat(partition->info, "empty");
-      else if(role == 0xfffe)
-	strcat(partition->info, "failed");
-      else
-	sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      unsigned int i,d;
+      for (i= be32(sb1->max_dev); i> 0 ; i--)
+	if (be16(sb1->dev_roles[i-1]) != 0xffff)
+	  break;
+      strcat(partition->info, " (");
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 7; d++)
+      {
+	const int role = be16(sb1->dev_roles[d]);
+	if (d)
+	  strcat(partition->info, ", ");
+	if (role == 0xffff)
+	  strcat(partition->info, "empty");
+	else if(role == 0xfffe)
+	  strcat(partition->info, "failed");
+	else
+	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      }
+      strcat(partition->info, ")");
     }
-    strcat(partition->info, ")");
   }
   if(verbose>0)
     log_info("%s %s\n", partition->fsname, partition->info);
