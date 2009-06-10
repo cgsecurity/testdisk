@@ -56,7 +56,6 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_emlx(file_recovery_t *file_recovery);
 static void file_check_ers(file_recovery_t *file_recovery);
-static void file_check_html(file_recovery_t *file_recovery);
 static void file_check_svg(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
 
@@ -93,7 +92,24 @@ static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
+static const unsigned char header_mysql[14]	= { '-', '-', ' ', 'M', 'y', 'S', 'Q', 'L', ' ', 'd', 'u', 'm', 'p', ' '};
 static const unsigned char header_perlm[7] 	= "package";
+static const unsigned char header_phpMyAdmin[22]= {
+  '-', '-', ' ', 'p', 'h', 'p', 'M', 'y',
+  'A', 'd', 'm', 'i', 'n', ' ', 'S', 'Q',
+  'L', ' ', 'D', 'u', 'm', 'p'};
+static const unsigned char header_postgreSQL[38]= {
+  '-', '-', '\n', '-', '-', ' ', 'P', 'o',
+  's', 't', 'g', 'r', 'e', 'S', 'Q', 'L',
+  ' ', 'd', 'a', 't', 'a', 'b', 'a', 's',
+  'e', ' ', 'c', 'l', 'u', 's', 't', 'e',
+  'r', ' ', 'd', 'u', 'm', 'p'};
+static const unsigned char header_postgreSQL_win[39]= {
+  '-', '-', '\r', '\n', '-', '-', ' ', 'P',
+  'o', 's', 't', 'g', 'r', 'e', 'S', 'Q',
+  'L', ' ', 'd', 'a', 't', 'a', 'b', 'a',
+  's', 'e', ' ', 'c', 'l', 'u', 's', 't',
+  'e', 'r', ' ', 'd', 'u', 'm', 'p'};
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
 static const unsigned char header_reg[8]  	= "REGEDIT4";
@@ -127,7 +143,11 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mysql, sizeof(header_mysql), &header_check_fasttxt, file_stat);
   register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_phpMyAdmin, sizeof(header_phpMyAdmin), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_postgreSQL, sizeof(header_postgreSQL), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_postgreSQL_win, sizeof(header_postgreSQL_win), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
@@ -349,9 +369,24 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   }
   /* Incredimail has .imm extension but this extension isn't frequent */
   if(memcmp(buffer,header_imm,sizeof(header_imm))==0 ||
-      memcmp(buffer,header_ReturnPath,sizeof(header_ReturnPath))==0 ||
-      memcmp(buffer,header_mail,sizeof(header_mail))==0)
+      memcmp(buffer,header_ReturnPath,sizeof(header_ReturnPath))==0)
   {
+    if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+        file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+        strcmp(file_recovery->extension,"imm")==0)
+      return 0;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=NULL;
+    file_recovery_new->extension="imm";
+    return 1;
+  }
+  if(memcmp(buffer,header_mail,sizeof(header_mail))==0)
+  {
+    unsigned int i;
+    /* From someone@somewhere */
+    for(i=sizeof(header_mail); buffer[i]!=' ' && buffer[i]!='@' && i<200; i++);
+    if(buffer[i]!='@')
+      return 0;
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
         file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
         strcmp(file_recovery->extension,"imm")==0)
@@ -410,6 +445,17 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="slk";
+    return 1;
+  }
+  if(memcmp(buffer, header_mysql, sizeof(header_mysql))==0 ||
+      memcmp(buffer, header_phpMyAdmin, sizeof(header_phpMyAdmin))==0 ||
+      memcmp(buffer, header_postgreSQL, sizeof(header_postgreSQL))==0 ||
+      memcmp(buffer, header_postgreSQL_win, sizeof(header_postgreSQL_win))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="sql";
     return 1;
   }
   if(memcmp(buffer, header_stl, sizeof(header_stl))==0 &&
@@ -904,40 +950,6 @@ static int data_check_txt(const unsigned char *buffer, const unsigned int buffer
   free(buffer_lower);
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return 1;
-}
-
-static void file_check_html(file_recovery_t *file_recovery)
-{
-  const unsigned char html_footer[7]= {'<', '/', 'h', 't', 'm', 'l', '>'};
-  file_search_lc_footer(file_recovery, html_footer,sizeof(html_footer));
-  if(file_recovery->file_size==0)
-    log_warning("%s: no footer\n",file_recovery->filename);
-  else
-  {
-    const int read_size=1024;
-    int taille;
-    char *buffer_lower;
-    int i;
-    if(fseek(file_recovery->handle,0,SEEK_SET)<0)
-      return;
-    buffer_lower=(char *)MALLOC(read_size);
-    taille=fread(buffer_lower,1,read_size,file_recovery->handle);
-    if(taille<0)
-    {
-      free(buffer_lower);
-      return;
-    }
-    buffer_lower[taille<read_size?taille:read_size-1]='\0';
-    /* TODO: use strcasestr if available */
-    for(i=0;i<taille;i++)
-      buffer_lower[i]=tolower(buffer_lower[i]);
-    if(strstr(buffer_lower, "<html")==NULL)
-    {
-      log_warning("%s: no header\n",file_recovery->filename);
-      file_recovery->file_size=0;
-    }
-    free(buffer_lower);
-  }
 }
 
 static void file_check_emlx(file_recovery_t *file_recovery)
