@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -44,7 +45,6 @@
 #include <io.h>
 #endif
 #include "common.h"
-#include <stdio.h>
 #include "dir.h"
 #include "log.h"
 #include "log_part.h"

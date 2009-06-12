@@ -23,6 +23,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -33,7 +35,6 @@
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#include <stdio.h>
 #include "fnctdsk.h"
 #include "dir.h"
 #include "list.h"

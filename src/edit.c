@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -36,8 +37,6 @@
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
 #endif
 #include "fnctdsk.h"
 #include "edit.h"

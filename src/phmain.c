@@ -23,6 +23,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -59,8 +61,6 @@
 #include "fnctdsk.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
 #endif
 #ifdef HAVE_JPEGLIB_H
 #include <jpeglib.h>

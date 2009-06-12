@@ -23,14 +23,13 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #include "types.h"
 #include "common.h"
 #include "lang.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
 #endif
 #include "log.h"
 #include "tdelete.h"

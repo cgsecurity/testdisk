@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -31,8 +32,6 @@
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
 #endif
 #include "log.h"
 #include "diskacc.h"

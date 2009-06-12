@@ -24,6 +24,7 @@
 #endif
  
 #ifdef HAVE_NCURSES
+#include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif

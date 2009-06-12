@@ -32,8 +32,6 @@
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include "types.h"
-#include "common.h"
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -42,6 +40,8 @@
 #include <io.h>
 #endif
 #endif
+#include "types.h"
+#include "common.h"
 #include "log.h"
 
 static unsigned int up2power_aux(const unsigned int number);

@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -32,8 +33,6 @@
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
-#else
-#include <stdio.h>
 #endif
 #include "godmode.h"
 #include "fnctdsk.h"

@@ -25,6 +25,7 @@
 #endif
  
 #ifdef HAVE_NCURSES
+#include <stdio.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"

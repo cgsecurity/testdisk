@@ -48,8 +48,8 @@ typedef struct
 
 struct file_enable_struct
 {
-  unsigned int enable;
   const file_hint_t *file_hint;
+  unsigned int enable;
 };
 
 struct file_stat_struct
@@ -61,14 +61,14 @@ struct file_stat_struct
 
 struct file_recovery_struct
 {
+  char filename[2048];
+  alloc_list_t location;
+  alloc_data_t *loc;
   file_stat_t *file_stat;
   FILE *handle;
-  char filename[2048];
   time_t time;
   uint64_t file_size;
   uint64_t file_size_on_disk;
-  alloc_list_t location;
-  alloc_data_t *loc;
   const char *extension;
   uint64_t min_filesize;
   uint64_t offset_error;
