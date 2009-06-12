@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#include <stdio.h>
 #ifdef HAVE_NCURSES
 #include <stdarg.h>
 #ifdef HAVE_STDLIB_H
@@ -1302,7 +1303,6 @@ void display_message(const char*msg)
 }
 
 #else
-#include <stdio.h>
 #include "log.h"
 #include "intrfn.h"
 

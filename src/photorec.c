@@ -23,6 +23,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -36,7 +38,6 @@
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
-#include <stdio.h>
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
@@ -338,7 +339,10 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
 {
   int nbr;
   alloc_data_t *file_space=*current_search_space;
-  for(nbr=0;nbr<10;nbr++)
+  uint64_t size=0;
+  /* Search backward the first fragment of a file not successfully recovered
+   * Limit the search to 10 fragments and 1GB */
+  for(nbr=0;nbr<10 && size<(uint64_t)1024*1024*1024;nbr++)
   {
     file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
     if(file_space==list_search_space)
@@ -349,6 +353,7 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
       *offset=file_space->start;
       return 0;
     }
+    size+=file_space->end - file_space->start + 1;
   }
   return -1;
 }
