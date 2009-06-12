@@ -2,7 +2,7 @@
 
     File: file_jpg.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 static void file_check_jpg(file_recovery_t *file_recovery);
 static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb);
 static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
@@ -95,6 +96,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       memcmp(buffer, jpg_header_com,  sizeof(jpg_header_com))==0)
   {
     unsigned int i=2;
+    time_t jpg_time=0;
     while(i<6*512 && i+4<buffer_size)
     {
       if(buffer[i]!=0xff)
@@ -110,7 +112,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  unsigned int tiff_size=2+(buffer[i+2]<<8)+buffer[i+3]-0x0A;
 	  if(buffer_size - (i+0x0A) < tiff_size)
 	    tiff_size=buffer_size - (i+0x0A);
-	  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
+	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
       }
       else if((buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||
@@ -126,6 +128,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->min_filesize=(i>288?i:288);
 	file_recovery_new->data_check=&data_check_jpg;
 	file_recovery_new->calculated_file_size=2;
+	file_recovery_new->time=jpg_time;
 	return 1;
       }
       i+=2+(buffer[i+2]<<8)+buffer[i+3];
@@ -136,6 +139,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->min_filesize=i;
     file_recovery_new->data_check=&data_check_jpg;
     file_recovery_new->calculated_file_size=2;
+    file_recovery_new->time=jpg_time;
     return 1;
   }
   return 0;
@@ -154,16 +158,13 @@ static void my_emit_message (j_common_ptr cinfo, int msg_level);
 
 static void my_output_message (j_common_ptr cinfo)
 {
+#ifdef DEBUG_JPEG
   struct my_error_mgr *myerr = (struct my_error_mgr *) cinfo->err;
-#ifdef DEBUG
-  {
-    char buffermsg[JMSG_LENGTH_MAX];
-    /* Create the message */
-    (*cinfo->err->format_message) (cinfo, buffermsg);
-    log_error("test_jpeg error %s\n",buffermsg);
-  }
+  char buffermsg[JMSG_LENGTH_MAX];
+  /* Create the message */
+  (*cinfo->err->format_message) (cinfo, buffermsg);
+  log_info("jpeg: %s\n", buffermsg);
 #endif
-  longjmp(myerr->setjmp_buffer, 1);
 }
 
 static void my_error_exit (j_common_ptr cinfo)
@@ -390,33 +391,36 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   static struct jpeg_decompress_struct cinfo;
 #endif
   file_recovery->file_size=0;
-  file_recovery->offset_error=0;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
-#else
-  /* Not accurate */
-  jpeg_size=ftell(infile);
+  if(file_recovery->calculated_file_size==0)
+    file_recovery->offset_error=0;
+#ifdef DEBUG_JPEG
+  log_info("%s %llu error at %llu\n", file_recovery->filename,
+      (long long unsigned)file_recovery->calculated_file_size,
+      (long long unsigned)file_recovery->offset_error);
 #endif
+  if(file_recovery->offset_error!=0)
+    return ;
   jpg_check_structure(file_recovery, 0);
   if(file_recovery->offset_error!=0)
     return ;
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   {
     JSAMPARRAY buffer;		/* Output row buffer */
-    int row_stride;		/* physical row width in output buffer */
+    unsigned int row_stride;		/* physical row width in output buffer */
     fseek(infile,0,SEEK_SET);
     cinfo.err = jpeg_std_error(&jerr.pub);
     jerr.pub.output_message = my_output_message;
     jerr.pub.error_exit = my_error_exit;
     jerr.pub.emit_message= my_emit_message;
-    // jerr.pub.emit_message = my_emit_message;
+#ifdef DEBUG_JPEG
+    jerr.pub.trace_level= 3;
+#endif
     /* Establish the setjmp return context for my_error_exit to use. */
     if (setjmp(jerr.setjmp_buffer)) 
     {
       /* If we get here, the JPEG code has signaled an error.
        * We need to clean up the JPEG object and return.
        */
-      /* Not accurate */
-      // jpeg_size=ftell(infile);
       my_source_mgr * src;
       src = (my_source_mgr *) cinfo.src;
       jpeg_size=src->file_size - src->pub.bytes_in_buffer;
@@ -443,8 +447,9 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     row_stride = cinfo.output_width * cinfo.output_components;
     buffer = (*cinfo.mem->alloc_sarray)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-    while (cinfo.output_scanline < cinfo.output_height) {
-      (void) jpeg_read_scanlines(&cinfo, buffer, 1);
+    while (cinfo.output_scanline < cinfo.output_height)
+    {
+      (void)jpeg_read_scanlines(&cinfo, buffer, 1);
     }
     (void) jpeg_finish_decompress(&cinfo);
     {
@@ -469,8 +474,13 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     return;
   }
 #endif
-  file_recovery->file_size=jpeg_size;
-  file_search_footer(file_recovery, jpg_footer, sizeof(jpg_footer), 0);
+  if(file_recovery->calculated_file_size>0)
+    file_recovery->file_size=file_recovery->calculated_file_size;
+  else
+  {
+    file_recovery->file_size=jpeg_size;
+    file_search_footer(file_recovery, jpg_footer, sizeof(jpg_footer), 0);
+  }
 }
 
 static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)
@@ -511,11 +521,11 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 	  {
 	    const unsigned int thumb_offset=thumb_data-(const char*)buffer;
 	    const unsigned int thumb_size=ifbytecount-(const char*)tiff;
-	    unsigned int j_old;
 	    if(thumb_offset < sizeof(buffer) && thumb_offset+thumb_size < sizeof(buffer))
 	    {
 	      unsigned int j=thumb_offset+2;
 	      unsigned int thumb_sos_found=0;
+	      unsigned int j_old;
 	      j_old=j;
 	      while(j+4<sizeof(buffer) && thumb_sos_found==0)
 	      {
@@ -575,9 +585,8 @@ static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer
       file_recovery->calculated_file_size+=2+size;
       if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
-	file_recovery->data_check=NULL;
-	file_recovery->calculated_file_size=0;
-	return 1;
+	file_recovery->data_check=&data_check_jpg2;
+	return data_check_jpg2(buffer, buffer_size, file_recovery);
       }
     }
     else
@@ -588,3 +597,31 @@ static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
+static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    if(buffer[i-1]==0xFF)
+    {
+      if(buffer[i]==0xd9)
+      {
+	/* JPEG_EOI */
+	file_recovery->calculated_file_size++;
+	return 2;
+      }
+      else if(buffer[i] >= 0xd0 && buffer[i] <= 0xd7)
+      {
+	/* JPEG_RST0 .. JPEG_RST7 markers */
+      }
+      else if(buffer[i]!=0x00)
+      {
+	file_recovery->offset_error=file_recovery->calculated_file_size;
+	return 2;
+      }
+    }
+    file_recovery->calculated_file_size++;
+  }
+  return 1;
+}
