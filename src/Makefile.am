@@ -82,9 +82,10 @@ file_C			= filegen.c \
 			  file_evt.c \
 			  file_exe.c \
 			  file_ext.c \
+			  file_fat.c \
+			  file_fbk.c \
 			  file_fcp.c \
 			  file_fcs.c \
-			  file_fbk.c \
 			  file_fdb.c \
 			  file_fh10.c \
 			  file_fh5.c \
@@ -217,7 +218,7 @@ photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(
 
 qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) $(fs_C) $(fs_H) $(ICON_PHOTOREC)
 
-fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h $(file_C) $(file_H) log.c log.h crc.c crc.h
+fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c
 
 DISTCLEANFILES = *~ core
 
