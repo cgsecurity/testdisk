@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([testdisk],[6.11],[grenier@cgsecurity.org])
+AC_INIT([testdisk],[6.12-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
 TESTDISKDATE="April 2009"
 AC_SUBST(TESTDISKDATE)
@@ -610,17 +610,17 @@ if test -z "${use_ewf}"; then
   else
     LIBS="${ewf_lib_a} $LIBS"
   fi
-  AC_TRY_COMPILE([#include <libewf.h>],
-          [void foo() { libewf_get_bytes_per_sector(NULL,NULL); }],
-	  ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=yes,
-	  ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=no)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libewf.h>]],
+      [[ libewf_get_bytes_per_sector(NULL,NULL); ]])],
+    [ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=yes],
+    [ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=no])
   if test "${ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments}" != "no"; then
         AC_DEFINE([LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS], 1, [Define if libewf_get_bytes_per_sector takes two parameters.])
   fi
-  AC_TRY_COMPILE([#include <libewf.h>],
-          [void foo() { libewf_get_media_size(NULL,NULL); }],
-	  ac_cv_c_libewf_get_media_size_have_two_arguments=yes,
-	  ac_cv_c_libewf_get_media_size_have_two_arguments=no)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libewf.h>]],
+      [[ libewf_get_media_size(NULL,NULL); ]])],
+    [ac_cv_c_libewf_get_media_size_have_two_arguments=yes],
+    [ac_cv_c_libewf_get_media_size_have_two_arguments=no])
   if test "${ac_cv_c_libewf_get_media_size_have_two_arguments}" != "no"; then
         AC_DEFINE([LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS], 1, [Define if libewf_get_media_size takes two parameters.])
   fi
@@ -638,9 +638,9 @@ do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
   AC_MSG_CHECKING([whether gcc understands $option])
-  AC_TRY_COMPILE([], [],
-      has_option=yes,
-      has_option=no; CFLAGS="$SAVE_CFLAGS",)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+      [has_option=yes],
+      [has_option=no; CFLAGS="$SAVE_CFLAGS"])
   AC_MSG_RESULT($has_option)
   unset has_option
   unset SAVE_CFLAGS
