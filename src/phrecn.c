@@ -85,7 +85,7 @@ extern const file_hint_t file_hint_dir;
 extern file_check_list_t file_check_list;
 
 #ifdef HAVE_NCURSES
-static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop);
+static void recovery_finished(disk_t *disk, const partition_t *partition, const unsigned int file_nbr, const char *recup_dir, const int ind_stop);
 #endif
 
 static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verbose, const int paranoid, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass, const unsigned int lowmem);
@@ -373,18 +373,30 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	  { 
 	    log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
-	    ind_stop=3;
+	    if(errno==EFBIG)
+	    {
+	      /* File is too big for the destination filesystem */
+	      res=2;
+	    }
+	    else
+	    {
+	      /* Warn the user */
+	      ind_stop=3;
+	    }
 	  }
 	}
-	current_search_space=file_add_data(current_search_space, offset, 1);
-	if(file_recovery.data_check!=NULL)
-	  res=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
-	file_recovery.file_size+=blocksize;
-	file_recovery.file_size_on_disk+=blocksize;
-	if(res==2)
+	if(ind_stop==0)
 	{
-	  if(verbose>1)
-	    log_trace("EOF found\n");
+	  current_search_space=file_add_data(current_search_space, offset, 1);
+	  if(file_recovery.data_check!=NULL)
+	    res=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
+	  file_recovery.file_size+=blocksize;
+	  file_recovery.file_size_on_disk+=blocksize;
+	  if(res==2)
+	  {
+	    if(verbose>1)
+	      log_trace("EOF found\n");
+	  }
 	}
       }
       if(res!=2 && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
@@ -491,11 +503,17 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 }
 
 #ifdef HAVE_NCURSES
-static void recovery_finished(const unsigned int file_nbr, const char *recup_dir, const int ind_stop)
+static void recovery_finished(disk_t *disk, const partition_t *partition, const unsigned int file_nbr, const char *recup_dir, const int ind_stop)
 {
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s", disk->description_short(disk));
+  mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
+  wmove(stdscr,6,0);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
   wmove(stdscr,9,0);
   wclrtoeol(stdscr);
-  wprintw(stdscr,"%u files saved in %s directory.\n",file_nbr,recup_dir);
+  wprintw(stdscr,"%u files saved in %s directory.\n", file_nbr, recup_dir);
   wmove(stdscr,10,0);
   wclrtoeol(stdscr);
   switch(ind_stop)
@@ -519,6 +537,7 @@ static void recovery_finished(const unsigned int file_nbr, const char *recup_dir
   wprintw(stdscr,"[ Quit ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
+  log_flush();
   while(1)
   {
     switch(wgetch(stdscr))
@@ -944,7 +963,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
   free_search_space(list_search_space);
 #ifdef HAVE_NCURSES
   if(interface && *current_cmd==NULL)
-    recovery_finished(file_nbr, recup_dir, ind_stop);
+    recovery_finished(disk_car, partition, file_nbr, recup_dir, ind_stop);
 #endif
   free(file_stats);
   free_header_check();
