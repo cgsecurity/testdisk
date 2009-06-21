@@ -121,7 +121,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	  log_info("%c",dir_entry->name[j]);
 	}
 	log_info(" type %u",dir_entry->type);
-	log_info(" sector %llu\n",(long long unsigned)le32(dir_entry->start_block));
+	log_info(" sector %u (%u bytes)\n",
+	    (unsigned int)le32(dir_entry->start_block),
+	    (unsigned int)le32(dir_entry->size));
 #endif
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 	  is_db++;
@@ -170,6 +172,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	  return "sldprt";
 #endif
 	}
+	/* Quattro Pro spreadsheet */
+	if(memcmp(&dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
+	  return "qpw";
       }
       if(ext!=NULL)
 	return ext;
