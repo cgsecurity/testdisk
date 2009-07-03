@@ -68,6 +68,15 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
   {
     const struct pe_image_file_hdr *pe_hdr;
     pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
+    if(le32(dos_hdr->e_lfanew)>0 &&
+	le32(dos_hdr->e_lfanew) <= buffer_size-sizeof(struct pe_image_file_hdr) &&
+	(le32(pe_hdr->Magic) & 0xffff) == IMAGE_WIN16_SIGNATURE)
+    {
+      /* NE Win16 */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_exe.extension;
+      return 1;
+    }
     if(le32(dos_hdr->e_lfanew)==0 ||
 	le32(dos_hdr->e_lfanew) > buffer_size-sizeof(struct pe_image_file_hdr) ||
 	le32(pe_hdr->Magic) != IMAGE_NT_SIGNATURE)
@@ -104,6 +113,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 #endif
       return 0;
     }
+    /* PE */
     if(le16(pe_hdr->Characteristics) & 0x2000)
     {
       /* Dynamic Link Library */

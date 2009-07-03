@@ -24,6 +24,7 @@
 #define __PE_H
 
 #define IMAGE_NT_SIGNATURE	    0x00004550
+#define IMAGE_WIN16_SIGNATURE	    0x0000454e
 
 struct dos_image_file_hdr
 {
