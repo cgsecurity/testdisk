@@ -31,14 +31,19 @@
 
 int is_hpa_or_dco(const disk_t *disk)
 {
-  if(disk->user_max>0 && (disk->user_max < disk->native_max+1 || disk->native_max < disk->dco))
+  int res=0;
+  if(disk->user_max > 0 && disk->user_max < disk->native_max+1)
   {
-    if(disk->user_max < disk->native_max+1)
-      log_warning("%s: Host Protected Area (HPA) present.\n", disk->device);
-    if(disk->native_max < disk->dco)
-      log_warning("%s: Device Configuration Overlay (DCO) present.\n", disk->device);
-    log_flush();
-    return 1;
+    log_warning("%s: Host Protected Area (HPA) present.\n", disk->device);
+    res=1;
   }
-  return 0;
+  if((disk->user_max> 0 && disk->native_max < disk->dco) ||
+      (disk->native_max == 0 && disk->user_max > 0 && disk->user_max < disk->dco))
+  {
+    log_warning("%s: Device Configuration Overlay (DCO) present.\n", disk->device);
+    res=1;
+  }
+  if(res>0)
+    log_flush();
+  return res;
 }
