@@ -120,6 +120,11 @@ static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_stl[6]	= "solid ";
 static const unsigned char header_stp[13]  	= "ISO-10303-21;";
+static const unsigned char header_url[18]  	= {
+  '[', 'I', 'n', 't', 'e', 'r', 'n', 'e',
+  't', 'S', 'h', 'o', 'r', 't', 'c', 'u',
+  't', ']'
+};
 static const unsigned char header_wpl[21]	= { '<', '?', 'w', 'p', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '=', '"', '1', '.', '0', '"', '?', '>' };
 static const unsigned char header_xml[14]	= "<?xml version=";
 
@@ -157,6 +162,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_url,sizeof(header_url), &header_check_fasttxt, file_stat);
   register_header_check(0, header_wpl,sizeof(header_wpl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
 }
@@ -644,6 +650,12 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   unsigned int l=0;
   const unsigned char header_asp[22]	= "<%@ language=\"vbscript";
   const unsigned char header_bat[9]  	= "@echo off";
+  const unsigned char header_bat2[4]  	= "rem ";
+  const unsigned char header_vb[20]	= {
+    'v', 'e', 'r', 's', 'i', 'o', 'n', ' ',
+    '4', '.', '0', '0', '\r', '\n', 'b', 'e',
+    'g', 'i', 'n', ' '
+  };
   const unsigned char header_vcf[11]	= "begin:vcard";
   const unsigned char header_sig_perl[4] = "perl";
   const unsigned char header_sig_python[6] = "python";
@@ -701,7 +713,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
   /* strncasecmp */
-  if(memcmp(buffer_lower,header_bat,sizeof(header_bat))==0)
+  if(memcmp(buffer_lower, header_bat, sizeof(header_bat))==0 ||
+      memcmp(buffer_lower, header_bat2, sizeof(header_bat2))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -715,6 +728,14 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="asp";
+    return 1;
+  }
+  if(memcmp(buffer_lower, header_vb ,sizeof(header_vb))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="vb";
     return 1;
   }
   if(memcmp(buffer_lower,header_vcf,sizeof(header_vcf))==0)
