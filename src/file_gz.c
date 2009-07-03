@@ -161,6 +161,22 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	file_recovery_new->extension="pvp";
 	return 1;
       }
+#ifndef DJGPP
+      {
+	unsigned int i;
+	for(i=0; i<d_stream.total_out && i< 256; i++)
+	{
+	  if(buffer_uncompr[i]=='<')
+	  {
+	    if(strncasecmp((const char*)&buffer_uncompr[i], "<html", 5)==0)
+	    {
+	      file_recovery_new->extension="html.gz";
+	      return 1;
+	    }
+	  }
+	}
+      }
+#endif
       if(d_stream.total_out>0x110 &&
 	memcmp(&buffer_uncompr[0x101],tar_header_posix,sizeof(tar_header_posix))==0)
       {
