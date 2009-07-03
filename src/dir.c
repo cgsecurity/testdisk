@@ -739,7 +739,8 @@ FILE *fopen_local(char **localfilename, const char *localroot, const char *filen
       }
 #elif defined(__CYGWIN__)
       if(memcmp(&localfilename[1],":/cygdrive",11)!=0 &&
-	  mkdir(*localfilename, 0775)<0 && errno==EINVAL)
+	  mkdir(*localfilename, 0775)<0 &&
+	  (errno==EINVAL || errno==ENOENT))
       {
 	unsigned int l;
 	l=filename_convert(dst_org, src_org, n);
