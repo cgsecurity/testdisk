@@ -27,6 +27,7 @@
 #include "types.h"
 #include "filegen.h"
 
+extern const file_hint_t file_hint_1cd;
 extern const file_hint_t file_hint_7z;
 extern const file_hint_t file_hint_DB;
 extern const file_hint_t file_hint_a;
@@ -210,6 +211,7 @@ extern const file_hint_t file_hint_zip;
 
 file_enable_t list_file_enable[]=
 {
+  { .enable=0, .file_hint=&file_hint_1cd  },
   { .enable=0, .file_hint=&file_hint_7z   },
   { .enable=0, .file_hint=&file_hint_DB    },
   { .enable=0, .file_hint=&file_hint_a    },
