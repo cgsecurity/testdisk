@@ -63,7 +63,7 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
       file_recovery_new->extension="avi";
     else if(memcmp(&buffer[8],"CDDA",4)==0)
       file_recovery_new->extension="cda";
-    else if(memcmp(&buffer[8],"CDR",3)==0)
+    else if(memcmp(&buffer[8],"CDR",3)==0 || memcmp(&buffer[8],"cdr6",4)==0)
       file_recovery_new->extension="cdr";
     else if(memcmp(&buffer[8],"NUND",4)==0)
     {
@@ -74,6 +74,15 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     }
     else if(memcmp(&buffer[8],"RMP3",4)==0 || memcmp(&buffer[8],"WAVE",4)==0)
       file_recovery_new->extension="wav";
+    /* MIDI sound file */
+    else if(memcmp(&buffer[8],"RMID",4)==0)
+      file_recovery_new->extension="mid";
+    /* MIDI Instruments Definition File */
+    else if(memcmp(&buffer[8],"IDF LIST",8)==0)
+      file_recovery_new->extension="idf";
+    /* Windows Animated Cursor */
+    else if(memcmp(&buffer[8],"ACON",4)==0)
+      file_recovery_new->extension="ani";
     else
       file_recovery_new->extension="avi";
     return 1;
