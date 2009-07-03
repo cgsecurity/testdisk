@@ -1022,7 +1022,7 @@ static list_part_t *reduce_structure(list_part_t *list_part)
   return list_part;
 }
 
-static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int align, const int verbose)
+static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, const int max_ext, const int align, const int verbose)
 {
   /* list_part need to be sorted! */
   /* All extended partitions of an P_EXTENDX are P_EXTENDED */
@@ -1031,9 +1031,10 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
   list_part_t *deb=NULL;
   list_part_t *fin=NULL;
   int nbr_entries=0;
-  CHS_t start,end;
   partition_t *new_partition;
   unsigned int order=0;
+  uint64_t part_extended_offset=0;
+  uint64_t part_extended_end=0;
   for(element=list_part;element!=NULL;)
   {
     if(element->part->status==STATUS_EXT)
@@ -1069,7 +1070,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
   }
   if(deb==NULL)
     return list_part;
-  if((nbr_entries==4)||(max_ext!=0))
+  if(nbr_entries==4 || max_ext!=0)
   {
     if(verbose>1)
     {
@@ -1077,100 +1078,119 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
     }
     if(deb->prev==NULL)
     {
-      offset2CHS_inline(disk_car,deb->part->part_offset-1,&start);
-      if((align>0) && (start.cylinder>0||start.head>1))
+      CHS_t start;
+      part_extended_offset=deb->part->part_offset-1;
+      offset2CHS_inline(disk, part_extended_offset, &start);
+      if(align>0 && (start.cylinder>0 || start.head>1))
       {
 	start.cylinder=0;
 	start.head=1;
 	start.sector=1;
+	part_extended_offset=CHS2offset_inline(disk, &start);
       }
     }
     else
     {
-      start.cylinder=offset2cylinder(disk_car,deb->prev->part->part_offset+deb->prev->part->part_size-1)+1;
+      CHS_t start;
+      start.cylinder=offset2cylinder(disk, deb->prev->part->part_offset+deb->prev->part->part_size-1)+1;
       start.head=0;
       start.sector=1;
-      if(CHS2offset_inline(disk_car,&start)>=deb->part->part_offset)
+      part_extended_offset=CHS2offset_inline(disk, &start);
+      if(part_extended_offset >= deb->part->part_offset)
       {
-	offset2CHS_inline(disk_car,deb->prev->part->part_offset+deb->prev->part->part_size-1+1,&start);
+	offset2CHS_inline(disk, deb->prev->part->part_offset+deb->prev->part->part_size-1+1, &start);
 	start.sector=1;
 	start.head++;
-	if(start.head >= disk_car->geom.heads_per_cylinder)
+	if(start.head >= disk->geom.heads_per_cylinder)
 	{
 	  start.cylinder++;
 	  start.head=0;
 	}
-	if(CHS2offset_inline(disk_car,&start)>=deb->part->part_offset)
+	part_extended_offset=CHS2offset_inline(disk, &start);
+	if(part_extended_offset >= deb->part->part_offset)
 	{
-	  offset2CHS_inline(disk_car,deb->prev->part->part_offset+deb->prev->part->part_size-1+1,&start);
+	  part_extended_offset=deb->prev->part->part_offset+deb->prev->part->part_size-1+1;
 	}
       }
     }
     if(fin->next==NULL)
     {
-      end.cylinder=disk_car->geom.cylinders-1;
-      end.head=disk_car->geom.heads_per_cylinder-1;
-      end.sector=disk_car->geom.sectors_per_head;
+      CHS_t end;
+      end.cylinder=disk->geom.cylinders-1;
+      end.head=disk->geom.heads_per_cylinder-1;
+      end.sector=disk->geom.sectors_per_head;
+      part_extended_end=CHS2offset_inline(disk, &end);
+      if(disk->disk_size-disk->sector_size < part_extended_end)
+	part_extended_end=disk->disk_size-disk->sector_size;
     }
     else
     {
-      end.cylinder=offset2cylinder(disk_car,fin->next->part->part_offset)-1; /* 8 october 2002 */
-      end.head=disk_car->geom.heads_per_cylinder-1;
-      end.sector=disk_car->geom.sectors_per_head;
-      if(CHS2offset_inline(disk_car,&end)<=fin->part->part_offset+fin->part->part_size-1)
+      CHS_t end;
+      end.cylinder=offset2cylinder(disk, fin->next->part->part_offset)-1; /* 8 october 2002 */
+      end.head=disk->geom.heads_per_cylinder-1;
+      end.sector=disk->geom.sectors_per_head;
+      part_extended_end=CHS2offset_inline(disk, &end);
+      if(part_extended_end <= fin->part->part_offset+fin->part->part_size-1)
       {
-	offset2CHS_inline(disk_car,fin->next->part->part_offset-1,&end);
-	end.sector=disk_car->geom.sectors_per_head;
+	offset2CHS_inline(disk, fin->next->part->part_offset-1, &end);
+	end.sector=disk->geom.sectors_per_head;
 	if(end.head>0)
 	  end.head--;
 	else
 	{
 	  end.cylinder--;
-	  end.head=disk_car->geom.heads_per_cylinder-1;
+	  end.head=disk->geom.heads_per_cylinder-1;
 	}
-	if(CHS2offset_inline(disk_car,&end)<=fin->part->part_offset+fin->part->part_size-1)
+	part_extended_end=CHS2offset_inline(disk, &end);
+	if(part_extended_end <= fin->part->part_offset+fin->part->part_size-1)
 	{
-	  offset2CHS_inline(disk_car,fin->next->part->part_offset-1,&end);
+	  part_extended_end=fin->next->part->part_offset-1;
 	}
       }
     }
   }
   else
   {
+    CHS_t start;
+    CHS_t end;
     if(verbose>1)
     {
       log_trace("add_ext_part_i386: min\n");
     }
-    offset2CHS_inline(disk_car,deb->part->part_offset-1,&start);
+    offset2CHS_inline(disk, deb->part->part_offset-1, &start);
     start.sector=1;
-    if(deb->prev && CHS2offset_inline(disk_car,&start)<=deb->prev->part->part_offset+deb->prev->part->part_size-1)
+    part_extended_offset=CHS2offset_inline(disk, &start);
+    if(deb->prev && part_extended_offset <= deb->prev->part->part_offset+deb->prev->part->part_size-1)
     {
-      offset2CHS_inline(disk_car,deb->part->part_offset-1,&start);
+      offset2CHS_inline(disk, deb->part->part_offset-1, &start);
       start.sector=1;
-      if(CHS2offset_inline(disk_car,&start)<=deb->prev->part->part_offset+deb->prev->part->part_size-1)
+      part_extended_offset=CHS2offset_inline(disk, &start);
+      if(part_extended_offset <= deb->prev->part->part_offset+deb->prev->part->part_size-1)
       {
-	offset2CHS_inline(disk_car,deb->part->part_offset-1,&start);
+	part_extended_offset=deb->part->part_offset-1;
       }
     }
-    offset2CHS_inline(disk_car,fin->part->part_offset+fin->part->part_size-1,&end);
-    end.head=disk_car->geom.heads_per_cylinder-1;
-    end.sector=disk_car->geom.sectors_per_head;
-    if(fin->next && CHS2offset_inline(disk_car,&end)>=fin->next->part->part_offset)
+    offset2CHS_inline(disk, fin->part->part_offset+fin->part->part_size-1, &end);
+    end.head=disk->geom.heads_per_cylinder-1;
+    end.sector=disk->geom.sectors_per_head;
+    part_extended_end=CHS2offset_inline(disk, &end);
+    if(fin->next && part_extended_end >= fin->next->part->part_offset)
     {
-      offset2CHS_inline(disk_car,fin->part->part_offset+fin->part->part_size-1,&end);
-      end.sector=disk_car->geom.sectors_per_head;
+      offset2CHS_inline(disk, fin->part->part_offset+fin->part->part_size-1, &end);
+      end.sector=disk->geom.sectors_per_head;
     }
-    if(fin->next && CHS2offset_inline(disk_car,&end)>=fin->next->part->part_offset)
+    part_extended_end=CHS2offset_inline(disk, &end);
+    if(fin->next && part_extended_end >= fin->next->part->part_offset)
     {
-      offset2CHS_inline(disk_car,fin->part->part_offset+fin->part->part_size-1,&end);
+      part_extended_end=fin->part->part_offset+fin->part->part_size-1;
     }
   }
-  new_partition=partition_new(disk_car->arch);
+  new_partition=partition_new(disk->arch);
   new_partition->order=order;
-  new_partition->part_type_i386=(end.cylinder>1023?P_EXTENDX:P_EXTENDED);
+  new_partition->part_type_i386=(offset2cylinder(disk, part_extended_end) > 1023?P_EXTENDX:P_EXTENDED);
   new_partition->status=STATUS_EXT;
-  new_partition->part_offset=CHS2offset_inline(disk_car,&start);
-  new_partition->part_size=(uint64_t)CHS2offset_inline(disk_car,&end)-new_partition->part_offset+disk_car->sector_size;
+  new_partition->part_offset=part_extended_offset;
+  new_partition->part_size=part_extended_end - new_partition->part_offset + disk->sector_size;
   list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
   if(insert_error>0)
     free(new_partition);
