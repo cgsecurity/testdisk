@@ -100,6 +100,7 @@ file_C			= filegen.c \
 			  file_fs.c \
 			  file_gho.c \
 			  file_gif.c \
+			  file_gp5.c \
 			  file_gpg.c \
 			  file_gz.c \
 			  file_hds.c \
