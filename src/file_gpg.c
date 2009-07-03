@@ -48,6 +48,8 @@ const file_hint_t file_hint_gpg= {
   .register_header_check=&register_header_check_gpg
 };
 
+/* See rfc4880 OpenPGP Message Format */
+
 static const unsigned char gpg_header_pkey_enc[1]= {0x85};
 static const unsigned char gpg_header_seckey[1]= {0x95};
 #if 0
@@ -198,7 +200,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   }
 #endif
   /* Public-Key Encrypted Session Key Packet v3 */
-  if(buffer[0]==0x85 && buffer[3]==0x03)
+  if(buffer[0]==0x85 && buffer[3]==0x03 && is_valid_pubkey_algo(buffer[3+1+8]))
   {
     for(i=1;i<nbr;i++)
     {
