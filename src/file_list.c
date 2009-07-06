@@ -161,6 +161,7 @@ extern const file_hint_t file_hint_pyc;
 extern const file_hint_t file_hint_qbb;
 extern const file_hint_t file_hint_qdf;
 extern const file_hint_t file_hint_qxd;
+extern const file_hint_t file_hint_r3d;
 extern const file_hint_t file_hint_ra;
 extern const file_hint_t file_hint_raf;
 extern const file_hint_t file_hint_rar;
@@ -345,6 +346,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_qbb  },
   { .enable=0, .file_hint=&file_hint_qdf  },
   { .enable=0, .file_hint=&file_hint_qxd  },
+  { .enable=0, .file_hint=&file_hint_r3d  },
   { .enable=0, .file_hint=&file_hint_ra   },
   { .enable=0, .file_hint=&file_hint_raf  },
   { .enable=0, .file_hint=&file_hint_rar  },
