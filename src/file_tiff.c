@@ -304,6 +304,8 @@ static const char *tag_name(unsigned int tag)
        return "DNGPRIVATEDATA";
     case EXIFTAG_MAKERNOTE:
        return "EXIFTAG_MAKERNOTE";
+    case TIFFTAG_PRINTIM:
+       return "PrintIM";
     default:
       return "";
   }
@@ -322,13 +324,14 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   uint64_t jpegifoffset=0;
   uint64_t jpegifbytecount=0;
   TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
+#ifdef DEBUG_TIFF
+  log_info("header_check_tiff_le(in, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
+#endif
   if(depth>4)
     return 0;
   if(count>16)
     return 0;
   if(tiff_diroff == 0)
-    return 0;
-  if(tiff_diroff % 2 != 0)
     return 0;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
     return 0;
@@ -348,7 +351,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   {
     uint64_t val=(uint64_t)le32(entry->tdir_count)*type2size(le16(entry->tdir_type));
 #ifdef DEBUG_TIFF
-    log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx)\n",
+    log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx) val=%u\n",
 	i,
 	le16(entry->tdir_tag),
 	le16(entry->tdir_tag),
@@ -356,7 +359,8 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	le16(entry->tdir_type),
 	(long unsigned)le32(entry->tdir_count),
 	(long unsigned)le32(entry->tdir_offset),
-	(long unsigned)le32(entry->tdir_offset));
+	(long unsigned)le32(entry->tdir_offset),
+	val);
 #endif
     if(val>4)
     {
@@ -393,35 +397,41 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	}
 	else if(val>4)
 	{
-	  const unsigned int nbr=le32(entry->tdir_count);
-	  if(nbr<25)
+	  const unsigned int nbr=(le32(entry->tdir_count)<32?le32(entry->tdir_count):32);
+	  unsigned int j;
+	  uint32_t *subifd_offsetp;
+	  subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
+	  if(fseek(in, le32(entry->tdir_offset), SEEK_SET) < 0)
 	  {
-	    unsigned int j;
-	    uint32_t *subifd_offsetp;
-	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
-	    if(fseek(in, le32(entry->tdir_offset), SEEK_SET) < 0)
-	    {
-	      free(subifd_offsetp);
-	      return 0;
-	    }
-	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
-	    {
-	      free(subifd_offsetp);
-	      return 0;
-	    }
-	    for(j=0; j<nbr; j++)
-	    {
-	      const uint64_t new_offset=header_check_tiff_le(in, le32(subifd_offsetp[j]), depth+1, 0);
-	      if(new_offset==0)
-	      {
-		free(subifd_offsetp);
-		return 0;
-	      }
-	      if(max_offset < new_offset)
-		max_offset = new_offset;
-	    }
 	    free(subifd_offsetp);
+	    return 0;
 	  }
+	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
+	  {
+	    free(subifd_offsetp);
+	    return 0;
+	  }
+	  for(j=0; j<nbr; j++)
+	  {
+	    const uint64_t new_offset=header_check_tiff_le(in, le32(subifd_offsetp[j]), depth+1, 0);
+	    if(new_offset==0)
+	    {
+	      free(subifd_offsetp);
+	      return 0;
+	    }
+	    if(max_offset < new_offset)
+	      max_offset = new_offset;
+	  }
+	  free(subifd_offsetp);
+	}
+	break;
+      case EXIFTAG_MAKERNOTE:
+	{
+	  uint64_t new_offset=header_check_tiff_le(in, le32(entry->tdir_offset), depth+1, 0);
+	  if(new_offset==0)
+	    return 0;
+	  if(max_offset < new_offset)
+	    max_offset=new_offset;
 	}
 	break;
     }
@@ -458,8 +468,6 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   if(count>16)
     return 0;
   if(tiff_diroff == 0)
-    return 0;
-  if(tiff_diroff % 2 != 0)
     return 0;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
     return 0;
@@ -524,35 +532,41 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
 	}
 	else if(val>4)
 	{
-	  const unsigned int nbr=be32(entry->tdir_count);
-	  if(nbr<25)
+	  const unsigned int nbr=(be32(entry->tdir_count)<32?be32(entry->tdir_count):32);
+	  unsigned int j;
+	  uint32_t *subifd_offsetp;
+	  subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
+	  if(fseek(in, be32(entry->tdir_offset), SEEK_SET) < 0)
 	  {
-	    unsigned int j;
-	    uint32_t *subifd_offsetp;
-	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
-	    if(fseek(in, be32(entry->tdir_offset), SEEK_SET) < 0)
-	    {
-	      free(subifd_offsetp);
-	      return 0;
-	    }
-	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
-	    {
-	      free(subifd_offsetp);
-	      return 0;
-	    }
-	    for(j=0; j<nbr; j++)
-	    {
-	      const uint64_t new_offset=header_check_tiff_be(in, be32(subifd_offsetp[j]), depth+1, 0);
-	      if(new_offset==0)
-	      {
-		free(subifd_offsetp);
-		return 0;
-	      }
-	      if(max_offset < new_offset)
-		max_offset = new_offset;
-	    }
 	    free(subifd_offsetp);
+	    return 0;
 	  }
+	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
+	  {
+	    free(subifd_offsetp);
+	    return 0;
+	  }
+	  for(j=0; j<nbr; j++)
+	  {
+	    const uint64_t new_offset=header_check_tiff_be(in, be32(subifd_offsetp[j]), depth+1, 0);
+	    if(new_offset==0)
+	    {
+	      free(subifd_offsetp);
+	      return 0;
+	    }
+	    if(max_offset < new_offset)
+	      max_offset = new_offset;
+	  }
+	  free(subifd_offsetp);
+	}
+	break;
+      case EXIFTAG_MAKERNOTE:
+	{
+	  uint64_t new_offset=header_check_tiff_be(in, be32(entry->tdir_offset), depth+1, 0);
+	  if(new_offset==0)
+	    return 0;
+	  if(max_offset < new_offset)
+	    max_offset=new_offset;
 	}
 	break;
     }
@@ -590,11 +604,16 @@ void file_check_tiff(file_recovery_t *fr)
 #endif
   if(fr->file_size < calculated_file_size)
     fr->file_size=0;
-    /* PhotoRec isn't yet capable to find the correct Sony arw and dng filesize,
-     * same problem for panasonic raw/rw2,
+    /* PhotoRec isn't yet capable to find the correct filesize for
+     * Sony arw and dng,
+     * Panasonic raw/rw2,
+     * Minolta tif
      * so don't truncate them */
-  else if(strcmp(fr->extension,"arw")!=0 &&
-      strcmp(fr->extension,"dng")!=0 &&
-      strcmp(fr->extension,"rw2")!=0)
+  else if(strcmp(fr->extension,"cr2")==0 ||
+      strcmp(fr->extension,"dcr")==0 ||
+      strcmp(fr->extension,"nef")==0 ||
+      strcmp(fr->extension,"pef")==0 ||
+      strcmp(fr->extension,"sr2")==0 ||
+      (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024))
     fr->file_size=calculated_file_size;
 }
