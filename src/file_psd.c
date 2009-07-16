@@ -44,7 +44,7 @@ const file_hint_t file_hint_psd= {
   .register_header_check=&register_header_check_psd
 };
 
-static const unsigned char psd_header[4]={'8','B','P','S' };
+static const unsigned char psd_header[6]={'8', 'B', 'P', 'S', 0x00, 0x01};
 
 static void register_header_check_psd(file_stat_t *file_stat)
 {
