@@ -699,5 +699,5 @@ AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
 AC_SUBST(qphotorec_LDADD)
 AC_SUBST(fidentify_LDADD)
-AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.1 doc_src/photorec.1])
+AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.8 doc_src/photorec.8])
 AC_OUTPUT

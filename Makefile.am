@@ -2,8 +2,8 @@
 SUBDIRS = src
 
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh progsreiserfs-journal.patch \
-	darwin/readme.txt \
-	doc_src/testdisk.1.in doc_src/photorec.1.in doc \
+	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
+	doc_src/testdisk.8.in doc_src/photorec.8.in doc \
 	dos/readme.txt \
 	ico/photorec.ico ico/testdisk.ico \
 	linux/testdisk.spec.in \
@@ -12,7 +12,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 
 AUTOMAKE_OPTIONS = gnits
 
-man_MANS		= doc_src/testdisk.1 doc_src/photorec.1
+man_MANS		= doc_src/testdisk.8 doc_src/photorec.8
 
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)
