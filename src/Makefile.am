@@ -77,6 +77,7 @@ file_C			= filegen.c \
 			  file_dv.c \
 			  file_dwg.c \
 			  file_dxf.c \
+			  file_e01.c \
 			  file_edb.c \
 			  file_elf.c \
 			  file_emf.c \
