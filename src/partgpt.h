@@ -63,6 +63,7 @@ struct systypes_gtp {
 };
 
 list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
+int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
