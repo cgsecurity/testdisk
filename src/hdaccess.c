@@ -108,6 +108,30 @@
 #include "alignio.h"
 #include "hpa_dco.h"
 
+struct tdewf_file_header
+{
+        /* The EWF file signature (magic header)
+         * consists of 8 bytes containing
+         * EVF 0x09 0x0d 0x0a 0xff 0x00
+         */
+        uint8_t signature[ 8 ];
+        /* The fields start
+         * consists of 1 byte (8 bit) containing
+         * 0x01
+         */
+        uint8_t fields_start;
+        /* The fields segment number
+         * consists of 2 bytes (16 bits) containing
+         */
+        uint16_t fields_segment;
+        /* The fields end
+         * consists of 2 bytes (16 bits) containing
+         * 0x00 0x00
+         */
+        uint16_t fields_end;
+} __attribute__ ((__packed__));
+
+
 struct info_file_struct
 {
   int handle;
@@ -1397,11 +1421,13 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 #endif
   {
     unsigned char *buffer;
+    struct tdewf_file_header *ewf;
     const uint8_t evf_file_signature[8] = { 'E', 'V', 'F', 0x09, 0x0D, 0x0A, 0xFF, 0x00 };
     if(verbose>1)
       log_verbose("file_test_availability %s is a file\n", device);
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
+    ewf=(struct tdewf_file_header*)buffer;
     if(read(hd_h,buffer,DEFAULT_SECTOR_SIZE)<0)
     {
       memset(buffer,0,DEFAULT_SECTOR_SIZE);
@@ -1415,7 +1441,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
       disk_car->offset=*(unsigned long*)(buffer+19);
     }
-    else if(memcmp(buffer, evf_file_signature, 8)==0)
+    else if(memcmp(buffer, evf_file_signature, 8)==0 && le16(ewf->fields_start)==0)
     {
       free(buffer);
       free(data);
