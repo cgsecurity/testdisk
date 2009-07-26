@@ -322,6 +322,8 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
               dir_list=dir_fat_aux(buffer,read_size,0,0);
               if(dir_list!=NULL)
               {
+		log_info("Sector %lu\n",
+		    (unsigned long)(file_recovery.location.start/disk_car->sector_size));
 		dir_aff_log(NULL, dir_list);
                 delete_list_file(dir_list);
               }
