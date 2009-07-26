@@ -83,8 +83,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS COPYING ChangeLog NEWS README THANKS doc
-%{_mandir}/man1/testdisk.1*
-%{_mandir}/man1/photorec.1*
+%{_mandir}/man8/testdisk.8*
+%{_mandir}/man8/photorec.8*
 %attr(755,root,root) %{_sbindir}/testdisk
 %attr(755,root,root) %{_sbindir}/photorec
 %changelog
