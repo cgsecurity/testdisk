@@ -128,7 +128,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   cluster = file->stat.st_ino;
   new_file=(char *)MALLOC(1024);
-  snprintf(new_file, 1024, "%s.%u/f%u-%s", recup_dir, dir_num,
+  snprintf(new_file, 1024, "%s.%u/f%07u-%s", recup_dir, dir_num,
       (unsigned int)((start_data - partition->part_offset + (uint64_t)(cluster-2)*block_size)/disk->sector_size),
       file->name);
   log_info("fat_copy_file %s\n", new_file);
@@ -172,34 +172,34 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 
 static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verbose, const char *recup_dir, const int interface, unsigned int *file_nbr, const unsigned int blocksize, const uint64_t start_offset, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num)
 {
-  uint64_t offset=0;
+  uint64_t offset;
+  uint64_t offset_end;
   unsigned char *buffer_start;
-  unsigned char *buffer_olddata;
   unsigned char *buffer;
   time_t start_time;
   time_t previous_time;
-  unsigned int buffer_size;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
-  buffer_size=blocksize+READ_SIZE;
-  buffer_start=(unsigned char *)MALLOC(buffer_size);
-  buffer_olddata=buffer_start;
-  buffer=buffer_olddata+blocksize;
+  buffer_start=(unsigned char *)MALLOC(READ_SIZE);
+  buffer=buffer_start;
   reset_file_recovery(&file_recovery);
   start_time=time(NULL);
   previous_time=start_time;
-  memset(buffer_olddata,0,blocksize);
+  current_search_space=td_list_entry(list_search_space->list.prev, alloc_data_t, list);
+  if(current_search_space==list_search_space)
+  {
+    free(buffer_start);
+    return 0;
+  }
+  offset_end=current_search_space->end;
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-  if(current_search_space!=list_search_space)
-    offset=current_search_space->start;
+  offset=current_search_space->start;
   if(verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, verbose);
   disk->pread(disk, buffer, READ_SIZE, offset);
-  while(current_search_space!=list_search_space)
+  for(;offset < offset_end; offset+=blocksize)
   {
-    const uint64_t old_offset=offset;
-    get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
     if(memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
@@ -208,9 +208,9 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
       if(dir_list!=NULL)
       {
 	const file_data_t *current_file;
-	log_info("Sector %llu\n", (long long unsigned)old_offset/disk->sector_size);
+	log_info("Sector %llu\n", (long long unsigned)offset/disk->sector_size);
 	dir_aff_log(NULL, dir_list);
-	del_search_space(list_search_space, old_offset, old_offset + blocksize -1);
+	del_search_space(list_search_space, offset, offset + blocksize -1);
 	current_file=dir_list;
 	while(current_file!=NULL)
 	{
@@ -227,6 +227,7 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 	    {
 	      if(fat_copy_file(disk, partition, blocksize, start_offset, recup_dir, *dir_num, current_file)==0)
 	      {
+		(*file_nbr)++;
 		del_search_space(list_search_space, file_start, file_end);
 	      }
 	      current_file=current_file->next;
@@ -238,22 +239,12 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 	    current_file=current_file->next;
 	}
 	delete_list_file(dir_list);
-	(*file_nbr)++;
       }
     }
-    if(current_search_space==list_search_space)
-    {
-      /* End of disk found => EOF */
-      reset_file_recovery(&file_recovery);
-    }
-    buffer_olddata+=blocksize;
     buffer+=blocksize;
-    if( old_offset+blocksize!=offset ||
-        buffer+read_size>buffer_start+buffer_size)
+    if(buffer+read_size>buffer_start+READ_SIZE)
     {
-      memcpy(buffer_start,buffer_olddata,blocksize);
-      buffer_olddata=buffer_start;
-      buffer=buffer_olddata+blocksize;
+      buffer=buffer_start;
       if(verbose>1)
       {
         log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk->sector_size),(unsigned long)((partition->part_size-1)/disk->sector_size));
@@ -281,9 +272,12 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
           previous_time=current_time;
 	  wmove(stdscr,9,0);
 	  wclrtoeol(stdscr);
+	  log_info("Reading sector %10lu/%lu, %u files found\n",
+	      (unsigned long)((offset-partition->part_offset)/disk->sector_size),
+	      (unsigned long)(partition->part_size/disk->sector_size), *file_nbr);
 	  wprintw(stdscr,"Reading sector %10lu/%lu, %u files found\n",
 	      (unsigned long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long)(partition->part_size/disk->sector_size), file_nbr);
+	      (unsigned long)(partition->part_size/disk->sector_size), *file_nbr);
 	  wmove(stdscr,10,0);
 	  wclrtoeol(stdscr);
 	  wprintw(stdscr,"Elapsed time %uh%02um%02us",
@@ -301,13 +295,13 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 	  if(check_enter_key_or_s(stdscr))
 	  {
 	    log_info("PhotoRec has been stopped\n");
-	    current_search_space=list_search_space;
+	    offset = offset_end;
 	  }
 	}
       }
 #endif
     }
-  } /* end while(current_search_space!=list_search_space) */
+  }
   free(buffer_start);
   return 0;
 }
