@@ -93,7 +93,8 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
     case '3': blocksize=32768; break;
     case '6': blocksize=65536; break;
   }
-  if(*offset%sector_size!=0 || *offset>=blocksize)
+  *offset=*offset % blocksize;
+  if(*offset%sector_size!=0)
     *offset=0;
   if(sector_size < blocksize)
   {
