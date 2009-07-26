@@ -27,14 +27,22 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>     /* free */
+#endif
 #include "types.h"
 #include "filegen.h"
 #include "memmem.h"
+#include "common.h"
 
 static void register_header_check_pdf(file_stat_t *file_stat);
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_pdf(file_recovery_t *file_recovery);
 static void file_check_pdf_and_size(file_recovery_t *file_recovery);
+static void file_date_pdf(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_pdf= {
   .extension="pdf",
@@ -113,8 +121,11 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
     for(i=taille-4;i>=0;i--)
     {
       if(buffer[i]=='%' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
+      {
+	file_date_pdf(file_recovery);
 	return ;
     }
+  }
   }
   file_recovery->file_size=0;
 }
@@ -124,4 +135,65 @@ static void file_check_pdf(file_recovery_t *file_recovery)
   const unsigned char pdf_footer[4]= { '%', 'E', 'O', 'F'};
   file_search_footer(file_recovery, pdf_footer, sizeof(pdf_footer), 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+  file_date_pdf(file_recovery);
+}
+
+static void file_date_pdf(file_recovery_t *file_recovery)
+{
+  const unsigned char pattern[14]={'x', 'a', 'p', ':', 'C', 'r', 'e', 'a', 't', 'e', 'D', 'a', 't', 'e'};
+  uint64_t offset=0;
+  unsigned int j=0;
+  unsigned char*buffer=(unsigned char*)MALLOC(4096);
+  fseek(file_recovery->handle, 0, SEEK_SET);
+  while(offset < file_recovery->file_size)
+  {
+    int i;
+    int bsize;
+    if((bsize=fread(buffer, 1, 4096, file_recovery->handle))<=0)
+    {
+      free(buffer);
+      return ;
+    }
+    for(i=0; i<bsize; i++)
+    {
+      if(buffer[i]==pattern[j])
+      {
+	if(++j==sizeof(pattern))
+	{
+	  const unsigned char *date_asc;
+	  struct tm tm_time;
+	  fseek(file_recovery->handle, offset+i+1, SEEK_SET);
+	  if((bsize=fread(buffer, 1, 22, file_recovery->handle))<22)
+	  {
+	    free(buffer);
+	    return ;
+	  }
+	  if(buffer[0]=='=' && (buffer[1]=='\'' || buffer[1]=='"'))
+	    date_asc=&buffer[2];
+	  else if(buffer[i]=='>')
+	    date_asc=&buffer[1];
+	  else
+	  {
+	    free(buffer);
+	    return ;
+	  }
+	  /* */
+	  memset(&tm_time, 0, sizeof(tm_time));
+	  tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
+	  tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
+	  tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
+	  tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month 1-31 */
+	  tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
+	  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+	    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+	  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
+	  file_recovery->time=mktime(&tm_time);
+	}
+      }
+      else
+	j=0;
+    }
+    offset+=bsize;
+  }
+  free(buffer);
 }
