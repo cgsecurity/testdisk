@@ -64,8 +64,8 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, parti
       alloc_data_t *current_search_space;
       current_search_space=td_list_entry(search_walker, alloc_data_t, list);
       log_info("ext2_group: %llu\n", (long long unsigned)current_search_space->start);
-      current_search_space->start=current_search_space->start*mult + (sb->s_log_block_size==0?1024:0);
-      current_search_space->end=current_search_space->end*mult+mult-1 + (sb->s_log_block_size==0?1024:0);
+      current_search_space->start=current_search_space->start*mult + (le32(sb->s_log_block_size)==0?1024:0);
+      current_search_space->end=current_search_space->end*mult+mult-1 + (le32(sb->s_log_block_size)==0?1024:0);
     }
     blocksize=EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size);
   }

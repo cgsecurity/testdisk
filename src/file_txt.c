@@ -447,7 +447,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 #endif
     }
     else
-    file_recovery_new->extension="pm";
+      file_recovery_new->extension="pm";
     free(buffer_lower);
     return 1;
   }

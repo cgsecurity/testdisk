@@ -124,8 +124,8 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
       {
 	file_date_pdf(file_recovery);
 	return ;
+      }
     }
-  }
   }
   file_recovery->file_size=0;
 }
