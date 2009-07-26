@@ -162,6 +162,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	return 1;
       }
 #ifndef DJGPP
+      if(memcmp(buffer_uncompr, "RDX2", 4)==0)
+      {
+	/* R - language and environment for statistical computing and graphics */
+	file_recovery_new->extension="RData";
+	return 1;
+      }
       {
 	unsigned int i;
 	for(i=0; i<d_stream.total_out && i< 256; i++)
