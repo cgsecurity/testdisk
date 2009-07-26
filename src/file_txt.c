@@ -82,12 +82,20 @@ const file_hint_t file_hint_txt= {
 static const unsigned char header_adr[25]	= "Opera Hotlist version 2.0";
 static const unsigned char header_bash[11]  	= "#!/bin/bash";
 static const unsigned char header_cls[24]	= {'V','E','R','S','I','O','N',' ','1','.','0',' ','C','L','A','S','S','\r','\n','B','E','G','I','N'};
-static const unsigned char header_cue[10]	= "REM GENRE ";
+static const unsigned char header_cue1[10]	= "REM GENRE ";
+static const unsigned char header_cue2[6]	= { 'F', 'I', 'L', 'E', ' ', '"'};
 static const unsigned char header_dc[6]		= "SC V10";
 static const unsigned char header_dif[12]	= { 'T', 'A', 'B', 'L', 'E', '\r', '\n', '0', ',', '1', '\r', '\n'};
+static const unsigned char header_emka[16]	= { '1', '\t', '\t', '\t', '\t', '\t', 't', 'h','i','s',' ','f','i','l','e','\t'};
 static const unsigned char header_ers[19]	= "DatasetHeader Begin";
 static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
+static const unsigned char header_json[31]	= {
+  '{', '"', 't', 'i', 't', 'l', 'e', '"',
+  ':', '"', '"', ',', '"', 'i', 'd', '"',
+  ':', '1', ',', '"', 'd', 'a', 't', 'e',
+  'A', 'd', 'd', 'e', 'd', '"', ':' };
+static const unsigned char header_ksh[10]  	= "#!/bin/ksh";
 static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
@@ -127,6 +135,10 @@ static const unsigned char header_url[18]  	= {
 };
 static const unsigned char header_wpl[21]	= { '<', '?', 'w', 'p', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '=', '"', '1', '.', '0', '"', '?', '>' };
 static const unsigned char header_xml[14]	= "<?xml version=";
+static const char sign_java1[6]			= "class";
+static const char sign_java2[5]			= "java";
+static const char sign_java3[15]		= "private static";
+static const char sign_java4[17]		= "public interface";
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -138,12 +150,16 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_adr, sizeof(header_adr), &header_check_fasttxt, file_stat);
   register_header_check(0, header_bash,sizeof(header_bash), &header_check_fasttxt, file_stat);
   register_header_check(0, header_cls,sizeof(header_cls), &header_check_fasttxt, file_stat);
-  register_header_check(0, header_cue,sizeof(header_cue), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_cue1,sizeof(header_cue1), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_cue2,sizeof(header_cue2), &header_check_fasttxt, file_stat);
   register_header_check(4, header_dc, sizeof(header_dc), &header_check_fasttxt, file_stat);
   register_header_check(0, header_dif, sizeof(header_dif), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_emka, sizeof(header_emka), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_json, sizeof(header_json), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ksh,sizeof(header_ksh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
@@ -373,6 +389,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="cls";
     return 1;
   }
+  if(memcmp(buffer,header_json,sizeof(header_json))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="json";
+    return 1;
+  }
   /* Incredimail has .imm extension but this extension isn't frequent */
   if(memcmp(buffer,header_imm,sizeof(header_imm))==0 ||
       memcmp(buffer,header_ReturnPath,sizeof(header_ReturnPath))==0)
@@ -405,10 +429,26 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   if(memcmp(buffer,header_perlm,sizeof(header_perlm))==0 &&
       (buffer[sizeof(header_perlm)]==' ' || buffer[sizeof(header_perlm)]=='\t'))
   {
+    char *buffer_lower=(char *)MALLOC(2048);
+    const unsigned int buffer_size_test=(buffer_size < 2048-16 ? buffer_size : 2048-16);
+    UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    if(strstr(buffer_lower, sign_java1)!=NULL ||
+	strstr(buffer_lower, sign_java2)!=NULL ||
+	strstr(buffer_lower, sign_java3)!=NULL ||
+	strstr(buffer_lower, sign_java4)!=NULL)
+    {
+#ifdef DJGPP
+      file_recovery_new->extension="jav";
+#else
+      file_recovery_new->extension="java";
+#endif
+    }
+    else
     file_recovery_new->extension="pm";
+    free(buffer_lower);
     return 1;
   }
   if(memcmp(buffer,header_rpp,sizeof(header_rpp))==0)
@@ -437,7 +477,8 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     return 1;
   }
   if(memcmp(buffer,header_sh,sizeof(header_sh))==0 ||
-      memcmp(buffer,header_bash,sizeof(header_bash))==0)
+      memcmp(buffer,header_bash,sizeof(header_bash))==0 ||
+      memcmp(buffer,header_ksh,sizeof(header_ksh))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -482,6 +523,19 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_ers;
     file_recovery_new->extension="ers";
+    return 1;
+  }
+  if(memcmp(buffer, header_emka, sizeof(header_emka))==0)
+  {
+    /* EMKA IOX file */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+#ifdef DJGPP
+    file_recovery_new->extension="emk";
+#else
+    file_recovery_new->extension="emka";
+#endif
     return 1;
   }
   if(memcmp(buffer,header_stp,sizeof(header_stp))==0)
@@ -631,8 +685,10 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     return 1;
   }
   /* Cue sheet often begins by the music genre
+   * or by the filename
    * http://wiki.hydrogenaudio.org/index.php?title=Cue_sheet */
-  if(memcmp(buffer, header_cue, sizeof(header_cue))==0)
+  if(memcmp(buffer, header_cue1, sizeof(header_cue1))==0 ||
+      memcmp(buffer, header_cue2, sizeof(header_cue2))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -643,6 +699,22 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   return 0;
 }
 
+static int is_ini(const char *buffer)
+{
+  const char *src=buffer;
+  if(*src!='[')
+    return 0;
+  src++;
+  while(1)
+  {
+    if(*src==']')
+      return 1;
+    if(!isalnum(*src) && *src!=' ')
+      return 0;
+    src++;
+  }
+}
+
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static char *buffer_lower=NULL;
@@ -651,6 +723,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const unsigned char header_asp[22]	= "<%@ language=\"vbscript";
   const unsigned char header_bat[9]  	= "@echo off";
   const unsigned char header_bat2[4]  	= "rem ";
+  const unsigned char header_json_small[2]	= { '{', '"'};
   const unsigned char header_vb[20]	= {
     'v', 'e', 'r', 's', 'i', 'o', 'n', ' ',
     '4', '.', '0', '0', '\r', '\n', 'b', 'e',
@@ -663,12 +736,12 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   const char sign_asp[]			= "<% ";
   const char sign_c[]			= "#include";
   const char sign_h[]			= "/*";
+  const char sign_inf[]			= "[autorun]";
   const char sign_jsp[]			= "<%@";
   const char sign_jsp2[]		= "<%=";
   const char sign_php[]			= "<?php";
   const char sign_tex[]			= "\\begin{";
   const char sign_html[]		= "<html";
-  const char sign_cue[6]		= { 'F', 'I', 'L', 'E', ' ', '"'};
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int i;
@@ -689,16 +762,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="emlx";
       return 1;
     }
-  }
-  /* Cue sheet can begin by the filename 
-   * http://wiki.hydrogenaudio.org/index.php?title=Cue_sheet */
-  if(memcmp(buffer, sign_cue, sizeof(sign_cue))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->data_check=&data_check_txt;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension="cue";
-    return 1;
   }
   if(buffer_lower_size<buffer_size_test+16)
   {
@@ -844,7 +907,23 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
           ind+=stats[i]*(stats[i]-1);
       ind=ind/l/(l-1);
     }
-    if(nbrf>10 && ind<0.9)
+    /* Detect .ini */
+    if(buffer[0]=='[' && is_ini(buffer_lower))
+      ext="ini";
+    else if(strstr(buffer_lower, sign_php)!=NULL)
+      ext="php";
+    else if(strstr(buffer_lower, sign_java1)!=NULL ||
+	strstr(buffer_lower, sign_java2)!=NULL ||
+	strstr(buffer_lower, sign_java3)!=NULL ||
+	strstr(buffer_lower, sign_java4)!=NULL)
+    {
+#ifdef DJGPP
+      ext="jav";
+#else
+      ext="java";
+#endif
+    }
+    else if(nbrf>10 && ind<0.9)
       ext="f";
     else if(is_csv>0)
       ext="csv";
@@ -853,8 +932,9 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="tex";
     else if(strstr(buffer_lower, sign_c)!=NULL)
       ext="c";
-    else if(strstr(buffer_lower, sign_php)!=NULL)
-      ext="php";
+    /* Windows Autorun */
+    else if(strstr(buffer_lower, sign_inf)!=NULL)
+      ext="inf";
     else if(strstr(buffer_lower, sign_jsp)!=NULL)
       ext="jsp";
     else if(strstr(buffer_lower, sign_jsp2)!=NULL)
@@ -867,6 +947,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="h";
     else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;
+    else if(memcmp(buffer_lower, header_json_small, sizeof(header_json_small))==0)
+      ext="json";
     else
       ext=file_hint_txt.extension;
     if(ext!=NULL && strcmp(ext,"txt")==0 &&
