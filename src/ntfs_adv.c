@@ -361,7 +361,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
     display_message("NTFS: Can't read mft_sector\n");
     return 1;
   }
-  *mft_lcn=ntfs_get_attr(attr, 0x80, partition, buffer+8*DEFAULT_SECTOR_SIZE, verbose, NULL);
+  *mft_lcn=ntfs_get_attr(attr, 0x80, partition, buffer+sizeof(buffer), verbose, NULL);
   *mft_record_size=NTFS_GETU32(attr + 0x1C);
   if(*mft_record_size==0)
   {
@@ -370,7 +370,13 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
     return 2;
   }
   attr+= NTFS_GETU32(attr + 0x1C);
-  *mftmirr_lcn=ntfs_get_attr(attr, 0x80, partition,buffer+8*DEFAULT_SECTOR_SIZE, verbose, NULL);
+  if(attr < buffer || attr > buffer+sizeof(buffer))
+  {
+    if(verbose<0)
+      log_warning("read_mft_info failed: bad record.\n");
+    return 2;
+  }
+  *mftmirr_lcn=ntfs_get_attr(attr, 0x80, partition,buffer+sizeof(buffer), verbose, NULL);
   /* Try to divide by the biggest number first */
   if(*mft_lcn<*mftmirr_lcn)
   {
