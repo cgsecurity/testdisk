@@ -56,7 +56,11 @@ static int header_check_flac(const unsigned char *buffer, const unsigned int buf
   if(memcmp(buffer, flac_header, sizeof(flac_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="flc";
+#else
     file_recovery_new->extension=file_hint_flac.extension;
+#endif
     return 1;
   }
   return 0;

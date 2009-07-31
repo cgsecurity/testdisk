@@ -76,7 +76,11 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
     unsigned int i=0;
     uint64_t naxis_size_max=0;
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="fts";
+#else
     file_recovery_new->extension=file_hint_fits.extension;
+#endif
     file_recovery_new->min_filesize=2880;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;

@@ -142,7 +142,11 @@ static int header_check_dump(const unsigned char *buffer, const unsigned int buf
       le32(dump->c_type)==TS_TAPE)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="dmp";
+#else
     file_recovery_new->extension=file_hint_dump.extension;
+#endif
     return 1;
   }
   return 0;

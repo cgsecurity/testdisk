@@ -62,7 +62,11 @@ static int header_check_fh10(const unsigned char *buffer, const unsigned int buf
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=4096;
+#ifdef DJGPP
+    file_recovery_new->extension="fh1";
+#else
     file_recovery_new->extension=file_hint_fh10.extension;
+#endif
     return 1;
   }
   return 0;

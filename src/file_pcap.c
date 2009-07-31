@@ -56,7 +56,11 @@ static int header_check_pcap(const unsigned char *buffer, const unsigned int buf
   if(memcmp(buffer, pcap_header, sizeof(pcap_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="pcp";
+#else
     file_recovery_new->extension=file_hint_pcap.extension;
+#endif
     return 1;
   }
   return 0;

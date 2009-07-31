@@ -72,7 +72,11 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
   if (memcmp(hdr->id,indd_header,sizeof(indd_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="ind";
+#else
     file_recovery_new->extension=file_hint_indd.extension;
+#endif
     file_recovery_new->calculated_file_size=(uint64_t)(1+le32(hdr->blocks))*4096;
     file_recovery_new->file_check=&file_check_indd;
 //    log_debug("header_check_indd: Guessed length: %lu.\n", indd_file_size);

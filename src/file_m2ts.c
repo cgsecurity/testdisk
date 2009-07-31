@@ -72,7 +72,11 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
       memcmp(&buffer[0xe8], hdmv_header, sizeof(hdmv_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="m2t";
+#else
     file_recovery_new->extension=file_hint_m2ts.extension;
+#endif
     file_recovery_new->min_filesize=192;
     file_recovery_new->calculated_file_size=192;
     file_recovery_new->data_check=&data_check_m2ts;

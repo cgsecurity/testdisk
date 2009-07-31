@@ -86,7 +86,11 @@ static int header_check_vmdk(const unsigned char *buffer, const unsigned int buf
       memcmp(buffer,vmdk_header4, sizeof(vmdk_header4))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="vmd";
+#else
     file_recovery_new->extension=file_hint_vmdk.extension;
+#endif
     return 1;
   }
   return 0;
