@@ -15,13 +15,14 @@
 class QListWidget;
 class QPushButton;
 
-class QPhotorec: public QDialog
+class QPhotorec: public QWidget
 {
         public:
-                QPhotorec();
-                void show();
+                QPhotorec(QWidget *parent = 0);
+		void setupUi(QWidget *MainWindow);
+                void ashow();
         private:
-                QListWidget *editor;
+                QListWidget *HDDlistWidget;
                 QPushButton *btn;
 };
 #endif
