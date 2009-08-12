@@ -45,6 +45,7 @@
 #include "dir.h"
 #include "fat_dir.h"
 #include "log.h"
+#include "setdate.h"
 
 #define MSDOS_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
 struct fat_dir_struct

@@ -72,6 +72,7 @@
 #include "ntfs_utl.h"
 #include "ntfs_inc.h"
 #include "log.h"
+#include "setdate.h"
 
 #ifdef HAVE_LIBNTFS
 #define MAX_PATH    1024

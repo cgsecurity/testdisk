@@ -45,6 +45,7 @@
 #include "ext2_dir.h"
 #include "ext2_inc.h"
 #include "log.h"
+#include "setdate.h"
 
 #if defined(HAVE_LIBEXT2FS)
 #define DIRENT_DELETED_FILE	4

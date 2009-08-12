@@ -37,9 +37,6 @@
 #include <sys/stat.h>
 #endif
 #include "types.h"
-#ifdef HAVE_UTIME_H
-#include <utime.h>
-#endif
 #include <errno.h>
 #ifdef HAVE_IO_H
 #include <io.h>
@@ -329,35 +326,6 @@ int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data
 {
   log_partition(disk, partition);
   return dir_whole_partition_log_aux(disk, partition, dir_data, inode);
-}
-
-/**
- * set_date - Set the file's date and time
- * @pathname:  Path and name of the file to alter
- * @actime:    Date and time to set
- * @modtime:   Date and time to set
- *
- * Give a file a particular date and time.
- *
- * Return:  1  Success, set the file's date and time
- *	    0  Error, failed to change the file's date and time
- */
-int set_date(const char *pathname, time_t actime, time_t modtime)
-{
-#ifdef HAVE_UTIME
-  struct utimbuf ut;
-  if (!pathname)
-    return 0;
-  ut.actime  = actime;
-  ut.modtime = modtime;
-  if (utime(pathname, &ut)) {
-    log_error("ERROR: Couldn't set the file's date and time for %s\n", pathname);
-    return 0;
-  }
-  return 1;
-#else
-  return 0;
-#endif
 }
 
 int filesort(const struct td_list_head *a, const struct td_list_head *b)

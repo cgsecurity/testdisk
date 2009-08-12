@@ -43,6 +43,7 @@
 #include "log_part.h"
 #include "dirn.h"
 #include "askloc.h"
+#include "setdate.h"
 
 extern const char *monstr[];
 

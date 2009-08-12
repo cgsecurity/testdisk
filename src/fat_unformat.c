@@ -50,6 +50,7 @@
 #include "fat_cluster.h"
 #include "fat_unformat.h"
 #include "pnext.h"
+#include "setdate.h"
 
 #define READ_SIZE 1024*512
 static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)

@@ -93,6 +93,7 @@
 #include "ntfs_dir.h"
 #include "ntfs_utl.h"
 #include "askloc.h"
+#include "setdate.h"
 
 extern const char *monstr[];
 

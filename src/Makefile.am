@@ -22,7 +22,7 @@ fs_H			= analyse.h bfs.h bsd.h cramfs.h exfat.h fat.h fatx.h ext2.h jfs_superblo
 testdisk_ncurses_C	= addpart.c adv.c askloc.c chgtype.c chgtypen.c dimage.c dirn.c dirpart.c diskacc.c diskcapa.c edit.c ext2_sb.c ext2_sbn.c fat1x.c fat32.c fat_adv.c fat_cluster.c fatn.c geometry.c godmode.c hiddenn.c intrface.c intrfn.c nodisk.c ntfs_adv.c ntfs_fix.c ntfs_udl.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c tanalyse.c tbanner.c tdelete.c tdiskop.c tdisksel.c testdisk.c thfs.c tload.c tlog.c tmbrcode.c tntfs.c toptions.c tpartwr.c 
 testdisk_ncurses_H	= addpart.h adv.h askloc.h chgtype.h chgtypen.h dimage.h dirn.h dirpart.h diskacc.h diskcapa.h edit.h ext2_sb.h ext2_sbn.h fat1x.h fat32.h fat_adv.h fat_cluster.h fatn.h geometry.h godmode.h hiddenn.h intrface.h intrfn.h nodisk.h ntfs_udl.h partgptn.h parti386n.h partmacn.h partsunn.h partxboxn.h tanalyse.h tdelete.h tdiskop.h tdisksel.h thfs.h tload.h tlog.h tmbrcode.h tntfs.h toptions.h tpartwr.h 
 
-testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h $(ICON_TESTDISK) next.c next.h
+testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h setdate.c setdate.h $(ICON_TESTDISK) next.c next.h
 
 file_C			= filegen.c \
 			  file_list.c \
@@ -212,9 +212,9 @@ file_C			= filegen.c \
 
 file_H			= list.h file_jpg.h file_tar.h file_sp3.h file_tiff.h filegen.h pe.h ole.h ext2.h
 
-photorec_C		= photorec.c phcfg.c dir.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c list.c ntfs_dir.c ntfsp.c sessionp.c
+photorec_C		= photorec.c phcfg.c dir.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c list.c ntfs_dir.c ntfsp.c sessionp.c setdate.c
 
-photorec_H		= photorec.h phcfg.h dir.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h sessionp.h
+photorec_H		= photorec.h phcfg.h dir.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h sessionp.h setdate.h
 
 photorec_ncurses_C	= addpart.c askloc.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometry.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdisksel.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartsel.c
 photorec_ncurses_H	= addpart.h askloc.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometry.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdisksel.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartsel.h
@@ -223,7 +223,7 @@ photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(
 
 qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC)
 
-fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c
+fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c
 
 DISTCLEANFILES = *~ core
 
