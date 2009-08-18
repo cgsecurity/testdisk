@@ -37,6 +37,38 @@
 #include "ext2.h"
 #include "ext2_sbn.h"
 
+static const  uint64_t group_size[3]={
+    ((EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512),
+    (EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1),
+    (EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2),
+  };
+static const  uint64_t factors[3]={3,5,7};
+
+static uint64_t next_sb(const uint64_t hd_offset_old)
+{
+  uint64_t hd_offset=0;
+  int j;
+  if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<0)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<0;
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<1)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<1;
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<2)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<2;
+  for(j=0; j<3; j++)
+  {
+    int i;
+    for(i=0; i<3; i++)
+    {
+      uint64_t val;
+      for(val=1; val * group_size[j] <= hd_offset_old; val*=factors[i])
+	;
+      if(hd_offset==0 || val * group_size[j] < hd_offset)
+	hd_offset=val* group_size[j];
+    }
+  }
+  return hd_offset;
+}
+
 list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, const int verbose, const int dump_ind, const int interface)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(2*0x200);
@@ -65,7 +97,7 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
     wattroff(stdscr, A_REVERSE);
   }
 #endif
-  for(hd_offset=0;hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;hd_offset+=DEFAULT_SECTOR_SIZE)
+  for(hd_offset=0;hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;hd_offset=next_sb(hd_offset))
   {
 #ifdef HAVE_NCURSES
     unsigned long int percent;
@@ -81,49 +113,32 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
       old_percent=percent;
     }
 #endif
-    /* ext2/ext3/ext4 */
-    if( hd_offset==(EXT2_MIN_BLOCK_SIZE<<0) ||
-	hd_offset==(EXT2_MIN_BLOCK_SIZE<<1) ||
-	hd_offset==(EXT2_MIN_BLOCK_SIZE<<2) ||
-      hd_offset==(1*(EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512) ||
-      hd_offset==(1*(EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1)) ||
-      hd_offset==(1*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2)) ||
-      hd_offset%(3*(EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512)==0 ||
-      hd_offset%(5*(EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512)==0 ||
-      hd_offset%(7*(EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512)==0 ||
-      hd_offset%(3*(EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1))==0 ||
-      hd_offset%(5*(EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1))==0 ||
-      hd_offset%(7*(EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1))==0 ||
-      hd_offset%(3*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2))==0 ||
-      hd_offset%(5*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2))==0 ||
-      hd_offset%(7*(EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2))==0)
+    if(disk_car->pread(disk_car, buffer, 1024, partition->part_offset + hd_offset) == 1024)
     {
-      if(disk_car->pread(disk_car, buffer, 1024, partition->part_offset + hd_offset) == 1024)
+      /* ext2/ext3/ext4 */
+      if(le16(sb->s_magic)==EXT2_SUPER_MAGIC)
       {
-	if(le16(sb->s_magic)==EXT2_SUPER_MAGIC)
+	dup_partition_t(new_partition,partition);
+	new_partition->part_offset+=hd_offset;
+	if(recover_EXT2(disk_car,sb,new_partition,verbose,dump_ind)==0)
 	{
-	  dup_partition_t(new_partition,partition);
-	  new_partition->part_offset+=hd_offset;
-	  if(recover_EXT2(disk_car,sb,new_partition,verbose,dump_ind)==0)
-	  {
-	    int insert_error=0;
-	    if(hd_offset<=(EXT2_MIN_BLOCK_SIZE<<2))
-	      new_partition->part_offset-=hd_offset;
-	    log_info("Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)\n",
-		(long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
-		(long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
-		EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
+	  int insert_error=0;
+	  if(hd_offset<=(EXT2_MIN_BLOCK_SIZE<<2))
+	    new_partition->part_offset-=hd_offset;
+	  log_info("Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)\n",
+	      (long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
+	      (long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
+	      EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
 #ifdef HAVE_NCURSES
-	    wmove(stdscr,10+nbr_sb,0);
-	    wprintw(stdscr,"Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)        \n",
-		(long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
-		(long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
-                EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
+	  wmove(stdscr,10+nbr_sb,0);
+	  wprintw(stdscr,"Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)        \n",
+	      (long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
+	      (long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
+	      EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
 #endif
-	    list_part=insert_new_partition(list_part, new_partition, 1, &insert_error);
-	    new_partition=partition_new(disk_car->arch);
-	    nbr_sb++;
-	  }
+	  list_part=insert_new_partition(list_part, new_partition, 1, &insert_error);
+	  new_partition=partition_new(disk_car->arch);
+	  nbr_sb++;
 	}
       }
     }
