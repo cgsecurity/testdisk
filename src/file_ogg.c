@@ -46,6 +46,7 @@ const file_hint_t file_hint_ogg= {
 };
 
 static const unsigned char ogg_header[4]= {'O','g','g','S'};
+static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
 
 static void register_header_check_ogg(file_stat_t *file_stat)
 {
@@ -64,7 +65,11 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->calculated_file_size=0;
     file_recovery_new->data_check=&data_check_ogg;
     file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension=file_hint_ogg.extension;
+    /* Ogg data, Theora video */
+    if(memcmp(&buffer[28], sign_theora, sizeof(sign_theora))==0)
+      file_recovery_new->extension="ogm";
+    else
+      file_recovery_new->extension=file_hint_ogg.extension;
     return 1;
   }
   return 0;
