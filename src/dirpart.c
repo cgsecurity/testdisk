@@ -27,6 +27,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "fat.h"
@@ -54,6 +57,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #endif
   int res=-3;
   fflush(stderr);
+  dir_data.local_dir=NULL;
   if(is_part_fat(partition))
     res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
   else if(is_part_ntfs(partition))
@@ -187,5 +191,6 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   wrefresh(stdscr);
 #endif
   fflush(stderr);
+  free(dir_data.local_dir);
   return res;
 }
