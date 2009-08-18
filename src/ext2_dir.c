@@ -85,8 +85,7 @@ static struct struct_io_manager my_struct_manager = {
 };
 static file_data_t *ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster);
 
-io_channel *shared_ioch=NULL;
-io_manager my_io_manager = &my_struct_manager;
+static io_channel *shared_ioch=NULL;
 /*
  * Macro taken from unix_io.c
  * For checking structure magic numbers...
@@ -101,27 +100,26 @@ io_manager my_io_manager = &my_struct_manager;
 static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data)
 {
   io_channel     ioch;
-#ifdef DEBUG
-  log_trace("alloc_io_channel start\n");
+#ifdef DEBUG_EXT2
+  log_info("alloc_io_channel start\n");
 #endif
   ioch = (io_channel)MALLOC(sizeof(struct struct_io_channel));
   if (ioch==NULL)
     return NULL;
   memset(ioch, 0, sizeof(struct struct_io_channel));
   ioch->magic = EXT2_ET_MAGIC_IO_CHANNEL;
-  ioch->manager = my_io_manager;
-  ioch->name = (char *)MALLOC(strlen(my_data->partition->fsname)+1);
+  ioch->manager = &my_struct_manager;
+  ioch->name=strdup(my_data->partition->fsname);
   if (ioch->name==NULL) {
 	  free(ioch);
 	  return NULL;
   }
-  memcpy(ioch->name, my_data->partition->fsname,strlen(my_data->partition->fsname)+1);
   ioch->private_data = my_data;
   ioch->block_size = 1024; /* The smallest ext2fs block size */
   ioch->read_error = 0;
   ioch->write_error = 0;
-#ifdef DEBUG
-  log_trace("alloc_io_channel end\n");
+#ifdef DEBUG_EXT2
+  log_info("alloc_io_channel end\n");
 #endif
   return ioch;
 }
@@ -129,8 +127,8 @@ static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data)
 static errcode_t my_open(const char *dev, int flags, io_channel *channel)
 {
   *channel = *shared_ioch;
-#ifdef DEBUG
-  log_trace("my_open %s done\n",dev);
+#ifdef DEBUG_EXT2
+  log_info("my_open %s done\n", dev);
 #endif
   return 0;
 }
@@ -140,8 +138,8 @@ static errcode_t my_close(io_channel channel)
   free(channel->private_data);
   free(channel->name);
   free(channel);
-#ifdef DEBUG
-  log_trace("my_close done\n");
+#ifdef DEBUG_EXT2
+  log_info("my_close done\n");
 #endif
   return 0;
 }
@@ -149,8 +147,8 @@ static errcode_t my_close(io_channel channel)
 static errcode_t my_set_blksize(io_channel channel, int blksize)
 {
   channel->block_size = blksize;
-#ifdef DEBUG
-  log_trace("my_set_blksize done\n");
+#ifdef DEBUG_EXT2
+  log_info("my_set_blksize done\n");
 #endif
   return 0;
 }
@@ -162,14 +160,15 @@ static errcode_t my_read_blk(io_channel channel, unsigned long block, int count,
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 
   size = (count < 0) ? -count : count * channel->block_size;
-#ifdef DEBUG
-  log_trace("my_read_blk start size=%lu, offset=%lu name=%s\n",
-      (long unsigned)size, (unsigned long)(block*channel->block_size), my_data->partition->fsname);
+#ifdef DEBUG_EXT2
+  log_info("my_read_blk start size=%lu, offset=%lu name=%s, block=%lu, count=%d, buf=%p\n",
+      (long unsigned)size, (unsigned long)(block*channel->block_size),
+      my_data->partition->fsname, block, count, buf);
 #endif
   if(my_data->disk_car->pread(my_data->disk_car, buf, size, my_data->partition->part_offset + (uint64_t)block * channel->block_size) != size)
     return 1;
-#ifdef DEBUG
-  log_trace("my_read_blk done\n");
+#ifdef DEBUG_EXT2
+  log_info("my_read_blk done\n");
 #endif
   return 0;
 }
@@ -211,7 +210,7 @@ static int list_dir_proc2(ext2_ino_t dir,
   ino = dirent->inode;
   if (ino) {
     errcode_t retval;
-//    log_trace("ext2fs_read_inode(ino=%u)\n",ino);
+//    log_info("ext2fs_read_inode(ino=%u)\n", ino);
     if ((retval=ext2fs_read_inode(ls->current_fs,ino, &inode))!=0)
     {
       log_error("ext2fs_read_inode(ino=%u) failed with error %ld.\n",(unsigned)ino, (long)retval);
@@ -363,9 +362,9 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   ioch=alloc_io_channel(disk_car,my_data);
   shared_ioch=&ioch;
   /* An alternate superblock may be used if the calling function has set an IO redirection */
-  if(ext2fs_open ("/dev/testdisk", 0, 0, 0, my_io_manager, &ls->current_fs)!=0)
+  if(ext2fs_open ("/dev/testdisk", 0, 0, 0, &my_struct_manager, &ls->current_fs)!=0)
   {
-    free(my_data);
+//    free(my_data);
     free(ls);
     return -1;
   }
