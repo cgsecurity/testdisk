@@ -83,6 +83,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_FREEBSD_UFS,		"FreeBSD UFS"		},
   { GPT_ENT_TYPE_FREEBSD_VINUM,		"FreeBSD Vinum"		},
 //  { GPT_ENT_TYPE_FREEBSD_UFS2,		"FreeBSD UFS2"		},
+  { GPT_ENT_TYPE_FREEBSD_ZFS,		"FreeBSD ZFS"		},
   { GPT_ENT_TYPE_MS_RESERVED,		"MS Reserved"		},
   { GPT_ENT_TYPE_MS_BASIC_DATA,		"MS Data"		},
   { GPT_ENT_TYPE_MS_LDM_METADATA,	"MS LDM MetaData"	},

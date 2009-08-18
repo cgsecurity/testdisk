@@ -53,6 +53,7 @@
 #include "sysv.h"
 #include "ufs.h"
 #include "xfs.h"
+#include "zfs.h"
 #include "log.h"
 
 int search_NTFS_backup(unsigned char *buffer, disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind)
@@ -223,6 +224,7 @@ int search_type_16(unsigned char *buffer, disk_t *disk_car,partition_t *partitio
     return -1;
   /* Test UFS */
   if(recover_ufs(disk_car,(const struct ufs_super_block*)buffer,partition,verbose,dump_ind)==0) return 1;
+  if(recover_ZFS(disk_car,(const struct vdev_boot_header*)buffer,partition,verbose,dump_ind)==0) return 1;
   return 0;
 }
 

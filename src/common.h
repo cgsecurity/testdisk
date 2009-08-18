@@ -132,6 +132,8 @@ struct efi_guid_s
 	((efi_guid_t){le32(0x516e7cb5),le16(0x6ecf),le16(0x11d6),0x8f,0xf8,{0x00,0x02,0x2d,0x09,0x71,0x2b}})
 #define	GPT_ENT_TYPE_FREEBSD_UFS	\
 	((efi_guid_t){le32(0x516e7cb6),le16(0x6ecf),le16(0x11d6),0x8f,0xf8,{0x00,0x02,0x2d,0x09,0x71,0x2b}})
+#define GPT_ENT_TYPE_FREEBSD_ZFS	\
+	((efi_guid_t){le32(0x516e7cb),le16(0x6ecf),le16(0x11d6),0x8f,0xf8,{0x00,0x02,0x2d,0x09,0x71,0x2b}})
 /*
  * The following is unused but documented here to avoid reuse.
  *
@@ -193,6 +195,7 @@ struct efi_guid_s
 	((efi_guid_t){le32(0x6a8b642b),le16(0x1dd2),le16(0x11b2),0x99,0xa6,{0x08,0x00,0x20,0x73,0x66,0x31}})
 #define GPT_ENT_TYPE_SOLARIS_USR  	\
 	((efi_guid_t){le32(0x6a898cc3),le16(0x1dd2),le16(0x11b2),0x99,0xa6,{0x08,0x00,0x20,0x73,0x66,0x31}})
+#define GPT_ENT_TYPE_MAC_ZFS		GPT_ENT_TYPE_SOLARIS_USR  
 #define GPT_ENT_TYPE_SOLARIS_VAR  	\
 	((efi_guid_t){le32(0x6a8ef2e9),le16(0x1dd2),le16(0x11b2),0x99,0xa6,{0x08,0x00,0x20,0x73,0x66,0x31}})
 #define GPT_ENT_TYPE_SOLARIS_HOME  	\
@@ -217,7 +220,7 @@ struct efi_guid_s
 #define TESTDISK_O_READAHEAD_32K 010
 #define TESTDISK_O_ALL		020
 
-enum upart_type { UP_UNK, UP_BEOS, UP_CRAMFS, UP_EXT2, UP_EXT3, UP_EXT4, UP_EXTENDED, UP_EXFAT, UP_FAT12, UP_FAT16, UP_FAT32, UP_FATX, UP_FREEBSD,  UP_HFS, UP_HFSP, UP_HFSX, UP_HPFS, UP_JFS, UP_LINSWAP, UP_LINSWAP2, UP_LUKS, UP_LVM, UP_LVM2, UP_MD, UP_MD1, UP_NETWARE, UP_NTFS, UP_OPENBSD, UP_OS2MB, UP_RFS, UP_RFS2, UP_RFS3, UP_RFS4, UP_SUN, UP_SYSV4, UP_UFS, UP_UFS2, UP_XFS, UP_XFS2, UP_XFS3, UP_XFS4};
+enum upart_type { UP_UNK, UP_BEOS, UP_CRAMFS, UP_EXT2, UP_EXT3, UP_EXT4, UP_EXTENDED, UP_EXFAT, UP_FAT12, UP_FAT16, UP_FAT32, UP_FATX, UP_FREEBSD,  UP_HFS, UP_HFSP, UP_HFSX, UP_HPFS, UP_JFS, UP_LINSWAP, UP_LINSWAP2, UP_LUKS, UP_LVM, UP_LVM2, UP_MD, UP_MD1, UP_NETWARE, UP_NTFS, UP_OPENBSD, UP_OS2MB, UP_RFS, UP_RFS2, UP_RFS3, UP_RFS4, UP_SUN, UP_SYSV4, UP_UFS, UP_UFS2, UP_XFS, UP_XFS2, UP_XFS3, UP_XFS4, UP_ZFS};
 typedef enum upart_type upart_type_t;
 enum status_type { STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG, STATUS_EXT, STATUS_EXT_IN_EXT};
 typedef enum status_type status_type_t;
@@ -299,17 +302,12 @@ typedef struct arch_fnct_struct arch_fnct_t;
 
 struct param_disk_struct
 {
-  uint64_t disk_size;
-  CHSgeometry_t	geom;	/* logical CHS */
-  int write_used;
-  int autodetect;
-  int access_mode;
-  int unit;
-  unsigned int sector_size;
-  char *device;
-  char *model;
   char description_txt[DISKDESCRIPTION_MAX];
   char description_short_txt[DISKDESCRIPTION_MAX];
+  CHSgeometry_t	geom;	/* logical CHS */
+  uint64_t disk_size;
+  char *device;
+  char *model;
   const char *(*description)(disk_t *disk_car);
   const char *(*description_short)(disk_t *disk_car);
   int (*pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
@@ -327,30 +325,41 @@ struct param_disk_struct
   void *wbuffer;
   unsigned int rbuffer_size;
   unsigned int wbuffer_size;
+  int write_used;
+  int autodetect;
+  int access_mode;
+  int unit;
+  unsigned int sector_size;
 };
 
 struct partition_struct
 {
+  char          fsname[80];
+  char          partname[80];
+  char          info[80];
   uint64_t      part_offset;
   uint64_t      part_size;
   uint64_t      sborg_offset;
   uint64_t      sb_offset;
   unsigned int  sb_size;
   unsigned int  blocksize;
+  efi_guid_t    part_uuid;
+  efi_guid_t    part_type_gpt;
   unsigned int  part_type_i386;
   unsigned int  part_type_sun;
   unsigned int  part_type_mac;
   unsigned int  part_type_xbox;
-  efi_guid_t    part_type_gpt;
-  efi_guid_t    part_uuid;
   upart_type_t  upart_type;
   status_type_t status;
   unsigned int  order;
   errcode_type_t errcode;
-  char          fsname[80];
-  char          partname[80];
-  char          info[80];
   const arch_fnct_t *arch;
+  /* NTFS => utils_cluster_in_use */
+  /* ext2/ext3/ext4 */
+#if 0
+  int (*is_allocated)(disk_t *disk, const partition_t *partition, const uint64_t offset);
+  void *free_is_allocated(void);
+#endif
 };
 
 typedef struct my_data_struct my_data_t;

@@ -118,6 +118,7 @@ static const struct systypes none_sys_types[] = {
   {UP_XFS2,	"XFS 2"},
   {UP_XFS3,	"XFS 3"},
   {UP_XFS4,	"XFS 4"},
+  {UP_ZFS,	"ZFS"},
   { 0,NULL }
 };
 
