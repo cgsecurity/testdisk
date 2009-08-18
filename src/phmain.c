@@ -367,6 +367,10 @@ int main( int argc, char **argv )
   {
     printf("PhotoRec: Log file corrupted!\n");
   }
+  else if(cmd_run!=NULL && cmd_run[0]!='\0')
+  {
+    printf("PhotoRec syntax error: %s\n", cmd_run);
+  }
   else
   {
     printf("PhotoRec exited normally.\n");
