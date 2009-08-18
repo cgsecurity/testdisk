@@ -36,11 +36,13 @@
 #include "ole.h"
 #include "log.h"
 #include "memmem.h"
+#include "setdate.h"
 
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static uint64_t test_OLE(FILE *file);
+static void file_rename_doc(const char *old_filename);
+static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header);
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
@@ -61,8 +63,34 @@ static void register_header_check_doc(file_stat_t *file_stat)
 
 static void file_check_doc(file_recovery_t *file_recovery)
 {
-  uint64_t doc_file_size=test_OLE(file_recovery->handle);
-  file_recovery->file_size=(doc_file_size>0?((doc_file_size<=(file_recovery->file_size))?doc_file_size:0):0);
+  unsigned char buffer_header[512];
+  uint64_t doc_file_size;
+  uint32_t *fat;
+  unsigned long int i;
+  unsigned int freesect_count=0;  
+  struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
+  fseek(file_recovery->handle,0,SEEK_SET);
+  if(fread(&buffer_header,sizeof(buffer_header),1,file_recovery->handle)!=1)	/*reads first sector including OLE header */
+    return ;
+#ifdef DEBUG_OLE
+  log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
+  log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
+#endif
+  /* Sanity check */
+  if(le32(header->num_FAT_blocks)==0 ||
+      le32(header->num_extra_FAT_blocks)>50 ||
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+    return ;
+  if((fat=OLE_load_FAT(file_recovery->handle, header))==NULL)
+    return ;
+  /* Search how many entries are not used at the end of the FAT */
+  for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
+      i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF;
+      i--)
+    freesect_count++;
+  doc_file_size=512+((le32(header->num_FAT_blocks)*128-freesect_count)<<le16(header->uSectorShift));
+  free(fat);
+  file_recovery->file_size=(doc_file_size<= file_recovery->file_size?doc_file_size:0);
 #ifdef DEBUG_OLE
   log_trace("size found : %llu\n",(long long unsigned)doc_file_size);
   log_trace("==> size : %llu\n",(long long unsigned)file_recovery->file_size);
@@ -78,7 +106,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   unsigned int i;
   if(buffer_size<512)
     return NULL;
-  if(header->num_FAT_blocks==0)
+  if(le32(header->num_FAT_blocks)==0)
   {
     fat=(const uint32_t *)(header+1);
     fat_entries=109;
@@ -88,7 +116,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
     const uint32_t *fati=(const uint32_t *)(header+1);
     const unsigned int fat_offset=(le32(fati[0])<<header->uSectorShift)+512;
     fat=(const uint32_t *)&buffer[fat_offset];
-    fat_entries=(header->num_FAT_blocks<<header->uSectorShift)/4;
+    fat_entries=(le32(header->num_FAT_blocks) << header->uSectorShift)/4;
     if(fat_offset>buffer_size)
       fat_entries=0;
     else if(fat_offset+fat_entries>buffer_size)
@@ -96,6 +124,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   }
   /* FFFFFFFE = ENDOFCHAIN
    * Use a loop count i to avoid endless loop */
+#ifdef DEBUG_OLE
+    log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
+#endif
   for(block=le32(header->root_start_block), i=0;
       block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
       block=le32(fat[block]), i++)
@@ -112,7 +143,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       const char *ext=NULL;
       int is_db=0;
       for(sid=0,dir_entry=(const struct OLE_DIR *)&buffer[offset_root_dir];
-	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;sid++,dir_entry++)
+	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
+	  sid++,dir_entry++)
       {
 #ifdef DEBUG_OLE
 	unsigned int j;
@@ -146,6 +178,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* HP Photosmart Photo Printing Album */
 	if(memcmp(&dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
 	  return "albm";
+	/* SigmaPlot .jnb */
+	if(memcmp(&dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
+	  return "jnb";
 	if(memcmp(&dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
 	  return "ppt";
 	/* Microsoft Works .wps */
@@ -207,6 +242,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_doc;
+    file_recovery_new->file_rename=&file_rename_doc;
     file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
     if(file_recovery_new->extension!=NULL)
     {
@@ -291,28 +327,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static uint64_t test_OLE(FILE *IN)
+static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 {
-  unsigned char buffer_header[512];
-  uint64_t totalsize;
-  uint32_t *dif;
   uint32_t *fat;
-  unsigned int freesect_count=0;  
-  struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
-  if(!IN)
-    return 0;
-  fseek(IN,0,SEEK_SET);
-  if(fread(&buffer_header,sizeof(buffer_header),1,IN)!=1)	/*reads first sector including OLE header */
-    return 0;
-#ifdef DEBUG_OLE
-  log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
-  log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
-#endif
-  /* Sanity check */
-  if(le32(header->num_FAT_blocks)==0 ||
-      le32(header->num_extra_FAT_blocks)>50 ||
-      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
-    return 0;
+  uint32_t *dif;
   dif=(uint32_t*)MALLOC(109*4+(le32(header->num_extra_FAT_blocks)<<le16(header->uSectorShift)));
   memcpy(dif,(header+1),109*4);
   if(le32(header->num_extra_FAT_blocks)>0)
@@ -322,16 +340,16 @@ static uint64_t test_OLE(FILE *IN)
     unsigned long int block=le32(header->FAT_next_block);
     for(i=0;i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;i++)
     {
-//      log_trace("pointeur:0x%x\n",block);
+      //      log_trace("pointeur:0x%x\n",block);
       if(fseek(IN,512+(block<<le16(header->uSectorShift)),SEEK_SET)<0)
       {
 	free(dif);
-	return 0;
+	return NULL;
       }
       if(fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN)!=4)
       {
 	free(dif);
-	return 0;
+	return NULL;
       }
       dif_pos+=(((1<<le16(header->uSectorShift))/4)-1);
       block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)+127]);
@@ -340,30 +358,340 @@ static uint64_t test_OLE(FILE *IN)
   fat=(uint32_t*)MALLOC(le32(header->num_FAT_blocks)<<le16(header->uSectorShift));
   { /* Load FAT */
     unsigned long int j;
-    for(j=0;j<le32(header->num_FAT_blocks);j++)
+    for(j=0; j<le32(header->num_FAT_blocks); j++)
     {
       if(fseek(IN,512+(le32(dif[j])<<le16(header->uSectorShift)),SEEK_SET)<0)
       {
 	free(dif);
 	free(fat);
-	return 0;
+	return NULL;
       }
       if(fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN)!=1)
       {
 	free(dif);
 	free(fat);
-	return 0;
+	return NULL;
       }
     }
   }
-  { /* Search how many entries are not used at the end of the FAT */
-    unsigned long int i;
-    for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
-	i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF; i--)
-      freesect_count++;
-  }
-  totalsize=512+((le32(header->num_FAT_blocks)*128-freesect_count)<<le16(header->uSectorShift));
   free(dif);
+  return fat;
+}
+
+
+static uint32_t get32u(const void *buffer, const unsigned int offset)
+{
+  const uint32_t *val=(const uint32_t *)((const unsigned char *)buffer+offset);
+  return le32(*val);
+}
+
+static uint64_t get64u(const void *buffer, const unsigned int offset)
+{
+  const uint64_t *val=(const uint64_t *)((const unsigned char *)buffer+offset);
+  return le64(*val);
+}
+
+static const char *software2ext(const unsigned int count, const unsigned char *software)
+{
+  if(count>=14 && memcmp(software, "Microsoft Word", 14)==0)
+    return "doc";
+  if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
+    return "doc";
+  if(count>=15 && memcmp(software, "Microsoft Excel", 15)==0)
+    return "xls";
+  if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
+    return "ppt";
+  return NULL;
+}
+
+static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int fat_entries, const unsigned int block_start, const unsigned int size_org, const unsigned int uSectorShift, const char **ext, char **title, time_t *file_time)
+{
+  unsigned int block;
+  unsigned int size_read;
+  unsigned int pos;
+  const unsigned int dirLen=(size_org < 40960 ? size_org : 40960);
+  unsigned char *dataPt;
+  if(dirLen<48)
+    return ;
+  dataPt=(unsigned char *)MALLOC(dirLen);
+  for(block=block_start, size_read=0;
+      block<fat_entries && block!=0xFFFFFFFE && size_read+(1<<uSectorShift) <= dirLen;
+      block=le32(fat[block]), size_read+=(1<<uSectorShift))
+  {
+    if(fseek(IN, 512+(block<<uSectorShift), SEEK_SET)<0)
+    {
+      free(dataPt);
+      return ;
+    }
+    if(fread(&dataPt[size_read], (1<<uSectorShift), 1, IN)!=1)
+    {
+      free(dataPt);
+      return ;
+    }
+  }
+#ifdef DEBUG_OLE
+  dump_log(dataPt, dirLen);
+#endif
+  if(dataPt[0]!=0xfe || dataPt[1]!=0xff)
+  {
+    free(dataPt);
+    return ;
+  }
+  pos=get32u(dataPt, 44);
+  {
+    unsigned int size;
+    unsigned int numEntries;
+    unsigned int i;
+    if(pos+8 > dirLen)
+    {
+      free(dataPt);
+      return ;
+    }
+    size=get32u(dataPt, pos);
+    numEntries=get32u(dataPt, pos+4);
+#ifdef DEBUG_OLE
+    log_info("Property Info %u - %u at 0x%x\n", numEntries, size, pos);
+#endif
+    if(pos + 8 + 8 * numEntries > dirLen)
+    {
+      free(dataPt);
+      return ;
+    }
+    for(i=0; i<numEntries; i++)
+    {
+      unsigned int entry = pos + 8 + 8 * i;
+      unsigned int tag=get32u(dataPt, entry);
+      unsigned int offset=get32u(dataPt, entry + 4);
+      unsigned int valStart = pos + 4 + offset;
+      unsigned int type;
+      if(valStart >= dirLen)
+      {
+	free(dataPt);
+	return ;
+      }
+      type=get32u(dataPt, pos + offset);
+#ifdef DEBUG_OLE
+      log_info("entry 0x%x, tag 0x%x, offset 0x%x, valStart 0x%x, type 0x%x\n",
+	  entry, tag, offset, valStart, type);
+#endif
+      /* tag: Software, type: VT_LPSTR */
+      if(tag==0x12 && type==30)
+      {
+	unsigned int count=get32u(dataPt, valStart);
+	if(valStart + 4 + count > dirLen)
+	{
+	  free(dataPt);
+	  return ;
+	}
+#ifdef DEBUG_OLE
+	{
+	  unsigned int j;
+	  log_info("Software ");
+	  for(j=0; j<count; j++)
+	  {
+	    log_info("%c", dataPt[valStart + 4 + j]);
+	  }
+	  log_info("\n");
+	}
+#endif
+	*ext=software2ext(count, &dataPt[valStart + 4]);
+      }
+      if(tag==0x02 && type==30 && *title==NULL)
+      {
+	unsigned int count=get32u(dataPt, valStart);
+	if(valStart + 4 + count > dirLen)
+	{
+	  free(dataPt);
+	  return ;
+	}
+	*title=MALLOC(count+1);
+	memcpy(*title, &dataPt[valStart + 4], count);
+	(*title)[count]='\0';
+#ifdef DEBUG_OLE
+	log_info("Title %s\n", *title);
+#endif
+      }
+      /* ModifyDate, type=VT_FILETIME */
+      if(tag==0x0d && type==64)
+      {
+	uint64_t tmp=get64u(dataPt, valStart);
+	tmp/=10000000;
+	if(tmp > (uint64_t)134774 * 24 * 3600)
+	{
+	  tmp -= (uint64_t)134774 * 24 * 3600;
+	  *file_time=tmp;
+	}
+      }
+    }
+  }
+  free(dataPt);
+}
+
+static void file_rename_doc(const char *old_filename)
+{
+  int is_db=0;
+  const char *ext=NULL;
+  char *title=NULL;
+  FILE *file;
+  unsigned char buffer_header[512];
+  uint32_t *fat;
+  struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
+  time_t file_time=0;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  fseek(file,0,SEEK_SET);
+  if(fread(&buffer_header,sizeof(buffer_header),1,file)!=1)	/*reads first sector including OLE header */
+  {
+    fclose(file);
+    return ;
+  }
+  /* Sanity check */
+  if(le32(header->num_FAT_blocks)==0 ||
+      le32(header->num_extra_FAT_blocks)>50 ||
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+  {
+    fclose(file);
+    return ;
+  }
+  if((fat=OLE_load_FAT(file, header))==NULL)
+  {
+    fclose(file);
+    return ;
+  }
+  {
+    unsigned int block;
+    unsigned int i;
+    unsigned int fat_entries;
+    fat_entries=(le32(header->num_FAT_blocks)==0 ?
+	109:
+	(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
+    /* FFFFFFFE = ENDOFCHAfile
+     * Use a loop count i to avoid endless loop */
+#ifdef DEBUG_OLE
+    log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
+#endif
+    for(block=le32(header->root_start_block), i=0;
+	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
+	block=le32(fat[block]), i++)
+    {
+      struct OLE_DIR *dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
+      if(fseek(file, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
+      {
+	free(fat);
+	free(dir_entries);
+	fclose(file);
+	return ;
+      }
+      if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file)!=1)
+      {
+	free(fat);
+	free(dir_entries);
+	fclose(file);
+	return ;
+      }
+
+#ifdef DEBUG_OLE
+      log_info("Root Directory block=%u (0x%x)\n", block, block);
+#endif
+      {
+	unsigned int sid;
+	struct OLE_DIR *dir_entry;
+	for(sid=0, dir_entry=dir_entries;
+	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
+	    sid++,dir_entry++)
+	{
+	  const char SummaryInformation[38]=
+	  {
+	    0x05, '\0', 'S', '\0', 'u', '\0', 'm', '\0',
+	     'm', '\0', 'a', '\0', 'r', '\0', 'y', '\0',
+	     'I', '\0', 'n', '\0', 'f', '\0', 'o', '\0',
+	     'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
+	     'i', '\0', 'o', '\0', 'n', '\0'
+	  };
+#ifdef DEBUG_OLE
+	  unsigned int j;
+	  for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
+	  {
+	    log_info("%c",dir_entry->name[j]);
+	  }
+	  log_info(" type %u",dir_entry->type);
+	  log_info(" sector %u (%u bytes)\n",
+	      (unsigned int)le32(dir_entry->start_block),
+	      (unsigned int)le32(dir_entry->size));
+#endif
+	  if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
+	  {
+	    OLE_parse_summary(file, fat, fat_entries,
+		le32(dir_entry->start_block), le32(dir_entry->size), le16(header->uSectorShift),
+		&ext, &title, &file_time);
+	  }
+	  if(sid==1 && memcmp(dir_entry->name, "1\0\0\0", 4)==0)
+	    is_db++;
+	  else if(sid==2 && memcmp(dir_entry->name, "2\0\0\0", 4)==0)
+	    is_db++;
+	  /* 3ds max */
+	  if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
+	    ext="max";
+	  /* MS Excel
+	   * Note: Microsoft Works Spreadsheet contains the same signature */
+	  else if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
+	    ext="xls";
+	  else if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
+	    ext="sda";
+	  else if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
+	    ext="sdc";
+	  /* Microsoft Works Spreadsheet or Chart */
+	  else if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
+	    ext="xlr";
+	  /* HP Photosmart Photo Printing Album */
+	  else if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
+	    ext="albm";
+	  /* SigmaPlot .jnb */
+	  else if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
+	    ext="jnb";
+	  else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
+	    ext="ppt";
+	  /* Microsoft Works .wps */
+	  else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
+	    ext="wps";
+	  /* Outlook */
+	  else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
+	    ext="msg";
+	  /* Licom AlphaCAM */
+	  else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
+	    ext="amb";
+	  /* Note: False positive with StarImpress sdd files */
+	  else if(memcmp(dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
+	    ext="sdw";
+	  /* Visio */
+	  else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
+	    ext="vsd";
+	  /* SolidWorks */
+	  else if(memcmp(dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
+	  {
+#ifdef DJGPP
+	    ext="sld";
+#else
+	    ext="sldprt";
+#endif
+	  }
+	  /* Quattro Pro spreadsheet */
+	  else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
+	    ext="qpw";
+	}
+      }
+      free(dir_entries);
+    }
+  }
   free(fat);
-  return totalsize;
+  fclose(file);
+  if(file_time!=0 && file_time!=(time_t)-1)
+    set_date(old_filename, file_time, file_time);
+  if(title!=NULL)
+  {
+    file_rename(old_filename, (const unsigned char*)title, strlen(title), 0, ext, 1);
+    free(title);
+  }
+  else
+    file_rename(old_filename, NULL, 0, 0, ext, 1);
 }
