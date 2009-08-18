@@ -56,7 +56,11 @@ static int header_check_sqlite(const unsigned char *buffer, const unsigned int b
   if(memcmp(buffer,sqlite_header,sizeof(sqlite_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+    file_recovery_new->extension="sql";
+#else
     file_recovery_new->extension=file_hint_sqlite.extension;
+#endif
     return 1;
   }
   return 0;
