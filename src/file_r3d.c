@@ -30,7 +30,6 @@
 #include <ctype.h>
 #include "types.h"
 #include "filegen.h"
-#include "log.h"
 
 static void register_header_check_r3d(file_stat_t *file_stat);
 static int header_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -82,9 +81,8 @@ static void file_rename_r3d(const char *old_filename)
     return;
   for(i=0x43; i< buffer_size && buffer[i]!=0 && buffer[i]!='.'; i++)
   {
-    log_info("%c", buffer[i]);
     if(!isalnum(buffer[i]) && buffer[i]!='_')
       return ;
   }
-  file_rename(old_filename, buffer, i, 0x43);
+  file_rename(old_filename, buffer, i, 0x43, NULL, 1);
 }

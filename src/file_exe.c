@@ -313,7 +313,7 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
 	    {
 	      if(do_rename)
 	      {
-		file_rename_unicode(old_filename, buffer, end, pt, 0);
+		file_rename_unicode(old_filename, buffer, end, pt, NULL, 0);
 		free(buffer);
 		return ;
 	      }

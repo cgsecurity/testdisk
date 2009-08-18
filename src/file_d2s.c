@@ -78,5 +78,5 @@ static void file_rename_d2s(const char *old_filename)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  file_rename(old_filename, buffer, buffer_size, 0x14);
+  file_rename(old_filename, buffer, buffer_size, 0x14, NULL, 1);
 }

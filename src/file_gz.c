@@ -231,7 +231,7 @@ static void file_rename_gz(const char *old_filename)
     }
     if((flags&GZ_FNAME)!=0)
     {
-      file_rename(old_filename, buffer, buffer_size, off);
+      file_rename(old_filename, buffer, buffer_size, off, NULL, 1);
     }
   }
 }

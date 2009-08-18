@@ -130,8 +130,8 @@ void register_header_check(const unsigned int offset, const unsigned char *value
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 file_stat_t * init_file_stats(file_enable_t *files_enable);
-void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset);
-void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const int force_ext);
+void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
+void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
