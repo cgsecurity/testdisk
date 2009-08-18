@@ -45,6 +45,7 @@
 #include "fatp.h"
 #include "ntfsp.h"
 #include "log.h"
+#include "setdate.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
