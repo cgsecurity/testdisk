@@ -306,6 +306,14 @@ static const char *tag_name(unsigned int tag)
        return "EXIFTAG_MAKERNOTE";
     case TIFFTAG_PRINTIM:
        return "PrintIM";
+    case TIFFTAG_IMAGEOFFSET:
+       return "IMAGEOFFSET";
+    case TIFFTAG_IMAGEBYTECOUNT:
+       return "IMAGEBYTECOUNT";
+    case TIFFTAG_ALPHAOFFSET:
+       return "ALPHAOFFSET";
+    case TIFFTAG_ALPHABYTECOUNT:
+       return "ALPHABYTECOUNT";
     default:
       return "";
   }
@@ -319,10 +327,14 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   int data_read;
   uint32_t *tiff_next_diroff;
   uint64_t max_offset=0;
-  uint64_t strip_offsets=0;
-  uint64_t strip_bytecounts=0;
+  uint64_t alphaoffset=0;
+  uint64_t alphabytecount=0;
+  uint64_t imageoffset=0;
+  uint64_t imagebytecount=0;
   uint64_t jpegifoffset=0;
   uint64_t jpegifbytecount=0;
+  uint64_t strip_offsets=0;
+  uint64_t strip_bytecounts=0;
   TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_le(in, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
@@ -351,7 +363,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   {
     uint64_t val=(uint64_t)le32(entry->tdir_count)*type2size(le16(entry->tdir_type));
 #ifdef DEBUG_TIFF
-    log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx) val=%u\n",
+    log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx) val=%lu\n",
 	i,
 	le16(entry->tdir_tag),
 	le16(entry->tdir_tag),
@@ -360,7 +372,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	(long unsigned)le32(entry->tdir_count),
 	(long unsigned)le32(entry->tdir_offset),
 	(long unsigned)le32(entry->tdir_offset),
-	val);
+	(long unsigned)val);
 #endif
     if(val>4)
     {
@@ -383,6 +395,18 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	break;
       case TIFFTAG_STRIPBYTECOUNTS:
 	strip_bytecounts=le32(entry->tdir_offset);
+	break;
+      case TIFFTAG_ALPHAOFFSET:
+	alphaoffset=le32(entry->tdir_offset);
+	break;
+      case TIFFTAG_ALPHABYTECOUNT:
+	alphabytecount=le32(entry->tdir_offset);
+	break;
+      case TIFFTAG_IMAGEOFFSET:
+	imageoffset=le32(entry->tdir_offset);
+	break;
+      case TIFFTAG_IMAGEBYTECOUNT:
+	imagebytecount=le32(entry->tdir_offset);
 	break;
       case TIFFTAG_EXIFIFD:
       case TIFFTAG_KODAKIFD:
@@ -437,11 +461,15 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
     }
     entry++;
   }
+  if(alphabytecount > 0 && max_offset < alphaoffset + alphabytecount)
+    max_offset = alphaoffset + alphabytecount;
+  if(imagebytecount > 0 && max_offset < imageoffset + imagebytecount)
+    max_offset = imageoffset + imagebytecount;
+  if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
+    max_offset = jpegifoffset + jpegifbytecount;
   if(strip_bytecounts > 0 && strip_offsets!=0xffffffff &&
       max_offset < strip_offsets + strip_bytecounts)
     max_offset = strip_offsets + strip_bytecounts;
-  if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
-    max_offset = jpegifoffset + jpegifbytecount;
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_le(in, le32(*tiff_next_diroff), depth, count+1);
@@ -458,10 +486,14 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
   int data_read;
   uint32_t *tiff_next_diroff;
   uint64_t max_offset=0;
-  uint64_t strip_offsets=0;
-  uint64_t strip_bytecounts=0;
+  uint64_t alphaoffset=0;
+  uint64_t alphabytecount=0;
+  uint64_t imageoffset=0;
+  uint64_t imagebytecount=0;
   uint64_t jpegifoffset=0;
   uint64_t jpegifbytecount=0;
+  uint64_t strip_offsets=0;
+  uint64_t strip_bytecounts=0;
   TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
   if(depth>4)
     return 0;
@@ -519,6 +551,18 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
       case TIFFTAG_STRIPBYTECOUNTS:
 	strip_bytecounts=be32(entry->tdir_offset);
 	break;
+      case TIFFTAG_ALPHAOFFSET:
+	alphaoffset=be32(entry->tdir_offset);
+	break;
+      case TIFFTAG_ALPHABYTECOUNT:
+	alphabytecount=be32(entry->tdir_offset);
+	break;
+      case TIFFTAG_IMAGEOFFSET:
+	imageoffset=be32(entry->tdir_offset);
+	break;
+      case TIFFTAG_IMAGEBYTECOUNT:
+	imagebytecount=be32(entry->tdir_offset);
+	break;
       case TIFFTAG_EXIFIFD:
       case TIFFTAG_KODAKIFD:
       case TIFFTAG_SUBIFD:
@@ -572,11 +616,15 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
     }
     entry++;
   }
+  if(alphabytecount > 0 && max_offset < alphaoffset + alphabytecount)
+    max_offset = alphaoffset + alphabytecount;
+  if(imagebytecount > 0 && max_offset < imageoffset + imagebytecount)
+    max_offset = imageoffset + imagebytecount;
+  if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
+    max_offset = jpegifoffset + jpegifbytecount;
   if(strip_bytecounts > 0 && strip_offsets!=0xffffffff &&
       max_offset < strip_offsets + strip_bytecounts)
     max_offset = strip_offsets + strip_bytecounts;
-  if(jpegifbytecount > 0 && max_offset < jpegifoffset + jpegifbytecount)
-    max_offset = jpegifoffset + jpegifbytecount;
   tiff_next_diroff=(uint32_t *)entry;
   {
     uint64_t new_offset=header_check_tiff_be(in, be32(*tiff_next_diroff), depth, count+1);
@@ -614,6 +662,7 @@ void file_check_tiff(file_recovery_t *fr)
       strcmp(fr->extension,"nef")==0 ||
       strcmp(fr->extension,"pef")==0 ||
       strcmp(fr->extension,"sr2")==0 ||
-      (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024))
+      (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
+      strcmp(fr->extension,"wdp")==0)
     fr->file_size=calculated_file_size;
 }

@@ -36,6 +36,10 @@ extern "C" {
 #define TIFFTAG_KODAKIFD 		33424
 #define TIFFTAG_EXIFIFD                 34665
 #define EXIFTAG_MAKERNOTE		37500	/* Manufacturer notes */
+#define TIFFTAG_IMAGEOFFSET		0xbcc0
+#define TIFFTAG_IMAGEBYTECOUNT		0xbcc1
+#define TIFFTAG_ALPHAOFFSET		0xbcc2
+#define TIFFTAG_ALPHABYTECOUNT		0xbcc3
 #define TIFFTAG_PRINTIM			50341
 #define TIFFTAG_DNGVERSION		50706
 #define TIFFTAG_DNGPRIVATEDATA		50740	/* &manufacturer's private data */

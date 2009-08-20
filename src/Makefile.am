@@ -197,6 +197,7 @@ file_C			= filegen.c \
 			  file_tz.c \
 			  file_veg.c \
 			  file_vmdk.c \
+			  file_wdp.c \
 			  file_wks.c \
 			  file_wmf.c \
 			  file_wnk.c \
