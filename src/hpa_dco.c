@@ -121,7 +121,7 @@ static uint64_t read_native_max(int fd)
 #endif
 }
 
-static uint64_t sg_read_native_max_ext(int fd)
+static uint64_t sg_read_native_max_ext(int fd, const int is_lba48)
 {
 #ifdef SG_IO
   unsigned char cdb[16];
@@ -135,7 +135,7 @@ static uint64_t sg_read_native_max_ext(int fd)
   cdb[ 2] = SG_CDB2_CHECK_COND;
   cdb[13] = 0x40; // dev;
   cdb[14] = WIN_READ_NATIVE_MAX_EXT; // command;
-//  if (is_lba48)
+  if (is_lba48)
   {
     cdb[ 1] |= SG_ATA_LBA48;
   }
@@ -172,9 +172,10 @@ static uint64_t sg_read_native_max_ext(int fd)
 static uint64_t sg_device_configuration_identify(int fd)
 {
 #ifdef SG_IO
-  unsigned char cdb[16];
-  unsigned char sb[32];
   unsigned char data[512];
+  unsigned char sb[32];
+  unsigned char cdb[16];
+  uint64_t hdsize;
   unsigned int i;
   unsigned int sum=0;
   sg_io_hdr_t  io_hdr;
@@ -224,8 +225,13 @@ static uint64_t sg_device_configuration_identify(int fd)
     sum+=data[i];
   if((sum&0xff)!=0)
     return 0;
-  return data[6] + (data[7]<<8) + (data[8]<<16) + (data[9]<<24) +
+  hdsize=data[6] + (data[7]<<8) + (data[8]<<16) + (data[9]<<24) +
     ((uint64_t)data[10]<<32) + ((uint64_t)data[11]<<40) + ((uint64_t)data[12]<<48) + ((uint64_t)data[13]<<56);
+  if((data[15]&1)==0)
+    hdsize&=0xfffffff;		/* LBA 28 */
+  else
+    hdsize&=0xffffffffffff;	/* LBA 48 */
+    return hdsize;
 #else
   return 0;
 #endif
@@ -295,7 +301,7 @@ void disk_get_hpa_dco(const int fd, disk_t *disk)
   if (disk->user_max == 0) {
     disk->user_max = (uint64_t) id_val[61] << 16 | id_val[60];
   }
-  disk->native_max=sg_read_native_max_ext(fd);
+  disk->native_max=sg_read_native_max_ext(fd, flags & DISK_HAS_48_SUPPORT);
   if(disk->native_max==0)
     disk->native_max=read_native_max(fd);
   disk->dco=sg_device_configuration_identify(fd);
