@@ -147,7 +147,7 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
   {
     struct utsname	Ver;
     uname(&Ver);
-    snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s)", Ver.sysname, Ver.release, Ver.version);
+    snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s", Ver.sysname, Ver.release, Ver.version, Ver.machine);
   }
 #elif defined(__FreeBSD__)
   snprintf(buffer, sizeof(buffer) - 1, "FreeBSD");
