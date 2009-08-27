@@ -154,7 +154,10 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       }
     }
     if(structure_status==0)
-      mvwaddstr(stdscr,LINES-6,0,msg_STRUCT_OK);
+    {
+      if(list_part!=NULL)
+	mvwaddstr(stdscr,LINES-6,0,msg_STRUCT_OK);
+    }
     else
     {
       if(has_colors())
