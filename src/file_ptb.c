@@ -52,7 +52,8 @@ static void register_header_check_ptb(file_stat_t *file_stat)
 
 static int header_check_ptb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,ptb_header,sizeof(ptb_header))==0)
+  const unsigned int file_version=buffer[4]|(buffer[5]<<8);
+  if(memcmp(buffer,ptb_header,sizeof(ptb_header))==0 && file_version>=1 && file_version<=4)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ptb.extension;
