@@ -48,7 +48,6 @@ const file_hint_t file_hint_gz= {
 };
 
 static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
-static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
 /* flags:
    bit 0   FTEXT
    bit 1   FHCRC
@@ -72,6 +71,15 @@ static void register_header_check_gz(file_stat_t *file_stat)
 
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
+  static const unsigned char xournal_header[0x2d]  = {
+    '<', '?', 'x', 'm', 'l', ' ', 'v', 'e',
+    'r', 's', 'i', 'o', 'n', '=', '"', '1',
+    '.', '0', '"', ' ', 's', 't', 'a', 'n',
+    'd', 'a', 'l', 'o', 'n', 'e', '=', '"',
+    'n', 'o', '"', '?', '>', '\n', '<', 'x',
+    'o', 'u', 'r', 'n', 'a', 'l'
+  };
   /* gzip file format:
    * a 10-byte header, containing a magic number, a version number and a timestamp
    * optional extra headers, such as the original file name,
@@ -150,15 +158,21 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       file_recovery_new->min_filesize=22;
       file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
       file_recovery_new->file_rename=&file_rename_gz;
-      if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
-      {
-	file_recovery_new->extension="kmy";
-	return 1;
-      }
       if(memcmp(buffer_uncompr, "PVP ", 4)==0)
       {
 	/* php Video Pro */
 	file_recovery_new->extension="pvp";
+	return 1;
+      }
+      if(memcmp(buffer_uncompr, xournal_header, sizeof(xournal_header))==0)
+      {
+	/* Xournal, http://xournal.sourceforge.net/ */
+	file_recovery_new->extension="xoj";
+	return 1;
+      }
+      if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
+      {
+	file_recovery_new->extension="kmy";
 	return 1;
       }
 #ifndef DJGPP
