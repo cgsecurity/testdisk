@@ -95,6 +95,18 @@ enum {
 #define IDE_DRIVE_TASK_NO_DATA          0
 #endif
 
+#ifdef DEBUG_HPA_DCO
+static void dump_bytes(const char *prefix, const unsigned char *p, const unsigned int len)
+{
+  unsigned int i;
+  if (prefix)
+    log_info("%s: ", prefix);
+  for (i = 0; i < len; i++)
+    log_info(" %02x", p[i]);
+  log_info("\n");
+}
+#endif
+
 #ifdef HDIO_DRIVE_CMD
 static uint64_t read_native_max(int fd)
 {
@@ -121,24 +133,22 @@ static uint64_t read_native_max(int fd)
 #endif
 }
 
-static uint64_t sg_read_native_max_ext(int fd, const int is_lba48)
+static uint64_t sg_read_native_max_ext(int fd)
 {
 #ifdef SG_IO
   unsigned char cdb[16];
   unsigned char sb[32];
-  const unsigned char *desc= (const unsigned char*)(sb + 8);
   sg_io_hdr_t  io_hdr;
+  const unsigned char *desc= (const unsigned char*)(sb + 8);
+  const uint16_t *word=(const uint16_t*)(sb + 10);
 
   memset(&cdb, 0, sizeof(cdb));
   cdb[ 0] = 0x85;
   cdb[ 1] = SG_ATA_PROTO_NON_DATA;
   cdb[ 2] = SG_CDB2_CHECK_COND;
-  cdb[13] = 0x40; // dev;
+  cdb[13] = 0x40; // dev; ATA_USING_LBA
   cdb[14] = WIN_READ_NATIVE_MAX_EXT; // command;
-  if (is_lba48)
-  {
-    cdb[ 1] |= SG_ATA_LBA48;
-  }
+  cdb[ 1] |= SG_ATA_LBA48;
   memset(&sb,     0, sizeof(sb));
   memset(&io_hdr, 0, sizeof(io_hdr));
   io_hdr.interface_id	= 'S';
@@ -151,19 +161,26 @@ static uint64_t sg_read_native_max_ext(int fd, const int is_lba48)
   io_hdr.sbp		= sb;
   io_hdr.pack_id	= 0;
   io_hdr.timeout	= 1000; /* msecs */
-
+#ifdef DEBUG_HPA_DCO
+  log_info("sg_read_native_max_ext\n");
+  dump_bytes("outgoing cdb", cdb, sizeof(cdb));
+#endif
   if (ioctl(fd, SG_IO, &io_hdr) == -1) {
     return 0;	/* SG_IO not supported */
   }
+#ifdef DEBUG_HPA_DCO
+  log_info("SG_IO: ATA_%u status=0x%x, host_status=0x%x, driver_status=0x%x\n",
+      io_hdr.cmd_len, io_hdr.status, io_hdr.host_status, io_hdr.driver_status);
+  dump_bytes("SG_IO: sb[]", sb, sizeof(sb));
+  dump_bytes("SG_IO: desc[]", desc, (desc[1] < sizeof(sb) - 8 -2 ? desc[1] : sizeof(sb) - 8 - 2));
+#endif
   if (io_hdr.host_status || io_hdr.driver_status != SG_DRIVER_SENSE
       || (io_hdr.status && io_hdr.status != SG_CHECK_CONDITION))
     return 0;
-  if (sb[0] != 0x72 || sb[7] < 14)
+  if (sb[0] != 0x72 || sb[7] < 14 || desc[0] != 9 || desc[1] < 12)
     return 0;
-  if (desc[0] != 9 || desc[1] < 12)
-    return 0;
-  return desc[7]+(desc[9]<<8)+(desc[11]<<16)+
-    ((desc[ 2] & 1)==0?0:(desc[6]<<24)+((uint64_t)desc[8]<<32)+((uint64_t)desc[10]<<40));
+  return ((uint64_t)word[2]>>8) | (((uint64_t)word[3]>>8)<<8) | (((uint64_t)word[4]>>8)<<16) |
+    ((uint64_t)(word[2]&0xff)<<24) | ((uint64_t)(word[3]&0xff)<<32) | ((uint64_t)(word[4]&0xff)<<48);
 #else
   return 0;
 #endif
@@ -178,6 +195,7 @@ static uint64_t sg_device_configuration_identify(int fd)
   uint64_t hdsize;
   unsigned int i;
   unsigned int sum=0;
+  uint16_t *word=(uint16_t*)&data;
   sg_io_hdr_t  io_hdr;
 
   memset(&cdb,    0, sizeof(cdb));
@@ -194,7 +212,7 @@ static uint64_t sg_device_configuration_identify(int fd)
   cdb[ 8] = 0;	// lob.lbal;
   cdb[10] = 0;	// lob.lbam;
   cdb[12] = 0;	// lob.lbah;
-  cdb[13] = 0x40; // dev;
+  cdb[13] = 0x40; // dev; ATA_USING_LBA
   cdb[14] = 0xB1; // command;
   io_hdr.interface_id	= 'S';
   io_hdr.cmd_len	= sizeof(cdb);
@@ -207,31 +225,38 @@ static uint64_t sg_device_configuration_identify(int fd)
   io_hdr.pack_id	= 0;
   io_hdr.timeout	= 1000; /* msecs */
 
+#ifdef DEBUG_HPA_DCO
+  log_info("sg_device_configuration_identify\n");
+  dump_bytes("outgoing cdb", cdb, sizeof(cdb));
+#endif
   if (ioctl(fd, SG_IO, &io_hdr) == -1)
     return 0;	/* SG_IO not supported */
+#ifdef DEBUG_HPA_DCO
+  log_info("SG_IO: ATA_%u status=0x%x, host_status=0x%x, driver_status=0x%x\n",
+      io_hdr.cmd_len, io_hdr.status, io_hdr.host_status, io_hdr.driver_status);
+  dump_bytes("SG_IO: sb[]", sb, sizeof(sb));
+  dump_bytes("SG_IO: data[]", data, sizeof(data));
+#endif
   if (io_hdr.host_status || io_hdr.driver_status != SG_DRIVER_SENSE
       || (io_hdr.status && io_hdr.status != SG_CHECK_CONDITION))
     return 0;
   if (sb[0] != 0x72 || sb[7] < 14)
     return 0;
   /* Check for error bit */
-    if((sb[8+3]&1)!=0)
-      return 0;
+  if((sb[8+3]&1)!=0)
+    return 0;
+  for(i=0; i< 0x100; i++)
+    word[i]=le16(word[i]);
   /* Check the signature presence */
-  if(data[0x1fe]!=0xa5)
+  if((word[255]&0xff)!=0xa5)
     return 0;
   /* Checksum must be 0 */
   for(i=0;i<512;i++)
     sum+=data[i];
   if((sum&0xff)!=0)
     return 0;
-  hdsize=data[6] + (data[7]<<8) + (data[8]<<16) + (data[9]<<24) +
-    ((uint64_t)data[10]<<32) + ((uint64_t)data[11]<<40) + ((uint64_t)data[12]<<48) + ((uint64_t)data[13]<<56);
-  if((data[15]&1)==0)
-    hdsize&=0xfffffff;		/* LBA 28 */
-  else
-    hdsize&=0xffffffffffff;	/* LBA 48 */
-    return hdsize;
+  hdsize=(uint64_t)word[3] | ((uint64_t)word[4]<<16) | ((uint64_t)word[5]<<32) | ((uint64_t)word[6]<<48);
+  return hdsize;
 #else
   return 0;
 #endif
@@ -281,7 +306,7 @@ void disk_get_hpa_dco(const int fd, disk_t *disk)
   // see if word 83 is valid -- this is a signature check
   if ((id_val[83] & 0xc000) == 0x4000) {
     // see if the 48-bit commands are supported
-    if (id_val[83] & 0x0400) {
+    if ((id_val[83] & 0x0400) == 0x0400 && (id_val[86] & 0x0400) == 0x0400) {
       flags |= DISK_HAS_48_SUPPORT;
       log_info(", LBA48");
     }
@@ -301,10 +326,11 @@ void disk_get_hpa_dco(const int fd, disk_t *disk)
   if (disk->user_max == 0) {
     disk->user_max = (uint64_t) id_val[61] << 16 | id_val[60];
   }
-  disk->native_max=sg_read_native_max_ext(fd, flags & DISK_HAS_48_SUPPORT);
-  if(disk->native_max==0)
-    disk->native_max=read_native_max(fd);
   disk->dco=sg_device_configuration_identify(fd);
+  if((flags & DISK_HAS_48_SUPPORT)!=0)
+    disk->native_max=sg_read_native_max_ext(fd);
+  else
+    disk->native_max=read_native_max(fd);
   if(disk->sector_size!=0)
     log_info("%s: size       %llu sectors\n", disk->device, (long long unsigned)(disk->disk_real_size/disk->sector_size));
   if(disk->user_max!=0)
