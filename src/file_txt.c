@@ -99,6 +99,14 @@ static const unsigned char header_ksh[10]  	= "#!/bin/ksh";
 static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
+static const unsigned char header_mnemosyne[48]	= {
+  '-', '-', '-', ' ', 'M', 'n', 'e', 'm',
+  'o', 's', 'y', 'n', 'e', ' ', 'D', 'a',
+  't', 'a', ' ', 'B', 'a', 's', 'e', ' ',
+  '-', '-', '-', ' ', 'F', 'o', 'r', 'm',
+  'a', 't', ' ', 'V', 'e', 'r', 's', 'i',
+  'o', 'n', ' ', '2', ' ', '-', '-', '-'
+};
 static const unsigned char header_msf[19]	= "// <!-- <mdb:mork:z";
 static const unsigned char header_mysql[14]	= { '-', '-', ' ', 'M', 'y', 'S', 'Q', 'L', ' ', 'd', 'u', 'm', 'p', ' '};
 static const unsigned char header_perlm[7] 	= "package";
@@ -163,6 +171,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mnemosyne, sizeof(header_mnemosyne), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mysql, sizeof(header_mysql), &header_check_fasttxt, file_stat);
   register_header_check(0, header_perlm,sizeof(header_perlm), &header_check_fasttxt, file_stat);
@@ -664,6 +673,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="m3u";
+    return 1;
+  }
+  /* http://www.mnemosyne-proj.org/
+   * flash-card program to help you memorise question/answer pairs */
+  if(memcmp(buffer, header_mnemosyne, sizeof(header_mnemosyne))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="mem";
     return 1;
   }
   /* Mozilla, firefox, thunderbird msf (Mail Summary File) */
