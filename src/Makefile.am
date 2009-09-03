@@ -47,6 +47,7 @@ file_C			= filegen.c \
 			  file_asm.c \
 			  file_atd.c \
 			  file_au.c \
+			  file_bac.c \
 			  file_bkf.c \
 			  file_bld.c \
 			  file_bmp.c \
@@ -57,6 +58,7 @@ file_C			= filegen.c \
 			  file_class.c \
 			  file_cm.c \
 			  file_compress.c \
+			  file_cow.c \
 			  file_crw.c \
 			  file_ctg.c \
 			  file_cwk.c \

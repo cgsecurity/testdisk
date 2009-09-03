@@ -49,6 +49,7 @@ extern const file_hint_t file_hint_asf;
 extern const file_hint_t file_hint_asm;
 extern const file_hint_t file_hint_atd;
 extern const file_hint_t file_hint_au;
+extern const file_hint_t file_hint_bac;
 extern const file_hint_t file_hint_bkf;
 extern const file_hint_t file_hint_blend;
 extern const file_hint_t file_hint_bmp;
@@ -59,6 +60,7 @@ extern const file_hint_t file_hint_chm;
 extern const file_hint_t file_hint_class;
 extern const file_hint_t file_hint_cm;
 extern const file_hint_t file_hint_compress;
+extern const file_hint_t file_hint_cow;
 extern const file_hint_t file_hint_crw;
 extern const file_hint_t file_hint_ctg;
 extern const file_hint_t file_hint_cwk;
@@ -238,6 +240,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_asm  },
   { .enable=0, .file_hint=&file_hint_atd  },
   { .enable=0, .file_hint=&file_hint_au   },
+  { .enable=0, .file_hint=&file_hint_bac  },
   { .enable=0, .file_hint=&file_hint_bkf  },
   { .enable=0, .file_hint=&file_hint_blend },
   { .enable=0, .file_hint=&file_hint_bmp  },
@@ -248,6 +251,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_class },
   { .enable=0, .file_hint=&file_hint_cm  },
   { .enable=0, .file_hint=&file_hint_compress },
+  { .enable=0, .file_hint=&file_hint_cow  },
   { .enable=0, .file_hint=&file_hint_crw  },
   { .enable=0, .file_hint=&file_hint_ctg  },
   { .enable=0, .file_hint=&file_hint_cwk  },
