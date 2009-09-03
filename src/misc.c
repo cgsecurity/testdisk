@@ -126,15 +126,23 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
     }
     else if (Ver.dwMajorVersion == 6 && Ver.dwMinorVersion == 0)
     {
-      snprintf(buffer, sizeof(buffer) - 1, "Windows Vista (%lu)", Ver.dwBuildNumber);
+       if( Ver.wProductType == VER_NT_WORKSTATION )
+	 snprintf(buffer, sizeof(buffer) - 1, "Windows Vista (%lu)", Ver.dwBuildNumber);
+       else
+	 snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2008 (%lu)", Ver.dwBuildNumber);
     }
-    else if (Ver.dwMajorVersion == 6 && Ver.dwMinorVersion > 0)
+    else if (Ver.dwMajorVersion == 6 && Ver.dwMinorVersion == 1)
     {
-      snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2007 (%lu)", Ver.dwBuildNumber);
+      if( Ver.wProductType == VER_NT_WORKSTATION )
+	snprintf(buffer, sizeof(buffer) - 1, "Windows 7 (%lu)", Ver.dwBuildNumber);
+      else
+	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2008 R2 (%lu)", Ver.dwBuildNumber);
     }
     else
     {
-      snprintf(buffer, sizeof(buffer) - 1, "Windows %i.%i.%i",(int)Ver.dwMajorVersion,(int)Ver.dwMinorVersion,(int)Ver.dwBuildNumber);
+      snprintf(buffer, sizeof(buffer) - 1, "Windows %s %i.%i.%i",
+	  (Ver.wProductType == VER_NT_WORKSTATION ? "WorkStation" : Server),
+	  (int)Ver.dwMajorVersion, (int)Ver.dwMinorVersion, (int)Ver.dwBuildNumber);
     }
 
     if (Extended && Ver.wServicePackMajor != 0) {
