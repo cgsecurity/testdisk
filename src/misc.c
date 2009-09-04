@@ -141,7 +141,7 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
     else
     {
       snprintf(buffer, sizeof(buffer) - 1, "Windows %s %i.%i.%i",
-	  (Ver.wProductType == VER_NT_WORKSTATION ? "WorkStation" : Server),
+	  (Ver.wProductType == VER_NT_WORKSTATION ? "WorkStation" : "Server"),
 	  (int)Ver.dwMajorVersion, (int)Ver.dwMinorVersion, (int)Ver.dwBuildNumber);
     }
 
