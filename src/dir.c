@@ -161,21 +161,16 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
   {
     char		datestr[80];
     char str[11];
-    if((current_file->status&FILE_STATUS_DELETED)!=0)
-      log_info("X");
-    else
-      log_info(" ");
     if(current_file->stat.st_mtime)
     {
       struct tm		*tm_p;
       tm_p = localtime(&current_file->stat.st_mtime);
-
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
 	  1900 + tm_p->tm_year, tm_p->tm_hour,
 	  tm_p->tm_min);
       /* FIXME: a check using current_file->name will be better */
-      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2012)
+      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2014)
       {
 	test_date=1;
       }
@@ -183,6 +178,10 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
       strncpy(datestr, "                 ",sizeof(datestr));
     }
     mode_string(current_file->stat.st_mode,str);
+    if((current_file->status&FILE_STATUS_DELETED)!=0)
+      log_info("X");
+    else
+      log_info(" ");
     log_info("%7lu %s %5u  %5u   %7llu %s ",
 	(unsigned long int)current_file->stat.st_ino,
 	str,
