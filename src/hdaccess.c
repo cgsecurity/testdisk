@@ -271,17 +271,18 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
   }
 #elif defined(__APPLE__)
   {
+    char device[100];
     char device_scsi[]="/dev/disk0";
     char device_raw[]="/dev/rdisk0";
     /* Disk */
-    for(i=0;i<10;i++)
+    for(i=0;i<20;i++)
     {
-      device_scsi[strlen(device_scsi)-1]='0'+i;
+      snprintf(device, sizeof(device), "/dev/disk%u", i);
       list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi,verbose,arch,testdisk_mode));
     }
-    for(i=0;i<10;i++)
+    for(i=0;i<20;i++)
     {
-      device_raw[strlen(device_raw)-1]='0'+i;
+      snprintf(device, sizeof(device), "/dev/rdisk%u", i);
       list_disk=insert_new_disk(list_disk,file_test_availability(device_raw,verbose,arch,testdisk_mode));
     }
   }
