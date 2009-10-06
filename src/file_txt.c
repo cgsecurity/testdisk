@@ -99,6 +99,7 @@ static const unsigned char header_ksh[10]  	= "#!/bin/ksh";
 static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
 static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
+static const unsigned char header_mdl[7]	= {'M','o','d','e','l',' ','{'};
 static const unsigned char header_mnemosyne[48]	= {
   '-', '-', '-', ' ', 'M', 'n', 'e', 'm',
   'o', 's', 'y', 'n', 'e', ' ', 'D', 'a',
@@ -171,6 +172,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mdl, sizeof(header_mdl),  &header_check_fasttxt, file_stat);
   register_header_check(0, header_mnemosyne, sizeof(header_mnemosyne), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mysql, sizeof(header_mysql), &header_check_fasttxt, file_stat);
@@ -386,6 +388,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   const char sign_grisbi[14]		= "Version_grisbi";
   const char sign_fst[5]                = "QBFSD";
   const char sign_html[5]		= "<html";
+  const char sign_plist[16]		= "<!DOCTYPE plist ";
   const char sign_svg[4]		= "<svg";
   static const unsigned char spaces[16]={
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -433,6 +436,13 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=NULL;
     file_recovery_new->extension="imm";
+    return 1;
+  }
+  if(memcmp(buffer,header_mdl,sizeof(header_mdl))==0)
+  { /* Mathlab Model .mdl */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->extension="mdl";
     return 1;
   }
   if(memcmp(buffer,header_perlm,sizeof(header_perlm))==0 &&
@@ -589,12 +599,27 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     else if(td_memmem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
       file_recovery_new->extension="fst";
     else if(td_memmem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
+    {
+#ifdef DJGPP
       file_recovery_new->extension="html";
+#else
+      file_recovery_new->extension="htm";
+#endif
+    }
     else if(td_memmem(buffer, buffer_size, sign_svg, sizeof(sign_svg))!=NULL)
     {
       file_recovery_new->extension="svg";
       file_recovery_new->file_check=&file_check_svg;
       return 1;
+    }
+    else if(td_memmem(buffer, buffer_size, sign_plist, sizeof(sign_plist))!=NULL)
+    {
+      /* Mac OS X property list */
+#ifdef DJGPP
+      file_recovery_new->extension="pli";
+#else
+      file_recovery_new->extension="plist";
+#endif
     }
     else
       file_recovery_new->extension="xml";
