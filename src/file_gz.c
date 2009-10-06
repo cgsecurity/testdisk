@@ -182,6 +182,11 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	file_recovery_new->extension="RData";
 	return 1;
       }
+      if(memcmp(buffer_uncompr, "<?xml version=", 14) == 0)
+      {
+	file_recovery_new->extension="xml.gz";
+	return 1;
+      }
       {
 	unsigned int i;
 	for(i=0; i<d_stream.total_out && i< 256; i++)
