@@ -140,6 +140,7 @@ file_C			= filegen.c \
 			  file_mus.c \
 			  file_mxf.c \
 			  file_mysql.c \
+			  file_nds.c \
 			  file_njx.c \
 			  file_nk2.c \
 			  file_ogg.c \
