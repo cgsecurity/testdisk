@@ -410,8 +410,8 @@ int main( int argc, char **argv )
       }
       else if(cmd_run[0]!='\0')
       {
-	log_critical("error in command line: %s\n",cmd_run);
-	printf("error in command line: %s\n",cmd_run);
+	log_critical("Syntax error in command line: %s\n",cmd_run);
+	printf("Syntax error in command line: %s\n",cmd_run);
       }
     }
     switch(command)

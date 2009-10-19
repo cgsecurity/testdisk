@@ -293,9 +293,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       }
       else
       {
-	log_critical("error >%s<\n",*current_cmd);
-	while(*current_cmd[0]!='\0')
-	  (*current_cmd)++;
+	log_critical("Syntax error in command line: %s\n",*current_cmd);
 	part_free_list(list_part);
 	return;
       }
