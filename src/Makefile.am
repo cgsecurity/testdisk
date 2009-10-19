@@ -109,6 +109,7 @@ file_C			= filegen.c \
 			  file_gz.c \
 			  file_hds.c \
 			  file_hr9.c \
+			  file_icc.c \
 			  file_ico.c \
 			  file_ifo.c \
 			  file_imb.c \
