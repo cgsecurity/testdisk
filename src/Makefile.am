@@ -122,6 +122,7 @@ file_C			= filegen.c \
 			  file_lnk.c \
 			  file_logic.c \
 			  file_m2ts.c \
+			  file_mat.c \
 			  file_max.c \
 			  file_mb.c \
 			  file_mcd.c \
