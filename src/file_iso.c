@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "iso9660.h"
 
 static void register_header_check_iso(file_stat_t *file_stat);
 static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -49,43 +50,6 @@ static void register_header_check_iso(file_stat_t *file_stat)
 {
   register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_db, file_stat);
 }
-
-struct iso_primary_descriptor
-{
-	char type;
-	char id[5];
-	char version;
-	char unused1;
-	char system_id[32];
-	char volume_id[32];
-	char unused2[8];
-	char volume_space_size[8];
-	char unused3[32];
-	char volume_set_size[4];
-	char volume_sequence_number[4];
-	char logical_block_size[4];
-	char path_table_size[8];
-	char type_l_path_tabl[4];
-	char opt_type_l_path_table[4];
-	char type_m_path_table[4];
-	char opt_type_m_path_table[4];
-	char root_directory_record[34];
-	char volume_set_id[128];
-	char publisher_id[128];
-	char preparer_id[128];
-	char application_id[128];
-	char copyright_file_id[37];
-	char abstract_file_id[37];
-	char bibliographic_file_id[37];
-	char creation_date[17];
-	char modification_date[17];
-	char expiration_date[17];
-	char effective_date[17];
-	char file_structure_version;
-	char unused4;
-	char application_data[512];
-	char unused5[653];
-} __attribute__ ((__packed__));
 
 static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

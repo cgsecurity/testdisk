@@ -2,7 +2,7 @@
 
     File: partnone.c
 
-    Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,7 @@
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
+#include "iso.h"
 #include "hfs.h"
 #include "hfsp.h"
 #include "hpfs.h"
@@ -93,6 +94,7 @@ static const struct systypes none_sys_types[] = {
   {UP_HFSP,	"HFS+"},
   {UP_HFSX,	"HFSX"},
   {UP_HPFS,	"HPFS"},
+  {UP_ISO,	"ISO"},
   {UP_JFS,	"JFS"},
   {UP_LINSWAP,	"Linux SWAP"},
   {UP_LINSWAP2,	"Linux SWAP 2"},
@@ -185,6 +187,8 @@ list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveh
     res=search_type_128(buffer_disk,disk_car,partition,verbose,0);
   if(res<=0)
     res=search_type_64(buffer_disk,disk_car,partition,verbose,0);
+  if(res<=0)
+    res=(recover_ISO(disk_car,(const struct iso_primary_descriptor*)(buffer_disk+0x200), partition, verbose, 0)==0);
   if(res<=0)
     res=search_type_8(buffer_disk,disk_car,partition,verbose,0);
   if(res<=0)
@@ -286,6 +290,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_HPFS:
       ret=check_HPFS(disk_car,partition,verbose);
+      break;
+    case UP_ISO:
+      ret=check_ISO(disk_car, partition);
       break;
     case UP_JFS:
       ret=check_JFS(disk_car, partition);
