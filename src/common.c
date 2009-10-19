@@ -162,4 +162,12 @@ void set_part_name(partition_t *partition,const char *src,const int max_size)
   partition->fsname[i--]='\0';
 }
 
-
+void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size)
+{
+  int i;
+  for(i=0;(i<max_size) && (src[i]!=(char)0);i++)
+    partition->fsname[i]=src[i];
+  partition->fsname[i--]='\0';
+  for(;(i>=0) && (src[i]==' ');i--);
+  partition->fsname[i+1]='\0';
+}

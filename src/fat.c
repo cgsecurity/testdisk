@@ -47,7 +47,6 @@ extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
 static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition);
-static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size);
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
 static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
@@ -74,16 +73,6 @@ static int is_fat32(const partition_t *partition);
 #define FAT12_EOC	0x0FF8
 #define FAT16_BAD	0xFFF7
 #define FAT16_EOC	0xFFF8
-
-static void fat_set_part_name(partition_t *partition,const unsigned char *src,const int max_size)
-{
-  int i;
-  for(i=0;(i<max_size) && (src[i]!=(char)0);i++)
-    partition->fsname[i]=src[i];
-  partition->fsname[i--]='\0';
-  for(;(i>=0) && (src[i]==' ');i--);
-  partition->fsname[i+1]='\0';
-}
 
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
 {
@@ -215,7 +204,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       snprintf(partition->info,sizeof(partition->info),"FAT12");
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
-        fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+        set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
         if(check_VFAT_volume_name(partition->fsname, 11))
           partition->fsname[0]='\0';
       }
@@ -224,7 +213,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       snprintf(partition->info,sizeof(partition->info),"FAT16");
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
-        fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+        set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
         if(check_VFAT_volume_name(partition->fsname, 11))
           partition->fsname[0]='\0';
       }
@@ -843,7 +832,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
       { /* Test attribut volume name and check if the volume name is erased or not */
         if(((buffer[i*0x20+0xB] & ATTR_EXT) !=ATTR_EXT) && ((buffer[i*0x20+0xB] & ATTR_VOLUME) !=0) && (buffer[i*0x20]!=0xE5))
         {
-          fat_set_part_name(partition,&buffer[i*0x20],11);
+          set_part_name_chomp(partition,&buffer[i*0x20],11);
           if(check_VFAT_volume_name(partition->fsname, 11))
             partition->fsname[0]='\0';
         }
@@ -858,7 +847,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   if(partition->fsname[0]=='\0')
   {
     log_info("set_FAT_info: name from BS used\n");
-    fat_set_part_name(partition,((const unsigned char*)fat_header)+FAT32_PART_NAME,11);
+    set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT32_PART_NAME,11);
     if(check_VFAT_volume_name(partition->fsname, 11))
       partition->fsname[0]='\0';
   }
