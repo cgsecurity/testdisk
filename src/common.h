@@ -80,6 +80,7 @@ struct efi_guid_s
 #define P_HFSP		0xAF
 #define P_SUN		0xBF
 #define P_BEOS          0xEB
+#define P_VMFS		0xFB
 #define P_RAID		0xFD
 #define P_UNK		255
 #define NO_ORDER 	255

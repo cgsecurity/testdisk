@@ -208,6 +208,7 @@ static const struct systypes i386_sys_types[] = {
   {0xf1,		"Storage Dimensions"},
   {0xf2,		"DOS secondary"},
   {0xf4,		"SpeedStor"},
+  {P_VMFS,		"VMFS"},
   {P_RAID,		"Linux RAID"},
   {0xfe,		"LANstep"},
   {0xff,		"Xenix bad block"},
