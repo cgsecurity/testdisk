@@ -67,6 +67,7 @@ const file_hint_t file_hint_jpg= {
 
 static const unsigned char jpg_header_app0[4]= { 0xff,0xd8,0xff,0xe0};
 static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
+static const unsigned char jpg_header_app12[4]= { 0xff,0xd8,0xff,0xec};
 static const unsigned char jpg_header_com[4]= { 0xff,0xd8,0xff,0xfe};
 static const unsigned char jpg_footer[2]= { 0xff,0xd9};
 static const unsigned char jpg_header_app0_avi[0x14]= {
@@ -78,6 +79,7 @@ static void register_header_check_jpg(file_stat_t *file_stat)
 {
   register_header_check(0, jpg_header_app0,sizeof(jpg_header_app0), &header_check_jpg, file_stat);
   register_header_check(0, jpg_header_app1,sizeof(jpg_header_app1), &header_check_jpg, file_stat);
+  register_header_check(0, jpg_header_app12,sizeof(jpg_header_app12), &header_check_jpg, file_stat);
   register_header_check(0, jpg_header_com,sizeof(jpg_header_com), &header_check_jpg, file_stat);
 }
 
@@ -91,9 +93,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       file_recovery->file_stat->file_hint==&file_hint_riff &&
     memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0)
     return 0;
-  if(memcmp(buffer,  jpg_header_app0, sizeof(jpg_header_app0))==0 ||
-      memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 ||
-      memcmp(buffer, jpg_header_com,  sizeof(jpg_header_com))==0)
+  if(buffer[0]==0xff && buffer[1]==0xd8)
   {
     unsigned int i=2;
     time_t jpg_time=0;
