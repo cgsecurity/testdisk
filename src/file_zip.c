@@ -2,7 +2,7 @@
 
     File: file_zip.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
     Copyright (C) 2007      Christophe GISQUET <christophe.gisquet@free.fr>
 
     This software is free software; you can redistribute it and/or modify
@@ -45,6 +45,7 @@ static void register_header_check_zip(file_stat_t *file_stat);
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_zip(file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
+static void file_rename_zip(const char *old_filename);
 
 const file_hint_t file_hint_zip= {
   .extension="zip",
@@ -131,7 +132,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   return -1;
 }
 
-static int zip_parse_file_entry(file_recovery_t *fr)
+static int zip_parse_file_entry(file_recovery_t *fr, const char *ext, const unsigned int file_nbr)
 {
   zip_file_entry_t  file;
   uint32_t          len;
@@ -168,6 +169,41 @@ static int zip_parse_file_entry(file_recovery_t *fr)
 #ifdef DEBUG_ZIP
     log_info("%s", filename);
 #endif
+    if(ext==NULL)
+    {
+      static int msoffice=0;
+      if(file_nbr==0)
+      {
+	msoffice=0;
+	if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.calc", 36)==0)
+	  ext="sxc";
+	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.draw", 36)==0)
+	  ext="sxd";
+	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.impress", 39)==0)
+	  ext="sxi";
+	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.writer", 38)==0)
+	  ext="sxw";
+	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
+	  ext="odg";
+	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
+	  ext="odp";
+	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
+	  ext="ods";
+	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
+	  ext="odt";
+	else if(strncmp(filename, "[Content_Types].xml", 19)==0)
+	  msoffice=1;
+      }
+      else if(file_nbr==2 && msoffice!=0)
+      {
+	if(strncmp(filename, "word/", 5)==0)
+	  ext="docx";
+	else if(strncmp(filename, "xl/", 3)==0)
+	  ext="pptx";
+	else if(strncmp(filename, "ppt/", 4)==0)
+	  ext="pptx";
+      }
+    }
     free(filename);
   }
 #ifdef DEBUG_ZIP
@@ -441,6 +477,8 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 
 static void file_check_zip(file_recovery_t *fr)
 {
+  const char *ext=NULL;
+  unsigned int file_nbr=0;
   fseek(fr->handle, 0, SEEK_SET);
   fr->file_size = 0;
   fr->offset_error=0;
@@ -485,7 +523,8 @@ static void file_check_zip(file_recovery_t *fr)
         status = zip_parse_data_desc(fr);
         break;
       case ZIP_FILE_ENTRY: /* File Entry */
-        status = zip_parse_file_entry(fr);
+        status = zip_parse_file_entry(fr, ext, file_nbr);
+	file_nbr++;
         break;
       case ZIP_SIGNATURE: /* Signature */
         status = zip_parse_signature(fr);
@@ -511,6 +550,95 @@ static void file_check_zip(file_recovery_t *fr)
     /* Only end of central dir is end of archive, 64b version of it is before */
     if (header==ZIP_END_CENTRAL_DIR)
       return;
+  }
+}
+
+static void file_rename_zip(const char *old_filename)
+{
+  const char *ext=NULL;
+  unsigned int file_nbr=0;
+  file_recovery_t fr;
+  reset_file_recovery(&fr);
+  if((fr.handle=fopen(old_filename, "rb"))==NULL)
+    return;
+  fseek(fr.handle, 0, SEEK_SET);
+  fr.file_size = 0;
+  fr.offset_error=0;
+
+  while (1)
+  {
+    uint32_t header;
+    int      status;
+
+    if (fread(&header, 4, 1, fr.handle)!=1)
+    {
+#ifdef DEBUG_ZIP
+      log_trace("Failed to read block header\n");
+#endif
+      fclose(fr.handle);
+      return;
+    }
+
+    header = le32(header);
+#ifdef DEBUG_ZIP
+    log_trace("Header 0x%08X at 0x%llx\n", header, (long long unsigned int)fr.file_size);
+    log_flush();
+#endif
+    fr.file_size += 4;
+
+    switch (header)
+    {
+      case ZIP_CENTRAL_DIR: /* Central dir */
+        status = zip_parse_central_dir(&fr);
+        break;
+      case ZIP_CENTRAL_DIR64: /* 64b end central dir */
+        status = zip64_parse_end_central_dir(&fr);
+        break;
+      case ZIP_END_CENTRAL_DIR: /* End central dir */
+        status = zip_parse_end_central_dir(&fr);
+        break;
+      case ZIP_END_CENTRAL_DIR64: /* 64b end central dir locator */
+        status = zip64_parse_end_central_dir_locator(&fr);
+        break;
+      case ZIP_DATA_DESCRIPTOR: /* Data descriptor */
+        status = zip_parse_data_desc(&fr);
+        break;
+      case ZIP_FILE_ENTRY: /* File Entry */
+        status = zip_parse_file_entry(&fr, ext, file_nbr);
+	file_nbr++;
+	if(file_nbr>2)
+	{
+	  fclose(fr.handle);
+	  file_rename(old_filename, NULL, 0, 0, ext, 1);
+	  return;
+	}
+        break;
+      case ZIP_SIGNATURE: /* Signature */
+        status = zip_parse_signature(&fr);
+        break;
+      default:
+#ifdef DEBUG_ZIP
+        if ((header&0xFFFF) != 0x4B50)
+          log_trace("Not a zip block: 0x%08X\n", header);
+        else
+          log_trace("Unparsable block with ID 0x%04X\n", header>>16);
+#endif
+        status = -1;
+        break;
+    }
+
+    /* Verify status */
+    if (status<0)
+    {
+      fclose(fr.handle);
+      return;
+    }
+    /* Only end of central dir is end of archive, 64b version of it is before */
+    if (header==ZIP_END_CENTRAL_DIR)
+    {
+      fclose(fr.handle);
+      return;
+    }
   }
 }
 
@@ -563,14 +691,15 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
        file_recovery_new->extension="odt";
      else if(memcmp(&buffer[30],"[Content_Types].xml",19)==0)
      {
-       if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"word", 4)!=0)
+       if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
          file_recovery_new->extension="docx";
-       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl", 2)!=0)
+       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
          file_recovery_new->extension="xlsx";
-       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"ppt", 3)!=0)
+       else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
          file_recovery_new->extension="pptx";
        else
          file_recovery_new->extension="docx";
+       file_recovery_new->file_rename=&file_rename_zip;
      }
     else
       file_recovery_new->extension=file_hint_zip.extension;
