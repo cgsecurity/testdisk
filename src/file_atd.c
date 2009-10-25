@@ -43,7 +43,7 @@ const file_hint_t file_hint_atd= {
   .register_header_check=&register_header_check_atd
 };
 
-const unsigned char atd_header[16]= {
+static const unsigned char atd_header[16]= {
   'A' ,'B' ,'S' ,'0' ,'L' ,'U' ,'T' ,'E' ,
   'D' ,'A' ,'T' ,'A' ,'B' ,'A' ,'S' ,'E' };
 
