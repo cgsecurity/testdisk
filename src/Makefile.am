@@ -217,7 +217,7 @@ file_C			= filegen.c \
 			  file_xv.c \
 			  file_zip.c 
 
-file_H			= list.h file_jpg.h file_tar.h file_sp3.h file_tiff.h filegen.h pe.h ole.h ext2.h
+file_H			= ext2.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h list.h ole.h pe.h
 
 photorec_C		= photorec.c phcfg.c dir.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c list.c ntfs_dir.c ntfsp.c sessionp.c setdate.c
 

@@ -2,7 +2,7 @@
 
     File: file_txt.c
 
-    Copyright (C) 2005-2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2005-2009 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,14 +39,15 @@
 #include "filegen.h"
 #include "log.h"
 #include "memmem.h"
+#include "file_txt.h"
 
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_pdf;
+extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_zip;
 
 static inline int filtre(unsigned char car);
-static inline int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len);
 
 static void register_header_check_txt(file_stat_t *file_stat);
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -144,6 +145,12 @@ static const unsigned char header_url[18]  	= {
 };
 static const unsigned char header_wpl[21]	= { '<', '?', 'w', 'p', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '=', '"', '1', '.', '0', '"', '?', '>' };
 static const unsigned char header_xml[14]	= "<?xml version=";
+static const unsigned char header_xmp[35]	= {
+  '<', 'x', ':', 'x', 'm', 'p', 'm', 'e',
+  't', 'a', ' ', 'x', 'm', 'l', 'n', 's',
+  ':', 'x', '=', '"', 'a', 'd', 'o', 'b',
+  'e', ':', 'n', 's', ':', 'm', 'e', 't',
+  'a', '/', '"'};
 static const char sign_java1[6]			= "class";
 static const char sign_java2[5]			= "java";
 static const char sign_java3[15]		= "private static";
@@ -192,6 +199,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_url,sizeof(header_url), &header_check_fasttxt, file_stat);
   register_header_check(0, header_wpl,sizeof(header_wpl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_xmp,sizeof(header_xmp), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -260,7 +268,7 @@ static int filtre(unsigned char car)
 
 /* destination should have an extra byte available for null terminator
    return read size */
-static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
+int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
 {
   const unsigned char *p; 	/* pointers to actual position in source buffer */
   unsigned char *q;	/* pointers to actual position in destination buffer */
@@ -608,6 +616,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     }
     else if(td_memmem(buffer, buffer_size, sign_svg, sizeof(sign_svg))!=NULL)
     {
+      /* Scalable Vector Graphics */
       file_recovery_new->extension="svg";
       file_recovery_new->file_check=&file_check_svg;
       return 1;
@@ -738,6 +747,18 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="cue";
+    return 1;
+  }
+  if(memcmp(buffer,header_xmp,sizeof(header_xmp))==0 &&
+      !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+	(file_recovery->file_stat->file_hint==&file_hint_pdf ||
+	 file_recovery->file_stat->file_hint==&file_hint_tiff)))
+  {
+    /* Adobe's Extensible Metadata Platform */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="xmp";
     return 1;
   }
   return 0;
