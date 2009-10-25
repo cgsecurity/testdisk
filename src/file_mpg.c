@@ -103,7 +103,10 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
      /* MPEG-1 system header start code */
      (buffer[3]==0xBB && (buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01) ||
      /* MPEG-1 sequence header code, horizontal size>0 && vertical size>0, bitrate!=0 */
-     (buffer[3]==0xB3 && (buffer[4]<<8)+(buffer[5]>>8)>0 && (buffer[5]<<8)+buffer[6]>0 && buffer[8]!=0) ||
+     (buffer[3]==0xB3 &&
+      (buffer[4]<<4)+(buffer[5]>>4)>0 &&
+      ((buffer[5]&&0x0f)<<4)+buffer[6]>0 &&
+      buffer[8]!=0) ||
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object sequence start code */
      (buffer[3]==0xB0) ||
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object start code */
