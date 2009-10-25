@@ -31,6 +31,7 @@
 #endif
 #include "types.h"
 #include "common.h"
+#include "iso9660.h"
 #include "iso.h"
 #include "fnctdsk.h"
 #include "log.h"
@@ -63,7 +64,7 @@ static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *p
   const unsigned int volume_space_size2=iso->volume_space_size[7] | (iso->volume_space_size[6]<<8) | (iso->volume_space_size[5]<<16) | (iso->volume_space_size[4]<<24);
   const unsigned int logical_block_size=iso->logical_block_size[0] | (iso->logical_block_size[1]<<8);
   const unsigned int logical_block_size2=iso->logical_block_size[3] | (iso->logical_block_size[2]<<8);
-  set_part_name_chomp(partition, iso->volume_id, 32);
+  set_part_name_chomp(partition, (const unsigned char*)iso->volume_id, 32);
   if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
     snprintf(partition->info, sizeof(partition->info), "ISO9660");
   else
