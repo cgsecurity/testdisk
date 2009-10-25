@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-enum part_offset { PART_OFFSET128, PART_OFFSET2, PART_OFFSET1, PART_OFFSET0, PART_QUIT};
 typedef enum part_offset part_offset_t;
 int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, int align, const int ask_part_order, const unsigned int expert, const int search_vista_part, char **current_cmd);
 void only_one_bootable( list_part_t *list_part, list_part_t *part_boot);

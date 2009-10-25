@@ -101,7 +101,7 @@ int screen_buffer_add(const char *_format, ...)
   return 0;
 }
 
-void screen_buffer_to_stdout()
+void screen_buffer_to_stdout(void)
 {
   int i;
   if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
@@ -114,13 +114,13 @@ void screen_buffer_to_stdout()
   }
 }
 
-void screen_buffer_reset()
+void screen_buffer_reset(void)
 {
   intr_nbr_line=0;
   memset(intr_buffer_screen, 0, sizeof(intr_buffer_screen));
 }
 
-void screen_buffer_to_log()
+void screen_buffer_to_log(void)
 {
   int i;
   if(intr_buffer_screen[intr_nbr_line][0]!='\0')

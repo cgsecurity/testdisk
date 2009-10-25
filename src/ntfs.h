@@ -70,7 +70,6 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header);
 int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int interface, const unsigned int expert, char**current_cmd);
 int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert);
-int repair_MFT_Vol(disk_t *disk_car, partition_t *partition, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

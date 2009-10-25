@@ -106,7 +106,6 @@ static void file_check_e01(file_recovery_t *file_recovery)
     'n', 'e', 'x', 't', 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
-  uint64_t file_size=file_recovery->file_size;
   file_search_footer(file_recovery, sig_next, sizeof(sig_next), 60);
   if(file_recovery->file_size!=0)
     return ;

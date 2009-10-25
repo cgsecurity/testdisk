@@ -90,7 +90,7 @@ static unsigned int get_part_type_xbox(const partition_t *partition)
   return partition->part_type_xbox;
 }
 
-list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveheader)
 {
   unsigned char buffer[0x800];
   list_part_t *new_list_part=NULL;

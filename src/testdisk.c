@@ -71,10 +71,10 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_sun;
 
 #ifdef HAVE_SIGACTION
-struct sigaction action;
-void sighup_hdlr(int sig);
+static struct sigaction action;
+static void sighup_hdlr(int sig);
 
-void sighup_hdlr(int sig)
+static void sighup_hdlr(int sig)
 {
   if(sig == SIGINT)
     log_critical("SIGINT detected! TestDisk has been killed.\n");

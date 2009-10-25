@@ -95,7 +95,7 @@ unsigned int get_crc32(const void*buf, const unsigned int len, const uint32_t se
   {
     crc32val = crc32_tab[(crc32val ^ s[i]) & 0xff] ^ (crc32val >> 8);
   }
-  return crc32val;
+  return (unsigned int)crc32val;
 }
 
 #if 0

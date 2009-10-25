@@ -111,7 +111,7 @@ static unsigned int get_part_type_mac(const partition_t *partition)
   return partition->part_type_mac;
 }
 
-list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int saveheader)
 {
   unsigned char buffer[DEFAULT_SECTOR_SIZE];
   list_part_t *new_list_part=NULL;

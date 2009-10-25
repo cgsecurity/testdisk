@@ -43,7 +43,6 @@ extern const arch_fnct_t arch_i386;
 
 list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
-  int position=0;
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_i386);
   start.cylinder=0;
@@ -53,6 +52,7 @@ list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part,
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
   {
+    int position=0;
     int done = 0;
     while (done==0)
     {

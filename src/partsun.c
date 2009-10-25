@@ -117,7 +117,7 @@ static unsigned int get_part_type_sun(const partition_t *partition)
   return partition->part_type_sun;
 }
 
-int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
+static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   const sun_partition *sunlabel=(const sun_partition*)buffer;
   if(verbose>1)
@@ -135,7 +135,7 @@ int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHS
   return 0;
 }
 
-list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader)
 {
   unsigned int i;
   sun_partition *sunlabel;

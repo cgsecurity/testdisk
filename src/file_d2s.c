@@ -52,8 +52,6 @@ static void register_header_check_d2s(file_stat_t *file_stat)
   register_header_check(0, d2s_header,sizeof(d2s_header), &header_check_d2s, file_stat);
 }
 
-/* TODO: extract the name from the file */
-
 static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,d2s_header,sizeof(d2s_header))==0)

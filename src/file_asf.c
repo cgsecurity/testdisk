@@ -44,7 +44,7 @@ const file_hint_t file_hint_asf= {
   .register_header_check=&register_header_check_asf
 };
 
-const unsigned char asf_header[4]= { 0x30,0x26,0xB2,0x75};
+static const unsigned char asf_header[4]= { 0x30,0x26,0xB2,0x75};
 
 static void register_header_check_asf(file_stat_t *file_stat)
 {

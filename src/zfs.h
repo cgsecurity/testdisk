@@ -30,13 +30,13 @@ extern "C" {
 #define VDEV_BOOT_VERSION       1               /* version number       */
 #define	VDEV_BOOT_HEADER_SIZE	(8 << 10)
 
-typedef struct vdev_boot_header {
+struct vdev_boot_header {
         uint64_t        vb_magic;               /* VDEV_BOOT_MAGIC      */
         uint64_t        vb_version;             /* VDEV_BOOT_VERSION    */
         uint64_t        vb_offset;              /* start offset (bytes) */
         uint64_t        vb_size;                /* size (bytes)         */
         char            vb_pad[VDEV_BOOT_HEADER_SIZE - 4 * sizeof (uint64_t)];
-} vdev_boot_header_t;
+};
 int check_ZFS(disk_t *disk,partition_t *partition);
 int recover_ZFS(disk_t *disk, const struct vdev_boot_header *ZFS_header,partition_t *partition,const int verbose, const int dump_ind);
 #ifdef __cplusplus

@@ -76,7 +76,6 @@ struct reiserfs_super_block
 
 #define REISERFS4_SUPER_MAGIC		"ReIsEr4"
 #define MAGIC_SIZE 16
-typedef struct reiser4_master_sb reiser4_master_sb;
 struct reiser4_master_sb {
   char magic[16];         /* "ReIsEr4" */
   uint16_t disk_plugin_id;     /* id of disk layout plugin */

@@ -938,7 +938,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 				}
 			}
 
-			cluster_count = 0LL;
+			cluster_count = (long long)0;
 			for (i = 0; rl[i].length > 0; i++) {
 
 				if (rl[i].lcn == LCN_RL_NOT_MAPPED) {

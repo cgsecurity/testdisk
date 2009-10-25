@@ -217,8 +217,7 @@ static int cache_clean(disk_t *disk_car)
     for(i=0;i<CACHE_BUFFER_NBR;i++)
     {
       struct cache_buffer_struct *cache=&data->cache[i];
-      if(cache->buffer!=NULL)
-	free(cache->buffer);
+      free(cache->buffer);
     }
     free(data->disk_car);
     free(disk_car->data);

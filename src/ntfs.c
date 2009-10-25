@@ -45,7 +45,6 @@
 #include "log.h"
 /* #include "guid_cmp.h" */
 extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_mac;
 
 static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose);
 static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header, const int my_type, const int verbose);

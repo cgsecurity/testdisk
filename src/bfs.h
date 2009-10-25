@@ -28,7 +28,7 @@ extern "C" {
 
 typedef struct block_run
 {
-    int32_t   allocation_group;
+    uint32_t   allocation_group;
     uint16_t  start;
     uint16_t  len;       /* in blocks */
 } block_run;
@@ -38,36 +38,36 @@ typedef block_run inode_addr;
 
 #define B_OS_NAME_LENGTH 32
 
-typedef struct disk_super_block          /* super block as it is on disk */
+struct disk_super_block          /* super block as it is on disk */
 {
     char         name[B_OS_NAME_LENGTH];
-    int32_t        magic1;                /* 0x20 */
-    int32_t        fs_byte_order;         /* 0x24 */
+    uint32_t        magic1;                /* 0x20 */
+    uint32_t        fs_byte_order;         /* 0x24 */
 
     uint32_t       block_size;            /* 0x28 in bytes */
     uint32_t       block_shift;           /* 0x2C block_size == (1 << block_shift) */
 
-    int64_t        num_blocks;            /* 0x30 */
-    int64_t        used_blocks;           /* 0x38 */
+    uint64_t        num_blocks;            /* 0x30 */
+    uint64_t        used_blocks;           /* 0x38 */
 
-    int32_t        inode_size;            /* 0x40 # of bytes per inode */
+    uint32_t        inode_size;            /* 0x40 # of bytes per inode */
 
-    int32_t        magic2;                /* 0x44 */
-    int32_t        blocks_per_ag;         /* 0x48 in blocks */
-    int32_t        ag_shift;              /* 0x4C # of bits to shift to get ag num */
-    int32_t        num_ags;               /* 0x50 # of allocation groups */
-    int32_t        flags;                 /* 0x54 if it's clean, etc */
+    uint32_t        magic2;                /* 0x44 */
+    uint32_t        blocks_per_ag;         /* 0x48 in blocks */
+    uint32_t        ag_shift;              /* 0x4C # of bits to shift to get ag num */
+    uint32_t        num_ags;               /* 0x50 # of allocation groups */
+    uint32_t        flags;                 /* 0x54 if it's clean, etc */
     block_run    log_blocks;             /* 0x58 a block_run of the log blocks */
-    int64_t        log_start;              /* 0x60 block # of the beginning */
-    int64_t        log_end;                /* 0x68 block # of the end of the log */
+    uint64_t        log_start;              /* 0x60 block # of the beginning */
+    uint64_t        log_end;                /* 0x68 block # of the end of the log */
 
-    int32_t        magic3;                /* 0x70 */
+    uint32_t        magic3;                /* 0x70 */
     inode_addr   root_dir;              /* 0x74 */
     inode_addr   indices;               /* 0x7C */
 
-    int32_t        pad[8];                /* 0x84 extra stuff for the future */
+    uint32_t        pad[8];               /* 0x84 extra stuff for the future */
 					/* 0xA4-0xFF */
-} disk_super_block;
+};
 
 
 /*the flags field can have these values */

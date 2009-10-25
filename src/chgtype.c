@@ -35,8 +35,6 @@
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_none;
-extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_sun;
 
 void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **current_cmd)
 {

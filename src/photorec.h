@@ -27,14 +27,6 @@ extern "C" {
 
 enum photorec_status { STATUS_FIND_OFFSET, STATUS_UNFORMAT, STATUS_EXT2_ON, STATUS_EXT2_ON_BF, STATUS_EXT2_OFF, STATUS_EXT2_OFF_BF, STATUS_EXT2_ON_SAVE_EVERYTHING, STATUS_EXT2_OFF_SAVE_EVERYTHING, STATUS_QUIT };
 typedef enum photorec_status photorec_status_t;
-typedef struct list_cluster_struct list_cluster_t;
-struct list_cluster_struct
-{
-  struct td_list_head list;
-  uint64_t offset;
-  uint32_t cluster;
-  file_data_t *dir_list;
-};
 
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
@@ -43,7 +35,6 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
 alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space,
     unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
-void reset_file_stats(file_stat_t *file_stats);
 void write_stats_log(const file_stat_t *file_stats);
 void write_stats_stdout(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);

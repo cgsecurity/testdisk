@@ -43,7 +43,7 @@ const file_hint_t file_hint_all= {
   .register_header_check=&register_header_check_all
 };
 
-const unsigned char all_header[8]= { 0x00, 0x00, 0x00, 0x48, 0x00, 0x00, 0x06, 0x04};
+static const unsigned char all_header[8]= { 0x00, 0x00, 0x00, 0x48, 0x00, 0x00, 0x06, 0x04};
 
 static void register_header_check_all(file_stat_t *file_stat)
 {

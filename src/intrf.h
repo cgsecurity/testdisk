@@ -54,8 +54,6 @@ struct MenuItem
 #define MENU_MAX_ITEMS 		256 /* for simpleMenu function */
 #define key_CR 			'\015'
 #define key_ESC 		'\033'
-#define key_DEL 		'\177'
-#define key_BELL 		'\007'
 /* '\014' == ^L */
 #define key_REDRAWKEY 		'\014'
 
@@ -67,14 +65,12 @@ void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const par
 int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
 unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 5, 6)));
-int display_message_aux(const char*_format,...) __attribute__ ((format (printf, 1, 2)));
 void not_implemented(const char *msg);
 void screen_buffer_reset(void);
 int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf, 1, 2)));
 void screen_buffer_to_log(void);
 void screen_buffer_to_interface(void);
 void screen_buffer_to_stdout(void);
-int intrf_no_disk(const char *prog_name);
 char *get_default_location(void);
 void dump_ncurses(const void *nom_dump, unsigned int lng);
 char *td_getcwd(char *buf, unsigned long size);

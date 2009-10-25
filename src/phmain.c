@@ -80,16 +80,14 @@
 #include "pdisksel.h"
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
-extern const arch_fnct_t arch_xbox;
 extern file_enable_t list_file_enable[];
 
 #ifdef HAVE_SIGACTION
-struct sigaction action;
-void sighup_hdlr(int sig);
+static struct sigaction action;
+static void sighup_hdlr(int sig);
 
-void sighup_hdlr(int sig)
+static void sighup_hdlr(int sig)
 {
   if(sig == SIGINT)
     log_critical("SIGINT detected! PhotoRec has been killed.\n");

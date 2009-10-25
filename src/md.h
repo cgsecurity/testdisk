@@ -245,10 +245,12 @@ struct mdp_superblock_1 {
 	uint16_t	dev_roles[0];	/* role in array, or 0xffff for a spare, or 0xfffe for faulty */
 };
 
+#if 0
 static inline uint64_t md_event(mdp_super_t *sb) {
 	uint64_t ev = sb->events_hi;
 	return (ev<<32)| sb->events_lo;
 }
+#endif
 
 /* TestDisk */
 int check_MD(disk_t *disk_car,partition_t *partition,const int verbose);

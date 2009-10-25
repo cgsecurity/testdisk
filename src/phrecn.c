@@ -125,26 +125,6 @@ static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
   dst->location.list.next=&dst->location.list;
 }
 
-static inline void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
-{
-  if(!td_list_empty(&list->list))
-  {
-    alloc_list_t *prev=td_list_entry(list->list.prev, alloc_list_t, list);
-    if(prev->end+1==offset && prev->data==data)
-    {
-      prev->end=offset+blocksize-1;
-      return ;
-    }
-  }
-  {
-    alloc_list_t *new_list=(alloc_list_t *)MALLOC(sizeof(*new_list));
-    new_list->start=offset;
-    new_list->end=offset+blocksize-1;
-    new_list->data=data;
-    td_list_add_tail(&new_list->list, &list->list);
-  }
-}
-
 /* ==================== INLINE FUNCTIONS ========================= */
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -618,6 +598,26 @@ static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *li
 }
 
 #if 0
+static inline void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
+{
+  if(!td_list_empty(&list->list))
+  {
+    alloc_list_t *prev=td_list_entry(list->list.prev, alloc_list_t, list);
+    if(prev->end+1==offset && prev->data==data)
+    {
+      prev->end=offset+blocksize-1;
+      return ;
+    }
+  }
+  {
+    alloc_list_t *new_list=(alloc_list_t *)MALLOC(sizeof(*new_list));
+    new_list->start=offset;
+    new_list->end=offset+blocksize-1;
+    new_list->data=data;
+    td_list_add_tail(&new_list->list, &list->list);
+  }
+}
+
 static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const uint64_t start, const uint64_t end)
 {
   uint64_t datasize=end-start+1;

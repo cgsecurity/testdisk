@@ -36,7 +36,7 @@ typedef uint16_t sysv_ino_t;
    significant 16 bits come last.
 */
 
-typedef uint32_t sysv_zone_t;
+/* typedef uint32_t sysv_zone_t; */
 
 /* Among the blocks ... */
 /* Xenix FS, Coherent FS: block 0 is the boot block, block 1 the super-block.

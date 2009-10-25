@@ -487,11 +487,11 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 {
   FILE* infile=file_recovery->handle;
   unsigned char buffer[40*8192];
-  unsigned int offset=2;
   int nbytes;
   fseek(infile, 0, SEEK_SET);
   if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {
+    unsigned int offset=2;
     while(offset < nbytes)
     {
       const unsigned int i=offset;

@@ -72,7 +72,7 @@ static void register_header_check_gz(file_stat_t *file_stat)
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
-  static const unsigned char xournal_header[0x2d]  = {
+  static const unsigned char xournal_header[0x2e]  = {
     '<', '?', 'x', 'm', 'l', ' ', 'v', 'e',
     'r', 's', 'i', 'o', 'n', '=', '"', '1',
     '.', '0', '"', ' ', 's', 't', 'a', 'n',
@@ -232,7 +232,6 @@ static void file_rename_gz(const char *old_filename)
   unsigned char buffer[512];
   FILE *file;
   int buffer_size;
-  int off=10;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
@@ -243,6 +242,7 @@ static void file_rename_gz(const char *old_filename)
     return ;
   {
     const unsigned int flags=buffer[3];
+    int off=10;
     if((flags&GZ_FEXTRA)!=0)
     {
       off+=2;

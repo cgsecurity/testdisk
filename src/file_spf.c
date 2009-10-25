@@ -46,7 +46,7 @@ const file_hint_t file_hint_spf= {
   .register_header_check=&register_header_check_spf
 };
 
-const unsigned char spf_header[12]= {
+static const unsigned char spf_header[12]= {
   'S', 'P', 'F', 'I', 0x00, 0x02, 0x00, 0x00, 0x41, 0x00, 0x00, 0x00
 };
 

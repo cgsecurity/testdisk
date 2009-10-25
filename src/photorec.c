@@ -499,16 +499,6 @@ partition_t *new_whole_disk(const disk_t *disk_car)
   return fake_partition;
 }
 
-
-typedef struct info_cluster_offset cluster_offset_t;
-
-struct info_cluster_offset
-{
-  unsigned int cluster_size;
-  unsigned long int offset;
-  unsigned int nbr;
-};
-
 unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int default_blocksize, uint64_t *offset)
 {
   unsigned int blocksize=128*512;

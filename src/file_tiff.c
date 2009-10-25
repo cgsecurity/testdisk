@@ -93,7 +93,7 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
   /* IFD1 */
   if(be32(*tiff_next_diroff)>0)
   {
-    const const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+be32(*tiff_next_diroff));
+    const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+be32(*tiff_next_diroff));
     if((const char*)ifd1 <= (const char*)tiff ||
 	(const char*)(ifd1+1) > (const char*)tiff+tiff_size)
       return NULL;
@@ -144,7 +144,7 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
   /* IFD1 */
   if(le32(*tiff_next_diroff)>0)
   {
-    const const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+le32(*tiff_next_diroff));
+    const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+le32(*tiff_next_diroff));
     /* Bound checking */
     if((const char*)(ifd1) <= (const char*)tiff ||
 	(const char*)(ifd1+1) > (const char*)tiff+tiff_size)
@@ -222,6 +222,7 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
       file_recovery_new->extension="cr2";
     else if(find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_DNGVERSION)!=NULL)
     {
+      /* Adobe Digital Negative */
       file_recovery_new->extension="dng";
     }
     else

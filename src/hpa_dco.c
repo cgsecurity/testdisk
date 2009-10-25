@@ -180,7 +180,7 @@ static uint64_t sg_read_native_max_ext(int fd)
   if (sb[0] != 0x72 || sb[7] < 14 || desc[0] != 9 || desc[1] < 12)
     return 0;
   return ((uint64_t)word[2]>>8) | (((uint64_t)word[3]>>8)<<8) | (((uint64_t)word[4]>>8)<<16) |
-    ((uint64_t)(word[2]&0xff)<<24) | ((uint64_t)(word[3]&0xff)<<32) | ((uint64_t)(word[4]&0xff)<<48);
+    ((uint64_t)(word[2]&0xff)<<24) | (((uint64_t)word[3]&0xff)<<32) | (((uint64_t)word[4]&0xff)<<48);
 #else
   return 0;
 #endif

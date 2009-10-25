@@ -46,6 +46,7 @@
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
+#include "iso9660.h"
 #include "iso.h"
 #include "hfs.h"
 #include "hfsp.h"
@@ -151,7 +152,7 @@ static unsigned int get_part_type_none(const partition_t *partition)
   return partition->upart_type;
 }
 
-int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
+static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   {
     /* Ugly hack to get geometry from FAT and NTFS */
@@ -169,7 +170,7 @@ int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CH
   return 0;
 }
 
-list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader)
 {
   int insert_error=0;
   unsigned char *buffer_disk;
@@ -373,7 +374,7 @@ static const char *get_partition_typename_none_aux(const unsigned int part_type_
   return NULL;
 }
 
-const char *get_partition_typename_none(const partition_t *partition)
+static const char *get_partition_typename_none(const partition_t *partition)
 {
   return get_partition_typename_none_aux(partition->upart_type);
 }

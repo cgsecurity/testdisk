@@ -265,7 +265,7 @@ static uint64_t get_start_sect(const struct partition_dos *p)
   return read4_little_endian(p->start4);
 }
 
-uint64_t get_nr_sects(const struct partition_dos *p)
+static uint64_t get_nr_sects(const struct partition_dos *p)
 {
   return read4_little_endian(p->size4);
 }
@@ -281,7 +281,7 @@ static void set_start_sect(struct partition_dos *p, unsigned int start_sect)
 }
 
 
-int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
+static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   unsigned int i;
   if(verbose>1)
@@ -628,7 +628,7 @@ static int test_MBR_over(disk_t *disk_car,list_part_t *list_part)
   return res;
 }
 
-int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+static int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
 {
   int res=0;
   res+=write_mbr_i386(disk_car,list_part,ro,verbose);

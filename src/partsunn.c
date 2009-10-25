@@ -44,7 +44,6 @@ list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list_part, 
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_sun);
-  int position=0;
   start.cylinder=0;
   start.head=0;
   start.sector=1;
@@ -52,6 +51,7 @@ list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list_part, 
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
   {
+    int position=0;
     int done = FALSE;
     while (done==FALSE) {
       int command;

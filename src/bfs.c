@@ -61,7 +61,7 @@ int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block, pa
   if(test_BeFS(disk_car,beos_block,partition,dump_ind)!=0)
     return 1;
   set_BeFS_info(beos_block, partition);
-  partition->part_size=le64(beos_block->num_blocks) * (1<<le32(beos_block->block_shift));
+  partition->part_size=le64(beos_block->num_blocks) << le32(beos_block->block_shift);
   partition->part_type_i386=(unsigned char)P_BEOS;
   return 0;
 }
@@ -69,7 +69,7 @@ int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block, pa
 static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,partition_t *partition, const int dump_ind)
 {
   if(beos_block->magic1==le32(SUPER_BLOCK_MAGIC1) &&
-      beos_block->magic2==(signed)le32(SUPER_BLOCK_MAGIC2) &&
+      beos_block->magic2==le32(SUPER_BLOCK_MAGIC2) &&
       beos_block->magic3==le32(SUPER_BLOCK_MAGIC3))
   {
     partition->upart_type=UP_BEOS;

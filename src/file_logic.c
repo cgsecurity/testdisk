@@ -43,7 +43,7 @@ const file_hint_t file_hint_logic= {
   .register_header_check=&register_header_check_logic
 };
 
-const unsigned char logic_header[12]= {
+static const unsigned char logic_header[12]= {
   0xab, 0xc0, 0x47, 0x13, 0x05, 0x17, 0x00, 0x15, 0x00, 0x04, 0x00, 0x24
 };
 

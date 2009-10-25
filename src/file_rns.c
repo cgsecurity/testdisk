@@ -44,7 +44,7 @@ const file_hint_t file_hint_rns= {
   .register_header_check=&register_header_check_rns
 };
 
-const unsigned char rns_header[]  = "Propellerheads Reason Song File";
+static const unsigned char rns_header[]  = "Propellerheads Reason Song File";
 
 static void register_header_check_rns(file_stat_t *file_stat)
 {

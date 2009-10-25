@@ -24,12 +24,6 @@
 extern "C" {
 #endif
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-#include "types.h"
-#include "common.h"
-
 #if 0
 uint32_t* make_crc32_table(uint32_t poly);
 unsigned int get_crc32_gen(const unsigned char *s, const unsigned int len, const uint32_t seed, const uint32_t *crctab);
