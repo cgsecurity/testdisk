@@ -82,6 +82,7 @@ extern const file_hint_t file_hint_dv;
 extern const file_hint_t file_hint_dwg;
 extern const file_hint_t file_hint_dxf;
 extern const file_hint_t file_hint_e01;
+extern const file_hint_t file_hint_ecryptfs;
 extern const file_hint_t file_hint_edb;
 extern const file_hint_t file_hint_elf;
 extern const file_hint_t file_hint_emf;
@@ -277,6 +278,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_dwg  },
   { .enable=0, .file_hint=&file_hint_dxf  },
   { .enable=0, .file_hint=&file_hint_e01  },
+  { .enable=0, .file_hint=&file_hint_ecryptfs },
   { .enable=0, .file_hint=&file_hint_edb  },
   { .enable=0, .file_hint=&file_hint_elf  },
   { .enable=0, .file_hint=&file_hint_emf  },
