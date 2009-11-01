@@ -43,6 +43,7 @@ static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_rename_doc(const char *old_filename);
 static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header);
+static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries);
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
@@ -71,8 +72,12 @@ static void file_check_doc(file_recovery_t *file_recovery)
   struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
   fseek(file_recovery->handle,0,SEEK_SET);
   if(fread(&buffer_header,sizeof(buffer_header),1,file_recovery->handle)!=1)	/*reads first sector including OLE header */
+  {
+    file_recovery->file_size=0;
     return ;
+  }
 #ifdef DEBUG_OLE
+  log_info("file_check_doc %s\n", file_recovery->filename);
   log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
   log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
 #endif
@@ -80,21 +85,91 @@ static void file_check_doc(file_recovery_t *file_recovery)
   if(le32(header->num_FAT_blocks)==0 ||
       le32(header->num_extra_FAT_blocks)>50 ||
       le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+  {
+    file_recovery->file_size=0;
     return ;
+  }
   if((fat=OLE_load_FAT(file_recovery->handle, header))==NULL)
+  {
+    file_recovery->file_size=0;
     return ;
+  }
   /* Search how many entries are not used at the end of the FAT */
   for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
       i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
   doc_file_size=512+((le32(header->num_FAT_blocks)*128-freesect_count)<<le16(header->uSectorShift));
-  free(fat);
-  file_recovery->file_size=(doc_file_size<= file_recovery->file_size?doc_file_size:0);
+  if(doc_file_size > file_recovery->file_size)
+  {
+    free(fat);
+    return ;
+  }
+  file_recovery->file_size=doc_file_size;
 #ifdef DEBUG_OLE
-  log_trace("size found : %llu\n",(long long unsigned)doc_file_size);
   log_trace("==> size : %llu\n",(long long unsigned)file_recovery->file_size);
 #endif
+  {
+    unsigned int block;
+    unsigned int fat_entries;
+    fat_entries=(le32(header->num_FAT_blocks)==0 ?
+	109:
+	(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
+#ifdef DEBUG_OLE
+    log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
+#endif
+    /* FFFFFFFE = ENDOFCHAIN
+     * Use a loop count i to avoid endless loop */
+    for(block=le32(header->root_start_block), i=0;
+	block!=0xFFFFFFFE && i<fat_entries;
+	block=le32(fat[block]), i++)
+    {
+      struct OLE_DIR *dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
+#ifdef DEBUG_OLE
+      log_info("read block %u\n", block);
+#endif
+      if(!(block < fat_entries))
+      {
+	file_recovery->file_size=0;
+	free(dir_entries);
+	free(fat);
+	return ;
+      }
+      if(fseek(file_recovery->handle, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
+      {
+	file_recovery->file_size=0;
+	free(dir_entries);
+	free(fat);
+	return ;
+      }
+      if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file_recovery->handle)!=1)
+      {
+	file_recovery->file_size=0;
+	free(dir_entries);
+	free(fat);
+	return ;
+      }
+      {
+	unsigned int sid;
+	struct OLE_DIR *dir_entry;
+	for(sid=0, dir_entry=dir_entries;
+	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
+	    sid++,dir_entry++)
+	{
+	  if(le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
+	      (le32(dir_entry->start_block) > fat_entries || le32(dir_entry->size) > file_recovery->file_size))
+	  {
+	    file_recovery->file_size=0;
+	    free(dir_entries);
+	    free(fat);
+	    return ;
+	  }
+	}
+      }
+      free(dir_entries);
+    }
+  }
+  free(fat);
 }
 
 static const char *ole_get_file_extension(const unsigned char *buffer, const unsigned int buffer_size)
@@ -152,7 +227,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	{
 	  log_info("%c",dir_entry->name[j]);
 	}
-	log_info(" type %u",dir_entry->type);
+	log_info(" type %u", dir_entry->type);
+	log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
 	log_info(" sector %u (%u bytes)\n",
 	    (unsigned int)le32(dir_entry->start_block),
 	    (unsigned int)le32(dir_entry->size));
@@ -378,6 +454,65 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
   return fat;
 }
 
+static void *OLE_read_stream(FILE *IN,
+    const uint32_t *fat, const unsigned int fat_entries, const unsigned int uSectorShift,
+    const unsigned int block_start, const unsigned int len)
+{
+  unsigned char *dataPt;
+  unsigned int block;
+  unsigned int size_read;
+  dataPt=(unsigned char *)MALLOC((len+(1<<uSectorShift)-1) / (1<<uSectorShift) * (1<<uSectorShift));
+  for(block=block_start, size_read=0;
+      size_read < len;
+      block=le32(fat[block]), size_read+=(1<<uSectorShift))
+  {
+    if(!(block < fat_entries))
+    {
+      free(dataPt);
+      return NULL;
+    }
+    if(fseek(IN, 512+(block<<uSectorShift), SEEK_SET)<0)
+    {
+      free(dataPt);
+      return NULL;
+    }
+    if(fread(&dataPt[size_read], (1<<uSectorShift), 1, IN)!=1)
+    {
+      free(dataPt);
+      return NULL;
+    }
+  }
+  return dataPt;
+}
+
+static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries)
+{
+  unsigned char*minifat_pos;
+  uint32_t *minifat;
+  unsigned int block;
+  unsigned int i;
+  if(le32(header->csectMiniFat)==0)
+    return NULL;
+  minifat=(uint32_t*)MALLOC(le32(header->csectMiniFat) << le16(header->uSectorShift));
+  minifat_pos=(unsigned char*)minifat;
+  block=le32(header->dir_flag);
+  for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
+  {
+    if(fseek(IN, ((uint64_t)block << le16(header->uSectorShift)) + 512, SEEK_SET) < 0)
+    {
+      free(minifat);
+      return NULL;
+    }
+    if(fread(minifat_pos, 1 << le16(header->uSectorShift), 1, IN) != 1)
+    {
+      free(minifat);
+      return NULL;
+    }
+    minifat_pos+=1 << le16(header->uSectorShift);
+    block=le32(fat[block]);
+  }
+  return minifat;
+}
 
 static uint32_t get32u(const void *buffer, const unsigned int offset)
 {
@@ -404,59 +539,28 @@ static const char *software2ext(const unsigned int count, const unsigned char *s
   return NULL;
 }
 
-static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int fat_entries, const unsigned int block_start, const unsigned int size_org, const unsigned int uSectorShift, const char **ext, char **title, time_t *file_time)
+static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned int dirLen, const char **ext, char **title, time_t *file_time)
 {
-  unsigned int block;
-  unsigned int size_read;
   unsigned int pos;
-  const unsigned int dirLen=(size_org < 40960 ? size_org : 40960);
-  unsigned char *dataPt;
-  if(dirLen<48)
-    return ;
-  dataPt=(unsigned char *)MALLOC(dirLen);
-  for(block=block_start, size_read=0;
-      block<fat_entries && block!=0xFFFFFFFE && size_read+(1<<uSectorShift) <= dirLen;
-      block=le32(fat[block]), size_read+=(1<<uSectorShift))
-  {
-    if(fseek(IN, 512+(block<<uSectorShift), SEEK_SET)<0)
-    {
-      free(dataPt);
-      return ;
-    }
-    if(fread(&dataPt[size_read], (1<<uSectorShift), 1, IN)!=1)
-    {
-      free(dataPt);
-      return ;
-    }
-  }
 #ifdef DEBUG_OLE
   dump_log(dataPt, dirLen);
 #endif
   if(dataPt[0]!=0xfe || dataPt[1]!=0xff)
-  {
-    free(dataPt);
     return ;
-  }
   pos=get32u(dataPt, 44);
   {
     unsigned int size;
     unsigned int numEntries;
     unsigned int i;
     if(pos+8 > dirLen)
-    {
-      free(dataPt);
       return ;
-    }
     size=get32u(dataPt, pos);
     numEntries=get32u(dataPt, pos+4);
 #ifdef DEBUG_OLE
     log_info("Property Info %u - %u at 0x%x\n", numEntries, size, pos);
 #endif
     if(pos + 8 + 8 * numEntries > dirLen)
-    {
-      free(dataPt);
       return ;
-    }
     for(i=0; i<numEntries; i++)
     {
       unsigned int entry = pos + 8 + 8 * i;
@@ -465,10 +569,7 @@ static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int 
       unsigned int valStart = pos + 4 + offset;
       unsigned int type;
       if(valStart >= dirLen)
-      {
-	free(dataPt);
 	return ;
-      }
       type=get32u(dataPt, pos + offset);
 #ifdef DEBUG_OLE
       log_info("entry 0x%x, tag 0x%x, offset 0x%x, valStart 0x%x, type 0x%x\n",
@@ -479,10 +580,7 @@ static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int 
       {
 	unsigned int count=get32u(dataPt, valStart);
 	if(valStart + 4 + count > dirLen)
-	{
-	  free(dataPt);
 	  return ;
-	}
 #ifdef DEBUG_OLE
 	{
 	  unsigned int j;
@@ -498,12 +596,9 @@ static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int 
       }
       if(tag==0x02 && type==30 && *title==NULL)
       {
-	unsigned int count=get32u(dataPt, valStart);
+	const unsigned int count=get32u(dataPt, valStart);
 	if(valStart + 4 + count > dirLen)
-	{
-	  free(dataPt);
 	  return ;
-	}
 	*title=MALLOC(count+1);
 	memcpy(*title, &dataPt[valStart + 4], count);
 	(*title)[count]='\0';
@@ -524,7 +619,68 @@ static void OLE_parse_summary(FILE *IN, const uint32_t *fat, const unsigned int 
       }
     }
   }
-  free(dataPt);
+}
+
+static void *OLE_read_ministream(unsigned char *ministream,
+    const uint32_t *minifat, const unsigned int minifat_entries, const unsigned int uMiniSectorShift,
+    const unsigned int miniblock_start, const unsigned int len)
+{
+  unsigned char *dataPt;
+  unsigned int mblock;
+  unsigned int size_read;
+  dataPt=(unsigned char *)MALLOC((len+(1<<uMiniSectorShift)-1) / (1<<uMiniSectorShift) * (1<<uMiniSectorShift));
+  for(mblock=miniblock_start, size_read=0;
+      size_read < len;
+      mblock=le32(minifat[mblock]), size_read+=(1<<uMiniSectorShift))
+  {
+    if(!(mblock < minifat_entries))
+    {
+      free(dataPt);
+      return NULL;
+    }
+    memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
+  }
+  return dataPt;
+}
+
+static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned int fat_entries,
+    const struct OLE_HDR *header, const unsigned int ministream_block, const unsigned int ministream_size,
+    const unsigned int block, const unsigned int len, const char **ext, char **title, time_t *file_time)
+{
+  unsigned char *summary=NULL;
+  if(len < 48 || len>102400)
+    return ;
+  if(len < le32(header->miniSectorCutoff))
+  {
+    if(le32(header->csectMiniFat)!=0 && ministream_size > 0 && ministream_size < 102400)
+    {
+      const unsigned int mini_fat_entries=(le32(header->csectMiniFat) << le16(header->uSectorShift)) / 4;
+      uint32_t *minifat;
+      unsigned char *ministream;
+      if((minifat=OLE_load_MiniFAT(file, header, fat, fat_entries))==NULL)
+	return ;
+      ministream=(unsigned char *)OLE_read_stream(file,
+	  fat, fat_entries, le16(header->uSectorShift),
+	  ministream_block, ministream_size);
+      if(ministream != NULL)
+      {
+	summary=OLE_read_ministream(ministream,
+	    minifat, mini_fat_entries, le16(header->uMiniSectorShift),
+	    block, len);
+	free(ministream);
+      }
+      free(minifat);
+    }
+  }
+  else
+    summary=(unsigned char *)OLE_read_stream(file,
+	fat, fat_entries, le16(header->uSectorShift),
+	block, len);
+  if(summary!=NULL)
+  {
+    OLE_parse_summary_aux(summary, len, ext, title, file_time);
+    free(summary);
+  }
 }
 
 static void file_rename_doc(const char *old_filename)
@@ -537,8 +693,12 @@ static void file_rename_doc(const char *old_filename)
   uint32_t *fat;
   struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
   time_t file_time=0;
+  unsigned int fat_entries;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
+#ifdef DEBUG_OLE
+  log_info("file_rename_doc(%s)\n", old_filename);
+#endif
   fseek(file,0,SEEK_SET);
   if(fread(&buffer_header,sizeof(buffer_header),1,file)!=1)	/*reads first sector including OLE header */
   {
@@ -558,14 +718,15 @@ static void file_rename_doc(const char *old_filename)
     fclose(file);
     return ;
   }
+  fat_entries=(le32(header->num_FAT_blocks)==0 ?
+      109:
+      (le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
   {
+    unsigned int ministream_block=0;
+    unsigned int ministream_size=0;
     unsigned int block;
     unsigned int i;
-    unsigned int fat_entries;
-    fat_entries=(le32(header->num_FAT_blocks)==0 ?
-	109:
-	(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
-    /* FFFFFFFE = ENDOFCHAfile
+    /* FFFFFFFE = ENDOFCHAIN
      * Use a loop count i to avoid endless loop */
 #ifdef DEBUG_OLE
     log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
@@ -595,7 +756,12 @@ static void file_rename_doc(const char *old_filename)
 #endif
       {
 	unsigned int sid;
-	struct OLE_DIR *dir_entry;
+	struct OLE_DIR *dir_entry=dir_entries;
+	if(i==0)
+	{
+	  ministream_block=le32(dir_entry->start_block);
+	  ministream_size=le32(dir_entry->size);
+	}
 	for(sid=0, dir_entry=dir_entries;
 	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
 	    sid++,dir_entry++)
@@ -614,15 +780,16 @@ static void file_rename_doc(const char *old_filename)
 	  {
 	    log_info("%c",dir_entry->name[j]);
 	  }
-	  log_info(" type %u",dir_entry->type);
+	  log_info(" type %u", dir_entry->type);
+	  log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
 	  log_info(" sector %u (%u bytes)\n",
 	      (unsigned int)le32(dir_entry->start_block),
 	      (unsigned int)le32(dir_entry->size));
 #endif
 	  if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
 	  {
-	    OLE_parse_summary(file, fat, fat_entries,
-		le32(dir_entry->start_block), le32(dir_entry->size), le16(header->uSectorShift),
+	    OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_block,
+		le32(dir_entry->start_block), le32(dir_entry->size),
 		&ext, &title, &file_time);
 	  }
 	  if(sid==1 && memcmp(dir_entry->name, "1\0\0\0", 4)==0)
