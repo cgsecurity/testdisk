@@ -80,28 +80,28 @@ typedef struct {
  * at the second to last block of the disk.
  */
 typedef struct hfsp_vh {
-        uint16_t         signature;   // must be HFSPLUS_VOLHEAD_SIG 'H+'
-        uint16_t         version;     // 4 for HFS+, 5 for HFSX
-        uint32_t         attributes;  // See bit constants below
-        uint32_t         last_mount_vers;
+        uint16_t         signature;   // 00: must be HFSPLUS_VOLHEAD_SIG 'H+'
+        uint16_t         version;     // 02: 4 for HFS+, 5 for HFSX
+        uint32_t         attributes;  // 04: See bit constants below
+        uint32_t         last_mount_vers; // 08
                 // Use a registered creator code here (See libhfsp.h)
 		// Mac OS uses '8.10' well
-        uint32_t         reserved;
+        uint32_t         reserved;	// 0C
  
-        uint32_t         create_date; // local time !
-        uint32_t         modify_date; // GMT (?)
-        uint32_t         backup_date; // GMT (?)
-        uint32_t         checked_date; // GMT (?) fsck ?
+        uint32_t         create_date; // 10 local time !
+        uint32_t         modify_date; // 14 GMT (?)
+        uint32_t         backup_date; // 18 GMT (?)
+        uint32_t         checked_date; // 1C GMT (?) fsck ?
  
-        uint32_t         file_count;
+        uint32_t         file_count;	// 20
          // not including special files but including DATA and RSRC forks
-        uint32_t         folder_count; // excluding the root folder
+        uint32_t         folder_count; // 24 excluding the root folder
  
-        uint32_t         blocksize;
+        uint32_t         blocksize;	// 28
          // must be multiple of HFSPLUS_SECTOR_SIZE,
          // should be a multiple of 4k for harddisk
-        uint32_t         total_blocks;
-        uint32_t         free_blocks;
+        uint32_t         total_blocks;	// 2C
+        uint32_t         free_blocks;	// 30
          // The total number of unused allocation blocks on the disk.
  
         uint32_t         next_alloc;
