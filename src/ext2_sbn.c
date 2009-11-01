@@ -38,7 +38,7 @@
 #include "ext2_sbn.h"
 
 static const  uint64_t group_size[3]={
-    ((EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0)+2*512),
+    (EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0),
     (EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1),
     (EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2),
   };
@@ -57,13 +57,14 @@ static uint64_t next_sb(const uint64_t hd_offset_old)
   for(j=0; j<3; j++)
   {
     int i;
+    const uint64_t offset=(j==0?2*512:0);
     for(i=0; i<3; i++)
     {
       uint64_t val;
-      for(val=1; val * group_size[j] <= hd_offset_old; val*=factors[i])
+      for(val=1; val * group_size[j] + offset <= hd_offset_old; val*=factors[i])
 	;
-      if(hd_offset==0 || val * group_size[j] < hd_offset)
-	hd_offset=val* group_size[j];
+      if(hd_offset==0 || val * group_size[j] + offset < hd_offset)
+	hd_offset=val* group_size[j] + offset;
     }
   }
   return hd_offset;
