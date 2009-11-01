@@ -647,6 +647,10 @@ do
 done
 unset option
 
+#if defined __GNUC__ && !defined _FORTIFY_SOURCE
+AC_DEFINE([_FORTIFY_SOURCE], 2, [enable compile-time and run-time bounds-checking, and some warnings])
+#endif
+
 case "$target" in
   *hpux*)
 	;;
