@@ -37,8 +37,16 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_ISO(disk_t *disk_car, const struct iso_primary_descriptor *iso, partition_t *partition, const int dump_ind);
 static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *partition);
+
+static int test_ISO(const struct iso_primary_descriptor *iso, partition_t *partition)
+{
+  static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
+  if(memcmp(iso, iso_header, sizeof(iso_header))!=0)
+    return 1;
+  partition->upart_type=UP_ISO;
+  return 0;
+}
 
 int check_ISO(disk_t *disk_car, partition_t *partition)
 {
@@ -48,7 +56,7 @@ int check_ISO(disk_t *disk_car, partition_t *partition)
     free(buffer);
     return 1;
   }
-  if(test_ISO(disk_car, (struct iso_primary_descriptor*)buffer, partition,0)!=0)
+  if(test_ISO((struct iso_primary_descriptor*)buffer, partition)!=0)
   {
     free(buffer);
     return 1;
@@ -74,7 +82,7 @@ static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *p
 
 int recover_ISO(disk_t *disk_car, const struct iso_primary_descriptor *iso, partition_t *partition, const int verbose, const int dump_ind)
 {
-  if(test_ISO(disk_car, iso, partition, dump_ind)!=0)
+  if(test_ISO(iso, partition)!=0)
     return 1;
   set_ISO_info(iso, partition);
   {
@@ -88,14 +96,5 @@ int recover_ISO(disk_t *disk_car, const struct iso_primary_descriptor *iso, part
       partition->blocksize=logical_block_size;
     }
   }
-  return 0;
-}
-
-static int test_ISO(disk_t *disk_car, const struct iso_primary_descriptor *iso, partition_t *partition, const int dump_ind)
-{
-  static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
-  if(memcmp(iso, iso_header, sizeof(iso_header))!=0)
-    return 1;
-  partition->upart_type=UP_ISO;
   return 0;
 }
