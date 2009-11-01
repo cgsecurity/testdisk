@@ -590,7 +590,13 @@ static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *li
       const unsigned int read_size=(current_search_space->end - offset + 1 < buffer_size ?
 	  current_search_space->end - offset + 1 : buffer_size);
       disk->pread(disk, buffer, read_size, offset);
-      fwrite(buffer, read_size, 1, out);
+      if(fwrite(buffer, read_size, 1, out)<1)
+      {
+	log_critical("Cannot write to file %s:%s\n", filename, strerror(errno));
+	free(buffer);
+	fclose(out);
+	return ;
+      }
     }
   }
   free(buffer);
@@ -664,7 +670,14 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
       return;
     }
   }
-  fwrite(buffer, datasize, 1, file_recovery->handle);
+  if(fwrite(buffer, datasize, 1, file_recovery->handle)<1)
+  {
+    log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+    fclose(file_recovery->handle)
+    file_recovery->handle=NULL;
+    free(buffer);
+    return;
+  }
   list_append_block(&file_recovery->location, start, datasize, 1);
   file_recovery->calculated_file_size=0;
   file_recovery->file_size+=datasize;
