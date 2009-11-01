@@ -152,7 +152,6 @@ static const unsigned char header_xmp[35]	= {
   'e', ':', 'n', 's', ':', 'm', 'e', 't',
   'a', '/', '"'};
 static const char sign_java1[6]			= "class";
-static const char sign_java2[5]			= "java";
 static const char sign_java3[15]		= "private static";
 static const char sign_java4[17]		= "public interface";
 
@@ -463,7 +462,6 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     if(strstr(buffer_lower, sign_java1)!=NULL ||
-	strstr(buffer_lower, sign_java2)!=NULL ||
 	strstr(buffer_lower, sign_java3)!=NULL ||
 	strstr(buffer_lower, sign_java4)!=NULL)
     {
@@ -773,7 +771,11 @@ static int is_ini(const char *buffer)
   while(1)
   {
     if(*src==']')
-      return 1;
+    {
+      if(src > buffer + 3)
+	return 1;
+      return 0;
+    }
     if(!isalnum(*src) && *src!=' ')
       return 0;
     src++;
@@ -840,6 +842,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     buffer_lower=(char *)MALLOC(buffer_lower_size);
   }
   l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
+  if(l<10)
+    return 0;
   /* strncasecmp */
   if(memcmp(buffer_lower, header_bat, sizeof(header_bat))==0 ||
       memcmp(buffer_lower, header_bat2, sizeof(header_bat2))==0)
@@ -959,7 +963,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       if(csv_per_line<1 || line_nbr<10)
 	is_csv=0;
     }
-    if(l>1)
+    /* if(l>1) */
     {
       unsigned int stats[256];
       unsigned int i;
@@ -973,12 +977,11 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ind=ind/l/(l-1);
     }
     /* Detect .ini */
-    if(buffer[0]=='[' && is_ini(buffer_lower))
+    if(buffer[0]=='[' && is_ini(buffer_lower) && l>50)
       ext="ini";
     else if(strstr(buffer_lower, sign_php)!=NULL)
       ext="php";
     else if(strstr(buffer_lower, sign_java1)!=NULL ||
-	strstr(buffer_lower, sign_java2)!=NULL ||
 	strstr(buffer_lower, sign_java3)!=NULL ||
 	strstr(buffer_lower, sign_java4)!=NULL)
     {
@@ -1070,7 +1073,8 @@ Doc: \r (0xD)
            td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL &&
            td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
            td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
-           td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL) ||
+           td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
+           td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL) ||
           /* Text should not be found in zip because of compression */
           (file_recovery->file_stat->file_hint==&file_hint_zip &&
 	  td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
