@@ -71,6 +71,7 @@ struct file_recovery_struct
   uint64_t file_size_on_disk;
   const char *extension;
   uint64_t min_filesize;
+  uint64_t offset_ok;
   uint64_t offset_error;
   uint64_t calculated_file_size;
   int (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);

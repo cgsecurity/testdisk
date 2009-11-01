@@ -34,9 +34,7 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-#ifdef DEBUG_HEADER_CHECK
 #include "log.h"
-#endif
 
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
@@ -46,7 +44,7 @@ file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
-static void index_header_check(void);
+static unsigned int index_header_check(void);
 
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
@@ -125,17 +123,20 @@ static void index_header_check_aux(file_check_t *file_check_new)
   file_check_add_tail(file_check_new, &file_check_list);
 }
 
-static void index_header_check(void)
+static unsigned int index_header_check(void)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;
+  unsigned int nbr=0;
   td_list_for_each_prev_safe(tmp, next, &file_check_plist.list)
   {
     file_check_t *current_check;
     current_check=td_list_entry(tmp, file_check_t, list);
     td_list_del(tmp);
     index_header_check_aux(current_check);
+    nbr++;
   }
+  return nbr;
 }
 
 void free_header_check(void)
@@ -307,6 +308,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->file_check=NULL;
   file_recovery->file_rename=NULL;
   file_recovery->offset_error=0;
+  file_recovery->offset_ok=0;
 }
 
 file_stat_t * init_file_stats(file_enable_t *files_enable)
@@ -314,6 +316,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   file_stat_t *file_stats;
   file_enable_t *file_enable;
   unsigned int enable_count=1;	/* Lists are terminated by NULL */
+  unsigned int sign_nbr;
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
     if(file_enable->enable>0)
@@ -335,8 +338,9 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
       enable_count++;
     }
   }
-  index_header_check();
+  sign_nbr=index_header_check();
   file_stats[enable_count].file_hint=NULL;
+  log_info("%u first-level signatures enabled\n", sign_nbr);
   return file_stats;
 }
 

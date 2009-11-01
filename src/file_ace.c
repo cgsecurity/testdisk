@@ -72,8 +72,9 @@ static void file_check_ace(file_recovery_t *file_recovery)
 {
   fseek(file_recovery->handle, 0, SEEK_SET);
 
+  file_recovery->offset_error = 0;
+  file_recovery->offset_ok = 0;
   file_recovery->file_size = 0;
-  file_recovery->offset_error=0;
 #ifdef DEBUG_ACE
   log_trace("file_check_ace\n");
 #endif

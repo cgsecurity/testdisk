@@ -112,6 +112,7 @@ static void file_check_nk2(file_recovery_t *fr)
   fseek(fr->handle, 0, SEEK_SET);
   fr->file_size = 0;
   fr->offset_error=0;
+  fr->offset_ok=0;
   if (fread(&nk2h, sizeof(nk2h), 1, fr->handle)!=1)
   {
     fr->offset_error=fr->file_size;

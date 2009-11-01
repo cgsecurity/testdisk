@@ -482,9 +482,11 @@ static void file_check_zip(file_recovery_t *fr)
   fseek(fr->handle, 0, SEEK_SET);
   fr->file_size = 0;
   fr->offset_error=0;
+  fr->offset_ok=0;
 
   while (1)
   {
+    uint64_t file_size_old;
     uint32_t header;
     int      status;
 
@@ -504,6 +506,7 @@ static void file_check_zip(file_recovery_t *fr)
     log_flush();
 #endif
     fr->file_size += 4;
+    file_size_old=fr->file_size;
 
     switch (header)
     {
@@ -550,6 +553,7 @@ static void file_check_zip(file_recovery_t *fr)
     /* Only end of central dir is end of archive, 64b version of it is before */
     if (header==ZIP_END_CENTRAL_DIR)
       return;
+    fr->offset_ok=file_size_old;
   }
 }
 

@@ -148,6 +148,7 @@ static void file_check_xm(file_recovery_t *fr)
 
   fr->file_size = 0;
   fr->offset_error=0;
+  fr->offset_ok=0;
 
   if (fseek(fr->handle, 70, SEEK_SET) == -1)
     return;

@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #endif
 #include <stdio.h>
+#include <errno.h>
 #include "types.h"
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
@@ -205,6 +206,7 @@ typedef struct {
   JOCTET * buffer;		/* start of buffer */
   boolean start_of_file;	/* have we gotten any data yet? */
   unsigned long int file_size;
+  unsigned long int offset_ok;
 } my_source_mgr;
 
 #define JPG_INPUT_BUF_SIZE  4096	/* choose an efficiently fread'able size */
@@ -224,6 +226,7 @@ static void jpg_init_source (j_decompress_ptr cinfo)
    */
   src->start_of_file = TRUE;
   src->file_size = 0;
+  src->offset_ok = 0;
 }
 
 
@@ -307,6 +310,7 @@ static void jpg_skip_input_data (j_decompress_ptr cinfo, long num_bytes)
    * any trouble anyway --- large skips are infrequent.
    */
   if (num_bytes > 0) {
+    src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
     while (num_bytes > (long) src->pub.bytes_in_buffer) {
       num_bytes -= (long) src->pub.bytes_in_buffer;
       (void) jpg_fill_input_buffer(cinfo);
@@ -424,7 +428,8 @@ static void file_check_jpg(file_recovery_t *file_recovery)
       my_source_mgr * src;
       src = (my_source_mgr *) cinfo.src;
       jpeg_size=src->file_size - src->pub.bytes_in_buffer;
-      // log_error("JPG error at offset %llu\n", (long long unsigned)jpeg_size);
+      log_error("JPG error, ok at %llu - bad at %llu\n",
+	  (long long unsigned)src->offset_ok, (long long unsigned)jpeg_size);
       jpeg_destroy_decompress(&cinfo);
       if(jpeg_size>0)
 	file_recovery->offset_error=jpeg_size;
@@ -449,6 +454,9 @@ static void file_check_jpg(file_recovery_t *file_recovery)
       ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
     while (cinfo.output_scanline < cinfo.output_height)
     {
+      my_source_mgr * src;
+      src = (my_source_mgr *) cinfo.src;
+      src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
       (void)jpeg_read_scanlines(&cinfo, buffer, 1);
     }
     (void) jpeg_finish_decompress(&cinfo);
@@ -554,7 +562,10 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 		  *(sep+1)='t';
 		  if((out=fopen(thumbname,"wb"))!=NULL)
 		  {
-		    fwrite(thumb_data,  thumb_size, 1, out);
+		    if(fwrite(thumb_data, thumb_size, 1, out) < 1)
+		    {
+		      log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
+		    }
 		    fclose(out);
 		  }
 		  else
