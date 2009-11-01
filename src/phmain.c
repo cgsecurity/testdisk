@@ -78,9 +78,7 @@
 #include "ext2_dir.h"
 #include "ntfs_dir.h"
 #include "pdisksel.h"
-extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_sun;
+extern const arch_fnct_t arch_none;
 extern file_enable_t list_file_enable[];
 
 #ifdef HAVE_SIGACTION
@@ -114,13 +112,7 @@ int main( int argc, char **argv )
   char *cmd_device=NULL;
   char *cmd_run=NULL;
   const char *logfile="photorec.log";
-#ifdef TARGET_SOLARIS
-  const arch_fnct_t *arch=&arch_sun;
-#elif defined __APPLE__
-  const arch_fnct_t *arch=&arch_mac;
-#else
-  const arch_fnct_t *arch=&arch_i386;
-#endif
+  const arch_fnct_t *arch=&arch_none;
   FILE *log_handle=NULL;
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
