@@ -1097,7 +1097,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
   return 0;
 }
 
-int end_ncurses()
+int end_ncurses(void)
 {
   wclear(stdscr);
   wrefresh(stdscr);
@@ -1224,7 +1224,7 @@ int interface_partition_type_ncurses(disk_t *disk_car)
   return 0;
 }
 
-void screen_buffer_to_interface()
+void screen_buffer_to_interface(void)
 {
   {
     int i;

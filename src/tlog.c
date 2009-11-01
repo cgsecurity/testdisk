@@ -34,7 +34,7 @@
 #include "tlog.h"
 
 #ifdef HAVE_NCURSES
-int ask_testdisk_log_creation()
+int ask_testdisk_log_creation(void)
 {
   unsigned int menu=0;
   static struct MenuItem menuLogCreation[]=
