@@ -47,7 +47,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
-  .description="Microsoft Office Document (doc/xls/ppt/vsd/...), 3ds Max, MetaStock",
+  .description="Microsoft Office Document (doc/xls/ppt/vsd/...), 3ds Max, MetaStock, Wilcom ES",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -599,7 +599,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
 	const unsigned int count=get32u(dataPt, valStart);
 	if(valStart + 4 + count > dirLen)
 	  return ;
-	*title=MALLOC(count+1);
+	*title=(char*)MALLOC(count+1);
 	memcpy(*title, &dataPt[valStart + 4], count);
 	(*title)[count]='\0';
 #ifdef DEBUG_OLE
@@ -664,7 +664,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
 	  ministream_block, ministream_size);
       if(ministream != NULL)
       {
-	summary=OLE_read_ministream(ministream,
+	summary=(unsigned char*)OLE_read_ministream(ministream,
 	    minifat, mini_fat_entries, le16(header->uMiniSectorShift),
 	    block, len);
 	free(ministream);
@@ -774,6 +774,16 @@ static void file_rename_doc(const char *old_filename)
 	     'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
 	     'i', '\0', 'o', '\0', 'n', '\0'
 	  };
+	  const char WilcomDesignInformationDDD[54]=
+	  {
+	    0x05, '\0', 'W', '\0', 'i', '\0', 'l', '\0',
+	     'c', '\0', 'o', '\0', 'm', '\0', 'D', '\0',
+	     'e', '\0', 's', '\0', 'i', '\0', 'g', '\0',
+	     'n', '\0', 'I', '\0', 'n', '\0', 'f', '\0',
+	     'o', '\0', 'r', '\0', 'm', '\0', 'a', '\0',
+	     't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
+	     'D', '\0', 'D', '\0', 'D', '\0'
+	  };
 #ifdef DEBUG_OLE
 	  unsigned int j;
 	  for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
@@ -786,6 +796,11 @@ static void file_rename_doc(const char *old_filename)
 	      (unsigned int)le32(dir_entry->start_block),
 	      (unsigned int)le32(dir_entry->size));
 #endif
+	  if(memcmp(dir_entry->name, WilcomDesignInformationDDD, sizeof(WilcomDesignInformationDDD))==0)
+	  {
+	    /* Wilcom ES Software */
+	    ext="emb";
+	  }
 	  if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
 	  {
 	    OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_block,
