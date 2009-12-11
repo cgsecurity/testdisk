@@ -163,14 +163,19 @@ int main(int argc, char **argv)
 #endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
-    log_info("Command line: PhotoRec");
+    log_info("Command line: fidentify");
     for(i=1;i<argc;i++)
       log_info(" %s", argv[i]);
     log_info("\n\n");
     log_flush();
   }
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
-  reset_list_file_enable(list_file_enable);
+  {
+    /* Enable all file formats */
+    file_enable_t *file_enable;
+    for(file_enable=list_file_enable;file_enable->file_hint!=NULL;file_enable++)
+      file_enable->enable=1;
+  }
   file_stats=init_file_stats(list_file_enable);
   if(argc>1)
   {
