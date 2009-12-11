@@ -5,7 +5,8 @@
 VER_E2FSPROGS=
 VER_PROGSREISERFS=0.3.1-rc8
 VER_NTFSPROGS=2.0.0
-VER_LIBEWF=20080501
+#VER_LIBEWF=20080501
+VER_LIBEWF=20090510
 crosscompile_target=
 prefix=/usr/
 if [ "$CC" = "gcc295" ];
@@ -19,7 +20,7 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-    VER_E2FSPROGS=1.41.4
+    VER_E2FSPROGS=1.41.8
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
   fi
@@ -216,6 +217,9 @@ then
 # use  --with-ncurses-lib=$prefix/usr/lib to get binaries that don't need libncurses
 # but users may be unable to navigate...
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo
+                ;;
+	  i686-apple-darwin9)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo
                 ;;
           i586-pc-msdosdjgpp)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv
