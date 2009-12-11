@@ -373,6 +373,12 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       }
     }
   }
+#elif defined(__HAIKU__)
+  {
+#ifdef HAVE_GLOB_H
+    list_disk=hd_glob_parse("/dev/disk/*/*/master/raw", list_disk, verbose, arch, testdisk_mode);
+#endif
+  }
 #else
   {
     /* Need to check http://mattriffle.com/mirrors/freebsd/doc/en_US.ISO8859-1/books/handbook/disks-naming.html#DISK-NAMING-PHYSICAL-TABLE */
