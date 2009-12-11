@@ -63,7 +63,7 @@ static int header_check_mysql(const unsigned char *buffer, const unsigned int bu
     return 1;
   }
   /* MySQL table definition file Version 7 up to 10 */
-  if(buffer[0]==0xfe && buffer[1]==0x01 && (buffer[2]>=0x07 && buffer[2]<=0x0A) && buffer[3]==0x09)
+  if(buffer[0]==0xfe && buffer[1]==0x01 && (buffer[2]>=0x07 && buffer[2]<=0x0A) && buffer[3]==0x09 && buffer[5]==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="frm";
