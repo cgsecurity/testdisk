@@ -39,6 +39,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_SYS_CYGWIN_H
+#include <sys/cygwin.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "log.h"
@@ -72,9 +75,16 @@ FILE *log_open_default(const char*default_filename, const int mode)
     path = getenv("HOMEPATH");
   if(path == NULL)
     return NULL;
-  filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
+  /* Check to avoid buffer overflow may not be 100% bullet proof */
+  if(strlen(path)+strlen(default_filename)+2 > 2048)
+    return NULL;
+  filename=(char*)MALLOC(2048);
+#ifdef __CYGWIN__
+  cygwin_conv_to_posix_path(path, filename);
+#else
   strcpy(filename, path);
-  strcat(filename, "\\");
+#endif
+  strcat(filename, "/");
   strcat(filename, default_filename);
   log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
   free(filename);
