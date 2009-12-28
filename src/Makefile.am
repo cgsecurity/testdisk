@@ -87,6 +87,7 @@ file_C			= filegen.c \
 			  file_evt.c \
 			  file_exe.c \
 			  file_ext.c \
+			  file_ext2.c \
 			  file_fat.c \
 			  file_fbk.c \
 			  file_fcp.c \
