@@ -188,6 +188,8 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
 	  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
 	  file_recovery->time=mktime(&tm_time);
+	  free(buffer);
+	  return ;
 	}
       }
       else
