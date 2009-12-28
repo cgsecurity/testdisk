@@ -74,7 +74,7 @@ int interface_check_hidden_ncurses(disk_t *disk)
     wmove(stdscr,line++,0);
     wprintw(stdscr, "Host Protected Area (HPA) present.\n");
   }
-  if(disk->native_max < disk->dco)
+  if(disk->native_max!=0 && disk->native_max < disk->dco)
   {
     wmove(stdscr,line,0);
     wprintw(stdscr, "Device Configuration Overlay (DCO) present.\n");
