@@ -49,7 +49,7 @@ void write_part_mac_warning_ncurses(void)
   wprintw(window,"Function write_part_mac not implemented");
   log_warning("Function write_part_mac not implemented\n");
   wmove(window,8,0);
-  wprintw(window,"Use pdisk to recreate the missing partition");
+  wprintw(window,"Use pdisk (Mac) or parted (Linux) to recreate the missing partition");
   wmove(window,9,0);
   wprintw(window,"using values displayed by TestDisk");
   wmove(window,22,0);
