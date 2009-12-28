@@ -209,6 +209,7 @@ extern const file_hint_t file_hint_ttf;
 extern const file_hint_t file_hint_txt;
 extern const file_hint_t file_hint_tz;
 extern const file_hint_t file_hint_veg;
+extern const file_hint_t file_hint_vfb;
 extern const file_hint_t file_hint_vmdk;
 extern const file_hint_t file_hint_wdp;
 extern const file_hint_t file_hint_win;
@@ -408,6 +409,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_fasttxt  },
   { .enable=0, .file_hint=&file_hint_txt  },
   { .enable=0, .file_hint=&file_hint_tz   },
+  { .enable=0, .file_hint=&file_hint_vfb  },
   { .enable=0, .file_hint=&file_hint_vmdk },
   { .enable=0, .file_hint=&file_hint_veg  },
   { .enable=0, .file_hint=&file_hint_wdp  },

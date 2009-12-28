@@ -206,6 +206,7 @@ file_C			= filegen.c \
 			  file_txt.c \
 			  file_tz.c \
 			  file_veg.c \
+			  file_vfb.c \
 			  file_vmdk.c \
 			  file_wdp.c \
 			  file_win.c \
