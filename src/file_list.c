@@ -169,6 +169,7 @@ extern const file_hint_t file_hint_pst;
 extern const file_hint_t file_hint_ptb;
 extern const file_hint_t file_hint_pyc;
 extern const file_hint_t file_hint_pzf;
+extern const file_hint_t file_hint_pzh;
 extern const file_hint_t file_hint_qbb;
 extern const file_hint_t file_hint_qdf;
 extern const file_hint_t file_hint_qxd;
@@ -367,6 +368,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_ptb  },
   { .enable=0, .file_hint=&file_hint_pyc  },
   { .enable=0, .file_hint=&file_hint_pzf  },
+  { .enable=0, .file_hint=&file_hint_pzh  },
   { .enable=0, .file_hint=&file_hint_qbb  },
   { .enable=0, .file_hint=&file_hint_qdf  },
   { .enable=0, .file_hint=&file_hint_qxd  },

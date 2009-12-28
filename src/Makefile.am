@@ -166,6 +166,7 @@ file_C			= filegen.c \
 			  file_ptb.c \
 			  file_pyc.c \
 			  file_pzf.c \
+			  file_pzh.c \
 			  file_qbb.c \
 			  file_qdf.c \
 			  file_qxd.c \
