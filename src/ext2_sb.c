@@ -79,6 +79,15 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
           (long unsigned)(partition->sb_offset/partition->blocksize),
           partition->blocksize, partition->fsname);
   }
+  if(list_part!=NULL)
+  {
+    const partition_t *partition=list_part->part;
+    screen_buffer_add("\n");
+    screen_buffer_add("To repair the filesystem using alternate superblock, run\n");
+    screen_buffer_add("fsck.ext%u -p -b superblock -B blocksize device\n",
+	(partition->upart_type==UP_EXT2?2:
+	 (partition->upart_type==UP_EXT3?3:4)));
+  }
   screen_buffer_to_log();
   if(*current_cmd==NULL)
   {
