@@ -623,7 +623,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
 
 static void *OLE_read_ministream(unsigned char *ministream,
     const uint32_t *minifat, const unsigned int minifat_entries, const unsigned int uMiniSectorShift,
-    const unsigned int miniblock_start, const unsigned int len)
+    const unsigned int miniblock_start, const unsigned int len, const unsigned int ministream_size)
 {
   unsigned char *dataPt;
   unsigned int mblock;
@@ -638,7 +638,8 @@ static void *OLE_read_ministream(unsigned char *ministream,
       free(dataPt);
       return NULL;
     }
-    memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
+    if((mblock<<uMiniSectorShift)+ (1<<uMiniSectorShift) <= ministream_size)
+      memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
   }
   return dataPt;
 }
@@ -666,7 +667,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
       {
 	summary=(unsigned char*)OLE_read_ministream(ministream,
 	    minifat, mini_fat_entries, le16(header->uMiniSectorShift),
-	    block, len);
+	    block, len, ministream_size);
 	free(ministream);
       }
       free(minifat);
