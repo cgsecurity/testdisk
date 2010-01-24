@@ -119,7 +119,7 @@ static unsigned int get_part_type_sun(const partition_t *partition)
 
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
-  const sun_partition *sunlabel=(const sun_partition*)buffer;
+  const sun_disklabel *sunlabel=(const sun_disklabel*)buffer;
   if(verbose>1)
   {
     log_trace("get_geometry_from_sunmbr\n");
@@ -138,11 +138,11 @@ static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbo
 static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader)
 {
   unsigned int i;
-  sun_partition *sunlabel;
+  sun_disklabel *sunlabel;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
-  sunlabel=(sun_partition*)buffer;
+  sunlabel=(sun_disklabel*)buffer;
   if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     screen_buffer_add( msg_PART_RD_ERR);

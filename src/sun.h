@@ -49,7 +49,7 @@ typedef struct {
   } partitions[8];
   uint16_t magic;      /* Magic number */
   uint16_t csum;       /* Label xor'd checksum */
-} sun_partition;
+} sun_disklabel;
 
 #define SUN_PARTITION_I386_SIZE 512
 
