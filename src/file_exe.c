@@ -204,7 +204,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-struct rsrc_entries
+struct rsrc_entries_s
 {
   uint32_t Type;
   uint32_t Pos;
@@ -339,8 +339,8 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
 
 static void file_exe_ressource(FILE *file, const unsigned int base, const unsigned int dir_start, const unsigned int size, const unsigned int rsrcType, const unsigned int level, const struct pe_image_section_hdr *pe_sections, unsigned int nbr_sections, const char *old_filename)
 {
-  struct rsrc_entries *rsrc_entries;
-  struct rsrc_entries *rsrc_entry;
+  struct rsrc_entries_s *rsrc_entries;
+  struct rsrc_entries_s *rsrc_entry;
   unsigned char buffer[16];
   int buffer_size;
   unsigned int nameEntries;
@@ -362,8 +362,8 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
   count = nameEntries + idEntries;
   if(count==0 || count > 1024)
     return ;
-  rsrc_entries=(struct rsrc_entries *)MALLOC(count * sizeof(struct rsrc_entries));
-  if(fread(rsrc_entries, sizeof(struct rsrc_entries), count, file) != count)
+  rsrc_entries=(struct rsrc_entries_s *)MALLOC(count * sizeof(struct rsrc_entries_s));
+  if(fread(rsrc_entries, sizeof(struct rsrc_entries_s), count, file) != count)
   {
     free(rsrc_entries);
     return ;
