@@ -64,7 +64,14 @@ then
   then
         rm -f $compiledir/Makefile
   	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
-	CC=$TESTDISKCC CFLAGS="$CFLAGS -g -O2 -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
+        case "$crosscompile_target" in
+	  arm-marvell-linux-gnu)
+	  	CC=$TESTDISKCC CFLAGS="$CFLAGS -g -O2 -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix --disable-tls
+                ;;
+          *)
+		CC=$TESTDISKCC CFLAGS="$CFLAGS -g -O2 -DOMIT_COM_ERR" ./configure --host=$crosscompile_target --prefix=$prefix
+                ;;
+	esac
 	cd $pwd_saved
   fi
 fi
@@ -229,6 +236,9 @@ then
                 ;;
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
+                ;;
+	  arm-marvell-linux-gnu)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs
                 ;;
           *)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT
