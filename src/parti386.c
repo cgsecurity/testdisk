@@ -61,6 +61,7 @@
 #include "xfs.h"
 #include "log.h"
 #include "parti386.h"
+#include "partgpt.h"
 
 static int is_extended(const unsigned int part_type);
 static int test_structure_i386(list_part_t *list_part);
@@ -1434,20 +1435,33 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
   part_free_list_only(new_list_part);
 }
 
-static int erase_list_part_i386(disk_t *disk_car)
+static int erase_list_part_i386(disk_t *disk)
 {
   unsigned char buffer[DEFAULT_SECTOR_SIZE];
-  if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
+  if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     log_error(msg_PART_RD_ERR);
     memset(buffer,0,sizeof(buffer));
   }
   memset(buffer+TAB_PART,0,0x40);
-  if(disk_car->pwrite(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
+  if(disk->pwrite(disk, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     return 1;
   }
-  disk_car->sync(disk_car);
+  {
+    /* Erase EFI GPT signature if present */
+    struct gpt_hdr *gpt=(struct gpt_hdr*)MALLOC(disk->sector_size);
+    if((unsigned)disk->pread(disk, gpt, disk->sector_size, disk->sector_size) == disk->sector_size)
+    {
+      if(memcmp(gpt->hdr_sig, GPT_HDR_SIG, 8)==0)
+      {
+	memset(gpt->hdr_sig, 0, 8);
+	disk->pwrite(disk, gpt, disk->sector_size, disk->sector_size);
+      }
+    }
+    free(gpt);
+  }
+  disk->sync(disk);
   return 0;
 }
 
