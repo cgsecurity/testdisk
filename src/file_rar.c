@@ -51,6 +51,7 @@ static void register_header_check_rar(file_stat_t *file_stat)
 {
   register_header_check(0, rar_header,sizeof(rar_header), &header_check_rar, file_stat);
 }
+#define  MHD_PASSWORD       0x0080U
 
 static int header_check_rar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -58,7 +59,8 @@ static int header_check_rar(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=70;
-    file_recovery_new->file_check=file_check_rar;
+    if((buffer[0xa] & MHD_PASSWORD)==0)
+      file_recovery_new->file_check=file_check_rar;
     file_recovery_new->extension=file_hint_rar.extension;
     return 1;
   }
