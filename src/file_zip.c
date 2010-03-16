@@ -705,6 +705,9 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
          file_recovery_new->extension="docx";
        file_recovery_new->file_rename=&file_rename_zip;
      }
+     /* Extended Renoise song file */
+    else if(memcmp(&buffer[30], "Song.xml", 8)==0)
+      file_recovery_new->extension="xrns";
     else
       file_recovery_new->extension=file_hint_zip.extension;
     return 1;
