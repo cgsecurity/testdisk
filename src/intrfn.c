@@ -75,6 +75,7 @@ extern const arch_fnct_t arch_xbox;
 extern char intr_buffer_screen[MAX_LINES][BUFFER_LINE_LENGTH+1];
 extern int intr_nbr_line;
 
+#define MINIMUM_LINES		24
 #define COLUMNS 		80
 /* Use COLS (actual number of columns) or COLUMNS (number of columns the program has been designed for) ? */
 #define INTER_DIR (LINES+16-25)
@@ -1052,11 +1053,11 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
   curs_set(0);
   {
     int quit=0;
-    while(LINES>=8 && LINES<24 && quit==0)
+    while(LINES>=8 && LINES<MINIMUM_LINES && quit==0)
     {
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wprintw(stdscr,"%s need 24 lines to work.", prog_name);
+      wprintw(stdscr,"%s need %d lines to work.", prog_name, MINIMUM_LINES);
       wmove(stdscr,5,0);
       wprintw(stdscr,"Please enlarge the terminal.");
       wmove(stdscr,LINES-2,0);
@@ -1079,10 +1080,10 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
       }
     }
   }
-  if(LINES<24)
+  if(LINES < MINIMUM_LINES)
   {
     end_ncurses();
-    printf("%s need 24 lines to work.\nPlease enlarge the terminal and restart %s.\n",prog_name,prog_name);
+    printf("%s need %d lines to work.\nPlease enlarge the terminal and restart %s.\n", prog_name, MINIMUM_LINES, prog_name);
     log_critical("Terminal has only %d lines\n",LINES);
     return 1;
   }

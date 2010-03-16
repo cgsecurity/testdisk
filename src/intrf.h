@@ -32,7 +32,6 @@ struct MenuItem
 #define MAX_LINES		200
 #define BUFFER_LINE_LENGTH 	255
 #define MAXIMUM_PARTS 		60
-#define WARNING_START 		23
 
 #define INTER_OPTION_X  	0
 #define INTER_OPTION_Y		10
