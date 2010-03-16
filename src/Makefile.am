@@ -142,6 +142,7 @@ file_C			= filegen.c \
 			  file_mrw.c \
 			  file_mus.c \
 			  file_mxf.c \
+			  file_myo.c \
 			  file_mysql.c \
 			  file_nds.c \
 			  file_njx.c \
