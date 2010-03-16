@@ -1263,13 +1263,19 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	waddstr(window," to select the current file, ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"C");
+	waddstr(window,"a");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to select/deselect all files, ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	mvwaddstr(window,LINES-1,4,"C");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to copy the selected files, ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	mvwaddstr(window,LINES-1,4,"c");
+	waddstr(window,"c");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to copy the current file, ");
@@ -1323,6 +1329,20 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  {
 	    current_file=current_file->next;
 	    pos_num++;
+	  }
+	  break;
+	case 'a':
+	  {
+	    int status;
+	    file_info_t *file_info;
+	    file_info=td_list_entry(current_file, file_info_t, list);
+	    status=(file_info->status^FILE_STATUS_MARKED)&FILE_STATUS_MARKED;
+	    td_list_for_each(file_walker,&dir_list->list)
+	    {
+	      file_info=td_list_entry(file_walker, file_info_t, list);
+	      if((file_info->status & FILE_STATUS_MARKED)!=status)
+		file_info->status^=FILE_STATUS_MARKED;
+	    }
 	  }
 	  break;
 	case ':':
