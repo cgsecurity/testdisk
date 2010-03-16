@@ -110,7 +110,7 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object sequence start code */
      (buffer[3]==0xB0) ||
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object start code */
-     (buffer[3]==0xB5)
+     (buffer[3]==0xB5 && (buffer[4]&0xf0)==0x80)
     )
     )
   {
