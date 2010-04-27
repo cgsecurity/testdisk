@@ -61,30 +61,27 @@ int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose)
 
 static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *partition, const int verbose)
 {
-  if (sb->sb_magicnum==be32(XFS_SB_MAGIC))
-  {
-    switch(be16(sb->sb_versionnum) & XFS_SB_VERSION_NUMBITS)
-    {
-      case XFS_SB_VERSION_1:
-	partition->upart_type = UP_XFS;
-	break;
-      case XFS_SB_VERSION_2:
-	partition->upart_type = UP_XFS2;
-	break;
-      case XFS_SB_VERSION_3:
-	partition->upart_type = UP_XFS3;
-	break;
-      case XFS_SB_VERSION_4:
-	partition->upart_type = UP_XFS4;
-	break;
-      default:
-	log_error("Unknown XFS version %x\n",be16(sb->sb_versionnum)& XFS_SB_VERSION_NUMBITS);
-	partition->upart_type = UP_XFS4;
-	break;
-    }
-  }
-  else
+  if (sb->sb_magicnum!=be32(XFS_SB_MAGIC))
     return 1;
+  switch(be16(sb->sb_versionnum) & XFS_SB_VERSION_NUMBITS)
+  {
+    case XFS_SB_VERSION_1:
+      partition->upart_type = UP_XFS;
+      break;
+    case XFS_SB_VERSION_2:
+      partition->upart_type = UP_XFS2;
+      break;
+    case XFS_SB_VERSION_3:
+      partition->upart_type = UP_XFS3;
+      break;
+    case XFS_SB_VERSION_4:
+      partition->upart_type = UP_XFS4;
+      break;
+    default:
+      log_error("Unknown XFS version %x\n",be16(sb->sb_versionnum)& XFS_SB_VERSION_NUMBITS);
+      partition->upart_type = UP_XFS4;
+      break;
+  }
   if(verbose>0)
     log_info("\nXFS Marker at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
   return 0;
