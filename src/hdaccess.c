@@ -427,7 +427,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     }
     for(i=0;i<8;i++)
     {
-      device_scsi2[strlen(device_scsi2)-1]='0'+i;
+      device_scsi2[strlen(device_scsi2)-2]='0'+i;
       list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi2,verbose,arch,testdisk_mode));
     }
     for(i=0;i<8;i++)
@@ -1446,7 +1446,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
       disk_car->offset=*(unsigned long*)(buffer+19);
     }
-    else if(memcmp(buffer, evf_file_signature, 8)==0 && le16(ewf->fields_start)==0)
+    else if(memcmp(buffer, evf_file_signature, 8)==0)
     {
       free(buffer);
       free(data);
