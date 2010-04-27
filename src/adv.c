@@ -30,6 +30,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "lang.h"
