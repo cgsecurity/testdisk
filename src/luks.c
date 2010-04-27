@@ -38,7 +38,6 @@
 
 static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind);
 static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition);
-static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
 
 int check_LUKS(disk_t *disk_car,partition_t *partition)
 {
@@ -90,7 +89,8 @@ int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *parti
 
 static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind)
 {
-  if(memcmp(sb->magic,LUKS_MAGIC,LUKS_MAGIC_L)!=0)
+  static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
+  if(memcmp(sb->magic, LUKS_MAGIC, LUKS_MAGIC_L)!=0)
     return 1;
   if(dump_ind!=0)
   {
