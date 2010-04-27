@@ -67,6 +67,7 @@ extern const file_hint_t file_hint_cwk;
 extern const file_hint_t file_hint_d2s;
 extern const file_hint_t file_hint_dat;
 extern const file_hint_t file_hint_dbf;
+extern const file_hint_t file_hint_dbn;
 extern const file_hint_t file_hint_dim;
 extern const file_hint_t file_hint_dir;
 extern const file_hint_t file_hint_djv;
@@ -270,6 +271,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_d2s  },
   { .enable=0, .file_hint=&file_hint_dat  },
   { .enable=0, .file_hint=&file_hint_dbf  },
+  { .enable=0, .file_hint=&file_hint_dbn  },
   { .enable=0, .file_hint=&file_hint_dim  },
   { .enable=0, .file_hint=&file_hint_dir  },
   { .enable=0, .file_hint=&file_hint_djv  },
