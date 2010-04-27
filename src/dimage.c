@@ -51,27 +51,27 @@
 #define O_BINARY 0
 #endif
 
-static void disk_image_backward(int disk_dst, disk_t *disk, const uint64_t offset_start, const uint64_t offset_end)
+static void disk_image_backward(int disk_dst, disk_t *disk, const uint64_t src_offset_start, const uint64_t src_offset_end, uint64_t dst_offset)
 {
-  uint64_t offset;
+  uint64_t src_offset;
   unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
-  for(offset=offset_end-disk->sector_size; offset > offset_start; offset-=disk->sector_size)
+  for(src_offset=src_offset_end-disk->sector_size; src_offset > src_offset_start; src_offset-=disk->sector_size, dst_offset-=disk->sector_size)
   {
     ssize_t pread_res;
-    pread_res=disk->pread(disk, buffer, disk->sector_size, offset);
+    pread_res=disk->pread(disk, buffer, disk->sector_size, src_offset);
     if((unsigned)pread_res != disk->sector_size)
     {
       free(buffer);
       return;
     }
 #if defined(HAVE_PWRITE)
-    if(pwrite(disk_dst, buffer, pread_res, offset)<0)
+    if(pwrite(disk_dst, buffer, pread_res, src_offset)<0)
     {
       free(buffer);
       return;
     }
 #else
-    if(lseek(disk_dst, offset, SEEK_SET)<0)
+    if(lseek(disk_dst, src_offset, SEEK_SET)<0)
     {
       free(buffer);
       return;
@@ -90,11 +90,12 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
 {
   int ind_stop=0;
   uint64_t nbr_read_error=0;
-  uint64_t offset=partition->part_offset;
-  uint64_t offset_old=offset;
-  const uint64_t offset_end=partition->part_offset+partition->part_size;
-  const uint64_t offset_inc=(offset_end-offset)/100;
-  uint64_t offset_next=offset;
+  uint64_t src_offset=partition->part_offset;
+  uint64_t src_offset_old=src_offset;
+  uint64_t dst_offset=0;
+  const uint64_t src_offset_end=partition->part_offset+partition->part_size;
+  const uint64_t offset_inc=(src_offset_end-src_offset)/100;
+  uint64_t src_offset_next=src_offset;
   unsigned char *buffer=(unsigned char *)MALLOC(READ_SIZE);
   unsigned int readsize=READ_SIZE;
   int disk_dst;
@@ -120,22 +121,22 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   waddstr(window,"  Stop  ");
   wattroff(window, A_REVERSE);
 #endif
-  while(ind_stop==0 && offset < offset_end)
+  while(ind_stop==0 && src_offset < src_offset_end)
   {
     ssize_t pread_res;
     int update=0;
-    if(offset_end-offset < readsize)
-      readsize=offset_end-offset;
-    pread_res=disk->pread(disk, buffer, readsize, offset);
+    if(src_offset_end-src_offset < readsize)
+      readsize=src_offset_end-src_offset;
+    pread_res=disk->pread(disk, buffer, readsize, src_offset);
     if(pread_res > 0)
     {
 #if defined(HAVE_PWRITE)
-      if(pwrite(disk_dst, buffer, pread_res, offset)<0)
+      if(pwrite(disk_dst, buffer, pread_res, dst_offset)<0)
       {
 	ind_stop=2;
       }
 #else
-      if(lseek(disk_dst, offset, SEEK_SET)<0)
+      if(lseek(disk_dst, dst_offset, SEEK_SET)<0)
       {
 	ind_stop=2;
       }
@@ -144,15 +145,16 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
 	ind_stop=2;
       }
 #endif
-      if(offset_old + SKIP_SIZE==offset)
+      if(src_offset_old + SKIP_SIZE==src_offset)
       {
-	disk_image_backward(disk_dst, disk, offset_old, offset);
+	disk_image_backward(disk_dst, disk, src_offset_old, src_offset, dst_offset);
       }
     }
-    offset_old=offset;
+    src_offset_old=src_offset;
     if((unsigned)pread_res == readsize)
     {
-      offset+=readsize;
+      src_offset+=readsize;
+      dst_offset+=readsize;
       readsize=READ_SIZE;
     }
     else
@@ -160,18 +162,19 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
       update=1;
       nbr_read_error++;
       readsize=disk->sector_size;
-      offset+=SKIP_SIZE;
+      src_offset+=SKIP_SIZE;
+      dst_offset+=SKIP_SIZE;
     }
-    if(offset>offset_next)
+    if(src_offset>src_offset_next)
     {
       update=1;
-      offset_next=offset+offset_inc;
+      src_offset_next=src_offset+offset_inc;
     }
     if(update)
     {
 #ifdef HAVE_NCURSES
       unsigned int i;
-      const unsigned int percent=(offset-partition->part_offset)*100/partition->part_size;
+      const unsigned int percent=(src_offset-partition->part_offset)*100/partition->part_size;
       wmove(window,7,0);
       wprintw(window,"%3u %% ", percent);
       for(i=0;i<percent*3/5;i++)
