@@ -99,10 +99,10 @@ static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *
 	return buf[1];
       case 1:
 	*length_type=3;
-	return (buf[1] << 8) + buf[2];
+	return (buf[1] << 8) | buf[2];
       case 2:
 	*length_type=5;
-	return (buf[1] << 24) +(buf[2] << 16) +  (buf[3] << 8) + buf[4];
+	return (buf[1] << 24) |(buf[2] << 16) |  (buf[3] << 8) | buf[4];
       default:
 	*length_type=1;
 	return 0;
@@ -178,7 +178,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   memset(packet_tag, 0, sizeof(packet_tag));
   memset(length_type, 0, sizeof(length_type));
   memset(length, 0, sizeof(length));
-  while(nbr<5 && potential_frame_offset+5< buffer_size)
+  while(nbr<5 && potential_frame_offset < buffer_size - 5)
   {
     packet_tag[nbr]=openpgp_packet_tag(&buffer[potential_frame_offset]);
     if(packet_tag[nbr]==0)	/* Reserved */
