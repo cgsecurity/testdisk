@@ -1142,6 +1142,8 @@ int check_enter_key_or_s(WINDOW *window)
     case 's':
     case 'S':
       return 1;
+    case 'F':
+      return 2;
   }
   return 0;
 }

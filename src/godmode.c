@@ -471,7 +471,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     static CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
-    if(old_cylinder!=start.cylinder && interface!=0 && (disk_car->geom.heads_per_cylinder>0 || (start.cylinder & 0xFFF)==0))
+    if(old_cylinder!=start.cylinder && interface!=0 &&
+	(disk_car->geom.heads_per_cylinder>1 || (start.cylinder & 0x7FFF)==0))
     {
       old_cylinder=start.cylinder;
       wmove(stdscr,ANALYSE_Y,ANALYSE_X);
@@ -634,7 +635,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                   const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
                   if(le16(sb->s_block_group_nr)>0)
                   {
-                    if(recover_EXT2(disk_car,sb,partition,verbose,dump_ind)==0)
+		    if(le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
+			recover_EXT2(disk_car, sb, partition, verbose, dump_ind)==0)
                       res=1;
                   }
                 }
@@ -817,6 +819,13 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       }
       while(sector_inc==0);
     }
+    if(ind_stop==2)
+    {
+      ind_stop=0;
+      if(try_offset_nbr>0 && search_location < try_offset[0])
+	search_location=try_offset[0];
+    }
+    else
     { /* Optimized "search_location+=disk_car->sector_size;" */
       uint64_t min=search_location_update(search_location);
       if(try_offset_nbr>0 && min>try_offset[0])
