@@ -54,6 +54,42 @@ static inline uint64_t CHS_to_offset(const unsigned int C, const int H, const in
   return (((uint64_t)C * disk_car->geom.heads_per_cylinder + H) * disk_car->geom.sectors_per_head +(S>0?S-1:S))*disk_car->sector_size;
 }
 
+static void update_location(void)
+{
+  unsigned int i;
+  if(search_location_info[search_location_nbr].inc==0)
+  {
+    search_location_nbr++;
+    return;
+  }
+  for(i=0; i<search_location_nbr; i++)
+  {
+    if(search_location_info[i].offset==search_location_info[search_location_nbr].offset &&
+	search_location_info[i].inc >= search_location_info[search_location_nbr].inc &&
+	search_location_info[i].inc % search_location_info[search_location_nbr].inc==0)
+    {
+      search_location_info[i].inc=search_location_info[search_location_nbr].inc;
+      return ;
+    }
+    if(search_location_info[i].offset==search_location_info[search_location_nbr].offset &&
+	search_location_info[search_location_nbr].inc >= search_location_info[i].inc &&
+	search_location_info[search_location_nbr].inc % search_location_info[i].inc==0)
+      return ;
+    if(search_location_info[i].inc==search_location_info[search_location_nbr].inc &&
+	search_location_info[i].offset >= search_location_info[search_location_nbr].offset &&
+	(search_location_info[i].offset - search_location_info[search_location_nbr].offset)%search_location_info[i].inc==0)
+    {
+      search_location_info[i].offset=search_location_info[search_location_nbr].offset;
+      return ;
+    }
+    if(search_location_info[i].inc==search_location_info[search_location_nbr].inc &&
+	search_location_info[search_location_nbr].offset >= search_location_info[i].offset &&
+	(search_location_info[search_location_nbr].offset - search_location_info[i].offset)%search_location_info[i].inc==0)
+      return ;
+  }
+  search_location_nbr++;
+}
+
 void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode, const int search_vista_part)
 {
   /* test_nbr==1... */
@@ -62,28 +98,33 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
     if(fast_mode>1)
     {
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,1,disk_car);
-      search_location_info[search_location_nbr++].inc= CHS_to_offset(0,1,0,disk_car);
+      search_location_info[search_location_nbr].inc= CHS_to_offset(0,1,0,disk_car);
+      update_location();
     }
     else
     {
       //CHS H=0,1,2 S=1
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,1,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,1,1,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,2,1,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
     }
     if(search_vista_part>0)
     {
       search_location_info[search_location_nbr].offset=0;
-      search_location_info[search_location_nbr++].inc=2048*512;
+      search_location_info[search_location_nbr].inc=2048*512;
+      update_location();
     }
   }
   else
   {
     search_location_info[search_location_nbr].offset=0;
-    search_location_info[search_location_nbr++].inc=location_boundary;
+    search_location_info[search_location_nbr].inc=location_boundary;
+    update_location();
   }
   if(fast_mode>0)
   {
@@ -92,37 +133,45 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
     {
       //CHS H=0,1,2 S=7
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,7,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,1,7,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,2,7,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
     }
     else
     {
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,7,disk_car);
-      search_location_info[search_location_nbr++].inc=location_boundary;
+      search_location_info[search_location_nbr].inc=location_boundary;
+      update_location();
     }
     if(search_vista_part>0)
     {
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,7,disk_car);
-      search_location_info[search_location_nbr++].inc=2048*512;
+      search_location_info[search_location_nbr].inc=2048*512;
+      update_location();
     }
     /* test_nbr==3 ou test_nbr==4, NTFS or HFS backup boot sector */
     if(disk_car->arch==&arch_i386)
     {
       search_location_info[search_location_nbr].offset=CHS_to_offset(1,0,-1,disk_car);
-      search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+      search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+      update_location();
     }
     else
     {
       search_location_info[search_location_nbr].offset=location_boundary-512;
-      search_location_info[search_location_nbr++].inc=location_boundary;
+      search_location_info[search_location_nbr].inc=location_boundary;
+      update_location();
     }
     if(search_vista_part>0)
     {
       search_location_info[search_location_nbr].offset=(2048-1)*512;
-      search_location_info[search_location_nbr++].inc=2048*512;
+      search_location_info[search_location_nbr].inc=2048*512;
+      update_location();
     }
     /* test_nbr==5*/
     {
@@ -133,16 +182,20 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
 	if(disk_car->arch==&arch_i386)
 	{
 	  search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,1,disk_car)+hd_offset;
-	  search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+	  search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+	  update_location();
 	  search_location_info[search_location_nbr].offset=CHS_to_offset(0,1,1,disk_car)+hd_offset;
-	  search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+	  search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+	  update_location();
 	  search_location_info[search_location_nbr].offset=CHS_to_offset(0,2,1,disk_car)+hd_offset;
-	  search_location_info[search_location_nbr++].inc=CHS_to_offset(1,0,0,disk_car);
+	  search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
+	  update_location();
 	}
 	else
 	{
 	  search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,1,disk_car)+hd_offset;
-	  search_location_info[search_location_nbr++].inc=location_boundary;
+	  search_location_info[search_location_nbr].inc=location_boundary;
+	  update_location();
 	}
       }
     }
