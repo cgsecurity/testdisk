@@ -4,6 +4,8 @@ The Windows version of TestDisk & PhotoRec should work under
 - Windows XP
 - Windows 2003
 - Windows Vista
+- Windows Server 2008
+- Windows 7
 
 If you are using an older version of Windows, run the DOS version of TestDisk.
 You can download it from http://www.cgsecurity.org/wiki/TestDisk_Download

@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.12-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="April 2009"
+TESTDISKDATE="April 2010"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -695,12 +695,15 @@ CFLAGS="$CFLAGS -static"
 ACX_PTHREAD([enable_threads="pthread"],[enable_threads="no"])
 CFLAGS="$SAVE_CFLAGS"
 
+photorecf_LDADD=$photorec_LDADD
+
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
+AC_SUBST(photorecf_LDADD)
 AC_SUBST(qphotorec_LDADD)
 AC_SUBST(fidentify_LDADD)
 AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.8 doc_src/photorec.8])
