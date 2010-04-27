@@ -11,7 +11,7 @@ if USEQT
 endif
 
 sbin_PROGRAMS		= testdisk photorec fidentify $(QPHOTOREC)
-EXTRA_PROGRAMS		= 
+EXTRA_PROGRAMS		= photorecf
 
 base_C			= autoset.c common.c crc.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c iso.c log.c log_part.c misc.c msdos.c parti386.c partgpt.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
 base_H			= alignio.h autoset.h common.h crc.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h iso.h iso9660.h lang.h log.h log_part.h misc.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
@@ -224,7 +224,7 @@ file_C			= filegen.c \
 			  file_xv.c \
 			  file_zip.c 
 
-file_H			= ext2.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h list.h ole.h pe.h
+file_H			= ext2.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h list.h ole.h pe.h suspend.h
 
 photorec_C		= photorec.c phcfg.c dir.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c list.c ntfs_dir.c ntfsp.c sessionp.c setdate.c
 
@@ -233,11 +233,13 @@ photorec_H		= photorec.h phcfg.h dir.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h f
 photorec_ncurses_C	= addpart.c askloc.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometry.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdisksel.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartsel.c
 photorec_ncurses_H	= addpart.h askloc.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometry.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdisksel.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartsel.h
 
-photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC)
+photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC)
+photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
 
-fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c
+qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
+
+fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c suspend_no.c
 
 DISTCLEANFILES = *~ core
 

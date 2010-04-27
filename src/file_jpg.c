@@ -40,6 +40,7 @@
 #endif
 #ifdef HAVE_JPEGLIB_H
 #include <jpeglib.h>
+#include "suspend.h"
 #endif
 #include "filegen.h"
 #include "common.h"
@@ -52,9 +53,7 @@ extern const file_hint_t file_hint_riff;
 static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_jpg(file_recovery_t *file_recovery);
-static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb);
-static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
@@ -102,10 +101,23 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     {
       if(buffer[i]!=0xff)
 	return 0;
+      /* 0x00 */
+      /* 0x01 */
+      /* 0xc4 Define Huffman table */
+      /* 0xc0 SOF0 Start of Frame */
+      /* 0xcc DAC arithmetic-coding conditioning*/
+      /* 0xcf SOF15 */
+      /* 0xd0-d7 JPEG_RST0 .. JPEG_RST7 markers */
+      /* 0xd8 SOI Start of Image */
+      /* 0xd9 EOI End of Image */
+      /* 0xda SOS: Start Of Scan */
+      /* 0xdb DQT: Define Quantization Table */
+      /* 0xdc DNL: Define Number of Lines */
+      /* 0xdd DRI: define restart interval */
+      /* 0xde DHP: define hierarchical progression */
       /* 0xe0 APP0 */
       /* 0xef APP15 */
       /* 0xfe COM */
-      /* 0xdb DQT */
       if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
 	if(i+0x0A < buffer_size && 2+(buffer[i+2]<<8)+buffer[i+3] > 0x0A)
@@ -153,6 +165,19 @@ struct my_error_mgr {
   jmp_buf setjmp_buffer;	/* for return to caller */
 };
 
+typedef struct {
+  struct jpeg_source_mgr pub;	/* public fields */
+
+  FILE * infile;		/* source stream */
+  JOCTET * buffer;		/* start of buffer */
+  boolean start_of_file;	/* have we gotten any data yet? */
+  unsigned long int offset;
+  unsigned long int file_size;
+  unsigned long int file_size_max;
+  unsigned long int offset_ok;
+  unsigned int blocksize;
+} my_source_mgr;
+
 static void my_output_message (j_common_ptr cinfo);
 static void my_error_exit (j_common_ptr cinfo);
 static void my_emit_message (j_common_ptr cinfo, int msg_level);
@@ -199,17 +224,8 @@ static void my_emit_message (j_common_ptr cinfo, int msg_level)
   }
 }
 
-typedef struct {
-  struct jpeg_source_mgr pub;	/* public fields */
-
-  FILE * infile;		/* source stream */
-  JOCTET * buffer;		/* start of buffer */
-  boolean start_of_file;	/* have we gotten any data yet? */
-  unsigned long int file_size;
-  unsigned long int offset_ok;
-} my_source_mgr;
-
-#define JPG_INPUT_BUF_SIZE  4096	/* choose an efficiently fread'able size */
+//#define JPG_INPUT_BUF_SIZE  4096	/* choose an efficiently fread'able size */
+//#define JPG_INPUT_BUF_SIZE  512		/* TODO: use the blocksize */
 
 /*
  * Initialize source --- called by jpeg_read_header
@@ -225,8 +241,10 @@ static void jpg_init_source (j_decompress_ptr cinfo)
    * This is correct behavior for reading a series of images from one source.
    */
   src->start_of_file = TRUE;
+  src->offset= 0;
   src->file_size = 0;
-  src->offset_ok = 0;
+  src->file_size_max = 0;
+//  src->offset_ok = 0;
 }
 
 
@@ -267,7 +285,17 @@ static boolean jpg_fill_input_buffer (j_decompress_ptr cinfo)
 {
   my_source_mgr * src = (my_source_mgr *) cinfo->src;
   size_t nbytes;
-  nbytes = fread(src->buffer, 1, JPG_INPUT_BUF_SIZE, src->infile);
+#if 0
+  log_info("jpg_fill_input_buffer file_size=%llu -> %llu (offset=%llu, blocksize=%u)\n",
+      (long long unsigned)src->file_size,
+      (long long unsigned)src->file_size+src->blocksize - (src->offset + src->file_size)%src->blocksize,
+      (long long unsigned)src->offset,
+      src->blocksize);
+#endif
+  nbytes = fread(src->buffer, 1,
+      src->blocksize - (src->offset + src->file_size)%src->blocksize,
+//      512 - (src->offset + src->file_size)%512,
+      src->infile);
   if (nbytes <= 0) {
     if (src->start_of_file)	/* Treat empty input file as fatal error */
     {
@@ -282,6 +310,14 @@ static boolean jpg_fill_input_buffer (j_decompress_ptr cinfo)
     nbytes = 2;
   }
   src->pub.next_input_byte = src->buffer;
+  if(src->file_size_max!=0 && src->file_size + nbytes > src->file_size_max)
+  {
+    const uint64_t off_end=(src->file_size_max > src->file_size ? src->file_size_max - src->file_size: 0);
+//    memset(&src->buffer[off_end], 0, nbytes);
+    src->buffer[off_end] = (JOCTET) 0xFF;
+    src->buffer[off_end+1] = (JOCTET) JPEG_EOI;
+    nbytes=off_end+2;
+  }
   src->pub.bytes_in_buffer = nbytes;
   src->start_of_file = FALSE;
   src->file_size += nbytes;
@@ -353,7 +389,7 @@ static void jpg_term_source (j_decompress_ptr cinfo)
  * for closing it after finishing decompression.
  */
 
-static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile)
+static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile, uint64_t offset, const unsigned int blocksize)
 {
   my_source_mgr * src;
 
@@ -371,7 +407,7 @@ static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile)
     src = (my_source_mgr *) cinfo->src;
     src->buffer = (JOCTET *)
       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-				  JPG_INPUT_BUF_SIZE * sizeof(JOCTET));
+				  blocksize * sizeof(JOCTET));
   }
 
   src = (my_source_mgr *) cinfo->src;
@@ -380,108 +416,474 @@ static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile)
   src->pub.skip_input_data = jpg_skip_input_data;
   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
   src->pub.term_source = jpg_term_source;
-  src->infile = infile;
   src->pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
   src->pub.next_input_byte = NULL; /* until buffer loaded */
+  src->infile = infile;
+  src->offset = offset;
+  src->blocksize=blocksize;
 }
-#endif
 
-static void file_check_jpg(file_recovery_t *file_recovery)
+struct jpeg_session_struct
 {
-  FILE* infile=file_recovery->handle;
-  uint64_t jpeg_size;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
-  static struct my_error_mgr jerr;
-  static struct jpeg_decompress_struct cinfo;
-#endif
-  file_recovery->file_size=0;
-  if(file_recovery->calculated_file_size==0)
-    file_recovery->offset_error=0;
-#ifdef DEBUG_JPEG
-  log_info("%s %llu error at %llu\n", file_recovery->filename,
-      (long long unsigned)file_recovery->calculated_file_size,
-      (long long unsigned)file_recovery->offset_error);
-#endif
-  if(file_recovery->offset_error!=0)
-    return ;
-  jpg_check_structure(file_recovery, 0);
-  if(file_recovery->offset_error!=0)
-    return ;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
-  {
-    JSAMPARRAY buffer;		/* Output row buffer */
-    unsigned int row_stride;		/* physical row width in output buffer */
-    fseek(infile,0,SEEK_SET);
-    cinfo.err = jpeg_std_error(&jerr.pub);
-    jerr.pub.output_message = my_output_message;
-    jerr.pub.error_exit = my_error_exit;
-    jerr.pub.emit_message= my_emit_message;
-#ifdef DEBUG_JPEG
-    jerr.pub.trace_level= 3;
-#endif
-    /* Establish the setjmp return context for my_error_exit to use. */
-    if (setjmp(jerr.setjmp_buffer)) 
-    {
-      /* If we get here, the JPEG code has signaled an error.
-       * We need to clean up the JPEG object and return.
-       */
-      my_source_mgr * src;
-      src = (my_source_mgr *) cinfo.src;
-      jpeg_size=src->file_size - src->pub.bytes_in_buffer;
-      log_error("JPG error, ok at %llu - bad at %llu\n",
-	  (long long unsigned)src->offset_ok, (long long unsigned)jpeg_size);
-      jpeg_destroy_decompress(&cinfo);
-      if(jpeg_size>0)
-	file_recovery->offset_error=jpeg_size;
-#ifdef DEBUG_JPEG
-      jpg_check_structure(file_recovery, 1);
-#endif
-      return;
-    }
-    jpeg_create_decompress(&cinfo);
-    cinfo.two_pass_quantize = FALSE;
-    cinfo.dither_mode = JDITHER_NONE;
-    cinfo.desired_number_of_colors = 0;
-    cinfo.dct_method = JDCT_FASTEST;
-    cinfo.do_fancy_upsampling = FALSE;
-    cinfo.raw_data_out = TRUE;
+  struct jpeg_decompress_struct cinfo;
+  struct jpeg_decompress_struct cinfo_backup;
+  unsigned char *frame;
+  unsigned int row_stride;
+  unsigned int output_components;
+  unsigned int output_width;
+  unsigned int output_height;
+  uint64_t offset;
+  FILE *handle;
+  unsigned int flags;
+  unsigned int blocksize;
+};
 
-    jpeg_testdisk_src(&cinfo, infile);
-    (void) jpeg_read_header(&cinfo, TRUE);
-    (void) jpeg_start_decompress(&cinfo);
-    row_stride = cinfo.output_width * cinfo.output_components;
-    buffer = (*cinfo.mem->alloc_sarray)
-      ((j_common_ptr) &cinfo, JPOOL_IMAGE, row_stride, 1);
-    while (cinfo.output_scanline < cinfo.output_height)
-    {
-      my_source_mgr * src;
-      src = (my_source_mgr *) cinfo.src;
-      src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
-      (void)jpeg_read_scanlines(&cinfo, buffer, 1);
-    }
-    (void) jpeg_finish_decompress(&cinfo);
-    {
-      my_source_mgr * src;
-      src = (my_source_mgr *) cinfo.src;
-      jpeg_size=src->file_size - src->pub.bytes_in_buffer;
-    }
-    jpeg_destroy_decompress(&cinfo);
-  }
+static void jpeg_init_session(struct jpeg_session_struct *jpeg_session)
+{
+  jpeg_session->frame=NULL;
+  jpeg_session->row_stride=0;
+  jpeg_session->output_components=0;
+  jpeg_session->output_width=0;
+  jpeg_session->output_height=0;
+  jpeg_session->offset=0;
+  jpeg_session->handle=NULL;
+  jpeg_session->flags=0;
+}
+
+static void jpeg_session_delete(struct jpeg_session_struct *jpeg_session)
+{
+  jpeg_destroy_decompress(&jpeg_session->cinfo);
+  free(jpeg_session->frame);
+  jpeg_session->frame=NULL;
+  jpeg_session->row_stride=0;
+}
+
+static inline int jpeg_session_resume(struct jpeg_session_struct *jpeg_session)
+{
+  my_source_mgr * src;
+  memcpy(&jpeg_session->cinfo, &jpeg_session->cinfo_backup, sizeof(jpeg_session->cinfo));
+  if(resume_memory((j_common_ptr)&jpeg_session->cinfo))
+    return -1;
+  src = (my_source_mgr *) jpeg_session->cinfo.src;
+  fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET);
+  return 0;
+}
+
+static inline void jpeg_session_suspend(struct jpeg_session_struct *jpeg_session)
+{
+  suspend_memory((j_common_ptr)&jpeg_session->cinfo);
+  memcpy(&jpeg_session->cinfo_backup, &jpeg_session->cinfo, sizeof(jpeg_session->cinfo));
+}
+
+static void jpeg_session_start(struct jpeg_session_struct *jpeg_session)
+{
+  fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET);
+  jpeg_create_decompress(&jpeg_session->cinfo);
+  jpeg_testdisk_src(&jpeg_session->cinfo, jpeg_session->handle, jpeg_session->offset, jpeg_session->blocksize);
+  (void) jpeg_read_header(&jpeg_session->cinfo, TRUE);
+  jpeg_session->cinfo.two_pass_quantize = FALSE;
+  jpeg_session->cinfo.dither_mode = JDITHER_NONE;
+  jpeg_session->cinfo.dct_method = JDCT_FASTEST;
+  jpeg_session->cinfo.do_block_smoothing = FALSE;
+  jpeg_session->cinfo.do_fancy_upsampling = FALSE;
+  (void) jpeg_start_decompress(&jpeg_session->cinfo);
+  jpeg_session->output_width=jpeg_session->cinfo.output_width;
+  jpeg_session->output_height=jpeg_session->cinfo.output_height;
+  jpeg_session->output_components=jpeg_session->cinfo.output_components;
+  jpeg_session->row_stride = jpeg_session->cinfo.output_width * jpeg_session->cinfo.output_components;
+  jpeg_session->frame=NULL;
+}
+
+static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsigned y,
+    const uint64_t offset_rel1, const uint64_t offset_rel2, const uint64_t offset, const unsigned int blocksize)
+{
+  static struct my_error_mgr jerr;
+  static uint64_t file_size_max;
+  static struct jpeg_session_struct jpeg_session;
+  unsigned int checkpoint_status=0;
+  int avoid_leak=0;
+  jpeg_init_session(&jpeg_session);
+  jpeg_session.handle=infile;
+  jpeg_session.offset=offset;
+  jpeg_session.blocksize=blocksize;
+  file_size_max=(offset_rel1+blocksize-1)/blocksize*blocksize;
+#ifdef DEBUG_JPEG
+  log_info("jpg_xy_to_offset(infile, x=%u, y=%u, offset_rel1=%lu, offset_rel2=%lu)\n",
+      x, y, (long unsigned)offset_rel1, (long unsigned)offset_rel2);
 #endif
-//    log_error("JPG size: %llu\n", (long long unsigned)jpeg_size);
+  jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.output_message = my_output_message;
+  jerr.pub.error_exit = my_error_exit;
+  /* Establish the setjmp return context for my_error_exit to use. */
+  if (setjmp(jerr.setjmp_buffer)) 
+  {
+    if(jpeg_session.frame!=NULL && jpeg_session.cinfo.output_scanline >= y)
+    {
+      int data=0;
+      unsigned int i;
+      for(i=0; i< (jpeg_session.output_width-x) * jpeg_session.output_components; i++)
+      {
+	if(jpeg_session.frame[x*jpeg_session.output_components+i]!=0x80)
+	  data=1;
+      }
+      if(data==1)
+      {
+	jpeg_session_delete(&jpeg_session);
+	return offset + file_size_max - blocksize;
+      }
+    }
+    file_size_max+=blocksize;
+  }
+  while(file_size_max<offset_rel2)
+  {
+    if(checkpoint_status==0 || jpeg_session_resume(&jpeg_session)<0)
+    {
+      if(avoid_leak)
+	jpeg_session_delete(&jpeg_session);
+      jpeg_session_start(&jpeg_session);
+      jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.row_stride);
+      avoid_leak=1;
+    }
+    {
+      my_source_mgr * src;
+      src = (my_source_mgr *) jpeg_session.cinfo.src;
+      src->file_size_max=file_size_max;
+    }
+    {
+      my_source_mgr * src;
+      src = (my_source_mgr *) jpeg_session.cinfo.src;
+      while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height &&
+	  jpeg_session.cinfo.output_scanline < y)
+      {
+	JSAMPROW row_pointer[1];
+	row_pointer[0] = (unsigned char *)jpeg_session.frame;
+	(void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
+      }
+      if(src->file_size < src->file_size_max)
+      {
+	jpeg_session_suspend(&jpeg_session);
+	checkpoint_status=1;
+      }
+      if(jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
+      {
+	JSAMPROW row_pointer[1];
+	int data=0;
+	unsigned int i;
+	row_pointer[0] = (unsigned char *)jpeg_session.frame;
+	/* 0x100/2=0x80, medium value */
+	memset(jpeg_session.frame, 0x80, jpeg_session.row_stride);
+	(void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
+	for(i=0; i< (jpeg_session.output_width-x) * jpeg_session.output_components; i++)
+	{
+	  if(jpeg_session.frame[x*jpeg_session.output_components+i]!=0x80)
+	    data=1;
+	}
+	if(data==1)
+	{
+	  (void) jpeg_finish_decompress(&jpeg_session.cinfo);
+	  jpeg_session_delete(&jpeg_session);
+	  return offset + file_size_max;
+	}
+      }
+    }
+    file_size_max+=blocksize;
+  }
+/*  Do not call jpeg_finish_decompress(&cinfo); to avoid an endless loop */
+  jpeg_session_delete(&jpeg_session);
+  return 0;
+}
+
+static unsigned int is_line_cut(const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int y)
+{
+  const unsigned int row_stride = output_width * output_components;
+  unsigned int result_max=0;
+  unsigned int result_i=0;
+  unsigned int i;
+  for(i=(8 - 1) * output_components; i<row_stride; i+=8 * output_components)
+  {
+    unsigned int result=0;
+    unsigned int j;
+    unsigned int pos;
+    for(j=0,
+	pos= y * row_stride + i;
+	j<8 && y+j < output_scanline;
+	j++, pos+=row_stride)
+    {
+      /* FIXME: out of bound read access */
+      result += abs(2 * frame[pos] - frame[pos - output_components]
+	  - (pos + output_components <  row_stride * output_scanline ? frame[pos + output_components]: 0));
+    }
+#ifdef DEBUG_JPEG
+  log_info("y=%u x=%u i=%u result=%u\n", y, i/output_components, i, result);
+#endif
+    if(result_max <= result)
+    {
+      result_max=result;
+      result_i=i;
+    }
+  }
+#ifdef DEBUG_JPEG
+  log_info("y=%u result_i=%u\n", y, result_i);
+#endif
+  return (result_i != row_stride-output_components);
+}
+
+static unsigned int jpg_find_border(const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame)
+{
+  unsigned int y;
+#ifdef DEBUG_JPEG
+  log_info("jpg_find_border output_scanline=%u output_width=%u output_components=%u\n",
+      output_scanline, output_width, output_components);
+#endif
+  /* TODO handle output_width%8!=0 */
+  if(output_width%8!=0)
+    return output_scanline;
+  for(y=output_scanline-8; y>=8; y-=8)
+  {
+    if(!is_line_cut(output_scanline, output_width, output_components, frame, y))
+      return y+8;
+  }
+  return output_scanline;
+}
+
+/* FIXME: it doesn handle correctly when there is a few extra sectors */
+static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int *offsets, const uint64_t offset, const unsigned int blocksize, const uint64_t checkpoint_offset)
+{
+  const unsigned int row_stride = output_width * output_components;
+  unsigned int result=0;
+  unsigned int result_max=0;
+  unsigned int result_x;
+  unsigned int result_y;
+  unsigned int y;
+  unsigned int i;
+  unsigned int pos_new;
+  unsigned int output_scanline_max;
+  output_scanline_max=jpg_find_border(output_scanline, output_width, output_components, frame);
+  for(i = 0, pos_new= 8 * row_stride;
+      i < row_stride;
+      i++, pos_new++)
+  {
+    result += abs(2 * frame[pos_new] - frame[pos_new - row_stride] - frame[pos_new + row_stride]);
+  }
+  result_x=0;
+  result_y=8;
+  result_max=result;
+
+  for(y=8; y+8 < output_scanline; y+=8)
+  {
+    unsigned int pos;
+    for(i = 0,
+	pos = y * row_stride,
+	pos_new = (y + 8) * row_stride;
+	i < row_stride;
+	i++, pos++, pos_new++)
+    {
+      if(i % (8 * output_components)==0)
+      {
+	int stop=0;
+//	log_info("x %4u, y %4u: %6u\n", i/output_components, y, result);
+	if(result_max < result)
+	{
+	  // FIXME
+#if 1
+	  if(2 * result_max < result) // && offset + offsets[result_x / 8] >= checkpoint_offset)
+	    stop=1;
+#endif
+	  result_max=result;
+	  result_x=i/output_components;
+	  result_y=y;
+	}
+	/* 12 is a magic value */
+#if 1
+	else if(2 * result < result_max && result_max > 12 * row_stride) // && offset + offsets[result_x / 8] >= checkpoint_offset)
+	  stop=1;
+#endif
+#if 1
+	else if(y > output_scanline_max)
+	{
+	  stop=1;
+	}
+#endif
+	if(stop==1
+	    && is_line_cut(output_scanline, output_width, output_components, frame, y))
+	{
+	  uint64_t offset_rel1,offset_rel2;
+#ifdef DEBUG_JPEG
+	  log_info("x %4u, y %4u: %6u, result=%u, output_scanline_max=%u\n",
+	      result_x, result_y, result_max, result, output_scanline_max);
+#endif
+	  offset_rel1=offsets[result_y / 8];
+	  offset_rel2=offsets[result_y / 8 + 1];
+	  if(offset_rel1 < offset_rel2)
+	  {
+	    const uint64_t offset_error=jpg_xy_to_offset(handle, result_x, result_y,
+		offset_rel1, offset_rel2, offset, 512);
+//		offset_rel1, offset_rel2, offset, blocksize);
+	    if(offset_error>0)
+	      return offset_error;
+	  }
+	  return offset + offset_rel2;
+	}
+      }
+      result -= abs(2 * frame[pos] - frame[pos - row_stride] - frame[pos + row_stride]);
+      result += abs(2 * frame[pos_new] - frame[pos_new - row_stride] - frame[pos_new + row_stride]);
+    }
+  }
+  return 0;
+}
+
+static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsigned int blocksize, const uint64_t checkpoint_offset, const unsigned int flags)
+{
+  static struct my_error_mgr jerr;
+  static unsigned int offsets[10240];
+  static struct jpeg_session_struct jpeg_session;
+  jpeg_init_session(&jpeg_session);
+  jpeg_session.flags=flags;
+  jpeg_session.handle=infile;
+  jpeg_session.offset=offset;
+  jpeg_session.blocksize=blocksize;
+  jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.output_message = my_output_message;
+  jerr.pub.error_exit = my_error_exit;
+  jerr.pub.emit_message= my_emit_message;
+#ifdef DEBUG_JPEG
+  jerr.pub.trace_level= 3;
+#endif
+  /* Establish the setjmp return context for my_error_exit to use. */
+  if (setjmp(jerr.setjmp_buffer)) 
+  {
+    /* If we get here, the JPEG code has signaled an error.
+     * We need to clean up the JPEG object and return.
+     */
+    uint64_t offset_error;
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    offset_error=jpeg_session.offset + src->file_size - src->pub.bytes_in_buffer;
+    if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
+    {
+//      log_info("jpg_check_thumb jpeg corrupted near   %llu\n", offset_error);
+      offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, blocksize, checkpoint_offset);
+      log_info("jpg_check_thumb find_error estimation %llu\n", (long long unsigned)offset_error);
+    }
+    jpeg_session_delete(&jpeg_session);
+    return offset_error;
+  }
+  memset(offsets, 0, sizeof(offsets));
+  jpeg_session_start(&jpeg_session);
+  jpeg_session.frame = (unsigned char*)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
+  /* 0x100/2=0x80, medium value */
+  memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+  while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
+  {
+    JSAMPROW row_pointer[1];
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
+    if(jpeg_session.cinfo.output_scanline/8 < 10240 && offsets[jpeg_session.cinfo.output_scanline/8]==0)
+      offsets[jpeg_session.cinfo.output_scanline/8]=src->file_size - src->pub.bytes_in_buffer;
+    // Calculate where this line needs to go.
+    row_pointer[0] = (unsigned char *)jpeg_session.frame + jpeg_session.cinfo.output_scanline * jpeg_session.row_stride;
+    (void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
+  }
+  (void) jpeg_finish_decompress(&jpeg_session.cinfo);
+  jpeg_session_delete(&jpeg_session);
+  return 0;
+}
+
+static void jpg_check_picture(file_recovery_t *file_recovery)
+{
+  static struct my_error_mgr jerr;
+  static unsigned int offsets[10240];
+  uint64_t jpeg_size=0;
+  static struct jpeg_session_struct jpeg_session;
+  static int jpeg_session_initialised=0;
+  if(file_recovery->checkpoint_status==0)
+  {
+    if(jpeg_session_initialised==1)
+      jpeg_session_delete(&jpeg_session);
+    jpeg_init_session(&jpeg_session);
+    jpeg_session.flags=file_recovery->flags;
+    jpeg_session_initialised=1;
+    jpeg_session.blocksize=file_recovery->blocksize;
+  }
+  jpeg_session.handle=file_recovery->handle;
+  jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.output_message = my_output_message;
+  jerr.pub.error_exit = my_error_exit;
+  jerr.pub.emit_message= my_emit_message;
+#ifdef DEBUG_JPEG
+  jerr.pub.trace_level= 3;
+#endif
+  /* Establish the setjmp return context for my_error_exit to use. */
+  if (setjmp(jerr.setjmp_buffer)) 
+  {
+    /* If we get here, the JPEG code has signaled an error.
+     * We need to clean up the JPEG object and return.
+     */
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    jpeg_size=src->file_size - src->pub.bytes_in_buffer;
+    if(jpeg_size>0)
+      file_recovery->offset_error=jpeg_size;
+    if(file_recovery->offset_ok < src->offset_ok)
+      file_recovery->offset_ok=src->offset_ok;
+#ifdef DEBUG_JPEG
+    log_error("JPG error, ok at %llu - bad at %llu\n",
+	(long long unsigned)file_recovery->offset_ok,
+	(long long unsigned)file_recovery->offset_error);
+#endif
+#if 1
+    if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
+    {
+      uint64_t offset_error;
+      offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, jpeg_session.blocksize, file_recovery->checkpoint_offset);
+      if(offset_error !=0 && file_recovery->offset_error > offset_error)
+	file_recovery->offset_error=offset_error;
+#ifdef DEBUG_JPEG
+      log_error("JPG error, ok at %llu - bad at %llu (jpg_find_error)\n",
+	  (long long unsigned)file_recovery->offset_ok,
+	  (long long unsigned)file_recovery->offset_error);
+#endif
+    }
+#endif
+    jpeg_session_delete(&jpeg_session);
+    return;
+  }
+  memset(offsets, 0, sizeof(offsets));
+  jpeg_session_start(&jpeg_session);
+  {
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    src->file_size_max=file_recovery->file_size;
+  }
+  jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
+  /* 0x100/2=0x80, medium value */
+  memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+  while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
+  {
+    JSAMPROW row_pointer[1];
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
+    if(jpeg_session.cinfo.output_scanline/8 < 10240 && offsets[jpeg_session.cinfo.output_scanline/8]==0)
+    {
+      offsets[jpeg_session.cinfo.output_scanline/8]=src->file_size - src->pub.bytes_in_buffer;
+    }
+  // Calculate where this line needs to go.
+    row_pointer[0] = (unsigned char *)jpeg_session.frame + jpeg_session.cinfo.output_scanline * jpeg_session.row_stride;
+    (void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
+  }
+  {
+    my_source_mgr * src;
+    src = (my_source_mgr *) jpeg_session.cinfo.src;
+    jpeg_size=src->file_size - src->pub.bytes_in_buffer;
+  }
+  (void) jpeg_finish_decompress(&jpeg_session.cinfo);
+  jpeg_session_delete(&jpeg_session);
+  jpeg_session_initialised=0;
+  file_recovery->checkpoint_status=0;
   if(jpeg_size<=0)
     return;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
-  if(jerr.pub.num_warnings>0)
-  {
-    file_recovery->offset_error=jpeg_size;
-#ifdef DEBUG_JPEG
-    log_error("JPG warning: %llu\n", (long long unsigned)jpeg_size);
-    jpg_check_structure(file_recovery, 1);
-#endif
-    return;
-  }
-#endif
   if(file_recovery->calculated_file_size>0)
     file_recovery->file_size=file_recovery->calculated_file_size;
   else
@@ -490,30 +892,132 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     file_search_footer(file_recovery, jpg_footer, sizeof(jpg_footer), 0);
   }
 }
+#endif
 
-static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)
+static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size)
+{
+  /* DHT must not be shorter than 18 bytes, 1+16+1 */
+  /* DHT should not be longer than 1088 bytes, 4*(1+16+255) */
+  if(size<18)
+    return 2;
+  if(i + 4 < buffer_size)
+  {
+    unsigned int j=i+4;
+    const unsigned int n=buffer[j] & 0x0f;
+    /* Must be between 0 and 3 Huffman table */
+    if(n > 3)
+      return 2;
+    {
+      unsigned int l;
+      unsigned int sum=0;
+      if(j < buffer_size && (buffer[j]&0x0f)>3)
+	return 2;
+      j++;
+      for(l=0; l < 16; l++)
+	if(j < buffer_size)
+	  sum+=buffer[j+l];
+      if(sum>255)
+	return 2;
+      j+=16;
+      j+=sum;
+    }
+    if(j > i+size)
+      return 2;
+  }
+  return 0;
+}
+
+static void jpg_search_marker(file_recovery_t *file_recovery)
 {
   FILE* infile=file_recovery->handle;
   unsigned char buffer[40*8192];
   int nbytes;
+  uint64_t offset;
+  unsigned int i;
+  if(file_recovery->blocksize==0)
+    return ;
+  offset=file_recovery->offset_error / file_recovery->blocksize * file_recovery->blocksize;
+  i=file_recovery->offset_error % file_recovery->blocksize;
+  fseek(infile, offset, SEEK_SET);
+  do
+  {
+    while((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
+    {
+      for(;i+1<nbytes; i+=file_recovery->blocksize)
+      {
+	if(buffer[i]==0xff &&
+	    (buffer[i+1]==0xd8 ||			/* SOI */
+	     buffer[i+1]==0xdb ||			/* DQT */
+	     (buffer[i+1]>=0xc0 && buffer[i+1]<=0xcf) ||	/* SOF0 - SOF15, 0xc4=DHT */
+	     buffer[i+1]==0xda ||				/* SOS: Start Of Scan */
+	     buffer[i+1]==0xdd ||				/* DRI */
+	     (buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||	/* APP0 - APP15 */
+	     buffer[i+1]==0xfe)				/* COM */
+	  )
+	{
+	  file_recovery->extra=offset + i - file_recovery->offset_error;
+	  if(file_recovery->extra % file_recovery->blocksize != 0)
+	  {
+	    log_info("jpg_search_marker %s extra=%llu\n",
+		file_recovery->filename,
+		(long long unsigned)file_recovery->extra);
+	  }
+	  return ;
+	}
+      }
+    }
+    offset +=nbytes;
+    i=i % file_recovery->blocksize;
+  } while(nbytes == sizeof(buffer));
+  return ;
+}
+
+static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)
+{
+  FILE* infile=file_recovery->handle;
+  unsigned char buffer[40*8192];
+  uint64_t thumb_offset=0;
+  int nbytes;
+  file_recovery->extra=0;
   fseek(infile, 0, SEEK_SET);
   if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {
-    unsigned int offset=2;
-    while(offset < nbytes)
+    unsigned int offset;
+    file_recovery->offset_error=0;
+    for(offset=file_recovery->blocksize; offset < nbytes && file_recovery->offset_error==0; offset+=file_recovery->blocksize)
+    {
+      if(buffer[offset]==0xff && buffer[offset+1]==0xd8 && buffer[offset+2]==0xff &&
+	(buffer[offset+3]==0xe0 || buffer[offset+3]==0xe1 || buffer[offset+3]==0xec))
+      {
+	file_recovery->offset_error=offset;
+      }
+    }
+    offset=2;
+    while(offset + 4 < nbytes && (file_recovery->offset_error==0 || offset < file_recovery->offset_error))
     {
       const unsigned int i=offset;
       const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
       if(buffer[i]!=0xff)
       {
+#ifdef DEBUG_JPEG
+	log_info("%s no marker at 0x%x\n", file_recovery->filename, i);
+#endif
 	file_recovery->offset_error=i;
-	return;
+	jpg_search_marker(file_recovery);
+	return thumb_offset;
       }
+#ifdef DEBUG_JPEG
+      log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
+#endif
       offset+=2+size;
       if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
-	return;
+      {
+	file_recovery->offset_ok=i+1;
+	return thumb_offset;
+      }
       else if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
+#if 1
 	if(i+0x0A < nbytes && 2+size > 0x0A)
 	{
 	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
@@ -524,39 +1028,89 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 	    tiff_size=nbytes - (i+0x0A);
 	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET);
 	  if(thumb_data!=NULL)
+	  {
+	    thumb_offset=thumb_data-(const char*)buffer;
 	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT);
+	  }
+	  if(file_recovery->offset_ok<i)
+	    file_recovery->offset_ok=i;
 	  if(thumb_data!=NULL && ifbytecount!=NULL)
 	  {
-	    const unsigned int thumb_offset=thumb_data-(const char*)buffer;
 	    const unsigned int thumb_size=ifbytecount-(const char*)tiff;
-	    if(thumb_offset < sizeof(buffer) && thumb_offset+thumb_size < sizeof(buffer))
+	    if(thumb_offset < nbytes - 1)
 	    {
 	      unsigned int j=thumb_offset+2;
 	      unsigned int thumb_sos_found=0;
 	      unsigned int j_old;
 	      j_old=j;
-	      while(j+4<sizeof(buffer) && thumb_sos_found==0)
+	      if(buffer[thumb_offset]!=0xff)
+	      {
+		file_recovery->offset_error=thumb_offset;
+		jpg_search_marker(file_recovery);
+		return 0;
+	      }
+	      if(buffer[thumb_offset+1]!=0xd8)
+	      {
+		file_recovery->offset_error=thumb_offset+1;
+		return 0;
+	      }
+	      while(j+4<nbytes && thumb_sos_found==0)
 	      {
 		if(buffer[j]!=0xff)
 		{
 		  file_recovery->offset_error=j;
 #ifdef DEBUG_JPEG
+		  log_info("%s thumb no marker at 0x%x\n", file_recovery->filename, j);
 		  log_error("%s Error between %u and %u\n", file_recovery->filename, j_old, j);
 #endif
-		  return;
+		  jpg_search_marker(file_recovery);
+		  return 0;
 		}
+#ifdef DEBUG_JPEG
+		log_info("%s thumb marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
+#endif
 		if(buffer[j+1]==0xda)	/* Thumb SOS: Start Of Scan */
 		  thumb_sos_found=1;
+		else if(buffer[j+1]==0xc4)			/* DHT */
+		{
+#if 1
+		  if(jpg_check_dht(buffer, nbytes, j, 2+(buffer[j+2]<<8)+buffer[j+3])!=0)
+		  {
+		    file_recovery->offset_error=j+2;
+		    return 0;
+		  }
+#endif
+		}
+		else if(buffer[j+1]==0xdb ||			/* DQT */
+		    buffer[j+1]==0xc0 ||			/* SOF0 */
+		    buffer[j+1]==0xdd)				/* DRI */
+		{
+		}
+		else if((buffer[j+1]>=0xc0 && buffer[j+1]<=0xcf) ||	/* SOF0 - SOF15 */
+		    (buffer[j+1]>=0xe0 && buffer[j+1]<=0xef) ||		/* APP0 - APP15 */
+		    buffer[j+1]==0xfe)					/* COM */
+		{
+		  /* Unusual marker, bug ? */
+		}
+		else
+		{
+		  log_info("%s thumb unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
+		  file_recovery->offset_error=j;
+		  return 0;
+		}
+		if(file_recovery->offset_ok<j)
+		  file_recovery->offset_ok=j;
 		j_old=j;
 		j+=2+(buffer[j+2]<<8)+buffer[j+3];
 	      }
-	      if(thumb_sos_found>0 && extract_thumb>0)
+	      if(thumb_sos_found>0 && extract_thumb>0
+		  && offset < nbytes && buffer[offset]==0xff)
 	      {
 		char *thumbname;
 		char *sep;
 		thumbname=strdup(file_recovery->filename);
 		sep=strrchr(thumbname,'/');
-		if(sep!=NULL && *(sep+1)=='f' && thumb_offset+thumb_size < sizeof(buffer))
+		if(sep!=NULL && *(sep+1)=='f' && thumb_offset+thumb_size < nbytes)
 		{
 		  FILE *out;
 		  *(sep+1)='t';
@@ -578,39 +1132,133 @@ static void jpg_check_structure(file_recovery_t *file_recovery, const unsigned i
 	    }
 	  }
 	}
-	return ;
+#endif
+      }
+      else if(buffer[i+1]==0xc4)	/* DHT */
+      {
+#if 1
+	if(jpg_check_dht(buffer, nbytes, i, 2+size)!=0)
+	{
+	  file_recovery->offset_error=i+2;
+	  return thumb_offset;
+	}
+#endif
+	if(file_recovery->offset_ok<i+1)
+	  file_recovery->offset_ok=i+1;
+      }
+      else if(buffer[i+1]==0xdb ||			/* DQT */
+	  (buffer[i+1]>=0xc0 && buffer[i+1]<=0xcf) ||	/* SOF0 - SOF15 */
+	  buffer[i+1]==0xdd ||				/* DRI */
+	  (buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||	/* APP0 - APP15 */
+	  buffer[i+1]==0xfe)				/* COM */
+      {
+	if(file_recovery->offset_ok<i+1)
+	  file_recovery->offset_ok=i+1;
+      }
+      else
+      {
+	log_info("%s unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i+1);
+	file_recovery->offset_error=i+1;
+	return thumb_offset;
       }
     }
+    if(offset > nbytes && nbytes < sizeof(buffer))
+    {
+      file_recovery->offset_error=nbytes;
+      return thumb_offset;
+    }
   }
+  return thumb_offset;
 }
 
-static int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static void file_check_jpg(file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
+  uint64_t thumb_offset;
+  static uint64_t thumb_error=0;
+  /* FIXME REMOVE ME */
+  file_recovery->flags=1;
+  file_recovery->file_size=0;
+  if(file_recovery->calculated_file_size==0)
+    file_recovery->offset_error=0;
+#ifdef DEBUG_JPEG
+  log_info("file_check_jpg  %s calculated_file_size=%llu, error at %llu\n", file_recovery->filename,
+      (long long unsigned)file_recovery->calculated_file_size,
+      (long long unsigned)file_recovery->offset_error);
+#endif
+  if(file_recovery->offset_error!=0)
+    return ;
+  thumb_offset=jpg_check_structure(file_recovery, 1);
+#ifdef DEBUG_JPEG
+  log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
+#endif
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
+  if(thumb_offset!=0 &&
+      (file_recovery->checkpoint_status==0 || thumb_error!=0) &&
+      (file_recovery->offset_error==0 || thumb_offset < file_recovery->offset_error))
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    if(buffer[i]==0xFF)
+#ifdef DEBUG_JPEG
+    log_info("jpg_check_thumb\n");
+#endif
+    thumb_error=jpg_check_thumb(file_recovery->handle, thumb_offset, file_recovery->blocksize, file_recovery->checkpoint_offset, file_recovery->flags);
+    if(thumb_error!=0)
     {
-      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
-      file_recovery->calculated_file_size+=2+size;
-      if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
+#ifdef DEBUG_JPEG
+      log_info("%s thumb corrupted at %llu, previous error at %llu\n",
+	  file_recovery->filename, (long long unsigned)thumb_error,
+	  (long long unsigned)file_recovery->offset_error);
+#endif
+      if(file_recovery->offset_error==0 || file_recovery->offset_error > thumb_error)
       {
-	file_recovery->data_check=&data_check_jpg2;
-	return data_check_jpg2(buffer, buffer_size, file_recovery);
+#ifdef DEBUG_JPEG
+	log_info("Thumb usefull\n");
+#endif
+	file_recovery->offset_error = thumb_error;
       }
     }
-    else
-    {
-      return 2;
-    }
   }
-  return 1;
+#endif
+  if(file_recovery->offset_error!=0)
+    return ;
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
+  jpg_check_picture(file_recovery);
+#else
+  file_recovery->file_size=file_recovery->calculated_file_size;
+#endif
+#if 0
+    /* FIXME REMOVE ME */
+  if(file_recovery->offset_error!=0)
+  {
+    file_recovery->file_size=file_recovery->offset_error;
+    file_recovery->offset_error=0;
+    fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+    fwrite(jpg_footer, sizeof(jpg_footer), 1, file_recovery->handle);
+    file_recovery->file_size+=2;
+    return ;
+  }
+#endif
 }
 
 static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+#if 0
+  unsigned int old_marker=0;
+#endif
+  if(file_recovery->calculated_file_size<2)
+  {
+    /* Reset to the correct file checker */
+    file_recovery->data_check=&data_check_jpg;
+    return data_check_jpg(buffer, buffer_size, file_recovery);
+  }
+  if(buffer[buffer_size/2]==0xff && buffer[buffer_size/2]==0xd8 && 
+      file_recovery->calculated_file_size != file_recovery->file_size)
+  {
+#ifdef DEBUG_JPEG
+    log_info("%s data_check_jpg2 0xffd8 at 0x%llx\n", file_recovery->filename, 
+	(long long unsigned)file_recovery->calculated_file_size);
+#endif
+    return 2;
+  }
+  while(file_recovery->calculated_file_size + buffer_size/2  > file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
@@ -625,14 +1273,79 @@ static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffe
       else if(buffer[i] >= 0xd0 && buffer[i] <= 0xd7)
       {
 	/* JPEG_RST0 .. JPEG_RST7 markers */
+#if 0
+	if((buffer[i]==0xd0 && old_marker!=0 && old_marker!=0xd7) ||
+	    (buffer[i]!=0xd0 && old_marker+1 != buffer[i]))
+	{
+#ifdef DEBUG_JPEG
+	  log_info("Rejected due to JPEG_RST marker\n");
+#endif
+	  file_recovery->calculated_file_size++;
+	  return 2;
+	}
+	/* TODO: store old_marker in file_recovery */
+	old_marker=buffer[i];
+#endif
       }
       else if(buffer[i]!=0x00)
       {
+#ifdef DEBUG_JPEG
+	log_info("%s data_check_jpg2 marker 0x%02x at 0x%llx\n", file_recovery->filename, buffer[i],
+	    (long long unsigned)file_recovery->calculated_file_size);
+#endif
 	file_recovery->offset_error=file_recovery->calculated_file_size;
 	return 2;
       }
     }
     file_recovery->calculated_file_size++;
+  }
+  return 1;
+}
+
+int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(buffer[buffer_size/2]==0xff && buffer[buffer_size/2]==0xd8 && 
+      file_recovery->calculated_file_size != file_recovery->file_size)
+  {
+    log_info("data_check_jpg ffd8\n");
+    return 2;
+  }
+  /* Skip the SOI */
+  if(file_recovery->calculated_file_size==0)
+    file_recovery->calculated_file_size+=2;
+  /* Search SOS */
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    if(buffer[i]==0xFF)
+    {
+      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+#if 0
+      log_info("data_check_jpg %02x%02x at %llu, next expected at %llu\n", buffer[i], buffer[i+1],
+	  (long long unsigned)file_recovery->calculated_file_size,
+	  (long long unsigned)file_recovery->calculated_file_size+2+size);
+#endif
+      file_recovery->calculated_file_size+=2+size;
+      if(buffer[i+1]==0xc4)	/* DHT */
+      {
+	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
+	  return 2;
+      }
+      if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
+      {
+	file_recovery->data_check=&data_check_jpg2;
+	return data_check_jpg2(buffer, buffer_size, file_recovery);
+      }
+    }
+    else
+    {
+#if 0
+      log_info("data_check_jpg %02x at %llu\n", buffer[i],
+	  (long long unsigned)file_recovery->calculated_file_size);
+#endif
+      return 2;
+    }
   }
   return 1;
 }
