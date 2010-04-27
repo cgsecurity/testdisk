@@ -73,6 +73,7 @@ struct file_recovery_struct
   uint64_t min_filesize;
   uint64_t offset_ok;
   uint64_t offset_error;
+  uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
   int (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
   /* data_check returns 0: bad, 1: EOF not found, 2: EOF
@@ -80,6 +81,10 @@ struct file_recovery_struct
   */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(const char *old_filename);
+  uint64_t checkpoint_offset;
+  int checkpoint_status;	/* 0=suspend at offset_checkpoint if offset_checkpoint>0, 1=resume at offset_checkpoint */
+  unsigned int blocksize;
+  unsigned int flags;
 };
 
 struct file_hint_struct

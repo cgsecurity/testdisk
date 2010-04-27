@@ -191,11 +191,12 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=blocksize;
   buffer_size=blocksize + READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
   buffer=buffer_olddata+blocksize;
-  reset_file_recovery(&file_recovery);
   start_time=time(NULL);
   previous_time=start_time;
   memset(buffer_olddata,0,blocksize);
@@ -228,6 +229,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 #endif
     {
       file_recovery_t file_recovery_new;
+      file_recovery_new.blocksize=blocksize;
       if(file_recovery.file_stat!=NULL &&
           file_recovery.file_stat->file_hint->min_header_distance > 0 &&
           file_recovery.file_size<=file_recovery.file_stat->file_hint->min_header_distance)
@@ -690,9 +692,10 @@ static void test_files(disk_t *disk, partition_t *partition, alloc_data_t *list_
   alloc_data_t *current_search_space=list_search_space;
   uint64_t offset;
   file_recovery_t file_recovery;
+  reset_file_recovery(&file_recovery);
+  file_recovery->blocksize=512;
   offset=current_search_space->start;
   /* Recover a file with a known location */
-  reset_file_recovery(&file_recovery);
   test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 1289*512, (1304+1)*512-1);
   test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 2881*512, (3259+1)*512-1);
   file_finish(&file_recovery, recup_dir, 1, file_nbr, disk->sector_size, list_search_space, &current_search_space, &offset, dir_num, STATUS_EXT2_OFF, disk);
@@ -780,7 +783,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     }
     else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
     {
-      ind_stop=photorec_bf(disk_car, partition, verbose, paranoid, recup_dir, interface, file_stats, &file_nbr, blocksize, list_search_space, real_start_time, &dir_num, status, pass);
+      ind_stop=photorec_bf(disk_car, partition, verbose, recup_dir, interface, file_stats, &file_nbr, blocksize, list_search_space, real_start_time, &dir_num, status, pass);
       session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose);
     }
     else

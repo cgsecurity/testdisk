@@ -54,6 +54,7 @@
 static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize);
+static alloc_data_t *file_error(alloc_data_t *space, file_recovery_t *file, const unsigned int blocksize);
 static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
 static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size);
 
@@ -546,6 +547,8 @@ void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, c
   }
 }
 
+uint64_t free_list_allocation_end=0;
+
 static void free_list_allocation(alloc_list_t *list_allocation)
 {
   struct td_list_head *tmp = NULL;
@@ -554,6 +557,7 @@ static void free_list_allocation(alloc_list_t *list_allocation)
   {
     alloc_list_t *allocated_space;
     allocated_space=td_list_entry(tmp, alloc_list_t, list);
+    free_list_allocation_end=allocated_space->end;
     td_list_del(tmp);
     free(allocated_space);
   }
@@ -726,6 +730,8 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     if(file_recovery->file_size==0)
     {
       /* File hasn't been sucessfully recovered */
+      if(file_recovery->offset_error>0)
+	datanext=file_error(list_search_space, file_recovery, blocksize);
     }
     else
     {
@@ -829,6 +835,60 @@ static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, c
   log_info("\n");
   datanext=td_list_entry(&spacenext->list.next, alloc_data_t, list);
   return datanext;
+}
+
+static alloc_data_t *file_error_aux(alloc_data_t *space, alloc_data_t *file, const uint64_t file_size, const unsigned int blocksize)
+{
+  struct td_list_head *tmp;
+  struct td_list_head *next;
+  uint64_t size=0;
+  const uint64_t file_size_on_disk=(file_size+blocksize-1)/blocksize*blocksize;
+  for(tmp=&file->list, next=tmp->next; tmp!=&space->list; tmp=next, next=tmp->next)
+  {
+    alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
+    if(size >= file_size)
+      return NULL;
+    if(element->data>0)
+    {
+      if(size + (element->end-element->start+1) <= file_size_on_disk)
+      {
+	size=size + (element->end-element->start+1);
+      }
+      else if(file_size_on_disk > size)
+      {
+	if(element->file_stat==NULL)
+	  return NULL;
+	if(next!=&space->list)
+	{
+	  alloc_data_t *new_element;
+	  new_element=td_list_entry(next, alloc_data_t, list);
+	  if(element->end+1==new_element->start && new_element->file_stat==NULL)
+	  {
+	    log_info("GOT IT\n");
+	    new_element->start-=file_size_on_disk - size;
+	    element->end=new_element->start - 1;
+	    return new_element;
+	  }
+	}
+	{
+	  alloc_data_t *new_element;
+	  new_element=(alloc_data_t*)MALLOC(sizeof(*new_element));
+	  memcpy(new_element, element, sizeof(*new_element));
+	  new_element->start+=file_size_on_disk - size;
+	  new_element->file_stat=NULL;
+	  td_list_add(&new_element->list, &element->list);
+	  element->end=new_element->start - 1;
+	  return new_element;
+	}
+      }
+    }
+  }
+  return NULL;
+}
+
+static alloc_data_t *file_error(alloc_data_t *space, file_recovery_t *file, const unsigned int blocksize)
+{
+  return file_error_aux(space, file->loc, file->offset_error, blocksize);
 }
 
 void free_search_space(alloc_data_t *list_search_space)

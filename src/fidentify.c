@@ -65,11 +65,12 @@ static int file_identify(const char *filename)
   unsigned int buffer_size;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery;
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=blocksize;
   buffer_size=blocksize + READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
   buffer=buffer_olddata + blocksize;
-  reset_file_recovery(&file_recovery);
   file=fopen(filename, "rb");
   if(file==NULL)
     return -1;
@@ -81,8 +82,9 @@ static int file_identify(const char *filename)
   }
   fclose(file);
   {
-    file_recovery_t file_recovery_new;
     struct td_list_head *tmpl;
+    file_recovery_t file_recovery_new;
+    file_recovery_new.blocksize=blocksize;
     file_recovery_new.file_stat=NULL;
     td_list_for_each(tmpl, &file_check_list.list)
     {

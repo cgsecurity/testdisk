@@ -182,9 +182,10 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=blocksize;
   buffer_start=(unsigned char *)MALLOC(READ_SIZE);
   buffer=buffer_start;
-  reset_file_recovery(&file_recovery);
   start_time=time(NULL);
   previous_time=start_time;
   current_search_space=td_list_entry(list_search_space->list.prev, alloc_data_t, list);

@@ -99,11 +99,12 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
   const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=*blocksize;
   buffer_size=(*blocksize)+READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
   buffer=buffer_olddata+(*blocksize);
-  reset_file_recovery(&file_recovery);
   start_time=time(NULL);
   previous_time=start_time;
   memset(buffer_olddata,0,(*blocksize));
