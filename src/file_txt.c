@@ -62,7 +62,7 @@ static void file_check_xml(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
-  .description="Text files with header: rtf,xml,xhtml,imm,pm,ram,reg,sh,slk,stp",
+  .description="Text files with header: rtf,xml,xhtml,mbox/imm,pm,ram,reg,sh,slk,stp",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -99,7 +99,8 @@ static const unsigned char header_json[31]	= {
 static const unsigned char header_ksh[10]  	= "#!/bin/ksh";
 static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
-static const unsigned char header_mail[5]	= {'F','r','o','m',' '};
+static const unsigned char header_mail[19]	= {'F','r','o','m',' ','M','A','I','L','E','R','-','D','A','E','M','O','N',' '};
+static const unsigned char header_mail2[5]	= {'F','r','o','m',' '};
 static const unsigned char header_mdl[7]	= {'M','o','d','e','l',' ','{'};
 static const unsigned char header_mnemosyne[48]	= {
   '-', '-', '-', ' ', 'M', 'n', 'e', 'm',
@@ -178,6 +179,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_mail2,sizeof(header_mail2), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mdl, sizeof(header_mdl),  &header_check_fasttxt, file_stat);
   register_header_check(0, header_mnemosyne, sizeof(header_mnemosyne), &header_check_fasttxt, file_stat);
   register_header_check(0, header_msf, sizeof(header_msf), &header_check_fasttxt, file_stat);
@@ -418,31 +420,32 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   }
   /* Incredimail has .imm extension but this extension isn't frequent */
   if(memcmp(buffer,header_imm,sizeof(header_imm))==0 ||
+      memcmp(buffer,header_mail,sizeof(header_mail))==0 ||
       memcmp(buffer,header_ReturnPath,sizeof(header_ReturnPath))==0)
   {
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
         file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-        strcmp(file_recovery->extension,"imm")==0)
+        strcmp(file_recovery->extension,"mbox")==0)
       return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=NULL;
-    file_recovery_new->extension="imm";
+    file_recovery_new->extension="mbox";
     return 1;
   }
-  if(memcmp(buffer,header_mail,sizeof(header_mail))==0)
+  if(memcmp(buffer,header_mail2,sizeof(header_mail2))==0)
   {
     unsigned int i;
     /* From someone@somewhere */
-    for(i=sizeof(header_mail); buffer[i]!=' ' && buffer[i]!='@' && i<200; i++);
+    for(i=sizeof(header_mail2); buffer[i]!=' ' && buffer[i]!='@' && i<200; i++);
     if(buffer[i]!='@')
       return 0;
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
         file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-        strcmp(file_recovery->extension,"imm")==0)
+        strcmp(file_recovery->extension,"mbox")==0)
       return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=NULL;
-    file_recovery_new->extension="imm";
+    file_recovery_new->extension="mbox";
     return 1;
   }
   if(memcmp(buffer,header_mdl,sizeof(header_mdl))==0)
@@ -820,7 +823,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
        memcmp(buffer+i+1, header_ReceivedFrom, sizeof(header_ReceivedFrom))==0) &&
         !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
           file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-          strcmp(file_recovery->extension,"imm")==0))
+          strcmp(file_recovery->extension,"mbox")==0))
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->calculated_file_size=tmp+i+1;
