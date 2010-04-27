@@ -99,7 +99,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
       i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
-  doc_file_size=512+((le32(header->num_FAT_blocks)*128-freesect_count)<<le16(header->uSectorShift));
+  doc_file_size=512+(((le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
   if(doc_file_size > file_recovery->file_size)
   {
     free(fat);
@@ -304,9 +304,15 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
   if(memcmp(buffer,doc_header,sizeof(doc_header))==0)
   {
     const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
-    if(le16(header->reserved)!=0 || le32(header->reserved1)!=0 || le32(header->reserved2)!=0)
+    if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
       return 0;
-    if(le16(header->uMiniSectorShift)!=6 || le16(header->uSectorShift)!=9)
+    /* qbb file have reserved2=4 */
+    if(le32(header->reserved2)!=0 && le32(header->reserved2)!=4)
+      return 0;
+    if(le16(header->uMiniSectorShift)!=6)
+      return 0;
+    /* qbb file have uSectorShift=12 */
+    if(le16(header->uSectorShift)!=9 && le16(header->uSectorShift)!=12)
       return 0;
     /*
        num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
@@ -411,30 +417,33 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
   memcpy(dif,(header+1),109*4);
   if(le32(header->num_extra_FAT_blocks)>0)
   { /* Load DIF*/
-    uint32_t *dif_pos=dif+109;
     unsigned long int i;
-    unsigned long int block=le32(header->FAT_next_block);
-    for(i=0;i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;i++)
+    unsigned long int block;
+    unsigned char *data=(unsigned char*)&dif[109];
+    for(i=0, block=le32(header->FAT_next_block);
+	i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;
+	i++, block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)]))
     {
-      //      log_trace("pointeur:0x%x\n",block);
-      if(fseek(IN,512+(block<<le16(header->uSectorShift)),SEEK_SET)<0)
+      if(fseek(IN, 512+(block<<le16(header->uSectorShift)), SEEK_SET) < 0)
       {
 	free(dif);
 	return NULL;
       }
-      if(fread(dif_pos, (i<le32(header->num_extra_FAT_blocks)?128:(le32(header->num_FAT_blocks)-109)%127),4,IN)!=4)
+      if(fread(data, 1<<le16(header->uSectorShift), 1, IN)!=1)
       {
 	free(dif);
 	return NULL;
       }
-      dif_pos+=(((1<<le16(header->uSectorShift))/4)-1);
-      block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)+127]);
+      data+=(1<<le16(header->uSectorShift))-4;
     }
   }
   fat=(uint32_t*)MALLOC(le32(header->num_FAT_blocks)<<le16(header->uSectorShift));
   { /* Load FAT */
     unsigned long int j;
-    for(j=0; j<le32(header->num_FAT_blocks); j++)
+    unsigned char *data=(unsigned char*)fat;
+    for(j=0, data=(unsigned char*)fat;
+	j<le32(header->num_FAT_blocks);
+	j++, data+=(1<<le16(header->uSectorShift)))
     {
       if(fseek(IN,512+(le32(dif[j])<<le16(header->uSectorShift)),SEEK_SET)<0)
       {
@@ -442,7 +451,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	free(fat);
 	return NULL;
       }
-      if(fread(fat+((j<<le16(header->uSectorShift))/4),(1<<le16(header->uSectorShift)),1,IN)!=1)
+      if(fread(data, (1<<le16(header->uSectorShift)), 1, IN)!=1)
       {
 	free(dif);
 	free(fat);
@@ -714,6 +723,12 @@ static void file_rename_doc(const char *old_filename)
     fclose(file);
     return ;
   }
+  if(le16(header->uSectorShift)==12)
+  {
+    fclose(file);
+    file_rename(old_filename, NULL, 0, 0, "qbb", 1);
+    return ;
+  }
   if((fat=OLE_load_FAT(file, header))==NULL)
   {
     fclose(file);
@@ -764,103 +779,106 @@ static void file_rename_doc(const char *old_filename)
 	  ministream_size=le32(dir_entry->size);
 	}
 	for(sid=0, dir_entry=dir_entries;
-	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
+	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR);
 	    sid++,dir_entry++)
 	{
-	  const char SummaryInformation[38]=
+	  if(dir_entry->type!=NO_ENTRY)
 	  {
-	    0x05, '\0', 'S', '\0', 'u', '\0', 'm', '\0',
-	     'm', '\0', 'a', '\0', 'r', '\0', 'y', '\0',
-	     'I', '\0', 'n', '\0', 'f', '\0', 'o', '\0',
-	     'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
-	     'i', '\0', 'o', '\0', 'n', '\0'
-	  };
-	  const char WilcomDesignInformationDDD[54]=
-	  {
-	    0x05, '\0', 'W', '\0', 'i', '\0', 'l', '\0',
-	     'c', '\0', 'o', '\0', 'm', '\0', 'D', '\0',
-	     'e', '\0', 's', '\0', 'i', '\0', 'g', '\0',
-	     'n', '\0', 'I', '\0', 'n', '\0', 'f', '\0',
-	     'o', '\0', 'r', '\0', 'm', '\0', 'a', '\0',
-	     't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
-	     'D', '\0', 'D', '\0', 'D', '\0'
-	  };
+	    const char SummaryInformation[38]=
+	    {
+	      0x05, '\0', 'S', '\0', 'u', '\0', 'm', '\0',
+	      'm', '\0', 'a', '\0', 'r', '\0', 'y', '\0',
+	      'I', '\0', 'n', '\0', 'f', '\0', 'o', '\0',
+	      'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
+	      'i', '\0', 'o', '\0', 'n', '\0'
+	    };
+	    const char WilcomDesignInformationDDD[54]=
+	    {
+	      0x05, '\0', 'W', '\0', 'i', '\0', 'l', '\0',
+	      'c', '\0', 'o', '\0', 'm', '\0', 'D', '\0',
+	      'e', '\0', 's', '\0', 'i', '\0', 'g', '\0',
+	      'n', '\0', 'I', '\0', 'n', '\0', 'f', '\0',
+	      'o', '\0', 'r', '\0', 'm', '\0', 'a', '\0',
+	      't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
+	      'D', '\0', 'D', '\0', 'D', '\0'
+	    };
 #ifdef DEBUG_OLE
-	  unsigned int j;
-	  for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
-	  {
-	    log_info("%c",dir_entry->name[j]);
-	  }
-	  log_info(" type %u", dir_entry->type);
-	  log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
-	  log_info(" sector %u (%u bytes)\n",
-	      (unsigned int)le32(dir_entry->start_block),
-	      (unsigned int)le32(dir_entry->size));
+	    unsigned int j;
+	    for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
+	    {
+	      log_info("%c",dir_entry->name[j]);
+	    }
+	    log_info(" type %u", dir_entry->type);
+	    log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
+	    log_info(" sector %u (%u bytes)\n",
+		(unsigned int)le32(dir_entry->start_block),
+		(unsigned int)le32(dir_entry->size));
 #endif
-	  if(memcmp(dir_entry->name, WilcomDesignInformationDDD, sizeof(WilcomDesignInformationDDD))==0)
-	  {
-	    /* Wilcom ES Software */
-	    ext="emb";
-	  }
-	  if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
-	  {
-	    OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_block,
-		le32(dir_entry->start_block), le32(dir_entry->size),
-		&ext, &title, &file_time);
-	  }
-	  if(sid==1 && memcmp(dir_entry->name, "1\0\0\0", 4)==0)
-	    is_db++;
-	  else if(sid==2 && memcmp(dir_entry->name, "2\0\0\0", 4)==0)
-	    is_db++;
-	  /* 3ds max */
-	  if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
-	    ext="max";
-	  /* MS Excel
-	   * Note: Microsoft Works Spreadsheet contains the same signature */
-	  else if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
-	    ext="xls";
-	  else if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
-	    ext="sda";
-	  else if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
-	    ext="sdc";
-	  /* Microsoft Works Spreadsheet or Chart */
-	  else if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
-	    ext="xlr";
-	  /* HP Photosmart Photo Printing Album */
-	  else if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
-	    ext="albm";
-	  /* SigmaPlot .jnb */
-	  else if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
-	    ext="jnb";
-	  else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
-	    ext="ppt";
-	  /* Microsoft Works .wps */
-	  else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
-	    ext="wps";
-	  /* Outlook */
-	  else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
-	    ext="msg";
-	  /* Licom AlphaCAM */
-	  else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
-	    ext="amb";
-	  /* Note: False positive with StarImpress sdd files */
-	  else if(memcmp(dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
-	    ext="sdw";
-	  /* Visio */
-	  else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
-	    ext="vsd";
-	  /* SolidWorks */
-	  else if(memcmp(dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
-	  {
+	    if(memcmp(dir_entry->name, WilcomDesignInformationDDD, sizeof(WilcomDesignInformationDDD))==0)
+	    {
+	      /* Wilcom ES Software */
+	      ext="emb";
+	    }
+	    if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
+	    {
+	      OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_block,
+		  le32(dir_entry->start_block), le32(dir_entry->size),
+		  &ext, &title, &file_time);
+	    }
+	    if(sid==1 && memcmp(dir_entry->name, "1\0\0\0", 4)==0)
+	      is_db++;
+	    else if(sid==2 && memcmp(dir_entry->name, "2\0\0\0", 4)==0)
+	      is_db++;
+	    /* 3ds max */
+	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
+	      ext="max";
+	    /* MS Excel
+	     * Note: Microsoft Works Spreadsheet contains the same signature */
+	    else if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
+	      ext="xls";
+	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
+	      ext="sda";
+	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
+	      ext="sdc";
+	    /* Microsoft Works Spreadsheet or Chart */
+	    else if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
+	      ext="xlr";
+	    /* HP Photosmart Photo Printing Album */
+	    else if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
+	      ext="albm";
+	    /* SigmaPlot .jnb */
+	    else if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
+	      ext="jnb";
+	    else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
+	      ext="ppt";
+	    /* Microsoft Works .wps */
+	    else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
+	      ext="wps";
+	    /* Outlook */
+	    else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
+	      ext="msg";
+	    /* Licom AlphaCAM */
+	    else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
+	      ext="amb";
+	    /* Note: False positive with StarImpress sdd files */
+	    else if(memcmp(dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
+	      ext="sdw";
+	    /* Visio */
+	    else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
+	      ext="vsd";
+	    /* SolidWorks */
+	    else if(memcmp(dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
+	    {
 #ifdef DJGPP
-	    ext="sld";
+	      ext="sld";
 #else
-	    ext="sldprt";
+	      ext="sldprt";
 #endif
+	    }
+	    /* Quattro Pro spreadsheet */
+	    else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
+	      ext="qpw";
 	  }
-	  /* Quattro Pro spreadsheet */
-	  else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
-	    ext="qpw";
 	}
       }
       free(dir_entries);
