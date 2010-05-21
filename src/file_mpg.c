@@ -102,13 +102,13 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
      (buffer[3]==0xBA && (buffer[4]&0xc4)==0x44) ||
      /* MPEG-1 system header start code */
      (buffer[3]==0xBB && (buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01) ||
-     /* MPEG-1 sequence header code, horizontal size>0 && vertical size>0, bitrate!=0 */
+     /* MPEG-1 sequence header code, horizontal size>0 && vertical size>0, aspect_ratio!=0 */
      (buffer[3]==0xB3 &&
       (buffer[4]<<4)+(buffer[5]>>4)>0 &&
-      ((buffer[5]&&0x0f)<<4)+buffer[6]>0 &&
-      buffer[8]!=0) ||
+      ((buffer[5]&&0x0f)<<8)+buffer[6]>0 &&
+      (buffer[7]>>4)!=0 && (buffer[7]>>4)!=15) ||
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object sequence start code */
-     (buffer[3]==0xB0) ||
+     /* (buffer[3]==0xB0) || */
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object start code */
      (buffer[3]==0xB5 && (buffer[4]&0xf0)==0x80)
     )
@@ -129,18 +129,21 @@ static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer
   const unsigned char sequence_end_iso_end[8]={0x00, 0x00, 0x01, 0xB7, 0x00, 0x00, 0x01, 0xB9};
   unsigned int i;
   /* search padding + end code */
-  if(memcmp(&buffer[buffer_size/2-4], padding_iso_end, sizeof(padding_iso_end))==0)
+  if(buffer_size>=8 && memcmp(&buffer[buffer_size/2-4], padding_iso_end, sizeof(padding_iso_end))==0)
   {
     file_recovery->calculated_file_size=file_recovery->file_size+4;
     return 2;
   }
   /* search video sequence end followed by iso end code*/
-  for(i=buffer_size/2-7; i<buffer_size-7; i++)
+  if(buffer_size>=14)
   {
-    if(buffer[i]==0x00 && memcmp(&buffer[i], sequence_end_iso_end, sizeof(sequence_end_iso_end))==0)
+    for(i=buffer_size/2-7; i<buffer_size-7; i++)
     {
-      file_recovery->calculated_file_size=file_recovery->file_size+i+sizeof(sequence_end_iso_end)-buffer_size/2;
-      return 2;
+      if(buffer[i]==0x00 && memcmp(&buffer[i], sequence_end_iso_end, sizeof(sequence_end_iso_end))==0)
+      {
+	file_recovery->calculated_file_size=file_recovery->file_size+i+sizeof(sequence_end_iso_end)-buffer_size/2;
+	return 2;
+      }
     }
   }
   /* some files don't end by iso end code, so continue... */
