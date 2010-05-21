@@ -94,8 +94,9 @@ static int header_check_pcx(const unsigned char *buffer, const unsigned int buff
       pcx->Reserved==0 &&
       le16(pcx->XMin) <= le16(pcx->XMax) &&
       le16(pcx->YMin) <= le16(pcx->YMax) &&
-      pcx->BytesPerLine>0 &&
-      pcx->Filler[0]==0)
+      pcx->BytesPerLine>0 && pcx->BytesPerLine%2==0 &&
+      pcx->Filler[0]==0 && pcx->Filler[1]==0 &&
+      pcx->Filler[54]==0 && pcx->Filler[55]==0)
   {
     reset_file_recovery(file_recovery_new);
 #ifdef DEBUG_PCX
