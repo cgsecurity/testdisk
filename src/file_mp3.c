@@ -187,29 +187,26 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       const unsigned int mpeg_layer	=(buffer[potential_frame_offset+1]>>1)&0x03;
       const unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
       const unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
-      const unsigned int padding		=(buffer[potential_frame_offset+2]>>1)&0x01;
-      const unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
-      const unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
+      const unsigned int padding	=(buffer[potential_frame_offset+2]>>1)&0x01;
+      const unsigned int bit_rate	=bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key];
+      const unsigned int sample_rate	=sample_rate_table[mpeg_version][sampling_rate_key];
       unsigned int frameLengthInBytes=0;
-      if(sample_rate>0 && bit_rate>0)
+      if(sample_rate==0 || bit_rate==0 || mpeg_layer==MPEG_L1)
+	return 0;
+      if(mpeg_layer==MPEG_L3)
       {
-	if(mpeg_layer==MPEG_L3)
-	{
-	  if(mpeg_version==MPEG_V1)
-	    frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
-	  else
-	    frameLengthInBytes = 72 * bit_rate / sample_rate + padding;
-	}
-	else if(mpeg_layer==MPEG_L2)
-	  frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
+	if(mpeg_version==MPEG_V1)
+	  frameLengthInBytes = 144000 * bit_rate / sample_rate + padding;
 	else
-	  frameLengthInBytes = (12 * bit_rate / sample_rate + padding)*4;
+	  frameLengthInBytes = 72000 * bit_rate / sample_rate + padding;
       }
+      else if(mpeg_layer==MPEG_L2)
+	frameLengthInBytes = 144000 * bit_rate / sample_rate + padding;
+      else
+	frameLengthInBytes = (12000 * bit_rate / sample_rate + padding)*4;
 #ifdef DEBUG_MP3
-      log_info("bit_rate=%u\n",bit_rate);
-      log_info("sample_rate=%u\n",sample_rate);
-      log_info("padding=%u\n", padding);
-      log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
+      log_info("framesize: %u, layer: %u, bitrate: %u, padding: %u\n",
+	  frameLengthInBytes, 4-mpeg_layer, bit_rate, padding);
 #endif
       if(frameLengthInBytes==0)
 	return 0;
@@ -268,13 +265,13 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
     */
     if(buffer[i+0]==0xFF && ((buffer[i+1]&0xE0)==0xE0))
     {
-      unsigned int mpeg_version	=(buffer[i+1]>>3)&0x03;
-      unsigned int mpeg_layer	=(buffer[i+1]>>1)&0x03;
-      unsigned int bit_rate_key	=(buffer[i+2]>>4)&0x0F;
-      unsigned int sampling_rate_key=(buffer[i+2]>>2)&0x03;
-      unsigned int padding		=(buffer[i+2]>>1)&0x01;
-      unsigned int bit_rate= bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key]*1000;
-      unsigned int sample_rate=sample_rate_table[mpeg_version][sampling_rate_key];
+      const unsigned int mpeg_version	=(buffer[i+1]>>3)&0x03;
+      const unsigned int mpeg_layer	=(buffer[i+1]>>1)&0x03;
+      const unsigned int bit_rate_key	=(buffer[i+2]>>4)&0x0F;
+      const unsigned int sampling_rate_key=(buffer[i+2]>>2)&0x03;
+      const unsigned int padding	=(buffer[i+2]>>1)&0x01;
+      const unsigned int bit_rate	=bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key];
+      const unsigned int sample_rate	=sample_rate_table[mpeg_version][sampling_rate_key];
       unsigned int frameLengthInBytes=0;
       /*
       log_info("frame_offset=%u\n",i);
@@ -282,24 +279,21 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
       log_info("sample_rate=%u\n",sample_rate);
       log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
       */
-      if(sample_rate>0 && bit_rate>0)
-      {
-	if(mpeg_layer==MPEG_L3)
-	{
-	  if(mpeg_version==MPEG_V1)
-	    frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
-	  else
-	    frameLengthInBytes = 72 * bit_rate / sample_rate + padding;
-	}
-	else if(mpeg_layer==MPEG_L2)
-	  frameLengthInBytes = 144 * bit_rate / sample_rate + padding;
-	else
-	  frameLengthInBytes = (12 * bit_rate / sample_rate + padding)*4;
-      }  
-      if(frameLengthInBytes<3)
-      {
+      if(sample_rate==0 || bit_rate==0 || mpeg_layer==MPEG_L1)
 	return 2;
+      if(mpeg_layer==MPEG_L3)
+      {
+	if(mpeg_version==MPEG_V1)
+	  frameLengthInBytes = 144000 * bit_rate / sample_rate + padding;
+	else
+	  frameLengthInBytes = 72000 * bit_rate / sample_rate + padding;
       }
+      else if(mpeg_layer==MPEG_L2)
+	frameLengthInBytes = 144000 * bit_rate / sample_rate + padding;
+      else
+	frameLengthInBytes = (12000 * bit_rate / sample_rate + padding)*4;
+      if(frameLengthInBytes<3)
+	return 2;
       file_recovery->calculated_file_size+=frameLengthInBytes;
     }
     else if(buffer[i]=='L' && buffer[i+1]=='Y' && buffer[i+2]=='R' && buffer[i+3]=='I' && buffer[i+4]=='C' && buffer[i+5]=='S' && buffer[i+6]=='B' && buffer[i+7]=='E' && buffer[i+8]=='G' && buffer[i+9]=='I' && buffer[i+10]=='N')
