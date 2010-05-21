@@ -58,11 +58,12 @@ static int data_check_txt(const unsigned char *buffer, const unsigned int buffer
 static void file_check_emlx(file_recovery_t *file_recovery);
 static void file_check_ers(file_recovery_t *file_recovery);
 static void file_check_svg(file_recovery_t *file_recovery);
+static void file_check_smil(file_recovery_t *file_recovery);
 static void file_check_xml(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
-  .description="Text files with header: rtf,xml,xhtml,mbox/imm,pm,ram,reg,sh,slk,stp",
+  .description="Text files with header: rtf,xml,xhtml,mbox/imm,pm,ram,reg,sh,slk,stp,jad,url",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -91,6 +92,7 @@ static const unsigned char header_emka[16]	= { '1', '\t', '\t', '\t', '\t', '\t'
 static const unsigned char header_ers[19]	= "DatasetHeader Begin";
 static const unsigned char header_ics[15]	= "BEGIN:VCALENDAR";
 static const unsigned char header_imm[13]	= {'M','I','M','E','-','V','e','r','s','i','o','n',':'};
+static const unsigned char header_jad[9]	= { 'M', 'I', 'D', 'l', 'e', 't', '-', '1', ':'};
 static const unsigned char header_json[31]	= {
   '{', '"', 't', 'i', 't', 'l', 'e', '"',
   ':', '"', '"', ',', '"', 'i', 'd', '"',
@@ -137,6 +139,7 @@ static const unsigned char header_rpp[16]	= { '<', 'R', 'E', 'A', 'P', 'E', 'R',
 static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
 static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
+static const unsigned char header_smil[6]  	= "<smil>";
 static const unsigned char header_stl[6]	= "solid ";
 static const unsigned char header_stp[13]  	= "ISO-10303-21;";
 static const unsigned char header_url[18]  	= {
@@ -146,12 +149,14 @@ static const unsigned char header_url[18]  	= {
 };
 static const unsigned char header_wpl[21]	= { '<', '?', 'w', 'p', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '=', '"', '1', '.', '0', '"', '?', '>' };
 static const unsigned char header_xml[14]	= "<?xml version=";
+static const unsigned char header_xml_utf8[17]	= {0xef, 0xbb, 0xbf, '<', '?', 'x', 'm', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '='};
 static const unsigned char header_xmp[35]	= {
   '<', 'x', ':', 'x', 'm', 'p', 'm', 'e',
   't', 'a', ' ', 'x', 'm', 'l', 'n', 's',
   ':', 'x', '=', '"', 'a', 'd', 'o', 'b',
   'e', ':', 'n', 's', ':', 'm', 'e', 't',
   'a', '/', '"'};
+static const unsigned char header_vbookmark[10]	= { 'B', 'E', 'G', 'I', 'N', ':', 'V', 'B', 'K', 'M'};
 static const char sign_java1[6]			= "class";
 static const char sign_java3[15]		= "private static";
 static const char sign_java4[17]		= "public interface";
@@ -174,6 +179,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_jad, sizeof(header_jad), &header_check_fasttxt, file_stat);
   register_header_check(0, header_json, sizeof(header_json), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ksh,sizeof(header_ksh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
@@ -195,12 +201,15 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_smil,sizeof(header_smil), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_url,sizeof(header_url), &header_check_fasttxt, file_stat);
   register_header_check(0, header_wpl,sizeof(header_wpl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_xml_utf8,sizeof(header_xml_utf8), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xmp,sizeof(header_xmp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_vbookmark, sizeof(header_vbookmark), &header_check_fasttxt, file_stat);
 }
 
 // #define DEBUG_FILETXT
@@ -596,7 +605,8 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="ram";
     return 1;
   }
-  if(memcmp(buffer,header_xml,sizeof(header_xml))==0)
+  if(memcmp(buffer, header_xml, sizeof(header_xml))==0 ||
+      memcmp(buffer, header_xml_utf8, sizeof(header_xml_utf8))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -692,6 +702,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     free(buffer2);
     return 1;
   }
+  /* Java Application Descriptor
+   * http://en.wikipedia.org/wiki/JAD_%28file_format%29 */
+  if(memcmp(buffer, header_jad, sizeof(header_jad))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="jad";
+    return 1;
+  }
   /* Lyx http://www.lyx.org */
   if(memcmp(buffer, header_lyx, sizeof(header_lyx))==0)
   {
@@ -750,6 +770,16 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="cue";
     return 1;
   }
+  /* Synchronized Multimedia Integration Language
+   * http://en.wikipedia.org/wiki/Synchronized_Multimedia_Integration_Language */
+  if(memcmp(buffer, header_smil, sizeof(header_smil))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_smil;
+    file_recovery_new->extension="smil";
+    return 1;
+  }
   if(memcmp(buffer,header_xmp,sizeof(header_xmp))==0 &&
       !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
 	(file_recovery->file_stat->file_hint==&file_hint_pdf ||
@@ -760,6 +790,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="xmp";
+    return 1;
+  }
+  if(memcmp(buffer, header_vbookmark, sizeof(header_vbookmark))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="url";
     return 1;
   }
   return 0;
@@ -1138,6 +1176,13 @@ static void file_check_emlx(file_recovery_t *file_recovery)
       file_recovery->file_size=file_recovery->calculated_file_size+2048;
     file_search_footer(file_recovery, emlx_footer, sizeof(emlx_footer), 0);
   }
+}
+
+static void file_check_smil(file_recovery_t *file_recovery)
+{
+  const unsigned char smil_footer[7]= { '<', '/', 's', 'm', 'i', 'l', '>'};
+  file_search_footer(file_recovery, smil_footer, sizeof(smil_footer), 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_xml(file_recovery_t *file_recovery)
