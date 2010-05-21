@@ -232,6 +232,12 @@ static char OriginalFilename[34]={
   'F', 0x0, 'i', 0x0, 'l', 0x0, 'e', 0x0, 'n', 0x0, 'a', 0x0, 'm', 0x0, 'e', 0x0,
   0x0, 0x0
 };
+
+static char InternalName[24]={
+  'I', 0x0, 'n', 0x0, 't', 0x0, 'e', 0x0, 'r', 0x0, 'n', 0x0, 'a', 0x0, 'l', 0x0,
+  'N', 0x0, 'a', 0x0, 'm', 0x0, 'e', 0x0
+};
+
 static unsigned int ReadUnicodeStr(const char *buffer, unsigned int pos, const unsigned int len)
 {
   for(; pos+2<len && (buffer[pos]!='\0' || buffer[pos+1]!='\0'); pos+=2)
@@ -246,35 +252,22 @@ static unsigned int ReadUnicodeStr(const char *buffer, unsigned int pos, const u
   return pos;
 }
 
-static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, const char *old_filename)
+static int PEVersion_aux(const char*buffer, const unsigned int length, const char *old_filename, const char *needle, const unsigned int needle_len, const int force_ext)
 {
-  char *buffer;
   unsigned int pos=0;
   unsigned int end=length;
-  if(length==0 || length > 1024*1024)
-    return;
-  if(fseek(file, offset, SEEK_SET)<0)
-    return ;
-  buffer=(char*)MALLOC(length);
-  if(fread(buffer, length, 1, file) != 1)
-  {
-    free(buffer);
-    return ;
-  }
   while(1)
   {
     const struct PE_index *PE_index;
     pos=(pos + 3) & 0xfffffffc;  /* align on a 4-byte boundary */
     if(pos + 6 > end)
     {
-      free(buffer);
-      return ;
+      return -1;
     }
     PE_index=(const struct PE_index*)&buffer[pos];
     if(le16(PE_index->len)==0 && le16(PE_index->val_len)==0)
     {
-      free(buffer);
-      return ;
+      return -1;
     }
     {
       const char *stringName=&buffer[pos+6];
@@ -303,8 +296,8 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
 	  {
 	    int do_rename=0;
 	    PE_index=(const struct PE_index*)&buffer[pt];
-	    if(pt+6+sizeof(OriginalFilename) < end &&
-		memcmp(&buffer[pt+6], OriginalFilename, sizeof(OriginalFilename))==0)
+	    if(pt+6+needle_len < end &&
+		memcmp(&buffer[pt+6], needle, needle_len)==0)
 	    {
 	      do_rename=1;
 	    }
@@ -313,9 +306,8 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
 	    {
 	      if(do_rename)
 	      {
-		file_rename_unicode(old_filename, buffer, end, pt, NULL, 0);
-		free(buffer);
-		return ;
+		file_rename_unicode(old_filename, buffer, end, pt, NULL, force_ext);
+		return 0;
 	      }
 #ifdef DEBUG_EXE
 	      log_info(": ");
@@ -334,6 +326,28 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
       }
     }
   }
+  return -1;
+}
+
+static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, const char *old_filename)
+{
+  char *buffer;
+  if(length==0 || length > 1024*1024)
+    return;
+  if(fseek(file, offset, SEEK_SET)<0)
+    return ;
+  buffer=(char*)MALLOC(length);
+  if(fread(buffer, length, 1, file) != 1)
+  {
+    free(buffer);
+    return ;
+  }
+  if(PEVersion_aux(buffer, length, old_filename, OriginalFilename, sizeof(OriginalFilename), 0)==0)
+  {
+    free(buffer);
+    return;
+  }
+  PEVersion_aux(buffer, length, old_filename, InternalName, sizeof(InternalName), 1);
   free(buffer);
 }
 
