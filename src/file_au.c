@@ -28,6 +28,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 static void register_header_check_au(file_stat_t *file_stat);
@@ -50,13 +51,33 @@ static void register_header_check_au(file_stat_t *file_stat)
   register_header_check(0, au_header,sizeof(au_header), &header_check_au, file_stat);
 }
 
+/* http://en.wikipedia.org/wiki/Au_file_format */
+struct header_au_s
+{
+  uint32_t magic;
+  uint32_t offset;
+  uint32_t size;
+  uint32_t encoding;
+  uint32_t sample_rate;
+  uint32_t channels;
+} __attribute__ ((__packed__));
+
 static int header_check_au(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,au_header,sizeof(au_header))==0)
+  const struct header_au_s *au=(const struct header_au_s *)buffer;
+  if(memcmp(buffer,au_header,sizeof(au_header))==0 &&
+    be32(au->encoding)<=27 &&
+    be32(au->channels)<=256)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=111;
     file_recovery_new->extension=file_hint_au.extension;
+    if(be32(au->size)!=0xffffffff)
+    {
+      file_recovery_new->calculated_file_size=be32(au->offset)+be32(au->size);
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+    }
     return 1;
   }
   return 0;
