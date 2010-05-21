@@ -55,13 +55,15 @@ static void register_header_check_swf(file_stat_t *file_stat)
 
 static int header_check_swf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, swf_header_compressed, sizeof(swf_header_compressed))==0)
+  if(memcmp(buffer, swf_header_compressed, sizeof(swf_header_compressed))==0 &&
+      buffer[3]>0 && buffer[3]<=20)
   { /* Compressed flash */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="swc";
     return 1;
   }
-  if(memcmp(buffer, swf_header, sizeof(swf_header))==0)
+  if(memcmp(buffer, swf_header, sizeof(swf_header))==0 &&
+      buffer[3]>0 && buffer[3]<=20)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_swf.extension;
