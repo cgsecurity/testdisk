@@ -51,6 +51,8 @@ static const unsigned char lnk_header[20]= {
   0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46	/* GUID */
   };
 
+static const unsigned char lnk_reserved[10]= {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 struct lnk_header_s {
   uint32_t magic; 		/* 0h Always 0000004Ch ‘L’ */
   char     guid[16]; 		/* 4h GUID of shortcut files */
@@ -86,7 +88,8 @@ static void register_header_check_lnk(file_stat_t *file_stat)
 
 static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,lnk_header,sizeof(lnk_header))==0)
+  if(memcmp(buffer, lnk_header, sizeof(lnk_header))==0 &&
+      memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))==0)
   {
     const struct lnk_header_s* lnk_head=(const struct lnk_header_s*)buffer;
     const uint32_t flags=le32(lnk_head->flags);
