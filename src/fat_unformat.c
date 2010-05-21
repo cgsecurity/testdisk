@@ -91,7 +91,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
     if(memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
-      unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
+      const unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
 	(buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
       log_info("sector %lu, cluster %lu\n",
 	  (unsigned long)(offset/disk->sector_size), cluster);
