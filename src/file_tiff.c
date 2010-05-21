@@ -41,8 +41,8 @@
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
-static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
+static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
+static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
 
 const file_hint_t file_hint_tiff= {
   .extension="tif",
@@ -240,7 +240,7 @@ static int header_check_tiff(const unsigned char *buffer, const unsigned int buf
 	  file_recovery_new->extension="dcr";
 	else if(strcmp(tag_make, "SONY")==0)
 	  file_recovery_new->extension="sr2";
-	else if(strcmp(tag_make, "SONY ")==0)
+	else if(strncmp(tag_make, "SONY ",5)==0)
 	  file_recovery_new->extension="arw";
       }
     }
@@ -425,7 +425,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff, const ch
 }
 #endif
 
-static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
+static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
 {
   unsigned char buffer[8192];
   unsigned int i,n;
@@ -442,7 +442,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
   uint64_t strip_bytecounts=0;
   TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
 #ifdef DEBUG_TIFF
-  log_info("header_check_tiff_le(in, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
+  log_info("header_check_tiff_le(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
 #endif
   if(depth>4)
     return 0;
@@ -450,14 +450,14 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
     return 0;
   if(tiff_diroff == 0)
     return 0;
-  if(fseek(in, tiff_diroff, SEEK_SET) < 0)
+  if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
     return 0;
-  data_read=fread(buffer, 1, sizeof(buffer), in);
+  data_read=fread(buffer, 1, sizeof(buffer), fr->handle);
   if(data_read<2)
     return 0;
   n=buffer[0]+(buffer[1]<<8);
 #ifdef DEBUG_TIFF
-  log_info("header_check_tiff_le(in, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
+  log_info("header_check_tiff_le(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
   //sizeof(TIFFDirEntry)=12;
   if(n > (unsigned)(data_read-2)/12)
@@ -515,10 +515,9 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	break;
       case TIFFTAG_EXIFIFD:
       case TIFFTAG_KODAKIFD:
-      case TIFFTAG_SUBIFD:
 	if(val==4)
 	{
-	  uint64_t new_offset=header_check_tiff_le(in, le32(entry->tdir_offset), depth+1, 0, tag_make);
+	  uint64_t new_offset=header_check_tiff_le(fr, le32(entry->tdir_offset), depth+1, 0, tag_make);
 	  if(new_offset==0)
 	    return 0;
 	  if(max_offset < new_offset)
@@ -530,19 +529,68 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
 	  unsigned int j;
 	  uint32_t *subifd_offsetp;
 	  subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
-	  if(fseek(in, le32(entry->tdir_offset), SEEK_SET) < 0)
+	  if(fseek(fr->handle, le32(entry->tdir_offset), SEEK_SET) < 0)
 	  {
 	    free(subifd_offsetp);
 	    return 0;
 	  }
-	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
+	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, fr->handle) != nbr)
 	  {
 	    free(subifd_offsetp);
 	    return 0;
 	  }
 	  for(j=0; j<nbr; j++)
 	  {
-	    const uint64_t new_offset=header_check_tiff_le(in, le32(subifd_offsetp[j]), depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_le(fr, le32(subifd_offsetp[j]), depth+1, 0, tag_make);
+	    if(new_offset==0)
+	    {
+	      free(subifd_offsetp);
+	      return 0;
+	    }
+	    if(max_offset < new_offset)
+	      max_offset = new_offset;
+	  }
+	  free(subifd_offsetp);
+	}
+	break;
+      case TIFFTAG_SUBIFD:
+	if(fr->extension!=NULL && strcmp(fr->extension, "arw")==0)
+	{
+	  /* DSLR-A100 is boggus */
+	  if(val==4)
+	  {
+	    const uint64_t new_offset=le32(entry->tdir_offset);
+	    if(max_offset < new_offset)
+	      max_offset=new_offset;
+	  }
+	}
+	else if(val==4)
+	{
+	  uint64_t new_offset=header_check_tiff_le(fr, le32(entry->tdir_offset), depth+1, 0, tag_make);
+	  if(new_offset==0)
+	    return 0;
+	  if(max_offset < new_offset)
+	    max_offset=new_offset;
+	}
+	else if(val>4)
+	{
+	  const unsigned int nbr=(le32(entry->tdir_count)<32?le32(entry->tdir_count):32);
+	  unsigned int j;
+	  uint32_t *subifd_offsetp;
+	  subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
+	  if(fseek(fr->handle, le32(entry->tdir_offset), SEEK_SET) < 0)
+	  {
+	    free(subifd_offsetp);
+	    return 0;
+	  }
+	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, fr->handle) != nbr)
+	  {
+	    free(subifd_offsetp);
+	    return 0;
+	  }
+	  for(j=0; j<nbr; j++)
+	  {
+	    const uint64_t new_offset=header_check_tiff_le(fr, le32(subifd_offsetp[j]), depth+1, 0, tag_make);
 	    if(new_offset==0)
 	    {
 	      free(subifd_offsetp);
@@ -579,7 +627,7 @@ static uint64_t header_check_tiff_le(FILE *in, const uint32_t tiff_diroff, const
     max_offset = strip_offsets + strip_bytecounts;
   tiff_next_diroff=(uint32_t *)entry;
   {
-    uint64_t new_offset=header_check_tiff_le(in, le32(*tiff_next_diroff), depth, count+1, tag_make);
+    uint64_t new_offset=header_check_tiff_le(fr, le32(*tiff_next_diroff), depth, count+1, tag_make);
     if(max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -690,7 +738,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff, const ch
 }
 #endif
 
-static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
+static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
 {
   unsigned char buffer[8192];
   unsigned int i,n;
@@ -712,14 +760,14 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
     return 0;
   if(tiff_diroff == 0)
     return 0;
-  if(fseek(in, tiff_diroff, SEEK_SET) < 0)
+  if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
     return 0;
-  data_read=fread(buffer, 1, sizeof(buffer), in);
+  data_read=fread(buffer, 1, sizeof(buffer), fr->handle);
   if(data_read<2)
     return 0;
   n=(buffer[0]<<8)+buffer[1];
 #ifdef DEBUG_TIFF
-  log_info("header_check_tiff_be(in, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
+  log_info("header_check_tiff_be(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
   //sizeof(TIFFDirEntry)=12;
   if(n > (unsigned)(data_read-2)/12)
@@ -779,7 +827,7 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
       case TIFFTAG_SUBIFD:
 	if(val==4)
 	{
-	  uint64_t new_offset=header_check_tiff_be(in, be32(entry->tdir_offset), depth+1, 0, tag_make);
+	  uint64_t new_offset=header_check_tiff_be(fr, be32(entry->tdir_offset), depth+1, 0, tag_make);
 	  if(new_offset==0)
 	    return 0;
 	  if(max_offset < new_offset)
@@ -791,19 +839,19 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
 	  unsigned int j;
 	  uint32_t *subifd_offsetp;
 	  subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
-	  if(fseek(in, be32(entry->tdir_offset), SEEK_SET) < 0)
+	  if(fseek(fr->handle, be32(entry->tdir_offset), SEEK_SET) < 0)
 	  {
 	    free(subifd_offsetp);
 	    return 0;
 	  }
-	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, in) != nbr)
+	  if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, fr->handle) != nbr)
 	  {
 	    free(subifd_offsetp);
 	    return 0;
 	  }
 	  for(j=0; j<nbr; j++)
 	  {
-	    const uint64_t new_offset=header_check_tiff_be(in, be32(subifd_offsetp[j]), depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_be(fr, be32(subifd_offsetp[j]), depth+1, 0, tag_make);
 	    if(new_offset==0)
 	    {
 	      free(subifd_offsetp);
@@ -840,7 +888,7 @@ static uint64_t header_check_tiff_be(FILE *in, const uint32_t tiff_diroff, const
     max_offset = strip_offsets + strip_bytecounts;
   tiff_next_diroff=(uint32_t *)entry;
   {
-    uint64_t new_offset=header_check_tiff_be(in, be32(*tiff_next_diroff), depth, count+1, tag_make);
+    uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth, count+1, tag_make);
     if(max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -867,9 +915,9 @@ void file_check_tiff(file_recovery_t *fr)
     if(tag_make < (const char *)buffer || tag_make >= (const char *)buffer + data_read - 20)
       tag_make=NULL;
     if(header->tiff_magic==TIFF_LITTLEENDIAN)
-      calculated_file_size=header_check_tiff_le(fr->handle, le32(header->tiff_diroff), 0, 0, tag_make);
+      calculated_file_size=header_check_tiff_le(fr, le32(header->tiff_diroff), 0, 0, tag_make);
     else if(header->tiff_magic==TIFF_BIGENDIAN)
-      calculated_file_size=header_check_tiff_be(fr->handle, be32(header->tiff_diroff), 0, 0, tag_make);
+      calculated_file_size=header_check_tiff_be(fr, be32(header->tiff_diroff), 0, 0, tag_make);
   }
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
