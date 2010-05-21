@@ -90,12 +90,15 @@ static int header_check_ps(const unsigned char *buffer, const unsigned int buffe
 static int data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
-  for(i=(buffer_size/2)-4;i+4<buffer_size;i++)
+  if(buffer_size>8)
   {
-    if(buffer[i]=='%' && buffer[i+1]=='%' && buffer[i+2]=='E' && buffer[i+3]=='O' && buffer[i+4]=='F')
+    for(i=(buffer_size/2)-4;i+4<buffer_size;i++)
     {
-      file_recovery->calculated_file_size=file_recovery->file_size+i+5-(buffer_size/2);
-      return 2;
+      if(buffer[i]=='%' && buffer[i+1]=='%' && buffer[i+2]=='E' && buffer[i+3]=='O' && buffer[i+4]=='F')
+      {
+	file_recovery->calculated_file_size=file_recovery->file_size+i+5-(buffer_size/2);
+	return 2;
+      }
     }
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
