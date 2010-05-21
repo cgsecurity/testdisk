@@ -33,6 +33,7 @@
 static void register_header_check_dat(file_stat_t *file_stat);
 static int header_check_dat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int header_check_datIE(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static int header_check_dat_history(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_dat= {
   .extension="dat",
@@ -51,10 +52,14 @@ static const unsigned char datIE_header[0x1c]= {
   'M', 'M', 'F', ' ', 'V', 'e', 'r', ' ',
   '5', '.', '2', 0x00};
 
+/* Found on Sony Ericson phone */
+static const unsigned char dat_history[8]={ 'N', 'F', 'P', 'K', 'D', 'D', 'A', 'T'};
+
 static void register_header_check_dat(file_stat_t *file_stat)
 {
   register_header_check(0, dat_header,sizeof(dat_header), &header_check_dat, file_stat);
   register_header_check(0, datIE_header,sizeof(datIE_header), &header_check_datIE, file_stat);
+  register_header_check(4, dat_history, sizeof(dat_history), &header_check_dat_history, file_stat);
 }
 
 static int header_check_dat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -78,6 +83,17 @@ static int header_check_datIE(const unsigned char *buffer, const unsigned int bu
     file_recovery_new->calculated_file_size=(uint64_t)buffer[0x1C]+(((uint64_t)buffer[0x1D])<<8)+(((uint64_t)buffer[0x1E])<<16)+(((uint64_t)buffer[0x1F])<<24);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
+  return 0;
+}
+
+static int header_check_dat_history(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(memcmp(&buffer[4], dat_history, sizeof(dat_history))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_dat.extension;
     return 1;
   }
   return 0;
