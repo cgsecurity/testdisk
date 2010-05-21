@@ -236,10 +236,12 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       if(element==current_element)
       {
 	wattrset(stdscr, A_REVERSE);
+	waddstr(stdscr, ">");
 	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
+	waddstr(stdscr, " ");
 	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
       }
     }

@@ -54,7 +54,7 @@ void write_part_mac_warning_ncurses(void)
   wprintw(window,"using values displayed by TestDisk");
   wmove(window,22,0);
   wattrset(window, A_REVERSE);
-  wprintw(window,"[ Abort ]");
+  waddstr(window,"[ Abort ]");
   wattroff(window, A_REVERSE);
   wrefresh(window);
   while(wgetch(window)==ERR);

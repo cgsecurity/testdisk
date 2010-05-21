@@ -86,7 +86,12 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	wmove(window, 6+i-offset, 0);
 	wclrtoeol(window);	/* before addstr for BSD compatibility */
 	if(current_file==pos)
+	{
 	  wattrset(window, A_REVERSE);
+	  waddstr(window, ">");
+	}
+	else
+	  waddstr(window, " ");
 	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(1));
 	if(current_file->stat.st_mtime!=0)
@@ -356,6 +361,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
     dir_aff_log(dir_data, dir_list);
     if(*current_cmd!=NULL)
     {
+      /* TODO: handle copy_files */
       dir_data->current_directory[current_directory_namelength]='\0';
       delete_list_file(dir_list);
       return -1;	/* Quit */

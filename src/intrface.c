@@ -132,11 +132,13 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       wmove(stdscr,6+i-offset,0);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
       if(parts==pos)
-      {
 	wattrset(stdscr, A_REVERSE);
-      }
       if(structure_status==0 && parts->part->status!=STATUS_DELETED && has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(2));
+      if(parts==pos)
+	waddstr(stdscr, ">");
+      else
+	waddstr(stdscr, " ");
       aff_part(stdscr, AFF_PART_STATUS, disk_car, parts->part);
       if(structure_status==0 && parts->part->status!=STATUS_DELETED && has_colors())
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));

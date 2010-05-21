@@ -176,6 +176,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
       {
 	char buffer_part_size[100];
 	wattrset(stdscr, A_REVERSE);
+	waddstr(stdscr, ">");
 	aff_part(stdscr, AFF_PART_BASE, disk_car, parts->part);
 	wattroff(stdscr, A_REVERSE);
 	wmove(stdscr,23,0);
@@ -187,6 +188,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
       } else
       {
+	waddstr(stdscr, " ");
 	aff_part(stdscr, AFF_PART_BASE, disk_car, parts->part);
       }
     }

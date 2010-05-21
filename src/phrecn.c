@@ -518,7 +518,7 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
   wmove(stdscr,22,0);
   wclrtoeol(stdscr);
   wattrset(stdscr, A_REVERSE);
-  wprintw(stdscr,"[ Quit ]");
+  waddstr(stdscr,"[ Quit ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   log_flush();
@@ -1193,7 +1193,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       if(i==current_element_num)
       {
 	wattrset(stdscr, A_REVERSE);
-	wprintw(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+	wprintw(stdscr,">[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
 	    (files_enable[i].file_hint->extension!=NULL?
 	     files_enable[i].file_hint->extension:""),
 	    files_enable[i].file_hint->description);
@@ -1201,7 +1201,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       }
       else
       {
-	wprintw(stdscr,"[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+	wprintw(stdscr," [%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
 	    (files_enable[i].file_hint->extension!=NULL?
 	     files_enable[i].file_hint->extension:""),
 	    files_enable[i].file_hint->description);

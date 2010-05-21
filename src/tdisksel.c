@@ -101,11 +101,11 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	continue;
       wmove(stdscr,8+i-offset,0);
       if(element_disk!=current_disk)
-	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr," %s\n",element_disk->disk->description_short(element_disk->disk));
       else
       {
 	wattrset(stdscr, A_REVERSE);
-	wprintw(stdscr,"%s\n",element_disk->disk->description_short(element_disk->disk));
+	wprintw(stdscr,">%s\n",element_disk->disk->description_short(element_disk->disk));
 	wattroff(stdscr, A_REVERSE);
       }
     }

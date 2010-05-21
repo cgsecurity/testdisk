@@ -1207,7 +1207,12 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  wmove(window, 6-1+i-offset, 0);
 	  wclrtoeol(window);	/* before addstr for BSD compatibility */
 	  if(file_walker==current_file)
+	  {
 	    wattrset(window, A_REVERSE);
+	    waddstr(window, ">");
+	  }
+	  else
+	    waddstr(window, " ");
 	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	    wbkgdset(window,' ' | COLOR_PAIR(2));
 	  if(file_info->stat.st_mtime!=0)

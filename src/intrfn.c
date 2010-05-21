@@ -205,29 +205,30 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
     if(lenName >= itemLength)
     {
       if( menuType & MENU_BUTTON )
-        snprintf(buff, sizeof(buff),"[%s]",mi);
+        snprintf(buff, sizeof(buff)," [%s]",mi);
       else
-        snprintf(buff, sizeof(buff),"%s",mi);
+        snprintf(buff, sizeof(buff)," %s",mi);
     }
     else
     {
       if( menuType & MENU_BUTTON )
       {
         if(menuType & MENU_VERT)
-          snprintf( buff, sizeof(buff),"[%*s%-*s]", (itemLength - lenNameMax) / 2, "",
+          snprintf( buff, sizeof(buff)," [%*s%-*s]", (itemLength - lenNameMax) / 2, "",
               (itemLength - lenNameMax + 1) / 2 + lenNameMax, mi );
         else
-          snprintf( buff, sizeof(buff),"[%*s%-*s]", (itemLength - lenName) / 2, "",
+          snprintf( buff, sizeof(buff)," [%*s%-*s]", (itemLength - lenName) / 2, "",
               (itemLength - lenName + 1) / 2 + lenName, mi );
       }
       else
-        snprintf( buff, sizeof(buff),"%*s%-*s", (itemLength - lenName) / 2, "",
+        snprintf( buff, sizeof(buff)," %*s%-*s", (itemLength - lenName) / 2, "",
             (itemLength - lenName + 1) / 2 + lenName, mi );
     }
     /* If current item is selected, highlight it */
     if( current == i )
     {
       wattrset(window, A_REVERSE);
+      buff[0]='>';
     }
 
     /* Print item */
@@ -800,10 +801,13 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
 	wmove(window,INTER_ANALYSE_Y+i-first_line_to_display,INTER_ANALYSE_X);
 	wclrtoeol(window);
 	if(i==current_line)
+	{
 	  wattrset(window, A_REVERSE);
-	wprintw(window, "%-*s", COLS, intr_buffer_screen[i]);
-	if(i==current_line)
+	  wprintw(window, ">%-*s", COLS, intr_buffer_screen[i]);
 	  wattroff(window, A_REVERSE);
+	}
+	else
+	  wprintw(window, " %-*s", COLS, intr_buffer_screen[i]);
       }
     }
     else
@@ -1062,7 +1066,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
       wprintw(stdscr,"Please enlarge the terminal.");
       wmove(stdscr,LINES-2,0);
       wattrset(stdscr, A_REVERSE);
-      wprintw(stdscr,"[ Quit ]");
+      waddstr(stdscr,"[ Quit ]");
       wattroff(stdscr, A_REVERSE);
       wrefresh(stdscr);
       switch(wgetch(stdscr))

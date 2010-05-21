@@ -316,10 +316,12 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	if(element==current_element)
 	{
 	  wattrset(stdscr, A_REVERSE);
+	  waddstr(stdscr, ">");
 	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	  wattroff(stdscr, A_REVERSE);
 	} else
 	{
+	  waddstr(stdscr, " ");
 	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
 	}
       }

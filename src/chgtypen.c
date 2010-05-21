@@ -176,11 +176,11 @@ static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *parti
       if(i==current_element_num)
       {
 	wattrset(stdscr, A_REVERSE);
-	wprintw(stdscr,"%s", part_name[i].name);
+	wprintw(stdscr,">%s", part_name[i].name);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
-	wprintw(stdscr,"%s", part_name[i].name);
+	wprintw(stdscr," %s", part_name[i].name);
       }
     }
     if(i-offset<INTER_CHGTYPE)
@@ -289,11 +289,11 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
       if(i==current_element_num)
       {
 	wattrset(stdscr, A_REVERSE);
-	wprintw(stdscr,"%s", gpt_sys_types[i].name);
+	wprintw(stdscr,">%s", gpt_sys_types[i].name);
 	wattroff(stdscr, A_REVERSE);
       } else
       {
-	wprintw(stdscr,"%s", gpt_sys_types[i].name);
+	wprintw(stdscr," %s", gpt_sys_types[i].name);
       }
     }
     if(i-offset<INTER_CHGTYPE)

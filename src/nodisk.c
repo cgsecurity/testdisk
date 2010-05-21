@@ -79,7 +79,7 @@ int intrf_no_disk_ncurses(const char *prog_name)
 #endif
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);
-  wprintw(stdscr,"[ Quit ]");
+  waddstr(stdscr,"[ Quit ]");
   wattroff(stdscr, A_REVERSE);
   wrefresh(stdscr);
   while(wgetch(stdscr)==ERR);

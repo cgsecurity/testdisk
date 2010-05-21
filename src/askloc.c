@@ -268,10 +268,17 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
               wmove(window,8-1+i-offset,0);
               wclrtoeol(window);	/* before addstr for BSD compatibility */
               if(file_walker==current_file)
+	      {
                 wattrset(window, A_REVERSE);
-              dir_aff_entry(window,file_info);
-              if(file_walker==current_file)
+		waddstr(window, ">");
+		dir_aff_entry(window,file_info);
                 wattroff(window, A_REVERSE);
+	      }
+	      else
+	      {
+		wprintw(window, " ");
+		dir_aff_entry(window,file_info);
+	      }
             }
             if(offset+INTER_DIR<=i)
               break;

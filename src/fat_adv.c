@@ -209,7 +209,12 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       wmove(window,8+i-offset,0);
       wclrtoeol(window);	/* before addstr for BSD compatibility */
       if(current_file==pos)
+      {
 	wattrset(window, A_REVERSE);
+	waddstr(window, ">");
+      }
+      else
+	waddstr(window, " ");
       if(current_file->stat.st_mtime!=0)
       {
 	tm_p = localtime(&current_file->stat.st_mtime);

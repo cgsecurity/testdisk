@@ -105,11 +105,11 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
 	if(backup_walker==backup_current)
 	{
 	  wattrset(stdscr, A_REVERSE);
-	  wprintw(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
+	  wprintw(stdscr,">%s %s",backup->description,ctime(&backup->my_time));
 	  wattroff(stdscr, A_REVERSE);
 	} else
 	{
-	  wprintw(stdscr,"%s %s",backup->description,ctime(&backup->my_time));
+	  wprintw(stdscr," %s %s",backup->description,ctime(&backup->my_time));
 	}
       }
       if(i<=INTER_LOAD && backup==NULL)
