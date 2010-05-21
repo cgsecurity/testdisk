@@ -129,8 +129,10 @@ static int header_check_arj(const unsigned char *buffer, const unsigned int buff
 {
   const struct arj_main_header *arj=(const struct arj_main_header*)buffer;
   if(memcmp(buffer, arj_header, sizeof(arj_header))==0 &&
+      le16(arj->basic_header_size) > 0 &&
       le16(arj->basic_header_size) <= 2600 &&
       arj->archiver_ver_min <= arj->archiver_ver &&
+      arj->archiver_ver <=12 &&
       (arj->flags&0x01)==0 &&
       arj->file_type==2)
   {
