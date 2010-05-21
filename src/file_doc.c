@@ -286,6 +286,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* Quattro Pro spreadsheet */
 	if(memcmp(&dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
 	  return "qpw";
+	if(sid==1 && memcmp(&dir_entry->name, "D\0g\0n", 6)==0)
+	  return "dgn";
       }
       if(ext!=NULL)
 	return ext;
@@ -545,6 +547,8 @@ static const char *software2ext(const unsigned int count, const unsigned char *s
     return "xls";
   if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
     return "ppt";
+  if(count>=12 && memcmp(software, "MicroStation", 12)==0)
+    return "dgn";
   return NULL;
 }
 
@@ -878,6 +882,8 @@ static void file_rename_doc(const char *old_filename)
 	    /* Quattro Pro spreadsheet */
 	    else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
 	      ext="qpw";
+	    if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
+	      return "dgn";
 	  }
 	}
       }
