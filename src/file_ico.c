@@ -86,13 +86,17 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
       (ico_dir->reserved==0 || ico_dir->reserved==255) &&
       (ico_dir->color_planes==0 || ico_dir->color_planes==1) &&
       ico_dir->width==ico_dir->heigth &&
-      ico_dir->width>=16
-
-    )
+      ico_dir->width>=16 &&
+      (le16(ico_dir->bits_per_pixel)==1 ||
+       le16(ico_dir->bits_per_pixel)==4 ||
+       le16(ico_dir->bits_per_pixel)==8 ||
+       le16(ico_dir->bits_per_pixel)==16 ||
+       le16(ico_dir->bits_per_pixel)==32) &&
+       le32(ico_dir->bitmap_offset) >= sizeof(struct ico_header)+le16(ico->count)*sizeof(struct ico_directory))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ico.extension;
-    file_recovery_new->calculated_file_size=le32(ico_dir->bitmap_size) + le32(ico_dir->bitmap_offset);
+    file_recovery_new->calculated_file_size=(uint64_t)le32(ico_dir->bitmap_size) + le32(ico_dir->bitmap_offset);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;
