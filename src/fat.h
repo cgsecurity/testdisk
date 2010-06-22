@@ -103,11 +103,11 @@ struct msdos_dir_slot {
 };
 
 
-int comp_FAT(disk_t *disk_car,const partition_t *partition, const unsigned long int fat_size, const unsigned long int sect_res);
+int comp_FAT(disk_t *disk,const partition_t *partition, const unsigned long int fat_size, const unsigned long int sect_res);
 int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector*fh2, const upart_type_t upart_type, const unsigned int sector_size);
 
-unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster);
-int set_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster, const unsigned int next_cluster);
+unsigned int get_next_cluster(disk_t *disk,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster);
+int set_next_cluster(disk_t *disk,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster, const unsigned int next_cluster);
 
 int is_fat(const partition_t *partition);
 int is_part_fat(const partition_t *partition);
@@ -117,8 +117,8 @@ int is_part_fat32(const partition_t *partition);
 unsigned int get_dir_entries(const struct fat_boot_sector *fat_header);
 unsigned int fat_sector_size(const struct fat_boot_sector *fat_header);
 unsigned int sectors(const struct fat_boot_sector *fat_header);
-unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
-int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
+unsigned int fat32_get_prev_cluster(disk_t *disk,const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
+int fat32_free_info(disk_t *disk,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
 unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
 
@@ -145,11 +145,11 @@ unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const uns
 #define FAT32_EOC	0x0FFFFFF8
 #define FAT1x_BOOT_SECTOR_SIZE 0x200
 
-int recover_FAT(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup);
-int check_FAT(disk_t *disk_car,partition_t *partition, const int verbose);
-int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
-int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
-int check_OS2MB(disk_t *disk_car,partition_t *partition, const int verbose);
+int recover_FAT(disk_t *disk, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup);
+int check_FAT(disk_t *disk, partition_t *partition, const int verbose);
+int test_FAT(disk_t *disk, const struct fat_boot_sector *fat_header, partition_t *partition, const int verbose, const int dump_ind);
+int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
+int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose);
 int check_VFAT_volume_name(const char *name, const unsigned int max_size);
 
 #ifdef __cplusplus

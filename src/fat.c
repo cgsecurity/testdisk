@@ -49,7 +49,7 @@ extern const arch_fnct_t arch_mac;
 static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition);
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
-static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
 static int is_fat12(const partition_t *partition);
 static int is_fat16(const partition_t *partition);
 static int is_fat32(const partition_t *partition);
@@ -421,7 +421,7 @@ static unsigned int get_prev_cluster(disk_t *disk_car,const partition_t *partiti
 }
 */
 
-int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
   uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
   unsigned long int no_of_cluster,fat_length,fat_length_calc;
@@ -433,7 +433,7 @@ int test_FAT(disk_t *disk_car,const struct fat_boot_sector *fat_header, partitio
   if(verbose>1 || dump_ind!=0)
   {
     log_trace("test_FAT\n");
-    log_partition(disk_car,partition);
+    log_partition(disk_car, partition);
   }
   if(dump_ind!=0)
     dump_log(fat_header, DEFAULT_SECTOR_SIZE);
@@ -854,50 +854,53 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   return 0;
 }
 
-int check_OS2MB(disk_t *disk_car,partition_t *partition,const int verbose)
+int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
 {
   unsigned char buffer[0x200];
-  if((unsigned)disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
+  if((unsigned)disk->pread(disk, &buffer, disk->sector_size, partition->part_offset) != disk->sector_size)
   {
     screen_buffer_add("check_OS2MB: Read error\n");
     log_error("check_OS2MB: Read error\n");
     return 1;
   }
-  if(test_OS2MB(disk_car,(const struct fat_boot_sector *)buffer,partition,verbose,0)!=0)
+  if(test_OS2MB(disk,(const struct fat_boot_sector *)buffer,partition,verbose,0)!=0)
   {
     if(verbose>0)
     {
       log_info("\n\ntest_OS2MB()\n");
-      log_partition(disk_car,partition);
+      log_partition(disk, partition);
     }
     return 1;
   }
   return 0;
 }
 
-int recover_OS2MB(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind)
+int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind)
 {
-  if(test_OS2MB(disk_car, fat_header, partition, verbose, dump_ind))
+  if(test_OS2MB(disk, fat_header, partition, verbose, dump_ind))
     return 1;
   /* 1 cylinder */
-  partition->part_size=(uint64_t)disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
+  partition->part_size=(uint64_t)disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
   partition->part_type_i386=P_OS2MB;
   partition->fsname[0]='\0';
   partition->info[0]='\0';
   return 0;
 }
 
-static int test_OS2MB(disk_t *disk_car,const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)fat_header;
   if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)
   {
     if(verbose||dump_ind)
     {
-      log_info("OS2MB at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
+      log_info("OS2MB at %u/%u/%u\n",
+	  offset2cylinder(disk, partition->part_offset),
+	  offset2head(disk, partition->part_offset),
+	  offset2sector(disk, partition->part_offset));
     }
     if(dump_ind)
-      dump_log(buffer,DEFAULT_SECTOR_SIZE);
+      dump_log(buffer, DEFAULT_SECTOR_SIZE);
     partition->upart_type=UP_OS2MB;
     return 0;
   }
