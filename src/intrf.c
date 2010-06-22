@@ -140,6 +140,8 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   {
     arch=disk_car->arch;
     log_error("BUG: No arch for a partition\n");
+    msg[0]='\0';
+    return msg;
   }
   msg[sizeof(msg)-1]=0;
   if((newline&AFF_PART_ORDER)==AFF_PART_ORDER)
