@@ -39,9 +39,10 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
 {
   int command;
   unsigned int menu=0;
-  const char *optionsBlocksize="S51248736";
+  const char *optionsBlocksize="BS51248736";
   static const struct MenuItem menuBlocksize[]=
   {
+	{'B',"1",""},
 	{'S',"256",""},
 	{'5',"512",""},
 	{'1',"1024",""},
@@ -55,26 +56,28 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
   };
   switch(sector_size)
   {
-    case 512: optionsBlocksize+=1; break;
-    case 1024: optionsBlocksize+=2; break;
-    case 2048: optionsBlocksize+=3; break;
-    case 4096: optionsBlocksize+=4; break;
-    case 8192: optionsBlocksize+=5; break;
-    case 16384: optionsBlocksize+=6;break;
-    case 32768: optionsBlocksize+=7; break;
-    case 65536: optionsBlocksize+=8; break;
+    case 256: optionsBlocksize+=1; break;
+    case 512: optionsBlocksize+=2; break;
+    case 1024: optionsBlocksize+=3; break;
+    case 2048: optionsBlocksize+=4; break;
+    case 4096: optionsBlocksize+=5; break;
+    case 8192: optionsBlocksize+=6; break;
+    case 16384: optionsBlocksize+=7;break;
+    case 32768: optionsBlocksize+=8; break;
+    case 65536: optionsBlocksize+=9; break;
   }
   switch(blocksize)
   {
-    case 256: menu=0; break;
-    case 512: menu=1; break;
-    case 1024: menu=2; break;
-    case 2048: menu=3; break;
-    case 4096: menu=4; break;
-    case 8192: menu=5; break;
-    case 16384: menu=6; break;
-    case 32768: menu=7; break;
-    case 65536: menu=8; break;
+    case 1: menu=0; break;
+    case 256: menu=1; break;
+    case 512: menu=2; break;
+    case 1024: menu=3; break;
+    case 2048: menu=4; break;
+    case 4096: menu=5; break;
+    case 8192: menu=6; break;
+    case 16384: menu=7; break;
+    case 32768: menu=8; break;
+    case 65536: menu=9; break;
   }
   aff_copy(stdscr);
   wmove(stdscr,INTER_PARTITION_Y-1,0);
@@ -83,6 +86,7 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
       optionsBlocksize, MENU_VERT| MENU_BUTTON|MENU_VERT_WARN, &menu,NULL);
   switch(command)
   {
+    case 'B': blocksize=1; break;
     case 'S': blocksize=256; break;
     case '5': blocksize=512; break;
     case '1': blocksize=1024; break;

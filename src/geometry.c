@@ -248,7 +248,7 @@ static void change_geometry_ncurses(disk_t *disk_car)
             /* FIXME using 3*512=1536 as sector size and */
             /* 63/3=21 for number of sectors is an easy way to test */
 	    /* MS Backup internal blocksize is 256 bytes */
-            if (tmp_val==256 || tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512) {
+            if (tmp_val==256 || tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512 || tmp_val==1) {
               disk_car->sector_size = tmp_val;
               if(cyl_modified==0)
 		set_cylinders_from_size_up(disk_car);
