@@ -43,7 +43,7 @@ const file_hint_t file_hint_dex= {
   .register_header_check=&register_header_check_dex
 };
 
-static const unsigned char dex_header[5]= {'d','e','x','\n','0'};
+static const unsigned char dex_header[4]= {'d','e','x','\n'};
 
 static void register_header_check_dex(file_stat_t *file_stat)
 {
