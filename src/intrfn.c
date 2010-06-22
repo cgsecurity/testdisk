@@ -68,6 +68,7 @@
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_gpt;
+extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
@@ -1155,7 +1156,7 @@ int check_enter_key_or_s(WINDOW *window)
 int interface_partition_type_ncurses(disk_t *disk_car)
 {
   /* arch_list must match the order from menuOptions */
-  const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_mac, &arch_none, &arch_sun, &arch_xbox, NULL};
+  const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_humax, &arch_mac, &arch_none, &arch_sun, &arch_xbox, NULL};
   unsigned int menu;
   for(menu=0;arch_list[menu]!=NULL && disk_car->arch!=arch_list[menu];menu++);
   if(arch_list[menu]==NULL)
@@ -1171,6 +1172,7 @@ int interface_partition_type_ncurses(disk_t *disk_car)
     {
       { 'I', arch_i386.part_name, "Intel/PC partition" },
       { 'G', arch_gpt.part_name, "EFI GPT partition map (Mac i386, some x86_64...)" },
+      { 'H', arch_humax.part_name, "Humax partition table" },
       { 'M', arch_mac.part_name, "Apple partition map" },
       { 'N', arch_none.part_name, "Non partitioned media" },
       { 'S', arch_sun.part_name, "Sun Solaris partition"},
@@ -1187,7 +1189,7 @@ int interface_partition_type_ncurses(disk_t *disk_car)
     wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
     wmove(stdscr,21,0);
     wprintw(stdscr,"rare for a drive to be 'Non-partitioned'.");
-    car=wmenuSelect_ext(stdscr, 23, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGHMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
     switch(car)
     {
       case 'i':
@@ -1197,6 +1199,10 @@ int interface_partition_type_ncurses(disk_t *disk_car)
       case 'g':
       case 'G':
         disk_car->arch=&arch_gpt;
+        break;
+      case 'h':
+      case 'H':
+        disk_car->arch=&arch_humax;
         break;
       case 'm':
       case 'M':

@@ -101,6 +101,8 @@ struct efi_guid_s
 #define PSUN_RAID	P_RAID
 #define PSUN_UNK	255
 
+#define PHUMAX_PARTITION 1
+
 #define PMAC_DRIVER43 	1
 #define PMAC_DRIVERATA 	2
 #define PMAC_DRIVERIO 	3
@@ -346,9 +348,10 @@ struct partition_struct
   unsigned int  blocksize;
   efi_guid_t    part_uuid;
   efi_guid_t    part_type_gpt;
+  unsigned int  part_type_humax;
   unsigned int  part_type_i386;
-  unsigned int  part_type_sun;
   unsigned int  part_type_mac;
+  unsigned int  part_type_sun;
   unsigned int  part_type_xbox;
   upart_type_t  upart_type;
   status_type_t status;

@@ -1,8 +1,8 @@
 /*
 
-    File: autoset.c
+    File: parthumax.c
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2010 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,28 +19,12 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
-#include <stdio.h>
-#include "types.h"
-#include "common.h"
-#include "autoset.h"
 
-extern const arch_fnct_t arch_gpt;
-extern const arch_fnct_t arch_humax;
-extern const arch_fnct_t arch_mac;
+list_part_t *add_partition_humax_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 
-void autoset_unit(disk_t *disk)
-{
-  if(disk==NULL)
-    return ;
-  if(
-      disk->arch==&arch_mac || 
-      disk->arch==&arch_gpt || 
-      disk->arch==&arch_humax || 
-      (disk->geom.heads_per_cylinder==1 && disk->geom.sectors_per_head==1))
-    disk->unit=UNIT_SECTOR;
-  else
-    disk->unit=UNIT_CHS;
-}
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif

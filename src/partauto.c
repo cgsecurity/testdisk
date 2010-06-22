@@ -35,6 +35,7 @@
 #include "log.h"
 
 extern const arch_fnct_t arch_gpt;
+extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
@@ -70,6 +71,11 @@ void autodetect_arch(disk_t *disk)
   if(list_part==NULL)
   {
     disk->arch=&arch_gpt;
+    list_part=disk->arch->read_part(disk,verbose,0);
+  }
+  if(list_part==NULL)
+  {
+    disk->arch=&arch_humax;
     list_part=disk->arch->read_part(disk,verbose,0);
   }
   if(list_part==NULL)
