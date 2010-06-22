@@ -132,7 +132,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   return -1;
 }
 
-static int zip_parse_file_entry(file_recovery_t *fr, const char *ext, const unsigned int file_nbr)
+static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const unsigned int file_nbr)
 {
   zip_file_entry_t  file;
   uint32_t          len;
@@ -169,40 +169,45 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char *ext, const unsi
 #ifdef DEBUG_ZIP
     log_info("%s", filename);
 #endif
-    if(ext==NULL)
+    if(*ext==NULL)
     {
       static int msoffice=0;
       if(file_nbr==0)
       {
 	msoffice=0;
 	if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.calc", 36)==0)
-	  ext="sxc";
+	  *ext="sxc";
 	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.draw", 36)==0)
-	  ext="sxd";
+	  *ext="sxd";
 	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.impress", 39)==0)
-	  ext="sxi";
+	  *ext="sxi";
 	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.writer", 38)==0)
-	  ext="sxw";
+	  *ext="sxw";
 	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
-	  ext="odg";
+	  *ext="odg";
 	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
-	  ext="odp";
+	  *ext="odp";
 	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
-	  ext="ods";
+	  *ext="ods";
 	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
-	  ext="odt";
+	  *ext="odt";
 	else if(strncmp(filename, "[Content_Types].xml", 19)==0)
 	  msoffice=1;
       }
       else if(file_nbr==2 && msoffice!=0)
       {
 	if(strncmp(filename, "word/", 5)==0)
-	  ext="docx";
+	  *ext="docx";
 	else if(strncmp(filename, "xl/", 3)==0)
-	  ext="pptx";
+	  *ext="pptx";
 	else if(strncmp(filename, "ppt/", 4)==0)
-	  ext="pptx";
+	  *ext="pptx";
       }
+    }
+    if(*ext==NULL)
+    {
+      if(strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
+	*ext="jar";
     }
     free(filename);
   }
@@ -526,7 +531,7 @@ static void file_check_zip(file_recovery_t *fr)
         status = zip_parse_data_desc(fr);
         break;
       case ZIP_FILE_ENTRY: /* File Entry */
-        status = zip_parse_file_entry(fr, ext, file_nbr);
+        status = zip_parse_file_entry(fr, &ext, file_nbr);
 	file_nbr++;
         break;
       case ZIP_SIGNATURE: /* Signature */
@@ -608,9 +613,9 @@ static void file_rename_zip(const char *old_filename)
         status = zip_parse_data_desc(&fr);
         break;
       case ZIP_FILE_ENTRY: /* File Entry */
-        status = zip_parse_file_entry(&fr, ext, file_nbr);
+        status = zip_parse_file_entry(&fr, &ext, file_nbr);
 	file_nbr++;
-	if(file_nbr>2)
+	if(ext!=NULL)
 	{
 	  fclose(fr.handle);
 	  file_rename(old_filename, NULL, 0, 0, ext, 1);
@@ -709,7 +714,10 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     else if(memcmp(&buffer[30], "Song.xml", 8)==0)
       file_recovery_new->extension="xrns";
     else
+    {
       file_recovery_new->extension=file_hint_zip.extension;
+      file_recovery_new->file_rename=&file_rename_zip;
+    }
     return 1;
   }
   else if(memcmp(buffer,zip_header2,sizeof(zip_header2))==0)
