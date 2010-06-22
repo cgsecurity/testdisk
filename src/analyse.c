@@ -126,7 +126,7 @@ int search_FAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
   return 0;
 }
 
-int search_type_0(unsigned char *buffer,disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
+int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const pv_disk_t *pv=(const pv_disk_t *)buffer;
   const struct disk_fatx *fatx_block=(const struct disk_fatx*)buffer;
@@ -151,8 +151,6 @@ int search_type_0(unsigned char *buffer,disk_t *disk, partition_t *partition, co
     log_trace("search_type_0 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  if(disk->pread(disk, buffer, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) != 8 * DEFAULT_SECTOR_SIZE)
-    return -1;
   if(memcmp(swap_header->magic.magic, "SWAP", 4)==0 &&
       recover_Linux_SWAP(swap_header, partition)==0)
     return 1;
@@ -196,7 +194,7 @@ int search_type_0(unsigned char *buffer,disk_t *disk, partition_t *partition, co
   return 0;
 }
 
-int search_type_1(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
+int search_type_1(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const struct disklabel *bsd_header=(const struct disklabel *)(buffer+0x200);
   const struct disk_super_block*beos_block=(const struct disk_super_block*)(buffer+0x200);
@@ -214,8 +212,6 @@ int search_type_1(unsigned char *buffer, disk_t *disk,partition_t *partition,con
     log_trace("search_type_1 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  if(disk->pread(disk, buffer, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) != 8 * DEFAULT_SECTOR_SIZE)
-    return -1;
   if(le32(bsd_header->d_magic) == DISKMAGIC && le32(bsd_header->d_magic2)==DISKMAGIC &&
 	recover_BSD(disk, bsd_header, partition, verbose, dump_ind)==0)
     return 1;
@@ -237,7 +233,7 @@ int search_type_1(unsigned char *buffer, disk_t *disk,partition_t *partition,con
   return 0;
 }
 
-int search_type_2(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
+int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)(buffer+0x400);
   const struct hfsp_vh *vh=(const struct hfsp_vh *)(buffer+0x400);
@@ -250,8 +246,6 @@ int search_type_2(unsigned char *buffer, disk_t *disk,partition_t *partition,con
     log_trace("search_type_2 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  if(disk->pread(disk, (buffer + 0x400), 1024, partition->part_offset + 1024) != 1024)
-    return -1;
   if(le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
       recover_EXT2(disk, sb, partition, verbose, dump_ind)==0)
     return 1;
@@ -328,7 +322,7 @@ int search_type_64(unsigned char *buffer, disk_t *disk,partition_t *partition,co
   return 0;
 }
 
-int search_type_128(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
+int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)(buffer+0x400);
   const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)(buffer+0x400);

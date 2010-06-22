@@ -170,7 +170,7 @@ static int get_geometry_from_nonembr(const unsigned char *buffer, const int verb
   return 0;
 }
 
-static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_none(disk_t *disk, const int verbose, const int saveheader)
 {
   int insert_error=0;
   unsigned char *buffer_disk;
@@ -179,36 +179,56 @@ static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const in
   int res=0;
   partition=partition_new(&arch_none);
   buffer_disk=(unsigned char *)MALLOC(16*DEFAULT_SECTOR_SIZE);
-  partition->part_size=disk_car->disk_size;
-  if(recover_MD_from_partition(disk_car, partition, verbose)==0)
+  partition->part_size=disk->disk_size;
+  if(recover_MD_from_partition(disk, partition, verbose)==0)
     res=1;
   else
     partition_reset(partition,&arch_none);
   if(res<=0)
-    res=search_type_128(buffer_disk,disk_car,partition,verbose,0);
+  {
+    if(disk->pread(disk, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 8 * DEFAULT_SECTOR_SIZE)
+      res=search_type_2(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=search_type_64(buffer_disk,disk_car,partition,verbose,0);
+  {
+      res=search_type_1(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=(recover_ISO(disk_car,(const struct iso_primary_descriptor*)(buffer_disk+0x200), partition, verbose, 0)==0);
+  {
+    res=search_type_0(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=search_type_8(buffer_disk,disk_car,partition,verbose,0);
+  {
+    if(disk->pread(disk, buffer_disk, 4096, partition->part_offset + 4096) == 4096)
+      res=search_type_8(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=search_type_16(buffer_disk,disk_car,partition,verbose,0);
+  {
+    if(disk->pread(disk, buffer_disk, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 16 * 512) == 3 * DEFAULT_SECTOR_SIZE)
+      res=search_type_16(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=search_type_2(buffer_disk,disk_car,partition,verbose,0);
+  {
+    if(disk->pread(disk, buffer_disk, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 63 * 512) == 3 * DEFAULT_SECTOR_SIZE)
+      res=search_type_64(buffer_disk, disk, partition,verbose,0);
+  }
   if(res<=0)
-    res=search_type_1(buffer_disk,disk_car,partition,verbose,0);
+    res=(recover_ISO(disk, (const struct iso_primary_descriptor*)(buffer_disk+0x200), partition, verbose, 0)==0);
   if(res<=0)
-    res=search_type_0(buffer_disk,disk_car,partition,verbose,0);
+  {
+  /* 64k offset */
+    if(disk->pread(disk, buffer_disk, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) == 11 * DEFAULT_SECTOR_SIZE)
+      res=search_type_128(buffer_disk, disk, partition,verbose,0);
+  }
   free(buffer_disk);
   if(res<=0)
     partition_reset(partition,&arch_none);
-  partition->part_size=disk_car->disk_size;
+  partition->part_size=disk->disk_size;
   partition->order=NO_ORDER;
   partition->status=STATUS_PRIM;
   screen_buffer_reset();
-  disk_car->arch->check_part(disk_car,verbose,partition,saveheader);
-  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+  disk->arch->check_part(disk, verbose,partition,saveheader);
+  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk, partition);
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
   if(insert_error>0)
     free(partition);

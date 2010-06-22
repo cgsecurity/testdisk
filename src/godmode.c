@@ -363,6 +363,7 @@ static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned in
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, const int search_vista_part, char **current_cmd)
 {
   unsigned char *buffer_disk;
+  unsigned char *buffer_disk0;
   /* TODO use circular buffer for try_offset and try_offset_raid */
   uint64_t try_offset[MAX_SEARCH_LOCATION];
   uint64_t try_offset_raid[MAX_SEARCH_LOCATION];
@@ -387,6 +388,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       (uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size);
   partition=partition_new(disk_car->arch);
   buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
+  buffer_disk0=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
   {
     /* Will search for partition at current known partition location */
     const list_part_t *element;
@@ -523,12 +525,6 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         partition->part_offset=search_location;
         if(res<=0 && test_nbr==0)
         {
-          if(search_now>0)
-            res=search_type_2(buffer_disk,disk_car,partition,verbose,dump_ind);
-          test_nbr++;
-        }
-        if(res<=0 && test_nbr==1)
-        {
           if(search_now_raid>0 || fast_mode>1)
           { /* Search Linux software RAID */
             if(disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, search_location) != 8 * DEFAULT_SECTOR_SIZE)
@@ -562,10 +558,10 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           }
           test_nbr++;
         }
-        if(res<=0 && test_nbr==2)
+        if(res<=0 && test_nbr==1)
         {
           if(fast_mode==0)
-            test_nbr=7;
+            test_nbr=6;
           else
           {
             if((disk_car->arch==&arch_i386 &&
@@ -576,21 +572,16 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             test_nbr++;
           }
         }
+        if(res<=0 && test_nbr==2)
+	{
+	  if((disk_car->arch==&arch_i386 &&
+		((start.sector==13 && (start.head<=2 || fast_mode>1)) ||
+		 (search_vista_part>0 && search_location%(2048*512)==(13-1)*512))) ||
+	      (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*512)))
+	    res=search_EXFAT_backup(buffer_disk, disk_car, partition);
+	  test_nbr++;
+	}
         if(res<=0 && test_nbr==3)
-        {
-          if(fast_mode==0)
-            test_nbr=7;
-          else
-          {
-            if((disk_car->arch==&arch_i386 &&
-                  ((start.sector==13 && (start.head<=2 || fast_mode>1)) ||
-                   (search_vista_part>0 && search_location%(2048*512)==(13-1)*512))) ||
-                (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*512)))
-              res=search_EXFAT_backup(buffer_disk, disk_car, partition);
-            test_nbr++;
-          }
-        }
-        if(res<=0 && test_nbr==4)
         {
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
@@ -601,7 +592,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             res=search_NTFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==5)
+        if(res<=0 && test_nbr==4)
         {
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
@@ -612,7 +603,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             res=search_HFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(res<=0 && test_nbr==6)
+        if(res<=0 && test_nbr==5)
         {
           int s_log_block_size;
           /* try backup superblock */
@@ -651,19 +642,29 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           }
           test_nbr++;
         }
+        if(res<=0 && test_nbr==6)
+        {
+	  if(search_now==0)
+            test_nbr=13;
+	  else
+	  {
+	    if(disk_car->pread(disk_car, buffer_disk0, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 8 * DEFAULT_SECTOR_SIZE)
+	      res=search_type_2(buffer_disk0,disk_car,partition,verbose,dump_ind);
+	    else
+	      res=-1;
+	    test_nbr++;
+	  }
+        }
         if(res<=0 && test_nbr==7)
         {
-          if(search_now>0)
-          {
-            res=search_type_1(buffer_disk, disk_car,partition,verbose,dump_ind);
-            test_nbr++;
-          }
-          else
-            test_nbr=13;
+	  if(res==0)
+	    res=search_type_1(buffer_disk0, disk_car,partition,verbose,dump_ind);
+	  test_nbr++;
         }
         if(res<=0 && test_nbr==8)
         {
-          res=search_type_0(buffer_disk,disk_car,partition,verbose,dump_ind);
+	  if(res==0)
+	    res=search_type_0(buffer_disk0,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
         if(res<=0 && test_nbr==9)
@@ -889,6 +890,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 #endif
   }
   part_free_list(list_part_bad);
+  free(buffer_disk0);
   free(buffer_disk);
   return list_part;
 }
