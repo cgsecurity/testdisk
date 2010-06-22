@@ -195,13 +195,14 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const unsigned int atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
 #ifdef DEBUG_MOV
-    log_trace("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+    log_trace("file_mov.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+	file_recovery->filename,
         buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
         buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
         atom_size,
         (long long unsigned)file_recovery->calculated_file_size);
 #endif
-    if(atom_size>=8 && atom_size<1024*1024*1024 &&
+    if(atom_size>=8 &&
         (
          (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
          (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
