@@ -84,7 +84,7 @@ int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
     strncpy(partition->info,"HFS found using backup sector!",sizeof(partition->info));
     return 1;
   }
-  if((be32(vh->version)==4 || be32(vh->version)==5) &&
+  if((be16(vh->version)==4 || be16(vh->version)==5) &&
       recover_HFSP(disk, vh, partition, verbose, dump_ind, 1)==0)
   {
     strncpy(partition->info,"HFS+ found using backup sector!",sizeof(partition->info));
@@ -258,7 +258,7 @@ int search_type_2(unsigned char *buffer, disk_t *disk,partition_t *partition,con
   if(hfs_mdb->drSigWord==be16(HFS_SUPER_MAGIC) &&
       recover_HFS(disk, hfs_mdb, partition, verbose, dump_ind, 0)==0)
     return 1;
-  if((be32(vh->version)==4 || be32(vh->version)==5) &&
+  if((be16(vh->version)==4 || be16(vh->version)==5) &&
       recover_HFSP(disk, vh, partition, verbose, dump_ind, 0)==0)
     return 1;
   return 0;
