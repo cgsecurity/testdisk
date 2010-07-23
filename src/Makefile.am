@@ -175,6 +175,7 @@ file_C			= filegen.c \
 			  file_pzh.c \
 			  file_qbb.c \
 			  file_qdf.c \
+			  file_qkt.c \
 			  file_qxd.c \
 			  file_r3d.c \
 			  file_ra.c \
