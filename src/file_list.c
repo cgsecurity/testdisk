@@ -187,6 +187,7 @@ extern const file_hint_t file_hint_raw;
 extern const file_hint_t file_hint_rdc;
 extern const file_hint_t file_hint_reg;
 extern const file_hint_t file_hint_res;
+extern const file_hint_t file_hint_rfp;
 extern const file_hint_t file_hint_riff;
 extern const file_hint_t file_hint_rm;
 extern const file_hint_t file_hint_rns;
@@ -393,6 +394,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_rdc  },
   { .enable=0, .file_hint=&file_hint_reg  },
   { .enable=0, .file_hint=&file_hint_res  },
+  { .enable=0, .file_hint=&file_hint_rfp  },
   { .enable=0, .file_hint=&file_hint_riff },
   { .enable=0, .file_hint=&file_hint_rm   },
   { .enable=0, .file_hint=&file_hint_rns  },
