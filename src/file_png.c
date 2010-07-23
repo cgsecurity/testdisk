@@ -40,7 +40,8 @@ extern const file_hint_t file_hint_doc;
 
 static void register_header_check_png(file_stat_t *file_stat);
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_png(file_recovery_t *file_recovery);
+static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_png= {
   .extension="png",
@@ -68,17 +69,19 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   if(memcmp(buffer,jng_header,sizeof(jng_header))==0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=92;
-    file_recovery_new->file_check=file_check_png;
     file_recovery_new->extension="jng";
+    file_recovery_new->calculated_file_size=8;
+    file_recovery_new->data_check=&data_check_png;
+    file_recovery_new->file_check=&file_check_size;
     return 1;
   }
   if(memcmp(buffer,mng_header,sizeof(mng_header))==0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=92;
-    file_recovery_new->file_check=file_check_png;
     file_recovery_new->extension="mng";
+    file_recovery_new->calculated_file_size=8;
+    file_recovery_new->data_check=&data_check_mng;
+    file_recovery_new->file_check=&file_check_size;
     return 1;
   }
   /* SolidWorks files contains a png */
@@ -90,20 +93,44 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   if(memcmp(buffer,png_header,sizeof(png_header))==0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=92;
-    file_recovery_new->file_check=file_check_png;
     file_recovery_new->extension=file_hint_png.extension;
+    file_recovery_new->calculated_file_size=8;
+    file_recovery_new->data_check=&data_check_png;
+    file_recovery_new->file_check=&file_check_size;
     return 1;
   }
   return 0;
 }
 
-static void file_check_png(file_recovery_t *file_recovery)
+static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  const unsigned char mng_footer[4]= {'M','E','N','D'};
-  const unsigned char png_footer[4]= {'I','E','N','D'};
-  if(strstr(file_recovery->filename,".mng")!=NULL)
-    file_search_footer(file_recovery, mng_footer, sizeof(mng_footer), 4);
-  else
-    file_search_footer(file_recovery, png_footer, sizeof(png_footer), 4);
+  static const unsigned char mng_footer[4]= {'M','E','N','D'};
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  {
+    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    /* chunk: length, type, data, crc */
+    file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
+    file_recovery->calculated_file_size+=12;
+    if(memcmp(&buffer[i+4], mng_footer, sizeof(mng_footer))==0)
+      return 2;
+  }
+  return 1;
 }
+
+static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  static const unsigned char png_footer[4]= {'I','E','N','D'};
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  {
+    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    /* chunk: length, type, data, crc */
+    file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
+    file_recovery->calculated_file_size+=12;
+    if(memcmp(&buffer[i+4], png_footer, sizeof(png_footer))==0)
+      return 2;
+  }
+  return 1;
+}
+
