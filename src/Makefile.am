@@ -213,6 +213,7 @@ file_C			= filegen.c \
 			  file_ttf.c \
 			  file_txt.c \
 			  file_tz.c \
+			  file_vdi.c \
 			  file_veg.c \
 			  file_vfb.c \
 			  file_vmdk.c \
