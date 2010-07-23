@@ -960,7 +960,7 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 				if (rl[i].lcn == LCN_HOLE) {
 					log_verbose("File has a sparse section.\n");
 					memset(buffer, 0, bufsize);
-					for (k = 0; k < rl[k].length * vol->cluster_size; k += bufsize) {
+					for (k = 0; k < rl[i].length * vol->cluster_size; k += bufsize) {
 						if (write_data(fd, buffer, bufsize) < bufsize) {
 							log_error("Write failed\n");
 							close(fd);
