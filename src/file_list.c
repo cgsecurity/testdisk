@@ -50,6 +50,7 @@ extern const file_hint_t file_hint_asm;
 extern const file_hint_t file_hint_atd;
 extern const file_hint_t file_hint_au;
 extern const file_hint_t file_hint_bac;
+extern const file_hint_t file_hint_bim;
 extern const file_hint_t file_hint_bkf;
 extern const file_hint_t file_hint_blend;
 extern const file_hint_t file_hint_bmp;
@@ -255,6 +256,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_atd  },
   { .enable=0, .file_hint=&file_hint_au   },
   { .enable=0, .file_hint=&file_hint_bac  },
+  { .enable=0, .file_hint=&file_hint_bim  },
   { .enable=0, .file_hint=&file_hint_bkf  },
   { .enable=0, .file_hint=&file_hint_blend },
   { .enable=0, .file_hint=&file_hint_bmp  },

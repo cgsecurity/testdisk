@@ -48,6 +48,7 @@ file_C			= filegen.c \
 			  file_atd.c \
 			  file_au.c \
 			  file_bac.c \
+			  file_bim.c \
 			  file_bkf.c \
 			  file_bld.c \
 			  file_bmp.c \
