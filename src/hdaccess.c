@@ -392,6 +392,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     char device_ide_hd[]="/dev/ad0";
     char device_scsi_hd[]="/dev/da0";
     char device_cd[]="/dev/acd0";
+    char device_vnd[]="/dev/rsvnd0c";	/* virtual node driver, interface to a disk image file */
     /* wd da */
     /* Disk IDE */
     for(i=0;i<8;i++)
@@ -446,6 +447,12 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     {
       device_cd[strlen(device_cd)-1]='0'+i;
       list_disk=insert_new_disk(list_disk,file_test_availability(device_cd,verbose,arch,testdisk_mode));
+    }
+    /* VND */
+    for(i=0;i<4;i++)
+    {
+      device_vnd[strlen(device_vnd)-2]='0'+i;
+      list_disk=insert_new_disk(list_disk,file_test_availability(device_vnd,verbose,arch,testdisk_mode));
     }
   }
 #endif
