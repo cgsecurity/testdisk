@@ -44,7 +44,6 @@ struct efi_guid_s
 
 #define DISKNAME_MAX	64
 #define DISKDESCRIPTION_MAX	128
-#define TAB_PART 0x1BE
 /* PARTITION TYPE */
 #define P_NO_OS         0x00
 #define P_12FAT         0x01
