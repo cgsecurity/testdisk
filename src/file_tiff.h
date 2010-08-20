@@ -63,7 +63,7 @@ struct ifd_header {
 } __attribute__ ((__packed__));
 
 time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size);
-const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag);
+const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error);
 void file_check_tiff(file_recovery_t *file_recovery);
 
 #ifdef __cplusplus

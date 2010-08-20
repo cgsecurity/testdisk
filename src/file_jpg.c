@@ -1020,18 +1020,21 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 #if 1
 	if(i+0x0A < nbytes && 2+size > 0x0A)
 	{
+	  const char *potential_error=NULL;
 	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
 	  unsigned int tiff_size=2+size-0x0A;
 	  const char *thumb_data=NULL;
 	  const char *ifbytecount=NULL;
 	  if(nbytes - (i+0x0A) < tiff_size)
 	    tiff_size=nbytes - (i+0x0A);
-	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET);
+	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
 	  if(thumb_data!=NULL)
 	  {
 	    thumb_offset=thumb_data-(const char*)buffer;
-	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT);
+	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
 	  }
+	  if(potential_error!=NULL)
+	    file_recovery->offset_error=potential_error-(const char*)buffer;
 	  if(file_recovery->offset_ok<i)
 	    file_recovery->offset_ok=i;
 	  if(thumb_data!=NULL && ifbytecount!=NULL)
