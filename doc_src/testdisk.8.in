@@ -17,7 +17,7 @@ testdisk \- Scan and repair disk partitions
    - DOS/Windows FAT12, FAT16 and FAT32
    - HFS and HFS+, Hierarchical File System
    - JFS, IBM's Journaled File System
-   - Linux Ext2 and Ext3
+   - Linux ext2/ext3/ext4
    - Linux Raid
      RAID 1: mirroring
      RAID 4: striped array with parity device
@@ -27,11 +27,17 @@ testdisk \- Scan and repair disk partitions
    - LVM and LVM2, Linux Logical Volume Manager
    - Mac partition map
    - Novell Storage Services NSS
-   - NTFS (Windows NT/2K/XP/2003/Vista)
+   - NTFS (Windows NT/2K/XP/2003/Vista/...)
    - ReiserFS 3.5, 3.6 and 4
    - Sun Solaris i386 disklabel
    - Unix File System UFS and UFS2 (Sun/BSD/...)
    - XFS, SGI's Journaled File System 
+
+   It can undelete files from
+   - DOS/Windows FAT12, FAT16 and FAT32
+   - Linux ext2
+   - NTFS (Windows NT/2K/XP/2003/Vista/...)
+
 .SH OPTIONS
 .TP
 .B /log
