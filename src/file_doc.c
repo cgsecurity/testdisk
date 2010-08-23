@@ -825,7 +825,7 @@ static void file_rename_doc(const char *old_filename)
 	    }
 	    if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
 	    {
-	      OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_block,
+	      OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_size,
 		  le32(dir_entry->start_block), le32(dir_entry->size),
 		  &ext, &title, &file_time);
 	    }
@@ -883,7 +883,7 @@ static void file_rename_doc(const char *old_filename)
 	    else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
 	      ext="qpw";
 	    if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
-	      return "dgn";
+	      ext="dgn";
 	  }
 	}
       }
