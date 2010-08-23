@@ -1228,8 +1228,8 @@ static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int c
 
 static int file_sync(disk_t *disk_car)
 {
-  struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
 #ifdef HAVE_FSYNC
+  struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
   return fsync(data->handle);
 #else
   errno=EINVAL;

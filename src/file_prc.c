@@ -51,7 +51,7 @@ static void register_header_check_prc(file_stat_t *file_stat)
   register_header_check(0x30, prc_header,sizeof(prc_header), &header_check_prc, file_stat);
 }
 
-typedef struct DatabaseHdrType_s {
+struct DatabaseHdrType_s {
   unsigned char name[32];
   uint16_t 	attributes;		/* 0x20 */
   uint32_t      creationDate;		/* 0x22 */

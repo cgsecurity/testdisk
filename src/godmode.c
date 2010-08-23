@@ -471,7 +471,6 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   /* Scan the disk */
   while(ind_stop==0 && search_location < search_location_max)
   {
-    unsigned int sector_inc=0;
     static CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
@@ -489,6 +488,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     }
 #endif
     {
+      unsigned int sector_inc=0;
       int test_nbr=0;
       int search_now=0;
       int search_now_raid=0;

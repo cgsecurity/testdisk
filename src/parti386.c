@@ -358,7 +358,6 @@ static list_part_t *init_part_order_i386(const disk_t *disk_car, list_part_t *li
 static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const int saveheader)
 {
   unsigned int i;
-  int res=0;
   CHSgeometry_t geometry;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
@@ -402,7 +401,6 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
 	  if(new_partition->errcode!=BAD_NOERR)
 	  {
 	    screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
-	    res|=1;
 	  }
 	  new_list_part=insert_new_partition(new_list_part,new_partition, 0, &insert_error);
 	  if(insert_error>0)

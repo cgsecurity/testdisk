@@ -154,9 +154,7 @@ static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, cons
 
 static list_part_t *init_part_order_humax(const disk_t *disk_car, list_part_t *list_part)
 {
-  int insert_error=0;
   int nbr_prim=0;
-  partition_t *new_partition;
   list_part_t *element;
   for(element=list_part;element!=NULL;element=element->next)
   {

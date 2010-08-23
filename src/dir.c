@@ -613,7 +613,6 @@ char *mkdir_local(const char *localroot, const char *pathname)
   while(*src!='\0')
   {
     unsigned int n=0;
-    unsigned int l;
     const char *src_org=src;
     char *dst_org=dst;
     for(n=0;
@@ -624,6 +623,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
 #ifdef __MINGW32__
     if(mkdir(localdir)<0 && errno==EINVAL)
     {
+      unsigned int l;
       l=filename_convert(dst_org, src_org, n);
       dst=dst_org+l;
       mkdir(localdir);
@@ -632,6 +632,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
     if(memcmp(&localdir[1],":/cygdrive",11)!=0 &&
 	mkdir(localdir, 0775)<0 && errno==EINVAL)
     {
+      unsigned int l;
       l=filename_convert(dst_org, src_org, n);
       dst=dst_org+l;
       mkdir(localdir, 0775);
@@ -639,6 +640,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
 #else
     if(mkdir(localdir, 0775)<0 && errno==EINVAL)
     {
+      unsigned int l;
       l=filename_convert(dst_org, src_org, n);
       dst=dst_org+l;
       mkdir(localdir, 0775);

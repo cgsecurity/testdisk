@@ -199,11 +199,8 @@ static int fewf_clean(disk_t *disk)
   {
     struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
     libewf_close(data->handle);
-    if(data->buffer!=NULL)
-    {
-      free(data->buffer);
-      data->buffer=NULL;
-    }
+    free(data->buffer);
+    data->buffer=NULL;
     free(disk->data);
     disk->data=NULL;
   }

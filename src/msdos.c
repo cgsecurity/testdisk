@@ -491,7 +491,6 @@ static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, con
 
 static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
 {
-  struct info_disk_struct*data=disk_car->data;
   int i=0;
   int rc;
   disk_car->write_used=1;
@@ -542,7 +541,6 @@ static int disk_clean(disk_t *disk_car)
 
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc)
 {
-  struct info_disk_struct*data=disk_car->data;
   log_error(" lba=%lu(%u/%u/%u) nbr_sector=%u, rc=%d\n",(long unsigned int)(hd_offset/disk_car->sector_size),
       offset2cylinder(disk_car,hd_offset),offset2head(disk_car,hd_offset),offset2sector(disk_car,hd_offset),
       count/disk_car->sector_size,rc);
