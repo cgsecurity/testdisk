@@ -349,14 +349,8 @@ int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, con
   return ind_stop;
 }
 
-/*
- * 0: file found
- * 1: stop by user
- * 2: stop
- * 3: fragment found
- * 4: eof
- * 5: file not found
- * */
+enum { BF_FILE_FOUND=0, BF_USER_STOP=1, BF_ERR_STOP=2, BF_FRAG_FOUND=3, BF_EOF=4, BF_NO_FILE=5};
+
 static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, unsigned int *dir_num, const photorec_status_t status, const int phase, const uint64_t file_offset, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer)
 {
   { /* Add remaining data blocs */
@@ -393,7 +387,7 @@ static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int
 	      log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
-	      return 2;
+	      return BF_ERR_STOP;
 	    }
 	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
@@ -420,7 +414,7 @@ static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int
 	      log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
-	      return 2;
+	      return BF_ERR_STOP;
 	    }
 	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
@@ -463,7 +457,7 @@ static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int
     log_info("photorec_bf_aux, call file_finish\n");
 #endif
     file_finish(file_recovery, recup_dir, 2, file_nbr, blocksize, list_search_space, current_search_space, offset, dir_num, status, disk_car);
-    return 0;
+    return BF_FILE_FOUND;
   }
   /* FIXME +4096 => +blocksize*/
   /* 21/11/2009: 2 blocksize */
@@ -477,9 +471,9 @@ static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int
 	blocksize);
     list_space_used(file_recovery, 512);
 #endif
-    return 3;
+    return BF_FRAG_FOUND;
   }
-  return 5;
+  return BF_NO_FILE;
 }
 
 static int photorec_bf_frag_fast(disk_t *disk_car, partition_t *partition, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
@@ -488,7 +482,6 @@ static int photorec_bf_frag_fast(disk_t *disk_car, partition_t *partition, const
   const uint64_t original_offset_ok=file_recovery->offset_ok;
   const int blocs_to_skip=file_recovery->extra / blocksize;
   unsigned int i;
-  int ind_stop=0;
   log_info("photorec_bf_frag_fast %s, original_offset_ok=%llu, original_offset_error=%llu, blocs_to_skip=%u, extra=%llu\n",
       file_recovery->filename,
       (long long unsigned)original_offset_ok,
@@ -546,14 +539,14 @@ static int photorec_bf_frag_fast(disk_t *disk_car, partition_t *partition, const
       disk_car->pread(disk_car, block_buffer, blocksize, *offset);
       if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=1)
       {
-	ind_stop=1;
+	/* TODO handle this problem */
       }
       if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
       {
 	log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
 	fclose(file_recovery->handle);
 	file_recovery->handle=NULL;
-	return 2;
+	return BF_ERR_STOP;
       }
       list_append_block(&file_recovery->location, *offset, blocksize, 1);
       file_recovery->file_size+=blocksize;
@@ -566,18 +559,18 @@ static int photorec_bf_frag_fast(disk_t *disk_car, partition_t *partition, const
       get_next_sector(list_search_space, current_search_space, offset, blocksize);
     }
     res=photorec_bf_pad(disk_car, recup_dir, file_nbr, file_recovery, blocksize, list_search_space, dir_num, status, phase, file_recovery->offset_error, current_search_space, offset, buffer, block_buffer);
-    if(res==3)
+    if(res==BF_FRAG_FOUND)
     {
       if(frag>5)
-	return 5;
+	return BF_NO_FILE;
       res=photorec_bf_frag(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, current_search_space, offset, buffer, block_buffer, frag+1);
     }
-    if(res<=2)
+    if(res==BF_FILE_FOUND || res==BF_USER_STOP || res==BF_ERR_STOP)
       return res;
-    if(res==4)
-      return 5;
+    if(res==BF_EOF)
+      return BF_NO_FILE;
   }
-  return 5;
+  return BF_NO_FILE;
 }
 
 static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
@@ -591,7 +584,7 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
       file_recovery->offset_ok > 0)
   {
     int res=photorec_bf_frag_fast(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, current_search_space, offset, buffer, block_buffer, frag);
-    if(res!=5)
+    if(res!=BF_NO_FILE)
       return res;
   }
 #endif
@@ -701,7 +694,7 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 	      file_recovery->flags=0;
 	      file_finish(file_recovery, recup_dir, 2, file_nbr, blocksize, list_search_space, current_search_space, offset, dir_num, status, disk_car);
 	      log_info("photorec_bf_aux, user choose to stop\n");
-	      return 1;
+	      return BF_USER_STOP;
 	    }
 	  }
 	}
@@ -725,40 +718,40 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 	  {
 	    get_next_sector(list_search_space, current_search_space, offset, blocksize);
 	    if(*current_search_space==list_search_space)
-	      return 5;
+	      return BF_NO_FILE;
 	  }
 	}
 
 	switch(photorec_bf_pad(disk_car, recup_dir, file_nbr, file_recovery, blocksize, list_search_space, dir_num, status, phase, file_offset, current_search_space, offset, buffer, block_buffer))
 	{
-	  case 0:
-	    return 0;
-	  case 2:
-	    return 2;
-	  case 3:
+	  case BF_FILE_FOUND:
+	    return BF_FILE_FOUND;
+	  case BF_ERR_STOP:
+	    return BF_ERR_STOP;
+	  case BF_FRAG_FOUND:
 	    if(frag>5)
-	      return 5;
+	      return BF_NO_FILE;
 	    switch(photorec_bf_frag(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, current_search_space, offset, buffer, block_buffer, frag+1))
 	    {
-	      case 0:
-		return 0;
-	      case 1:
-		return 1;
-	      case 2:
-		return 2;
-	      case 5:
+	      case BF_FILE_FOUND:
+		return BF_FILE_FOUND;
+	      case BF_USER_STOP:
+		return BF_USER_STOP;
+	      case BF_ERR_STOP:
+		return BF_ERR_STOP;
+	      case BF_NO_FILE:
 #if 0
 		/* TODO: Continue to iterate blocs_to_skip */
 		if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
-		  return 5;
+		  return BF_NO_FILE;
 		break;
 #else
-		return 5;
+		return BF_NO_FILE;
 #endif
 	    }
 	    break;
-	  case 4:
-	    return 5;
+	  case BF_EOF:
+	    return BF_NO_FILE;
 	}
       }
     }
@@ -768,7 +761,7 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 	(long long unsigned)file_recovery->offset_error, (long long unsigned)file_offset);
 #endif
   }
-  return 5;
+  return BF_NO_FILE;
 }
 
 static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const int phase)
@@ -783,7 +776,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char 
   if(file_recovery->handle==NULL)
   {
     log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
-    return 2;
+    return BF_ERR_STOP;
   }
   buffer=(unsigned char *) MALLOC(2*blocksize);
   block_buffer=&buffer[blocksize];
@@ -813,7 +806,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char 
       fclose(file_recovery->handle);
       file_recovery->handle=NULL;
       free(buffer);
-      return 2;
+      return BF_ERR_STOP;
     }
     list_append_block(&file_recovery->location, offset, blocksize, 1);
     get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
@@ -826,8 +819,8 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char 
   log_trace("\n");
 #endif
   ind_stop=photorec_bf_frag(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, &current_search_space, &offset, buffer, block_buffer, 0);
-  if(ind_stop==5)
-    ind_stop=0;
+  if(ind_stop==BF_NO_FILE)
+    ind_stop=BF_FILE_FOUND;
   /* Cleanup */
   file_finish(file_recovery,recup_dir,2, file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
   free(buffer);
