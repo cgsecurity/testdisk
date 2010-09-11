@@ -53,6 +53,9 @@ static void register_header_check_txt(file_stat_t *file_stat);
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void register_header_check_fasttxt(file_stat_t *file_stat);
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+#ifdef UTF16
+static int header_check_le16_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+#endif
 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_emlx(file_recovery_t *file_recovery);
@@ -131,12 +134,15 @@ static const unsigned char header_postgreSQL_win[39]= {
   'L', ' ', 'd', 'a', 't', 'a', 'b', 'a',
   's', 'e', ' ', 'c', 'l', 'u', 's', 't',
   'e', 'r', ' ', 'd', 'u', 'm', 'p'};
+static const unsigned char header_qgis[15]	= "<!DOCTYPE qgis ";
 static const unsigned char header_ram[7]	= "rtsp://";
 static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
 static const unsigned char header_reg[8]  	= "REGEDIT4";
 static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
 static const unsigned char header_rpp[16]	= { '<', 'R', 'E', 'A', 'P', 'E', 'R', '_', 'P', 'R', 'O', 'J', 'E', 'C', 'T', ' '};
 static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
+/* firefox session store */
+static const unsigned char header_sessionstore[42]  	= "({\"windows\":[{\"tabs\":[{\"entries\":[{\"url\":\"";
 static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_smil[6]  	= "<smil>";
@@ -160,10 +166,14 @@ static const unsigned char header_vbookmark[10]	= { 'B', 'E', 'G', 'I', 'N', ':'
 static const char sign_java1[6]			= "class";
 static const char sign_java3[15]		= "private static";
 static const char sign_java4[17]		= "public interface";
+static const char ascii_nul[1]			= { '\0' };
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
   register_header_check(0, NULL,0, &header_check_txt, file_stat);
+#ifdef UTF16
+  register_header_check(1, ascii_nul, sizeof(ascii_nul), &header_check_le16_txt, file_stat);
+#endif
 }
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
@@ -194,11 +204,13 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_phpMyAdmin, sizeof(header_phpMyAdmin), &header_check_fasttxt, file_stat);
   register_header_check(0, header_postgreSQL, sizeof(header_postgreSQL), &header_check_fasttxt, file_stat);
   register_header_check(0, header_postgreSQL_win, sizeof(header_postgreSQL_win), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_qgis, sizeof(header_qgis), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ram,sizeof(header_ram), &header_check_fasttxt, file_stat);
   register_header_check(0, header_reg,sizeof(header_reg), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rpp,sizeof(header_rpp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_sessionstore, sizeof(header_sessionstore), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_smil,sizeof(header_smil), &header_check_fasttxt, file_stat);
@@ -513,6 +525,18 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="reg";
     return 1;
   }
+  if(memcmp(buffer,header_sessionstore, sizeof(header_sessionstore))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+#ifdef DJGPP
+    file_recovery_new->extension="js";
+#else
+    file_recovery_new->extension="sessionstore.js";
+#endif
+    return 1;
+  }
   if(memcmp(buffer,header_sh,sizeof(header_sh))==0 ||
       memcmp(buffer,header_bash,sizeof(header_bash))==0 ||
       memcmp(buffer,header_ksh,sizeof(header_ksh))==0)
@@ -573,6 +597,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 #else
     file_recovery_new->extension="emka";
 #endif
+    return 1;
+  }
+  if(td_memmem(buffer, buffer_size, header_qgis, sizeof(header_qgis))!=NULL)
+  {
+    /* Quantum GIS (QGIS) is a user friendly Open Source Geographic Information System */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="qgs";
     return 1;
   }
   if(memcmp(buffer,header_stp,sizeof(header_stp))==0)
@@ -822,6 +855,33 @@ static int is_ini(const char *buffer)
     src++;
   }
 }
+
+#ifdef UTF16
+static int header_check_le16_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  for(i=0; i+1 < buffer_size; i+=2)
+  {
+    if(!( buffer[i+1]=='\0' && (isprint(buffer[i]) || buffer[i]=='\n' || buffer[i]=='\r' || buffer[i]==0xbb)))
+    {
+      if(i<40)
+	return 0;
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->calculated_file_size=i;
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->extension="utf16";
+      return 1;
+    }
+  }
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->calculated_file_size=i;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="utf16";
+  return 1;
+}
+#endif
 
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
