@@ -349,7 +349,7 @@ int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, con
   return ind_stop;
 }
 
-enum { BF_FILE_FOUND=0, BF_USER_STOP=1, BF_ERR_STOP=2, BF_FRAG_FOUND=3, BF_EOF=4, BF_NO_FILE=5};
+enum { BF_FILE_FOUND=0, BF_USER_STOP=1, BF_ERR_STOP=2, BF_FRAG_FOUND=3, BF_EOF=4, BF_NO_FILE=5, BF_TOO_FAR=6};
 
 static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int *file_nbr, file_recovery_t *file_recovery, const unsigned int blocksize, alloc_data_t *list_search_space, unsigned int *dir_num, const photorec_status_t status, const int phase, const uint64_t file_offset, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer)
 {
@@ -428,9 +428,7 @@ static int photorec_bf_pad(disk_t *disk_car, const char *recup_dir, unsigned int
       list_space_used(file_recovery, 512);
 #endif
       file_size_backup=file_recovery->file_size;
-      /* FIXME flags=0 */
-      file_recovery->flags=(phase==1?0:1);
-//      file_recovery->flags=1;
+      file_recovery->flags=1;
       file_recovery->offset_error=0;
       file_recovery->offset_ok=0;
       file_recovery->calculated_file_size=0;
@@ -567,7 +565,7 @@ static int photorec_bf_frag_fast(disk_t *disk_car, partition_t *partition, const
     }
     if(res==BF_FILE_FOUND || res==BF_USER_STOP || res==BF_ERR_STOP)
       return res;
-    if(res==BF_EOF)
+    if(res==BF_EOF || res==BF_TOO_FAR)
       return BF_NO_FILE;
   }
   return BF_NO_FILE;
@@ -584,6 +582,8 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
       file_recovery->offset_ok > 0)
   {
     int res=photorec_bf_frag_fast(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, current_search_space, offset, buffer, block_buffer, frag);
+//    if(res==BF_TOO_FAR)
+//      res=photorec_bf_frag(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, current_search_space, offset, buffer, block_buffer, frag);
     if(res!=BF_NO_FILE)
       return res;
   }
@@ -598,7 +598,8 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 #endif
   for(file_offset=original_offset_error/blocksize*blocksize;
       file_offset >= blocksize &&
-      (original_offset_error+blocksize-1)/blocksize*blocksize < file_offset+8*512;
+      (original_offset_error <= file_offset+6*512 ||
+       original_offset_error < file_offset+2*blocksize);
       file_offset -= blocksize)
   {
     alloc_data_t *extractblock_search_space;
@@ -739,6 +740,8 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 		return BF_USER_STOP;
 	      case BF_ERR_STOP:
 		return BF_ERR_STOP;
+	      case BF_TOO_FAR:
+		return BF_NO_FILE;
 	      case BF_NO_FILE:
 #if 0
 		/* TODO: Continue to iterate blocs_to_skip */
@@ -754,6 +757,8 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 	    return BF_NO_FILE;
 	}
       }
+      if(file_recovery->offset_error > 0 && file_recovery->offset_error < file_offset)
+	return BF_TOO_FAR;
     }
 #ifdef DEBUG_BF
     log_info("blocs_to_skip=%u offset_error=0x%llx file_offset=0x%llx\n",
@@ -794,8 +799,7 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char 
   file_recovery->blocksize=blocksize;
   // Writing the file until the error location
   for(file_recovery->file_size = 0;
-//      file_recovery->file_size + blocksize -1 < file_recovery->offset_error;
-      file_recovery->file_size < file_recovery->offset_error;
+      file_recovery->file_size + blocksize -1 < file_recovery->offset_error;
       file_recovery->file_size += blocksize)
   {
     disk_car->pread(disk_car, block_buffer, blocksize, offset);
@@ -819,10 +823,15 @@ static int photorec_bf_aux(disk_t *disk_car, partition_t *partition, const char 
   log_trace("\n");
 #endif
   ind_stop=photorec_bf_frag(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase, &current_search_space, &offset, buffer, block_buffer, 0);
-  if(ind_stop==BF_NO_FILE)
-    ind_stop=BF_FILE_FOUND;
   /* Cleanup */
   file_finish(file_recovery,recup_dir,2, file_nbr,blocksize,list_search_space,&current_search_space, &offset, dir_num,status,disk_car);
   free(buffer);
+  if(ind_stop==BF_TOO_FAR)
+  {
+//    return photorec_bf_aux(disk_car, partition, recup_dir, interface, file_stats, file_nbr, file_recovery, blocksize, list_search_space, start_search_space, real_start_time, dir_num, status, phase);
+    return BF_FILE_FOUND;
+  }
+  if(ind_stop==BF_NO_FILE)
+    return BF_FILE_FOUND;
   return ind_stop;
 }
