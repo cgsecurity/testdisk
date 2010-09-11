@@ -42,6 +42,12 @@
 
 #define AM_MEMORY_MANAGER	/* we define jvirt_Xarray_control structs */
 #ifdef HAVE_JPEGLIB_H
+#ifdef __MINGW32__
+#ifndef HAVE_BOOLEAN
+#define HAVE_BOOLEAN
+typedef int boolean;
+#endif
+#endif
 #include <jpeglib.h>
 #endif
 #include "types.h"

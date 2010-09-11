@@ -5,8 +5,8 @@
 VER_E2FSPROGS=
 VER_PROGSREISERFS=0.3.1-rc8
 VER_NTFSPROGS=2.0.0
-#VER_LIBEWF=20080501
-VER_LIBEWF=20090510
+#VER_LIBEWF=20090510
+VER_LIBEWF=20100226
 crosscompile_target=
 prefix=/usr/
 if [ "$CC" = "gcc295" ];
@@ -237,6 +237,9 @@ then
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
                 ;;
+	  i686-pc-mingw32|x86_64-pc-mingw32)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok
+                ;;
 	  arm-marvell-linux-gnu)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs
                 ;;
@@ -253,4 +256,3 @@ then
 	cd $pwd_saved
   fi
 fi
-

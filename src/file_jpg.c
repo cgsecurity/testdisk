@@ -39,6 +39,12 @@
 #include <setjmp.h>
 #endif
 #ifdef HAVE_JPEGLIB_H
+#ifdef __MINGW32__
+#ifndef HAVE_BOOLEAN
+#define HAVE_BOOLEAN
+typedef int boolean;
+#endif
+#endif
 #include <jpeglib.h>
 #include "suspend.h"
 #endif
