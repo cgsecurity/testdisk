@@ -1,5 +1,5 @@
 .\" May be distributed under the GNU General Public License
-.TH PHOTOREC 1 @TESTDISKDATE@ "Administration Tools"
+.TH PHOTOREC 8 @TESTDISKDATE@ "Administration Tools"
 .SH NAME
 photorec \- Recover lost files from harddisk, digital camera and cdrom
 .SH SYNOPSIS
@@ -16,8 +16,8 @@ create a photorec.log file
 .B /debug
 add debug information
 .SH SEE ALSO
-.BR testdisk(1),
-.BR fdisk (1).
+.BR testdisk(8),
+.BR fdisk (8).
 .BR
 .SH AUTHOR
 PhotoRec @VERSION@, Data Recovery Utility, @TESTDISKDATE@

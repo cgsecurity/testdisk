@@ -1,0 +1,18 @@
+.\" May be distributed under the GNU General Public License
+.TH FIDENTIFY 8 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+fidentify \- Recover lost files from harddisk, digital camera and cdrom
+.SH SYNOPSIS
+.BI "fidentify [directory]
+.sp
+.SH DESCRIPTION
+   \fBfidentify\fP identify the file type, the "extension", by using thr same database than PhotoRec.
+.SH SEE ALSO
+.BR photorec(8),
+.BR
+.SH AUTHOR
+PhotoRec @VERSION@, Data Recovery Utility, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+http://www.cgsecurity.org

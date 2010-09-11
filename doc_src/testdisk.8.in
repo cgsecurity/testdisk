@@ -1,5 +1,5 @@
 .\" May be distributed under the GNU General Public License
-.TH TESTDISK 1 @TESTDISKDATE@ "Administration Tools"
+.TH TESTDISK 8 @TESTDISKDATE@ "Administration Tools"
 .SH NAME
 testdisk \- Scan and repair disk partitions
 .SH SYNOPSIS
@@ -52,8 +52,8 @@ dump raw sectors
 .B /list
 display current partitions
 .SH SEE ALSO
-.BR fdisk (1),
-.BR photorec(1).
+.BR fdisk (8),
+.BR photorec(8).
 .BR
 .SH AUTHOR
 TestDisk @VERSION@, Data Recovery Utility, @TESTDISKDATE@
