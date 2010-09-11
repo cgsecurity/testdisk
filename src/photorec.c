@@ -842,7 +842,7 @@ static alloc_data_t *file_error_aux(alloc_data_t *space, alloc_data_t *file, con
   struct td_list_head *tmp;
   struct td_list_head *next;
   uint64_t size=0;
-  const uint64_t file_size_on_disk=(file_size+blocksize-1)/blocksize*blocksize;
+  const uint64_t file_size_on_disk=file_size/blocksize*blocksize;
   for(tmp=&file->list, next=tmp->next; tmp!=&space->list; tmp=next, next=tmp->next)
   {
     alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
