@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.12-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="April 2010"
+TESTDISKDATE="September 2010"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -68,11 +68,6 @@ AC_ARG_WITH(com_err-includes,
 AC_ARG_WITH([jpeg],
     AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
     [	use_jpeg="n" ])
-
-#AC_ARG_WITH(jpegmmx-lib,
-#    AS_HELP_STRING(--with-jpegmmx-lib=DIR,location of the jpeg library),
-#    [ jpegmmx_lib_a="${withval}/libjpeg-mmx.a"
-#    LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(jpeg-lib,
     AS_HELP_STRING(--with-jpeg-lib=DIR,location of the jpeg library),
@@ -370,9 +365,11 @@ AC_CHECK_HEADERS([libewf.h],,
               use_ewf=no
               AC_MSG_WARN(Disable use of ewf library))
 
-AC_CHECK_HEADERS([jpeglib.h],,
-              use_jpeg=no
-              AC_MSG_WARN(Disable use of jpeg library))
+AC_CHECK_HEADERS([jpeglib.h], use_jpeg_header=ok)
+if test -z "${use_jpeg_header}"; then
+	use_jpeg=no
+	AC_MSG_WARN(Disable use of jpeg library)
+fi
 
 AC_CHECK_HEADERS([ntfs/attrib.h ntfs/volume.h],,
               use_ntfs=no
@@ -491,14 +488,6 @@ else
 fi
 
 if test -z "${use_jpeg}"; then
-#  AC_CHECK_LIB(jpeg-mmx,jpeg_std_error,[
-#      AC_DEFINE([HAVE_LIBJPEG],1,[Define to 1 if you have the jpeg library (-ljpeg-mmx).])
-#      if test "${jpegmmx_lib_a}" = ""; then
-#        photorec_LDADD="$photorec_LDADD -ljpeg-mmx"
-#      else
-#        photorec_LDADD="$photorec_LDADD ${jpegmmx_lib_a}"
-#      fi
-#      ],AC_MSG_WARN(No jpeg-mmx library detected)
   AC_CHECK_LIB(jpeg,jpeg_std_error,[
       AC_DEFINE([HAVE_LIBJPEG],1,[Define to 1 if you have the jpeg library (-ljpeg).])
       if test "${jpeg_lib_a}" = ""; then
