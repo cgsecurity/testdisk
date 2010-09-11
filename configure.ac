@@ -188,6 +188,15 @@ AC_ARG_ENABLE([qt],
      esac],
      [use_qt=false])
 
+AC_ARG_ENABLE([ncmouse],
+    AS_HELP_STRING(--enable-ncmouse,enable use of mouse in ncurses(default is NO)),
+    [case "${enableval}" in
+       yes) use_ncmouse=true ;;
+       no)  use_ncmouse=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-mouse]) ;;
+     esac],
+     [use_ncmouse=false])
+
 use_icon=no
 
 case "$target" in
@@ -457,6 +466,17 @@ if test -z "${use_ncurses}"; then
    photorec_LDADD="$photorec_LDADD -ltinfo"
  fi
       ])
+  if test "$use_ncmouse" = "true";
+  then
+    ac_save_LIBS="$LIBS"
+    LIBS="$LIBS $photorec_LDADD"
+    AC_CHECK_FUNCS(mousemask)
+    LIBS="$ac_save_LIBS"
+    if test "$ac_cv_func_mousemask" = "yes";
+    then
+      AC_DEFINE([ENABLE_MOUSE],1,[Define to 1 if the ncurses mouse interface is enabled])
+    fi
+  fi
 else
   AC_MSG_WARN(Use of ncurses library disabled)
 fi

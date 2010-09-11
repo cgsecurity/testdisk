@@ -173,7 +173,7 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
   for( i = 0; menuItems[i].key!=0; i++ )
     if(strchr(available, menuItems[i].key)!=NULL )
     {
-      unsigned int lenName = strlen( menuItems[i].name );
+      const unsigned int lenName = strlen( menuItems[i].name );
       if(lenNameMax<lenName && lenName < itemLength)
         lenNameMax=lenName;
     }
@@ -274,17 +274,83 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
   return y;
 }
 
+int menu_to_command(const int yinfo, const int y_org, const int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const int y_real, const int x_real)
+{
+  int y=y_org;
+  int x=x_org;
+  unsigned int i, lmargin = x, ymargin = y;
+  unsigned int lenNameMax=0;
+  for( i = 0; menuItems[i].key!=0; i++ )
+    if(strchr(available, menuItems[i].key)!=NULL )
+    {
+      const unsigned int lenName = strlen( menuItems[i].name );
+      if(lenNameMax<lenName && lenName < itemLength)
+        lenNameMax=lenName;
+    }
+  /* Print available buttons */
+  for( i = 0; menuItems[i].key!=0; i++ )
+  {
+    unsigned int lenName;
+    const char *mi;
+    const int x_old=x;
+    const int y_old=y;
+    /* Search next available button */
+    while( menuItems[i].key!=0 && strchr(available, menuItems[i].key)==NULL )
+    {
+      i++;
+    }
+    if( menuItems[i].key==0 ) break; /* No more menu items */
+
+    mi = menuItems[i].name;
+    lenName = strlen( mi );
+
+    /* Calculate position for the next item */
+    if( menuType & MENU_VERT )
+    {
+      y += 1;
+      if( y >= yinfo - 1)
+      {
+	y = ymargin;
+	x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
+	if( menuType & MENU_BUTTON ) x += 2;
+      }
+      if(y_old==y_real && x_old <= x_real && x_real < x+(lenName < itemLength?itemLength:lenName) + MENU_SPACING)
+      {
+	return menuItems[i].key;
+      }
+    }
+    else
+    {
+      x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
+      if( menuType & MENU_BUTTON ) x += 2;
+      if(y_old==y_real && x_old <= x_real && x_real < x)
+      {
+	return menuItems[i].key;
+      }
+      if( x + lmargin + 12 > COLUMNS )
+      {
+	x = lmargin;
+	y ++ ;
+      }
+    }
+  }
+  log_info("menu_to_command not found\n");
+  return 0;
+}
+
 /* This function takes a list of menu items, lets the user choose one *
  * and returns the value keyboard shortcut of the selected menu item  */
 
-int wmenuSelect(WINDOW *window, int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int menuDefault)
+int wmenuSelect(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int menuDefault)
 {
   unsigned int current=menuDefault;
   return wmenuSelect_ext(window, yinfo, y, x, menuItems, itemLength, available, menuType, &current, NULL);
 }
 
-int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, int menuType, unsigned int *current, int *real_key)
+int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y_org, const int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key)
 {
+  int y=y_org;
+  int x=x_org;
   int i, ylast = y, key = 0;
   /*
      if( ( menuType & ( MENU_HORIZ | MENU_VERT ) )==0 )    
@@ -303,6 +369,11 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct 
       *current = 0;
     }
   }
+#if defined(ALL_MOUSE_EVENTS) && defined(ENABLE_MOUSE)
+  if((menuType & MENU_ACCEPT_OTHERS)==0 )
+    mousemask(ALL_MOUSE_EVENTS, NULL);
+#endif
+
   /* Repeat until allowable choice has been made */
   while( key==0 )
   {
@@ -339,6 +410,22 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct 
     /* Cursor keys */
     switch(key)
     {
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+      case KEY_MOUSE:
+	if((menuType & MENU_ACCEPT_OTHERS)==0 )
+	{
+	  MEVENT event;
+	  if(getmouse(&event) == OK)
+	  {	/* When the user clicks left mouse button */
+	    if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	    {
+	      key = menu_to_command(yinfo, y_org, x_org, menuItems, itemLength,
+		  available, menuType, event.y, event.x);
+	    }
+	  }
+	}
+	break;
+#endif
       case KEY_UP:
         if( (menuType & MENU_VERT)!=0 )
         {
@@ -427,7 +514,7 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, int y, int x, const struct 
 /* Function menuSelect takes way too many parameters  *
  * Luckily, most of time we can do with this function */
 
-int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, unsigned int menuDefault)
+int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, const unsigned int menuDefault)
 {
     unsigned int i, j, itemLength = 0;
     char available[MENU_MAX_ITEMS];
@@ -450,7 +537,6 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
   char res2[200];
   char response[128];
   char def[128];
-  unsigned long int tmp_val;
   va_list ap;
   va_start(ap,_format);
   vsnprintf(res,sizeof(res),_format,ap);
@@ -464,6 +550,7 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
   sprintf(def, "%llu", val_cur);
   if (get_string(response, sizeof(response), def) > 0)
   {
+    unsigned long int tmp_val;
 #ifdef HAVE_ATOLL
     tmp_val = atoll(response);
 #else
@@ -1138,6 +1225,18 @@ int check_enter_key_or_s(WINDOW *window)
 {
   switch(wgetch_nodelay(window))
   {
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+    case KEY_MOUSE:
+      {
+	MEVENT event;
+	if(getmouse(&event) == OK)
+	{	/* When the user clicks left mouse button */
+	  if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	    return 1;
+	}
+      }
+      break;
+#endif
     case KEY_ENTER:
 #ifdef PADENTER
     case PADENTER:

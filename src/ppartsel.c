@@ -307,6 +307,9 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       wmove(stdscr,4,0);
       wprintw(stdscr,"%s",disk_car->description_short(disk_car));
       mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+      mousemask(ALL_MOUSE_EVENTS, NULL);
+#endif
       for(i=0,element=list_part; element!=NULL && i<offset+INTER_SELECT;element=element->next,i++)
       {
 	if(i<offset)
@@ -331,6 +334,37 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	wprintw(stdscr, "Next");
       command = wmenuSelect(stdscr, INTER_SELECT_Y+1, INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
 	  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+      if(command == KEY_MOUSE)
+      {
+	MEVENT event;
+	if(getmouse(&event) == OK)
+	{	/* When the user clicks left mouse button */
+	  if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	  {
+	    if(event.y >=7 && event.y<7+INTER_SELECT)
+	    {
+	      /* Disk selection */
+	      while(current_element_num > event.y-(7-offset) && current_element->prev!=NULL)
+	      {
+		current_element=current_element->prev;
+		current_element_num--;
+	      }
+	      while(current_element_num < event.y-(7-offset) && current_element->next!=NULL)
+	      {
+		current_element=current_element->next;
+		current_element_num++;
+	      }
+	      if(event.bstate & BUTTON1_DOUBLE_CLICKED)
+		command='S';
+	    }
+	    else
+	      command = menu_to_command(INTER_SELECT_Y+1, INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
+		  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
+	  }
+	}
+      }
+#endif
       switch(command)
       {
 	case KEY_UP:

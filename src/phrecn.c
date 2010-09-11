@@ -526,6 +526,21 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
   {
     switch(wgetch(stdscr))
     {
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+      case KEY_MOUSE:
+	{
+	  MEVENT event;
+	  if(getmouse(&event) == OK)
+	  {	/* When the user clicks left mouse button */
+	    if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	    {
+	      if(event.x < sizeof("[ Quit ]") && event.y==22)
+		return ;
+	    }
+	  }
+	}
+	break;
+#endif
       case KEY_ENTER:
 #ifdef PADENTER
       case PADENTER:
@@ -830,7 +845,17 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     }
     else if(ind_stop>0)
     {
-      status=STATUS_QUIT;
+      if(session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose)<0)
+      {
+	/* Failed to save the session! */
+	if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
+	  status=STATUS_QUIT;
+      }
+      else
+      {
+	if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
+	status=STATUS_QUIT;
+      }
     }
     else if(paranoid>0)
     {
@@ -1169,6 +1194,9 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     {'q',"Quit","Return to main menu"},
     {0,NULL,NULL}
   };
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+  mousemask(ALL_MOUSE_EVENTS, NULL);
+#endif
   while(1)
   {
     int i;
@@ -1231,6 +1259,42 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     wprintw(stdscr," to save the settings");
     command = wmenuSelect(stdscr, LINES-1, INTER_FSELECT_Y, INTER_FSELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+    if(command == KEY_MOUSE)
+    {
+      MEVENT event;
+      if(getmouse(&event) == OK)
+      {	/* When the user clicks left mouse button */
+	if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	{
+	  if(event.y >=6 && event.y<6+INTER_FSELECT)
+	  {
+	    if(((event.bstate & BUTTON1_CLICKED) && current_element_num == event.y-6-offset) ||
+	      (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	      command='+';
+	    /* Disk selection */
+	    while(current_element_num > event.y-(6-offset) && current_element_num>0)
+	    {
+		current_element_num--;
+	    }
+	    while(current_element_num < event.y-(6-offset) && files_enable[current_element_num+1].file_hint!=NULL)
+	    {
+		current_element_num++;
+	    }
+	  }
+	  else if(event.y==5 && event.x>=4 && event.x<=4+sizeof("Previous") &&
+	      offset>0)
+	    command=KEY_PPAGE;
+	  else if(event.y==6+INTER_FSELECT && event.x>=4 && event.x<=4+sizeof("Next") &&
+	      files_enable[i].file_hint!=NULL)
+	    command=KEY_NPAGE;
+	  else
+	    command = menu_to_command(LINES-1, INTER_FSELECT_Y, INTER_FSELECT_X, menuAdv, 8,
+		"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
+	}
+      }
+    }
+#endif
     switch(command)
     {
       case KEY_UP:

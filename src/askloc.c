@@ -318,8 +318,45 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
         wrefresh(window);
         do
         {
+	  int command=wgetch(window);
           quit=ASK_LOCATION_WAITKEY;
-          switch(wgetch(window))
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
+	  if(command==KEY_MOUSE)
+	  {
+	    MEVENT event;
+	    if(getmouse(&event) == OK)
+	    {	/* When the user clicks left mouse button */
+	      if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
+	      {
+		if(event.y >=8 && event.y<8+INTER_DIR)
+		{
+		  const int pos_num_old=pos_num;
+		  /* Disk selection */
+		  while(pos_num > event.y-(8-offset) && current_file->prev!=&dir_list.list)
+		  {
+		    current_file=current_file->prev;
+		    pos_num--;
+		  }
+		  while(pos_num < event.y-(8-offset) && current_file->next!=&dir_list.list)
+		  {
+		    current_file=current_file->next;
+		    pos_num++;
+		  }
+		  quit=ASK_LOCATION_UPDATE;
+		  if(((event.bstate & BUTTON1_CLICKED) && pos_num==pos_num_old) ||
+		      (event.bstate & BUTTON1_DOUBLE_CLICKED))
+		    command=KEY_ENTER;
+		}
+#if 0
+		else if(file_walker!=&dir_list.list && file_walker->next!=&dir_list.list)
+		{
+		}
+#endif
+	      }
+	    }
+	  }
+#endif
+          switch(command)
           {
             case 'y':
             case 'Y':
