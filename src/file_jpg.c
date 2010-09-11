@@ -230,9 +230,6 @@ static void my_emit_message (j_common_ptr cinfo, int msg_level)
   }
 }
 
-//#define JPG_INPUT_BUF_SIZE  4096	/* choose an efficiently fread'able size */
-//#define JPG_INPUT_BUF_SIZE  512		/* TODO: use the blocksize */
-
 /*
  * Initialize source --- called by jpeg_read_header
  * before any data is actually read.
@@ -300,7 +297,6 @@ static boolean jpg_fill_input_buffer (j_decompress_ptr cinfo)
 #endif
   nbytes = fread(src->buffer, 1,
       src->blocksize - (src->offset + src->file_size)%src->blocksize,
-//      512 - (src->offset + src->file_size)%512,
       src->infile);
   if (nbytes <= 0) {
     if (src->start_of_file)	/* Treat empty input file as fatal error */
@@ -512,7 +508,7 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
   jpeg_session.handle=infile;
   jpeg_session.offset=offset;
   jpeg_session.blocksize=blocksize;
-  file_size_max=(offset_rel1+blocksize-1)/blocksize*blocksize;
+  file_size_max=(offset_rel1 + blocksize - (offset % blocksize) -1) / blocksize * blocksize;
 #ifdef DEBUG_JPEG
   log_info("jpg_xy_to_offset(infile, x=%u, y=%u, offset_rel1=%lu, offset_rel2=%lu)\n",
       x, y, (long unsigned)offset_rel1, (long unsigned)offset_rel2);
@@ -535,7 +531,7 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
       if(data==1)
       {
 	jpeg_session_delete(&jpeg_session);
-	return offset + file_size_max - blocksize;
+	return offset + file_size_max;
       }
     }
     file_size_max+=blocksize;
@@ -573,22 +569,19 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
       if(jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
       {
 	JSAMPROW row_pointer[1];
-	int data=0;
 	unsigned int i;
 	row_pointer[0] = (unsigned char *)jpeg_session.frame;
 	/* 0x100/2=0x80, medium value */
 	memset(jpeg_session.frame, 0x80, jpeg_session.row_stride);
 	(void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
-	for(i=0; i< (jpeg_session.output_width-x) * jpeg_session.output_components; i++)
+	for(i=(x+1)*jpeg_session.output_components; i < jpeg_session.output_width * jpeg_session.output_components; i++)
 	{
-	  if(jpeg_session.frame[x*jpeg_session.output_components+i]!=0x80)
-	    data=1;
-	}
-	if(data==1)
-	{
-	  (void) jpeg_finish_decompress(&jpeg_session.cinfo);
-	  jpeg_session_delete(&jpeg_session);
-	  return offset + file_size_max;
+	  if(jpeg_session.frame[i]!=0x80)
+	  {
+	    (void) jpeg_finish_decompress(&jpeg_session.cinfo);
+	    jpeg_session_delete(&jpeg_session);
+	    return offset + file_size_max;
+	  }
 	}
       }
     }
@@ -596,47 +589,84 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
   }
 /*  Do not call jpeg_finish_decompress(&cinfo); to avoid an endless loop */
   jpeg_session_delete(&jpeg_session);
-  return 0;
+  return offset + offset_rel2;
 }
 
 static unsigned int is_line_cut(const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int y)
 {
-  const unsigned int row_stride = output_width * output_components;
-  unsigned int result_max=0;
-  unsigned int result_i=0;
-  unsigned int i;
-  for(i=(8 - 1) * output_components; i<row_stride; i+=8 * output_components)
+  unsigned int result_x=0;
+  if(y+8-1 < output_scanline)
   {
-    unsigned int result=0;
-    unsigned int j;
-    unsigned int pos;
-    for(j=0,
-	pos= y * row_stride + i;
-	j<8 && y+j < output_scanline;
-	j++, pos+=row_stride)
+    unsigned int result_max=0;
+    unsigned int x;
+    for(x=8 - 1; x < output_width; x+=8)
     {
-      /* FIXME: out of bound read access */
-      result += abs(2 * frame[pos] - frame[pos - output_components]
-	  - (pos + output_components <  row_stride * output_scanline ? frame[pos + output_components]: 0));
-    }
-#ifdef DEBUG_JPEG
-  log_info("y=%u x=%u i=%u result=%u\n", y, i/output_components, i, result);
+      unsigned int result=0;
+      unsigned int j;
+      for(j=0;
+	  j<8 && y+j < output_scanline;
+	  j++)
+      {
+	unsigned int c;
+	unsigned int pos;
+	for(c=0, pos= ((y+j) * output_width + x ) * output_components;
+	    c<output_components;
+	    c++, pos++)
+	  result += abs(2 * frame[pos] - frame[pos - output_components] - frame[pos + output_components]);
+      }
+#ifdef DEBUG_JPEG2
+      log_info("y=%u x=%u result=%u\n", y, x, result);
 #endif
-    if(result_max <= result)
-    {
-      result_max=result;
-      result_i=i;
+      if(result_max <= result)
+      {
+	result_max=result;
+	result_x=x;
+      }
     }
   }
-#ifdef DEBUG_JPEG
-  log_info("y=%u result_i=%u\n", y, result_i);
+  else
+  {
+    const unsigned int end = output_width * output_components * output_scanline;
+    unsigned int result_max=0;
+    unsigned int x;
+    for(x=8 - 1; x < output_width; x+=8)
+    {
+      unsigned int result=0;
+      unsigned int j;
+      for(j=0;
+	  j<8 && y+j < output_scanline;
+	  j++)
+      {
+	unsigned int c;
+	unsigned int pos;
+	for(c=0, pos= (y+j) * output_width * output_components + x * output_components;
+	    c<output_components;
+	    c++, pos++)
+	  result += abs(2 * frame[pos] - frame[pos - output_components]
+	      - (pos + output_components <  end ?
+		frame[pos + output_components]:
+		frame[pos - output_components]));
+      }
+#ifdef DEBUG_JPEG2
+      log_info("y=%u x=%u result=%u\n", y, x, result);
 #endif
-  return (result_i != row_stride-output_components);
+      if(result_max <= result)
+      {
+	result_max=result;
+	result_x=x;
+      }
+    }
+  }
+#ifdef DEBUG_JPEG2
+  log_info("y=%u result_x=%u\n", y, result_x);
+#endif
+  return (output_width - result_x - 1);
 }
 
 static unsigned int jpg_find_border(const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame)
 {
   unsigned int y;
+  unsigned int val=0;
 #ifdef DEBUG_JPEG
   log_info("jpg_find_border output_scanline=%u output_width=%u output_components=%u\n",
       output_scanline, output_width, output_components);
@@ -646,8 +676,16 @@ static unsigned int jpg_find_border(const unsigned int output_scanline, const un
     return output_scanline;
   for(y=output_scanline-8; y>=8; y-=8)
   {
-    if(!is_line_cut(output_scanline, output_width, output_components, frame, y))
+    const unsigned int old_val=val;
+    val=is_line_cut(output_scanline, output_width, output_components, frame, y);
+    if(val==0)
+    {
       return y+8;
+    }
+    if(old_val!=0 && val!=old_val)
+    {
+      return y;
+    }
   }
   return output_scanline;
 }
@@ -721,13 +759,9 @@ static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline,
 	  offset_rel1=offsets[result_y / 8];
 	  offset_rel2=offsets[result_y / 8 + 1];
 	  if(offset_rel1 < offset_rel2)
-	  {
-	    const uint64_t offset_error=jpg_xy_to_offset(handle, result_x, result_y,
-		offset_rel1, offset_rel2, offset, 512);
+	    return jpg_xy_to_offset(handle, result_x, result_y,
 //		offset_rel1, offset_rel2, offset, blocksize);
-	    if(offset_error>0)
-	      return offset_error;
-	  }
+		offset_rel1, offset_rel2, offset, 512);
 	  return offset + offset_rel2;
 	}
       }
@@ -769,7 +803,7 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
     {
 //      log_info("jpg_check_thumb jpeg corrupted near   %llu\n", offset_error);
       offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, blocksize, checkpoint_offset);
-      log_info("jpg_check_thumb find_error estimation %llu\n", (long long unsigned)offset_error);
+//      log_info("jpg_check_thumb find_error estimation %llu\n", (long long unsigned)offset_error);
     }
     jpeg_session_delete(&jpeg_session);
     return offset_error;
@@ -1040,7 +1074,10 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
 	  }
 	  if(potential_error!=NULL)
+	  {
 	    file_recovery->offset_error=potential_error-(const char*)buffer;
+	    return 0;
+	  }
 	  if(file_recovery->offset_ok<i)
 	    file_recovery->offset_ok=i;
 	  if(thumb_data!=NULL && ifbytecount!=NULL)
@@ -1219,7 +1256,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
       if(file_recovery->offset_error==0 || file_recovery->offset_error > thumb_error)
       {
 #ifdef DEBUG_JPEG
-	log_info("Thumb usefull\n");
+	log_info("Thumb usefull, error at %llu\n", thumb_error);
 #endif
 	file_recovery->offset_error = thumb_error;
       }
