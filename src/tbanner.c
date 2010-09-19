@@ -30,12 +30,17 @@
 #include "intrf.h"
 #include "intrfn.h"
 
-void aff_copy(WINDOW *window)
+void aff_copy_short(WINDOW *window)
 {
   wclear(window);
   keypad(window, TRUE); /* Need it to get arrow key */
   wmove(window,0,0);
   wprintw(window, "TestDisk %s, Data Recovery Utility, %s",VERSION,TESTDISKDATE);
+}
+
+void aff_copy(WINDOW *window)
+{
+  aff_copy_short(window);
   wmove(window,1,0);
   wprintw(window,"Christophe GRENIER <grenier@cgsecurity.org>");
   wmove(window,2,0);
