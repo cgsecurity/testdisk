@@ -52,6 +52,74 @@ list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part,
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
   {
+    list_part_t *element;
+    list_part_t *next;
+    new_partition->part_offset=0;
+    new_partition->part_size=0;
+    for(element=list_part;
+	element!=NULL && !(
+	  element->part->status==STATUS_PRIM_BOOT ||
+	  element->part->status==STATUS_PRIM ||
+	  element->part->status==STATUS_LOG);
+	element=element->next);
+    if(element!=NULL)
+    {
+      const partition_t *part=element->part;
+      uint64_t part_size=0;
+      uint64_t part_offset;
+      part_offset =  disk_car->sector_size;
+      if(part->part_offset > part_offset)
+	part_size = part->part_offset - part_offset;
+      if(part_size > new_partition->part_size)
+      {
+	new_partition->part_offset=part_offset;
+	new_partition->part_size=part_size;
+      }
+    }
+    while(element!=NULL)
+    {
+      const partition_t *part=element->part;
+      uint64_t part_size=0;
+      uint64_t part_offset;
+      for(next=element->next;
+	  next!=NULL && !(
+	    next->part->status==STATUS_PRIM_BOOT ||
+	    next->part->status==STATUS_PRIM ||
+	    next->part->status==STATUS_LOG);
+	  next=next->next);
+      part_offset=part->part_offset + part->part_size;
+      if(next!=NULL)
+      {
+	if(next->part->status==STATUS_LOG)
+	{
+	  if(next->part->part_offset > part_offset + disk_car->sector_size)
+	    part_size = next->part->part_offset - ( part_offset + disk_car->sector_size);
+	}
+	else
+	{
+	  if(next->part->part_offset > part_offset)
+	    part_size = next->part->part_offset - part_offset;
+	}
+      }
+      else
+      {
+	if(CHS2offset(disk_car,&end) > part_offset)
+	  part_size = CHS2offset(disk_car,&end) - part_offset + disk_car->sector_size;
+      }
+      if(part_size > new_partition->part_size)
+      {
+	new_partition->part_offset=part_offset;
+	new_partition->part_size=part_size;
+      }
+      element=next;
+    }
+    if(new_partition->part_size >= 2 * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size)
+    {
+      offset2CHS(disk_car, new_partition->part_offset, &start);
+      offset2CHS(disk_car, new_partition->part_offset + new_partition->part_size - disk_car->sector_size, &end);
+    }
+  }
+  {
     int position=0;
     int done = 0;
     while (done==0)
