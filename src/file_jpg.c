@@ -55,6 +55,7 @@ typedef int boolean;
 
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_riff;
+extern int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -97,7 +98,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   /* Don't extract jpg inside AVI */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_riff &&
-    memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0)
+      (memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||
+       file_recovery->data_check == &data_check_avi_stream))
     return 0;
   if(buffer[0]==0xff && buffer[1]==0xd8)
   {
