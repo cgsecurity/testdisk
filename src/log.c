@@ -74,16 +74,10 @@ FILE *log_open_default(const char*default_filename, const int mode)
   if (path == NULL)
     path = getenv("HOMEPATH");
   if(path == NULL)
-  {
-    log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
-    return log_handle;
-  }
+    return log_open(default_filename, mode);
   /* Check to avoid buffer overflow may not be 100% bullet proof */
   if(strlen(path)+strlen(default_filename)+2 > 4096)
-  {
-    log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
-    return log_handle;
-  }
+    return log_open(default_filename, mode);
   filename=(char*)MALLOC(4096);
 #ifdef __CYGWIN__
 /* FIXME */
@@ -93,7 +87,7 @@ FILE *log_open_default(const char*default_filename, const int mode)
 #endif
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  log_open(filename, mode);
   free(filename);
   return log_handle;
 }
@@ -104,15 +98,12 @@ FILE *log_open_default(const char*default_filename, const int mode)
   char *path;
   path = getenv("HOME");
   if(path == NULL)
-  {
-    log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
-    return log_handle;
-  }
+    return log_open(default_filename, mode);
   filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
   strcpy(filename, path);
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_handle=fopen(filename,(mode==TD_LOG_CREATE?"w":"a"));
+  log_open(default_filename, mode);
   free(filename);
   return log_handle;
 }
