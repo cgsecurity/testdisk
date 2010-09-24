@@ -33,6 +33,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "filegen.h"
 
@@ -120,7 +121,6 @@ static int data_check_mng(const unsigned char *buffer, const unsigned int buffer
 
 static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  static const unsigned char png_footer[4]= {'I','E','N','D'};
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -128,8 +128,18 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
     /* chunk: length, type, data, crc */
     file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
     file_recovery->calculated_file_size+=12;
-    if(memcmp(&buffer[i+4], png_footer, sizeof(png_footer))==0)
+    if(memcmp(&buffer[i+4], "IEND", 4)==0)
       return 2;
+// PNG chunk code
+// IDAT IHDR PLTE bKGD cHRM fRAc gAMA gIFg gIFt gIFx hIST iCCP
+// iTXt oFFs pCAL pHYs sBIT sCAL sPLT sRGB sTER tEXt tRNS zTXt
+    if( !((isupper(buffer[i+4]) || islower(buffer[i+4])) &&
+	  (isupper(buffer[i+5]) || islower(buffer[i+5])) &&
+	  (isupper(buffer[i+6]) || islower(buffer[i+6])) &&
+	  (isupper(buffer[i+7]) || islower(buffer[i+7]))))
+    {
+      return 2;
+    }
   }
   return 1;
 }
