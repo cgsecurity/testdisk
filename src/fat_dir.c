@@ -80,6 +80,8 @@ file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, co
   file_data_t *current_file=NULL;
   unsigned int status;
   unsigned int inode;
+  int utf8=1;
+  wctomb(NULL, 0);
 GetNew:
   status=0;
   long_slots = 0;
@@ -256,11 +258,25 @@ RecEnd:
       return dir_list;
     if((int8_t) unicode[0] != (int8_t) DELETED_FLAG)
     {
-      unsigned int i;
+      unsigned int i,o;
       file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-      for(i=0;(unicode[i]!=0)&&(i<sizeof(new_file->name)-1);i++)
-	new_file->name[i]=(char) unicode[i];
-      new_file->name[i]=0;
+      for(i=0,o=0; unicode[i]!=0 && o<sizeof(new_file->name)-1; i++)
+      {
+	if(utf8 && unicode[i]>0x7f)
+	{
+	  const int sizec=wctomb(&new_file->name[o], unicode[i]);
+	  if(sizec <= 0)
+	  {
+	    new_file->name[o]=(char) unicode[i];
+	    utf8=0;
+	  }
+	  else
+	    o += sizec;
+	}
+	else
+	  new_file->name[o++]=(char) unicode[i];
+      }
+      new_file->name[o]=0;
       new_file->stat.st_dev=0;
       new_file->stat.st_ino=inode;
       new_file->stat.st_mode = MSDOS_MKMODE(de->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
