@@ -7,6 +7,7 @@ VER_PROGSREISERFS=0.3.1-rc8
 VER_NTFSPROGS=2.0.0
 #VER_LIBEWF=20090510
 VER_LIBEWF=20100226
+smp_mflags="-j 2"
 crosscompile_target=
 prefix=/usr/
 if [ "$CC" = "gcc295" ];
@@ -81,7 +82,7 @@ then
   if [ -e $compiledir/e2fsprogs-$VER_E2FSPROGS/Makefile ];
   then
 	cd $compiledir/e2fsprogs-$VER_E2FSPROGS
-	make libs
+	make $smp_mflags libs
 	cd $pwd_saved
   fi
 fi
@@ -120,7 +121,7 @@ then
   if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
   then
 	cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
-	make
+	make $smp_mflags
 	cd $pwd_saved
   fi
 fi
@@ -158,7 +159,7 @@ then
   if [ -e $compiledir/ntfsprogs-$VER_NTFSPROGS/Makefile ];
   then
 	cd $compiledir/ntfsprogs-$VER_NTFSPROGS
-	make libs
+	make $smp_mflags libs
 	cd $pwd_saved
   fi
 fi
@@ -203,7 +204,7 @@ then
   if [ -e $compiledir/libewf-$VER_LIBEWF/Makefile ];
   then
 	cd $compiledir/libewf-$VER_LIBEWF
-	make lib
+	make $smp_mflags lib
 	cd $pwd_saved
   fi
 fi
@@ -232,7 +233,7 @@ then
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv
                 ;;
           i386-pc-cygwin)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT
                 ;;
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
@@ -252,7 +253,7 @@ then
   if [ -e $compiledir/Makefile ];
   then
   	cd $compiledir
-        make
+        make $smp_mflags
 	cd $pwd_saved
   fi
 fi
