@@ -1116,7 +1116,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
     {
       log_critical("Terminfo file is missing.\n");
 #if defined(__CYGWIN__)
-      printf("The terminfo file '%s\\c\\cygwin' is missing.\n", terminfo);
+      printf("The terminfo file '%s\\63\\cygwin' is missing.\n", terminfo);
 #else
       printf("Terminfo file is missing.\n");
 #endif
