@@ -1201,7 +1201,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	{
 	  file_info_t *file_info;
 	  struct tm		*tm_p;
-	  char str[11];
 	  char		datestr[80];
 	  file_info=td_list_entry(file_walker, file_info_t, list);
 	  wmove(window, 6-1+i-offset, 0);
@@ -1226,12 +1225,16 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  } else {
 	    strncpy(datestr, "                 ",sizeof(datestr));
 	  }
-	  mode_string(file_info->stat.st_mode,str);
-	  wprintw(window, "%s %5u %5u   ", 
-	      str, (unsigned int)file_info->stat.st_uid, (unsigned int)file_info->stat.st_gid);
-	  wprintw(window, "%7llu", (long long unsigned int)file_info->stat.st_size);
-	  /* screen may overlap due to long filename */
-	  wprintw(window, " %s %s", datestr, file_info->name);
+	  if(COLS <= 1+17+1+7+1)
+	    wprintw(window, "%s %s %7llu", file_info->name, datestr, (long long unsigned int)file_info->stat.st_size);
+	  else
+	  {
+	    const unsigned int nbr=COLS - (1+17+1+7+1);
+	    if(strlen(file_info->name) < nbr)
+	      wprintw(window, "%-*s %s %7llu", nbr, file_info->name, datestr, (long long unsigned int)file_info->stat.st_size);
+	    else
+	      wprintw(window, "%-*s %s %7llu", nbr, &file_info->name[strlen(file_info->name) - nbr], datestr, (long long unsigned int)file_info->stat.st_size);
+	  }
 	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	    wbkgdset(window,' ' | COLOR_PAIR(0));
 	  if(file_walker==current_file)
@@ -1373,10 +1376,10 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	      {
 		char *res;
 		if(LINUX_S_ISDIR(file_info->stat.st_mode)!=0)
-		  res=ask_location("Are you sure you want to copy %s and any files below to the directory %s ? [Y/N]",
+		  res=ask_location("Please select a destination where %s and any files below will be copied.",
 		      file_info->name, NULL);
 		else
-		  res=ask_location("Are you sure you want to copy %s to the directory %s ? [Y/N]",
+		  res=ask_location("Please select a destination where %s will be copied.",
 		      file_info->name, NULL);
 		dir_data->local_dir=res;
 		opts.dest=res;

@@ -56,16 +56,23 @@
 #include "list.h"
 #include "dir.h"
 #include "askloc.h"
+#include "log.h"
 
 extern const char *monstr[];
 
 #define INTER_DIR (LINES-25+16)
+#define Y_DIR	  8
 
+#ifdef __MINGW32__
+#define SPATH_SEP "\\"
+#define PATH_SEP '\\'
+#else
 #define SPATH_SEP "/"
 #define PATH_SEP '/'
+#endif
 #if defined(__CYGWIN__)
-/* /cygdrive/c/ => */
-#define PATH_DRIVE_LENGTH 9
+/* /cygdrive/c/ */
+#define CYGDRIVE_LEN 9
 #endif
 
 #define ASK_LOCATION_WAITKEY 	0
@@ -104,11 +111,22 @@ static void set_parent_directory(char *dst_directory)
     if(dst_directory[i]==PATH_SEP)
       last_sep=i;
 #ifdef __CYGWIN__
-  /* /cygdrive */
-  if(last_sep>PATH_DRIVE_LENGTH)
-    dst_directory[last_sep]='\0';
+  if(memcmp(dst_directory, "/cygdrive", 9)==0)
+  {
+    if(last_sep > CYGDRIVE_LEN)
+      dst_directory[last_sep]='\0';
+    else
+      dst_directory[CYGDRIVE_LEN]='\0';
+  }
+  else if(last_sep>0)
+      dst_directory[last_sep]='\0';
+  else if(last_sep==0 && dst_directory[1]=='\0')
+    strcpy(dst_directory, "/cygdrive");
   else
-    dst_directory[PATH_DRIVE_LENGTH]='\0';
+  {
+    dst_directory[0]=PATH_SEP;
+    dst_directory[1]='\0';
+  }
 #elif defined(DJGPP) || defined(__OS2__)
   if(last_sep > 2 )
     dst_directory[last_sep]='\0';	/* subdirectory */
@@ -117,10 +135,13 @@ static void set_parent_directory(char *dst_directory)
   else
     dst_directory[0]='\0';	/* drive list */
 #else
-  if(last_sep>1)
+  if(last_sep>0)
     dst_directory[last_sep]='\0';
   else
+  {
+    dst_directory[0]=PATH_SEP;
     dst_directory[1]='\0';
+  }
 #endif
 }
 
@@ -130,7 +151,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
   char *res=NULL;
   int quit;
   WINDOW *window=newwin(0,0,0,0);	/* full screen */
-  aff_copy(window);
+  aff_copy_short(window);
   if(dst_org != NULL)
     strncpy(dst_directory, dst_org, sizeof(dst_directory));
   else
@@ -142,7 +163,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       .list = TD_LIST_HEAD_INIT(dir_list.list),
       .name = {0}
     };
-    wmove(window,7,0);
+    wmove(window,5,0);
     wclrtoeol(window);	/* before addstr for BSD compatibility */
     if(has_colors())
       wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
@@ -161,26 +182,39 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 #else
     dir=opendir(dst_directory);
 #endif
-    if(dir!=NULL)
+    if(dir==NULL)
     {
-      struct dirent *dir_entrie;
+      log_info("opendir(%s) failed\n", dst_directory);
+      strncpy(dst_directory, SPATH_SEP, sizeof(dst_directory));
+      dir=opendir(dst_directory);
+    }
+    if(dir==NULL)
+    {
+      td_getcwd(dst_directory, sizeof(dst_directory));
+      dir=opendir(dst_directory);
+    }
+    if(dir==NULL)
+      return NULL;
+    {
       file_info_t *file_info;
       file_info=(file_info_t*)MALLOC(sizeof(*file_info));
-      do
+      while(1)
       {
         char current_file[4096];
+	struct dirent *dir_entrie;
         dir_entrie=readdir(dir);
-	/* if dir_entrie exists
-	 *   there is enough room to store the filename
-	 *   dir_entrie->d_name is ".", ".." or something that doesn't begin by a "."
-	 * */
-        if(dir_entrie!=NULL
-            && strlen(dst_directory)+1+strlen(file_info->name)+1<=sizeof(current_file) &&
-            (dir_entrie->d_name[0]!='.' ||
-             dir_entrie->d_name[1]=='\0' ||
-             (dir_entrie->d_name[1]=='.' && dir_entrie->d_name[2]=='\0'))
+        if(dir_entrie==NULL)
+	  break;
+	/* hide filename beginning by '.' except '.' and '..' */
+	if(dir_entrie->d_name[0]=='.' &&
+	    !dir_entrie->d_name[1]=='\0' &&
+	    !(dir_entrie->d_name[1]=='.' && dir_entrie->d_name[2]=='\0'))
+	  continue;
+        if(strlen(dst_directory)+1+strlen(file_info->name)+1<=sizeof(current_file)
 #ifdef __CYGWIN__
-            && (strlen(dst_directory)>PATH_DRIVE_LENGTH || dir_entrie->d_name[0]!='.')
+	    && (memcmp(dst_directory, "/cygdrive", 9)!=0 ||
+	      (dst_directory[9]!='\0' && dst_directory[10]!='\0') ||
+	      dir_entrie->d_name[0]!='.')
 #endif
           )
         {
@@ -207,7 +241,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 #endif
 #ifdef __CYGWIN__
 	      /* Fix Drive list */
-	      if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
+	      if(memcmp(dst_directory, "/cygdrive", 9)==0 && (dst_directory[10]=='\0' || dst_directory[11]=='\0'))
 	      {
 		file_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
 		file_info->stat.st_mtime=0;
@@ -220,7 +254,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	      file_info=(file_info_t*)MALLOC(sizeof(*file_info));
 	    }
         }
-      } while(dir_entrie!=NULL);
+      }
       free(file_info);
       closedir(dir);
     }
@@ -240,22 +274,31 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	  pos_num=0;
 	  old_LINES=LINES;
 	}
-        aff_copy(window);
-        wmove(window,7,0);
-#ifdef __CYGWIN__
-        if(strlen(dst_directory)<=PATH_DRIVE_LENGTH)
-          wprintw(window,"To select a drive, use the arrow keys.");
-        else
-          wprintw(window,"To select another directory, use the arrow keys.");
-#elif defined(DJGPP) || defined(__OS2__)
-        if(dst_directory[0]=='\0')
-          wprintw(window,"To select a drive, use the arrow keys.");
-        else
-          wprintw(window,"To select another directory, use the arrow keys.");
-#else
-        wprintw(window,"To select another directory, use the arrow keys.");
-#endif
-        {
+        aff_copy_short(window);
+        wmove(window,4,0);
+        wprintw(window,"Keys: ");
+
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window, "Arrow");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	wprintw(window," keys to select another directory");
+	wmove(window, 5, 6);
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window, "C");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	wprintw(window, " when the destination is correct");
+	wmove(window, 6, 6);
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window, "Q");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to quit");
+	{
           struct td_list_head *file_walker = NULL;
           int i=0;
           td_list_for_each(file_walker,&dir_list.list)
@@ -265,7 +308,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
             {
               file_info_t *file_info;
               file_info=td_list_entry(file_walker, file_info_t, list);
-              wmove(window,8-1+i-offset,0);
+              wmove(window, Y_DIR - 1 + i - offset, 0);
               wclrtoeol(window);	/* before addstr for BSD compatibility */
               if(file_walker==current_file)
 	      {
@@ -283,38 +326,43 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
             if(offset+INTER_DIR<=i)
               break;
           }
-	  wmove(window, 8+INTER_DIR, 4);
+	  wmove(window, Y_DIR + INTER_DIR, 4);
 	  wclrtoeol(window);
 	  if(file_walker!=&dir_list.list && file_walker->next!=&dir_list.list)
 	    wprintw(window, "Next");
         }
+	aff_txt(2, window, msg, src_dir);
+	wmove(window,7,0);
+	wclrtoeol(window);	/* before addstr for BSD compatibility */
 	if(strcmp(dst_directory,".")==0)
 	{
-	  aff_txt(4, window, msg, src_dir, "the program is running from");
+	  wprintw(window, "Current directory");
 	  dst_directory_ok=1;
 	}
 	else
 	{
 #ifdef __CYGWIN__
-	  if(strlen(dst_directory)>PATH_DRIVE_LENGTH)
+	  if(memcmp(dst_directory, "/cygdrive", 9)!=0 ||
+	      (dst_directory[9]!='\0' && dst_directory[10]!='\0'))
 	  {
 	    char beautifull_dst_directory[4096];
-	    cygwin_conv_to_win32_path(dst_directory, beautifull_dst_directory);
-	    aff_txt(4, window, msg, src_dir, beautifull_dst_directory);
+	    if(cygwin_conv_path (CCP_POSIX_TO_WIN_A | CCP_ABSOLUTE, dst_directory, beautifull_dst_directory, sizeof(beautifull_dst_directory))==0)
+	      wprintw(window, "Directory %s", beautifull_dst_directory);
+	    else
+	      wprintw(window, "Directory %s", dst_directory);
 	    dst_directory_ok=1;
 	  }
 #elif defined(DJGPP) || defined(__OS2__)
 	  if(strlen(dst_directory)>0)
 	  {
-	    aff_txt(4, window, msg, src_dir, dst_directory);
+	    wprintw(window, "Directory %s", dst_directory);
 	    dst_directory_ok=1;
 	  }
 #else
-	  aff_txt(4, window, msg, src_dir, dst_directory);
+	  wprintw(window, "Directory %s", dst_directory);
 	  dst_directory_ok=1;
 #endif
 	}
-        wclrtoeol(window);	/* before addstr for BSD compatibility */
         wrefresh(window);
         do
         {
@@ -328,16 +376,16 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	    {	/* When the user clicks left mouse button */
 	      if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
 	      {
-		if(event.y >=8 && event.y<8+INTER_DIR)
+		if(event.y >= Y_DIR && event.y < Y_DIR + INTER_DIR)
 		{
 		  const int pos_num_old=pos_num;
 		  /* Disk selection */
-		  while(pos_num > event.y-(8-offset) && current_file->prev!=&dir_list.list)
+		  while(pos_num > event.y - (Y_DIR - offset) && current_file->prev!=&dir_list.list)
 		  {
 		    current_file=current_file->prev;
 		    pos_num--;
 		  }
-		  while(pos_num < event.y-(8-offset) && current_file->next!=&dir_list.list)
+		  while(pos_num < event.y - (Y_DIR - offset) && current_file->next!=&dir_list.list)
 		  {
 		    current_file=current_file->next;
 		    pos_num++;
@@ -360,6 +408,8 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
           {
             case 'y':
             case 'Y':
+            case 'c':
+            case 'C':
               if(dst_directory_ok>0)
               {
                 res=strdup(dst_directory);
@@ -368,6 +418,8 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
               break;
             case 'n':
             case 'N':
+	    case 'q':
+	    case 'Q':
               res=NULL;
               quit=ASK_LOCATION_QUIT;
               break;
