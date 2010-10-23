@@ -128,6 +128,7 @@ file_C			= filegen.c \
 			  file_ldf.c \
 			  file_lnk.c \
 			  file_logic.c \
+			  file_lzo.c \
 			  file_m2ts.c \
 			  file_mat.c \
 			  file_max.c \

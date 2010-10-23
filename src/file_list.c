@@ -130,6 +130,7 @@ extern const file_hint_t file_hint_kdb;
 extern const file_hint_t file_hint_ldf;
 extern const file_hint_t file_hint_logic;
 extern const file_hint_t file_hint_lnk;
+extern const file_hint_t file_hint_lzo;
 extern const file_hint_t file_hint_m2ts;
 extern const file_hint_t file_hint_mat;
 extern const file_hint_t file_hint_max;
@@ -339,6 +340,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_ldf  },
   { .enable=0, .file_hint=&file_hint_logic},
   { .enable=0, .file_hint=&file_hint_lnk  },
+  { .enable=0, .file_hint=&file_hint_lzo  },
   { .enable=0, .file_hint=&file_hint_m2ts },
   { .enable=0, .file_hint=&file_hint_mat  },
   { .enable=0, .file_hint=&file_hint_max  },
