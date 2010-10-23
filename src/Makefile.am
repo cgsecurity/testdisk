@@ -167,6 +167,7 @@ file_C			= filegen.c \
 			  file_prt.c \
 			  file_ps.c \
 			  file_psd.c \
+			  file_psf.c \
 			  file_psp.c \
 			  file_pst.c \
 			  file_ptb.c \
