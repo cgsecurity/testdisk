@@ -176,8 +176,9 @@ static const char *fewf_description(disk_t *disk)
 {
   const struct info_fewf_struct *data=(const struct info_fewf_struct *)disk->data;
   char buffer_disk_size[100];
+  size_to_unit(disk->disk_size, buffer_disk_size);
   snprintf(disk->description_txt, sizeof(disk->description_txt),"Image %s - %s - CHS %lu %u %u%s",
-      data->file_name, size_to_unit(disk->disk_size,buffer_disk_size),
+      data->file_name, buffer_disk_size,
       disk->geom.cylinders, disk->geom.heads_per_cylinder, disk->geom.sectors_per_head,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk->description_txt;
@@ -187,8 +188,9 @@ static const char *fewf_description_short(disk_t *disk)
 {
   const struct info_fewf_struct *data=(const struct info_fewf_struct *)disk->data;
   char buffer_disk_size[100];
+  size_to_unit(disk->disk_size, buffer_disk_size);
   snprintf(disk->description_short_txt, sizeof(disk->description_txt),"Image %s - %s%s",
-      data->file_name, size_to_unit(disk->disk_size,buffer_disk_size),
+      data->file_name, buffer_disk_size,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk->description_short_txt;
 }

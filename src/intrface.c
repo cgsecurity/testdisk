@@ -152,7 +152,8 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	{
 	  wprintw(stdscr,"%s, ",parts->part->info);
 	}
-	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
+	size_to_unit(parts->part->part_size, buffer_part_size);
+	wprintw(stdscr,"%s", buffer_part_size);
       }
     }
     if(structure_status==0)

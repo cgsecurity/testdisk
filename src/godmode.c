@@ -138,8 +138,10 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
   {
     char buffer_disk_size[100];
     char buffer_disk_size_found[100];
+    size_to_unit(disk_car->disk_size, buffer_disk_size);
+    size_to_unit(disk_size, buffer_disk_size_found);
     wprintw(stdscr,"The harddisk (%s) seems too small! (< %s)",
-	size_to_unit(disk_car->disk_size,buffer_disk_size), size_to_unit(disk_size,buffer_disk_size_found));
+	buffer_disk_size, buffer_disk_size_found);
   }
   wmove(stdscr,7,0);
   wprintw(stdscr,"Check the harddisk size: HD jumpers settings, BIOS detection...");
@@ -185,7 +187,8 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	{
 	  wprintw(stdscr,"%s, ",parts->part->info);
 	}
-	wprintw(stdscr,"%s",size_to_unit(parts->part->part_size,buffer_part_size));
+	size_to_unit(parts->part->part_size, buffer_part_size);
+	wprintw(stdscr,"%s", buffer_part_size);
       } else
       {
 	waddstr(stdscr, " ");
@@ -270,8 +273,10 @@ static int interface_part_bad_log(disk_t *disk_car, list_part_t *list_part)
   {
     char buffer_disk_size[100];
     char buffer_disk_size_found[100];
+    size_to_unit(disk_car->disk_size, buffer_disk_size);
+    size_to_unit(disk_size, buffer_disk_size_found);
     log_warning("The harddisk (%s) seems too small! (< %s)\n",
-	size_to_unit(disk_car->disk_size,buffer_disk_size), size_to_unit(disk_size,buffer_disk_size_found));
+	buffer_disk_size, buffer_disk_size_found);
   }
   if(list_part->next==NULL)
   {

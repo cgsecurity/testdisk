@@ -432,8 +432,9 @@ const char *disk_description(disk_t *disk_car)
 {
   struct info_disk_struct*data=disk_car->data;
   char buffer_disk_size[100];
+  size_to_unit(disk_car->disk_size, buffer_disk_size),
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %2x - %s - CHS %lu %u %u%s",
-      data->disk, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      data->disk, buffer_disk_size,
       disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       data->bad_geometry!=0?" (Buggy BIOS)":"");
   return disk_car->description_txt;
@@ -443,8 +444,9 @@ static const char *disk_description_short(disk_t *disk_car)
 {
   struct info_disk_struct*data=disk_car->data;
   char buffer_disk_size[100];
+  size_to_unit(disk_car->disk_size, buffer_disk_size);
   snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %2x - %s",
-      data->disk, size_to_unit(disk_car->disk_size,buffer_disk_size));
+      data->disk, buffer_disk_size);
   return disk_car->description_short_txt;
 }
 

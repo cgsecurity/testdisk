@@ -395,7 +395,7 @@ unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part
   return heads_per_cylinder;
 }
 
-const char *size_to_unit(uint64_t disk_size, char *buffer)
+void size_to_unit(const uint64_t disk_size, char *buffer)
 {
   if(disk_size<(uint64_t)10*1024)
     sprintf(buffer,"%u B", (unsigned)disk_size);
@@ -407,5 +407,4 @@ const char *size_to_unit(uint64_t disk_size, char *buffer)
     sprintf(buffer,"%u GB / %u GiB", (unsigned)(disk_size/1000/1000/1000), (unsigned)(disk_size/1024/1024/1024));
   else
     sprintf(buffer,"%u TB / %u TiB", (unsigned)(disk_size/1000/1000/1000/1000), (unsigned)(disk_size/1024/1024/1024/1024));
-  return buffer;
 }

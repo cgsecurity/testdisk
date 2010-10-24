@@ -1059,8 +1059,9 @@ static const char *file_description(disk_t *disk_car)
 {
   const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
   char buffer_disk_size[100];
+  size_to_unit(disk_car->disk_size, buffer_disk_size);
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %lu %u %u%s",
-      disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      disk_car->device, buffer_disk_size,
       disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   return disk_car->description_txt;
@@ -1070,13 +1071,14 @@ static const char *file_description_short(disk_t *disk_car)
 {
   const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
   char buffer_disk_size[100];
+  size_to_unit(disk_car->disk_size, buffer_disk_size);
   if(disk_car->model==NULL)
     snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s",
-      disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      disk_car->device, buffer_disk_size,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   else
     snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %s - %s%s - %s",
-      disk_car->device, size_to_unit(disk_car->disk_size,buffer_disk_size),
+      disk_car->device, buffer_disk_size,
       ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"),
       disk_car->model);
   return disk_car->description_short_txt;
