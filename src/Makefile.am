@@ -195,6 +195,7 @@ file_C			= filegen.c \
 			  file_rw2.c \
 			  file_ses.c \
 			  file_sib.c \
+			  file_sig.c \
 			  file_sit.c \
 			  file_skd.c \
 			  file_skp.c \
