@@ -115,7 +115,6 @@ typedef struct
 {
   struct td_list_head list;
   unsigned int offset;
-  unsigned int has_value;
   file_check_t file_checks[256];
 } file_check_list_t;
 

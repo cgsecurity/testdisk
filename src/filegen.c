@@ -66,7 +66,6 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   unsigned int i;
   file_check_list_t *newe=(file_check_list_t *)MALLOC(sizeof(*newe));
   newe->offset=file_check_new->offset;
-  newe->has_value=(file_check_new->length==0?0:1);
   for(i=0;i<256;i++)
   {
     newe->file_checks[i].list.prev=&newe->file_checks[i].list;
@@ -96,7 +95,7 @@ static void index_header_check_aux(file_check_t *file_check_new)
   td_list_for_each(tmp, &file_check_list.list)
   {
     file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
-    if(file_check_new->length>0 && pos->has_value==1)
+    if(file_check_new->length>0)
     {
       if(pos->offset >= file_check_new->offset &&
 	  pos->offset < file_check_new->offset+file_check_new->length)
@@ -111,13 +110,6 @@ static void index_header_check_aux(file_check_t *file_check_new)
 	file_check_add_tail(file_check_new, pos);
 	return ;
       }
-    }
-    else if(file_check_new->length==0 && pos->has_value==0)
-    {
-      td_list_add_sorted(&file_check_new->list,
-	  &pos->file_checks[0].list,
-	  file_check_cmp);
-      return;
     }
   }
   file_check_add_tail(file_check_new, &file_check_list);

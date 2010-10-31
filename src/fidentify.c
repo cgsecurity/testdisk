@@ -90,7 +90,7 @@ static int file_identify(const char *filename)
     {
       struct td_list_head *tmp;
       const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
-      td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
+      td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
       {
 	const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
 	if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&

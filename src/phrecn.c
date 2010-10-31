@@ -252,7 +252,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 	{
 	  struct td_list_head *tmp;
 	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
-	  td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
+	  td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
 	  {
 	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
 	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
@@ -653,7 +653,7 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
     {
       struct td_list_head *tmp;
       const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
-      td_list_for_each(tmp, &pos->file_checks[pos->has_value==0?0:buffer[pos->offset]].list)
+      td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
       {
 	const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
 	if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
