@@ -447,8 +447,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   char buffer[8*DEFAULT_SECTOR_SIZE];
   int ind_stop=0;
   unsigned int sectors_per_cluster=0;
-  uint64_t mft_lcn;
-  uint64_t mftmirr_lcn;
+  uint64_t mft_lcn=0;
+  uint64_t mftmirr_lcn=0;
   unsigned int mft_record_size=1024;
   info_mft_t info_mft[MAX_INFO_MFT];
   unsigned int nbr_mft=0;
