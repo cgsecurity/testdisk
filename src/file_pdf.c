@@ -163,7 +163,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	  const unsigned char *date_asc;
 	  struct tm tm_time;
 	  fseek(file_recovery->handle, offset+i+1, SEEK_SET);
-	  if((bsize=fread(buffer, 1, 22, file_recovery->handle))<22)
+	  if(fread(buffer, 1, 22, file_recovery->handle) < 22)
 	  {
 	    free(buffer);
 	    return ;
