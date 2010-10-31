@@ -107,7 +107,7 @@ static void log_riff_chunk(const uint64_t offset, const unsigned int depth, cons
 
 static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const uint64_t start, const uint64_t end)
 {
-  uint64_t file_size=fr->file_size;
+  uint64_t file_size;
   riff_list_header list_header;
   if(depth>5)
     return;
