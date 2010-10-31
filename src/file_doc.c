@@ -442,7 +442,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
   fat=(uint32_t*)MALLOC(le32(header->num_FAT_blocks)<<le16(header->uSectorShift));
   { /* Load FAT */
     unsigned long int j;
-    unsigned char *data=(unsigned char*)fat;
+    unsigned char *data;
     for(j=0, data=(unsigned char*)fat;
 	j<le32(header->num_FAT_blocks);
 	j++, data+=(1<<le16(header->uSectorShift)))
@@ -699,7 +699,6 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
 
 static void file_rename_doc(const char *old_filename)
 {
-  int is_db=0;
   const char *ext=NULL;
   char *title=NULL;
   FILE *file;
@@ -829,10 +828,6 @@ static void file_rename_doc(const char *old_filename)
 		  le32(dir_entry->start_block), le32(dir_entry->size),
 		  &ext, &title, &file_time);
 	    }
-	    if(sid==1 && memcmp(dir_entry->name, "1\0\0\0", 4)==0)
-	      is_db++;
-	    else if(sid==2 && memcmp(dir_entry->name, "2\0\0\0", 4)==0)
-	      is_db++;
 	    /* 3ds max */
 	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
 	      ext="max";
