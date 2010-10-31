@@ -98,17 +98,17 @@ static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partiti
 Primary superblock is at 1024 (SUPERBLOCK_OFFSET)
 Group 0 begin at s_first_data_block
 */
-int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+int recover_EXT2(disk_t *disk, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
   if(test_EXT2(sb, partition)!=0)
     return 1;
   if(dump_ind!=0)
   {
-    if(partition!=NULL && disk_car!=NULL)
+    if(partition!=NULL && disk!=NULL)
       log_info("\nEXT2/EXT3 magic value at %u/%u/%u\n",
-	  offset2cylinder(disk_car,partition->part_offset),
-	  offset2head(disk_car,partition->part_offset),
-	  offset2sector(disk_car,partition->part_offset));
+	  offset2cylinder(disk,partition->part_offset),
+	  offset2head(disk,partition->part_offset),
+	  offset2sector(disk,partition->part_offset));
     /* There is a little offset ... */
     dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
@@ -155,7 +155,10 @@ int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t
         (unsigned int)le32(sb->s_inodes_per_group));
     log_info("recover_EXT2: s_blocksize=%u\n", partition->blocksize);
     log_info("recover_EXT2: s_blocks_count %u\n", (unsigned int)le32(sb->s_blocks_count));
-    log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size/disk_car->sector_size));
+    if(disk==NULL)
+      log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size / DEFAULT_SECTOR_SIZE));
+    else
+      log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size / disk->sector_size));
   }
   return 0;
 }
