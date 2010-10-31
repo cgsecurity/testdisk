@@ -357,9 +357,7 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   const char *src=old_filename;
   const char *ext=src;
   char *dst=&new_filename[0];
-  char *directory_sep=&new_filename[0];
-  int off=offset;
-  *dst='\0';
+  char *directory_sep=dst;
   while(*src!='\0')
   {
     if(*src=='/')
@@ -368,14 +366,16 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
       ext=src;
     *dst++ = *src++;
   }
+  *dst='\0';
   dst=directory_sep;
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add original filename */
   if(offset < buffer_size && buffer!=NULL)
   {
+    int off;
     *dst++ = '_';
-    for(;off<buffer_size && buffer[off]!='\0'; off++)
+    for(off=offset; off<buffer_size && buffer[off]!='\0'; off++)
     {
       switch(buffer[off])
       {
@@ -417,9 +417,7 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
   const char *src=old_filename;
   const char *ext=src;
   char *dst=&new_filename[0];
-  char *directory_sep=&new_filename[0];
-  int off=offset;
-  *dst='\0';
+  char *directory_sep=dst;
   while(*src!='\0')
   {
     if(*src=='/')
@@ -428,14 +426,16 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
       ext=src;
     *dst++ = *src++;
   }
+  *dst='\0';
   dst=directory_sep;
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add original filename */
   if(offset < buffer_size && buffer!=NULL)
   {
+    int off;
     *dst++ = '_';
-    for(;off<buffer_size && buffer[off]!='\0'; off+=2)
+    for(off=offset; off<buffer_size && buffer[off]!='\0'; off+=2)
     {
       switch(buffer[off])
       {
