@@ -166,13 +166,20 @@ static const unsigned char header_vbookmark[10]	= { 'B', 'E', 'G', 'I', 'N', ':'
 static const char sign_java1[6]			= "class";
 static const char sign_java3[15]		= "private static";
 static const char sign_java4[17]		= "public interface";
-static const char ascii_nul[1]			= { '\0' };
+static unsigned char ascii_char[256];
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
-  register_header_check(0, NULL,0, &header_check_txt, file_stat);
+  unsigned int i;
+  for(i=0; i<256; i++)
+    ascii_char[i]=i;
+  for(i=0; i<256; i++)
+  {
+    if(filtre(i) || i==0xE2 || i==0xC2 || i==0xC3 || i==0xC5 || i==0xC6 || i==0xCB)
+      register_header_check(0, &ascii_char[i], 1, &header_check_txt, file_stat);
+  }
 #ifdef UTF16
-  register_header_check(1, ascii_nul, sizeof(ascii_nul), &header_check_le16_txt, file_stat);
+  register_header_check(1, &ascii_char[0], 1, &header_check_le16_txt, file_stat);
 #endif
 }
 
