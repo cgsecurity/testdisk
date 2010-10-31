@@ -220,9 +220,22 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
     if(disk->pread(disk, buffer_disk, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) == 11 * DEFAULT_SECTOR_SIZE)
       res=search_type_128(buffer_disk, disk, partition,verbose,0);
   }
+  if(res<=0)
+  { /* Search FAT32 backup */
+    partition->part_offset = 6*512;
+    res=search_FAT_backup(buffer_disk, disk, partition, verbose, 0);
+  }
+  if(res<=0)
+  { /* Search NTFS backup */
+    partition->part_offset = disk->disk_size - disk->sector_size;
+    res=search_NTFS_backup(buffer_disk, disk, partition, verbose, 0);
+    if(res>0 && partition->part_offset!=0)
+      res=0;
+  }
   free(buffer_disk);
   if(res<=0)
     partition_reset(partition,&arch_none);
+  partition->part_offset=0;
   partition->part_size=disk->disk_size;
   partition->order=NO_ORDER;
   partition->status=STATUS_PRIM;
