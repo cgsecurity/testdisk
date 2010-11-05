@@ -566,56 +566,34 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   {
     unsigned int i,j;
     int find_partition=0;
-    uint64_t tmp=partition->part_offset;
     for(i=0;i<nbr_mft;i++)
     {
       for(j=i+1;j<nbr_mft;j++)
       {
-	unsigned int sec_per_cluster=0;
-	if(info_mft[i].mft_lcn > info_mft[j].mftmirr_lcn)
+	if(info_mft[i].mft_lcn == info_mft[j].mft_lcn &&
+	    info_mft[i].mftmirr_lcn == info_mft[j].mftmirr_lcn &&
+	    info_mft[i].mft_lcn != info_mft[i].mftmirr_lcn)
 	{
-	  if((info_mft[j].sector - info_mft[i].sector)%(info_mft[i].mft_lcn - info_mft[j].mftmirr_lcn)==0)
-	    sec_per_cluster=(info_mft[j].sector - info_mft[i].sector)/(info_mft[i].mft_lcn - info_mft[j].mftmirr_lcn);
-	}
-	else if(info_mft[i].mft_lcn < info_mft[j].mftmirr_lcn)
-	{
-	  if((info_mft[j].sector - info_mft[i].sector)%(info_mft[j].mftmirr_lcn - info_mft[i].mft_lcn)==0)
-	    sec_per_cluster=(info_mft[j].sector - info_mft[i].sector)/(info_mft[j].mftmirr_lcn - info_mft[i].mft_lcn);
-	}
-	if(sec_per_cluster!=0)
-	{
-	  partition->part_offset=partition->part_offset + (info_mft[i].sector -
-	    info_mft[i].mft_lcn * sec_per_cluster) * disk_car->sector_size;
-	  if(find_partition==0)
-	    log_info("Potential partition:\n");
-	  log_partition(disk_car, partition);
-	  find_partition=1;
-	}
-	else
-	{
-	  if(info_mft[i].mftmirr_lcn > info_mft[j].mft_lcn)
+	  const uint64_t diff_mft=(info_mft[i].mft_lcn > info_mft[i].mftmirr_lcn ?
+	      info_mft[i].mft_lcn - info_mft[i].mftmirr_lcn:
+	      info_mft[i].mftmirr_lcn - info_mft[i].mft_lcn);
+	  const uint64_t diff_sector=info_mft[j].sector - info_mft[i].sector;
+	  if(diff_sector%diff_mft==0)
 	  {
-	    if((info_mft[j].sector - info_mft[i].sector)/(info_mft[i].mftmirr_lcn - info_mft[j].mft_lcn)==0)
-	      sec_per_cluster=(info_mft[j].sector - info_mft[i].sector)/(info_mft[i].mftmirr_lcn - info_mft[j].mft_lcn);
-	  }
-	  else if(info_mft[i].mftmirr_lcn < info_mft[j].mft_lcn)
-	  {
-	    if((info_mft[j].sector - info_mft[i].sector)/(info_mft[j].mft_lcn - info_mft[i].mftmirr_lcn)==0)
-	      sec_per_cluster=(info_mft[j].sector - info_mft[i].sector)/(info_mft[j].mft_lcn - info_mft[i].mftmirr_lcn);
-	  }
-	  if(sec_per_cluster!=0)
-	  {
-	    partition->part_offset=partition->part_offset + (info_mft[i].sector -
-		info_mft[i].mftmirr_lcn * sec_per_cluster) * disk_car->sector_size;
+	    const unsigned int sec_per_cluster=diff_sector/diff_mft;
+	    const uint64_t tmp=partition->part_offset;
+	    partition->part_offset+=(info_mft[i].sector -
+		(info_mft[i].mft_lcn < info_mft[i].mftmirr_lcn ? info_mft[i].mft_lcn : info_mft[i].mftmirr_lcn) *
+		sec_per_cluster) * disk_car->sector_size;
 	    if(find_partition==0)
 	      log_info("Potential partition:\n");
 	    log_partition(disk_car, partition);
 	    find_partition=1;
+	    partition->part_offset=tmp;
 	  }
 	}
       }
     }
-    partition->part_offset=tmp;
   }
 #ifdef HAVE_NCURSES
   if(interface>0 && expert>0)
