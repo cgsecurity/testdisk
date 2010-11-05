@@ -60,12 +60,46 @@
 #define INTER_DISK_Y		(8+NBR_DISK_MAX)
 #define INTER_NOTE_Y		(LINES-4)
 
-static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable)
+static int photorec_disk_selection_cli(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space, const char *cmd_device, char **current_cmd)
+{
+  const list_disk_t *element_disk;
+  disk_t *disk=NULL;
+  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+  {
+    if(strcmp(element_disk->disk->device,cmd_device)==0)
+      disk=element_disk->disk;
+  }
+  if(disk==NULL)
+  {
+    log_critical("No disk found\n");
+#ifdef HAVE_NCURSES
+    return intrf_no_disk_ncurses("PhotoRec");
+#else
+    return 0;
+#endif
+  }
+  {
+    /* disk sector size is now known, fix the sector ranges */
+    struct td_list_head *search_walker = NULL;
+    td_list_for_each(search_walker, &list_search_space->list)
+    {
+      alloc_data_t *current_search_space;
+      current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+      current_search_space->start=current_search_space->start*disk->sector_size;
+      current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
+    }
+  }
+  autodetect_arch(disk);
+  if(interface_partition_type(disk, verbose, current_cmd)==0)
+    menu_photorec(disk, verbose, recup_dir, file_enable, current_cmd, list_search_space);
+  return 0;
+}
+
+static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space)
 {
   char * current_cmd=NULL;
   int command;
   int real_key;
-  int done=0;
   unsigned int menu=0;
   int offset=0;
   int pos_num=0;
@@ -77,16 +111,17 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
     { 'P', "Previous",""},
     { 'N', "Next","" },
     { 'O',"Proceed",""},
+    { 'S', "Sudo", "Use the sudo command to restart as root"},
     { 'Q',"Quit","Quit program"},
     { 0,NULL,NULL}
   };
-  static alloc_data_t list_search_space={
-    .list = TD_LIST_HEAD_INIT(list_search_space.list)
-  };
   if(list_disk==NULL)
-    return ;
+  {
+    log_critical("No disk found\n");
+    return intrf_no_disk_ncurses("PhotoRec");
+  }
   /* ncurses interface */
-  while(done==0)
+  while(1)
   {
     const char *options;
     int i;
@@ -231,13 +266,15 @@ static void photorec_disk_selection_ncurses(int verbose, const char *recup_dir, 
 	  autodetect_arch(disk);
 	  if((!is_hpa_or_dco(disk) || interface_check_hidden_ncurses(disk)==0) &&
 	      interface_partition_type(disk, verbose, &current_cmd)==0)
-	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, &list_search_space);
+	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, list_search_space);
 	}
 	break;
+      case 's':
+      case 'S':
+	return 1;
       case 'q':
       case 'Q':
-	done=1;
-	break;
+	return 0;
     }
     if(pos_num<offset)
       offset=pos_num;
@@ -252,15 +289,6 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
-  if(list_disk==NULL)
-  {
-    log_critical("No disk found\n");
-#ifdef HAVE_NCURSES
-    return intrf_no_disk_ncurses("PhotoRec");
-#else
-    return 0;
-#endif
-  }
 #ifdef HAVE_NCURSES
   if(cmd_device==NULL)
   {
@@ -282,44 +310,10 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
   }
 #endif
   if(cmd_device!=NULL && *current_cmd!=NULL)
-  {
-    const list_disk_t *element_disk;
-    disk_t *disk=NULL;
-    for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-    {
-      if(strcmp(element_disk->disk->device,cmd_device)==0)
-	disk=element_disk->disk;
-    }
-    if(disk==NULL)
-    {
-      log_critical("No disk found\n");
+    return photorec_disk_selection_cli(verbose, recup_dir, list_disk, file_enable, &list_search_space, cmd_device, current_cmd);
 #ifdef HAVE_NCURSES
-      return intrf_no_disk_ncurses("PhotoRec");
+  return photorec_disk_selection_ncurses(verbose, recup_dir, list_disk, file_enable, &list_search_space);
 #else
-      return 0;
-#endif
-    }
-    {
-      /* disk sector size is now known, fix the sector ranges */
-      struct td_list_head *search_walker = NULL;
-      td_list_for_each(search_walker, &list_search_space.list)
-      {
-	alloc_data_t *current_search_space;
-	current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-	current_search_space->start=current_search_space->start*disk->sector_size;
-	current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
-      }
-    }
-    autodetect_arch(disk);
-    if(interface_partition_type(disk, verbose, current_cmd)==0)
-      menu_photorec(disk, verbose, recup_dir, file_enable, current_cmd, &list_search_space);
-  }
-  else
-  {
-#ifdef HAVE_NCURSES
-    photorec_disk_selection_ncurses(verbose, recup_dir, list_disk, file_enable);
-#endif
-  }
-  log_info("\n");
   return 0;
+#endif
 }
