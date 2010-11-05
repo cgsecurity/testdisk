@@ -58,70 +58,78 @@
 
 int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
-  const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
-//  assert(sizeof(struct ntfs_boot_sector)<=DEFAULT_SECTOR_SIZE);
-  if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
-    return -1;
-  /* NTFS recovery using backup sector */
-  if(le16(ntfs_header->marker)==0xAA55 &&
-      recover_NTFS(disk, ntfs_header, partition, verbose, dump_ind, 1)==0)
-    return 1;
+  void *data=disk->pread_fast(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset);
+  if(data==NULL)
+      return -1;
+  {
+    const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)data;
+    /* NTFS recovery using backup sector */
+    if(le16(ntfs_header->marker)==0xAA55 &&
+	recover_NTFS(disk, ntfs_header, partition, verbose, dump_ind, 1)==0)
+      return 1;
+  }
   return 0;
 }
 
 int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
-  const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)buffer;
-  const struct hfsp_vh *vh=(const struct hfsp_vh *)buffer;
-//  assert(sizeof(hfs_mdb_t)<=0x400);
-//  assert(sizeof(struct hfsp_vh)==0x200);
-  if(disk->pread(disk, buffer, 0x400, partition->part_offset) != 0x400)
+  void *data=disk->pread_fast(disk, buffer, 0x400, partition->part_offset);
+  if(data==NULL)
     return -1;
-  /* HFS recovery using backup sector */
-  if(hfs_mdb->drSigWord==be16(HFS_SUPER_MAGIC) &&
-      recover_HFS(disk, hfs_mdb, partition, verbose, dump_ind, 1)==0)
   {
-    strncpy(partition->info,"HFS found using backup sector!",sizeof(partition->info));
-    return 1;
-  }
-  if((be16(vh->version)==4 || be16(vh->version)==5) &&
-      recover_HFSP(disk, vh, partition, verbose, dump_ind, 1)==0)
-  {
-    strncpy(partition->info,"HFS+ found using backup sector!",sizeof(partition->info));
-    return 1;
+    const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)data;
+    const struct hfsp_vh *vh=(const struct hfsp_vh *)data;
+    /* HFS recovery using backup sector */
+    if(hfs_mdb->drSigWord==be16(HFS_SUPER_MAGIC) &&
+	recover_HFS(disk, hfs_mdb, partition, verbose, dump_ind, 1)==0)
+    {
+      strncpy(partition->info,"HFS found using backup sector!",sizeof(partition->info));
+      return 1;
+    }
+    if((be16(vh->version)==4 || be16(vh->version)==5) &&
+	recover_HFSP(disk, vh, partition, verbose, dump_ind, 1)==0)
+    {
+      strncpy(partition->info,"HFS+ found using backup sector!",sizeof(partition->info));
+      return 1;
+    }
   }
   return 0;
 }
 
 int search_EXFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partition)
 {
-  const struct exfat_super_block *exfat_header=(const struct exfat_super_block *)buffer;
-  if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
+  void *data=disk->pread_fast(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset);
+  if(data==NULL)
     return -1;
-  /* EXFAT recovery using backup sector */
-  if(le16(exfat_header->signature)==0xAA55 &&
-      recover_EXFAT(disk, exfat_header, partition)==0)
   {
-    strncpy(partition->info,"EXFAT found using backup sector!",sizeof(partition->info));
-    partition->sb_offset=6*512;
-    partition->part_offset-=partition->sb_offset;  /* backup sector */
-    return 1;
+    const struct exfat_super_block *exfat_header=(const struct exfat_super_block *)data;
+    /* EXFAT recovery using backup sector */
+    if(le16(exfat_header->signature)==0xAA55 &&
+	recover_EXFAT(disk, exfat_header, partition)==0)
+    {
+      strncpy(partition->info,"EXFAT found using backup sector!",sizeof(partition->info));
+      partition->sb_offset=6*512;
+      partition->part_offset-=partition->sb_offset;  /* backup sector */
+      return 1;
+    }
   }
   return 0;
 }
 
 int search_FAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
-  const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)buffer;
-//  assert(sizeof(struct fat_boot_sector)==DEFAULT_SECTOR_SIZE);
-  if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
+  void *data=disk->pread_fast(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset);
+  if(data==NULL)
     return -1;
-  /* FAT32 recovery using backup sector */
-  if(le16(fat_header->marker)==0xAA55 &&
-      recover_FAT(disk, fat_header, partition, verbose, dump_ind, 1)==0)
   {
-    strncpy(partition->info,"FAT found using backup sector!",sizeof(partition->info));
-    return 1;
+    const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)data;
+    /* FAT32 recovery using backup sector */
+    if(le16(fat_header->marker)==0xAA55 &&
+	recover_FAT(disk, fat_header, partition, verbose, dump_ind, 1)==0)
+    {
+      strncpy(partition->info,"FAT found using backup sector!",sizeof(partition->info));
+      return 1;
+    }
   }
   return 0;
 }
@@ -260,17 +268,19 @@ int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partit
 
 int search_type_8(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
 {
+  void *data;
   if(verbose>2)
   {
     log_trace("search_type_8 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  if(disk->pread(disk, buffer, 4096, partition->part_offset + 4096) != 4096)
+  data=disk->pread_fast(disk, buffer, 4096, partition->part_offset + 4096);
+  if(data==NULL)
     return -1;
   { /* MD 1.2 */
-    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
+    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)data;
     if(le32(sb1->major_version)==1 &&
-        recover_MD(disk,(const struct mdp_superblock_s*)buffer,partition,verbose,dump_ind)==0)
+        recover_MD(disk, (const struct mdp_superblock_s*)data, partition, verbose, dump_ind)==0)
     {
       partition->part_offset-=(uint64_t)le64(sb1->super_offset)*512-4096;
       return 1;
@@ -281,74 +291,82 @@ int search_type_8(unsigned char *buffer, disk_t *disk,partition_t *partition,con
 
 int search_type_16(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
 {
-  const struct ufs_super_block *ufs=(const struct ufs_super_block *)buffer;
-  const struct vdev_boot_header *zfs=(const struct vdev_boot_header*)buffer;
-//  assert(sizeof(struct ufs_super_block)<=3*DEFAULT_SECTOR_SIZE);
+  void *data;
   if(verbose>2)
   {
     log_trace("search_type_16 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
   /* 8k offset */
-  if(disk->pread(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 16 * 512) != 3 * DEFAULT_SECTOR_SIZE)
+  data=disk->pread_fast(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 16 * 512);
+  if(data==NULL)
     return -1;
-  /* Test UFS */
-  if((le32(ufs->fs_magic)==UFS_MAGIC || be32(ufs->fs_magic)==UFS_MAGIC ||
-	le32(ufs->fs_magic)==UFS2_MAGIC || be32(ufs->fs_magic)==UFS2_MAGIC) &&
-      recover_ufs(disk, ufs, partition, verbose, dump_ind)==0)
-    return 1;
-  if(le64(zfs->vb_magic)==VDEV_BOOT_MAGIC &&
-      recover_ZFS(disk, zfs, partition, verbose, dump_ind)==0)
-    return 1;
+  {
+    const struct ufs_super_block *ufs=(const struct ufs_super_block *)data;
+    const struct vdev_boot_header *zfs=(const struct vdev_boot_header*)data;
+    /* Test UFS */
+    if((le32(ufs->fs_magic)==UFS_MAGIC || be32(ufs->fs_magic)==UFS_MAGIC ||
+	  le32(ufs->fs_magic)==UFS2_MAGIC || be32(ufs->fs_magic)==UFS2_MAGIC) &&
+	recover_ufs(disk, ufs, partition, verbose, dump_ind)==0)
+      return 1;
+    if(le64(zfs->vb_magic)==VDEV_BOOT_MAGIC &&
+	recover_ZFS(disk, zfs, partition, verbose, dump_ind)==0)
+      return 1;
+  }
   return 0;
 }
 
 int search_type_64(unsigned char *buffer, disk_t *disk,partition_t *partition,const int verbose, const int dump_ind)
 {
-//  assert(sizeof(struct jfs_superblock)<=2*DEFAULT_SECTOR_SIZE);
-  const struct jfs_superblock* jfs=(const struct jfs_superblock*)(buffer+0x200);
+  void *data;
   if(verbose>2)
   {
     log_trace("search_type_64 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
   /* 32k offset */
-  if(disk->pread(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 63 * 512) != 3 * DEFAULT_SECTOR_SIZE)
+  data=disk->pread_fast(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 63 * 512);
+  if(data==NULL)
     return -1;
-  /* Test JFS */
-  if(memcmp(jfs->s_magic,"JFS1",4)==0 &&
-      recover_JFS(disk, jfs, partition, verbose, dump_ind)==0)
-    return 1;
+  data=(char*)data+0x200;
+  {
+    const struct jfs_superblock* jfs=(const struct jfs_superblock*)data;
+    /* Test JFS */
+    if(memcmp(jfs->s_magic,"JFS1",4)==0 &&
+	recover_JFS(disk, jfs, partition, verbose, dump_ind)==0)
+      return 1;
+  }
   return 0;
 }
 
 int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
-  const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)(buffer+0x400);
-  const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)(buffer+0x400);
-  const struct ufs_super_block *ufs=(const struct ufs_super_block *)(buffer+0x400);
-  /* Reiserfs4 need to read the master superblock and the format40 superblock => 4096 */
-//  assert(sizeof(struct reiserfs_super_block)<=9*DEFAULT_SECTOR_SIZE);
-//  assert(4096+sizeof(struct format40_super)<=9*DEFAULT_SECTOR_SIZE);
-//  assert(sizeof(struct ufs_super_block)<=9*DEFAULT_SECTOR_SIZE);
+  void *data;
   if(verbose>2)
   {
     log_trace("search_type_128 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  /* 64k offset */
-  if(disk->pread(disk, buffer, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) != 11 * DEFAULT_SECTOR_SIZE)
+  data=disk->pread_fast(disk, buffer, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512);
+  if(data==NULL)
     return -1;
-  /* Test ReiserFS */
-  if((memcmp(rfs->s_magic,"ReIs",4) == 0 ||
-	memcmp(rfs4->magic,REISERFS4_SUPER_MAGIC,sizeof(REISERFS4_SUPER_MAGIC)) == 0) &&
-      recover_rfs(disk, rfs, partition, verbose, dump_ind)==0)
-    return 1;
-  /* Test UFS2 */
-  if((le32(ufs->fs_magic)==UFS_MAGIC || be32(ufs->fs_magic)==UFS_MAGIC ||
-	le32(ufs->fs_magic)==UFS2_MAGIC || be32(ufs->fs_magic)==UFS2_MAGIC) &&
-      recover_ufs(disk, ufs, partition, verbose, dump_ind)==0)
-    return 1;
-//  if(recover_gfs2(disk,(buffer+0x400),partition,verbose,dump_ind)==0) return 1;
+  data=(char*)data+0x400;
+  {
+    const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)data;
+    const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)data;
+    const struct ufs_super_block *ufs=(const struct ufs_super_block *)data;
+    /* 64k offset */
+    /* Test ReiserFS */
+    if((memcmp(rfs->s_magic,"ReIs",4) == 0 ||
+	  memcmp(rfs4->magic,REISERFS4_SUPER_MAGIC,sizeof(REISERFS4_SUPER_MAGIC)) == 0) &&
+	recover_rfs(disk, rfs, partition, verbose, dump_ind)==0)
+      return 1;
+    /* Test UFS2 */
+    if((le32(ufs->fs_magic)==UFS_MAGIC || be32(ufs->fs_magic)==UFS_MAGIC ||
+	  le32(ufs->fs_magic)==UFS2_MAGIC || be32(ufs->fs_magic)==UFS2_MAGIC) &&
+	recover_ufs(disk, ufs, partition, verbose, dump_ind)==0)
+      return 1;
+    //  if(recover_gfs2(disk,(buffer+0x400),partition,verbose,dump_ind)==0) return 1;
+  }
   return 0;
 }

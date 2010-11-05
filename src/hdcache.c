@@ -34,7 +34,7 @@
 #include "hdcache.h"
 #include "log.h"
 
-#define CACHE_BUFFER_NBR 128
+#define CACHE_BUFFER_NBR 16
 #define CACHE_DEFAULT_SIZE 64*512
 //#define DEBUG_CACHE 1
 
@@ -64,11 +64,40 @@ struct cache_struct
 
 static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset, const unsigned int read_ahead);
 static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
+static void *cache_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int count, const uint64_t offset);
 static int cache_sync(disk_t *clean);
 static int cache_clean(disk_t *clean);
 static const char *cache_description(disk_t *disk_car);
 static const char *cache_description_short(disk_t *disk_car);
+
+static void *cache_get_data_p(disk_t *disk, const unsigned int count, const uint64_t offset)
+{
+  struct cache_struct *data=(struct cache_struct *)disk->data;
+  unsigned int i;
+  unsigned int cache_buffer_nbr;
+  for(i=0, cache_buffer_nbr=data->cache_buffer_nbr;
+      i<CACHE_BUFFER_NBR;
+      i++, cache_buffer_nbr=(cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR)
+  {
+    const struct cache_buffer_struct *cache=&data->cache[cache_buffer_nbr];
+    if(cache->buffer!=NULL && cache->cache_size>0 &&
+	cache->cache_offset <= offset &&
+	offset + count < cache->cache_offset + cache->cache_size)
+      return cache->buffer + offset - cache->cache_offset;
+  }
+  return NULL;
+}
+
+static void* cache_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset)
+{
+  void*data=cache_get_data_p(disk, count, offset);
+  if(data!=NULL)
+    return data;
+  if(cache_pread(disk, buffer, count, offset) == count)
+    return buffer;
+  return NULL;
+}
 
 static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset)
 {
@@ -265,6 +294,7 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   new_disk_car->disk_real_size=disk_car->disk_real_size;
   new_disk_car->write_used=0;
   new_disk_car->data=data;
+  new_disk_car->pread_fast=cache_pread_fast;
   new_disk_car->pread=cache_pread;
   new_disk_car->pwrite=cache_pwrite;
   new_disk_car->sync=cache_sync;

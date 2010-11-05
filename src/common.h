@@ -312,6 +312,7 @@ struct param_disk_struct
   char *model;
   const char *(*description)(disk_t *disk_car);
   const char *(*description_short)(disk_t *disk_car);
+  void *(*pread_fast)(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
   int (*pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
   int (*pwrite)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
   int (*sync)(disk_t *disk_car);

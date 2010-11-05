@@ -532,15 +532,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         {
           if(search_now_raid>0 || fast_mode>1)
           { /* Search Linux software RAID */
-            if(disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, search_location) != 8 * DEFAULT_SECTOR_SIZE)
+	    void *data=disk_car->pread_fast(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, search_location);
+	    if(data!=NULL)
             {
-              res = -1;
-            }
-            else
-            {
-              if(recover_MD(disk_car,(const struct mdp_superblock_s*)buffer_disk,partition,verbose,dump_ind)==0)
+              if(recover_MD(disk_car, (const struct mdp_superblock_s*)data, partition, verbose, dump_ind)==0)
               {
-                const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer_disk;
+                const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)data;
 		if(le32(sb1->md_magic)==(unsigned int)MD_SB_MAGIC)
 		{
 		  if(le32(sb1->major_version)==0)
@@ -628,19 +625,16 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               if((disk_car->arch==&arch_i386 && start_ext2.sector==1 &&  (start_ext2.head<=2 || fast_mode>1)) ||
                   (disk_car->arch!=&arch_i386 && search_location%location_boundary==0))
               {
-                if(disk_car->pread(disk_car, buffer_disk, 1024, search_location) == 1024)
+		void *data=disk_car->pread_fast(disk_car, buffer_disk, 1024, search_location);
+		if(data!=NULL)
                 {
-                  const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
+                  const struct ext2_super_block *sb=(const struct ext2_super_block*)data;
                   if(le16(sb->s_block_group_nr)>0)
                   {
 		    if(le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
 			recover_EXT2(disk_car, sb, partition, verbose, dump_ind)==0)
                       res=1;
                   }
-                }
-                else
-                {
-                  res = -1;
                 }
               }
             }
@@ -691,7 +685,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==12)
         {
           /* read to fill the cache */
-          disk_car->pread(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE,
+          disk_car->pread_fast(disk_car, buffer_disk, 8 * DEFAULT_SECTOR_SIZE,
 	      partition->part_offset + (63 + 16) * 512);
           /* Try to catch disklabel before BSD FFS partition */
           res=search_type_128(buffer_disk,disk_car,partition,verbose,dump_ind);
@@ -858,11 +852,13 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         unsigned int i;
         for(i=32;i>0;i--)
         {
+	  void *data;
           partition->part_size=(uint64_t)0;
           partition->part_offset=element->part->part_offset - i * disk_car->sector_size;
-          if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset) == DEFAULT_SECTOR_SIZE)
+	  data=disk_car->pread_fast(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset);
+          if(data!=NULL)
           {
-            if(recover_NTFS(disk_car,(const struct ntfs_boot_sector*)buffer_disk,partition,verbose,dump_ind,0)==0)
+            if(recover_NTFS(disk_car, (const struct ntfs_boot_sector*)data, partition, verbose, dump_ind, 0)==0)
             {
               partition->status=STATUS_DELETED;
               if(disk_car->arch->is_part_known(partition)!=0 && partition->part_size>1 &&

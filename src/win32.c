@@ -58,6 +58,7 @@ static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
 static int file_win32_clean(disk_t *disk_car);
+static void *file_win32_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count,  const uint64_t offset);
@@ -319,6 +320,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     disk_car->data=data;
     disk_car->description=file_win32_description;
     disk_car->description_short=file_win32_description_short;
+    disk_car->pread_fast=file_win32_pread_fast;
     disk_car->pread=file_win32_pread;
     disk_car->pwrite=((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?file_win32_pwrite:file_win32_nopwrite);
     disk_car->sync=file_win32_sync;
@@ -343,7 +345,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
 
 static const char *file_win32_description(disk_t *disk_car)
 {
-  struct info_file_win32_struct *data=disk_car->data;
+  struct info_file_win32_struct *data=(struct info_file_win32_struct *)disk_car->data;
   char buffer_disk_size[100];
   size_to_unit(disk_car->disk_size, buffer_disk_size);
   if(disk_car->device[0]=='\\' && disk_car->device[1]=='\\' && disk_car->device[2]=='.' && disk_car->device[3]=='\\' && disk_car->device[5]==':')
@@ -361,7 +363,7 @@ static const char *file_win32_description(disk_t *disk_car)
 
 static const char *file_win32_description_short(disk_t *disk_car)
 {
-  struct info_file_win32_struct *data=disk_car->data;
+  struct info_file_win32_struct *data=(struct info_file_win32_struct *)disk_car->data;
   char buffer_disk_size[100];
   size_to_unit(disk_car->disk_size, buffer_disk_size);
   if(disk_car->device[0]=='\\' && disk_car->device[1]=='\\' && disk_car->device[2]=='.' && disk_car->device[3]=='\\' && disk_car->device[5]==':')
@@ -399,7 +401,7 @@ static int file_win32_clean(disk_t *disk_car)
 {
   if(disk_car->data!=NULL)
   {
-    struct info_file_win32_struct *data=disk_car->data;
+    struct info_file_win32_struct *data=(struct info_file_win32_struct *)disk_car->data;
     CloseHandle(data->handle);
   }
   return generic_clean(disk_car);
@@ -494,6 +496,13 @@ static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int coun
   return align_pread(&file_win32_pread_aux, disk_car, buf, count, offset);
 }
 
+static void *file_win32_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
+{
+  if(file_win32_pread(disk, buf, count, offset)==offset)
+    return buf;
+  return NULL;
+}
+
 static int file_win32_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
@@ -543,7 +552,7 @@ static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned i
 
 static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count,  const uint64_t offset)
 {
-  const struct info_file_win32_struct *data=disk_car->data;
+  const struct info_file_win32_struct *data=(const struct info_file_win32_struct *)disk_car->data;
   log_warning("file_win32_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", (unsigned int)data->handle,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
@@ -552,7 +561,7 @@ static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned
 
 static int file_win32_sync(disk_t *disk_car)
 {
-  const struct info_file_win32_struct *data=disk_car->data;
+  const struct info_file_win32_struct *data=(const struct info_file_win32_struct *)disk_car->data;
   if(FlushFileBuffers(data->handle)==0)
   {
     errno=EINVAL;

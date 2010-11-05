@@ -58,6 +58,7 @@
 static const char *fewf_description(disk_t *disk);
 static const char *fewf_description_short(disk_t *disk);
 static int fewf_clean(disk_t *disk);
+static void *fewf_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_nopwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_sync(disk_t *disk);
@@ -129,6 +130,7 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   disk->data=data;
   disk->description=fewf_description;
   disk->description_short=fewf_description_short;
+  disk->pread_fast=fewf_pread_fast;
   disk->pread=fewf_pread;
   disk->pwrite=fewf_nopwrite;
   disk->sync=fewf_sync;
@@ -235,6 +237,13 @@ static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, cons
       return -1;
   }
   return taille;
+}
+
+static void *fewf_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
+{
+  if(fewf_pread(disk, buf, count, offset)==offset)
+    return buf;
+  return NULL;
 }
 
 static int fewf_nopwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset)

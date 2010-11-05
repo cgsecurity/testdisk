@@ -144,6 +144,7 @@ static const char *file_description(disk_t *disk_car);
 static const char *file_description_short(disk_t *disk_car);
 static int file_clean(disk_t *disk_car);
 static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
+static void *file_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_sync(disk_t *disk_car);
@@ -1176,6 +1177,13 @@ static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, con
   return align_pread(&file_pread_aux, disk_car, buf, count, offset);
 }
 
+static void *file_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
+{
+  if(file_pread(disk, buf, count, offset)==offset)
+    return buf;
+  return NULL;
+}
+
 static int file_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   int fd=((struct info_file_struct *)disk_car->data)->handle;
@@ -1395,6 +1403,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
   disk_car->data=data;
   disk_car->description=file_description;
   disk_car->description_short=file_description_short;
+  disk_car->pread_fast=file_pread_fast;
   disk_car->pread=file_pread;
   disk_car->pwrite=((mode&O_RDWR)==O_RDWR?file_pwrite:file_nopwrite);
   disk_car->sync=file_sync;

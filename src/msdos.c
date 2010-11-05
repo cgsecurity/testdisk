@@ -52,6 +52,7 @@ static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description_short(disk_t *disk_car);
+static void *disk_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
@@ -84,7 +85,7 @@ static int alloc_cmd_dos_buffer(void)
 
 static void disk_reset_error(disk_t *disk_car)
 {
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   biosdisk(0, data->disk, 0, 0, 1, 1, NULL);
 }
 
@@ -95,7 +96,7 @@ static int hd_pread(disk_t *disk_car, void *buf, const unsigned int count, const
   int xfer_dos_segment, xfer_dos_selector;
   int nsects;
   unsigned long int hd_offset;
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   nsects=count/disk_car->sector_size;
   hd_offset=offset/disk_car->sector_size;
   if(data->mode_enh==0)
@@ -146,7 +147,7 @@ static int hd_pwrite(disk_t *disk_car, const void *buf, const unsigned int count
   int xfer_dos_segment, xfer_dos_selector;
   int nsects;
   unsigned long int hd_offset;
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   nsects=count/disk_car->sector_size;
   hd_offset=offset/disk_car->sector_size;
 
@@ -240,7 +241,7 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   int compute_LBA=0;
   __dpmi_regs r;
   unsigned char buf[0x200];	/* Don't change it! */
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   if(cmd_dos_segment==0)
     if(alloc_cmd_dos_buffer())
       return 1;
@@ -376,6 +377,7 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     disk_car->description=disk_description;
     disk_car->description_short=disk_description_short;
+    disk_car->pread_fast=disk_pread_fast;
     disk_car->pread=disk_pread;
     disk_car->pwrite=((testdisk_mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR?disk_pwrite:disk_nopwrite);
     disk_car->sync=disk_sync;
@@ -430,7 +432,7 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
 
 const char *disk_description(disk_t *disk_car)
 {
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   char buffer_disk_size[100];
   size_to_unit(disk_car->disk_size, buffer_disk_size),
   snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %2x - %s - CHS %lu %u %u%s",
@@ -442,7 +444,7 @@ const char *disk_description(disk_t *disk_car)
 
 static const char *disk_description_short(disk_t *disk_car)
 {
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   char buffer_disk_size[100];
   size_to_unit(disk_car->disk_size, buffer_disk_size);
   snprintf(disk_car->description_short_txt, sizeof(disk_car->description_txt),"Disk %2x - %s",
@@ -452,7 +454,7 @@ static const char *disk_description_short(disk_t *disk_car)
 
 static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  struct info_disk_struct*data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   if(data->geo_phys.cylinders>0 && offset+count>disk_car->disk_size)
   {
     log_error("disk_pread_aux: Don't read after the end of the disk\n");
@@ -491,6 +493,13 @@ static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, con
   return align_pread(&disk_pread_aux, disk_car, buf, count, offset);
 }
 
+static void *disk_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
+{
+  if(disk_pread(disk, buf, count, offset)==offset)
+    return buf;
+  return NULL;
+}
+
 static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)
 {
   int i=0;
@@ -517,7 +526,7 @@ static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int cou
 
 static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
-  struct info_disk_struct *data=disk_car->data;
+  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
   log_warning("disk_nopwrite(%d,%u,buffer,%lu(%u/%u/%u)) write refused\n", data->disk,
       (unsigned)(count/disk_car->sector_size),(long unsigned)(offset/disk_car->sector_size),
       offset2cylinder(disk_car,offset),offset2head(disk_car,offset),offset2sector(disk_car,offset));
