@@ -38,6 +38,57 @@
 static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size);
 static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size);
 
+static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
+{
+  unsigned char *buffer;
+  const uint16_t *p16;
+  unsigned int cluster;
+  const uint64_t hd_offset=partition->part_offset+(uint64_t)fat_offset*sector_size;
+  uint64_t start_free=0;
+  uint64_t end_free=0;
+  unsigned long int offset_s_prev=0;
+  log_trace("fat12_remove_used_space\n");
+  buffer=(unsigned char *)MALLOC(2*sector_size);
+  p16=(const uint16_t*)buffer;
+  del_search_space(list_search_space, partition->part_offset,
+      partition->part_offset+(uint64_t)(start_data*sector_size)-1);
+  for(cluster=2; cluster<=no_of_cluster+1; cluster++)
+  {
+    unsigned long int offset_s,offset_o;
+    unsigned int next_cluster;
+    offset_s=(cluster+cluster/2)/disk->sector_size;
+    offset_o=(cluster+cluster/2)%disk->sector_size;
+    if(offset_s!=offset_s_prev || cluster==2)
+    {
+      offset_s_prev=offset_s;
+      if((unsigned)disk->pread(disk, buffer, 2*sector_size, hd_offset + offset_s * disk->sector_size) != 2*sector_size)
+      {
+	/* Consider these FAT sectors points to free clusters */
+      }
+    }
+    if((cluster&1)!=0)
+      next_cluster=le16((*((uint16_t*)&buffer[offset_o])))>>4;
+    else
+      next_cluster=le16(*((uint16_t*)&buffer[offset_o]))&0x0FFF;
+    if(next_cluster!=0)
+    {
+      /* Not free */
+      if(end_free+1==partition->part_offset+(start_data+(uint64_t)(cluster-2)*cluster_size)*sector_size)
+	end_free+=cluster_size*sector_size;
+      else
+      {
+	if(start_free != end_free)
+	  del_search_space(list_search_space, start_free, end_free);
+	start_free=partition->part_offset+(start_data+(uint64_t)(cluster-2)*cluster_size)*sector_size;
+	end_free=start_free+(uint64_t)cluster_size*sector_size-1;
+      }
+    }
+  }
+  free(buffer);
+  if(start_free != end_free)
+    del_search_space(list_search_space, start_free, end_free);
+}
+
 static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
   unsigned char *buffer;
@@ -150,7 +201,9 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+sector_size-1)/sector_size;
     no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
-    if(partition->upart_type==UP_FAT16)
+    if(partition->upart_type==UP_FAT12)
+      fat12_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->sectors_per_cluster,sector_size);
+    else if(partition->upart_type==UP_FAT16)
       fat16_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->sectors_per_cluster,sector_size);
     else if(partition->upart_type==UP_FAT32)
       fat32_remove_used_space(disk_car,partition, list_search_space, start_fat1, no_of_cluster, start_data, fat_header->sectors_per_cluster,sector_size);

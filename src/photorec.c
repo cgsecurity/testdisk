@@ -386,7 +386,9 @@ void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space)
 
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space)
 {
-  if(partition->upart_type==UP_FAT16 || partition->upart_type==UP_FAT32)
+  if( partition->upart_type==UP_FAT12 ||
+      partition->upart_type==UP_FAT16 || 
+      partition->upart_type==UP_FAT32)
     return fat_remove_used_space(disk_car, partition, list_search_space);
 #ifdef HAVE_LIBNTFS
   else if(partition->upart_type==UP_NTFS)
