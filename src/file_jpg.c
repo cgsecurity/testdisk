@@ -95,6 +95,15 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_indd)
     return 0;
+  /* Don't recover the thumb instead of the jpg itself */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_jpg &&
+      file_recovery->file_size <= 1024 &&
+      memcmp(buffer, jpg_header_app12, sizeof(jpg_header_app12))==0)
+  {
+    log_info("jpg %llu %llu\n", file_recovery->calculated_file_size, file_recovery->file_size);
+    return 0;
+  }
   /* Don't extract jpg inside AVI */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_riff &&
