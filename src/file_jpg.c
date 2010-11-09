@@ -873,7 +873,9 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
      */
     my_source_mgr * src;
     src = (my_source_mgr *) jpeg_session.cinfo.src;
-    jpeg_size=src->file_size - src->pub.bytes_in_buffer;
+    jpeg_size=src->file_size;
+    if(src->pub.bytes_in_buffer >= 4)
+      jpeg_size-=src->pub.bytes_in_buffer;
     if(jpeg_size>0)
       file_recovery->offset_error=jpeg_size;
     if(file_recovery->offset_ok < src->offset_ok)
@@ -1267,7 +1269,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
       if(file_recovery->offset_error==0 || file_recovery->offset_error > thumb_error)
       {
 #ifdef DEBUG_JPEG
-	log_info("Thumb usefull, error at %llu\n", thumb_error);
+	log_info("Thumb usefull, error at %llu\n", (long long unsigned)thumb_error);
 #endif
 	file_recovery->offset_error = thumb_error;
       }
