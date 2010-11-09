@@ -33,6 +33,7 @@
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
 #endif
+#include <ctype.h>
 #include "types.h"
 #include "common.h"
 #include "lang.h"
@@ -178,14 +179,13 @@ int is_part_linux(const partition_t *partition)
 
 void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd)
 {
-  int quit;
 #ifdef HAVE_NCURSES
   int offset=0;
   int current_element_num=0;
   int old_LINES=LINES;
 #endif
   int rewrite=1;
-  const char *options;
+  unsigned int menu=0;
   list_part_t *element;
   list_part_t *list_part;
   list_part_t *current_element;
@@ -196,8 +196,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   {
     log_partition(disk_car,element->part);
   }
-  do
+  while(1)
   {
+    const char *options;
     static struct MenuItem menuAdv[]=
     {
       {'t',"Type","Change type, this setting will not be saved on disk"},
@@ -205,11 +206,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'s',"Superblock",NULL},
       {'c',"Image Creation", "Create an image"},
       {'u',"Undelete", "File undelete"},
+      {'l',"List", "List and copy files"},
 //      {'a',"Add", "Add temporary partition (Expert only)"},
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}
     };
-    int menu=0;
     int command;
 #ifdef HAVE_NCURSES
     int i;
@@ -262,60 +263,42 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     }
     else
     {
-      if(is_part_fat(current_element->part))
-      {
-	options="tubcq";
+      const partition_t *partition=current_element->part;
+      if(menu==0)
 	menu=1;
-      }
-      else if(is_part_ntfs(current_element->part))
-      {
+      if(is_part_fat(partition) || is_part_ntfs(partition))
 	options="tubcq";
-	menu=1;
-      }
-      else if(is_part_linux(current_element->part))
+      else if(is_part_linux(partition))
       {
-	if(current_element->part->upart_type==UP_EXT2)
+	if(partition->upart_type==UP_EXT2)
+	  options="tuscq";
+	else
+	  options="tlscq";
+	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
+      }
+      else if(is_part_hfs(partition) || is_part_hfsp(partition))
+      {
+	options="tscq";
+	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
+      }
+      else if(is_fat(partition) || is_ntfs(partition))
+	options="tubcq";
+      else if(is_linux(partition))
+      {
+	if(partition->upart_type==UP_EXT2)
 	  options="tuscq";
 	else
 	  options="tscq";
 	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
-	menu=1;
       }
-      else if(is_part_hfs(current_element->part) || is_part_hfsp(current_element->part))
+      else if(is_hfs(partition) || is_hfsp(partition))
       {
 	options="tscq";
 	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
-	menu=1;
-      }
-      else if(is_fat(current_element->part))
-      {
-	options="tubcq";
-	menu=1;
-      }
-      else if(is_ntfs(current_element->part))
-      {
-	options="tubcq";
-	menu=1;
-      }
-      else if(is_linux(current_element->part))
-      {
-	if(current_element->part->upart_type==UP_EXT2)
-	  options="tuscq";
-	else
-	  options="tscq";
-	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
-	menu=1;
-      }
-      else if(is_hfs(current_element->part) || is_hfsp(current_element->part))
-      {
-	options="tscq";
-	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
-	menu=1;
       }
       else
 	options="tcq";
     }
-    quit=0;
     if(*current_cmd!=NULL)
     {
       int keep_asking;
@@ -373,8 +356,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     else
     {
 #ifdef HAVE_NCURSES
-      command = wmenuSelect(stdscr, INTER_ADV_Y+1, INTER_ADV_Y, INTER_ADV_X, menuAdv, 8, options,
-	  MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+      command = wmenuSelect_ext(stdscr, INTER_ADV_Y+1, INTER_ADV_Y, INTER_ADV_X, menuAdv, 8, options,
+	  MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu, NULL);
 #else
       command = 'q';
 #endif
@@ -383,8 +366,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     {
       case 'q':
       case 'Q':
-	quit=1;
-	break;
+	part_free_list(list_part);
+	return;
       case 'a':
       case 'A':
 	if(disk_car->arch!=&arch_none)
@@ -514,6 +497,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    partition_t *partition=current_element->part;
 	    dir_partition(disk_car, partition, 0, current_cmd);
 	  }
+	  rewrite=1;
 	  break;
 	case 's':
 	case 'S':
@@ -543,6 +527,5 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	offset=current_element_num-INTER_ADV+1;
     }
 #endif
-  } while(quit==0);
-  part_free_list(list_part);
+  }
 }
