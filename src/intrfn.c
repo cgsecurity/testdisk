@@ -483,10 +483,15 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y_org, const int 
     if(key==PADENTER)
       key = menuItems[*current].key;
 #endif
-
     /* Is pressed key among acceptable ones */
     if( key!=0 && (strchr(available, toupper(key))!=NULL || strchr(available, key)!=NULL))
+    {
+      const unsigned int old_current=*current;
+      for(i=0; menuItems[i].key != 0 && menuItems[i].key != key; i++);
+      *current=(menuItems[i].key == 0 ? old_current : i);
       break;
+    }
+
     /* Should all keys to be accepted? */
     if( key && (menuType & MENU_ACCEPT_OTHERS)!=0 ) break;
     /* The key has not been accepted so far -> let's reject it */
