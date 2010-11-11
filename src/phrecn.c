@@ -79,6 +79,7 @@
 /* #define DEBUG */
 /* #define DEBUG_BF */
 #define READ_SIZE 1024*512
+#define DEFAULT_IMAGE_NAME "image_remaining.dd"
 
 extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_dir;
@@ -995,10 +996,36 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     log_flush();
   }
 #ifdef HAVE_NCURSES
-  if(expert>0)
+  if(expert>0 && !td_list_empty(&list_search_space->list))
   {
-    if(ask_confirmation("Create a image_remaining.dd file with the unknown data (Answer N if not sure) (Y/N)")!=0)
-      gen_image("image_remaining.dd", disk_car, list_search_space);
+    char msg[256];
+    uint64_t data_size=0;
+    struct td_list_head *search_walker = NULL;
+    td_list_for_each(search_walker, &list_search_space->list)
+    {
+      alloc_data_t *current_search_space;
+      current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+      data_size += current_search_space->end - current_search_space->start + 1;
+    }
+    snprintf(msg, sizeof(msg),
+	"Create a image_remaining.dd (%u MB) file with the unknown data (Answer N if not sure) (Y/N)",
+	(unsigned int)(data_size/1000/1000));
+    if(ask_confirmation(msg)!=0)
+    {
+      char *filename;
+      char *res;
+      char *dst_path=strdup(recup_dir);
+      res=strrchr(dst_path, '/');
+      if(res!=NULL)
+	*res='\0';
+      filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
+      strcpy(filename, dst_path);
+      strcat(filename, "/");
+      strcat(filename, DEFAULT_IMAGE_NAME);
+      gen_image(filename, disk_car, list_search_space);
+      free(filename);
+      free(dst_path);
+    }
   }
 #endif
   info_list_search_space(list_search_space, NULL, disk_car->sector_size, keep_corrupted_file, verbose);
