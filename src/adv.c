@@ -454,28 +454,30 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'c':
 	case 'C':
 	  {
-	    char *image_dd;
+	    char *dst_path;
 #ifdef HAVE_NCURSES
 	    if(*current_cmd!=NULL)
-	      image_dd=get_default_location();
+	      dst_path=get_default_location();
 	    else
-	      image_dd=ask_location("Please select where to store the file image.dd, an image of the partition", "", NULL);
-#else
-	    image_dd=get_default_location();
-#endif
-	    if(image_dd!=NULL)
 	    {
-	      char *new_recup_dir=(char *)MALLOC(strlen(image_dd)+1+strlen(DEFAULT_IMAGE_NAME)+1);
-	      strcpy(new_recup_dir,image_dd);
-	      strcat(new_recup_dir,"/");
-	      strcat(new_recup_dir,DEFAULT_IMAGE_NAME);
-	      free(image_dd);
-	      image_dd=new_recup_dir;
+	      char msg[256];
+	      snprintf(msg, sizeof(msg),
+		  "Please select where to store the file image.dd (%u MB), an image of the partition",
+		  (unsigned int)(current_element->part->part_size/1000/1000));
+	      dst_path=ask_location(msg, "", NULL);
 	    }
-	    if(image_dd!=NULL)
+#else
+	    dst_path=get_default_location();
+#endif
+	    if(dst_path!=NULL)
 	    {
-	      disk_image(disk_car, current_element->part, image_dd);
-	      free(image_dd);
+	      char *filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
+	      strcpy(filename, dst_path);
+	      strcat(filename, "/");
+	      strcat(filename, DEFAULT_IMAGE_NAME);
+	      disk_image(disk_car, current_element->part, filename);
+	      free(filename);
+	      free(dst_path);
 	    }
 	  }
 	  rewrite=1;
