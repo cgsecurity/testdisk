@@ -204,9 +204,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'t',"Type","Change type, this setting will not be saved on disk"},
       {'b',"Boot","Boot sector recovery"},
       {'s',"Superblock",NULL},
-      {'c',"Image Creation", "Create an image"},
-      {'u',"Undelete", "File undelete"},
       {'l',"List", "List and copy files"},
+      {'u',"Undelete", "File undelete"},
+      {'c',"Image Creation", "Create an image"},
 //      {'a',"Add", "Add temporary partition (Expert only)"},
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}
@@ -266,8 +266,10 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       const partition_t *partition=current_element->part;
       if(menu==0)
 	menu=1;
-      if(is_part_fat(partition) || is_part_ntfs(partition))
+      if(is_part_fat(partition))
 	options="tubcq";
+      if(is_part_ntfs(partition))
+	options="tlubcq";
       else if(is_part_linux(partition))
       {
 	if(partition->upart_type==UP_EXT2)
@@ -281,8 +283,10 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	options="tscq";
 	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
       }
-      else if(is_fat(partition) || is_ntfs(partition))
+      else if(is_fat(partition))
 	options="tubcq";
+      else if(is_ntfs(partition))
+	options="tlubcq";
       else if(is_linux(partition))
       {
 	if(partition->upart_type==UP_EXT2)
