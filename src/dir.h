@@ -70,7 +70,7 @@ struct file_data
 typedef struct 
 {
   struct td_list_head list;
-  char name[4096];
+  char *name;
   struct stat stat;
   unsigned int status;
 } file_info_t;

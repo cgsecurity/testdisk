@@ -269,6 +269,7 @@ void delete_list_file_info(struct td_list_head *list)
   {
     file_info_t *file_info;
     file_info=td_list_entry(file_walker, file_info_t, list);
+    free(file_info->name);
     td_list_del(file_walker);
     free(file_info);
   }
@@ -336,13 +337,13 @@ int filesort(const struct td_list_head *a, const struct td_list_head *b)
   if(res)
     return res;
   /* . and .. must listed before the other directories */
-  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name,".")==0)
+  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, ".")==0)
     return -1;
-  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name,"..")==0 &&
-      !strcmp(file_b->name,".")==0)
+  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, "..")==0 &&
+      !strcmp(file_b->name, ".")==0)
     return -1;
   /* Files and directories are sorted by name */
-  return strcmp(file_a->name,file_b->name);
+  return strcmp(file_a->name, file_b->name);
 }
 
 /*

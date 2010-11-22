@@ -303,20 +303,23 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 	{
 	  if(name->parent_name==NULL || parent_name==NULL)
 	    name->parent_name=parent_name;
-	  else if(strcmp(parent_name,".")==0 && inode_num==5)
-	  {
-	    /* root directory */
-	    char *npn=(char *)MALLOC(strlen(name->parent_name)+2);
-	    sprintf(npn, "/%s", name->parent_name);
-	    free(name->parent_name);
-	    name->parent_name=npn;
-	  }
 	  else
 	  {
-	    char *npn=(char *)MALLOC(strlen(parent_name)+strlen(name->parent_name)+2);
-	    sprintf(npn, "%s/%s", parent_name, name->parent_name);
+	    char *npn;
+	    if(strcmp(parent_name,".")==0 && inode_num==5)
+	    {
+	      /* root directory */
+	      npn=(char *)MALLOC(strlen(name->parent_name)+2);
+	      sprintf(npn, "/%s", name->parent_name);
+	    }
+	    else
+	    {
+	      npn=(char *)MALLOC(strlen(parent_name)+strlen(name->parent_name)+2);
+	      sprintf(npn, "%s/%s", parent_name, name->parent_name);
+	    }
 	    free(name->parent_name);
 	    name->parent_name=npn;
+	    free(parent_name);
 	  }
 	  if((unsigned)inode_num!=MREF(filename_attr->parent_directory))
 	  {
@@ -1045,25 +1048,16 @@ free:
 static file_info_t *ufile_to_file_data(const struct ufile *file)
 {
   file_info_t *new_file;
-  unsigned int len;
   if(file->pref_name==NULL)
     return NULL;
   new_file=(file_info_t *)MALLOC(sizeof(*new_file));
-  len=strlen(file->pref_name);
-  if(file->pref_pname!=NULL)
-    len+=strlen(file->pref_pname)+1;
-  if(len<sizeof(new_file->name))
-  {
-    if(file->pref_pname!=NULL)
-      sprintf((char *)&new_file->name, "%s/%s", file->pref_pname, file->pref_name);
-    else
-      memcpy(&new_file->name, file->pref_name, len);
-  }
+  if(file->pref_pname==NULL)
+    new_file->name=strdup(file->pref_name);
   else
   {
-    memcpy(new_file->name, file->pref_name,
-	strlen(file->pref_name)+1<sizeof(new_file->name)?strlen(file->pref_name)+1:sizeof(new_file->name) );
-    new_file->name[sizeof(new_file->name)-1]=0;
+    const unsigned int len=strlen(file->pref_name) + 1 + strlen(file->pref_pname) + 1;
+    new_file->name=(char *)MALLOC(len);
+    sprintf(new_file->name, "%s/%s", file->pref_pname, file->pref_name);
   }
   new_file->stat.st_dev=0;
   new_file->stat.st_ino=file->inode;
@@ -1553,7 +1547,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
       {
 	static file_info_t dir_list = {
 	  .list = TD_LIST_HEAD_INIT(dir_list.list),
-	  .name = {0}
+	  .name = NULL
 	};
 	struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data.private_dir_data;
 	scan_disk(ls->vol, &dir_list);

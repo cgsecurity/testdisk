@@ -94,10 +94,8 @@ void get_dos_drive_list(struct td_list_head *list)
   {
     file_info_t *new_drive;
     new_drive=(file_info_t*)MALLOC(sizeof(*new_drive));
-    new_drive->name[0]=i;
-    new_drive->name[1]=':';
-    new_drive->name[2]=PATH_SEP;
-    new_drive->name[3]='\0';
+    new_drive->name=(char*)MALLOC(4);
+    sprintf(new_drive->name, "%c:/", i);
     new_drive->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
     td_list_add_tail(&new_drive->list, list);
   }
@@ -161,7 +159,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
     DIR* dir;
     static file_info_t dir_list = {
       .list = TD_LIST_HEAD_INIT(dir_list.list),
-      .name = {0}
+      .name = NULL
     };
     wmove(window,5,0);
     wclrtoeol(window);	/* before addstr for BSD compatibility */
@@ -210,7 +208,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	    !dir_entrie->d_name[1]=='\0' &&
 	    !(dir_entrie->d_name[1]=='.' && dir_entrie->d_name[2]=='\0'))
 	  continue;
-        if(strlen(dst_directory)+1+strlen(file_info->name)+1<=sizeof(current_file)
+        if(strlen(dst_directory) + 1 + strlen(dir_entrie->d_name) + 1 <= sizeof(current_file)
 #ifdef __CYGWIN__
 	    && (memcmp(dst_directory, "/cygdrive", 9)!=0 ||
 	      (dst_directory[9]!='\0' && dst_directory[10]!='\0') ||
@@ -249,7 +247,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		file_info->stat.st_gid=0;
 	      }
 #endif
-	      strncpy(file_info->name,dir_entrie->d_name,sizeof(file_info->name));
+	      file_info->name=strdup(dir_entrie->d_name);
 	      td_list_add_sorted(&file_info->list, &dir_list.list, filesort);
 	      file_info=(file_info_t*)MALLOC(sizeof(*file_info));
 	    }
@@ -483,15 +481,15 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		  (LINUX_S_ISDIR(file_info->stat.st_mode) || LINUX_S_ISLNK(file_info->stat.st_mode)))
 		if(current_file!=&dir_list.list)
 		{
-		  if(strcmp(file_info->name,".")==0)
+		  if(strcmp(file_info->name, ".")==0)
 		  {
 		  }
-		  else if(strcmp(file_info->name,"..")==0)
+		  else if(strcmp(file_info->name, "..")==0)
 		  {
 		    set_parent_directory(dst_directory);
 		    quit=ASK_LOCATION_NEWDIR;
 		  }
-		  else if(strlen(dst_directory)+1+strlen(file_info->name)+1<=sizeof(dst_directory))
+		  else if(strlen(dst_directory) + 1 + strlen(file_info->name) + 1 <= sizeof(dst_directory))
 		  {
 #if defined(DJGPP) || defined(__OS2__)
 		    if(dst_directory[0]!='\0'&&dst_directory[1]!='\0'&&dst_directory[2]!='\0'&&dst_directory[3]!='\0')
@@ -499,7 +497,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		      if(dst_directory[1]!='\0')
 #endif
 			strcat(dst_directory,SPATH_SEP);
-		    strcat(dst_directory,file_info->name);
+		    strcat(dst_directory, file_info->name);
 		    quit=ASK_LOCATION_NEWDIR;
 		  }
 		}
