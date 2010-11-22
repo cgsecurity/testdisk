@@ -55,6 +55,7 @@ file_C			= filegen.c \
 			  file_bz2.c \
 			  file_cab.c \
 			  file_cam.c \
+			  file_cdt.c \
 			  file_chm.c \
 			  file_class.c \
 			  file_cm.c \
@@ -152,6 +153,7 @@ file_C			= filegen.c \
 			  file_nds.c \
 			  file_njx.c \
 			  file_nk2.c \
+			  file_nsf.c \
 			  file_ogg.c \
 			  file_one.c \
 			  file_orf.c \
