@@ -40,7 +40,7 @@ static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *
 
 const file_hint_t file_hint_gpg= {
   .extension="gpg",
-  .description="OpenPGP (Partial support)",
+  .description="OpenPGP/GPG (Partial support)",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
@@ -52,6 +52,7 @@ const file_hint_t file_hint_gpg= {
 
 static const unsigned char gpg_header_pkey_enc[1]= {0x85};
 static const unsigned char gpg_header_seckey[1]= {0x95};
+static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
 #if 0
 static const unsigned char gpg_header_pkey[1]= {0x99};
 #endif
@@ -60,6 +61,7 @@ static void register_header_check_gpg(file_stat_t *file_stat)
 {
   register_header_check(0, gpg_header_seckey, sizeof(gpg_header_seckey), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey_enc, sizeof(gpg_header_pkey_enc), &header_check_gpg, file_stat);
+  register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);
 #if 0
   register_header_check(0, gpg_header_pkey, sizeof(gpg_header_pkey), &header_check_gpg, file_stat);
 #endif
@@ -199,6 +201,12 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	i, packet_tag[i], length[i], length[i], length_type[i]);
   }
 #endif
+  if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0 && packet_tag[1]==1)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="pgp";
+    return 1;
+  }
   /* Public-Key Encrypted Session Key Packet v3 */
   if(buffer[0]==0x85 && buffer[3]==0x03 && is_valid_pubkey_algo(buffer[3+1+8]))
   {
