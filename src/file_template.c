@@ -55,7 +55,7 @@ static void register_header_check_EXTENSION(file_stat_t *file_stat)
 
 static int header_check_EXTENSION(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, EXTENSION_header, sizeof(EXTENSION_header))==0)
+  if(memcmp(&buffer[HEADER_LOC], EXTENSION_header, sizeof(EXTENSION_header))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_EXTENSION.extension;
