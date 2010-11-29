@@ -612,6 +612,33 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
   return list_part;
 }
 
+int recover_i386_logical(disk_t *disk, const unsigned char *buffer, partition_t *partition)
+{
+  const struct partition_dos *p=pt_offset_const(buffer,0);
+  if(partition->arch!=&arch_i386)
+    return 1;
+  if(is_extended(p->sys_ind))
+    p=pt_offset_const(buffer,1);
+  switch(p->sys_ind)
+  {
+    case P_12FAT:
+    case P_16FAT:
+    case P_16FATBD:
+    case P_16FATBD_LBA:
+    case P_NTFS:
+    case P_32FAT:
+    case P_32FAT_LBA:
+      break;
+    default:
+      return 1;
+  }
+  if(partition->part_offset==0)
+    return 1;
+  i386_entry2partition(disk, partition->part_offset, partition, p, STATUS_DELETED, 0, 0, 0);
+  partition->order=NO_ORDER;
+  return 0;
+}
+
 static int test_MBR_over(disk_t *disk_car,list_part_t *list_part)
 {/* Test if partitions overlap */
   int res=0;

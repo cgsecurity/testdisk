@@ -25,6 +25,7 @@ extern "C" {
 
 int parti386_can_be_ext(const disk_t *disk_car, const partition_t *partition);
 list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, char **current_cmd);
+int recover_i386_logical(disk_t *disk, const unsigned char *buffer, partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

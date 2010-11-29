@@ -55,6 +55,7 @@
 #include "xfs.h"
 #include "zfs.h"
 #include "log.h"
+#include "parti386.h"
 
 int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
@@ -199,6 +200,11 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
     partition->part_offset-=le64(sb1->super_offset)*512;
     return 1;
   }
+  /* Try to locate logical partition that may host truecrypt encrypted filesystem */
+  if(buffer[0x1fe]==0x55 && buffer[0x1ff]==0xAA &&
+    recover_i386_logical(disk, buffer, partition)==0 &&
+    partition->upart_type==UP_UNK)
+      return 1;
   return 0;
 }
 
