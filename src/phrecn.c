@@ -849,13 +849,17 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
       if(session_save(list_search_space, disk_car, partition, files_enable, blocksize, paranoid, keep_corrupted_file, mode_ext2, expert, lowmem, carve_free_space_only, verbose)<0)
       {
 	/* Failed to save the session! */
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
 	  status=STATUS_QUIT;
+#endif
       }
       else
       {
+#ifdef HAVE_NCURSES
 	if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
-	status=STATUS_QUIT;
+	  status=STATUS_QUIT;
+#endif
       }
     }
     else if(paranoid>0)

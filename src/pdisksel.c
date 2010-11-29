@@ -59,6 +59,7 @@
 #define INTER_DISK_X		0
 #define INTER_DISK_Y		(8+NBR_DISK_MAX)
 #define INTER_NOTE_Y		(LINES-4)
+#endif
 
 static int photorec_disk_selection_cli(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space, const char *cmd_device, char **current_cmd)
 {
@@ -95,6 +96,7 @@ static int photorec_disk_selection_cli(int verbose, const char *recup_dir, const
   return 0;
 }
 
+#ifdef HAVE_NCURSES
 static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space)
 {
   char * current_cmd=NULL;
