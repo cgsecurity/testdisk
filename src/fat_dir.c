@@ -81,7 +81,9 @@ file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, co
   unsigned int status;
   unsigned int inode;
   int utf8=1;
+#ifdef HAVE_WCTOMB
   wctomb(NULL, 0);
+#endif
 GetNew:
   status=0;
   long_slots = 0;
@@ -264,7 +266,11 @@ RecEnd:
       {
 	if(utf8 && unicode[i]>0x7f)
 	{
+#ifdef HAVE_WCTOMB
 	  const int sizec=wctomb(&new_file->name[o], unicode[i]);
+#else
+	  const int sizec=unicode[i];
+#endif
 	  if(sizec <= 0)
 	  {
 	    new_file->name[o]=(char) unicode[i];
