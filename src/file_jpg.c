@@ -1059,6 +1059,12 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	jpg_search_marker(file_recovery);
 	return thumb_offset;
       }
+      if(buffer[i+1]==0xff)
+      {
+	/* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
+	offset++;
+	continue;
+      }
 #ifdef DEBUG_JPEG
       log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
@@ -1124,6 +1130,12 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 #endif
 		  jpg_search_marker(file_recovery);
 		  return 0;
+		}
+		if(buffer[j+1]==0xff)
+		{
+		  /* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
+		  j++;
+		  continue;
 		}
 #ifdef DEBUG_JPEG
 		log_info("%s thumb marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
@@ -1377,7 +1389,9 @@ int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, 
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    if(buffer[i]==0xFF)
+    if(buffer[i]==0xFF && buffer[i+1]==0xFF)
+      file_recovery->calculated_file_size++;
+    else if(buffer[i]==0xFF)
     {
       const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
 #if 0
