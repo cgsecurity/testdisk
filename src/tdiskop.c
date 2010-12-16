@@ -47,6 +47,7 @@
 #include "geometry.h"
 
 extern const arch_fnct_t arch_i386;
+extern const arch_fnct_t arch_none;
 #define INTER_DISK_X	0
 #define INTER_DISK_Y	7
 
@@ -139,7 +140,6 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
   int allow_partial_last_cylinder=0;
   int ask_part_order=0;
   int command;
-  unsigned int menu=0;
   int real_key;
   unsigned int expert=0;
   char options[16];
@@ -155,6 +155,7 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	{'E',"Editor","Basic disk editor"},
 	{0,NULL,NULL}
   };
+  unsigned int menu=(disk_car->arch == &arch_none ? 1 : 0);
   strcpy(options, "AGOPTQ");
   if(disk_car->arch->write_MBR_code!=NULL)
     strcat(options,"C");

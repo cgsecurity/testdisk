@@ -81,8 +81,8 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     { 'P', "Previous",""},
     { 'N', "Next","" },
     { 'Q', "Quit","Return to Advanced menu"},
-    { 'L', "List", "List directories and files, copy and undelete data from FAT" },
     { 'R', "Rebuild BS","Rebuild boot sector"},
+    { 'L', "List", "List directories and files, copy and undelete data from FAT" },
     { 'D', "Dump","Dump boot sector and backup boot sector"},
     { 'C', "Repair FAT","Very Dangerous! Expert only"},
     { 'I', "Init Root","Init root directory: Very Dangerous! Expert only"},
@@ -93,7 +93,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   while(1)
   {
 #ifdef HAVE_NCURSES
-    unsigned int menu=0;
+    unsigned int menu=3;
 #endif
     int command;
     screen_buffer_reset();

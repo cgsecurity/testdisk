@@ -58,6 +58,7 @@
 #include "thfs.h"
 #include "askloc.h"
 #include "addpart.h"
+#include "io_redir.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -264,11 +265,14 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
     else
     {
       const partition_t *partition=current_element->part;
-      if(menu==0)
+      if(menu==0 && (disk_car->arch!=&arch_none || partition->upart_type!=UP_UNK))
 	menu=1;
       if(is_part_fat(partition))
+      {
 	options="tubcq";
-      if(is_part_ntfs(partition))
+	menu=(partition->upart_type==UP_UNK?1:4);
+      }
+      else if(is_part_ntfs(partition))
 	options="tlubcq";
       else if(is_part_linux(partition))
       {
@@ -290,9 +294,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       else if(is_linux(partition))
       {
 	if(partition->upart_type==UP_EXT2)
-	  options="tuscq";
+	  options="tluscq";
 	else
-	  options="tscq";
+	  options="tlscq";
 	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
       }
       else if(is_hfs(partition) || is_hfsp(partition))
@@ -490,10 +494,26 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'U':
 	  {
 	    partition_t *partition=current_element->part;
-	    if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
-	      ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
+	    if(partition->sb_offset!=0 && partition->sb_size>0)
+	    {
+	      io_redir_add_redir(disk_car,
+		  partition->part_offset+partition->sborg_offset,
+		  partition->sb_size,
+		  partition->part_offset+partition->sb_offset,
+		  NULL);
+	      if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
+		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
+	      else
+		dir_partition(disk_car, partition, 0, current_cmd);
+	      io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
+	    }
 	    else
-	      dir_partition(disk_car, partition, 0, current_cmd);
+	    {
+	      if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
+		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
+	      else
+		dir_partition(disk_car, partition, 0, current_cmd);
+	    }
 	  }
 	  rewrite=1;
 	  break;
@@ -501,7 +521,18 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'L':
 	  {
 	    partition_t *partition=current_element->part;
-	    dir_partition(disk_car, partition, 0, current_cmd);
+	    if(partition->sb_offset!=0 && partition->sb_size>0)
+	    {
+	      io_redir_add_redir(disk_car,
+		  partition->part_offset+partition->sborg_offset,
+		  partition->sb_size,
+		  partition->part_offset+partition->sb_offset,
+		  NULL);
+	      dir_partition(disk_car,partition,verbose, current_cmd);
+	      io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
+	    }
+	    else
+	      dir_partition(disk_car,partition,verbose, current_cmd);
 	  }
 	  rewrite=1;
 	  break;
