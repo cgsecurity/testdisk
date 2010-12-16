@@ -141,6 +141,8 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
 	)
       {
 	log_info("Write new boot!\n");
+	/* Reset information about backup boot sector */
+	partition->sb_offset=0;
 	/* Write boot sector and backup boot sector */
 	if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
 	{
@@ -210,6 +212,8 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	if(strchr(options,'W')!=NULL && ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("Write new boot!\n");
+	  /* Reset information about backup boot sector */
+	  partition->sb_offset=0;
 	  /* Write boot sector and backup boot sector */
 	  if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
 	  {

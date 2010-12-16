@@ -70,7 +70,7 @@ static uint64_t next_sb(const uint64_t hd_offset_old)
   return hd_offset;
 }
 
-list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, const int verbose, const int dump_ind, const int interface)
+list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const int interface)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(2*0x200);
   uint64_t hd_offset;
@@ -126,6 +126,13 @@ list_part_t *search_superblock(disk_t *disk_car, const partition_t *partition, c
 	  int insert_error=0;
 	  if(hd_offset<=(EXT2_MIN_BLOCK_SIZE<<2))
 	    new_partition->part_offset-=hd_offset;
+	  if(partition->blocksize==0)
+	  {
+	    partition->sborg_offset=new_partition->sborg_offset;
+	    partition->sb_offset   =new_partition->sb_offset;
+	    partition->sb_size     =new_partition->sb_size;
+	    partition->blocksize   =new_partition->blocksize;
+	  }
 	  log_info("Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)\n",
 	      (long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
 	      (long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),

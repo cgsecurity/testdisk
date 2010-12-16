@@ -187,6 +187,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	  options="DOBRL";
 	else if(opt_B!=0)
 	{
+	  partition->sb_offset=6 * disk_car->sector_size;
 	  menu=5;
 	  options="DBRL";
 	}
@@ -274,6 +275,8 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #endif
 	break;
       case 'B': /* B : copy backup boot sector over boot sector */
+	/* Reset information about backup boot sector */
+	partition->sb_offset=0;
 #ifdef HAVE_NCURSES
 	if(ask_confirmation("Copy backup FAT32 boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{

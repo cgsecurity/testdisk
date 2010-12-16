@@ -255,6 +255,8 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	if(ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
+	  /* Reset information about backup boot sector */
+	  partition->sb_offset=0;
 	  if(disk_car->pwrite(disk_car, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset) != NTFS_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite NTFS boot sector\n");

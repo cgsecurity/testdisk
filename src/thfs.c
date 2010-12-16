@@ -234,6 +234,8 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 	if(ask_confirmation("Copy backup HFS/HFS+ volume header over main volume header, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup superblock over main superblock\n");
+	  /* Reset information about backup boot sector */
+	  partition->sb_offset=0;
 	  if(disk_car->pwrite(disk_car, buffer_backup_bs, HFSP_BOOT_SECTOR_SIZE, partition->part_offset + 0x400) != HFSP_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite HFS/HFS+ main volume header\n");

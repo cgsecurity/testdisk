@@ -1029,6 +1029,8 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
   {
     int err=0;
     log_info("Write new boot!\n");
+    /* Reset information about backup boot sector */
+    partition->sb_offset=0;
     /* Write boot sector and backup boot sector */
     if(upart_type==UP_FAT32)
     {
