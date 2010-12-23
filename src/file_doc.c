@@ -286,6 +286,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	/* Quattro Pro spreadsheet */
 	if(memcmp(&dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
 	  return "qpw";
+	/* Page Maker */
+	if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0", 18)==0)
+	  return "p65";
 	if(sid==1 && memcmp(&dir_entry->name, "D\0g\0n", 6)==0)
 	  return "dgn";
       }
@@ -877,6 +880,9 @@ static void file_rename_doc(const char *old_filename)
 	    /* Quattro Pro spreadsheet */
 	    else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
 	      ext="qpw";
+	    /* Page Maker */
+	    else if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0", 18)==0)
+	      ext="p65";
 	    if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
 	      ext="dgn";
 	  }
