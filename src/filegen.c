@@ -58,7 +58,10 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   res=fc_a->offset-fc_b->offset;
   if(res!=0)
     return res;
-  return memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
+  res=memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
+  if(res!=0)
+    return res;
+  return fc_b->length-fc_a->length;
 }
 
 static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
