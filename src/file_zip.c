@@ -208,6 +208,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     {
       if(strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
 	*ext="jar";
+      else if(strcasecmp(filename, "chrome.manifest")==0)
+	*ext="xpi";
     }
     free(filename);
   }
