@@ -232,6 +232,28 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
     if(res>0 && partition->part_offset!=0)
       res=0;
   }
+  if(res<=0)
+  {
+    int s_log_block_size;
+    for(s_log_block_size=0; s_log_block_size<=2 && res<=0; s_log_block_size++)
+    {
+      /* sparse superblock feature: The groups chosen are 0, 1 and powers of 3, 5 and 7. */
+      /* Checking group 3 */
+      const uint64_t hd_offset=3*(EXT2_MIN_BLOCK_SIZE<<s_log_block_size)*8*(EXT2_MIN_BLOCK_SIZE<<s_log_block_size)+(s_log_block_size==0?2*DEFAULT_SECTOR_SIZE:0);
+      void *data=disk->pread_fast(disk, buffer_disk, 1024, hd_offset);
+      if(data!=NULL)
+      {
+	const struct ext2_super_block *sb=(const struct ext2_super_block*)data;
+	partition->part_offset = hd_offset;
+	if(le16(sb->s_block_group_nr)>0 &&
+	    le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
+	      recover_EXT2(disk, sb, partition, 0, 0)==0)
+	  res=1;
+	if(res>0 && partition->part_offset!=0)
+	  res=0;
+      }
+    }
+  }
   free(buffer_disk);
   if(res<=0)
     partition_reset(partition,&arch_none);
