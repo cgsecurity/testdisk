@@ -106,6 +106,7 @@ file_C			= filegen.c \
 			  file_fob.c \
 			  file_fp5.c \
 			  file_fp7.c \
+			  file_freeway.c \
 			  file_frm.c \
 			  file_fs.c \
 			  file_gho.c \

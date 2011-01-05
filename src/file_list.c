@@ -109,6 +109,7 @@ extern const file_hint_t file_hint_flv;
 extern const file_hint_t file_hint_fob;
 extern const file_hint_t file_hint_fp5;
 extern const file_hint_t file_hint_fp7;
+extern const file_hint_t file_hint_freeway;
 extern const file_hint_t file_hint_frm;
 extern const file_hint_t file_hint_fs;
 extern const file_hint_t file_hint_gho;
@@ -323,6 +324,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_fob  },
   { .enable=0, .file_hint=&file_hint_fp5  },
   { .enable=0, .file_hint=&file_hint_fp7  },
+  { .enable=0, .file_hint=&file_hint_freeway  },
   { .enable=0, .file_hint=&file_hint_frm  },
   { .enable=0, .file_hint=&file_hint_fs   },
   { .enable=0, .file_hint=&file_hint_gho  },
