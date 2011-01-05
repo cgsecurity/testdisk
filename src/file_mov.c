@@ -78,9 +78,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   }
   while(i<buffer_size-8)
   {
-    unsigned int atom_size;
-    atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
-    if(atom_size<8 || atom_size>1024*1024*1024)
+    const unsigned int atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
+    if(atom_size<8 || atom_size > (unsigned int)2*1024*1024*1024)
       return 0;
     /* check for commun atom type */
     if(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t')
