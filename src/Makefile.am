@@ -216,6 +216,7 @@ file_C			= filegen.c \
 			  file_tax.c \
 			  file_tib.c \
 			  file_tiff.c \
+			  file_torrent.c \
 			  file_tph.c \
 			  file_ttf.c \
 			  file_txt.c \
