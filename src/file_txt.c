@@ -642,6 +642,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->extension="stp";
     return 1;
   }
+  if(memcmp(buffer, header_url, sizeof(header_url))==0)
+  {
+    /* URL / Internet Shortcut */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="url";
+    return 1;
+  }
   if(memcmp(buffer,header_wpl,sizeof(header_wpl))==0)
   {
     /* Windows Play List*/
@@ -1113,7 +1122,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="java";
 #endif
     }
-    else if(nbrf>10 && ind<0.9)
+    else if(nbrf>10 && ind<0.9 && strstr(buffer, "integer")!=NULL)
       ext="f";
     else if(is_csv>0)
       ext="csv";
