@@ -33,20 +33,21 @@
 #include "types.h"
 #include "common.h"
 #include "exfat.h"
-static int test_EXFAT(const struct exfat_super_block *exfat_header, partition_t *partition);
-#define EXFAT_SIZE	512
 
 static int set_EXFAT_info(partition_t *partition)
 {
   partition->fsname[0]='\0';
-  strncpy(partition->info,"EXFAT",sizeof(partition->info));
+  if(partition->sb_offset==0)
+    strncpy(partition->info,"exFAT",sizeof(partition->info));
+  else
+    strncpy(partition->info,"exFAT found using backup sector!",sizeof(partition->info));
   return 0;
 }
 
 int check_EXFAT(disk_t *disk_car, partition_t *partition)
 {
-  unsigned char *buffer=(unsigned char*)MALLOC(EXFAT_SIZE);
-  if(disk_car->pread(disk_car, buffer, EXFAT_SIZE, partition->part_offset) != EXFAT_SIZE)
+  unsigned char *buffer=(unsigned char*)MALLOC(EXFAT_BS_SIZE);
+  if(disk_car->pread(disk_car, buffer, EXFAT_BS_SIZE, partition->part_offset) != EXFAT_BS_SIZE)
   {
     free(buffer);
     return 1;
@@ -61,7 +62,7 @@ int check_EXFAT(disk_t *disk_car, partition_t *partition)
   return 0;
 }
 
-static int test_EXFAT(const struct exfat_super_block *exfat_header, partition_t *partition)
+int test_EXFAT(const struct exfat_super_block *exfat_header, partition_t *partition)
 {
   if(le16(exfat_header->signature)!=0xAA55)
     return 1;
@@ -75,9 +76,17 @@ int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_head
 {
   if(test_EXFAT(exfat_header, partition)!=0)
     return 1;
-  set_EXFAT_info(partition);
+  partition->sborg_offset=0;
+  partition->sb_size=12 << exfat_header->blocksize_bits;
   partition->part_type_i386=P_EXFAT;
   partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
   partition->part_size=(uint64_t)le64(exfat_header->nr_sectors) * disk->sector_size;
+  if(le64(exfat_header->start_sector) +
+      (12 << exfat_header->blocksize_bits) == partition->part_offset)
+  {
+    partition->sb_offset=12 << exfat_header->blocksize_bits;
+    partition->part_offset-=partition->sb_offset;
+  }
+  set_EXFAT_info(partition);
   return 0;
 }

@@ -108,9 +108,7 @@ int search_EXFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partit
     if(le16(exfat_header->signature)==0xAA55 &&
 	recover_EXFAT(disk, exfat_header, partition)==0)
     {
-      strncpy(partition->info,"EXFAT found using backup sector!",sizeof(partition->info));
-      partition->sb_offset=6*512;
-      partition->part_offset-=partition->sb_offset;  /* backup sector */
+      /* part_offset has already been updated if found using backup sector */
       return 1;
     }
   }

@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define EXFAT_BS_SIZE	512
 
 struct exfat_super_block {
         unsigned char   jmp_boot[3];            /* boot strap short or near jump */
@@ -41,8 +42,8 @@ struct exfat_super_block {
 	uint16_t  	state;                  /* state of this volume */
 	unsigned char   blocksize_bits;         /* bits of block size */
 	unsigned char   block_per_clus_bits;    /* bits of blocks per cluster */
-	unsigned char   xxxx03;                 /* ??? (0x01 or 0x00 (?)) */
-	unsigned char   xxxx04;                 /* ??? (0x80 or any value (?)) */
+	unsigned char   number_of_fats;
+	unsigned char   drive_select;           /* Used by INT 13 */
 	unsigned char   allocated_percent;      /* 0x70 percentage of allocated space (?) */
 	unsigned char   xxxx05[397];            /* ??? (0x00...) */
 	uint16_t  	signature;              /* 0xaa55 */
@@ -50,6 +51,7 @@ struct exfat_super_block {
 
 int check_EXFAT(disk_t *disk_car, partition_t *partition);
 int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition);
+int test_EXFAT(const struct exfat_super_block *exfat_header, partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -578,8 +578,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	{
 	  if((disk_car->arch==&arch_i386 &&
 		((start.sector==13 && (start.head<=2 || fast_mode>1)) ||
-		 (search_vista_part>0 && search_location%(2048*512)==(13-1)*512))) ||
-	      (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*512)))
+		 (search_vista_part>0 && search_location%(2048*512)==(13-1)*disk_car->sector_size))) ||
+	      (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*disk_car->sector_size)))
 	    res=search_EXFAT_backup(buffer_disk, disk_car, partition);
 	  test_nbr++;
 	}
