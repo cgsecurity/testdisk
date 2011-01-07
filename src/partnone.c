@@ -86,7 +86,7 @@ static const struct systypes none_sys_types[] = {
   {UP_EXT3,	"ext3"},
   {UP_EXT4,	"ext4"},
 /*  {UP_EXTENDED,	"Extended"}, */
-  {UP_EXFAT,	"EXFAT"},
+  {UP_EXFAT,	"exFAT"},
   {UP_FAT12,	"FAT12"},
   {UP_FAT16,	"FAT16"},
   {UP_FAT32,	"FAT32"},
@@ -224,6 +224,11 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   { /* Search FAT32 backup */
     partition->part_offset = 6*512;
     res=search_FAT_backup(buffer_disk, disk, partition, verbose, 0);
+  }
+  if(res<=0)
+  { /* Search exFAT backup */
+    partition->part_offset = 12 * disk->sector_size;
+    res=search_EXFAT_backup(buffer_disk, disk, partition);
   }
   if(res<=0)
   { /* Search NTFS backup */
