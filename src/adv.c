@@ -54,6 +54,7 @@
 #include "ext2_sbn.h"
 #include "fat1x.h"
 #include "fat32.h"
+#include "texfat.h"
 #include "tntfs.h"
 #include "thfs.h"
 #include "askloc.h"
@@ -75,11 +76,17 @@ extern const arch_fnct_t arch_xbox;
 
 #define DEFAULT_IMAGE_NAME "image.dd"
 
+static int is_exfat(const partition_t *partition);
 static int is_hfs(const partition_t *partition);
 static int is_hfsp(const partition_t *partition);
 static int is_linux(const partition_t *partition);
 static int is_part_hfs(const partition_t *partition);
 static int is_part_hfsp(const partition_t *partition);
+
+static int is_exfat(const partition_t *partition)
+{
+  return (is_part_ntfs(partition) || partition->upart_type==UP_EXFAT);
+}
 
 static int is_hfs(const partition_t *partition)
 {
@@ -291,6 +298,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	options="tubcq";
       else if(is_ntfs(partition))
 	options="tlubcq";
+      else if(is_exfat(partition))
+	options="tlbcq";
       else if(is_linux(partition))
       {
 	if(partition->upart_type==UP_EXT2)
@@ -440,6 +449,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    else if(is_part_ntfs(partition))
 	    {
 	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
+//	      exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
 	      rewrite=1;
 	    }
 	    else if(partition->upart_type==UP_FAT32)
@@ -455,6 +465,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    else if(partition->upart_type==UP_NTFS)
 	    {
 	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
+	      rewrite=1;
+	    }
+	    else if(partition->upart_type==UP_EXFAT)
+	    {
+	      exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
 	      rewrite=1;
 	    }
 	  }

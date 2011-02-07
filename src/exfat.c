@@ -34,6 +34,19 @@
 #include "common.h"
 #include "exfat.h"
 
+uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster)
+{
+  return ((uint64_t)(((cluster-2) << exfat_header->block_per_clus_bits) + le32(exfat_header->clus_blocknr))) << exfat_header->blocksize_bits;
+}
+
+int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster)
+{
+  return disk->pread(disk,
+      buffer,
+      1 << (exfat_header->block_per_clus_bits + exfat_header->blocksize_bits),
+      partition->part_offset + exfat_cluster_to_offset(exfat_header, cluster));
+}
+
 static int set_EXFAT_info(partition_t *partition)
 {
   partition->fsname[0]='\0';
@@ -44,10 +57,10 @@ static int set_EXFAT_info(partition_t *partition)
   return 0;
 }
 
-int check_EXFAT(disk_t *disk_car, partition_t *partition)
+int check_EXFAT(disk_t *disk, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(EXFAT_BS_SIZE);
-  if(disk_car->pread(disk_car, buffer, EXFAT_BS_SIZE, partition->part_offset) != EXFAT_BS_SIZE)
+  if(disk->pread(disk, buffer, EXFAT_BS_SIZE, partition->part_offset) != EXFAT_BS_SIZE)
   {
     free(buffer);
     return 1;

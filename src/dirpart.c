@@ -39,6 +39,7 @@
 #endif
 #include "dir.h"
 #include "dirn.h"
+#include "exfat_dir.h"
 #include "ext2_dir.h"
 #include "fat_dir.h"
 #include "ntfs_dir.h"
@@ -61,7 +62,11 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   if(is_part_fat(partition))
     res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
   else if(is_part_ntfs(partition))
+  {
     res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+    if(res!=0)
+      res=dir_partition_exfat_init(disk_car, partition, &dir_data, verbose);
+  }
   else if(is_part_linux(partition))
   {
     res=dir_partition_ext2_init(disk_car,partition,&dir_data,verbose);
@@ -89,6 +94,9 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 	break;
       case UP_NTFS:
 	res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+	break;
+      case UP_EXFAT:
+	res=dir_partition_exfat_init(disk_car, partition, &dir_data, verbose);
 	break;
       default:
 	return res;

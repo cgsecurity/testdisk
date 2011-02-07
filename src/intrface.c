@@ -235,6 +235,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       }
       switch(pos->part->upart_type)
       {
+	case UP_EXFAT:
 	case UP_EXT2:
 	case UP_EXT3:
 	case UP_EXT4:

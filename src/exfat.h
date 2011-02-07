@@ -1,8 +1,8 @@
 /*
 
-    file: swap.h
+    file: exfat.h
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2010-2011 Christophe GRENIER <grenier@cgsecurity.org>
   
     this software is free software; you can redistribute it and/or modify
     it under the terms of the gnu general public license as published by
@@ -49,7 +49,52 @@ struct exfat_super_block {
 	uint16_t  	signature;              /* 0xaa55 */
 } __attribute__ ((__packed__));
 
-int check_EXFAT(disk_t *disk_car, partition_t *partition);
+struct exfat_file_entry
+{
+  uint8_t  type;
+  uint8_t  sec_count;
+  uint16_t checksum;
+  uint16_t attr;
+  uint16_t reserved1;
+  uint16_t ctime;
+  uint16_t cdate;
+  uint16_t mtime;
+  uint16_t mdate;
+  uint16_t atime;
+  uint16_t adate;
+  uint8_t  cms;
+  uint8_t  mms;
+  uint8_t  ctz;
+  uint8_t  mtz;
+  uint8_t  reserved2[7];
+} __attribute__ ((__packed__));
+
+struct exfat_stream_ext_entry
+{
+  uint8_t  type;
+  uint8_t  sec_flags;
+  uint8_t  reserved1;
+  uint8_t  name_length;
+  uint16_t name_hash;
+  uint16_t reserved2;
+  uint64_t valid_data_length;
+  uint32_t reserved3;
+  uint32_t first_cluster;
+  uint64_t data_length;
+} __attribute__ ((__packed__));
+
+struct exfat_alloc_bitmap_entry
+{
+  uint8_t  type;
+  uint8_t  bitmap_flags;
+  uint8_t  reserved[18];
+  uint32_t first_cluster;
+  uint64_t data_length;
+} __attribute__ ((__packed__));
+
+uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster);
+int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster);
+int check_EXFAT(disk_t *disk, partition_t *partition);
 int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition);
 int test_EXFAT(const struct exfat_super_block *exfat_header, partition_t *partition);
 

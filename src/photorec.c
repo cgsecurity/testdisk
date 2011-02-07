@@ -41,6 +41,7 @@
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
+#include "exfatp.h"
 #include "ext2p.h"
 #include "fatp.h"
 #include "ntfsp.h"
@@ -390,6 +391,8 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
       partition->upart_type==UP_FAT16 || 
       partition->upart_type==UP_FAT32)
     return fat_remove_used_space(disk_car, partition, list_search_space);
+  else if(partition->upart_type==UP_EXFAT)
+    return exfat_remove_used_space(disk_car, partition, list_search_space);
 #ifdef HAVE_LIBNTFS
   else if(partition->upart_type==UP_NTFS)
     return ntfs_remove_used_space(disk_car, partition, list_search_space);
@@ -708,7 +711,6 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     }
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
-    //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
     if(file_recovery->file_size>0)
     {
       if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
