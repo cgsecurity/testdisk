@@ -72,6 +72,7 @@ file_C			= filegen.c \
 			  file_dim.c \
 			  file_dir.c \
 			  file_djv.c \
+			  file_dmp.c \
 			  file_doc.c \
 			  file_dpx.c \
 			  file_drw.c \
