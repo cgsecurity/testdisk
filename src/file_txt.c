@@ -103,6 +103,7 @@ static const unsigned char header_json[31]	= {
   ':', '1', ',', '"', 'd', 'a', 't', 'e',
   'A', 'd', 'd', 'e', 'd', '"', ':' };
 static const unsigned char header_ksh[10]  	= "#!/bin/ksh";
+static const unsigned char header_ly[11]	= { '\n', '\\', 'v', 'e', 'r', 's', 'i', 'o', 'n', ' ', '"'};
 static const unsigned char header_lyx[7]	= {'#', 'L', 'y', 'X', ' ', '1', '.'};
 static const unsigned char header_m3u[7]	= {'#','E','X','T','M','3','U'};
 static const unsigned char header_mail[19]	= {'F','r','o','m',' ','M','A','I','L','E','R','-','D','A','E','M','O','N',' '};
@@ -201,6 +202,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_jad, sizeof(header_jad), &header_check_fasttxt, file_stat);
   register_header_check(0, header_json, sizeof(header_json), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ksh,sizeof(header_ksh), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ly, sizeof(header_ly), &header_check_fasttxt, file_stat);
   register_header_check(0, header_lyx,sizeof(header_lyx), &header_check_fasttxt, file_stat);
   register_header_check(0, header_m3u, sizeof(header_m3u), &header_check_fasttxt, file_stat);
   register_header_check(0, header_mail,sizeof(header_mail), &header_check_fasttxt, file_stat);
@@ -424,11 +426,6 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
 
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char sign_grisbi[14]		= "Version_grisbi";
-  const char sign_fst[5]                = "QBFSD";
-  const char sign_html[5]		= "<html";
-  const char sign_plist[16]		= "<!DOCTYPE plist ";
-  const char sign_svg[4]		= "<svg";
   static const unsigned char spaces[16]={
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
@@ -673,14 +670,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
-    if(td_memmem(buffer, buffer_size, sign_grisbi, sizeof(sign_grisbi))!=NULL)
+    if(td_memmem(buffer, buffer_size, "Version_grisbi", 14)!=NULL)
     {
       /* Grisbi - Personal Finance Manager XML data */
       file_recovery_new->extension="gsb";
     }
-    else if(td_memmem(buffer, buffer_size, sign_fst, sizeof(sign_fst))!=NULL)
+    else if(td_memmem(buffer, buffer_size, "QBFSD", 5)!=NULL)
       file_recovery_new->extension="fst";
-    else if(td_memmem(buffer, buffer_size, sign_html, sizeof(sign_html))!=NULL)
+    else if(td_memmem(buffer, buffer_size, "<html", 5)!=NULL)
     {
 #ifdef DJGPP
       file_recovery_new->extension="htm";
@@ -688,14 +685,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
       file_recovery_new->extension="html";
 #endif
     }
-    else if(td_memmem(buffer, buffer_size, sign_svg, sizeof(sign_svg))!=NULL)
+    else if(td_memmem(buffer, buffer_size, "<svg", 4)!=NULL)
     {
       /* Scalable Vector Graphics */
       file_recovery_new->extension="svg";
       file_recovery_new->file_check=&file_check_svg;
       return 1;
     }
-    else if(td_memmem(buffer, buffer_size, sign_plist, sizeof(sign_plist))!=NULL)
+    else if(td_memmem(buffer, buffer_size, "<!DOCTYPE plist ", 16)!=NULL)
     {
       /* Mac OS X property list */
 #ifdef DJGPP
@@ -773,6 +770,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="jad";
+    return 1;
+  }
+  /* LilyPond http://lilypond.org*/
+  if(memcmp(buffer, header_ly, sizeof(header_ly))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="ly";
     return 1;
   }
   /* Lyx http://www.lyx.org */
@@ -918,27 +924,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   static char *buffer_lower=NULL;
   static unsigned int buffer_lower_size=0;
   unsigned int l=0;
-  const unsigned char header_asp[22]	= "<%@ language=\"vbscript";
-  const unsigned char header_bat[9]  	= "@echo off";
-  const unsigned char header_bat2[4]  	= "rem ";
-  const unsigned char header_json_small[2]	= { '{', '"'};
-  const unsigned char header_vb[20]	= {
-    'v', 'e', 'r', 's', 'i', 'o', 'n', ' ',
-    '4', '.', '0', '0', '\r', '\n', 'b', 'e',
-    'g', 'i', 'n', ' '
-  };
-  const unsigned char header_vcf[11]	= "begin:vcard";
-  const unsigned char header_sig_perl[4] = "perl";
-  const unsigned char header_sig_python[6] = "python";
-  const unsigned char header_sig_ruby[4] = "ruby";
-  const char sign_asp[]			= "<% ";
-  const char sign_c[]			= "#include";
   const char sign_h[]			= "/*";
-  const char sign_inf[]			= "[autorun]";
-  const char sign_jsp[]			= "<%@";
-  const char sign_jsp2[]		= "<%=";
-  const char sign_php[]			= "<?php";
-  const char sign_tex[]			= "\\begin{";
   const char sign_html[]		= "<html";
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
@@ -976,8 +962,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   if(l<10)
     return 0;
   /* strncasecmp */
-  if(memcmp(buffer_lower, header_bat, sizeof(header_bat))==0 ||
-      memcmp(buffer_lower, header_bat2, sizeof(header_bat2))==0)
+  if(memcmp(buffer_lower, "@echo off", 9)==0 ||
+      memcmp(buffer_lower, "rem ", 4)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -985,7 +971,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="bat";
     return 1;
   }
-  if(memcmp(buffer_lower,header_asp,sizeof(header_asp))==0)
+  if(memcmp(buffer_lower, "<%@ language=\"vbscript", 22)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -993,7 +979,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="asp";
     return 1;
   }
-  if(memcmp(buffer_lower, header_vb ,sizeof(header_vb))==0)
+  if(memcmp(buffer_lower, "version 4.00\r\nbegin", 20)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -1001,7 +987,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="vb";
     return 1;
   }
-  if(memcmp(buffer_lower,header_vcf,sizeof(header_vcf))==0)
+  if(memcmp(buffer_lower, "begin:vcard", 11)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -1017,7 +1003,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     res=(const unsigned char *)memchr(haystack,'\n',ll);
     if(res!=NULL)
       ll=res-haystack;
-    if(td_memmem(haystack, ll, header_sig_perl, sizeof(header_sig_perl)) != NULL)
+    if(td_memmem(haystack, ll, "perl", 4) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -1025,7 +1011,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="pl";
       return 1;
     }
-    if(td_memmem(haystack, ll, header_sig_python, sizeof(header_sig_python)) != NULL)
+    if(td_memmem(haystack, ll, "python", 6) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -1033,7 +1019,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="py";
       return 1;
     }
-    if(td_memmem(haystack, ll, header_sig_ruby, sizeof(header_sig_ruby)) != NULL)
+    if(td_memmem(haystack, ll, "ruby", 4) != NULL)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
@@ -1110,7 +1096,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     /* Detect .ini */
     if(buffer[0]=='[' && is_ini(buffer_lower) && l>50)
       ext="ini";
-    else if(strstr(buffer_lower, sign_php)!=NULL)
+    else if(strstr(buffer_lower, "<?php")!=NULL)
       ext="php";
     else if(strstr(buffer_lower, sign_java1)!=NULL ||
 	strstr(buffer_lower, sign_java3)!=NULL ||
@@ -1122,31 +1108,33 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="java";
 #endif
     }
-    else if(nbrf>10 && ind<0.9 && strstr(buffer, "integer")!=NULL)
+    else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
       ext="f";
     else if(is_csv>0)
       ext="csv";
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
-    else if(strstr(buffer_lower, sign_tex)!=NULL)
+    else if(strstr(buffer_lower, "\\begin{")!=NULL)
       ext="tex";
-    else if(strstr(buffer_lower, sign_c)!=NULL)
+    else if(strstr(buffer_lower, "#include")!=NULL)
       ext="c";
     /* Windows Autorun */
-    else if(strstr(buffer_lower, sign_inf)!=NULL)
+    else if(strstr(buffer_lower, "[autorun]")!=NULL)
       ext="inf";
-    else if(strstr(buffer_lower, sign_jsp)!=NULL)
+    else if(strstr(buffer_lower, "<%@")!=NULL)
       ext="jsp";
-    else if(strstr(buffer_lower, sign_jsp2)!=NULL)
+    else if(strstr(buffer_lower, "<%=")!=NULL)
       ext="jsp";
-    else if(strstr(buffer_lower, sign_asp)!=NULL)
+    else if(strstr(buffer_lower, "<% ")!=NULL)
       ext="asp";
     else if(strstr(buffer_lower, sign_html)!=NULL)
       ext="html";
+    else if(strstr(buffer_lower, "\\score {")!=NULL)
+      ext="ly"; 	/* LilyPond http://lilypond.org*/
     else if(strstr(buffer_lower, sign_h)!=NULL && l>50)
       ext="h";
     else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;
-    else if(memcmp(buffer_lower, header_json_small, sizeof(header_json_small))==0)
+    else if(memcmp(buffer_lower, "{\"", 2)==0)
       ext="json";
     else
       ext=file_hint_txt.extension;
@@ -1270,29 +1258,25 @@ static void file_check_emlx(file_recovery_t *file_recovery)
 
 static void file_check_smil(file_recovery_t *file_recovery)
 {
-  const unsigned char smil_footer[7]= { '<', '/', 's', 'm', 'i', 'l', '>'};
-  file_search_footer(file_recovery, smil_footer, sizeof(smil_footer), 0);
+  file_search_footer(file_recovery, "</smil>", 7, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_xml(file_recovery_t *file_recovery)
 {
-  const unsigned char xml_footer[1]= { '>'};
-  file_search_footer(file_recovery, xml_footer, sizeof(xml_footer), 0);
+  file_search_footer(file_recovery, ">", 1, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_ers(file_recovery_t *file_recovery)
 {
-  const unsigned char ers_footer[17]= "DatasetHeader End";
-  file_search_footer(file_recovery, ers_footer, sizeof(ers_footer), 0);
+  file_search_footer(file_recovery, "DatasetHeader End", 17, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_svg(file_recovery_t *file_recovery)
 {
-  const unsigned char svg_footer[6]= { '<', '/', 's', 'v', 'g', '>'};
-  file_search_footer(file_recovery, svg_footer, sizeof(svg_footer), 0);
+  file_search_footer(file_recovery, "</svg>", 6, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
