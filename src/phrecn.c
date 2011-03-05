@@ -56,6 +56,7 @@
 #include <winbase.h>
 #endif
 #include "dir.h"
+#include "fat.h"
 #include "fat_dir.h"
 #include "list.h"
 #include "lang.h"
@@ -390,6 +391,12 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
+      if(res!=2 &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(partition))
+      {
+      	res=2;
+	log_verbose("File should not be bigger than %llu, stop adding data\n",
+	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
+      }
       if(res==2)
       {
 	alloc_data_t *datanext;
@@ -505,6 +512,13 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
   {
     case 0:
       wprintw(stdscr,"Recovery completed.");
+      if(file_nbr > 0)
+      {
+	wmove(stdscr, 12, 0);
+	wprintw(stdscr, "You are welcome to donate to support further development and encouragement");
+	wmove(stdscr, 13, 0);
+	wprintw(stdscr, "http://www.cgsecurity.org/wiki/Donation");
+      }
       break;
     case 1:
       wprintw(stdscr,"Recovery aborted by the user.");
