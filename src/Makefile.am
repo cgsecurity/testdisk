@@ -234,6 +234,7 @@ file_C			= filegen.c \
 			  file_wmf.c \
 			  file_wnk.c \
 			  file_wpd.c \
+			  file_wtv.c \
 			  file_wv.c \
 			  file_x3f.c \
 			  file_xcf.c \

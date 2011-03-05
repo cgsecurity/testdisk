@@ -2,7 +2,7 @@
 
     File: file_list.c
 
-    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2011 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -128,6 +128,7 @@ extern const file_hint_t file_hint_ifo;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_iso;
+extern const file_hint_t file_hint_it;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
@@ -235,6 +236,7 @@ extern const file_hint_t file_hint_wks;
 extern const file_hint_t file_hint_wmf;
 extern const file_hint_t file_hint_wnk;
 extern const file_hint_t file_hint_wpd;
+extern const file_hint_t file_hint_wtv;
 extern const file_hint_t file_hint_wv;
 extern const file_hint_t file_hint_x3f;
 extern const file_hint_t file_hint_xcf;
@@ -455,6 +457,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_wmf  },
   { .enable=0, .file_hint=&file_hint_wnk  },
   { .enable=0, .file_hint=&file_hint_wpd  },
+  { .enable=0, .file_hint=&file_hint_wtv  },
   { .enable=0, .file_hint=&file_hint_wv   },
   { .enable=0, .file_hint=&file_hint_x3f  },
   { .enable=0, .file_hint=&file_hint_xcf  },
