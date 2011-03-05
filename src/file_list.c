@@ -102,6 +102,7 @@ extern const file_hint_t file_hint_fcs;
 extern const file_hint_t file_hint_fdb;
 extern const file_hint_t file_hint_fh10;
 extern const file_hint_t file_hint_fh5;
+extern const file_hint_t file_hint_filevault;
 extern const file_hint_t file_hint_fits;
 extern const file_hint_t file_hint_flac;
 extern const file_hint_t file_hint_fasttxt;
@@ -320,6 +321,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_fdb  },
   { .enable=0, .file_hint=&file_hint_fh10  },
   { .enable=0, .file_hint=&file_hint_fh5  },
+  { .enable=0, .file_hint=&file_hint_filevault },
   { .enable=0, .file_hint=&file_hint_fits },
   { .enable=0, .file_hint=&file_hint_flac },
   { .enable=0, .file_hint=&file_hint_flp  },

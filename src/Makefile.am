@@ -100,6 +100,7 @@ file_C			= filegen.c \
 			  file_fdb.c \
 			  file_fh10.c \
 			  file_fh5.c \
+			  file_filevault.c \
 			  file_fits.c \
 			  file_flac.c \
 			  file_flp.c \
