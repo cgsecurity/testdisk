@@ -189,11 +189,12 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       case 'O':
 	{
 	  disk_t *disk=current_disk->disk;
+	  const int hpa_dco=is_hpa_or_dco(disk);
 	  autodetect_arch(disk);
 	  autoset_unit(disk);
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
-	      (!is_hpa_or_dco(disk) || interface_check_hidden_ncurses(disk)==0) &&
+	      (hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      interface_partition_type(disk, verbose, current_cmd)==0)
 	  {
 	    if(menu_disk(disk, verbose, dump_ind, saveheader, current_cmd))

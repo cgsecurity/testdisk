@@ -265,8 +265,9 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
       case 'O':
 	{
 	  disk_t *disk=current_disk->disk;
+	  const int hpa_dco=is_hpa_or_dco(disk);
 	  autodetect_arch(disk);
-	  if((!is_hpa_or_dco(disk) || interface_check_hidden_ncurses(disk)==0) &&
+	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      interface_partition_type(disk, verbose, &current_cmd)==0)
 	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, list_search_space);
 	}

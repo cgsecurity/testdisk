@@ -327,10 +327,13 @@ void disk_get_hpa_dco(const int fd, disk_t *disk)
     disk->user_max = (uint64_t) id_val[61] << 16 | id_val[60];
   }
   disk->dco=sg_device_configuration_identify(fd);
-  if((flags & DISK_HAS_48_SUPPORT)!=0)
-    disk->native_max=sg_read_native_max_ext(fd);
-  else
-    disk->native_max=read_native_max(fd);
+  if(flags & DISK_HAS_HPA_SUPPORT)
+  {
+    if((flags & DISK_HAS_48_SUPPORT)!=0)
+      disk->native_max=sg_read_native_max_ext(fd);
+    else
+      disk->native_max=read_native_max(fd);
+  }
   if(disk->sector_size!=0)
     log_info("%s: size       %llu sectors\n", disk->device, (long long unsigned)(disk->disk_real_size/disk->sector_size));
   if(disk->user_max!=0)
@@ -341,6 +344,7 @@ void disk_get_hpa_dco(const int fd, disk_t *disk)
     log_info("%s: dco        %llu sectors\n", disk->device, (long long unsigned)(disk->dco+1));
 #endif
 }
+
 #else
 void disk_get_hpa_dco(const int fd, disk_t *disk)
 {

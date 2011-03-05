@@ -1602,9 +1602,6 @@ void init_disk(disk_t *disk)
 {
   disk->autodetect=0;
   disk->disk_size=0;
-  disk->user_max=0;
-  disk->native_max=0;
-  disk->dco=0;
   /* Note, some Raid reserve the first 1024 512-sectors */
   disk->offset=0;
   disk->rbuffer=NULL;
