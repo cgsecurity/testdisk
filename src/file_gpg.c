@@ -50,7 +50,35 @@ const file_hint_t file_hint_gpg= {
 
 /* See rfc4880 OpenPGP Message Format */
 
+/* Public-Key Encrypted Session Key Packets */
+#define OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY	1
+/* Signature Packet */
+#define OPENPGP_TAG_SIGNATURE			2
+/* Symmetric-Key Encrypted Session Key Packets */
+#define OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY	3
+/*
+ * One-Pass Signature Packets (Tag 4)
+ * Secret-Key Packet (Tag 5)
+ * Public-Key Packet (Tag 6)
+ * Secret-Subkey Packet (Tag 7)
+ * Compressed Data Packet (Tag 8)
+ */
+/* Symmetrically Encrypted Data Packet */
+#define OPENPGP_TAG_SYM_ENC_DATA		9
+/* Marker Packet (Obsolete Literal Packet) (Tag 10)
+ * Literal Data Packet (Tag 11)
+ * Trust Packet (Tag 12)
+ */
+ /* User ID Packet */
+#define OPENPGP_TAG_USER_ID			13
+ /* Public-Subkey Packet (Tag 14)
+ * User Attribute Packet (Tag 17)
+ */
+/* Sym. Encrypted Integrity Protected Data Packet */
+#define OPENPGP_TAG_SYM_ENC_INTEGRITY		18
+ /* Modification Detection Code Packet (Tag 19) */
 static const unsigned char gpg_header_pkey_enc[1]= {0x85};
+static const unsigned char gpg_header_symkey_enc[1]= {0x8c};
 static const unsigned char gpg_header_seckey[1]= {0x95};
 static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
 #if 0
@@ -60,6 +88,7 @@ static const unsigned char gpg_header_pkey[1]= {0x99};
 static void register_header_check_gpg(file_stat_t *file_stat)
 {
   register_header_check(0, gpg_header_seckey, sizeof(gpg_header_seckey), &header_check_gpg, file_stat);
+  register_header_check(0, gpg_header_symkey_enc, sizeof(gpg_header_symkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey_enc, sizeof(gpg_header_pkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);
 #if 0
@@ -168,6 +197,38 @@ static  int is_valid_pubkey_algo(const int algo)
   }
 }
 
+static int is_valid_sym_algo(const int algo)
+{
+  /*
+       0          - Plaintext or unencrypted data
+       1          - IDEA [IDEA]
+       2          - TripleDES (DES-EDE, [SCHNEIER] [HAC] -
+                    168 bit key derived from 192)
+       3          - CAST5 (128 bit key, as per [RFC2144])
+       4          - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+       5          - Reserved
+       6          - Reserved
+       7          - AES with 128-bit key [AES]
+       8          - AES with 192-bit key
+       9          - AES with 256-bit key
+       10         - Twofish with 256-bit key [TWOFISH]
+       100 to 110 - Private/Experimental algorithm
+       */
+  switch(algo)
+  {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+      return 1;
+    default:
+      return 0;
+  }
+}
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int potential_frame_offset=0;
@@ -201,7 +262,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	i, packet_tag[i], length[i], length[i], length_type[i]);
   }
 #endif
-  if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0 && packet_tag[1]==1)
+  if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0 && packet_tag[1]== OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="pgp";
@@ -213,13 +274,13 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     for(i=1;i<nbr;i++)
     {
       /* Sym. Encrypted and Integrity Protected Data Packet */
-      if(packet_tag[i]==18)
+      if(packet_tag[i]==OPENPGP_TAG_SYM_ENC_INTEGRITY)
       {
 	start_recovery=1;
 	break;
       }
       /* Public-Key Encrypted Session Key Packet */
-      else if(packet_tag[i]!=1)
+      else if(packet_tag[i]!=OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
 	return 0;
     }
   }
@@ -230,7 +291,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   /* Secret-Key Packet v4 followed by User ID Packet */
-  if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==13 && is_valid_pubkey_algo(buffer[8])>0)
+  if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==OPENPGP_TAG_USER_ID && is_valid_pubkey_algo(buffer[8])>0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_gpg.extension;
@@ -238,10 +299,16 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->file_check=&file_check_size;
     return 1;
   }
-    /* algo buffer[8]*/
+  /* symkey enc packet: version 4 followed by Symmetrically Encrypted Data Packet */
+  if(buffer[0]==0x8c && buffer[2]==0x04 && is_valid_sym_algo(buffer[3])>0 && packet_tag[1]==OPENPGP_TAG_SYM_ENC_DATA)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_gpg.extension;
+    return 1;
+  }
   /* Public-Key Packet + User ID Packet */
 #if 0
-  if(buffer[0]==0x99 && packet_tag[1]==13)
+  if(buffer[0]==0x99 && packet_tag[1]==OPENPGP_TAG_USER_ID)
     start_recovery=1;
 #endif
   return 0;
