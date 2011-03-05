@@ -403,8 +403,11 @@ Returns
 -1: failed to copy some files
 0: all files has been copied
 */
+#define MAX_DIR_NBR 256
 static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir)
 {
+  static unsigned int dir_nbr=0;
+  static unsigned long int inode_known[MAX_DIR_NBR];
   file_data_t *dir_list;
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   file_data_t *current_file;
@@ -413,6 +416,7 @@ static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_
   int copy_ok=0;
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
     return -2;
+  inode_known[dir_nbr++]=dir->stat.st_ino;
   dir_name=mkdir_local(dir_data->local_dir, dir_data->current_directory);
   dir_list=dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->stat.st_ino);
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
@@ -425,14 +429,25 @@ static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_
       strcat(dir_data->current_directory,current_file->name);
       if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
       {
-	int tmp=0;
-	if(current_file->stat.st_ino != dir->stat.st_ino &&
-	    strcmp(current_file->name,"..")!=0 && strcmp(current_file->name,".")!=0)
+	const unsigned long int new_inode=current_file->stat.st_ino;
+	unsigned int new_inode_ok=1;
+	unsigned int i;
+	if(new_inode<2)
+	  new_inode_ok=0;
+	if(strcmp(current_file->name,"..")==0 || strcmp(current_file->name,".")==0)
+	  new_inode_ok=0;
+	for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
+	  if(new_inode==inode_known[i]) /* Avoid loop */
+	    new_inode_ok=0;
+	if(new_inode_ok>0)
+	{
+	  int tmp;
 	  tmp=copy_dir(disk, partition, dir_data, current_file);
-	if(tmp>=-1)
-	  copy_ok=1;
-	if(tmp<0)
-	  copy_bad=1;
+	  if(tmp>=-1)
+	    copy_ok=1;
+	  if(tmp<0)
+	    copy_bad=1;
+	}
       }
       else if(LINUX_S_ISREG(current_file->stat.st_mode)!=0)
       {
@@ -450,6 +465,7 @@ static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_
   delete_list_file(dir_list);
   set_date(dir_name, dir->stat.st_atime, dir->stat.st_mtime);
   free(dir_name);
+  dir_nbr--;
   return (copy_bad>0?(copy_ok>0?-1:-2):0);
 }
 
