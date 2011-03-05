@@ -40,25 +40,19 @@
 #include "intrf.h"
 #include "chgtype.h"
 #include "savehdr.h"
+#include "analyse.h"
 #include "bfs.h"
 #include "bsd.h"
-#include "cramfs.h"
 #include "exfat.h"
-#include "ext2.h"
 #include "fat.h"
 #include "hfs.h"
 #include "hfsp.h"
-#include "jfs_superblock.h"
-#include "jfs.h"
-#include "luks.h"
 #include "lvm.h"
 #include "md.h"
 #include "netware.h"
 #include "ntfs.h"
-#include "rfs.h"
 #include "sun.h"
 #include "swap.h"
-#include "xfs.h"
 #include "log.h"
 #include "parti386.h"
 #include "partgpt.h"
@@ -1522,36 +1516,16 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       { screen_buffer_add("Invalid BSD disklabel\n"); }
       break;
     case P_HFS:
-      ret=check_HFS(disk_car,partition,verbose);
+      ret=check_HFS(disk_car, partition, verbose);
       if(ret!=0)
-      {
-	ret=check_HFSP(disk_car,partition,verbose);
-      }
+	ret=check_HFSP(disk_car, partition, verbose);
+      if(ret!=0)
+	screen_buffer_add("No HFS or HFS+ structure\n");
       break;
     case P_LINUX:
-      ret=check_JFS(disk_car, partition);
+      ret=check_linux(disk_car, partition, verbose);
       if(ret!=0)
-      {
-	ret=check_rfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_EXT2(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_cramfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_xfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_LUKS(disk_car,partition);
-      }
-      if(ret!=0)
-      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+	screen_buffer_add("No ext2, JFS, Reiser, cramfs or XFS marker\n");
       break;
     case P_LINSWAP:
       ret=check_Linux_SWAP(disk_car, partition);
@@ -1559,9 +1533,9 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_LVM:
       ret=check_LVM(disk_car,partition,verbose);
       if(ret!=0)
-      {
 	ret=check_LVM2(disk_car,partition,verbose);
-      }
+      if(ret!=0)
+	screen_buffer_add("No LVM or LVM2 structure\n");
       break;
     case P_NETBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
@@ -1582,7 +1556,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
     case P_RAID:
       ret=check_MD(disk_car,partition,verbose);
       if(ret!=0)
-      { screen_buffer_add("Invalid RAID superblock\n"); }
+	screen_buffer_add("Invalid RAID superblock\n");
       break;
     case P_SUN:
       ret=check_sun_i386(disk_car,partition,verbose);

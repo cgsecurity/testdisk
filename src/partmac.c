@@ -38,18 +38,13 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
+#include "analyse.h"
 #include "chgtype.h"
 #include "partmac.h"
 #include "savehdr.h"
-#include "cramfs.h"
-#include "ext2.h"
 #include "fat.h"
 #include "hfs.h"
 #include "hfsp.h"
-#include "jfs_superblock.h"
-#include "jfs.h"
-#include "rfs.h"
-#include "xfs.h"
 #include "log.h"
 
 static int check_part_mac(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
@@ -363,25 +358,9 @@ static int check_part_mac(disk_t *disk_car,const int verbose,partition_t *partit
     case PMAC_PRODOS:
       break;
     case PMAC_LINUX:
-      ret=check_JFS(disk_car, partition);
+      ret=check_linux(disk_car, partition, verbose);
       if(ret!=0)
-      {
-	ret=check_rfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_EXT2(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_cramfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_xfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+	screen_buffer_add("No ext2, JFS, Reiser, cramfs or XFS marker\n");
       break;
     case PMAC_HFS:
       ret=check_HFSP(disk_car,partition,verbose);

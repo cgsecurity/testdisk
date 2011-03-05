@@ -41,6 +41,7 @@
 #include "intrf.h"
 #include "bfs.h"
 #include "bsd.h"
+#include "btrfs.h"
 #include "cramfs.h"
 #include "exfat.h"
 #include "ext2.h"
@@ -81,6 +82,7 @@ static const char *get_partition_typename_none(const partition_t *partition);
 
 static const struct systypes none_sys_types[] = {
   {UP_BEOS,	"BeFS"},
+  {UP_BTRFS,	"btrfs"},
   {UP_CRAMFS,	"CramFS"},
   {UP_EXT2,	"ext2"},
   {UP_EXT3,	"ext3"},
@@ -317,6 +319,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
   {
     case UP_BEOS:
       ret=check_BeFS(disk_car,partition);
+      break;
+    case UP_BTRFS:
+      ret=check_btrfs(disk_car, partition, verbose);
       break;
     case UP_CRAMFS:
       ret=check_cramfs(disk_car,partition,verbose);

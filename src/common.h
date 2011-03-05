@@ -222,7 +222,51 @@ struct efi_guid_s
 #define TESTDISK_O_READAHEAD_32K 010
 #define TESTDISK_O_ALL		020
 
-enum upart_type { UP_UNK, UP_BEOS, UP_CRAMFS, UP_EXT2, UP_EXT3, UP_EXT4, UP_EXTENDED, UP_EXFAT, UP_FAT12, UP_FAT16, UP_FAT32, UP_FATX, UP_FREEBSD,  UP_HFS, UP_HFSP, UP_HFSX, UP_HPFS, UP_ISO, UP_JFS, UP_LINSWAP, UP_LINSWAP2, UP_LUKS, UP_LVM, UP_LVM2, UP_MD, UP_MD1, UP_NETWARE, UP_NTFS, UP_OPENBSD, UP_OS2MB, UP_RFS, UP_RFS2, UP_RFS3, UP_RFS4, UP_SUN, UP_SYSV4, UP_UFS, UP_UFS2, UP_XFS, UP_XFS2, UP_XFS3, UP_XFS4, UP_ZFS};
+enum upart_type {
+  UP_UNK=0,
+  UP_BEOS=1,
+  UP_BTRFS=2,
+  UP_CRAMFS=3,
+  UP_EXFAT=4,
+  UP_EXT2=5,
+  UP_EXT3=6,
+  UP_EXT4=7,
+  UP_EXTENDED=8,
+  UP_FAT12=9,
+  UP_FAT16=0x0a,
+  UP_FAT32=0x0b,
+  UP_FATX,
+  UP_FREEBSD,
+  UP_HFS,
+  UP_HFSP,
+  UP_HFSX,
+  UP_HPFS,
+  UP_ISO,
+  UP_JFS,
+  UP_LINSWAP,
+  UP_LINSWAP2,
+  UP_LUKS,
+  UP_LVM,
+  UP_LVM2,
+  UP_MD,
+  UP_MD1,
+  UP_NETWARE,
+  UP_NTFS,
+  UP_OPENBSD,
+  UP_OS2MB,
+  UP_RFS,
+  UP_RFS2,
+  UP_RFS3,
+  UP_RFS4,
+  UP_SUN,
+  UP_SYSV4,
+  UP_UFS,
+  UP_UFS2,
+  UP_XFS,
+  UP_XFS2,
+  UP_XFS3,
+  UP_XFS4,
+  UP_ZFS};
 typedef enum upart_type upart_type_t;
 enum status_type { STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG, STATUS_EXT, STATUS_EXT_IN_EXT};
 typedef enum status_type status_type_t;
@@ -245,7 +289,7 @@ typedef struct
   unsigned long int cylinders;
   unsigned int heads_per_cylinder;
   unsigned int sectors_per_head;
-//  unsigned int bytes_per_sector;
+  unsigned int bytes_per_sector;	/* WARN: may be uninitialized */
 } CHSgeometry_t;
 
 struct CHS_struct

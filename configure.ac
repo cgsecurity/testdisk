@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([testdisk],[6.12-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="October 2010"
+TESTDISKDATE="March 2011"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)

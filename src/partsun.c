@@ -38,21 +38,13 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
+#include "analyse.h"
 #include "chgtype.h"
 #include "sun.h"
 #include "swap.h"
-#include "bsd.h"
-#include "fat.h"
-#include "ntfs.h"
-#include "ext2.h"
-#include "rfs.h"
 #include "lvm.h"
 #include "md.h"
-#include "jfs_superblock.h"
-#include "jfs.h"
 #include "savehdr.h"
-#include "cramfs.h"
-#include "xfs.h"
 #include "ufs.h"
 #include "log.h"
 #include "partsun.h"
@@ -354,29 +346,20 @@ static int check_part_sun(disk_t *disk_car,const int verbose,partition_t *partit
       ret=check_ufs(disk_car,partition,verbose);
       break;
     case PSUN_LINUX:
-      ret=check_JFS(disk_car, partition);
+      ret=check_linux(disk_car, partition, verbose);
       if(ret!=0)
-      {
-	ret=check_rfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_EXT2(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_cramfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      {
-	ret=check_xfs(disk_car,partition,verbose);
-      }
-      if(ret!=0)
-      { screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n"); }
+	screen_buffer_add("No EXT2, JFS, Reiser, cramfs or XFS marker\n");
       break;
-
     case PSUN_LINSWAP:
       ret=check_Linux_SWAP(disk_car, partition);
+      break;
+    case PSUN_LVM:
+      ret=check_LVM(disk_car,partition,verbose);
+      if(ret!=0)
+	ret=check_LVM2(disk_car,partition,verbose);
+      break;
+    case PSUN_RAID:
+      ret=check_MD(disk_car,partition,verbose);
       break;
     default:
       if(verbose>0)

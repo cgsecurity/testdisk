@@ -46,26 +46,25 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
+#include "analyse.h"
 #include "chgtype.h"
 #include "partgpt.h"
 #include "savehdr.h"
-#include "cramfs.h"
 #include "exfat.h"
-#include "ext2.h"
 #include "fat.h"
-#include "jfs_superblock.h"
-#include "jfs.h"
+#include "hfs.h"
+#include "hfsp.h"
+#include "lvm.h"
 #include "ntfs.h"
-#include "rfs.h"
-#include "xfs.h"
 #include "log.h"
 #include "log_part.h"
+#include "md.h"
 #include "guid_cmp.h"
 #include "guid_cpy.h"
 #include "unicode.h"
 #include "crc.h"
 
-static int check_part_gpt(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
+static int check_part_gpt(disk_t *disk, const int verbose, partition_t *partition, const int saveheader);
 static list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int saveheader);
 static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition);
@@ -429,7 +428,7 @@ static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, co
   part_free_list_only(new_list_part);
 }
 
-static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader)
+static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition, const int saveheader)
 {
   int ret=0;
   unsigned int old_levels;
@@ -437,36 +436,47 @@ static int check_part_gpt(disk_t *disk_car,const int verbose,partition_t *partit
   if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_MS_BASIC_DATA)==0 ||
       guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_MS_RESERVED)==0)
   {
-    ret=check_FAT(disk_car,partition,verbose);
+    ret=check_FAT(disk,partition,verbose);
     if(ret!=0)
-      ret=check_EXFAT(disk_car, partition);
+      ret=check_EXFAT(disk, partition);
     if(ret!=0)
-      ret=check_NTFS(disk_car,partition,verbose,0);
+      ret=check_NTFS(disk,partition,verbose,0);
     if(ret!=0)
-      ret=check_JFS(disk_car, partition);
+      ret=check_linux(disk, partition, verbose);
     if(ret!=0)
-      ret=check_rfs(disk_car,partition,verbose);
-    if(ret!=0)
-      ret=check_EXT2(disk_car,partition,verbose);
-    if(ret!=0)
-      ret=check_cramfs(disk_car,partition,verbose);
-    if(ret!=0)
-      ret=check_xfs(disk_car,partition,verbose);
-    if(ret!=0)
-    {
-      screen_buffer_add("No FAT, NTFS, EXT2, JFS, Reiser, cramfs or XFS marker\n"); 
-    }
+      screen_buffer_add("No FAT, NTFS, ext2, JFS, Reiser, cramfs or XFS marker\n"); 
   }
-  /* TODO: complete me */
+  else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_LINUX_RAID)==0)
+  {
+    ret=check_MD(disk, partition, verbose);
+    if(ret!=0)
+      screen_buffer_add("Invalid RAID superblock\n");
+  }
+  else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_LINUX_LVM)==0)
+  {
+    ret=check_LVM(disk, partition, verbose);
+    if(ret!=0)
+      ret=check_LVM2(disk, partition, verbose);
+    if(ret!=0)
+      screen_buffer_add("No LVM or LVM2 structure\n");
+  }
+  else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_MAC_HFS)==0)
+  {
+    ret=check_HFS(disk, partition, verbose);
+    if(ret!=0)
+      ret=check_HFSP(disk, partition, verbose);
+    if(ret!=0)
+      screen_buffer_add("No HFS or HFS+ structure\n");
+  }
   log_set_levels(old_levels);
   if(ret!=0)
   {
     log_error("check_part_gpt failed for partition\n");
-    log_partition(disk_car, partition);
-    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+    log_partition(disk, partition);
+    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
     if(saveheader>0)
     {
-      save_header(disk_car,partition,verbose);
+      save_header(disk, partition, verbose);
     }
   }
   return ret;
