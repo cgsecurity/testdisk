@@ -443,12 +443,6 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     log_error(msg_CHKFAT_BAD_JUMP);
     return 1;
   }
-  if(fat_sector_size(fat_header)!=disk_car->sector_size)
-  {
-    screen_buffer_add("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
-    log_error("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",fat_sector_size(fat_header),disk_car->sector_size);
-    return 1;
-  }
   switch(fat_header->sectors_per_cluster)
   {
     case 1:
@@ -489,11 +483,19 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     screen_buffer_add("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
     log_warning("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
   }
+  if(fat_sector_size(fat_header)!=disk_car->sector_size)
+  {
+    screen_buffer_add("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",
+	fat_sector_size(fat_header), disk_car->sector_size);
+    log_error("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",
+	fat_sector_size(fat_header), disk_car->sector_size);
+    return 1;
+  }
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
   part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_fat2=start_fat1+(fat_header->fats>1?fat_length:0);
-  start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
+  start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
   no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
   end_data=start_data+no_of_cluster*fat_header->sectors_per_cluster-1;
   if(verbose>1)
@@ -532,7 +534,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       return 1;
     }
     start_rootdir=start_fat2+fat_length;
-    fat_length_calc=((no_of_cluster+2+disk_car->sector_size*2/3-1)*3/2/disk_car->sector_size);
+    fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)*2/3-1)*3/2/fat_sector_size(fat_header));
     partition->upart_type=UP_FAT12;
     if(memcmp(buffer+FAT_NAME1,"FAT12   ",8)!=0) /* 2 Mo max */
     {
@@ -567,7 +569,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       return 1;
     }
     start_rootdir=start_fat2+fat_length;
-    fat_length_calc=((no_of_cluster+2+disk_car->sector_size/2-1)*2/disk_car->sector_size);
+    fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/2-1)*2/fat_sector_size(fat_header));
     partition->upart_type=UP_FAT16;
     if(memcmp(buffer+FAT_NAME1,"FAT16   ",8)!=0)
     {
@@ -608,7 +610,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       return 1;
     }
     start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->sectors_per_cluster;
-    fat_length_calc=((no_of_cluster+2+disk_car->sector_size/4-1)*4/disk_car->sector_size);
+    fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/4-1)*4/fat_sector_size(fat_header));
     partition->upart_type=UP_FAT32;
     if(memcmp(buffer+FAT_NAME2,"FAT32   ",8)!=0)
     {
@@ -618,14 +620,14 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
   }
   if(partition->part_size>0)
   {
-    if(part_size > partition->part_size/disk_car->sector_size)
+    if(part_size > partition->part_size/fat_sector_size(fat_header))
     {
       screen_buffer_add( "Error: size boot_sector %lu > partition %lu\n",
           (long unsigned)part_size,
-          (long unsigned)(partition->part_size/disk_car->sector_size));
+          (long unsigned)(partition->part_size/fat_sector_size(fat_header)));
       log_error("test_FAT size boot_sector %lu > partition %lu\n",
           (long unsigned)part_size,
-          (long unsigned)(partition->part_size/disk_car->sector_size));
+          (long unsigned)(partition->part_size/fat_sector_size(fat_header)));
       return 1;
     }
     else
@@ -633,7 +635,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       if(verbose>0 && part_size!=partition->part_size)
         log_info("Info: size boot_sector %lu, partition %lu\n",
             (long unsigned)part_size,
-            (long unsigned)(partition->part_size/disk_car->sector_size));
+            (long unsigned)(partition->part_size/fat_sector_size(fat_header)));
     }
   }
   if(verbose>0)
