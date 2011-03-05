@@ -155,6 +155,7 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   disk->geom.cylinders=0;
   disk->geom.heads_per_cylinder=1;
   disk->geom.sectors_per_head=1;
+  disk->geom.bytes_per_sector=disk->sector_size;
   /* Get disk_real_size */
 #ifdef LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS
   {

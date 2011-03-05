@@ -162,10 +162,12 @@ static int get_geometry_from_nonembr(const unsigned char *buffer, const int verb
     if(le16(fat_header->marker)==0xAA55)
     {
       if(le16(fat_header->secs_track)>0 && le16(fat_header->secs_track)<=63 &&
-          le16(fat_header->heads)>0 && le16(fat_header->heads)<=255)
+          le16(fat_header->heads)>0 && le16(fat_header->heads)<=255 &&
+	  fat_sector_size(fat_header)>0 && fat_sector_size(fat_header)%512==0)
       {
         geometry->sectors_per_head=le16(fat_header->secs_track);
         geometry->heads_per_cylinder=le16(fat_header->heads);
+	geometry->bytes_per_sector=fat_sector_size(fat_header);
       }
     }
   }
