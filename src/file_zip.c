@@ -46,6 +46,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 static void file_check_zip(file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
 static void file_rename_zip(const char *old_filename);
+static char first_filename[256];
 
 const file_hint_t file_hint_zip= {
   .extension="zip",
@@ -166,6 +167,12 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       return -1;
     }
     filename[len]='\0';
+    if(first_filename[0]=='\0')
+    {
+      const unsigned int len_tmp=(len<255?len:255);
+      strncpy(first_filename, filename, len_tmp);
+      first_filename[len_tmp]='\0';
+    }
 #ifdef DEBUG_ZIP
     log_info("%s", filename);
 #endif
@@ -490,7 +497,7 @@ static void file_check_zip(file_recovery_t *fr)
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
-
+  first_filename[0]='\0';
   while (1)
   {
     uint64_t file_size_old;
@@ -575,6 +582,7 @@ static void file_rename_zip(const char *old_filename)
   fseek(fr.handle, 0, SEEK_SET);
   fr.file_size = 0;
   fr.offset_error=0;
+  first_filename[0]='\0';
 
   while (1)
   {
@@ -647,7 +655,15 @@ static void file_rename_zip(const char *old_filename)
     /* Only end of central dir is end of archive, 64b version of it is before */
     if (header==ZIP_END_CENTRAL_DIR)
     {
+      unsigned int len;
       fclose(fr.handle);
+      for(len=0; len<32 &&
+	  first_filename[len]!='\0' &&
+	  first_filename[len]!='.' &&
+	  first_filename[len]!='/' &&
+	  first_filename[len]!='\\';
+	  len++);
+      file_rename(old_filename, first_filename, len, 0, "zip", 0);
       return;
     }
   }
