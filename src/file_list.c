@@ -346,6 +346,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_imb  },
   { .enable=0, .file_hint=&file_hint_indd  },
   { .enable=0, .file_hint=&file_hint_iso  },
+  { .enable=0, .file_hint=&file_hint_it  },
   { .enable=0, .file_hint=&file_hint_itunes  },
   { .enable=0, .file_hint=&file_hint_jpg  },
   { .enable=0, .file_hint=&file_hint_kdb  },
