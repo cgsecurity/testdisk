@@ -188,7 +188,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     file_recovery->file_size++;
 }
 
-void file_search_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length, const unsigned int extra_length)
+void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length)
 {
   unsigned char*buffer;
   int64_t file_size;
@@ -211,7 +211,7 @@ void file_search_footer(file_recovery_t *file_recovery, const unsigned char*foot
     taille=fread(buffer,1,read_size,file_recovery->handle);
     for(i=taille-1;i>=0;i--)
     {
-      if(buffer[i]==footer[0] && memcmp(buffer+i,footer,footer_length)==0)
+      if(buffer[i]==*(const unsigned char *)footer && memcmp(buffer+i,footer,footer_length)==0)
       {
         file_recovery->file_size=file_size + i + footer_length + extra_length;
         free(buffer);
