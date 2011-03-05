@@ -48,6 +48,30 @@ static inline void set_cylinders_from_size_up(disk_t *disk_car)
     ((uint64_t)disk_car->geom.sectors_per_head * disk_car->geom.heads_per_cylinder);
 }
 
+static int change_sector_size(disk_t *disk, const int cyl_modified, const unsigned int sector_size)
+{
+  /* Using 3*512=1536 as sector size and */
+  /* 63/3=21 for number of sectors is an easy way to test */
+  /* MS Backup internal blocksize is 256 bytes */
+  switch(sector_size)
+  {
+    case 1:
+    case 256:
+    case 512:
+    case 1024:
+    case 3*512:
+    case 2048:
+    case 4096:
+    case 8192:
+      disk->sector_size = sector_size;
+      if(cyl_modified==0)
+	set_cylinders_from_size_up(disk);
+      return 0;
+    default:
+      return 1;
+  }
+}
+
 static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 {
   int done = 0;
@@ -111,16 +135,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       tmp_val = atoi(*current_cmd);
       while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	(*current_cmd)++;
-      /* FIXME using 3*512=1536 as sector size and */
-      /* 63/3=21 for number of sectors is an easy way to test */
-      if (tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512)
-      {
-	disk_car->sector_size = tmp_val;
-	if(cyl_modified==0)
-	  set_cylinders_from_size_up(disk_car);
-      }
-      else
-	log_error("Illegal sector size\n");
+      if(change_sector_size(disk_car, cyl_modified, tmp_val))
+	  log_error("Illegal sector size\n");
     }
     else
     {
@@ -242,18 +258,11 @@ static void change_geometry_ncurses(disk_t *disk_car)
       case 'N':
         {
           sprintf(def, "%u", disk_car->sector_size);
-          mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the sector size (512, 1024, 2048, 4096): ");
+          mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the sector size (512, 1024, 2048, 4096, 8192): ");
           if (get_string(response, sizeof(response), def) > 0) {
             tmp_val = atoi(response);
-            /* FIXME using 3*512=1536 as sector size and */
-            /* 63/3=21 for number of sectors is an easy way to test */
-	    /* MS Backup internal blocksize is 256 bytes */
-            if (tmp_val==256 || tmp_val==512 || tmp_val==1024 || tmp_val==2048 || tmp_val==4096 || tmp_val==3*512 || tmp_val==1) {
-              disk_car->sector_size = tmp_val;
-              if(cyl_modified==0)
-		set_cylinders_from_size_up(disk_car);
-            } else
-              wprintw(stdscr,"Illegal sector size");
+	    if(change_sector_size(disk_car, cyl_modified, tmp_val))
+	      wprintw(stdscr,"Illegal sector size");
           }
         }
         default_option=4;
