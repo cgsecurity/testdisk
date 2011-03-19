@@ -65,7 +65,11 @@ static int fewf_sync(disk_t *disk);
 
 struct info_fewf_struct
 {
+#ifdef HAVE_LIBEWF_HANDLE_T
+  libewf_handle_t *handle;
+#else
   LIBEWF_HANDLE *handle;
+#endif
   uint64_t offset;
   char file_name[DISKNAME_MAX];
   int mode;

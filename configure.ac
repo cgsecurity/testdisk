@@ -633,6 +633,10 @@ if test -z "${use_ewf}"; then
   if test "${ac_cv_c_libewf_get_media_size_have_two_arguments}" != "no"; then
         AC_DEFINE([LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS], 1, [Define if libewf_get_media_size takes two parameters.])
   fi
+  AC_CHECK_TYPE(
+  [libewf_handle_t],
+  [AC_DEFINE( [HAVE_LIBEWF_HANDLE_T], [1], [Define to 1 if libewf_handle_t is available])],,
+  [#include <libewf.h>])
   ],[
   AC_MSG_WARN(No ewf library detected)
   ],[])

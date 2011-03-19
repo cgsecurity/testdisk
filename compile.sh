@@ -5,8 +5,8 @@
 VER_E2FSPROGS=
 VER_PROGSREISERFS=0.3.1-rc8
 VER_NTFSPROGS=2.0.0
-#VER_LIBEWF=20090510
 VER_LIBEWF=20100226
+#VER_LIBEWF=20110312
 smp_mflags="-j 2"
 crosscompile_target=
 prefix=/usr/
@@ -171,16 +171,17 @@ CONFIGUREOPT="$CONFIGUREOPT --with-ewf-lib=${PWDSRC}/libewf-${VER_LIBEWF}/libewf
 
 if [ ! -e $compiledir/libewf-$VER_LIBEWF/configure ];
 then
-  if [ ! -e libewf-$VER_LIBEWF.tar.gz ];
+  if [ ! -e libewf-$VER_LIBEWF.tar.gz -a ! -e libewf-alpha -$VER_LIBEWF.tar.gz -a ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
   then
-    if [ ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
-    then
-      	$LYNX "http://sourceforge.net/project/platformdownload.php?group_id=167783"
-    fi
+  	$LYNX "http://sourceforge.net/project/platformdownload.php?group_id=167783"
   fi
   if [ -e libewf-$VER_LIBEWF.tar.gz ];
   then
 	tar xzf libewf-$VER_LIBEWF.tar.gz -C $compiledir
+  fi
+  if [ -e libewf-alpha-$VER_LIBEWF.tar.gz ];
+  then
+	tar xzf libewf-alpha-$VER_LIBEWF.tar.gz -C $compiledir
   fi
   if [ -e libewf-beta-$VER_LIBEWF.tar.gz ];
   then
