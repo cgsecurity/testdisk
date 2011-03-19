@@ -213,7 +213,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     {
       /* Use MFT mirror */
 #ifdef HAVE_NCURSES
-      if(ask_confirmation("Fix MFT using its mirror ? (Y/N)")!=0)
+      if(ask_confirmation("Fix MFT using its mirror ? (Y/N) - DANGEROUS NON REVERSIBLE OPERATION")!=0)
 	use_MFT=2;
       else
 #endif
