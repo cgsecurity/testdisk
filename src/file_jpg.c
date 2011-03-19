@@ -101,7 +101,9 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       file_recovery->file_size <= 1024 &&
       memcmp(buffer, jpg_header_app12, sizeof(jpg_header_app12))==0)
   {
-    log_info("jpg %llu %llu\n", file_recovery->calculated_file_size, file_recovery->file_size);
+    log_info("jpg %llu %llu\n",
+	(long long unsigned)file_recovery->calculated_file_size,
+	(long long unsigned)file_recovery->file_size);
     return 0;
   }
   /* Don't extract jpg inside AVI */
@@ -606,7 +608,7 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
 static unsigned int is_line_cut(const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int y)
 {
   unsigned int result_x=0;
-  if(y+8-1 < output_scanline)
+  if(y+8 < output_scanline)
   {
     unsigned int result_max=0;
     unsigned int x;
@@ -650,7 +652,7 @@ static unsigned int is_line_cut(const unsigned int output_scanline, const unsign
       {
 	unsigned int c;
 	unsigned int pos;
-	for(c=0, pos= (y+j) * output_width * output_components + x * output_components;
+	for(c=0, pos= ((y+j) * output_width + x ) * output_components;
 	    c<output_components;
 	    c++, pos++)
 	  result += abs(2 * frame[pos] - frame[pos - output_components]
@@ -701,6 +703,8 @@ static unsigned int jpg_find_border(const unsigned int output_scanline, const un
   return output_scanline;
 }
 
+#define JPG_MAX_OFFSETS	10240
+
 /* FIXME: it doesn handle correctly when there is a few extra sectors */
 static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int *offsets, const uint64_t offset, const unsigned int blocksize, const uint64_t checkpoint_offset)
 {
@@ -713,6 +717,8 @@ static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline,
   unsigned int i;
   unsigned int pos_new;
   unsigned int output_scanline_max;
+  if(output_scanline/8 >= JPG_MAX_OFFSETS)
+    return 0;
   output_scanline_max=jpg_find_border(output_scanline, output_width, output_components, frame);
   for(i = 0, pos_new= 8 * row_stride;
       i < row_stride;
@@ -786,7 +792,7 @@ static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline,
 static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsigned int blocksize, const uint64_t checkpoint_offset, const unsigned int flags)
 {
   static struct my_error_mgr jerr;
-  static unsigned int offsets[10240];
+  static unsigned int offsets[JPG_MAX_OFFSETS];
   static struct jpeg_session_struct jpeg_session;
   jpeg_init_session(&jpeg_session);
   jpeg_session.flags=flags;
@@ -812,8 +818,10 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
     offset_error=jpeg_session.offset + src->file_size - src->pub.bytes_in_buffer;
     if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
     {
+      const uint64_t tmp=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, blocksize, checkpoint_offset);
 //      log_info("jpg_check_thumb jpeg corrupted near   %llu\n", offset_error);
-      offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, blocksize, checkpoint_offset);
+      if(tmp !=0 && offset_error > tmp)
+	offset_error=tmp;
 //      log_info("jpg_check_thumb find_error estimation %llu\n", (long long unsigned)offset_error);
     }
     jpeg_session_delete(&jpeg_session);
@@ -830,7 +838,7 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
     my_source_mgr * src;
     src = (my_source_mgr *) jpeg_session.cinfo.src;
     src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
-    if(jpeg_session.cinfo.output_scanline/8 < 10240 && offsets[jpeg_session.cinfo.output_scanline/8]==0)
+    if(jpeg_session.cinfo.output_scanline/8 < JPG_MAX_OFFSETS && offsets[jpeg_session.cinfo.output_scanline/8]==0)
       offsets[jpeg_session.cinfo.output_scanline/8]=src->file_size - src->pub.bytes_in_buffer;
     // Calculate where this line needs to go.
     row_pointer[0] = (unsigned char *)jpeg_session.frame + jpeg_session.cinfo.output_scanline * jpeg_session.row_stride;
@@ -844,7 +852,7 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
 static void jpg_check_picture(file_recovery_t *file_recovery)
 {
   static struct my_error_mgr jerr;
-  static unsigned int offsets[10240];
+  static unsigned int offsets[JPG_MAX_OFFSETS];
   uint64_t jpeg_size=0;
   static struct jpeg_session_struct jpeg_session;
   static int jpeg_session_initialised=0;
@@ -909,21 +917,35 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
     src = (my_source_mgr *) jpeg_session.cinfo.src;
     src->file_size_max=file_recovery->file_size;
   }
-  jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
+  /* Image is very big, skip some tests */
+  if(jpeg_session.output_height * jpeg_session.row_stride > 500 * 1024 * 1024)
+    jpeg_session.flags=0;
   /* 0x100/2=0x80, medium value */
-  memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+  if(jpeg_session.flags==0)
+  {
+    jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.row_stride);
+    memset(jpeg_session.frame, 0x80, jpeg_session.row_stride);
+  }
+  else
+  {
+    jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
+    memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+  }
   while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
   {
     JSAMPROW row_pointer[1];
     my_source_mgr * src;
     src = (my_source_mgr *) jpeg_session.cinfo.src;
     src->offset_ok=src->file_size - src->pub.bytes_in_buffer;
-    if(jpeg_session.cinfo.output_scanline/8 < 10240 && offsets[jpeg_session.cinfo.output_scanline/8]==0)
+    if(jpeg_session.cinfo.output_scanline/8 < JPG_MAX_OFFSETS && offsets[jpeg_session.cinfo.output_scanline/8]==0)
     {
       offsets[jpeg_session.cinfo.output_scanline/8]=src->file_size - src->pub.bytes_in_buffer;
     }
   // Calculate where this line needs to go.
-    row_pointer[0] = (unsigned char *)jpeg_session.frame + jpeg_session.cinfo.output_scanline * jpeg_session.row_stride;
+    if(jpeg_session.flags==0)
+      row_pointer[0] = jpeg_session.frame;
+    else
+      row_pointer[0] = (unsigned char *)jpeg_session.frame + jpeg_session.cinfo.output_scanline * jpeg_session.row_stride;
     (void)jpeg_read_scanlines(&jpeg_session.cinfo, row_pointer, 1);
   }
   {
