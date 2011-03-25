@@ -2,7 +2,7 @@
 
     File: file_psp.c
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008,2011 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_psp(file_stat_t *file_stat);
 static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
@@ -44,20 +43,37 @@ const file_hint_t file_hint_psp= {
   .register_header_check=&register_header_check_psp
 };
 
-static const unsigned char psp_header[25]=  "Paint Shop Pro Image File";
-
 static void register_header_check_psp(file_stat_t *file_stat)
 {
-  register_header_check(0, psp_header,  sizeof(psp_header),  &header_check_psp, file_stat);
+  register_header_check(0, "Paint Shop Pro Image File\n\032\0\0\0\0\0",  32,  &header_check_psp, file_stat);
+}
+
+static int data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 10 < file_recovery->file_size + buffer_size/2)
+  {
+    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    if(memcmp(&buffer[i], "~BK\0", 4) != 0)
+      return 2;
+    /* chunk: header, id, total_length */
+    file_recovery->calculated_file_size+=10;
+    file_recovery->calculated_file_size+=(buffer[i+6])+(buffer[i+7]<<8)+(buffer[i+8]<<16)+(buffer[i+9]<<24);
+  }
+  return 1;
 }
 
 static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, psp_header, sizeof(psp_header))==0)
+  unsigned int ver_major;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_psp.extension;
+  ver_major=buffer[0x20]+(buffer[0x21]<<8);
+  if(ver_major>=4)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_psp.extension;
-    return 1;
+    file_recovery_new->calculated_file_size=0x24;
+    file_recovery_new->data_check=&data_check_psp;
+    file_recovery_new->file_check=&file_check_size;
   }
-  return 0;
+  return 1;
 }
