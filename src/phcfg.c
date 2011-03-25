@@ -228,7 +228,6 @@ int file_options_load(file_enable_t *files_enable)
 {
   FILE *handle;
   char buffer[512];
-  reset_list_file_enable(files_enable);
   handle=file_options_load_aux();
   if(handle==NULL)
     return -1;

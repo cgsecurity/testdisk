@@ -346,6 +346,7 @@ int main( int argc, char **argv )
 	  disk->description(disk), disk->sector_size, disk->model);
   }
   log_info("\n");
+  reset_list_file_enable(list_file_enable);
   file_options_load(list_file_enable);
   use_sudo=do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
 #ifdef HAVE_NCURSES
