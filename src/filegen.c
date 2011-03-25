@@ -348,11 +348,19 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
 void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
-  char new_filename[2048];
+  char *new_filename;
   const char *src=old_filename;
   const char *ext=src;
-  char *dst=&new_filename[0];
-  char *directory_sep=dst;
+  char *dst;
+  char *directory_sep;
+  int len=strlen(old_filename)+1;
+  if(offset < buffer_size && buffer!=NULL)
+    len+=buffer_size-offset+1;
+  if(new_ext!=NULL)
+    len+=strlen(new_ext);
+  new_filename=(char*)MALLOC(len);
+  dst=new_filename;
+  directory_sep=new_filename;
   while(*src!='\0')
   {
     if(*src=='/')
@@ -391,9 +399,10 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   /* Add extension */
   if(new_ext!=NULL)
   {
+    src=new_ext;
     *dst++ = '.';
-    while(*new_ext!='\0')
-      *dst++ = *new_ext++;
+    while(*src!='\0')
+      *dst++ = *src++;
   }
   else if(force_ext>0)
   {
@@ -401,18 +410,32 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
       *dst++ = *ext++;
   }
   *dst='\0';
-  rename(old_filename, new_filename);
+  if(rename(old_filename, new_filename)<0)
+  {
+    /* Rename has failed, try without the original filename */
+    if(buffer!=NULL)
+      file_rename(old_filename, NULL, 0, 0, new_ext, force_ext);
+  }
+  free(new_filename);
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
 void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
-  char new_filename[2048];
+  char *new_filename;
   const char *src=old_filename;
   const char *ext=src;
-  char *dst=&new_filename[0];
-  char *directory_sep=dst;
+  char *dst;
+  char *directory_sep;
+  int len=strlen(old_filename)+1;
+  if(offset < buffer_size && buffer!=NULL)
+    len+=buffer_size-offset;
+  if(new_ext!=NULL)
+    len+=strlen(new_ext);
+  new_filename=(char*)MALLOC(len);
+  dst=new_filename;
+  directory_sep=dst;
   while(*src!='\0')
   {
     if(*src=='/')
@@ -451,8 +474,10 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
   /* Add extension */
   if(new_ext!=NULL)
   {
-    while(*new_ext!='\0')
-      *dst++ = *new_ext++;
+    src=new_ext;
+    *dst++ = '.';
+    while(*src!='\0')
+      *dst++ = *src++;
   }
   else if(force_ext>0)
   {
@@ -460,5 +485,11 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
       *dst++ = *ext++;
   }
   *dst='\0';
-  rename(old_filename, new_filename);
+  if(rename(old_filename, new_filename)<0)
+  {
+    /* Rename has failed, try without the original filename */
+    if(buffer!=NULL)
+      file_rename_unicode(old_filename, NULL, 0, 0, new_ext, force_ext);
+  }
+  free(new_filename);
 }
