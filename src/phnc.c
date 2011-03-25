@@ -94,13 +94,13 @@ int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec
   {
     wprintw(window, "Pass %u - ", pass);
     if(status==STATUS_FIND_OFFSET)
-      wprintw(window,"Reading sector %10lu/%lu, %u/10 headers found\n",
-          (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
+      wprintw(window,"Reading sector %10llu/%llu, %u/10 headers found\n",
+          (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
+          (unsigned long long)(partition->part_size/disk_car->sector_size), file_nbr);
     else
-      wprintw(window,"Reading sector %10lu/%lu, %u files found\n",
-          (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long)(partition->part_size/disk_car->sector_size), file_nbr);
+      wprintw(window,"Reading sector %10llu/%llu, %u files found\n",
+          (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
+          (unsigned long long)(partition->part_size/disk_car->sector_size), file_nbr);
   }
   wmove(window,10,0);
   wclrtoeol(window);

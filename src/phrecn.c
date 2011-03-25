@@ -209,7 +209,9 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
     info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
   if(verbose>1)
   {
-    log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)((partition->part_size-1)/disk_car->sector_size));
+    log_verbose("Reading sector %10llu/%llu\n",
+	(unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
+	(unsigned long long)((partition->part_size-1)/disk_car->sector_size));
   }
   disk_car->pread(disk_car, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
@@ -459,7 +461,9 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
       buffer=buffer_olddata + blocksize;
       if(verbose>1)
       {
-        log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk_car->sector_size),(unsigned long)((partition->part_size-1)/disk_car->sector_size));
+        log_verbose("Reading sector %10llu/%llu\n",
+	    (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
+	    (unsigned long long)((partition->part_size-1)/disk_car->sector_size));
       }
       if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
       {

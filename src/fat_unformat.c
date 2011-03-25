@@ -108,7 +108,9 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       buffer=buffer_start;
       if(verbose>1)
       {
-        log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk->sector_size),(unsigned long)((partition->part_size-1)/disk->sector_size));
+        log_verbose("Reading sector %10llu/%llu\n",
+	    (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
+	    (unsigned long long)((partition->part_size-1)/disk->sector_size));
       }
       if(disk->pread(disk, buffer_start, READ_SIZE, offset) != READ_SIZE)
       {
@@ -249,7 +251,9 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
       buffer=buffer_start;
       if(verbose>1)
       {
-        log_verbose("Reading sector %10lu/%lu\n",(unsigned long)((offset-partition->part_offset)/disk->sector_size),(unsigned long)((partition->part_size-1)/disk->sector_size));
+        log_verbose("Reading sector %10llu/%llu\n",
+	    (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
+	    (unsigned long long)((partition->part_size-1)/disk->sector_size));
       }
       if(disk->pread(disk, buffer, READ_SIZE, offset) != READ_SIZE)
       {
@@ -274,12 +278,12 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
           previous_time=current_time;
 	  wmove(stdscr,9,0);
 	  wclrtoeol(stdscr);
-	  log_info("Reading sector %10lu/%lu, %u files found\n",
-	      (unsigned long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long)(partition->part_size/disk->sector_size), *file_nbr);
-	  wprintw(stdscr,"Reading sector %10lu/%lu, %u files found\n",
-	      (unsigned long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long)(partition->part_size/disk->sector_size), *file_nbr);
+	  log_info("Reading sector %10llu/%llu, %u files found\n",
+	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
+	      (unsigned long long)(partition->part_size/disk->sector_size), *file_nbr);
+	  wprintw(stdscr,"Reading sector %10llu/%llu, %u files found\n",
+	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
+	      (unsigned long long)(partition->part_size/disk->sector_size), *file_nbr);
 	  wmove(stdscr,10,0);
 	  wclrtoeol(stdscr);
 	  wprintw(stdscr,"Elapsed time %uh%02um%02us",

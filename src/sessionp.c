@@ -122,8 +122,8 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   *current_cmd=strdup(info);
   while(1)
   {
-    long unsigned int start=0;
-    long unsigned int end=0;
+    uint64_t start=0;
+    uint64_t end=0;
     while(*pos>='0' && *pos<='9')
     {
       start=start*10 + (*pos - '0');
@@ -212,8 +212,9 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
     {
       alloc_data_t *current_free_space;
       current_free_space=td_list_entry(free_walker, alloc_data_t, list);
-      fprintf(f_session,"%lu-%lu\n",(long unsigned)(current_free_space->start/disk_car->sector_size),
-	  (long unsigned)(current_free_space->end/disk_car->sector_size));
+      fprintf(f_session,"%llu-%llu\n",
+	  (long long unsigned)(current_free_space->start/disk_car->sector_size),
+	  (long long unsigned)(current_free_space->end/disk_car->sector_size));
     }
   }
   { /* Reserve some space */
