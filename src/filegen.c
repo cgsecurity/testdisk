@@ -283,6 +283,12 @@ void file_check_size(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size;
 }
 
+void file_check_size_lax(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size > file_recovery->calculated_file_size)
+    file_recovery->file_size=file_recovery->calculated_file_size;
+}
+
 void reset_file_recovery(file_recovery_t *file_recovery)
 {
   file_recovery->filename[0]='\0';
