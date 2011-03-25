@@ -228,7 +228,7 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
     {
       partition->part_size=(uint64_t)(be32(sb->size)<<1)*disk_car->sector_size+MD_RESERVED_BYTES;
       memcpy(&partition->part_uuid, &sb->set_uuid0, 4);
-      memcpy(&partition->part_uuid+4, &sb->set_uuid1, 3*4);
+      memcpy((char*)(&partition->part_uuid)+4, &sb->set_uuid1, 3*4);
     }
     else
     {
