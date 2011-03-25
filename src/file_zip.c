@@ -174,7 +174,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       first_filename[len_tmp]='\0';
     }
 #ifdef DEBUG_ZIP
-    log_info("%s", filename);
+    log_info("%s\n", filename);
 #endif
     if(*ext==NULL)
     {
@@ -182,23 +182,23 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       if(file_nbr==0)
       {
 	msoffice=0;
-	if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.calc", 36)==0)
+	if(len==36 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.calc", 36)==0)
 	  *ext="sxc";
-	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.draw", 36)==0)
+	else if(len==36 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.draw", 36)==0)
 	  *ext="sxd";
-	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.impress", 39)==0)
+	else if(len==39 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.impress", 39)==0)
 	  *ext="sxi";
-	else if(strncmp(filename, "mimetypeapplication/vnd.sun.xml.writer", 38)==0)
+	else if(len==38 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.writer", 38)==0)
 	  *ext="sxw";
-	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
+	else if(len==51 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
 	  *ext="odg";
-	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
+	else if(len==55 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
 	  *ext="odp";
-	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
+	else if(len==54 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
 	  *ext="ods";
-	else if(strncmp(filename, "mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
+	else if(len==47 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
 	  *ext="odt";
-	else if(strncmp(filename, "[Content_Types].xml", 19)==0)
+	else if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
 	  msoffice=1;
       }
       else if(file_nbr==2 && msoffice!=0)
@@ -206,16 +206,16 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	if(strncmp(filename, "word/", 5)==0)
 	  *ext="docx";
 	else if(strncmp(filename, "xl/", 3)==0)
-	  *ext="pptx";
+	  *ext="xlsx";
 	else if(strncmp(filename, "ppt/", 4)==0)
 	  *ext="pptx";
       }
     }
     if(*ext==NULL)
     {
-      if(strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
+      if(len==20 && strcasecmp(filename, "META-INF/MANIFEST.MF")==0)
 	*ext="jar";
-      else if(strcasecmp(filename, "chrome.manifest")==0)
+      else if(len==15 && strcasecmp(filename, "chrome.manifest")==0)
 	*ext="xpi";
     }
     free(filename);
