@@ -148,7 +148,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
   char dst_directory[4096];
   char *res=NULL;
   int quit;
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy_short(window);
   if(dst_org != NULL)
     strncpy(dst_directory, dst_org, sizeof(dst_directory));

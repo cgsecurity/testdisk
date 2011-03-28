@@ -43,7 +43,7 @@ extern const arch_fnct_t arch_mac;
 
 void write_part_mac_warning_ncurses(void)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   wmove(window,7,0);
   wprintw(window,"Function write_part_mac not implemented");

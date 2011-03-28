@@ -93,7 +93,7 @@ int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned
     menu=0;
   else
     menu=1;
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   wmove(window,4,0);
   aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);

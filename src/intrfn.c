@@ -569,7 +569,7 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
 
 void dump_ncurses(const void *nom_dump, unsigned int lng)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   dump(window, nom_dump, lng);
@@ -1001,7 +1001,7 @@ int ask_confirmation(const char*_format, ...)
 {
   va_list ap;
   int res;
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   va_start(ap,_format);
   vaff_txt(4, window, _format, ap);
@@ -1017,7 +1017,7 @@ int ask_confirmation(const char*_format, ...)
 
 void not_implemented(const char *msg)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   wmove(window,7,0);
   wprintw(window,"Function %s not implemented",msg);
@@ -1399,7 +1399,7 @@ void display_message(const char*msg)
     { 'Q', "Ok", "" },
     { 0, NULL, NULL }
   };
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   log_info("%s",msg);
   aff_copy(window);
   mvwaddstr(window,5,0,msg);

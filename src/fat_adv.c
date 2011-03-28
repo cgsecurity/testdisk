@@ -190,7 +190,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
   const file_data_t *current_file;
   const file_data_t *pos=dir_list;
   WINDOW *window;
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   wmove(window,4,0);
   aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
@@ -881,7 +881,7 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
 #ifdef HAVE_NCURSES
 static void fat32_dump_ncurses(disk_t *disk_car, const partition_t *partition, const upart_type_t upart_type, const unsigned char *orgboot, const unsigned char *newboot)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
@@ -2279,7 +2279,7 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
     unsigned int fat32_root_cluster=0;
     int fat_damaged=0;
 #ifdef HAVE_NCURSES
-    WINDOW *window=newwin(0,0,0,0);	/* full screen */
+    WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
     aff_copy(window);
 #endif
     {

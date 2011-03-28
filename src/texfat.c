@@ -44,7 +44,7 @@
 #ifdef HAVE_NCURSES
 static void exFAT_dump_ncurses(disk_t *disk, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);

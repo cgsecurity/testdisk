@@ -103,7 +103,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
     }
   }
 #ifdef HAVE_NCURSES
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;
   aff_copy(window);
 #else

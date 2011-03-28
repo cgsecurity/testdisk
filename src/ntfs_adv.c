@@ -69,7 +69,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
 #ifdef HAVE_NCURSES
 static void ntfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
@@ -231,7 +231,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
       case 'D':
 	if(strchr(options,'D')!=NULL)
 	{
-	  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+	  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
 	  keypad(window, TRUE); /* Need it to get arrow key */
 	  aff_copy(window);
 	  wmove(window,4,0);

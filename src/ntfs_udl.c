@@ -1500,7 +1500,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
 #endif
   int res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
 #ifdef HAVE_NCURSES
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;
   aff_copy(window);
 #else
@@ -1571,7 +1571,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
 {
 #ifdef HAVE_NCURSES
   WINDOW *window;
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
 #endif
   log_info("\n");

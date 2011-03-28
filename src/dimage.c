@@ -110,7 +110,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
     return -1;
   }
 #ifdef HAVE_NCURSES
-  window=newwin(0,0,0,0);	/* full screen */
+  window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
   wmove(window,5,0);
   wprintw(window,"%s\n",disk->description_short(disk));

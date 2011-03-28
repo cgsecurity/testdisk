@@ -45,7 +45,7 @@
 #ifdef HAVE_NCURSES
 static void dump_fat1x_ncurses(disk_t *disk_car, partition_t *partition, const unsigned char *buffer_bs)
 {
-  WINDOW *window=newwin(0,0,0,0);	/* full screen */
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   keypad(window, TRUE); /* Need it to get arrow key */
   aff_copy(window);
   wmove(window,4,0);
