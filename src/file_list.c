@@ -249,6 +249,7 @@ extern const file_hint_t file_hint_zip;
 
 file_enable_t list_file_enable[]=
 {
+  { .enable=0, .file_hint=&file_hint_sig  },
   { .enable=0, .file_hint=&file_hint_1cd  },
   { .enable=0, .file_hint=&file_hint_7z   },
   { .enable=0, .file_hint=&file_hint_DB    },
@@ -425,7 +426,6 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_rw2  },
   { .enable=0, .file_hint=&file_hint_ses  },
   { .enable=0, .file_hint=&file_hint_sib  },
-  { .enable=0, .file_hint=&file_hint_sig  },
   { .enable=0, .file_hint=&file_hint_sit  },
   { .enable=0, .file_hint=&file_hint_skd  },
   { .enable=0, .file_hint=&file_hint_skp  },
