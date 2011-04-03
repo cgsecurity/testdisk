@@ -2,6 +2,7 @@
 
     File: suspend.c
     A suspending/resuming memory manager for libjpeg
+    NOT COMPATIBLE WITH libjpeg-turbo
 
     Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
     Copyright (C) 2008 Michael Cohen <scudette@users.sourceforge.net>, part of pyflag

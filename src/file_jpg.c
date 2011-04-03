@@ -928,8 +928,9 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
   }
   else
   {
-    jpeg_session.frame = (unsigned char *)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
-    memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+    /* FIXME out of bound read access in libjpeg-turbo */
+    jpeg_session.frame = (unsigned char *)MALLOC((jpeg_session.output_height+1) * jpeg_session.row_stride);
+    memset(jpeg_session.frame, 0x80, (jpeg_session.cinfo.output_height+1) * jpeg_session.row_stride);
   }
   while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
   {
