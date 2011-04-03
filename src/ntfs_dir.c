@@ -98,8 +98,6 @@ extern struct ntfs_device_operations ntfs_device_testdisk_io_ops;
 
 extern int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
                 void *dirent, ntfs_filldir_t filldir);
-extern u64 ntfs_inode_lookup_by_name(ntfs_inode *dir_ni,
-                const ntfschar *uname, const int uname_len);
 static time_t ntfs2utc (s64 ntfstime);
 static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
 		const int name_len, const int name_type, const s64 pos,
@@ -210,8 +208,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     s64 filesize = 0;
     ntfs_inode *ni;
     ntfs_attr_search_ctx *ctx = NULL;
-    FILE_NAME_ATTR *file_name_attr;
     ATTR_RECORD *attr;
+    STANDARD_INFORMATION *si;
 
     result = -1;				/* Everything else is bad */
 
@@ -222,17 +220,16 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
     if (!ctx)
       goto release;
-
-    if (ntfs_attr_lookup(AT_FILE_NAME, AT_UNNAMED, 0, 0, 0, NULL,
+    if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, 0, 0, NULL,
 	  0, ctx))
       goto release;
     attr = ctx->attr;
 
-    file_name_attr = (FILE_NAME_ATTR *)((char *)attr +
-	le16_to_cpu(attr->value_offset));
-    if (!file_name_attr)
-      goto release;
+    si = (STANDARD_INFORMATION*)((char*)attr +
+                            le16_to_cpu(attr->value_offset));
 
+    if (!si)
+      goto release;
 
     if (dt_type != NTFS_DT_DIR) {
       if (!ntfs_attr_lookup(AT_DATA, AT_UNNAMED, 0, 0, 0,
@@ -262,9 +259,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
       }
 #endif
-      new_file->stat.st_atime=ntfs2utc(sle64_to_cpu(file_name_attr->last_access_time));
-      new_file->stat.st_ctime=ntfs2utc(sle64_to_cpu(file_name_attr->creation_time));
-      new_file->stat.st_mtime=ntfs2utc(sle64_to_cpu(file_name_attr->last_data_change_time));
+      new_file->stat.st_atime=ntfs2utc(sle64_to_cpu(si->last_access_time));
+      new_file->stat.st_mtime=ntfs2utc(sle64_to_cpu(si->last_data_change_time));
+      new_file->stat.st_ctime=ntfs2utc(sle64_to_cpu(si->creation_time));
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       /* log_debug("fat: new file %s de=%p size=%u\n",new_file->name,de,de->size); */
