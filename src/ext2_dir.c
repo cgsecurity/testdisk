@@ -302,6 +302,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     if (ext2fs_read_inode(ls->current_fs, file->stat.st_ino, &inode)!=0)
     {
       free(new_file);
+      fclose(f_out);
       return -1;
     }
 
@@ -309,6 +310,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     if (retval) {
       log_error("Error while opening ext2 file %s\n", dir_data->current_directory);
       free(new_file);
+      fclose(f_out);
       return -2;
     }
     while (1)
