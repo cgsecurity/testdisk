@@ -306,7 +306,7 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 	  else
 	  {
 	    char *npn;
-	    if(strcmp(parent_name,".")==0 && inode_num==5)
+	    if(inode_num==5 && strcmp(parent_name,".")==0)
 	    {
 	      /* root directory */
 	      npn=(char *)MALLOC(strlen(name->parent_name)+2);
