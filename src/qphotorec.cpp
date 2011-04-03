@@ -53,10 +53,12 @@ void QPhotorec::setupUi(QWidget *MainWindow)
 {
   MainWindow->setWindowTitle(tr("QPhotorec"));
   HDDlistWidget = new QListWidget();
-  btn = new QPushButton();
   QVBoxLayout *mainLayout = new QVBoxLayout();
   mainLayout->addWidget(HDDlistWidget);
-  mainLayout->addWidget(btn);
+  QPushButton *button_next = new QPushButton("&Proceed");
+  mainLayout->addWidget(button_next);
+  QPushButton *button_quit= new QPushButton("&Quit");
+  mainLayout->addWidget(button_quit);
   MainWindow->setLayout(mainLayout);
   ashow();
 }
