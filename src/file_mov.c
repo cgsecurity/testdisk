@@ -124,12 +124,20 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	  td_memmem(&buffer[i+8], search_size-8, "mp41", 4)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "mp42", 4)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "mmp4", 4)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "M4A", 3)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "M4B", 3)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "M4P", 3)!=NULL)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mp4";
+	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->calculated_file_size=i+atom_size;
+	return 1;
+      }
+      else if(td_memmem(&buffer[i+8], search_size-8, "M4A", 3)!=NULL)
+      {
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension="acc";
 	file_recovery_new->data_check=data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
