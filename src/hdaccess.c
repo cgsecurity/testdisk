@@ -108,6 +108,10 @@
 #include "alignio.h"
 #include "hpa_dco.h"
 
+#if defined(HAVE_PREAD) && defined(TARGET_LINUX)
+//#define HDCLONE 1
+#endif
+
 struct tdewf_file_header
 {
         /* The EWF file signature (magic header)
@@ -135,6 +139,9 @@ struct tdewf_file_header
 struct info_file_struct
 {
   int handle;
+#ifdef HDCLONE
+  int handle_clone;
+#endif
   char file_name[DISKNAME_MAX];
   int mode;
 };
@@ -1099,6 +1106,13 @@ static int file_clean(disk_t *disk_car)
     }
 #endif
     */
+#ifdef HDCLONE
+    if(data->handle_clone>0)
+    {
+      close(data->handle_clone);
+      data->handle_clone=0;
+    }
+#endif
     close(data->handle);
   }
   return generic_clean(disk_car);
@@ -1169,6 +1183,17 @@ static int file_pread_aux(disk_t *disk_car, void *buf, const unsigned int count,
     }
     memset((char*)buf+ret,0,count-ret);
   }
+#ifdef HDCLONE
+  else
+  {
+    int handle_clone=((struct info_file_struct *)disk_car->data)->handle_clone;
+    if(handle_clone>0)
+    {
+      pwrite(handle_clone, buf, count, offset);
+      fdatasync(handle_clone);
+    }
+  }
+#endif
   return ret;
 }
 
@@ -1508,10 +1533,25 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
   }
   update_disk_car_fields(disk_car);
 #if defined(POSIX_FADV_SEQUENTIAL) && defined(HAVE_POSIX_FADVISE)
-  posix_fadvise(hd_h,0,0,POSIX_FADV_SEQUENTIAL);
+//  posix_fadvise(hd_h,0,0,POSIX_FADV_SEQUENTIAL);
 #endif
   if(disk_car->disk_real_size!=0)
+  {
+#ifdef HDCLONE
+    if(strncmp(device, "/dev/", 5)==0)
+    {
+      char *new_file=(char *)MALLOC(strlen(device)+5);
+      sprintf(new_file, "%s.dd", device);
+#ifdef O_LARGEFILE
+      data->handle_clone=open(new_file, O_CREAT|O_EXCL|O_LARGEFILE|O_WRONLY,00600);
+#else
+      data->handle_clone=open(new_file, O_CREAT|O_EXCL|O_WRONLY,00600);
+#endif
+      free(new_file);
+    }
+#endif
     return disk_car;
+  }
   if(disk_car->model==NULL)
     log_warning("Warning: can't get size for %s, sector size=%u\n",
 	disk_car->description(disk_car), disk_car->sector_size);
@@ -1602,6 +1642,9 @@ void init_disk(disk_t *disk)
 {
   disk->autodetect=0;
   disk->disk_size=0;
+  disk->user_max=0;
+  disk->native_max=0;
+  disk->dco=0;
   /* Note, some Raid reserve the first 1024 512-sectors */
   disk->offset=0;
   disk->rbuffer=NULL;
