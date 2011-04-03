@@ -203,7 +203,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
     {
       const char *extension;
       unsigned int offset=0;
-      unsigned char *signature=NULL;
+      unsigned char *tmp=NULL;
       unsigned int signature_max_size=512;
       unsigned int signature_size=0;
       {
@@ -222,13 +222,13 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
       /* read offset */
       pos=str_uint(pos, &offset);
       /* read signature */
-      signature=(unsigned char *)MALLOC(signature_max_size);
+      tmp=(unsigned char *)MALLOC(signature_max_size);
       while(*pos!='\n' && *pos!='\0')
       {
 	if(signature_size==signature_max_size)
 	{
 	  signature_max_size*=2;
-	  signature=(unsigned char *)realloc(signature, signature_max_size);
+	  tmp=(unsigned char *)realloc(tmp, signature_max_size);
 	}
 	if(isspace(*pos) || *pos=='\r' || *pos==',')
 	  pos++;
@@ -243,22 +243,22 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    if(*pos=='\0')
 	      return pos;
 	    else if(*pos=='b')
-	      signature[signature_size++]='\b';
+	      tmp[signature_size++]='\b';
 	    else if(*pos=='n')
-	      signature[signature_size++]='\n';
+	      tmp[signature_size++]='\n';
 	    else if(*pos=='t')
-	      signature[signature_size++]='\t';
+	      tmp[signature_size++]='\t';
 	    else if(*pos=='r')
-	      signature[signature_size++]='\r';
+	      tmp[signature_size++]='\r';
 	    else if(*pos=='0')
-	      signature[signature_size++]='\0';
+	      tmp[signature_size++]='\0';
 	    else
-	      signature[signature_size++]=*pos;
+	      tmp[signature_size++]=*pos;
 	    pos++;
 	  }
 	  else
 	  {
-	    signature[signature_size++]=*pos;
+	    tmp[signature_size++]=*pos;
 	    pos++;
 	  }
 	  if(*pos!='\'')
@@ -273,7 +273,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    if(signature_size==signature_max_size)
 	    {
 	      signature_max_size*=2;
-	      signature=(unsigned char *)realloc(signature, signature_max_size);
+	      tmp=(unsigned char *)realloc(tmp, signature_max_size);
 	    }
 	    if(*pos=='\\')
 	    {
@@ -281,20 +281,20 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	      if(*pos=='\0')
 		return pos;
 	      else if(*pos=='b')
-		signature[signature_size++]='\b';
+		tmp[signature_size++]='\b';
 	      else if(*pos=='n')
-		signature[signature_size++]='\n';
+		tmp[signature_size++]='\n';
 	      else if(*pos=='r')
-		signature[signature_size++]='\r';
+		tmp[signature_size++]='\r';
 	      else if(*pos=='t')
-		signature[signature_size++]='\t';
+		tmp[signature_size++]='\t';
 	      else if(*pos=='0')
-		signature[signature_size++]='\0';
+		tmp[signature_size++]='\0';
 	      else
-		signature[signature_size++]=*pos;
+		tmp[signature_size++]=*pos;
 	    }
 	    else
-	      signature[signature_size++]=*pos;;
+	      tmp[signature_size++]=*pos;;
 	  }
 	  if(*pos!='"')
 	    return pos;
@@ -323,7 +323,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    else if(*pos>='a' && *pos<='f')
 	      val-='a';
 	    pos++;
-	    signature[signature_size++]=val;
+	    tmp[signature_size++]=val;
 	  }
 	}
 	else
@@ -333,10 +333,14 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	pos++;
       if(signature_size>0)
       {
+	/* FIXME: Small memory leak */
+	unsigned char *signature=(unsigned char *)MALLOC(signature_size);
 	log_info("register a signature for %s\n", extension);
+	memcpy(signature, tmp, signature_size);
 	register_header_check(offset, signature, signature_size, &header_check_sig, file_stat);
 	signature_insert(extension, offset, signature, signature_size);
       }
+      free(tmp);
     }
   }
   return pos;
