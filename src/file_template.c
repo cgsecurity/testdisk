@@ -31,8 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_EXTENSION(file_stat_t *file_stat);
-static int header_check_EXTENSION(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_EXTENSION(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_EXTENSION= {
   .extension="EXTENSION",
@@ -44,14 +42,17 @@ const file_hint_t file_hint_EXTENSION= {
   .register_header_check=&register_header_check_EXTENSION
 };
 
+static void file_check_EXTENSION(file_recovery_t *file_recovery)
+{
+  const unsigned char EXTENSION_footer[FOOTER_SIZE]= {
+    FOOTER_MAGIC
+  };
+  file_search_footer(file_recovery, EXTENSION_footer, sizeof(EXTENSION_footer), FOOTER_EXTRA);
+}
+
 static const unsigned char EXTENSION_header[HEADER_SIZE]=  {
   HEADER_MAGIC
 };
-
-static void register_header_check_EXTENSION(file_stat_t *file_stat)
-{
-  register_header_check(HEADER_LOC, EXTENSION_header, sizeof(EXTENSION_header), &header_check_EXTENSION, file_stat);
-}
 
 static int header_check_EXTENSION(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -65,10 +66,7 @@ static int header_check_EXTENSION(const unsigned char *buffer, const unsigned in
   return 0;
 }
 
-static void file_check_EXTENSION(file_recovery_t *file_recovery)
+static void register_header_check_EXTENSION(file_stat_t *file_stat)
 {
-  const unsigned char EXTENSION_footer[FOOTER_SIZE]= {
-    FOOTER_MAGIC
-  };
-  file_search_footer(file_recovery, EXTENSION_footer, sizeof(EXTENSION_footer), FOOTER_EXTRA);
+  register_header_check(HEADER_LOC, EXTENSION_header, sizeof(EXTENSION_header), &header_check_EXTENSION, file_stat);
 }
