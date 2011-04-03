@@ -93,6 +93,7 @@ extern const file_hint_t file_hint_elf;
 extern const file_hint_t file_hint_emf;
 extern const file_hint_t file_hint_evt;
 extern const file_hint_t file_hint_exe;
+extern const file_hint_t file_hint_exs;
 extern const file_hint_t file_hint_ext2_sb;
 extern const file_hint_t file_hint_ext2_fs;
 extern const file_hint_t file_hint_fat;
@@ -316,6 +317,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_emf  },
   { .enable=0, .file_hint=&file_hint_evt  },
   { .enable=0, .file_hint=&file_hint_exe  },
+  { .enable=0, .file_hint=&file_hint_exs  },
   { .enable=0, .file_hint=&file_hint_ext2_sb },
   { .enable=0, .file_hint=&file_hint_ext2_fs },
   { .enable=0, .file_hint=&file_hint_fat  },
