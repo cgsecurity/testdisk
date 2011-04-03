@@ -175,8 +175,8 @@ CONFIGUREOPT="$CONFIGUREOPT --with-ewf-lib=${PWDSRC}/libewf-${VER_LIBEWF}/libewf
 
 if [ ! -e $compiledir/libewf-$VER_LIBEWF/configure ];
 then
-  if [ ! -e libewf-$VER_LIBEWF.tar.gz -a ! -e libewf-alpha -$VER_LIBEWF.tar.gz -a ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
-  then
+  if [ ! -e libewf-$VER_LIBEWF.tar.gz -a ! -e libewf-alpha-$VER_LIBEWF.tar.gz -a ! -e libewf-beta-$VER_LIBEWF.tar.gz ];
+    then
   	$LYNX "http://sourceforge.net/project/platformdownload.php?group_id=167783"
   fi
   if [ -e libewf-$VER_LIBEWF.tar.gz ];

@@ -86,7 +86,9 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
 #ifdef HAVE_GLOB_H
   glob_t globbuf;
 #endif
+#ifdef DEBUG_EWF
   libewf_set_notify_values( stderr, 1 );
+#endif
   data=(struct info_fewf_struct *)MALLOC(sizeof(*data));
   data->offset=0;
   strncpy(data->file_name,device,sizeof(data->file_name));
