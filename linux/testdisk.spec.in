@@ -15,6 +15,7 @@ Source0:	http://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
 Source1:	http://www.cgsecurity.org/testdisk-doc-%{version}%{?ver_wip}.tar.bz2
 Source2:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Patch0:		progsreiserfs-journal.patch
+Patch1:		progsreiserfs-file-read.patch
 URL:		http://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	e2fsprogs-devel
 BuildRequires:	libewf-devel
@@ -104,6 +105,7 @@ This package contains TestDisk & PhotoRec documentation.
 %setup -q -b 1 -D -n %{name}-%{version}%{?ver_wip}
 %setup -q -a 2 -D -n %{name}-%{version}%{?ver_wip}
 %patch0
+%patch1
 
 %build
 (

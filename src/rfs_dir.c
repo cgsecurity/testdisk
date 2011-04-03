@@ -37,6 +37,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -44,6 +47,7 @@
 #include "dir.h"
 #include "rfs_dir.h"
 #include "log.h"
+#include "setdate.h"
 
 #ifdef HAVE_LIBREISERFS
 #include "dal/dal.h"
@@ -466,6 +470,81 @@ static void dir_partition_reiser_close(dir_data_t *dir_data)
   file_close(ls->dal);
   free(ls);
 }
+
+static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+{
+  reiserfs_file_t *in;
+  FILE *f_out;
+  char *new_file;
+  struct rfs_dir_struct *ls=(struct rfs_dir_struct*)dir_data->private_dir_data;
+  int error=0;
+  uint64_t file_size;
+  f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
+  if(!f_out)
+  {
+    log_critical("Can't create file %s: %s\n", new_file, strerror(errno));
+    free(new_file);
+    return -4;
+  }
+  log_error("Try to open rfs file %s\n", dir_data->current_directory);
+  log_flush();
+  in=reiserfs_file_open(ls->current_fs, dir_data->current_directory, O_RDONLY);
+  if (in==NULL)
+  {
+    log_error("Error while opening rfs file %s\n", dir_data->current_directory);
+    free(new_file);
+    fclose(f_out);
+    return -1;
+  }
+  log_error("open rfs file %s done\n", dir_data->current_directory);
+  log_flush();
+  file_size = reiserfs_file_size(in);
+#if 0
+  /* TODO: do not use so much memory */
+  {
+    void *buf=MALLOC(file_size+1);
+    if (reiserfs_file_read(in, buf, file_size) != file_size)
+    {
+      log_error("Error while reading rfs file %s\n", dir_data->current_directory);
+      error = -3;
+    }
+    else if (fwrite(buf, file_size, 1, f_out) != 1)
+    {
+      log_error("Error while writing file %s\n", new_file);
+      error = -5;
+    }
+    free(buf);
+  }
+#else
+  {
+    /* require progsreiserfs-file-read.patch */
+    char buf[4096];
+    uint64_t offset=0;
+    while(file_size > 0)
+    {
+      int read_size=(file_size < sizeof(buf) ? file_size : sizeof(buf));
+      if (reiserfs_file_read(in, buf, read_size) == 0)
+      {
+	log_error("Error while reading rfs file %s\n", dir_data->current_directory);
+	error = -3;
+      }
+      else if (fwrite(buf, read_size, 1, f_out) != 1)
+      {
+	log_error("Error while writing file %s\n", new_file);
+	error = -5;
+      }
+      file_size -= read_size;
+      offset += read_size;
+    }
+  }
+#endif
+  reiserfs_file_close(in);
+  fclose(f_out);
+  set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+  set_mode(new_file, file->stat.st_mode);
+  free(new_file);
+  return error;
+}
 #endif
 
 int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
@@ -516,7 +595,7 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
     dir_data->verbose=verbose;
     dir_data->capabilities=0;
     dir_data->get_dir=reiser_dir;
-    dir_data->copy_file=NULL;
+    dir_data->copy_file=reiser_copy;
     dir_data->close=&dir_partition_reiser_close;
     dir_data->local_dir=NULL;
     dir_data->private_dir_data=ls;

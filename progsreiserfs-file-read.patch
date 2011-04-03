@@ -1,0 +1,12 @@
+diff -ru progsreiserfs-0.3.1-rc8.org/libreiserfs/file.c progsreiserfs-0.3.1-rc8/libreiserfs/file.c
+--- progsreiserfs-0.3.1-rc8.org/libreiserfs/file.c	2002-12-12 13:32:35.000000000 +0100
++++ progsreiserfs-0.3.1-rc8/libreiserfs/file.c	2011-03-30 08:00:37.000000000 +0200
+@@ -172,7 +172,7 @@
+ 	return readed;
+ 	
+     offset = file->offset;
+-    while (reiserfs_file_seek(file, file->offset)) {
++    while (readed < size && reiserfs_file_seek(file, file->offset)) {
+ 	
+ 	if (!reiserfs_file_read_item(file, buffer + readed, size - readed))
+ 	    return readed;

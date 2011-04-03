@@ -100,6 +100,10 @@ then
   if [ -e progsreiserfs-$VER_PROGSREISERFS.tar.gz ];
   then
         tar xzf progsreiserfs-$VER_PROGSREISERFS.tar.gz -C $compiledir
+        cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
+	patch -p1 < $pwd_saved/progsreiserfs-journal.patch
+	patch -p1 < $pwd_saved/progsreiserfs-file-read.patch
+        cd $pwd_saved
   fi
 fi
 

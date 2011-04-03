@@ -1,7 +1,8 @@
 
 SUBDIRS = src
 
-EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh progsreiserfs-journal.patch \
+EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh \
+	progsreiserfs-journal.patch progsreiserfs-file-read.patch \
 	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
 	doc_src/testdisk.8.in doc_src/photorec.8.in doc_src/fidentify.8.in doc/online.html \
 	dos/readme.txt \
