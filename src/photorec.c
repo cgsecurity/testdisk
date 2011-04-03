@@ -344,19 +344,19 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
   alloc_data_t *file_space=*current_search_space;
   uint64_t size=0;
   /* Search backward the first fragment of a file not successfully recovered
-   * Limit the search to 10 fragments and 1GB */
-  for(nbr=0;nbr<10 && size<(uint64_t)1024*1024*1024;nbr++)
+   * Limit the search to 10 fragments or 1GB */
+  for(nbr=0; nbr<10 && size < (uint64_t)1024*1024*1024; nbr++)
   {
     file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
     if(file_space==list_search_space)
       return -1;
+    size+=file_space->end - file_space->start + 1;
     if(file_space->file_stat!=NULL)
     {
       *current_search_space=file_space;
       *offset=file_space->start;
       return 0;
     }
-    size+=file_space->end - file_space->start + 1;
   }
   return -1;
 }
@@ -868,7 +868,6 @@ static alloc_data_t *file_error_aux(alloc_data_t *space, alloc_data_t *file, con
 	  new_element=td_list_entry(next, alloc_data_t, list);
 	  if(element->end+1==new_element->start && new_element->file_stat==NULL)
 	  {
-	    log_info("GOT IT\n");
 	    new_element->start-=file_size_on_disk - size;
 	    element->end=new_element->start - 1;
 	    return new_element;
