@@ -26,7 +26,7 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -50,7 +50,13 @@
 #include <stdarg.h>
 #include "types.h"
 
+#ifdef HAVE_LIBNTFS
 #include <ntfs/attrib.h>
+#endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/attrib.h>
+#endif
+
 #include "ntfs_utl.h"
 #include "common.h"
 #include "log.h"

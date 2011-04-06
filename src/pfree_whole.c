@@ -67,7 +67,7 @@ int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned
     {'W',"Whole","Extract files from whole partition"},
     {0,NULL,NULL}
   };
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
   static const struct MenuItem menuNTFS[]=
   {
     {'F',"Free", "Scan for file from NTFS unallocated space only"},
@@ -128,7 +128,7 @@ int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned
     else if(partition->upart_type==UP_FAT32)
       command = wmenuSelect_ext(window, 23, 8, 0, menuFAT32, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
     else if(partition->upart_type==UP_NTFS)
       command = wmenuSelect_ext(window, 23, 8, 0, menuNTFS, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);

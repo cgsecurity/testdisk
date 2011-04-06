@@ -19,7 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #ifdef __cplusplus
 extern "C" {
 #endif

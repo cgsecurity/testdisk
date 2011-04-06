@@ -393,7 +393,7 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
     return fat_remove_used_space(disk_car, partition, list_search_space);
   else if(partition->upart_type==UP_EXFAT)
     return exfat_remove_used_space(disk_car, partition, list_search_space);
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
   else if(partition->upart_type==UP_NTFS)
     return ntfs_remove_used_space(disk_car, partition, list_search_space);
 #endif

@@ -63,6 +63,10 @@
 #include <ntfs/version.h>
 #endif
 #endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/volume.h>
+#include <ntfs-3g/attrib.h>
+#endif
 
 #include "common.h"
 #include "intrf.h"
@@ -74,7 +78,7 @@
 #include "log.h"
 #include "setdate.h"
 
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #define MAX_PATH    1024
 #define PATH_SEP      '/'
 #define NTFS_DT_DIR               4
@@ -98,7 +102,7 @@ extern struct ntfs_device_operations ntfs_device_testdisk_io_ops;
 
 extern int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
                 void *dirent, ntfs_filldir_t filldir);
-static time_t ntfs2utc (s64 ntfstime);
+static time_t td_ntfs2utc (s64 ntfstime);
 static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type);
@@ -130,7 +134,7 @@ static int index_get_size(ntfs_inode *inode)
 }
 
 /**
- * ntfs2utc - Convert an NTFS time to Unix time
+ * td_ntfs2utc - Convert an NTFS time to Unix time
  * @time:  An NTFS time in 100ns units since 1601
  *
  * NTFS stores times as the number of 100ns intervals since January 1st 1601 at
@@ -138,7 +142,7 @@ static int index_get_size(ntfs_inode *inode)
  *
  * Return:  n  A Unix time (number of seconds since 1970)
  */
-static time_t ntfs2utc (s64 ntfstime)
+static time_t td_ntfs2utc (s64 ntfstime)
 {
   return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
 }
@@ -259,9 +263,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
       }
 #endif
-      new_file->stat.st_atime=ntfs2utc(sle64_to_cpu(si->last_access_time));
-      new_file->stat.st_mtime=ntfs2utc(sle64_to_cpu(si->last_data_change_time));
-      new_file->stat.st_ctime=ntfs2utc(sle64_to_cpu(si->creation_time));
+      new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
+      new_file->stat.st_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
+      new_file->stat.st_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
       new_file->prev=ls->current_file;
       new_file->next=NULL;
       /* log_debug("fat: new file %s de=%p size=%u\n",new_file->name,de,de->size); */
@@ -420,7 +424,7 @@ static void dir_partition_ntfs_close(dir_data_t *dir_data)
 
 int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
   struct ntfs_device *dev;
   my_data_t *my_data=NULL;
   ntfs_volume *vol=NULL;
@@ -502,6 +506,8 @@ const char*td_ntfs_version(void)
 #else
   return "available";
 #endif
+#elif defined(HAVE_LIBNTFS3G)
+  return "libntfs-3g";
 #else
   return "none";
 #endif

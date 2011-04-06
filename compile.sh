@@ -3,8 +3,7 @@
 # ./compile.sh [ i586-pc-msdosdjgpp | i386-pc-cygwin | i386-pc-mingw32 | powerpc-mac-darwin ]
 # Comment the version definition to not compile the library
 VER_E2FSPROGS=
-VER_PROGSREISERFS=0.3.1-rc8
-VER_NTFSPROGS=2.0.0
+VER_PROGSREISERFS="0.3.1-rc8"
 VER_LIBEWF=20100226
 #VER_LIBEWF=20110312
 smp_mflags="-j 2"
@@ -13,6 +12,7 @@ prefix=/usr/
 if [ "$CC" = "gcc295" ];
 then
   VER_NTFSPROGS=
+  VER_LIBNTFS3G=
 fi
 if [ -z "$1" ];
 then
@@ -26,12 +26,24 @@ else
     TESTDISKCC=$crosscompile_target-gcc
   fi
 fi
+case "$crosscompile_target" in
+  *-msdosdjgpp|*-cygwin|*-mingw32)
+	VER_LIBNTFS3G=
+	VER_NTFSPROGS="2.0.0"
+  ;;
+  *)
+	VER_LIBNTFS3G="2011.3.28-RC"
+	VER_NTFSPROGS=
+  ;;
+esac
 prefix=/usr/$crosscompile_target
 LYNX=links
+WGET="wget -N"
 LIBEXT=$compiledir/e2fsprogs-$VER_E2FSPROGS/lib/ext2fs/libext2fs.a
 LIBNTFS=$compiledir/ntfsprogs-$VER_NTFSPROGS/libntfs/.libs/libntfs.a
+LIBNTFS3G=$compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G/libntfs-3g/.libs/libntfs-3g.a
 LIBREISER=$compiledir/progsreiserfs-$VER_PROGSREISERFS/libreiserfs/.libs/libreiserfs.a
-LIBEWF=$compiledir/ewf-$VER_NTFSPROGS/libewf/.libs/libewf.a
+LIBEWF=$compiledir/ewf-$VER_LIBEWF/libewf/.libs/libewf.a
 pwd_saved=`pwd`
 confdir=`(dirname "$0") 2>/dev/null`
 cd $confdir
@@ -125,6 +137,52 @@ then
   if [ -e $compiledir/progsreiserfs-$VER_PROGSREISERFS/Makefile ];
   then
 	cd $compiledir/progsreiserfs-$VER_PROGSREISERFS
+	make $smp_mflags
+	cd $pwd_saved
+  fi
+fi
+fi
+
+if [ "$VER_LIBNTFS3G" != "" ];
+then
+CONFIGUREOPT="$CONFIGUREOPT --with-ntfs3g-lib=${PWDSRC}/ntfs-3g_ntfsprogs-${VER_LIBNTFS3G}/libntfs-3g/.libs/ --with-ntfs3g-includes=${PWDSRC}/ntfs-3g_ntfsprogs-${VER_LIBNTFS3G}/include/"
+if [ ! -e $compiledir/ntfsprogs-$VER_LIBNTFS3G/configure ];
+then
+  if [ ! -e ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz ];
+  then
+	$WGET http://tuxera.com/opensource/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz
+  fi
+  if [ -e ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz ];
+  then
+	tar xzf ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz -C $compiledir
+  fi
+fi
+
+if [ ! -e $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G/Makefile ];
+then
+  if [ -e $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G/configure ];
+  then
+#        rm -f $compiledir/Makefile
+        cd $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G
+        case "$crosscompile_target" in
+          powerpc-apple-darwin|i686-apple-darwin9)
+	  	CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto --disable-nfconv
+		;;
+	*)
+		CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
+		;;
+	esac
+# --disable-default-device-io-ops is need for NT 4
+        cd $pwd_saved
+  fi
+fi
+
+if [ ! -e $VER_LIBNTFS3G ];
+then
+  if [ -e $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G/Makefile ];
+  then
+	cd $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G
+#	make $smp_mflags libs
 	make $smp_mflags
 	cd $pwd_saved
   fi

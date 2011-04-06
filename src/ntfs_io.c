@@ -26,7 +26,7 @@
 #include <config.h>
 #endif
  
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -44,7 +44,12 @@
 #include <sys/ioctl.h>
 #endif
 #include <stdarg.h>
+#ifdef HAVE_LIBNTFS
 #include <ntfs/device.h>
+#endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/device.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #include "common.h"
@@ -117,6 +122,22 @@ static s64 ntfs_device_testdisk_io_write(struct ntfs_device *dev, const void *bu
   return count;
 }
 
+static s64 ntfs_device_testdisk_io_pread(struct ntfs_device *dev, void *buf,
+    s64 count, s64 offset)
+{
+  my_data_t *my_data=(my_data_t*)dev->d_private;
+  return my_data->disk_car->pread(my_data->disk_car, buf, count,
+      my_data->partition->part_offset + offset);
+}
+
+static s64 ntfs_device_testdisk_io_pwrite(struct ntfs_device *dev, const void *buf,
+                s64 count, s64 offset)
+{
+  my_data_t *my_data=(my_data_t*)dev->d_private;
+  return my_data->disk_car->pwrite(my_data->disk_car, buf, count,
+      my_data->partition->part_offset + offset);
+}
+
 static int ntfs_device_testdisk_io_sync(struct ntfs_device *dev)
 {
   my_data_t *my_data=(my_data_t*)dev->d_private;
@@ -147,8 +168,8 @@ struct ntfs_device_operations ntfs_device_testdisk_io_ops = {
 	.seek		= ntfs_device_testdisk_io_seek,
 	.read		= ntfs_device_testdisk_io_read,
 	.write		= ntfs_device_testdisk_io_write,
-	.pread		= NULL,
-	.pwrite		= NULL,
+	.pread		= ntfs_device_testdisk_io_pread,
+	.pwrite		= ntfs_device_testdisk_io_pwrite,
 	.sync		= ntfs_device_testdisk_io_sync,
 	.stat		= ntfs_device_testdisk_io_stat,
 	.ioctl		= ntfs_device_testdisk_io_ioctl,

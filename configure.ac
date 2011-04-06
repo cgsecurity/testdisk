@@ -92,6 +92,20 @@ AC_ARG_WITH(ntfs-includes,
     AS_HELP_STRING(--with-ntfs-includes=DIR,location of the ntfs includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
+AC_ARG_WITH([ntfs3g], 
+    AS_HELP_STRING(--without-ntfs3g,disabled use of the ntfs3g library (default is NO)),
+    [	use_ntfs3g="n" ])
+
+AC_ARG_WITH(ntfs3g-lib,
+    AS_HELP_STRING(--with-ntfs3g-lib=DIR,location of the ntfs3g library),
+    [ ntfs3g_lib_a="${withval}/libntfs-3g.a"
+      LDFLAGS="${LDFLAGS} -L${withval}"
+    ])
+
+AC_ARG_WITH(ntfs3g-includes,
+    AS_HELP_STRING(--with-ntfs3g-includes=DIR,location of the ntfs3g includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
 AC_ARG_WITH(dal-lib,
     AS_HELP_STRING(--with-dal-lib=DIR,location of the dal library),
     [ LDFLAGS="${LDFLAGS} -L${withval}" ])
@@ -384,6 +398,10 @@ AC_CHECK_HEADERS([ntfs/attrib.h ntfs/volume.h],,
               use_ntfs=no
               AC_MSG_WARN(Disable use of ntfs library))
 
+AC_CHECK_HEADERS([ntfs-3g/attrib.h ntfs-3g/volume.h],,
+              use_ntfs3g=no
+              AC_MSG_WARN(Disable use of ntfs3g library))
+
 AC_CHECK_HEADERS([libcarvpath.h],,
               use_carvpath=no
               AC_MSG_WARN(Disable use of carvpath library))
@@ -523,6 +541,23 @@ if test -z "${use_jpeg}"; then
 #  )
 else
   AC_MSG_WARN(Use of jpeg library disabled)
+fi
+
+if test -z "${use_ntfs3g}"; then
+  AC_CHECK_LIB(ntfs-3g,ntfs_device_mount,
+  [
+    AC_DEFINE([HAVE_LIBNTFS3G],1,[Define to 1 if you have the ntfs3g library (-lntfs3g).])
+    if test "${ntfs3g_lib_a}" = ""; then
+      LIBS="-lntfs-3g $LIBS"
+    else
+      LIBS="${ntfs3g_lib_a} $LIBS"
+    fi
+    use_ntfs=no
+  ],
+  AC_MSG_WARN(No ntfs-3g library detected)
+  )
+else
+  AC_MSG_WARN(Use of ntfs3g library disabled)
 fi
 
 if test -z "${use_ntfs}"; then

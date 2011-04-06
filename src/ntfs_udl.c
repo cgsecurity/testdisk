@@ -85,6 +85,20 @@
 #ifdef HAVE_NTFS_VERSION_H
 #include <ntfs/version.h>
 #endif
+#endif
+
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/bootsect.h>
+#include <ntfs-3g/mft.h>
+#include <ntfs-3g/attrib.h>
+#include <ntfs-3g/layout.h>
+#include <ntfs-3g/inode.h>
+#include <ntfs-3g/device.h>
+#include <ntfs-3g/debug.h>
+#include <ntfs-3g/ntfstime.h>
+#endif
+
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
 #endif
@@ -150,6 +164,20 @@ struct ufile {
 	MFT_RECORD	*mft;		/* Raw MFT record */
 	char		 padding[4];	/* Unused: padding to 64 bit. */
 };
+
+/**
+ * td_ntfs2utc - Convert an NTFS time to Unix time
+ * @time:  An NTFS time in 100ns units since 1601
+ *
+ * NTFS stores times as the number of 100ns intervals since January 1st 1601 at
+ * 00:00 UTC.  This system will not suffer from Y2K problems until ~57000AD.
+ *
+ * Return:  n  A Unix time (number of seconds since 1970)
+ */
+static time_t td_ntfs2utc (s64 ntfstime)
+{
+  return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
+}
 
 static const char *UNKNOWN   = "unknown";
 static struct options opts;
@@ -227,7 +255,7 @@ static FILE_NAME_ATTR* verify_parent(struct filename* name, MFT_RECORD* rec)
 
 	filename_attr = (FILE_NAME_ATTR*)((char*)attr30 + le16_to_cpu(attr30->value_offset));
 	/* if name is older than this dir -> can't determine */
-	if (ntfs2utc(filename_attr->creation_time) > name->date_c) {
+	if (td_ntfs2utc(filename_attr->creation_time) > name->date_c) {
 		return NULL;
 	}
 	if (filename_attr->file_name_type != name->name_space) {
@@ -388,10 +416,10 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
 		name->size_data  = sle64_to_cpu(attr->data_size);
 		name->flags      = attr->file_attributes;
 
-		name->date_c     = ntfs2utc(attr->creation_time);
-		name->date_a     = ntfs2utc(attr->last_data_change_time);
-		name->date_m     = ntfs2utc(attr->last_mft_change_time);
-		name->date_r     = ntfs2utc(attr->last_access_time);
+		name->date_c     = td_ntfs2utc(attr->creation_time);
+		name->date_a     = td_ntfs2utc(attr->last_data_change_time);
+		name->date_m     = td_ntfs2utc(attr->last_mft_change_time);
+		name->date_r     = td_ntfs2utc(attr->last_access_time);
 
 		if (ntfs_ucstombs(name->uname, name->uname_len, &name->name,
 				0) < 0) {
@@ -557,7 +585,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	if (attr10) {
 		STANDARD_INFORMATION *si;
 		si = (STANDARD_INFORMATION *) ((char *) attr10 + le16_to_cpu(attr10->value_offset));
-		file->date = ntfs2utc(si->last_data_change_time);
+		file->date = td_ntfs2utc(si->last_data_change_time);
 	}
 
 	if (attr20 || !attr10)

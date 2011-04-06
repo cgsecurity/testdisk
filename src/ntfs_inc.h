@@ -19,7 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 struct ntfs_dir_struct {
 	file_data_t *dir_list;
 	file_data_t *current_file;
