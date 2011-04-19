@@ -195,7 +195,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
   wmove(window,4,0);
   aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   wmove(window,6,0);
-  wprintw(window,"Answer Y(es), N(o) or A(bort interactive mode). N or A if not sure.");
+  wprintw(window,"Answer Y(es), N(o), Q(uit) or A(bort interactive mode). N or A if not sure.");
   curs_set(1);
   do
   {
@@ -251,6 +251,8 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       case 'Y':
       case 'n':
       case 'N':
+      case 'Q':
+      case 'q':
 	quit=1;
 	break;
     }
@@ -519,6 +521,10 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
                     case 'A':
                       interactive=0;
                       break;
+		    case 'Q':
+                      delete_list_file(dir_list);
+                      free(buffer);
+                      return 0;
                     default:
                       break;
                   }
@@ -545,7 +551,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     {
       dir_aff_log(NULL, rootdir_list);
 #ifdef HAVE_NCURSES
-      if(interface && (expert>0))
+      if(interface && expert>0)
       {
         if(ask_confirmation("Create a new root cluster with %u first-level directories (Expert only) (Y/N)",dir_nbr)!=0 && ask_confirmation("Write root cluster, confirm ? (Y/N)")!=0)
         {
@@ -2160,6 +2166,12 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       if(expert>0)
       {
 #ifdef HAVE_NCURSES
+	int i;
+	for(i=5; i<INTER_FAT_ASK_Y; i++)
+	{
+	  wmove(stdscr, i, 0);
+	  wclrtoeol(stdscr);
+	}
         wmove(stdscr, INTER_FAT_ASK_Y, INTER_FAT_ASK_X);
         root_cluster=ask_number(root_cluster,2,data_size/sectors_per_cluster+1,"root cluster ");
 #endif
