@@ -166,9 +166,9 @@ static char *str_uint(char *src, unsigned int *resptr)
       if(*src>='0' && *src<='9')
 	res=res*16+(*src)-'0';
       else if(*src>='A' && *src<='F')
-	res=res*16+(*src)-'A';
+	res=res*16+(*src)-'A'+10;
       else if(*src>='a' && *src<='f')
-	res=res*16+(*src)-'a';
+	res=res*16+(*src)-'a'+10;
       else
       {
 	*resptr=res;
@@ -310,18 +310,18 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    if(*pos>='0' && *pos<='9')
 	      val-='0';
 	    else if(*pos>='A' && *pos<='F')
-	      val-='A';
+	      val=val-'A'+10;
 	    else if(*pos>='a' && *pos<='f')
-	      val-='a';
+	      val=val-'a'+10;
 	    pos++;
 	    val*=16;
 	    val+=(*pos);
 	    if(*pos>='0' && *pos<='9')
 	      val-='0';
 	    else if(*pos>='A' && *pos<='F')
-	      val-='A';
+	      val=val-'A'+10;
 	    else if(*pos>='a' && *pos<='f')
-	      val-='a';
+	      val=val-'a'+10;
 	    pos++;
 	    tmp[signature_size++]=val;
 	  }
