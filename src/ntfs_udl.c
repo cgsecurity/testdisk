@@ -1095,6 +1095,9 @@ static file_info_t *ufile_to_file_data(const struct ufile *file)
   new_file->stat.st_gid=0;
   new_file->stat.st_rdev=0;
   new_file->stat.st_size=file->max_size;
+#ifdef DJGPP
+  new_file->file_size=file->max_size;
+#endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
   new_file->stat.st_blksize=512;	/* FIXME cluster_size */
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
@@ -1258,7 +1261,11 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	      wprintw(window, "%-*s", nbr, &file_info->name[strlen(file_info->name) - nbr]);
 	  }
 	  wprintw(window, " %s ", datestr);
+#ifdef DJGPP
+	  wprintw(window, "%9llu", (long long unsigned int)file_info->file_size);
+#else
 	  wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
+#endif
 	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	    wbkgdset(window,' ' | COLOR_PAIR(0));
 	  if(file_walker==current_file)

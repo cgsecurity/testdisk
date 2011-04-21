@@ -256,6 +256,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       new_file->stat.st_gid=0;
       new_file->stat.st_rdev=0;
       new_file->stat.st_size=filesize;
+#ifdef DJGPP
+      new_file->file_size=filesize;
+#endif
       new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
       if(new_file->stat.st_blksize!=0)

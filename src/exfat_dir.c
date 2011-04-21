@@ -121,6 +121,9 @@ file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, 
       new_file->stat.st_gid=0;
       new_file->stat.st_rdev=0;
       new_file->stat.st_size=0;
+#ifdef DJGPP
+      new_file->file_size=0;
+#endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
       new_file->stat.st_blksize=0;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
@@ -150,6 +153,9 @@ file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, 
 	/* Stream extension */
 	const struct exfat_stream_ext_entry *entry=(const struct exfat_stream_ext_entry*)&buffer[offset];
 	current_file->stat.st_size=le64(entry->data_length);
+#ifdef DJGPP
+	current_file->file_size=le64(entry->data_length);
+#endif
 	current_file->stat.st_ino=le32(entry->first_cluster);
 #if 0
 	if((entry->first_cluster&2)!=0)
@@ -346,7 +352,11 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
   const unsigned int cluster_shift=exfat_header->block_per_clus_bits + exfat_header->blocksize_bits;
   unsigned char *buffer_file=(unsigned char *)MALLOC(1<<cluster_shift);
   unsigned int cluster;
+#ifdef DJGPP
+  unsigned int file_size=file->file_size;
+#else
   unsigned int file_size=file->stat.st_size;
+#endif
   unsigned int exfat_meth=exFAT_FOLLOW_CLUSTER;
   uint64_t start_exfat1,clus_blocknr;
   unsigned long int total_clusters;

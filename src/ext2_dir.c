@@ -244,6 +244,10 @@ static int list_dir_proc2(ext2_ino_t dir,
   new_file->stat.st_rdev=0;
   new_file->stat.st_size=LINUX_S_ISDIR(inode.i_mode)?inode.i_size:
     inode.i_size| ((uint64_t)inode.i_size_high << 32);
+#ifdef DJGPP
+  new_file->file_size=LINUX_S_ISDIR(inode.i_mode)?inode.i_size:
+    inode.i_size| ((uint64_t)inode.i_size_high << 32);
+#endif
   new_file->stat.st_blksize=blocksize;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
   new_file->stat.st_blocks=inode.i_blocks;

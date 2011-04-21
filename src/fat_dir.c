@@ -292,6 +292,9 @@ RecEnd:
       new_file->stat.st_gid=0;
       new_file->stat.st_rdev=0;
       new_file->stat.st_size=le32(de->size);
+#ifdef DJGPP
+      new_file->file_size=le32(de->size);
+#endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
       new_file->stat.st_blksize=cluster_size;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
@@ -551,7 +554,11 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   const unsigned int block_size=fat_sector_size(fat_header)*sectors_per_cluster;
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
+#ifdef DJGPP
+  unsigned int file_size=file->file_size;
+#else
   unsigned int file_size=file->stat.st_size;
+#endif
   unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
   uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length;

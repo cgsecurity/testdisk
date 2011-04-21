@@ -64,6 +64,9 @@ struct file_data
   file_data_t *next;
   char	name[DIR_NAME_LEN];
   struct stat stat;
+#ifdef DJGPP
+  uint64_t file_size;
+#endif
   unsigned int status;
 };
 
@@ -72,6 +75,9 @@ typedef struct
   struct td_list_head list;
   char *name;
   struct stat stat;
+#ifdef DJGPP
+  uint64_t file_size;
+#endif
   unsigned int status;
 } file_info_t;
 

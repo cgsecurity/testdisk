@@ -109,7 +109,11 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	mode_string(current_file->stat.st_mode,str);
 	wprintw(window, "%s %5u %5u ", 
 	    str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+#ifdef DJGPP
+	wprintw(window, "%9llu", (long long unsigned int)current_file->file_size);
+#else
 	wprintw(window, "%9llu", (long long unsigned int)current_file->stat.st_size);
+#endif
 	/* screen may overlap due to long filename */
 	wprintw(window, " %s %s", datestr, current_file->name);
 	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())

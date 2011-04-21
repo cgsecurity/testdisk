@@ -126,7 +126,11 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   char *new_file;	
   FILE *f_out;
   unsigned int cluster;
+#ifdef DJGPP
+  unsigned int file_size=file->file_size;
+#else
   unsigned int file_size=file->stat.st_size;
+#endif
   unsigned long int no_of_cluster;
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   cluster = file->stat.st_ino;
@@ -226,7 +230,11 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 	      LINUX_S_ISREG(current_file->stat.st_mode)!=0)
 	  {
 	    const uint64_t file_start=start_offset + (uint64_t)(current_file->stat.st_ino - 2) * blocksize;
+#ifdef DJGPP
+	    const uint64_t file_end=file_start+(current_file->file_size+blocksize-1)/blocksize*blocksize - 1;
+#else
 	    const uint64_t file_end=file_start+(current_file->stat.st_size+blocksize-1)/blocksize*blocksize - 1;
+#endif
 	    if(file_end < partition->part_offset + partition->part_size)
 	    {
 	      if(fat_copy_file(disk, partition, blocksize, start_offset, recup_dir, *dir_num, current_file)==0)

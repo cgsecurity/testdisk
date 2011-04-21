@@ -187,7 +187,11 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
 	str,
 	(unsigned int)current_file->stat.st_uid,
 	(unsigned int)current_file->stat.st_gid,
+#ifdef DJGPP
+	(long long unsigned int)current_file->file_size,
+#else
 	(long long unsigned int)current_file->stat.st_size,
+#endif
 	datestr);
     if(dir_data!=NULL && (dir_data->param&FLAG_LIST_PATHNAME)!=0)
     {
@@ -241,7 +245,11 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
     log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
     log_info("%s %5u %5u ", 
 	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+#ifdef DJGPP
+    log_info("%9llu", (long long unsigned int)current_file->file_size);
+#else
     log_info("%9llu", (long long unsigned int)current_file->stat.st_size);
+#endif
     log_info(" %s %s\n", datestr, current_file->name);
   }
   return test_date;

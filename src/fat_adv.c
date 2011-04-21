@@ -228,7 +228,11 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       mode_string(current_file->stat.st_mode,str);
       wprintw(window, "%s %3u %3u ", 
 	  str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
+#ifdef DJGPP
+      wprintw(window, "%9llu", (long long unsigned int)current_file->file_size);
+#else
       wprintw(window, "%9llu", (long long unsigned int)current_file->stat.st_size);
+#endif
       /* FIXME: screen overlaps due to long filename */
       wprintw(window, " %s %s\n", datestr, current_file->name);
       if(current_file==pos)
@@ -625,7 +629,11 @@ static int file2entry(struct msdos_dir_entry *de, const file_data_t *current_fil
   fat_date_unix2dos(current_file->stat.st_mtime,&de->time,&de->date);
   de->start=le16(current_file->stat.st_ino);
   de->starthi=le16(current_file->stat.st_ino>>16);
+#ifdef DJGPP
+  de->size=le32(current_file->file_size);
+#else
   de->size=le32(current_file->stat.st_size);
+#endif
   return 0;
 }
 
