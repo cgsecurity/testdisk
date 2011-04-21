@@ -296,7 +296,7 @@ RecEnd:
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
       if(new_file->stat.st_blksize!=0)
       {
-	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
+	new_file->stat.st_blocks=(le32(de->size) + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
       }
 #endif
 #endif

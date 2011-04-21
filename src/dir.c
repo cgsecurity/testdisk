@@ -182,7 +182,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
       log_info("X");
     else
       log_info(" ");
-    log_info("%7lu %s %5u  %5u   %7llu %s ",
+    log_info("%7lu %s %5u  %5u %9llu %s ",
 	(unsigned long int)current_file->stat.st_ino,
 	str,
 	(unsigned int)current_file->stat.st_uid,
@@ -239,9 +239,9 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
     }
     mode_string(current_file->stat.st_mode,str);
     log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
-    log_info("%s %5u  %5u   ", 
+    log_info("%s %5u %5u ", 
 	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
-    log_info("%7llu", (long long unsigned int)current_file->stat.st_size);
+    log_info("%9llu", (long long unsigned int)current_file->stat.st_size);
     log_info(" %s %s\n", datestr, current_file->name);
   }
   return test_date;

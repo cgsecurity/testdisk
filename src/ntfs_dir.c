@@ -260,7 +260,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
       if(new_file->stat.st_blksize!=0)
       {
-	new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
+	new_file->stat.st_blocks=(filesize + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
       }
 #endif
       new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));

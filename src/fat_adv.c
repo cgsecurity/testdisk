@@ -226,9 +226,9 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	strncpy(datestr, "                 ",sizeof(datestr));
       }
       mode_string(current_file->stat.st_mode,str);
-      wprintw(window, "%s %5u %5u   ", 
+      wprintw(window, "%s %3u %3u ", 
 	  str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
-      wprintw(window, "%7llu", (long long unsigned int)current_file->stat.st_size);
+      wprintw(window, "%9llu", (long long unsigned int)current_file->stat.st_size);
       /* FIXME: screen overlaps due to long filename */
       wprintw(window, " %s %s\n", datestr, current_file->name);
       if(current_file==pos)

@@ -544,9 +544,9 @@ static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
     strncpy(datestr, "                 ",sizeof(datestr));
   }
   mode_string(file_info->stat.st_mode,str);
-  wprintw(window, "%s %5u %5u   ", 
+  wprintw(window, "%s %5u %5u ", 
       str, (unsigned int)file_info->stat.st_uid, (unsigned int)file_info->stat.st_gid);
-  wprintw(window, "%7llu", (long long unsigned int)file_info->stat.st_size);
+  wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
   /* screen may overlap due to long filename */
   wprintw(window, " %s %s", datestr, file_info->name);
 }

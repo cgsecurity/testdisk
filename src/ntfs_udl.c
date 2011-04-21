@@ -1100,7 +1100,7 @@ static file_info_t *ufile_to_file_data(const struct ufile *file)
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
   if(new_file->stat.st_blksize!=0)
   {
-    new_file->stat.st_blocks=(new_file->stat.st_size+new_file->stat.st_blksize-1)/new_file->stat.st_blksize;
+    new_file->stat.st_blocks=(file->max_size + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
   }
 #endif
 #endif
@@ -1248,15 +1248,17 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	    strncpy(datestr, "                 ",sizeof(datestr));
 	  }
 	  if(COLS <= 1+17+1+7+1)
-	    wprintw(window, "%s %s %7llu", file_info->name, datestr, (long long unsigned int)file_info->stat.st_size);
+	    wprintw(window, "%s", file_info->name);
 	  else
 	  {
 	    const unsigned int nbr=COLS - (1+17+1+7+1);
 	    if(strlen(file_info->name) < nbr)
-	      wprintw(window, "%-*s %s %7llu", nbr, file_info->name, datestr, (long long unsigned int)file_info->stat.st_size);
+	      wprintw(window, "%-*s", nbr, file_info->name);
 	    else
-	      wprintw(window, "%-*s %s %7llu", nbr, &file_info->name[strlen(file_info->name) - nbr], datestr, (long long unsigned int)file_info->stat.st_size);
+	      wprintw(window, "%-*s", nbr, &file_info->name[strlen(file_info->name) - nbr]);
 	  }
+	  wprintw(window, " %s ", datestr);
+	  wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
 	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	    wbkgdset(window,' ' | COLOR_PAIR(0));
 	  if(file_walker==current_file)
