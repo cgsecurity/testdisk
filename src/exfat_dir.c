@@ -227,11 +227,6 @@ static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_da
       log_error("exFAT: Can't read directory cluster.\n");
       stop=1;
     }
-    if(stop==0 && nbr_cluster==0 && first_cluster!=0 &&
-	!(buffer_dir[0]=='.' && buffer_dir[0x20]=='.' && buffer_dir[0x21]=='.'))
-    {
-      stop=1;
-    }
     if(stop==0)
     {
       if(exfat_meth==exFAT_FOLLOW_CLUSTER)
