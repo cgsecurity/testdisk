@@ -37,6 +37,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "fat.h"
@@ -585,7 +586,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     }
     if(fwrite(buffer_file, 1, toread, f_out) != toread)
     {
-      log_error("fat_copy: no space left on destination.\n");
+      log_error("fat_copy: failed to write data %s\n", strerror(errno));
       fclose(f_out);
       set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
       free(new_file);
