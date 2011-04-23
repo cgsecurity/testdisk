@@ -62,6 +62,17 @@ int log_set_levels(const unsigned int levels)
 FILE *log_open(const char*default_filename, const int mode)
 {
   log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+  if(log_handle!=NULL && mode!=TD_LOG_CREATE)
+  {
+    /* append doesn't work when running the executable via wine */
+    if(fprintf(log_handle, "\n")<=0 || fflush(log_handle)!=0)
+    {
+      fclose(log_handle);
+      log_handle=fopen(default_filename,"w");
+    }
+  }
+#endif
   return log_handle;
 }
 
@@ -70,6 +81,8 @@ FILE *log_open_default(const char*default_filename, const int mode)
 {
   char*filename;
   char *path;
+  if(log_handle != NULL)
+    return log_handle;
   path = getenv("USERPROFILE");
   if (path == NULL)
     path = getenv("HOMEPATH");
