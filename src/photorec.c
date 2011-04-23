@@ -298,6 +298,12 @@ void free_list_search_space(alloc_data_t *list_search_space)
   }
 }
 
+/** 
+ * @param recup_dir - base name of output directory
+ * @param initial_dir_num - first number to try appending.
+ * @return the number that was appended.
+ */
+
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num)
 {
   char working_recup_dir[2048];
@@ -568,7 +574,20 @@ static void free_list_allocation(alloc_list_t *list_allocation)
   }
 }
 
-/* file_finish() returns
+/** file_finish()
+    @param file_recovery - 
+    @param recup_dir - where the results go
+    @param paranoid
+    @param file_nbr
+    @param blocksize
+    @param alloc_data_t *list_search_space
+    @param alloc_data_t **current_search_space
+    @param *offset
+    @param dir_num
+    @param status
+    @param dist_t *disk
+
+    @returns:
    -1: file not recovered, file_size=0 offset_error!=0
     0: file not recovered
     1: file recovered
@@ -619,7 +638,12 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
-    if(file_recovery->file_size>0)
+    if(file_recovery->file_size==0)
+    {
+      /* File is zero-length; erase it */
+      unlink(file_recovery->filename);
+    }
+    else
     {
       if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
 	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
@@ -630,16 +654,10 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
       if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
         file_recovery->file_stat->recovered++;
     }
-    else
-    {
-      unlink(file_recovery->filename);
-    }
   }
   if(file_recovery->file_stat!=NULL)
   {
     list_truncate(&file_recovery->location,file_recovery->file_size);
-    if(file_recovery->file_size>0)
-      list_space_used(file_recovery, disk->sector_size);
     if(file_recovery->file_size==0)
     {
       /* File hasn't been sucessfully recovered, remember where it begins */
@@ -648,10 +666,14 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
           !((*current_search_space)->start <= *offset && *offset <= (*current_search_space)->end))
         *current_search_space=td_list_entry((*current_search_space)->list.next, alloc_data_t, list);
     }
-    else if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING && status!=STATUS_FIND_OFFSET)
+    else
     {
-      update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
-      file_recovered=1;
+      list_space_used(file_recovery, disk->sector_size);
+      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING && status!=STATUS_FIND_OFFSET)
+      {
+	update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
+	file_recovered=1;			/* note that file was recovered */
+      }
     }
     free_list_allocation(&file_recovery->location);
   }
@@ -711,7 +733,11 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     }
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
-    if(file_recovery->file_size>0)
+    if(file_recovery->file_size==0)
+    {
+      unlink(file_recovery->filename);
+    }
+    else
     {
       if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
 	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
@@ -722,11 +748,9 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
         *dir_num=photorec_mkdir(recup_dir,*dir_num+1);
       }
       if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+      {
         file_recovery->file_stat->recovered++;
-    }
-    else
-    {
-      unlink(file_recovery->filename);
+      }
     }
   }
   if(file_recovery->file_stat!=NULL)
@@ -799,9 +823,10 @@ static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, 
       return element;
     if(element->data>0)
     {
-      if(size + (element->end-element->start+1) <= file_size_on_disk)
+      const uint64_t len=element->end - element->start + 1;
+      if(size + len <= file_size_on_disk)
       {
-	size=size + (element->end-element->start+1);
+	size+=len;
 	log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
 	td_list_del(tmp);
 	free(element);
