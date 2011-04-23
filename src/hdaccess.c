@@ -550,7 +550,8 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
       {
 	log_verbose("disk_get_sector_size GetDiskFreeSpaceA %s Ok\n",device);
       }
-      if(sector_size!=0)
+      /* sector_size <= 16MB*/
+      if(sector_size>0 && sector_size <= (1<<24))
 	return sector_size;
     }
   }

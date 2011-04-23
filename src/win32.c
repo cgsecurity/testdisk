@@ -74,12 +74,14 @@ unsigned int disk_get_sector_size_win32(HANDLE handle, const char *device, const
   if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
 	&geometry_ex, sizeof(geometry_ex), &gotbytes, NULL))
   {
-    return geometry_ex.Geometry.BytesPerSector;
+    if(geometry_ex.Geometry.BytesPerSector <= (1<<24))
+      return geometry_ex.Geometry.BytesPerSector;
   }
   if (DeviceIoControl( handle, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
 	&geometry, sizeof(geometry), &gotbytes, NULL))
   {
-    return geometry.BytesPerSector;
+    if(geometry.BytesPerSector <= (1<<24))
+      return geometry.BytesPerSector;
   }
   sector_size=file_win32_compute_sector_size(handle);
   if(sector_size==0)
