@@ -44,9 +44,9 @@
 
 const char *get_os(void)
 {
-  static char 	buffer[100] = {0x00};
 #ifdef WIN32
   {
+    static char buffer[100] = {0x00};
     /* For more information, read
 http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getting_the_system_version.asp
     */
@@ -148,55 +148,60 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
     if (Extended && Ver.wServicePackMajor != 0) {
       snprintf(buffer+strlen(buffer), sizeof(buffer) - 1 - strlen(buffer)," SP%i",Ver.wServicePackMajor);
     }
+    return buffer;
   }
 #elif defined(DJGPP)
-  snprintf(buffer, sizeof(buffer) - 1, "DOS");
+  return "DOS";
 #elif defined(HAVE_SYS_UTSNAME_H)
   {
     struct utsname	Ver;
-    uname(&Ver);
-    snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s", Ver.sysname, Ver.release, Ver.version, Ver.machine);
+    if(uname(&Ver)==0)
+    {
+      static char buffer[100] = {0x00};
+      snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s", Ver.sysname, Ver.release, Ver.version, Ver.machine);
+      return buffer;
+    }
   }
-#elif defined(__FreeBSD__)
-  snprintf(buffer, sizeof(buffer) - 1, "FreeBSD");
+#endif
+#if defined(__FreeBSD__)
+  return "FreeBSD";
 #elif defined(__NetBSD__)
-  snprintf(buffer, sizeof(buffer) - 1, "NetBSD");
+  return "NetBSD";
 #elif defined(__OpenBSD__)
-  snprintf(buffer, sizeof(buffer) - 1, "OpenBSD");
+  return "BSD";
 #elif defined(__GNU__)
-  snprintf(buffer, sizeof(buffer) - 1, "GNU/Hurd");
+  return "GNU/Hurd";
 #elif defined(sun) || defined(__sun) || defined(__sun__)
 #  ifdef __SVR4
-  snprintf(buffer, sizeof(buffer) - 1, "Sun Solaris");
+  return "Sun Solaris";
 #  else
-  snprintf(buffer, sizeof(buffer) - 1, "SunOS");
+  return "SunOS";
 #  endif
 #elif defined(hpux) || defined(__hpux) || defined(__hpux__)
-  snprintf(buffer, sizeof(buffer) - 1, "HP-UX");
+  return "HP-UX";
 #elif defined(ultrix) || defined(__ultrix) || defined(__ultrix__)
-  snprintf(buffer, sizeof(buffer) - 1, "DEC Ultrix");
+  return "DEC Ultrix";
 #elif defined(sgi) || defined(__sgi)
-  snprintf(buffer, sizeof(buffer) - 1, "SGI Irix");
+  return "SGI Irix";
 #elif defined(__osf__)
-  snprintf(buffer, sizeof(buffer) - 1, "OSF Unix");
+  return "OSF Unix";
 #elif defined(bsdi) || defined(__bsdi__)
-  snprintf(buffer, sizeof(buffer) - 1, "BSDI Unix");
+  return "BSDI Unix";
 #elif defined(_AIX)
-  snprintf(buffer, sizeof(buffer) - 1, "AIX Unix");
+  return "AIX Unix";
 #elif defined(_UNIXWARE)
-  snprintf(buffer, sizeof(buffer) - 1, "SCO Unixware");
+  return "SCO Unixware";
 #elif defined(DGUX)
-  snprintf(buffer, sizeof(buffer) - 1, "DG Unix");
+  return "DG Unix";
 #elif defined(__QNX__)
-  snprintf(buffer, sizeof(buffer) - 1, "QNX");
+  return "QNX";
 #elif defined(__APPLE__)
-  snprintf(buffer, sizeof(buffer) - 1, "Apple");
+  return "Apple";
 #elif defined(__OS2__)
-  snprintf(buffer, sizeof(buffer) - 1, "OS2");
+  return "OS2";
 #else
-  snprintf(buffer, sizeof(buffer) - 1, "unknown");
+  return "unknown";
 #endif
-  return buffer;
 }
 
 const char *get_compiler(void)
@@ -205,13 +210,13 @@ const char *get_compiler(void)
 #ifdef WIN32
 #  ifdef _MSC_VER
   if (_MSC_VER == 1200) { /* ? */
-    snprintf(buffer, sizeof(buffer) - 1, "MS VC 6.0");
+    return "MS VC 6.0";
   } else if (_MSC_VER == 1300) {
-    snprintf(buffer, sizeof(buffer) - 1, "MS VC .NET 2002");
+    return "MS VC .NET 2002";
   } else if (_MSC_VER == 1310) {
-    snprintf(buffer, sizeof(buffer) - 1, "MS VC .NET 2003");
+    return "MS VC .NET 2003";
   } else if (_MSC_VER == 1400) {
-    snprintf(buffer, sizeof(buffer) - 1, "MS VC .NET 2005");
+    return "MS VC .NET 2005";
   } else {
     snprintf(buffer, sizeof(buffer) - 1, "MS VC %i",_MSC_VER);
   }
@@ -228,7 +233,7 @@ const char *get_compiler(void)
 #  elif defined(__GNUC__)
   snprintf(buffer, sizeof(buffer) - 1, "GCC %i.%i", __GNUC__, __GNUC_MINOR__);
 #  else
-  snprintf(buffer, sizeof(buffer) - 1, "unknown compiler");
+  return "unknown compiler";
 #  endif
 #elif defined(DJGPP)
   snprintf(buffer, sizeof(buffer) - 1, "djgpp %d.%d", __DJGPP, __DJGPP_MINOR);
@@ -239,11 +244,16 @@ const char *get_compiler(void)
 #elif defined(__INTEL_COMPILER)
   snprintf(buffer, sizeof(buffer) - 1, "Intel Compiler %ld", __INTEL_COMPILER);
 #else
-  snprintf(buffer, sizeof(buffer) - 1, "unknown compiler");
+  return "unknown compiler";
 #endif
+  return buffer;
+}
+
+const char *get_compilation_date(void)
+{
+  static char buffer[100] = {0x00};
 #ifdef __DATE__ 
-  strcat(buffer, " - ");
-  strcat(buffer, __DATE__);
+  strcpy(buffer, __DATE__);
 #ifdef __TIME__
   strcat(buffer, " ");
   strcat(buffer, __TIME__);

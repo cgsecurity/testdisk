@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int64_t test_jpeg(FILE *infile);
+const char*td_jpeg_version(void);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

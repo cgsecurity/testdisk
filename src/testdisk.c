@@ -222,6 +222,7 @@ int main( int argc, char **argv )
     printf("\n");
     printf("Version: %s\n", VERSION);
     printf("Compiler: %s\n", get_compiler());
+    printf("Compilation date: %s\n", get_compilation_date());
     printf("ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s\n",
 	td_ext2fs_version(), td_ntfs_version(), td_reiserfs_version(), td_ewf_version());
     printf("OS: %s\n" , get_os());
@@ -345,6 +346,7 @@ int main( int argc, char **argv )
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());
+  log_info("Compilation date: %s\n", get_compilation_date());
   log_info("ext2fs lib: %s, ntfs lib: %s, reiserfs lib: %s, ewf lib: %s\n",
       td_ext2fs_version(), td_ntfs_version(), td_reiserfs_version(), td_ewf_version());
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)

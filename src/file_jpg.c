@@ -51,6 +51,7 @@ typedef int boolean;
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
+#include "file_jpg.h"
 #include "file_tiff.h"
 
 extern const file_hint_t file_hint_indd;
@@ -1444,4 +1445,19 @@ int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, 
     }
   }
   return 1;
+}
+
+const char*td_jpeg_version(void)
+{
+#if defined(HAVE_LIBJPEG)
+#if defined(JPEG_LIB_VERSION)
+  static char buffer[32];
+  sprintf(buffer,"%d", JPEG_LIB_VERSION);
+  return buffer;
+#else
+  return "yes";
+#endif
+#else
+  return "none";
+#endif
 }
