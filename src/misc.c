@@ -35,6 +35,12 @@
 #ifdef HAVE_SYS_UTSNAME_H
 #  include <sys/utsname.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
 #ifdef HAVE_CYGWIN_VERSION_H
 #include <cygwin/version.h>
 #endif
@@ -154,11 +160,12 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
   return "DOS";
 #elif defined(HAVE_SYS_UTSNAME_H)
   {
-    struct utsname	Ver;
+    struct utsname Ver;
     if(uname(&Ver)==0)
     {
       static char buffer[100] = {0x00};
-      snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s", Ver.sysname, Ver.release, Ver.version, Ver.machine);
+      snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s",
+	  Ver.sysname, Ver.release, Ver.version, Ver.machine);
       return buffer;
     }
   }
@@ -253,10 +260,22 @@ const char *get_compilation_date(void)
 {
   static char buffer[100] = {0x00};
 #ifdef __DATE__ 
+#ifdef HAVE_STRPTIME
+  struct tm tm;
+  memset(&tm,0,sizeof(tm));
+  if(strptime(__DATE__, "%b %d %Y", &tm)!=NULL)
+    sprintf(buffer, "%4d-%02d-%02dT", tm.tm_year + 1900, tm.tm_mon+1, tm.tm_mday);
+  else
+    strcpy(buffer, __DATE__);
+#ifdef __TIME__
+  strcat(buffer, __TIME__);
+#endif
+#else
   strcpy(buffer, __DATE__);
 #ifdef __TIME__
   strcat(buffer, " ");
   strcat(buffer, __TIME__);
+#endif
 #endif
 #endif
   return buffer;
