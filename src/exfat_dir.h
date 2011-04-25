@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param);
 int dir_partition_exfat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 
 #ifdef __cplusplus

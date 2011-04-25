@@ -84,7 +84,7 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 #define ATTR_ARCH    32 /* archived */
 #define EXFAT_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
 
-file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param)
+static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param)
 {
   /*
    * 0x83 Volume label
@@ -270,7 +270,7 @@ static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_da
     }
   }
   if(nbr_cluster>0)
-    dir_list=dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, 1<<cluster_shift, dir_data->param);
+    dir_list=dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data->param);
   free(buffer_dir);
   return dir_list;
 }
@@ -382,7 +382,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     unsigned int toread = 1 << cluster_shift;
     if (toread > file_size)
       toread = file_size;
-    if((unsigned)exfat_read_cluster(disk, partition, exfat_header, buffer_file, cluster) != toread)
+    if((unsigned)exfat_read_cluster(disk, partition, exfat_header, buffer_file, cluster) < toread)
     {
       log_error("exfat_copy: Can't read cluster %u.\n", cluster);
     }
