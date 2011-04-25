@@ -516,7 +516,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 		  partition->sb_size,
 		  partition->part_offset+partition->sb_offset,
 		  NULL);
-	      if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
+	      if(partition->upart_type==UP_NTFS ||
+		  (is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
 		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
 	      else
 		dir_partition(disk_car, partition, 0, current_cmd);
@@ -524,7 +525,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    }
 	    else
 	    {
-	      if(partition->upart_type==UP_NTFS || is_part_ntfs(partition))
+	      if(partition->upart_type==UP_NTFS ||
+		  (is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
 		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
 	      else
 		dir_partition(disk_car, partition, 0, current_cmd);
