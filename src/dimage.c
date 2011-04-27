@@ -31,7 +31,12 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 #include <fcntl.h>
 #include "types.h"
 #include "common.h"
@@ -39,6 +44,7 @@
 #include "intrfn.h"
 #include "log.h"
 #include "dimage.h"
+
 
 #define READ_SIZE 256*512
 /* Skip 10Mb when there is a read error */
@@ -91,24 +97,38 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   int ind_stop=0;
   uint64_t nbr_read_error=0;
   uint64_t src_offset=partition->part_offset;
-  uint64_t src_offset_old=src_offset;
+  uint64_t src_offset_old;
   uint64_t dst_offset=0;
   const uint64_t src_offset_end=partition->part_offset+partition->part_size;
-  const uint64_t offset_inc=(src_offset_end-src_offset)/100;
+  const uint64_t offset_inc=(src_offset_end-src_offset)/10000;
   uint64_t src_offset_next=src_offset;
+  struct stat stat_buf;
   unsigned char *buffer=(unsigned char *)MALLOC(READ_SIZE);
   unsigned int readsize=READ_SIZE;
   int disk_dst;
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
-  if((disk_dst=open(image_dd,O_LARGEFILE|O_RDWR|O_BINARY|O_CREAT,0644))<0)
+  if((disk_dst=open(image_dd, O_LARGEFILE|O_RDWR|O_BINARY, 0644)) < 0)
   {
     log_error("Can't create file %s.\n",image_dd);
     display_message("Can't create file!\n");
     free(buffer);
     return -1;
   }
+  if(fstat(disk_dst, &stat_buf)==0)
+  {
+    int res=1;
+#ifdef HAVE_NCURSES
+    res=ask_confirmation("Append to existing file ? (Y/N)");
+#endif
+    if(res>0)
+    {
+      dst_offset=stat_buf.st_size;
+      src_offset+=dst_offset;
+    }
+  }
+  src_offset_old=src_offset;
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy(window);
@@ -174,9 +194,9 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
     {
 #ifdef HAVE_NCURSES
       unsigned int i;
-      const unsigned int percent=(src_offset-partition->part_offset)*100/partition->part_size;
+      const float percent=(src_offset-partition->part_offset)*100.00/partition->part_size;
       wmove(window,7,0);
-      wprintw(window,"%3u %% ", percent);
+      wprintw(window,"%3.2f %% ", percent);
       for(i=0;i<percent*3/5;i++)
 	wprintw(window,"=");
       wprintw(window,">");
