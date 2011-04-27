@@ -150,6 +150,7 @@ static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_smil[6]  	= "<smil>";
 static const unsigned char header_stl[6]	= "solid ";
 static const unsigned char header_stp[13]  	= "ISO-10303-21;";
+static const unsigned char header_ttd[55]	= "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00";
 static const unsigned char header_url[18]  	= {
   '[', 'I', 'n', 't', 'e', 'r', 'n', 'e',
   't', 'S', 'h', 'o', 'r', 't', 'c', 'u',
@@ -227,6 +228,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_smil,sizeof(header_smil), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_ttd, sizeof(header_ttd), &header_check_fasttxt, file_stat);
   register_header_check(0, header_url,sizeof(header_url), &header_check_fasttxt, file_stat);
   register_header_check(0, header_wpl,sizeof(header_wpl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_xml,sizeof(header_xml), &header_check_fasttxt, file_stat);
@@ -422,6 +424,21 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
   }
   *q = '\0';
   return(p-buffer);
+}
+
+static int data_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  unsigned int i;
+  for(i=buffer_size/2; i<buffer_size; i++)
+  {
+    const unsigned char car=buffer[i];
+    if((car>='A' && car<='F') || (car >='0' && car <='9') || car==' ' || car=='\n')
+      continue;
+    file_recovery->calculated_file_size=file_recovery->file_size + i - buffer_size/2;
+    return 2;
+  }
+  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
+  return 1;
 }
 
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -637,6 +654,14 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="stp";
+    return 1;
+  }
+  if(memcmp(buffer, header_ttd, sizeof(header_ttd))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_ttd;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="ttd";
     return 1;
   }
   if(memcmp(buffer, header_url, sizeof(header_url))==0)
