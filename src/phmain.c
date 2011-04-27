@@ -76,6 +76,8 @@
 #include "file_jpg.h"
 #include "ntfs_dir.h"
 #include "pdisksel.h"
+#include "dfxml.h"
+
 extern const arch_fnct_t arch_none;
 extern file_enable_t list_file_enable[];
 
@@ -237,6 +239,7 @@ int main( int argc, char **argv )
         "If you have problems with PhotoRec or bug reports, please contact me.\n");
     return 0;
   }
+  xml_set_command_line(argc, argv);
   if(create_log!=TD_LOG_NONE)
     log_handle=log_open(logfile, create_log);
 #ifdef HAVE_SETLOCALE

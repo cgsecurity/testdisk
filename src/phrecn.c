@@ -76,6 +76,7 @@
 #include "phnc.h"
 #include "phbs.h"
 #include "file_found.h"
+#include "dfxml.h"
 
 /* #define DEBUG */
 /* #define DEBUG_BF */
@@ -762,7 +763,13 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
   file_stats=init_file_stats(files_enable);
 
   real_start_time=time(NULL);
-  dir_num=photorec_mkdir(recup_dir,dir_num);
+  /* make the first recup_dir */
+  dir_num=photorec_mkdir(recup_dir, dir_num);
+
+  /* Open the XML output file */
+  xml_open(recup_dir, dir_num);
+  xml_setup(disk_car, partition);
+  
 #if 0
   test_files(disk_car, partition, list_search_space, recup_dir, &dir_num, &file_nbr);
 #endif
@@ -1060,6 +1067,8 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
   free(file_stats);
   free_header_check();
   free(new_recup_dir);
+  xml_shutdown();
+  xml_close();
   return 0;
 }
 

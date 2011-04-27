@@ -66,3 +66,69 @@ Both are under GNU General Public License.
 Christophe GRENIER
 grenier@cgsecurity.org
 http://www.cgsecurity.org/
+
+================================================================
+PhotoRec - Theory of operation:
+
+Carvers are plugable. Each carver consists of:
+
+struct file_hint_t - describes extension, name, max size, enable by default, etc.
+file_enable_t list_file_enable[] - array with all file hints and whether enabled or not.
+
+
+phmain.c - Contains the main() and driver logic for photorec.
+ 
+main():
+ - reads parameters
+ - scans for available devices
+ - parses the HD (or image)
+ - resets the list of which file carvers are enabled
+ - Initializes ncurses
+ - Calls do_curses_photorec() (in pdisksel.c)
+ - shuts down ncurses
+
+
+pdisksel.c - 
+ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk,
+                        file_enable_t *file_enable, char *cmd_device, char **current_cmd)
+
+ - runs either photorec_disk_selection_cli() or photorec_disk_selection_ncurses()
+ - Both of these eventually call menu_photorec() in ppartsel.c
+
+ppartsel.c - menu_photorec():
+ - Implements Search/Options/File Opt/Geometry/Quit menu
+ - Search Option:
+   - Creates new recup_dir 
+   - Runs ext2_fix_group and ext2_fix_inode if necessary
+   - runs photorec()
+
+phrecn.c - photorec()
+ - runs multiple passes until status==STATUS_QUIT
+ - calls photorec_mkdir() to actually make the output directory
+
+photorec.c: - file_finish()
+ - called when file is done.
+
+  called by:
+   - photorec_bf()
+   - photorec_bf_pad()
+   - photorec_bf_frag()
+   - photorec_bf_aux()
+
+  file_recovery_t *file_recovery - 
+
+photorec.c - file_finish2()
+ - called when a file is done.
+
+ called by:
+ - photorec_aux() (in three places)
+ - photorec()
+ 
+Some utility functions:
+phbf.c - set_filename(file_recovery,recup_dir,dir_num,disk_car,partition,nn)
+ - Figures out a file name
+
+================================================================
+XML Report Integration
+
+xml output file is always made and always placed in recup_dir

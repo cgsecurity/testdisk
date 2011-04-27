@@ -47,6 +47,7 @@
 #include "ntfsp.h"
 #include "log.h"
 #include "setdate.h"
+#include "dfxml.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
@@ -669,6 +670,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     else
     {
       list_space_used(file_recovery, disk->sector_size);
+      xml_log_file_recovered(file_recovery);
       if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING && status!=STATUS_FIND_OFFSET)
       {
 	update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
@@ -763,6 +765,7 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     }
     else
     {
+      xml_log_file_recovered2(file_recovery);
       datanext=file_truncate(list_search_space, file_recovery, disk->sector_size, blocksize);
     }
     free_list_allocation(&file_recovery->location);
