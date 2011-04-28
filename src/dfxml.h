@@ -40,7 +40,7 @@ void xml_set_command_line(const int argc, char **argv);
 void xml_add_DFXML_creator(const char *package, const char *version);
 void xml_shutdown(void);
 void xml_log_file_recovered(const file_recovery_t *file_recovery);
-void xml_log_file_recovered2(const file_recovery_t *file_recovery);
+void xml_log_file_recovered2(const alloc_data_t *space, const file_recovery_t *file_recovery);
 void xml_printf(const char *__restrict __format,...) __attribute__((format(printf,1,2)));
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

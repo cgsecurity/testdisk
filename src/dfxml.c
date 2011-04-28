@@ -316,11 +316,11 @@ void xml_log_file_recovered(const file_recovery_t *file_recovery)
   xml_pop("fileobject");
 }
 
-static void xml_log_file_recovered2_aux(const alloc_data_t *file, const uint64_t file_size)
+static void xml_log_file_recovered2_aux(const alloc_data_t *space, const alloc_data_t *file, const uint64_t file_size)
 {
   struct td_list_head *tmp;
   uint64_t size=0;
-  td_list_for_each(tmp, &file->list)
+  for(tmp=&file->list; tmp!=&space->list; tmp=tmp->next)
   {
     const alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
     if(size >= file_size)
@@ -348,7 +348,7 @@ static void xml_log_file_recovered2_aux(const alloc_data_t *file, const uint64_t
   }
 }
 
-void xml_log_file_recovered2(const file_recovery_t *file_recovery)
+void xml_log_file_recovered2(const alloc_data_t *space, const file_recovery_t *file_recovery)
 {
   if(xml_handle==NULL)
     return;
@@ -358,7 +358,7 @@ void xml_log_file_recovered2(const file_recovery_t *file_recovery)
   xml_out2s("filename", relative_name(file_recovery->filename));
   xml_out2i("filesize", file_recovery->file_size);
   xml_push("byte_runs", "");
-  xml_log_file_recovered2_aux(file_recovery->loc, file_recovery->file_size);
+  xml_log_file_recovered2_aux(space, file_recovery->loc, file_recovery->file_size);
   xml_pop("byte_runs");
   xml_pop("fileobject");
 }
