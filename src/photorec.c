@@ -765,7 +765,7 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     }
     else
     {
-      xml_log_file_recovered2(file_recovery);
+      xml_log_file_recovered2(list_search_space, file_recovery);
       datanext=file_truncate(list_search_space, file_recovery, disk->sector_size, blocksize);
     }
     free_list_allocation(&file_recovery->location);
