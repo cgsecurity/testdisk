@@ -48,12 +48,12 @@
 extern const char *monstr[];
 
 static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
-static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
+static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
 static int copy_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir);
 
-#define INTER_DIR (LINES-25+16)
+#define INTER_DIR (LINES-25+15)
 
-static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
+static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
 {
   /* Return value
    * -1: quit
@@ -66,9 +66,9 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
   {
     int offset=0;
     int pos_num=0;
-    const file_data_t *current_file;
-    const file_data_t *pos=dir_list;
+    file_data_t *pos=dir_list;
     int old_LINES=LINES;
+    int status=FILE_STATUS_MARKED;
     aff_copy(window);
     wmove(window,3,0);
     aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
@@ -78,6 +78,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
     {
       int i;
       int car;
+      const file_data_t *current_file;
       for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
       for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
       {
@@ -94,6 +95,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  waddstr(window, " ");
 	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(1));
+	else if((current_file->status&FILE_STATUS_MARKED)!=0 && has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(2));
 	if(current_file->stat.st_mtime!=0)
 	{
 	  struct tm		*tm_p;
@@ -116,7 +119,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 #endif
 	/* screen may overlap due to long filename */
 	wprintw(window, " %s %s", datestr, current_file->name);
-	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
+	if(((current_file->status&FILE_STATUS_DELETED)!=0 ||
+	      (current_file->status&FILE_STATUS_MARKED)!=0) && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if(current_file==pos)
 	  wattroff(window, A_REVERSE);
@@ -135,10 +139,10 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
       if(dir_list==NULL)
       {
 	wmove(window,6,0);
-	wprintw(window,"No file found, filesystem seems damaged.");
+	wprintw(window,"No file found, filesystem may be damaged.");
       }
       /* Redraw the bottom of the screen everytime because very long filenames may have corrupt it*/
-      mvwaddstr(window,LINES-2,0,"Use ");
+      mvwaddstr(window,LINES-3,0,"Use ");
       if(depth>0)
       {
 	if(has_colors())
@@ -153,35 +157,58 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
       waddstr(window,"Right");
       if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
-      waddstr(window," arrow to change directory, ");
-      if(dir_data->copy_file!=NULL)
-      {
-	if(has_colors())
-	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"c");
-	if(has_colors())
-	  wbkgdset(window,' ' | COLOR_PAIR(0));
-	waddstr(window," to copy, ");
-      }
-      wmove(window,LINES-1,4);
+      waddstr(window," to change directory");
       if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
       {
+	waddstr(window,", ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
 	waddstr(window,"h");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if((dir_data->param&FLAG_LIST_DELETED)==0)
-	  waddstr(window," to unhide deleted files, ");
+	  waddstr(window," to unhide deleted files");
 	else
-	  waddstr(window," to hide deleted files, ");
+	  waddstr(window," to hide deleted files");
       }
+      wmove(window,LINES-2,4);
       if(has_colors())
 	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
       waddstr(window,"q");
       if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
       waddstr(window," to quit");
+      if(dir_data->copy_file!=NULL)
+      {
+	waddstr(window,", ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,":");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to select the current file, ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"a");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	if((status&FILE_STATUS_MARKED)==FILE_STATUS_MARKED)
+	  waddstr(window," to select all files  ");
+	else
+	  waddstr(window," to deselect all files");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	mvwaddstr(window,LINES-1,4,"C");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy the selected files, ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"c");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	waddstr(window," to copy the current file");
+      }
       wrefresh(window);
       /* Using gnome terminal under FC3, TERM=xterm, the screen is not always correct */
       wredrawln(window,0,getmaxy(window));	/* redrawwin def is boggus in pdcur24 */
@@ -224,6 +251,35 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	    {
 	      pos=pos->next;
 	      pos_num++;
+	    }
+	    break;
+	  case ':':
+	    if(!(pos->name[0]=='.' && pos->name[1]=='\0') &&
+		!(pos->name[0]=='.' && pos->name[1]=='.' && pos->name[2]=='\0'))
+	    pos->status^=FILE_STATUS_MARKED;
+	    if(pos->next!=NULL)
+	    {
+	      pos=pos->next;
+	      pos_num++;
+	    }
+	    break;
+	  case 'a':
+	    {
+	      file_data_t *tmp;
+	      for(tmp=dir_list; tmp!=NULL; tmp=tmp->next)
+	      {
+		if((tmp->name[0]=='.' && tmp->name[1]=='\0') ||
+		    (tmp->name[0]=='.' && tmp->name[1]=='.' && tmp->name[2]=='\0'))
+		{
+		  tmp->status&=~FILE_STATUS_MARKED;
+		}
+		else
+		{
+		  if((tmp->status & FILE_STATUS_MARKED)!=status)
+		    tmp->status^=FILE_STATUS_MARKED;
+		}
+	      }
+	      status^=FILE_STATUS_MARKED;
 	    }
 	    break;
 	  case 'p':
@@ -332,6 +388,83 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      }
 	    }
 	    break;
+	  case 'C':
+	    if(dir_data->copy_file!=NULL)
+	    {
+	      if(dir_data->local_dir==NULL)
+	      {
+		dir_data->local_dir=ask_location("Please select a destination where the marked files will be copied.", NULL, NULL);
+	      }
+	      if(dir_data->local_dir!=NULL)
+	      {
+		file_data_t *tmp;
+		int copy_bad=0;
+		int copy_ok=0;
+		const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+		wmove(window,5,0);
+		wclrtoeol(window);
+		if(has_colors())
+		  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
+		wprintw(window,"Copying, please wait...");
+		if(has_colors())
+		  wbkgdset(window,' ' | COLOR_PAIR(0));
+		wrefresh(window);
+		for(tmp=dir_list; tmp!=NULL; tmp=tmp->next)
+		{
+		  if((tmp->status&FILE_STATUS_MARKED)!=0 &&
+		      current_directory_namelength + 1 + strlen(tmp->name) <
+		      sizeof(dir_data->current_directory)-1)
+		  {
+		    if(strcmp(dir_data->current_directory,"/"))
+		      strcat(dir_data->current_directory,"/");
+		    if(strcmp(tmp->name,".")!=0)
+		      strcat(dir_data->current_directory,tmp->name);
+		    if(LINUX_S_ISDIR(tmp->stat.st_mode)!=0)
+		    {
+		      const int res=copy_dir(disk, partition, dir_data, tmp);
+		      if(res >=-1)
+		      {
+			tmp->status&=~FILE_STATUS_MARKED;
+			copy_ok=1;
+		      }
+		      else if(res < 0)
+			copy_bad=1;
+		    }
+		    else if(LINUX_S_ISREG(tmp->stat.st_mode)!=0)
+		    {
+		      if(dir_data->copy_file(disk, partition, dir_data, tmp) == 0)
+		      {
+			tmp->status&=~FILE_STATUS_MARKED;
+			copy_ok=1;
+		      }
+		      else
+			copy_bad=1;
+		    }
+		  }
+		  dir_data->current_directory[current_directory_namelength]='\0';
+		}
+		wmove(window,5,0);
+		wclrtoeol(window);
+		if(copy_bad > 0 && copy_ok==0)
+		{
+		  if(has_colors())
+		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(1));
+		  wprintw(window,"Copy failed!");
+		}
+		else
+		{
+		  if(has_colors())
+		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
+		  if(copy_bad > 0)
+		    wprintw(window,"Copy done! (Failed to copy some files)");
+		  else
+		    wprintw(window,"Copy done!");
+		}
+		if(has_colors())
+		  wbkgdset(window,' ' | COLOR_PAIR(0));
+	      }
+	    }
+	    break;	
 	}
 	if(pos_num<offset)
 	  offset=pos_num;
