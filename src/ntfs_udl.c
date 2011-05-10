@@ -1454,7 +1454,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  if(dir_data->local_dir==NULL)
 	  {
 	    char *res;
-	    res=ask_location("Are you sure you want to copy the %smarked files to the directory %s ? [Y/N]", "", NULL);
+	    res=ask_location("Please select a destination where the marked files will be copied.", NULL, NULL);
 	    dir_data->local_dir=res;
 	    opts.dest=res;
 	  }
