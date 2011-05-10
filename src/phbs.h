@@ -22,9 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef HAVE_NCURSES
 int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time);
-#endif
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

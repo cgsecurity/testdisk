@@ -318,7 +318,7 @@ void xml_log_file_recovered(const file_recovery_t *file_recovery)
 
 static void xml_log_file_recovered2_aux(const alloc_data_t *space, const alloc_data_t *file, const uint64_t file_size)
 {
-  struct td_list_head *tmp;
+  const struct td_list_head *tmp;
   uint64_t size=0;
   for(tmp=&file->list; tmp!=&space->list; tmp=tmp->next)
   {
