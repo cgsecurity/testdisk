@@ -12,8 +12,7 @@ Release:	1%{?dist}
 License:	GPLv2+
 Group:		Applications/System
 Source0:	http://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
-Source1:	http://www.cgsecurity.org/testdisk-doc-%{version}%{?ver_wip}.tar.bz2
-Source2:	progsreiserfs-%ver_progsreiserfs.tar.gz
+Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Patch0:		progsreiserfs-journal.patch
 Patch1:		progsreiserfs-file-read.patch
 URL:		http://www.cgsecurity.org/wiki/TestDisk
@@ -22,10 +21,14 @@ BuildRequires:	libewf-devel
 BuildRequires:	libjpeg-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	ncurses-devel >= 5.2
-BuildRequires:	ntfsprogs-devel
+%ifnarch ppc ppc64
+#BuildRequires:	ntfsprogs-devel
+BuildRequires:	ntfs-3g-devel
+%endif
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Obsoletes:	testdisk-doc
 
 %description
 Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
@@ -57,53 +60,9 @@ Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 PhotoRec is a signature based file recovery utility. It handles more than
 200 file formats including JPG, MSOffice, OpenOffice documents.
 
-%package doc
-Summary:	TestDisk & PhotoRec documentation
-Group:		Documentation
-Requires:	testdisk = %{version}-%{release}
-
-%description doc
-Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
-NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS, Linux Raid, Linux Swap,
-LVM, LVM2, NSS, ReiserFS, UFS, XFS
-PhotoRec is a signature based file recovery utility. It handles more than
-200 file formats including JPG, MSOffice, OpenOffice documents.
-
-This package contains TestDisk & PhotoRec documentation.
-
-%description doc -l pl.UTF8
-Narzędzie sprawdzające i odzyskujące partycje. Pracuje z partycjami:
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
-Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
-PhotoRec is a signature based file recovery utility. It handles more than
-200 file formats including JPG, MSOffice, OpenOffice documents.
-
-This package contains TestDisk & PhotoRec documentation.
-
-%description doc -l fr.UTF8
-Outil pour vérifier et restaurer des partitions. Fonctionne avec
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
-Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
-PhotoRec utilise un mécanisme de signature pour récupérer des fichiers perdus.
-Il gère plus d'une centaine de formats de fichiers dont les JPEG,
-les documents MSOffice ou OpenOffice.
-
-Ce paquet contient la documentation de TestDisk & PhotoRec.
-
-%description doc -l ru_RU.UTF8
-Программа для проверки и восстановления разделов диска.
-Поддерживает следующие типы разделов:
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
-Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
-PhotoRec is a signature based file recovery utility. It handles more than
-200 file formats including JPG, MSOffice, OpenOffice documents.
-
-This package contains TestDisk & PhotoRec documentation.
-
 %prep
 %setup -q -n %{name}-%{version}%{?ver_wip}
-%setup -q -b 1 -D -n %{name}-%{version}%{?ver_wip}
-%setup -q -a 2 -D -n %{name}-%{version}%{?ver_wip}
+%setup -q -a 1 -D -n %{name}-%{version}%{?ver_wip}
 %patch0
 %patch1
 
@@ -137,10 +96,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec
 %attr(755,root,root) %{_bindir}/testdisk
-
-%files doc
-%defattr(644,root,root,755)
-%doc doc
 
 %changelog
 * Thu Jul 17 2008 Christophe Grenier <grenier@cgsecurity.org> 6.10-1
