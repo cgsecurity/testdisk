@@ -1,5 +1,26 @@
 Current news
 ============
+6.12
+fidentify, a little utility sharing PhotoRec signature database, is now build by default. It identifies the type of data contained in a file and reports the extension as seen by PhotoRec. It is similar to the Unix file command. Add compatibility with
+- libewf 20110312
+- ncurses 5.8
+- ntfs-3g 
+Fix detection of Encase 6 .ewf files
+
+TestDisk
+- Convert the directory name when it can't be created (Fix for Windows/Cygwin version)
+- Better HPA/DCO detection: handle the case where native_max is null.
+- Image Creation is now faster than previous version when there are bad sectors
+- List and copy (experimental) files from exFAT filesystem
+- Improved NTFS undelete interface 
+
+PhotoRec
+- PhotoRec checks for EFBIG (file too large) error when writing files. It's usefull to avoid erronous message about "no free space available" when recovering to a FAT filesystem.
+- Recover files from exFAT unallocated space
+- Use doc/xls/ppt title to name recovered Office document, use first filename in zip archive...
+- Possibility to add your own extension/custom signature to PhotoRec
+- Generated a report.xml file using Digital Forensics XML 
+
 6.11
 TestDisk & PhotoRec 6.11 should use less CPU.
 This new TestDisk version can undelete files for NTFS filesystem and recover deleted exFAT and ext4.
