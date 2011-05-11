@@ -190,8 +190,8 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 {
   while(*pos!='\0')
   {
-    /* skip comment */
-    if(*pos=='#')
+    /* skip comments */
+    while(*pos=='#')
     {
       while(*pos!='\0' && *pos!='\n')
 	pos++;
