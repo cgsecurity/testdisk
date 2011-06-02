@@ -702,6 +702,11 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     }
     else if(td_memmem(buffer, buffer_size, "QBFSD", 5)!=NULL)
       file_recovery_new->extension="fst";
+    else if(td_memmem(buffer, buffer_size, "<collection type=\"GC", 20)!=NULL)
+    {
+      /* GCstart, personal collections manager, http://www.gcstar.org/ */
+      file_recovery_new->extension="gcs";
+    }
     else if(td_memmem(buffer, buffer_size, "<html", 5)!=NULL)
     {
 #ifdef DJGPP
@@ -1111,11 +1116,11 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       unsigned int i;
       memset(&stats, 0, sizeof(stats));
       for(i=0;i<l;i++)
-        stats[(unsigned char)buffer_lower[i]]++;
+	stats[(unsigned char)buffer_lower[i]]++;
       ind=0;
       for(i=0;i<256;i++)
-        if(stats[i]>0)
-          ind+=stats[i]*(stats[i]-1);
+	if(stats[i]>0)
+	  ind+=stats[i]*(stats[i]-1);
       ind=ind/l/(l-1);
     }
     /* Detect .ini */
@@ -1163,85 +1168,85 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="json";
     else
       ext=file_hint_txt.extension;
-    if(ext!=NULL && strcmp(ext,"txt")==0 &&
-        (strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL))
+    if(ext==NULL)
+      return 0;
+    if(strcmp(ext,"txt")==0 &&
+	(strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL))
     {
       ext="html";
     }
-    if(ext!=NULL && file_recovery!=NULL && file_recovery->file_stat!=NULL)
+    log_info("ind=%f\n", ind);
+    if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
     {
       const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
       if(strcmp(ext,"html")==0 &&
-          file_recovery->file_stat->file_hint==&file_hint_txt &&
-          strstr(file_recovery->filename,"")!=NULL)
+	  file_recovery->file_stat->file_hint==&file_hint_txt &&
+	  strstr(file_recovery->filename,"")!=NULL)
       {
-        return 0;
+	return 0;
       }
 
       /* Special case: doc, texte files
 Unix: \n (0xA)
 Dos: \r\n (0xD 0xA)
 Doc: \r (0xD)
-       */
+*/
       if(file_recovery->file_stat->file_hint==&file_hint_doc &&
-          strstr(file_recovery->filename,".doc")!=NULL)
+	  strstr(file_recovery->filename,".doc")!=NULL)
       {
-        unsigned int i;
-        unsigned int txt_nl=0;
-        for(i=0;i<l-1;i++)
-          if(buffer_lower[i]=='\r' && buffer_lower[i+1]!='\n')
-          {
-            return 0;
-          }
-        for(i=0;i<l && i<512;i++)
-          if(buffer_lower[i]=='\n')
-            txt_nl=1;
-        if(txt_nl==1)
-        {
-          /* log_trace(">%s<\ndoc => %s\n",buffer_lower,ext); */
-          reset_file_recovery(file_recovery_new);
-          file_recovery_new->data_check=&data_check_txt;
-          file_recovery_new->file_check=&file_check_size;
-          file_recovery_new->extension=ext;
-          return 1;
-        }
+	unsigned int i;
+	unsigned int txt_nl=0;
+	if(ind>0.20)
+	  return 0;
+	for(i=0;i<l-1;i++)
+	  if(buffer_lower[i]=='\r' && buffer_lower[i+1]!='\n')
+	  {
+	    return 0;
+	  }
+	for(i=0;i<l && i<512;i++)
+	  if(buffer_lower[i]=='\n')
+	    txt_nl++;
+	if(txt_nl==0)
+	  return 0;
+	/* log_trace(">%s<\ndoc => %s\n",buffer_lower,ext); */
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->data_check=&data_check_txt;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->extension=ext;
+	return 1;
       }
       buffer_lower[511]='\0';
       /* Special case: two consecutive HTML files */
       if((strcmp(ext,"html")==0 &&
-            strstr(buffer_lower,sign_html)!=NULL &&
-            strstr(file_recovery->filename,".html")!=NULL) ||
-          /* Text should not be found in JPEG */
-          (file_recovery->file_stat->file_hint==&file_hint_jpg &&
-           td_memmem(buffer, buffer_size_test, "8BIM", 4)==NULL &&
-           td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL &&
-           td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
-           td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
-           td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
-           td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL) ||
-          /* Text should not be found in zip because of compression */
-          (file_recovery->file_stat->file_hint==&file_hint_zip &&
-	  td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
+	    strstr(buffer_lower,sign_html)!=NULL &&
+	    strstr(file_recovery->filename,".html")!=NULL) ||
+	  /* Text should not be found in JPEG */
+	  (file_recovery->file_stat->file_hint==&file_hint_jpg &&
+	   td_memmem(buffer, buffer_size_test, "8BIM", 4)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL) ||
+	  /* Text should not be found in zip because of compression */
+	  (file_recovery->file_stat->file_hint==&file_hint_zip &&
+	   td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
       {
-        reset_file_recovery(file_recovery_new);
-        file_recovery_new->data_check=&data_check_txt;
-        file_recovery_new->file_check=&file_check_size;
-        file_recovery_new->extension=ext;
-        return 1;
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->data_check=&data_check_txt;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->extension=ext;
+	return 1;
       }
       return 0;
     }
     /*    log_trace("ext=%s\n",ext); */
-    if(ext!=NULL)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=ext;
-      file_recovery_new->data_check=&data_check_txt;
-      file_recovery_new->file_check=&file_check_size;
-      return 1;
-    }
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=ext;
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
   }
-  return 0;
 }
 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
