@@ -109,7 +109,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
-  if((disk_dst=open(image_dd, O_LARGEFILE|O_RDWR|O_BINARY, 0644)) < 0)
+  if((disk_dst=open(image_dd, O_CREAT|O_LARGEFILE|O_RDWR|O_BINARY, 0644)) < 0)
   {
     log_error("Can't create file %s.\n",image_dd);
     display_message("Can't create file!\n");
@@ -120,7 +120,8 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   {
     int res=1;
 #ifdef HAVE_NCURSES
-    res=ask_confirmation("Append to existing file ? (Y/N)");
+    if(stat_buf.st_size > 0)
+      res=ask_confirmation("Append to existing file ? (Y/N)");
 #endif
     if(res>0)
     {
