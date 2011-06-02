@@ -1,23 +1,33 @@
 app                      ICON    DISCARDABLE     "../ico/testdisk.ico"
 
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST MOVEABLE PURE "../win/testdisk_win.exe.manifest"
+//CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST MOVEABLE PURE "../win/testdisk_win.exe.manifest"
+1 24 MOVEABLE PURE "../win/testdisk_win.exe.manifest"
 
 1 VERSIONINFO
-FILEVERSION 6, 11, 0, 0
-PRODUCTVERSION 6, 11, 0, 0
+FILEVERSION 6, 13, 0, 0
+PRODUCTVERSION 6, 13, 0, 0
 FILEFLAGSMASK 0x3f
 FILEOS 0x4
 FILETYPE 0x1
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
-    BLOCK "000004b0"
+    BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", "CGSecurity"
-      VALUE "FileDescription", "TestDisk"
-      VALUE "InternalName", "TestDisk"
-      VALUE "LegalCopyright", "Copyright \251 2009"
+      VALUE "CompanyName", 	"CGSecurity"
+      VALUE "ProductName",	"TestDisk"
+      VALUE "FileDescription",	"TestDisk"
+      VALUE "InternalName",	"TestDisk"
       VALUE "OriginalFilename", "testdisk_win.exe"
+      VALUE "Comments",		"Partition and file recovery utility"
+      VALUE "FileVersion",	"6.13"
+      VALUE "ProductVersion",	"6.13"
+      VALUE "LegalCopyright",	"Copyright (C) 2011"
     END
-  END 
+  END
+  BLOCK "VarFileInfo"
+      BEGIN
+      /* Once again -- same meanings -- apparently necessary */
+      VALUE "Translation", 0x0409, 0x04E4
+  END
 END
