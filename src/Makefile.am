@@ -112,6 +112,7 @@ file_C			= filegen.c \
 			  file_freeway.c \
 			  file_frm.c \
 			  file_fs.c \
+			  file_gam.c \
 			  file_gct.c \
 			  file_gho.c \
 			  file_gif.c \
