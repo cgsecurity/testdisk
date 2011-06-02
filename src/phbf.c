@@ -688,7 +688,10 @@ static int photorec_bf_frag(disk_t *disk_car, partition_t *partition, const char
 	    int ind_stop=0;
 	    previous_time=current_time;
 #ifdef HAVE_NCURSES
-	    ind_stop=photorec_progressbar(stdscr, testbf, status, file_recovery->location.start, disk_car, partition, *file_nbr, current_time-real_start_time, file_stats);
+	    ind_stop=photorec_progressbar(stdscr, testbf, status,
+		file_recovery->location.start, disk_car, partition, *file_nbr,
+		(current_time > real_start_time ? current_time - real_start_time: 0),
+		file_stats);
 #endif
 	    if(ind_stop!=0)
 	    {

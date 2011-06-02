@@ -486,7 +486,10 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const int verb
         if(current_time>previous_time)
         {
           previous_time=current_time;
-          ind_stop=photorec_progressbar(stdscr, pass, status, offset, disk_car, partition, *file_nbr, current_time-real_start_time, file_stats);
+          ind_stop=photorec_progressbar(stdscr, pass, status, offset, disk_car,
+	      partition, *file_nbr,
+	      (current_time > real_start_time ? current_time - real_start_time: 0),
+	      file_stats);
         }
       }
 #endif
