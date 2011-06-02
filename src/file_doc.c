@@ -542,16 +542,23 @@ static uint64_t get64u(const void *buffer, const unsigned int offset)
 
 static const char *software2ext(const unsigned int count, const unsigned char *software)
 {
+  if(count>=12 && memcmp(software, "MicroStation", 12)==0)
+    return "dgn";
   if(count>=14 && memcmp(software, "Microsoft Word", 14)==0)
-    return "doc";
-  if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
     return "doc";
   if(count>=15 && memcmp(software, "Microsoft Excel", 15)==0)
     return "xls";
   if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
     return "ppt";
-  if(count>=12 && memcmp(software, "MicroStation", 12)==0)
-    return "dgn";
+  if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
+    return "doc";
+  return NULL;
+}
+
+static const char *software_uni2ext(const unsigned int count, const unsigned char *software)
+{
+  if(count>=17 && memcmp(software, "D\0e\0l\0c\0a\0m\0 \0P\0o\0w\0e\0r\0S\0H\0A\0P\0E\0", 34)==0)
+    return "psmodel";
   return NULL;
 }
 
@@ -610,6 +617,25 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
 #endif
 	*ext=software2ext(count, &dataPt[valStart + 4]);
       }
+      /* tag: Software, type: VT_LPWSTR */
+      if(tag==0x12 && type==31)
+      {
+	unsigned int count=get32u(dataPt, valStart);
+	if(valStart + 4 + 2 * count > dirLen)
+	  return ;
+#ifdef DEBUG_OLE
+	{
+	  unsigned int j;
+	  log_info("Software ");
+	  for(j=0; j < 2 * count; j+=2)
+	  {
+	    log_info("%c", dataPt[valStart + 4 + j]);
+	  }
+	  log_info("\n");
+	}
+#endif
+	*ext=software_uni2ext(count, &dataPt[valStart + 4]);
+      }
       if(tag==0x02 && type==30 && *title==NULL)
       {
 	const unsigned int count=get32u(dataPt, valStart);
@@ -665,11 +691,11 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
     const unsigned int block, const unsigned int len, const char **ext, char **title, time_t *file_time)
 {
   unsigned char *summary=NULL;
-  if(len < 48 || len>102400)
+  if(len < 48 || len>1024*1024)
     return ;
   if(len < le32(header->miniSectorCutoff))
   {
-    if(le32(header->csectMiniFat)!=0 && ministream_size > 0 && ministream_size < 102400)
+    if(le32(header->csectMiniFat)!=0 && ministream_size > 0 && ministream_size < 1024*1024)
     {
       const unsigned int mini_fat_entries=(le32(header->csectMiniFat) << le16(header->uSectorShift)) / 4;
       uint32_t *minifat;
