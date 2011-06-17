@@ -164,6 +164,7 @@ extern const file_hint_t file_hint_nds;
 extern const file_hint_t file_hint_njx;
 extern const file_hint_t file_hint_nk2;
 extern const file_hint_t file_hint_nsf;
+extern const file_hint_t file_hint_oci;
 extern const file_hint_t file_hint_ogg;
 extern const file_hint_t file_hint_one;
 extern const file_hint_t file_hint_orf;
@@ -392,6 +393,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_njx  },
   { .enable=0, .file_hint=&file_hint_nk2  },
   { .enable=0, .file_hint=&file_hint_nsf  },
+  { .enable=0, .file_hint=&file_hint_oci  },
   { .enable=0, .file_hint=&file_hint_ogg  },
   { .enable=0, .file_hint=&file_hint_one  },
   { .enable=0, .file_hint=&file_hint_orf  },

@@ -162,6 +162,7 @@ file_C			= filegen.c \
 			  file_njx.c \
 			  file_nk2.c \
 			  file_nsf.c \
+			  file_oci.c \
 			  file_ogg.c \
 			  file_one.c \
 			  file_orf.c \
