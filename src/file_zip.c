@@ -41,6 +41,7 @@
 #include "log.h"
 
 /* #define DEBUG_ZIP */
+extern const file_hint_t file_hint_doc;
 static void register_header_check_zip(file_stat_t *file_stat);
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_zip(file_recovery_t *file_recovery);
@@ -682,6 +683,12 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 #endif
   if(memcmp(buffer,zip_header,sizeof(zip_header))==0)
   {
+    if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_doc &&
+	(strcmp(file_recovery->extension,"doc")==0 ||
+	 strcmp(file_recovery->extension,"psmodel")==0)
+	&& memcmp(&buffer[30], "macrolog_1.mac", 14)==0)
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=21;
     file_recovery_new->file_check=&file_check_zip;

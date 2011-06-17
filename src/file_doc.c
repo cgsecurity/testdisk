@@ -909,8 +909,10 @@ static void file_rename_doc(const char *old_filename)
 	    /* Page Maker */
 	    else if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0", 18)==0)
 	      ext="p65";
-	    if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
+	    else if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
 	      ext="dgn";
+	    else if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0", 14)==0)
+	      ext="psmodel";
 	  }
 	}
       }
