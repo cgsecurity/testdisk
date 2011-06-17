@@ -67,9 +67,38 @@ static void register_header_check_mov(file_stat_t *file_stat)
   register_header_check(4, (const unsigned char*)"jP  ",4, &header_check_mov, file_stat);
 }
 
+struct atom_struct
+{
+  uint32_t size;
+  uint32_t type;
+} __attribute__ ((__packed__));
+
+struct atom64_struct
+{
+  uint32_t size1;
+  uint32_t type;
+  uint64_t size;
+} __attribute__ ((__packed__));
+
+static void file_rename_mov(const char *old_filename)
+{
+  FILE *file;
+  unsigned char buffer[512];
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  if(fread(&buffer,sizeof(buffer),1,file)!=1)
+  {
+    fclose(file);
+    return ;
+  }
+  fclose(file);
+  buffer[8]='\0';
+  file_rename(old_filename, buffer, sizeof(buffer), 4, NULL, 1);
+}
+
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  unsigned int i=0;
+  uint64_t i=0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
       file_recovery->calculated_file_size == file_recovery->file_size)
@@ -78,8 +107,16 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   }
   while(i<buffer_size-8)
   {
-    const unsigned int atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
-    if(atom_size<8 || atom_size > (unsigned int)2*1024*1024*1024)
+    const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
+    uint64_t atom_size=be32(atom->size);
+    if(atom_size==1)
+    {
+      const struct atom64_struct *atom64=(const struct atom64_struct*)&buffer[i];
+      atom_size=be64(atom64->size);
+      if(atom_size<16)
+	return 0;
+    }
+    else if(atom_size<8)
       return 0;
     /* check for commun atom type */
     if(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t')
@@ -110,16 +147,25 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
-      file_recovery_new->data_check=data_check_mov;
+      file_recovery_new->file_rename=&file_rename_mov;
+      /*
+      if(i==0 && buffer[12]=='m' && buffer[13]=='v' && buffer[14]=='h' && buffer[15]=='d')
+      {
+	file_recovery_new->calculated_file_size=atom_size;
+	file_recovery_new->data_check=data_check_size;
+      }
+      else
+	*/
+	file_recovery_new->data_check=data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
     }
     if(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p')
     {
-      unsigned int search_size=atom_size;
-      if(search_size>buffer_size-i)
-	search_size=buffer_size-i;
+      unsigned int search_size=buffer_size-i;
+      if(search_size > atom_size)
+	search_size=atom_size;
       if(td_memmem(&buffer[i+8], search_size-8, "isom", 4)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "mp41", 4)!=NULL ||
 	  td_memmem(&buffer[i+8], search_size-8, "mp42", 4)!=NULL ||
@@ -176,6 +222,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->extension="mov";
 	file_recovery_new->data_check=data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->file_rename=&file_rename_mov;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
@@ -200,37 +247,43 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int atom_size=(buffer[i+0]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
+    const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
+    uint64_t atom_size=be32(atom->size);
+    if(atom_size==1)
+    {
+      const struct atom64_struct *atom64=(const struct atom64_struct*)&buffer[i];
+      atom_size=be64(atom64->size);
+      if(atom_size<16)
+	return 2;
+    }
+    else if(atom_size<8)
+      return 2;
 #ifdef DEBUG_MOV
-    log_trace("file_mov.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+    log_trace("file_mov.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
 	file_recovery->filename,
         buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
         buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
-        atom_size,
+        (long long unsigned)atom_size,
         (long long unsigned)file_recovery->calculated_file_size);
 #endif
-    if(atom_size>=8 &&
-        (
-         (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-         (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
-         (buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
-	 (buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
-         (buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
-         (buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
-         (buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-         (buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
-         (buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
-         (buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
-         (buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
-         (buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
-         (buffer[i+4]=='u' && buffer[i+5]=='u' && buffer[i+6]=='i' && buffer[i+7]=='d') ||
-         (buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e')
-        )
-      )
+    if( (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+	(buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
+	(buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
+	(buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
+	(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
+	(buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
+	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
+	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
+	(buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+	(buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
+	(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
+	(buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
+	(buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
+	(buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
+	(buffer[i+4]=='u' && buffer[i+5]=='u' && buffer[i+6]=='i' && buffer[i+7]=='d') ||
+	(buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e') )
     {
-      file_recovery->calculated_file_size+=(uint64_t)atom_size;
+      file_recovery->calculated_file_size+=atom_size;
     }
     else
     {
