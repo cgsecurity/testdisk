@@ -1042,7 +1042,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const int verbose, const 
     snprintf(msg, sizeof(msg),
 	"Create a image_remaining.dd (%u MB) file with the unknown data (Answer N if not sure) (Y/N)",
 	(unsigned int)(data_size/1000/1000));
-    if(ask_confirmation(msg)!=0)
+    if(ask_confirmation("%s", msg)!=0)
     {
       char *filename;
       char *res;
