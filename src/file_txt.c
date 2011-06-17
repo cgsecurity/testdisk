@@ -1175,7 +1175,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     {
       ext="html";
     }
-    log_info("ind=%f\n", ind);
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
     {
       const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
