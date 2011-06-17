@@ -209,6 +209,7 @@ void xml_add_DFXML_creator(const char *package, const char *version)
 #endif
 #ifdef HAVE_GETEUID
   xml_out2i("uid", geteuid());
+#if 0
 #ifdef HAVE_GETPWUID
   {
     struct passwd *tmp=getpwuid(getuid());
@@ -217,6 +218,7 @@ void xml_add_DFXML_creator(const char *package, const char *version)
       xml_out2s("username", tmp->pw_name);
     }
   }
+#endif
 #endif
 #endif
   {
