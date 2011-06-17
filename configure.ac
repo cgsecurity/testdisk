@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
-AC_INIT([testdisk],[6.12],[grenier@cgsecurity.org])
+AC_PREREQ([2.59])
+AC_INIT([testdisk],[6.13-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
 TESTDISKDATE="May 2011"
 AC_SUBST(TESTDISKDATE)
@@ -283,8 +283,8 @@ AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.
 # compiles and links without any extra flags).
 if test -z "${use_iconv}"; then
 AC_MSG_CHECKING(iconv support)
-AC_LINK_IFELSE([[#include <iconv.h>
-int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
+int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
 ,
   # libc has a working iconv.
   AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
@@ -304,8 +304,8 @@ if test $found_iconv = no ; then
   else
     LIBS="$LIBS ${iconv_lib_a}"
   fi
-  AC_LINK_IFELSE([[#include <iconv.h>
-  int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+  AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
+  int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
   ,
     # -liconv works.
     AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
@@ -326,8 +326,8 @@ if test $found_iconv = no ; then
   else
     LIBS="$LIBS ${giconv_lib_a}"
   fi
-  AC_LINK_IFELSE([[#include <giconv.h>
-  int main(int argc,char **argv) { iconv_open("foo","bar"); }]]
+  AC_LINK_IFELSE([AC_LANG_SOURCE([#include <giconv.h>
+  int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
   ,
     AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
     AC_DEFINE(HAVE_GICONV,1, [Define if you have this function])
