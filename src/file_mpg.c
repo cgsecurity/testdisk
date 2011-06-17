@@ -54,7 +54,9 @@ static void register_header_check_mpg(file_stat_t *file_stat)
 
 static int header_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg &&
+      !(buffer[0]==0x00 && buffer[1]==0x00 && buffer[2]==0x01 &&
+	buffer[3]==0xBA && (buffer[4]&0xF1)==0x21  && buffer[5]==0 && buffer[6]==1 && buffer[7]==0 && buffer[8]==1))
     return 0;
   /* MPEG-1 http://andrewduncan.ws/MPEG/MPEG-1.ps
    * MPEG-2 Program stream http://neuron2.net/library/mpeg2/iso13818-1.pdf
