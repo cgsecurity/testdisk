@@ -68,7 +68,7 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
     const unsigned char *src;
     reset_file_recovery(file_recovery_new);
-    if(td_memmem(buffer, 512, "<</Illustrator ", 15) != NULL)
+    if(td_memmem(buffer, buffer_size, "<</Illustrator ", 15) != NULL)
       file_recovery_new->extension="ai";
     else
       file_recovery_new->extension=file_hint_pdf.extension;
