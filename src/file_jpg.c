@@ -91,8 +91,36 @@ static void register_header_check_jpg(file_stat_t *file_stat)
   register_header_check(0, jpg_header_com,sizeof(jpg_header_com), &header_check_jpg, file_stat);
 }
 
+static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *height, unsigned int *width)
+{
+  unsigned int i=2;
+  while(i+8<buffer_size)
+  {
+    if(buffer[i]==0xFF && buffer[i+1]==0xFF)
+      i++;
+    else if(buffer[i]==0xFF)
+    {
+      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      if(buffer[i+1]==0xc0)	/* SOF0 */
+      {
+	*height=(buffer[i+5]<<8)+buffer[i+6];
+	*width=(buffer[i+7]<<8)+buffer[i+8];
+	return;
+      }
+      i+=2+size;
+    }
+    else
+    {
+      return;
+    }
+  }
+}
+
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  unsigned int width=0;
+  unsigned int height=0;
+  jpg_get_size(buffer, buffer_size, &height, &width);
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_indd)
     return 0;
@@ -105,6 +133,15 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     log_info("jpg %llu %llu\n",
 	(long long unsigned)file_recovery->calculated_file_size,
 	(long long unsigned)file_recovery->file_size);
+    return 0;
+  }
+  /* Don't recover the thumb instead of the jpg itself */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_jpg &&
+      file_recovery->file_size <= 4096 &&
+      memcmp(buffer, jpg_header_app0, sizeof(jpg_header_app0))==0 &&
+      width>0 && width<200 && height>0 && height<200)
+  {
     return 0;
   }
   /* Don't extract jpg inside AVI */
@@ -1064,7 +1101,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     for(offset=file_recovery->blocksize; offset < nbytes && file_recovery->offset_error==0; offset+=file_recovery->blocksize)
     {
       if(buffer[offset]==0xff && buffer[offset+1]==0xd8 && buffer[offset+2]==0xff &&
-	(buffer[offset+3]==0xe0 || buffer[offset+3]==0xe1 || buffer[offset+3]==0xec))
+	(buffer[offset+3]==0xe1 || buffer[offset+3]==0xec))
       {
 	file_recovery->offset_error=offset;
       }
