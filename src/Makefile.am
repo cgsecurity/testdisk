@@ -236,6 +236,7 @@ file_C			= filegen.c \
 			  file_veg.c \
 			  file_vfb.c \
 			  file_vmdk.c \
+			  file_vmg.c \
 			  file_wdp.c \
 			  file_win.c \
 			  file_wks.c \
