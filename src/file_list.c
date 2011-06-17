@@ -245,6 +245,7 @@ extern const file_hint_t file_hint_win;
 extern const file_hint_t file_hint_wks;
 extern const file_hint_t file_hint_wmf;
 extern const file_hint_t file_hint_wnk;
+extern const file_hint_t file_hint_wpb;
 extern const file_hint_t file_hint_wpd;
 extern const file_hint_t file_hint_wtv;
 extern const file_hint_t file_hint_wv;
@@ -477,6 +478,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_wks  },
   { .enable=0, .file_hint=&file_hint_wmf  },
   { .enable=0, .file_hint=&file_hint_wnk  },
+  { .enable=0, .file_hint=&file_hint_wpb  },
   { .enable=0, .file_hint=&file_hint_wpd  },
   { .enable=0, .file_hint=&file_hint_wtv  },
   { .enable=0, .file_hint=&file_hint_wv   },

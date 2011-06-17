@@ -242,6 +242,7 @@ file_C			= filegen.c \
 			  file_wks.c \
 			  file_wmf.c \
 			  file_wnk.c \
+			  file_wpb.c \
 			  file_wpd.c \
 			  file_wtv.c \
 			  file_wv.c \
