@@ -2,7 +2,7 @@
 
     File: file_riff.c
 
-    Copyright (C) 1998-2005,2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2005,2007-2011 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -144,6 +144,7 @@ static void file_check_avi(file_recovery_t *fr)
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
+  while(1)
   {
     const uint64_t file_size=fr->file_size;
     riff_list_header list_header;
@@ -156,7 +157,7 @@ static void file_check_avi(file_recovery_t *fr)
     if(memcmp(&list_header.dwList, "RIFF", 4) != 0)
     {
       fr->offset_error=fr->file_size;
-      fr->file_size=0;
+      fr->file_size=fr->file_size;
       return;
     }
     check_riff_list(fr, 1, file_size + sizeof(list_header), file_size + 8 + le32(list_header.dwSize) - 1);
@@ -164,6 +165,21 @@ static void file_check_avi(file_recovery_t *fr)
       return;
     fr->file_size=file_size + 8 + le32(list_header.dwSize);
   }
+}
+
+static int data_check_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
+  {
+    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
+    if(memcmp(&buffer[i], "RIFF", 4)==0 && memcmp(&buffer[i+8], "AVIX", 4)==0)
+      file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
+    else
+      return 2;
+  }
+  return 1;
 }
 
 int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -185,28 +201,24 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
   if(memcmp(buffer,riff_header,sizeof(riff_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24)+8;
     if(memcmp(&buffer[8],"NUND",4)==0)
     {
       /* Cubase Project File */
       file_recovery_new->extension="cpr";
-      file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) + (((uint64_t)buffer[5])<<16) +
-	(((uint64_t)buffer[6])<<8) + (uint64_t)buffer[7] + 12;
-      file_recovery_new->data_check=&data_check_size;
-      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->calculated_file_size+=4;
       return 1;
     }
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24)+8;
     if(memcmp(&buffer[8],"AVI ",4)==0)
     {
       const riff_list_header list_movi={
-	.dwList=be32(0x4c495354),
+	.dwList=be32(0x4c495354),	/* LIST */
 	.dwSize=le32(4),
-	.dwFourCC=be32(0x6d6f7669)
+	.dwFourCC=be32(0x6d6f7669)	/* movi */
       };
       file_recovery_new->extension="avi";
-      file_recovery_new->data_check=&data_check_size;
-      file_recovery_new->file_check=&file_check_avi;
-
       /* Is it a raw avi stream with Data Binary chunks ? */
       if(file_recovery_new->calculated_file_size + 4 < buffer_size &&
 	memcmp(&buffer[file_recovery_new->calculated_file_size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
@@ -214,12 +226,14 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
 	  buffer[file_recovery_new->calculated_file_size+3]=='b')
       {
 	file_recovery_new->data_check=&data_check_avi_stream;
-	file_recovery_new->file_check=&file_check_size;
+      }
+      else
+      {
+	file_recovery_new->data_check=&data_check_avi;
+	file_recovery_new->file_check=&file_check_avi;
       }
       return 1;
     }
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
     if(memcmp(&buffer[8],"CDDA",4)==0)
       file_recovery_new->extension="cda";
     else if(memcmp(&buffer[8],"CDR",3)==0 || memcmp(&buffer[8],"cdr6",4)==0)
