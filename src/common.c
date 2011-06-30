@@ -171,3 +171,19 @@ void set_part_name_chomp(partition_t *partition, const unsigned char *src, const
   for(;(i>=0) && (src[i]==' ');i--);
   partition->fsname[i+1]='\0';
 }
+
+char* strip_dup(char* str)
+{
+  int     i;
+  char *end;
+  while(isspace(*str))
+    str++;
+  end=str;
+  for (i = 0; str[i] != 0; i++)
+    if (!isspace (str[i]))
+      end=&str[i];
+  *(end+1) = 0;
+  return strdup (str);
+}
+
+

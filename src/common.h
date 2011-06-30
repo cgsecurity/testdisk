@@ -354,6 +354,8 @@ struct param_disk_struct
   uint64_t disk_size;
   char *device;
   char *model;
+  char *serial_no;
+  char *fw_rev;
   const char *(*description)(disk_t *disk_car);
   const char *(*description_short)(disk_t *disk_car);
   void *(*pread_fast)(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
@@ -422,6 +424,7 @@ void *MALLOC(size_t size);
 unsigned int up2power(const unsigned int number);
 void set_part_name(partition_t *partition,const char *src,const int max_size);
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size);
+char* strip_dup(char* str);
 #ifndef BSD_MAXPARTITIONS
 #define	BSD_MAXPARTITIONS	8
 #endif

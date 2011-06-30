@@ -815,22 +815,6 @@ void update_disk_car_fields(disk_t *disk_car)
 }
 
 #ifdef TARGET_LINUX
-static char* strip_name(char* str)
-{
-  int     i;
-  int     end = 0;
-
-  for (i = 0; str[i] != 0; i++) {
-    if (!isspace (str[i])
-	|| (isspace (str[i]) && !isspace (str[i+1]) && str[i+1])) {
-      str [end] = str[i];
-      end++;
-    }
-  }
-  str[end] = 0;
-  return strdup (str);
-}
-
 /* This function reads the /sys entry named "file" for device "disk_car". */
 static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
 {
@@ -851,7 +835,7 @@ static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
   }
 
   fclose (f);
-  return strip_name (buf);
+  return strip_dup (buf);
 }
 #endif
 
@@ -866,86 +850,80 @@ static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
 #ifdef HAVE_SCSI_SCSI_IOCTL_H
 #include <scsi/scsi_ioctl.h>
 #endif
+#ifdef HAVE_SCSI_SG_H
+#include <scsi/sg.h>
+#endif
 #endif
 
-#if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
-static int scsi_query_product_info (const int hd_h, char **vendor, char **product)
+#if defined(TARGET_LINUX) && defined(INQUIRY) && defined(SG_GET_VERSION_NUM)
+typedef struct _scsi_inquiry_data
 {
-  /* The following are defined by the SCSI-2 specification. */
-  typedef struct _scsi_inquiry_cmd
-  {
-    uint8_t op;
-    uint8_t lun;          /* bits 5-7 denote the LUN */
-    uint8_t page_code;
-    uint8_t reserved;
-    uint8_t alloc_length;
-    uint8_t control;
-  } __attribute__((packed)) scsi_inquiry_cmd_t;
+  uint8_t peripheral_info;
+  uint8_t device_info;
+  uint8_t version_info;
+  uint8_t _field1;
+  uint8_t additional_length;
+  uint8_t _reserved1;
+  uint8_t _reserved2;
+  uint8_t _field2;
+  uint8_t vendor_id[8];
+  uint8_t product_id[16];
+  uint8_t product_revision[4];
+  uint8_t vendor_specific[20];
+  uint8_t _reserved3[40];
+} __attribute__((packed)) scsi_inquiry_data_t;
+#define INQ_CMD_LEN	6
+#define INQ_REPLY_LEN	sizeof(scsi_inquiry_data_t)
 
-  typedef struct _scsi_inquiry_data
-  {
-    uint8_t peripheral_info;
-    uint8_t device_info;
-    uint8_t version_info;
-    uint8_t _field1;
-    uint8_t additional_length;
-    uint8_t _reserved1;
-    uint8_t _reserved2;
-    uint8_t _field2;
-    uint8_t vendor_id[8];
-    uint8_t product_id[16];
-    uint8_t product_revision[4];
-    uint8_t vendor_specific[20];
-    uint8_t _reserved3[40];
-  } __attribute__((packed)) scsi_inquiry_data_t;
-
-  struct scsi_arg
-  {
-    unsigned int inlen;
-    unsigned int outlen;
-
-    union arg_data
-    {
-      scsi_inquiry_data_t out;
-      scsi_inquiry_cmd_t  in;
-    } data;
-  } arg;
-
-  struct scsi_idlun
-  {
-    uint32_t dev_id;
-    uint32_t host_unique_id;
-  } idlun;
-
+static int scsi_query_product_info (const int sg_fd, char **vendor, char **product, char **fw_rev)
+{
+  unsigned char inqCmdBlk[INQ_CMD_LEN] = {INQUIRY, 0, 0, 0, INQ_REPLY_LEN, 0};
+  scsi_inquiry_data_t inqBuff;
+  unsigned char sense_buffer[32];
+  sg_io_hdr_t io_hdr;
+  int k;
   char    buf[32];
-
   *vendor = NULL;
   *product = NULL;
 
-  if (ioctl (hd_h, SCSI_IOCTL_GET_IDLUN, &idlun) < 0)
+  /* It is prudent to check we have a sg device by trying an ioctl */
+  if (ioctl(sg_fd, SG_GET_VERSION_NUM, &k) < 0 || k < 30000)
+    return -1;
+  /* Prepare INQUIRY command */
+  memset(&io_hdr, 0, sizeof(sg_io_hdr_t));
+  io_hdr.interface_id = 'S';
+  io_hdr.cmd_len = sizeof(inqCmdBlk);
+  /* io_hdr.iovec_count = 0; */  /* memset takes care of this */
+  io_hdr.mx_sb_len = sizeof(sense_buffer);
+  io_hdr.dxfer_direction = SG_DXFER_FROM_DEV;
+  io_hdr.dxfer_len = INQ_REPLY_LEN;
+  io_hdr.dxferp = (unsigned char*)&inqBuff;
+  io_hdr.cmdp = inqCmdBlk;
+  io_hdr.sbp = sense_buffer;
+  io_hdr.timeout = 20000;     /* 20000 millisecs == 20 seconds */
+  /* io_hdr.flags = 0; */     /* take defaults: indirect IO, etc */
+  /* io_hdr.pack_id = 0; */
+  /* io_hdr.usr_ptr = NULL; */
+
+  if (ioctl(sg_fd, SG_IO, &io_hdr) < 0)
     return -1;
 
-
-  memset (&arg, 0x00, sizeof(struct scsi_arg));
-  arg.inlen  = 0;
-  arg.outlen = sizeof(scsi_inquiry_data_t);
-  arg.data.in.op  = INQUIRY;
-  arg.data.in.lun = idlun.host_unique_id << 5;
-  arg.data.in.alloc_length = sizeof(scsi_inquiry_data_t);
-  arg.data.in.page_code = 0;
-  arg.data.in.reserved = 0;
-  arg.data.in.control = 0;
-
-  if (ioctl (hd_h, SCSI_IOCTL_SEND_COMMAND, &arg) < 0)
+  /* now for the error processing */
+  if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK)
     return -1;
 
-  memcpy (buf, arg.data.out.vendor_id, 8);
+  memcpy (buf, inqBuff.vendor_id, 8);
   buf[8] = '\0';
-  *vendor = strip_name (buf);
+  *vendor = strip_dup (buf);
 
-  memcpy (buf, arg.data.out.product_id, 16);
+  memcpy (buf, inqBuff.product_id, 16);
   buf[16] = '\0';
-  *product = strip_name (buf);
+  *product = strip_dup (buf);
+
+  /* Information is truncated */
+  memcpy (buf, inqBuff.product_revision, 4);
+  buf[4] = '\0';
+  *fw_rev= strip_dup (buf);
 
   return 0;
 }
@@ -954,6 +932,54 @@ static int scsi_query_product_info (const int hd_h, char **vendor, char **produc
 #ifndef DJGPP
 static void disk_get_model(const int hd_h, disk_t *dev, const unsigned int verbose)
 {
+#ifdef HDIO_GET_IDENTITY
+  if(dev->model!=NULL)
+    return;
+  {
+    struct hd_driveid       hdi;
+    memset(&hdi, 0, sizeof(hdi));
+    if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
+    {
+      int i;
+      char tmp[41];
+      if(dev->model==NULL)
+      {
+	memcpy (tmp, hdi.model, 40);
+	tmp[40] = '\0';
+	dev->model=strip_dup(tmp);
+      }
+      if(dev->serial_no==NULL)
+      {
+	memcpy (tmp, hdi.serial_no, 20);
+	tmp[20] = '\0';
+	dev->serial_no=strip_dup(tmp);
+      }
+      if(dev->fw_rev==NULL)
+      {
+	memcpy (tmp, hdi.fw_rev, 8);
+	tmp[8] = '\0';
+	dev->fw_rev=strip_dup(tmp);
+      }
+    }
+  }
+#endif
+#if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
+  if(dev->model!=NULL)
+    return;
+  {
+    /* Uses direct queries via the deprecated ioctl SCSI_IOCTL_SEND_COMMAND */
+    char *vendor=NULL;
+    char *product=NULL;
+    scsi_query_product_info (hd_h, &vendor, &product, &dev->fw_rev);
+    if (vendor && product)
+    {
+      dev->model = (char*) MALLOC (8 + 16 + 2);
+      sprintf (dev->model, "%.8s %.16s", vendor, product);
+    }
+    free(vendor);
+    free(product);
+  }
+#endif
 #ifdef TARGET_LINUX
   if(dev->model!=NULL)
     return;
@@ -966,39 +992,6 @@ static void disk_get_model(const int hd_h, disk_t *dev, const unsigned int verbo
     if (vendor && product)
     {
       dev->model = (char*) MALLOC(8 + 16 + 2);
-      sprintf (dev->model, "%.8s %.16s", vendor, product);
-    }
-    free(vendor);
-    free(product);
-  }
-#endif
-#ifdef HDIO_GET_IDENTITY
-  if(dev->model!=NULL)
-    return;
-  {
-    struct hd_driveid       hdi;
-    memset(&hdi, 0, sizeof(hdi));
-    if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
-    {
-      char hdi_buf[41];
-      memcpy (hdi_buf, hdi.model, 40);
-      hdi_buf[40] = '\0';
-      if(dev!=NULL)
-	dev->model=strdup(hdi_buf);
-    }
-  }
-#endif
-#if defined(TARGET_LINUX) && defined(SCSI_IOCTL_GET_IDLUN) && defined(SCSI_IOCTL_SEND_COMMAND)
-  if(dev->model!=NULL)
-    return;
-  {
-    /* Uses direct queries via the deprecated ioctl SCSI_IOCTL_SEND_COMMAND */
-    char *vendor=NULL;
-    char *product=NULL;
-    scsi_query_product_info (hd_h, &vendor, &product);
-    if (vendor && product)
-    {
-      dev->model = (char*) MALLOC (8 + 16 + 2);
       sprintf (dev->model, "%.8s %.16s", vendor, product);
     }
     free(vendor);
@@ -1653,6 +1646,8 @@ void init_disk(disk_t *disk)
   disk->rbuffer_size=0;
   disk->wbuffer_size=0;
   disk->model=NULL;
+  disk->serial_no=NULL;
+  disk->fw_rev=NULL;
   disk->write_used=0;
   disk->description_txt[0]='\0';
   disk->unit=UNIT_CHS;
