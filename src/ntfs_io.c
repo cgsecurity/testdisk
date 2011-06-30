@@ -147,7 +147,9 @@ static int ntfs_device_testdisk_io_sync(struct ntfs_device *dev)
 static int ntfs_device_testdisk_io_stat(struct ntfs_device *dev, struct stat *buf)
 {
 	log_warning("ntfs_device_testdisk_io_stat() unimplemented\n");
+#ifdef ENOTSUP
 	errno = ENOTSUP;
+#endif
 	return -1;
 }
 
@@ -155,7 +157,9 @@ static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
 		void *argp)
 {
 	log_warning( "ntfs_device_testdisk_io_ioctl() unimplemented\n");
+#ifdef ENOTSUP
 	errno = ENOTSUP;
+#endif
 	return -1;
 }
 

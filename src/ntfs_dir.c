@@ -259,12 +259,14 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 #ifdef DJGPP
       new_file->file_size=filesize;
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
       new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
       if(new_file->stat.st_blksize!=0)
       {
 	new_file->stat.st_blocks=(filesize + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
       }
+#endif
 #endif
       new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
       new_file->stat.st_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
