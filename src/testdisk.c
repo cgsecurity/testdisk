@@ -385,12 +385,14 @@ int main( int argc, char **argv )
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
     disk_t *disk=element_disk->disk;
-    if(disk->model==NULL)
-      log_info("%s, sector size=%u\n",
-	  disk->description(disk), disk->sector_size);
-    else
-      log_info("%s, sector size=%u - %s\n",
-	  disk->description(disk), disk->sector_size, disk->model);
+    log_info("%s, sector size=%u", disk->description(disk), disk->sector_size);
+    if(disk->model!=NULL)
+      log_info(" - %s", disk->model);
+    if(disk->serial_no!=NULL)
+      log_info(", S/N:%s", disk->serial_no);
+    if(disk->fw_rev!=NULL)
+      log_info(", FW:%s", disk->fw_rev);
+    log_info("\n");
   }
   log_info("\n");
   use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
