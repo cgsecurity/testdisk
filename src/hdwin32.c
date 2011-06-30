@@ -75,28 +75,22 @@ void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose)
       log_info("IOCTL_STORAGE_QUERY_PROPERTY:\n");
       dump_log(&buffer, cbBytesReturned);
     }
+    buffer[(cbBytesReturned < sizeof(buffer) ? cbBytesReturned : sizeof(buffer)-1)]='\0';
+    if(descrip->SerialNumberOffset!=0 && descrip->SerialNumberOffset!=0xffffffff)
+      dev->serial_no=strip_dup(&buffer[descrip->SerialNumberOffset]);
+    if(descrip->ProductIdOffset!=0)
+      dev->fw_rev=strip_dup(&buffer[descrip->ProductRevisionOffset]);
     if(offsetVendor>0)
-    {
-      for(lenVendor=0; offsetVendor+lenVendor < sizeof(buffer) &&
-	  offsetVendor+lenVendor < cbBytesReturned &&
-	  buffer[offsetVendor+lenVendor] != '\0';
-	  lenVendor++);
-    }
+      lenVendor=strlen(&buffer[offsetVendor]);
     if(offsetProduct>0)
-    {
-      for(lenProduct=0; offsetProduct+lenProduct < sizeof(buffer) &&
-	  offsetProduct+lenProduct < cbBytesReturned &&
-	  buffer[offsetProduct+lenProduct] != '\0';
-	  lenProduct++);
-    }
-
+      lenProduct=strlen(&buffer[offsetProduct]);
     if(lenVendor+lenProduct>0)
     {
-      int i;
       dev->model = (char*) MALLOC(lenVendor+1+lenProduct+1);
       dev->model[0]='\0';
       if(lenVendor>0)
       {
+	int i;
 	memcpy(dev->model, &buffer[offsetVendor], lenVendor);
 	dev->model[lenVendor]='\0';
 	for(i=lenVendor-1;i>=0 && dev->model[i]==' ';i--);
@@ -106,6 +100,7 @@ void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose)
       }
       if(lenProduct>0)
       {
+	int i;
 	strncat(dev->model, &buffer[offsetProduct],lenProduct);
 	for(i=strlen(dev->model)-1;i>=0 && dev->model[i]==' ';i--);
 	dev->model[++i]='\0';
