@@ -311,6 +311,13 @@ int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_dat
     free(exfat_header);
     return -1;
   }
+  if(le16(exfat_header->signature)!=0xAA55 ||
+      memcmp(exfat_header->oem_id, "EXFAT   ", sizeof(exfat_header->oem_id))!=0)
+  {
+    log_error("Not an exFAT boot sector.\n");
+    free(exfat_header);
+    return -1;
+  }
   ls=(struct exfat_dir_struct *)MALLOC(sizeof(*ls));
   ls->boot_sector=exfat_header;
 #ifdef HAVE_ICONV
