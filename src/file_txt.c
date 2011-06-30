@@ -170,6 +170,12 @@ static const char sign_java1[6]			= "class";
 static const char sign_java3[15]		= "private static";
 static const char sign_java4[17]		= "public interface";
 static unsigned char ascii_char[256];
+static const unsigned char hdr_header[17]=  {
+  'E' , 'N' , 'V' , 'I' , 0x0d, 0x0a, 'd' , 'e' ,
+  's' , 'c' , 'r' , 'i' , 'p' , 't' , 'i' , 'o' ,
+  'n' 
+};
+
 
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -197,6 +203,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_dif, sizeof(header_dif), &header_check_fasttxt, file_stat);
   register_header_check(0, header_emka, sizeof(header_emka), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ers,sizeof(header_ers), &header_check_fasttxt, file_stat);
+  register_header_check(0, hdr_header, sizeof(hdr_header), &header_check_fasttxt, file_stat);
   register_header_check(0, header_html, sizeof(header_html), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ics, sizeof(header_ics), &header_check_fasttxt, file_stat);
   register_header_check(0, header_imm,sizeof(header_imm), &header_check_fasttxt, file_stat);
@@ -619,6 +626,15 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_ers;
     file_recovery_new->extension="ers";
+    return 1;
+  }
+  if(memcmp(buffer, hdr_header, sizeof(hdr_header))==0)
+  {
+    /* ENVI */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="hdr";
     return 1;
   }
   if(memcmp(buffer, header_emka, sizeof(header_emka))==0)
