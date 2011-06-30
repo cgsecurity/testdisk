@@ -101,7 +101,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   uint64_t i=0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
-      file_recovery->calculated_file_size == file_recovery->file_size)
+      file_recovery->calculated_file_size == file_recovery->file_size &&
+      !(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p'))
   { /* PhotoRec is already trying to recover this mov file */
     return 0;
   }
