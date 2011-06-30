@@ -35,7 +35,7 @@ static int header_check_mat(const unsigned char *buffer, const unsigned int buff
 
 const file_hint_t file_hint_mat= {
   .extension="mat",
-  .description="Mathlab",
+  .description="Matlab",
   .min_header_distance=0,
   .max_filesize=10*1024*1024,
   .recover=1,
