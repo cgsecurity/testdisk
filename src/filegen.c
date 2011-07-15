@@ -391,6 +391,7 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 	case '/':
 	case '\\':
 	case ':':
+	case '*':
 	  *dst++ = '_';
 	  break;
 	default:
@@ -466,6 +467,7 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
 	case '/':
 	case '\\':
 	case ':':
+	case '*':
 	  *dst++ = '_';
 	  break;
 	default:
