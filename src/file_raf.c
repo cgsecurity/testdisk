@@ -2,7 +2,7 @@
 
     File: file_raf.c
 
-    Copyright (C) 1998-2005,2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2005,2007-2011 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,7 +44,10 @@ const file_hint_t file_hint_raf= {
   .register_header_check=&register_header_check_raf
 };
 
-static const unsigned char raf_header[8]= {'F','U','J','I','F','I','L','M'};
+static const unsigned char raf_header[16]= {
+  'F','U','J','I','F','I','L','M',
+  'C','C','D','-','R','A','W',' '
+};
 
 static void register_header_check_raf(file_stat_t *file_stat)
 {
@@ -62,5 +65,3 @@ static int header_check_raf(const unsigned char *buffer, const unsigned int buff
   }
   return 0;
 }
-
-
