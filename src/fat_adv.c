@@ -1113,9 +1113,11 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
       memcmp(fat_header->system_id,"MSWIN4.1",8))
     memcpy(fat_header->system_id,"MSWIN4.1",8);
   /* FIXME, need to know where the extended or logical partition start */
+#if 0
   if(partition->status==STATUS_LOG)
     fat_header->hidden=le32(disk_car->geom.sectors_per_head);
   else
+#endif
     fat_header->hidden=le32((partition->part_offset/disk_car->sector_size));
   fat_header->sectors_per_cluster=sectors_per_cluster;
   fat_header->reserved=le16(reserved);
