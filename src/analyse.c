@@ -53,6 +53,7 @@
 #include "swap.h"
 #include "sysv.h"
 #include "ufs.h"
+#include "vmfs.h"
 #include "xfs.h"
 #include "zfs.h"
 #include "log.h"
@@ -376,6 +377,26 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
       recover_btrfs(disk, btrfs, partition, verbose, dump_ind)==0)
       return 1;
     //  if(recover_gfs2(disk,(buffer+0x400),partition,verbose,dump_ind)==0) return 1;
+  }
+  return 0;
+}
+
+int search_type_2048(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
+{
+  void *data;
+  if(verbose>2)
+  {
+    log_trace("search_type_2048 lba=%lu\n",
+	(long unsigned)(partition->part_offset/disk->sector_size));
+  }
+  data=disk->pread_fast(disk, buffer, 2*DEFAULT_SECTOR_SIZE, partition->part_offset + 2048 * 512);
+  if(data==NULL)
+    return -1;
+  {
+    const struct vmfs_volume *sb_vmfs=(const struct vmfs_volume *)data;
+    if(le32(sb_vmfs->magic)==0xc001d00d &&
+      recover_VMFS(disk, sb_vmfs, partition, verbose, dump_ind)==0)
+      return 1;
   }
   return 0;
 }

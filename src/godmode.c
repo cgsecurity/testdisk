@@ -644,7 +644,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<=0 && test_nbr==6)
         {
 	  if(search_now==0)
-            test_nbr=13;
+            test_nbr=14;
 	  else
 	  {
 	    if(disk_car->pread(disk_car, buffer_disk0, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 8 * DEFAULT_SECTOR_SIZE)
@@ -691,7 +691,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           res=search_type_128(buffer_disk,disk_car,partition,verbose,dump_ind);
           test_nbr++;
         }
-        if(test_nbr>=13)
+	if(res<=0 && test_nbr==13)
+	{
+          res=search_type_2048(buffer_disk,disk_car,partition,verbose,dump_ind);
+          test_nbr++;
+	}
+        if(test_nbr>=14)
         {
           sector_inc=1;
           test_nbr=0;

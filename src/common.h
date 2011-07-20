@@ -262,6 +262,7 @@ enum upart_type {
   UP_SYSV4,
   UP_UFS,
   UP_UFS2,
+  UP_VMFS,
   UP_XFS,
   UP_XFS2,
   UP_XFS3,

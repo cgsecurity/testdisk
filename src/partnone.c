@@ -65,6 +65,7 @@
 #include "swap.h"
 #include "ufs.h"
 #include "xfs.h"
+#include "vmfs.h"
 #include "log.h"
 
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
@@ -119,6 +120,7 @@ static const struct systypes none_sys_types[] = {
   {UP_UFS,	"UFS"},
   {UP_UFS2,	"UFS 2"},
   {UP_UNK,	"Unknown"},
+  {UP_VMFS,	"VMFS"},
   {UP_XFS,	"XFS"},
   {UP_XFS2,	"XFS 2"},
   {UP_XFS3,	"XFS 3"},
@@ -223,6 +225,10 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   /* 64k offset */
     if(disk->pread(disk, buffer_disk, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) == 11 * DEFAULT_SECTOR_SIZE)
       res=search_type_128(buffer_disk, disk, partition,verbose,0);
+  }
+  if(res<=0)
+  {
+    res=search_type_2048(buffer_disk, disk, partition,verbose,0);
   }
   if(res<=0)
   { /* Search FAT32 backup */
@@ -413,6 +419,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_UFS:
     case UP_UFS2:
       ret=check_ufs(disk_car,partition,verbose);
+      break;
+    case UP_VMFS:
+      ret=check_VMFS(disk_car, partition);
       break;
     case UP_XFS:
     case UP_XFS2:
