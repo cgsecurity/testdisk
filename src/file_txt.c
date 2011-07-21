@@ -1243,9 +1243,10 @@ Doc: \r (0xD)
 	   td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
 	   td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
 	   td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL) ||
-	  /* Text should not be found in zip because of compression */
+	  /* Text should not be found in zip because of compression except .sh3d */
 	  (file_recovery->file_stat->file_hint==&file_hint_zip &&
-	   td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL))
+	   td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL &&
+	   strstr(file_recovery->filename, ".sh3d")==NULL))
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->data_check=&data_check_txt;
