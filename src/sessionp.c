@@ -161,10 +161,6 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
 int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const struct ph_options *options, const unsigned int carve_free_space_only)
 {
   FILE *f_session;
-  if(options->verbose>1)
-  {
-    log_trace("session_save\n");
-  }
   f_session=fopen(SESSION_FILENAME,"wb");
   if(!f_session)
   {
@@ -175,6 +171,10 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t 
   {
     struct td_list_head *free_walker = NULL;
     unsigned int i;
+    if(options->verbose>1)
+    {
+      log_trace("session_save\n");
+    }
     fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",
 	(unsigned int)time(NULL), disk->device, disk->arch->part_name_option, partition->order, blocksize);
     for(i=0;files_enable[i].file_hint!=NULL;i++)
