@@ -74,19 +74,13 @@ static int spacerange_cmp(const struct td_list_head *a, const struct td_list_hea
 #define INTER_SELECT	(LINES-2-7-1)
 #endif
 
-void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
+void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
 {
   int insert_error=0;
   list_part_t *list_part;
   list_part_t *current_element;
-  int allow_partial_last_cylinder=0;
-  int paranoid=1;
-  int keep_corrupted_file=0;
   unsigned int current_element_num;
-  unsigned int mode_ext2=0;
   unsigned int blocksize=0;
-  unsigned int expert=0;
-  unsigned int lowmem=0;
   unsigned int carve_free_space_only=0;
   int done=0;
   int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
@@ -104,7 +98,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	{0,NULL,NULL}
   };
 #endif
-  list_part=disk_car->arch->read_part(disk_car,verbose,0);
+  list_part=disk_car->arch->read_part(disk_car,options->verbose,0);
   {
     partition_t *partition_wd;
     partition_wd=new_whole_disk(disk_car);
@@ -191,19 +185,18 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  {
 	    blocksize=remove_used_space(disk_car, partition, list_search_space);
 	  }
-	  photorec(disk_car, partition, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2,current_cmd,list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	  photorec(disk_car, partition, options, res, 1, file_enable, current_cmd, list_search_space, blocksize, carve_free_space_only);
 	}
 	if(res!=recup_dir)
 	  free(res);
       }
       else if(strncmp(*current_cmd,"options",7)==0)
       {
-	int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
+	const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
 	(*current_cmd)+=7;
-	interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
-	    &keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
-	if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	  hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+	interface_options_photorec(options, current_cmd);
+	if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
+	  hd_update_geometry(disk_car, options->allow_partial_last_cylinder, options->verbose);
       }
       else if(strncmp(*current_cmd,"fileopt",7)==0)
       {
@@ -240,7 +233,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       {
 	unsigned int groupnr;
 	(*current_cmd)+=11;
-	mode_ext2=1;
+	options->mode_ext2=1;
 	groupnr=atoi(*current_cmd);
 	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	  (*current_cmd)++;
@@ -262,7 +255,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       {
 	unsigned int inodenr;
 	(*current_cmd)+=11;
-	mode_ext2=1;
+	options->mode_ext2=1;
 	inodenr=atoi(*current_cmd);
 	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	  (*current_cmd)++;
@@ -333,7 +326,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
       if(element!=NULL)
 	wprintw(stdscr, "Next");
       command = wmenuSelect(stdscr, INTER_SELECT_Y+1, INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
-	  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+	  (options->expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
 #if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
       if(command == KEY_MOUSE)
       {
@@ -360,7 +353,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	    }
 	    else
 	      command = menu_to_command(INTER_SELECT_Y+1, INTER_SELECT_Y, INTER_SELECT_X, menuMain, 8,
-		  (expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
+		  (options->expert==0?"SOFQ":"SOFGQ"), MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
 	  }
 	}
       }
@@ -401,7 +394,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  {
 	    char *res;
 	    partition_t *partition=current_element->part;
-	    ask_mode_ext2(disk_car, partition, &mode_ext2, &carve_free_space_only);
+	    ask_mode_ext2(disk_car, partition, &options->mode_ext2, &carve_free_space_only);
 	    menu=0;
 	    if(recup_dir!=NULL)
 	      res=(char *)recup_dir;
@@ -436,7 +429,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 		 * To carve the whole space, need to quit and reselect the partition */
 		done = 1;
 	      }
-	      photorec(disk_car, partition, verbose, paranoid, res, keep_corrupted_file,1,file_enable,mode_ext2, current_cmd, list_search_space,blocksize,expert, lowmem, carve_free_space_only);
+	      photorec(disk_car, partition, options, res, 1, file_enable, current_cmd, list_search_space, blocksize, carve_free_space_only);
 	    }
 	    if(res!=recup_dir)
 	      free(res);
@@ -445,11 +438,10 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	case 'o':
 	case 'O':
 	  {
-	    int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
-	    interface_options_photorec(&paranoid, &allow_partial_last_cylinder,
-		&keep_corrupted_file, &mode_ext2, &expert, &lowmem, current_cmd);
-	    if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	      hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+	    const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
+	    interface_options_photorec(options, current_cmd);
+	    if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
+	      hd_update_geometry(disk_car, options->allow_partial_last_cylinder, options->verbose);
 	    menu=1;
 	  }
 	  break;
@@ -460,7 +452,7 @@ void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, f
 	  break;
 	case 'g':
 	case 'G':
-	  if(expert!=0)
+	  if(options->expert!=0)
 	    change_geometry(disk_car, current_cmd);
 	  break;
       case 'a':

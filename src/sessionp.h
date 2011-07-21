@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_space);
-int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const unsigned int paranoid, const unsigned int keep_corrupted_file, const unsigned int mode_ext2, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only, const int verbose);
+int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const struct ph_options *options, const unsigned int carve_free_space_only);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

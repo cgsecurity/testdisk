@@ -320,12 +320,12 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
   return 0;
 }
 
-int fat_unformat(disk_t *disk, partition_t *partition, const int verbose, const char *recup_dir, const int interface, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const unsigned int expert)
+int fat_unformat(disk_t *disk, partition_t *partition, const struct ph_options *options, const char *recup_dir, const int interface, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num)
 {
   unsigned int sectors_per_cluster=0;
   uint64_t start_data=0;
   *blocksize=0;
-  if(pfind_sectors_per_cluster(disk, partition, verbose, interface, &sectors_per_cluster, &start_data, list_search_space)==0)
+  if(pfind_sectors_per_cluster(disk, partition, options->verbose, interface, &sectors_per_cluster, &start_data, list_search_space)==0)
   {
     display_message("Can't find FAT cluster size\n");
     return 0;
@@ -341,13 +341,13 @@ int fat_unformat(disk_t *disk, partition_t *partition, const int verbose, const 
     uint64_t offset=start_data;
     *blocksize=sectors_per_cluster * disk->sector_size;
 #ifdef HAVE_NCURSES
-    if(expert>0)
+    if(options->expert>0)
       *blocksize=menu_choose_blocksize(*blocksize, disk->sector_size, &offset);
 #endif
     update_blocksize(*blocksize,list_search_space, offset);
   }
   /* start_data is relative to the disk */
-  fat_unformat_aux(disk, partition, verbose, recup_dir, interface, file_nbr,
+  fat_unformat_aux(disk, partition, options->verbose, recup_dir, interface, file_nbr,
       *blocksize, start_data, list_search_space,
       real_start_time, dir_num);
   return 0;

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-void menu_photorec(disk_t *disk_car, const int verbose, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space);
+void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

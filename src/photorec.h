@@ -27,12 +27,23 @@ extern "C" {
 
 enum photorec_status { STATUS_FIND_OFFSET, STATUS_UNFORMAT, STATUS_EXT2_ON, STATUS_EXT2_ON_BF, STATUS_EXT2_OFF, STATUS_EXT2_OFF_BF, STATUS_EXT2_ON_SAVE_EVERYTHING, STATUS_EXT2_OFF_SAVE_EVERYTHING, STATUS_QUIT };
 typedef enum photorec_status photorec_status_t;
+struct ph_options
+{
+  int paranoid;
+  int allow_partial_last_cylinder;
+  int keep_corrupted_file;
+  unsigned int mode_ext2;
+  unsigned int expert;
+  unsigned int lowmem;
+  int verbose;
+};
+
 
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset,
     unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
-alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const struct ph_options *options, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space,
     unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
 void write_stats_log(const file_stat_t *file_stats);

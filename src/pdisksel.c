@@ -61,7 +61,7 @@
 #define INTER_NOTE_Y		(LINES-4)
 #endif
 
-static int photorec_disk_selection_cli(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space, const char *cmd_device, char **current_cmd)
+static int photorec_disk_selection_cli(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space, const char *cmd_device, char **current_cmd)
 {
   const list_disk_t *element_disk;
   disk_t *disk=NULL;
@@ -91,13 +91,13 @@ static int photorec_disk_selection_cli(int verbose, const char *recup_dir, const
     }
   }
   autodetect_arch(disk);
-  if(interface_partition_type(disk, verbose, current_cmd)==0)
-    menu_photorec(disk, verbose, recup_dir, file_enable, current_cmd, list_search_space);
+  if(interface_partition_type(disk, options->verbose, current_cmd)==0)
+    menu_photorec(disk, options, recup_dir, file_enable, current_cmd, list_search_space);
   return 0;
 }
 
 #ifdef HAVE_NCURSES
-static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space)
+static int photorec_disk_selection_ncurses(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space)
 {
   char * current_cmd=NULL;
   int command;
@@ -125,7 +125,7 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
   /* ncurses interface */
   while(1)
   {
-    const char *options;
+    const char *menu_options;
     int i;
     aff_copy(stdscr);
     wmove(stdscr,4,0);
@@ -183,19 +183,19 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
     if(use_sudo > 0)
     {
       if(i<=NBR_DISK_MAX && element_disk==NULL)
-	options="OSQ";
+	menu_options="OSQ";
       else
-	options="PNOSQ";
+	menu_options="PNOSQ";
     }
     else
     {
       if(i<=NBR_DISK_MAX && element_disk==NULL)
-	options="OQ";
+	menu_options="OQ";
       else
-	options="PNOQ";
+	menu_options="PNOQ";
     }
     command = wmenuSelect_ext(stdscr, INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,
-	options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
+	menu_options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, &menu,&real_key);
 #if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
     if(command == KEY_MOUSE)
     {
@@ -224,7 +224,7 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
 	  }
 	  else
 	    command = menu_to_command(INTER_NOTE_Y-1, INTER_DISK_Y, INTER_DISK_X, menuMain, 8,
-		options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
+		menu_options, MENU_HORIZ | MENU_BUTTON | MENU_ACCEPT_OTHERS, event.y, event.x);
 	}
       }
     }
@@ -268,8 +268,8 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
 	  const int hpa_dco=is_hpa_or_dco(disk);
 	  autodetect_arch(disk);
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
-	      interface_partition_type(disk, verbose, &current_cmd)==0)
-	    menu_photorec(disk, verbose, recup_dir, file_enable, &current_cmd, list_search_space);
+	      interface_partition_type(disk, options->verbose, &current_cmd)==0)
+	    menu_photorec(disk, options, recup_dir, file_enable, &current_cmd, list_search_space);
 	}
 	break;
       case 's':
@@ -287,7 +287,7 @@ static int photorec_disk_selection_ncurses(int verbose, const char *recup_dir, c
 }
 #endif
 
-int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
+int do_curses_photorec(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
 {
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
@@ -313,9 +313,9 @@ int do_curses_photorec(int verbose, const char *recup_dir, const list_disk_t *li
   }
 #endif
   if(cmd_device!=NULL && *current_cmd!=NULL)
-    return photorec_disk_selection_cli(verbose, recup_dir, list_disk, file_enable, &list_search_space, cmd_device, current_cmd);
+    return photorec_disk_selection_cli(options, recup_dir, list_disk, file_enable, &list_search_space, cmd_device, current_cmd);
 #ifdef HAVE_NCURSES
-  return photorec_disk_selection_ncurses(verbose, recup_dir, list_disk, file_enable, &list_search_space);
+  return photorec_disk_selection_ncurses(options, recup_dir, list_disk, file_enable, &list_search_space);
 #else
   return 0;
 #endif

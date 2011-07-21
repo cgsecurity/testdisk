@@ -46,6 +46,7 @@
 #include "common.h"
 #include "intrf.h"
 #include "filegen.h"
+#include "photorec.h"
 #include "sessionp.h"
 #include "log.h"
 
@@ -66,7 +67,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   if(!f_session)
   {
     log_info("Can't open photorec.ses file: %s\n",strerror(errno));
-    session_save(NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, 0, 0, 0);
+    session_save(NULL, NULL, NULL, NULL, 0, NULL, 0);
     return -1;
   }
   if(fstat(fileno(f_session), &stat_rec)<0)
@@ -157,10 +158,10 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   }
 }
 
-int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const unsigned int paranoid, const unsigned int keep_corrupted_file, const unsigned int mode_ext2, const unsigned int expert, const unsigned int lowmem, const unsigned int carve_free_space_only, const int verbose)
+int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const struct ph_options *options, const unsigned int carve_free_space_only)
 {
   FILE *f_session;
-  if(verbose>1)
+  if(options->verbose>1)
   {
     log_trace("session_save\n");
   }
@@ -170,12 +171,12 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
     log_critical("Can't create photorec.ses file: %s\n",strerror(errno));
     return -1;
   }
-  if(disk_car!=NULL)
+  if(disk!=NULL)
   {
     struct td_list_head *free_walker = NULL;
     unsigned int i;
     fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",
-	(unsigned int)time(NULL), disk_car->device, disk_car->arch->part_name_option, partition->order, blocksize);
+	(unsigned int)time(NULL), disk->device, disk->arch->part_name_option, partition->order, blocksize);
     for(i=0;files_enable[i].file_hint!=NULL;i++)
     {
       if(files_enable[i].file_hint->extension!=NULL && files_enable[i].file_hint->extension[0]!='\0')
@@ -185,22 +186,22 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
     }
     /* Save options */
     fprintf(f_session, "options,");
-    if(paranoid==0)
+    if(options->paranoid==0)
       fprintf(f_session, "paranoid_no,");
-    else if(paranoid==1)
+    else if(options->paranoid==1)
       fprintf(f_session, "paranoid,");
     else
       fprintf(f_session, "paranoid_bf,");
     /* TODO: allow_partial_last_cylinder ? */
-    if(keep_corrupted_file>0)
+    if(options->keep_corrupted_file>0)
       fprintf(f_session, "keep_corrupted_file,");
     else
       fprintf(f_session, "keep_corrupted_file_no,");
-    if(mode_ext2>0)
+    if(options->mode_ext2>0)
       fprintf(f_session, "mode_ext2,");
-    if(expert>0)
+    if(options->expert>0)
       fprintf(f_session, "expert,");
-    if(lowmem>0)
+    if(options->lowmem>0)
       fprintf(f_session, "lowmem,");
     /* Save options - End */
     if(carve_free_space_only>0)
@@ -213,8 +214,8 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
       alloc_data_t *current_free_space;
       current_free_space=td_list_entry(free_walker, alloc_data_t, list);
       fprintf(f_session,"%llu-%llu\n",
-	  (long long unsigned)(current_free_space->start/disk_car->sector_size),
-	  (long long unsigned)(current_free_space->end/disk_car->sector_size));
+	  (long long unsigned)(current_free_space->start/disk->sector_size),
+	  (long long unsigned)(current_free_space->end/disk->sector_size));
     }
   }
   { /* Reserve some space */
@@ -233,5 +234,3 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk_car, const partitio
   fclose(f_session);
   return 0;
 }
-
-

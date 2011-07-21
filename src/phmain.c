@@ -102,7 +102,7 @@ int main( int argc, char **argv )
 {
   int i;
   int use_sudo=0;
-  int help=0, version=0, verbose=0;
+  int help=0, version=0;
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -114,6 +114,15 @@ int main( int argc, char **argv )
   const char *logfile="photorec.log";
   const arch_fnct_t *arch=&arch_none;
   FILE *log_handle=NULL;
+  struct ph_options options={
+    .paranoid=1,
+    .allow_partial_last_cylinder=0,
+    .keep_corrupted_file=0,
+    .mode_ext2=0,
+    .expert=0,
+    .lowmem=0,
+    .verbose=0
+  };
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
@@ -151,7 +160,7 @@ int main( int argc, char **argv )
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
-      verbose++;
+      options.verbose++;
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
     }
@@ -192,7 +201,7 @@ int main( int argc, char **argv )
         cmd_device=argv[++i];
         cmd_run=argv[++i];
         /* There is no log currently */
-        disk_car=file_test_availability(cmd_device,verbose,arch,testdisk_mode);
+        disk_car=file_test_availability(cmd_device, options.verbose, arch, testdisk_mode);
         if(disk_car==NULL)
         {
           printf("\nUnable to open file or device %s\n",cmd_device);
@@ -204,7 +213,7 @@ int main( int argc, char **argv )
     }
     else
     {
-      disk_t *disk_car=file_test_availability(argv[i],verbose,arch,testdisk_mode);
+      disk_t *disk_car=file_test_availability(argv[i], options.verbose, arch, testdisk_mode);
       if(disk_car==NULL)
       {
         printf("\nUnable to open file or device %s\n",argv[i]);
@@ -309,8 +318,8 @@ int main( int argc, char **argv )
   screen_buffer_reset();
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
-    list_disk=hd_parse(list_disk,verbose,arch,testdisk_mode);
-  hd_update_all_geometry(list_disk,0,verbose);
+    list_disk=hd_parse(list_disk, options.verbose, arch, testdisk_mode);
+  hd_update_all_geometry(list_disk, 0, options.verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
@@ -333,7 +342,7 @@ int main( int argc, char **argv )
   log_info("\n");
   reset_list_file_enable(list_file_enable);
   file_options_load(list_file_enable);
-  use_sudo=do_curses_photorec(verbose, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
+  use_sudo=do_curses_photorec(&options, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif

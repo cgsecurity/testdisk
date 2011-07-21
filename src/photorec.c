@@ -692,7 +692,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
   return file_recovered;
 }
 
-alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const struct ph_options *options, unsigned int *file_nbr,
     const unsigned int blocksize, alloc_data_t *list_search_space,
     unsigned int *dir_num, const photorec_status_t status, const disk_t *disk)
 {
@@ -706,7 +706,7 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
   {
     if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
     {
-      if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
+      if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && options->paranoid>0)
       { /* Check if recovered file is valid */
         file_recovery->file_check(file_recovery);
       }
