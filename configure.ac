@@ -617,21 +617,19 @@ AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
 if test "${found_uuid_function}" = "no";
 then
   found_uuid_function=yes
-  AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
-  if test "${found_uuid_function}" = "yes";
-  then
-    AC_CHECK_FUNCS([uuid_create])
-  fi
+  AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
 fi
 
 if test "${found_uuid_function}" = "no";
 then
   found_uuid_function=yes
-  AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
-  if test "${found_uuid_function}" = "yes";
-  then
-    AC_CHECK_FUNCS([uuid_generate])
-  fi
+  AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
+fi
+
+if test "${found_uuid_function}" = "yes";
+then
+  AC_CHECK_FUNCS([uuid_create])
+  AC_CHECK_FUNCS([uuid_generate])
 fi
 
 if test "${found_uuid_function}" = "no";
