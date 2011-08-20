@@ -87,7 +87,7 @@ static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
   dst->location.list.next=&dst->location.list;
 }
 
-int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time)
+int photorec_find_blocksize(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   uint64_t offset=0;
   unsigned char *buffer_start;
@@ -96,24 +96,25 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
   time_t start_time;
   time_t previous_time;
   unsigned int buffer_size;
-  const unsigned int read_size=((*blocksize)>65536?(*blocksize):65536);
+  const unsigned int blocksize=params->blocksize;
+  const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
   reset_file_recovery(&file_recovery);
-  file_recovery.blocksize=*blocksize;
-  buffer_size=(*blocksize)+READ_SIZE;
+  file_recovery.blocksize=blocksize;
+  buffer_size=blocksize + READ_SIZE;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
   buffer_olddata=buffer_start;
-  buffer=buffer_olddata+(*blocksize);
+  buffer=buffer_olddata + blocksize;
   start_time=time(NULL);
   previous_time=start_time;
-  memset(buffer_olddata,0,(*blocksize));
+  memset(buffer_olddata, 0, blocksize);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
   if(current_search_space!=list_search_space)
     offset=current_search_space->start;
-  if(verbose>0)
-    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, verbose);
-  disk_car->pread(disk_car, buffer, READ_SIZE, offset);
+  if(options->verbose>0)
+    info_list_search_space(list_search_space, current_search_space, params->disk->sector_size, 0, options->verbose);
+  params->disk->pread(params->disk, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
     uint64_t old_offset=offset;
@@ -153,7 +154,7 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
 	{
 	  /* A new file begins, backup file offset */
 	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
-	  (*file_nbr)++;
+	  params->file_nbr++;
 	  file_recovery_cpy(&file_recovery, &file_recovery_new);
 	}
       }
@@ -163,9 +164,9 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
     {
       int res=1;
       if(file_recovery.data_check!=NULL)
-	res=file_recovery.data_check(buffer_olddata,2*(*blocksize),&file_recovery);
-      file_recovery.file_size+=*blocksize;
-      file_recovery.file_size_on_disk+=*blocksize;
+	res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
+      file_recovery.file_size+=blocksize;
+      file_recovery.file_size_on_disk+=blocksize;
       if(res==2)
       {
 	/* EOF found */
@@ -178,52 +179,48 @@ int photorec_find_blocksize(disk_t *disk_car, partition_t *partition, const int 
       reset_file_recovery(&file_recovery);
     }
 
-    if(*file_nbr>=10)
+    if(params->file_nbr >= 10)
     {
       current_search_space=list_search_space;
     }
     else
-      get_next_sector(list_search_space, &current_search_space,&offset,*blocksize);
+      get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
     if(current_search_space==list_search_space)
     {
       /* End of disk found => EOF */
       reset_file_recovery(&file_recovery);
     }
-    buffer_olddata+=*blocksize;
-    buffer+=*blocksize;
-    if( old_offset+*blocksize!=offset ||
+    buffer_olddata+=blocksize;
+    buffer+=blocksize;
+    if( old_offset+blocksize!=offset ||
         buffer+read_size>buffer_start+buffer_size)
     {
-      memcpy(buffer_start,buffer_olddata,*blocksize);
+      memcpy(buffer_start, buffer_olddata, blocksize);
       buffer_olddata=buffer_start;
-      buffer=buffer_olddata+*blocksize;
-      if(verbose>1)
+      buffer=buffer_olddata+blocksize;
+      if(options->verbose>1)
       {
         log_verbose("Reading sector %10llu/%llu\n",
-	    (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
-	    (unsigned long long)((partition->part_size-1)/disk_car->sector_size));
+	    (unsigned long long)((offset - params->partition->part_offset) / params->disk->sector_size),
+	    (unsigned long long)((params->partition->part_size-1) / params->disk->sector_size));
       }
-      if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
+      if(params->disk->pread(params->disk, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
-        if(interface!=0)
-        {
-          wmove(stdscr,11,0);
-          wclrtoeol(stdscr);
-          wprintw(stdscr,"Error reading sector %10lu\n",
-              (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
-        }
+	wmove(stdscr,11,0);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Error reading sector %10lu\n",
+	    (unsigned long)((offset - params->partition->part_offset) / params->disk->sector_size));
 #endif
       }
 #ifdef HAVE_NCURSES
-      if(interface!=0)
       {
         time_t current_time;
         current_time=time(NULL);
         if(current_time>previous_time)
         {
           previous_time=current_time;
-          if(photorec_progressbar(stdscr, 0, STATUS_FIND_OFFSET, offset, disk_car, partition, *file_nbr, current_time-real_start_time, file_stats))
+          if(photorec_progressbar(stdscr, 0, params, offset, current_time))
 	  {
 	    log_info("PhotoRec has been stopped\n");
 	    current_search_space=list_search_space;

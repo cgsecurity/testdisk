@@ -53,7 +53,7 @@
 #include "setdate.h"
 
 #define READ_SIZE 1024*512
-static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
+static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
 {
   uint64_t offset=0;
   unsigned int nbr_subdir=0;
@@ -67,20 +67,17 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   if(verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, verbose);
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    wmove(stdscr,22,0);
-    wattrset(stdscr, A_REVERSE);
-    waddstr(stdscr,"  Stop  ");
-    wattroff(stdscr, A_REVERSE);
-  }
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   disk->pread(disk, buffer_start, READ_SIZE, offset);
   while(current_search_space!=list_search_space && nbr_subdir<10)
   {
     const uint64_t old_offset=offset;
 #ifdef HAVE_NCURSES
-    if(interface>0 && ((offset&(1024*disk->sector_size-1))==0))
+    if((offset&(1024*disk->sector_size-1))==0)
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
@@ -177,7 +174,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   return 0;
 }
 
-static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verbose, const char *recup_dir, const int interface, unsigned int *file_nbr, const unsigned int blocksize, const uint64_t start_offset, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num)
+static int fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_offset, alloc_data_t *list_search_space)
 {
   uint64_t offset;
   uint64_t offset_end;
@@ -185,9 +182,13 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
   unsigned char *buffer;
   time_t start_time;
   time_t previous_time;
+  const unsigned int blocksize=params->blocksize;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+  disk_t *disk=params->disk;
+  const partition_t *partition=params->partition;
+
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
   buffer_start=(unsigned char *)MALLOC(READ_SIZE);
@@ -203,8 +204,8 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
   offset_end=current_search_space->end;
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
   offset=current_search_space->start;
-  if(verbose>0)
-    info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, verbose);
+  if(options->verbose>0)
+    info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, options->verbose);
   disk->pread(disk, buffer, READ_SIZE, offset);
   for(;offset < offset_end; offset+=blocksize)
   {
@@ -237,9 +238,9 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
 #endif
 	    if(file_end < partition->part_offset + partition->part_size)
 	    {
-	      if(fat_copy_file(disk, partition, blocksize, start_offset, recup_dir, *dir_num, current_file)==0)
+	      if(fat_copy_file(disk, partition, blocksize, start_offset, params->recup_dir, params->dir_num, current_file)==0)
 	      {
-		(*file_nbr)++;
+		params->file_nbr++;
 		del_search_space(list_search_space, file_start, file_end);
 	      }
 	      current_file=current_file->next;
@@ -257,7 +258,7 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
     if(buffer+read_size>buffer_start+READ_SIZE)
     {
       buffer=buffer_start;
-      if(verbose>1)
+      if(options->verbose>1)
       {
         log_verbose("Reading sector %10llu/%llu\n",
 	    (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
@@ -266,32 +267,28 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
       if(disk->pread(disk, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
-        if(interface!=0)
-        {
-          wmove(stdscr,11,0);
-          wclrtoeol(stdscr);
-          wprintw(stdscr,"Error reading sector %10lu\n",
-              (unsigned long)((offset-partition->part_offset)/disk->sector_size));
-        }
+	wmove(stdscr,11,0);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Error reading sector %10lu\n",
+	    (unsigned long)((offset-partition->part_offset)/disk->sector_size));
 #endif
       }
 #ifdef HAVE_NCURSES
-      if(interface!=0)
       {
         time_t current_time;
         current_time=time(NULL);
         if(current_time>previous_time)
         {
-	  const time_t elapsed_time=current_time-real_start_time;
+	  const time_t elapsed_time=current_time - params->real_start_time;
           previous_time=current_time;
 	  wmove(stdscr,9,0);
 	  wclrtoeol(stdscr);
 	  log_info("Reading sector %10llu/%llu, %u files found\n",
 	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long long)(partition->part_size/disk->sector_size), *file_nbr);
+	      (unsigned long long)(partition->part_size/disk->sector_size), params->file_nbr);
 	  wprintw(stdscr,"Reading sector %10llu/%llu, %u files found\n",
 	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long long)(partition->part_size/disk->sector_size), *file_nbr);
+	      (unsigned long long)(partition->part_size/disk->sector_size), params->file_nbr);
 	  wmove(stdscr,10,0);
 	  wclrtoeol(stdscr);
 	  wprintw(stdscr,"Elapsed time %uh%02um%02us",
@@ -320,36 +317,34 @@ static int fat_unformat_aux(disk_t *disk, partition_t *partition, const int verb
   return 0;
 }
 
-int fat_unformat(disk_t *disk, partition_t *partition, const struct ph_options *options, const char *recup_dir, const int interface, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num)
+int fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   unsigned int sectors_per_cluster=0;
   uint64_t start_data=0;
-  *blocksize=0;
-  if(pfind_sectors_per_cluster(disk, partition, options->verbose, interface, &sectors_per_cluster, &start_data, list_search_space)==0)
+  params->blocksize=0;
+  if(pfind_sectors_per_cluster(params->disk, params->partition, options->verbose, &sectors_per_cluster, &start_data, list_search_space)==0)
   {
     display_message("Can't find FAT cluster size\n");
     return 0;
   }
-  if(start_data <= partition->part_offset)
+  if(start_data <= params->partition->part_offset)
   {
     display_message("FAT filesystem was beginning before the actual partition.");
     return 0;
   }
-  start_data *= disk->sector_size;
-  del_search_space(list_search_space, partition->part_offset, start_data - 1);
+  start_data *= params->disk->sector_size;
+  del_search_space(list_search_space, params->partition->part_offset, start_data - 1);
   {
     uint64_t offset=start_data;
-    *blocksize=sectors_per_cluster * disk->sector_size;
+    params->blocksize=sectors_per_cluster * params->disk->sector_size;
 #ifdef HAVE_NCURSES
     if(options->expert>0)
-      *blocksize=menu_choose_blocksize(*blocksize, disk->sector_size, &offset);
+      params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &offset);
 #endif
-    update_blocksize(*blocksize,list_search_space, offset);
+    update_blocksize(params->blocksize, list_search_space, offset);
   }
   /* start_data is relative to the disk */
-  fat_unformat_aux(disk, partition, options->verbose, recup_dir, interface, file_nbr,
-      *blocksize, start_data, list_search_space,
-      real_start_time, dir_num);
+  fat_unformat_aux(params, options, start_data, list_search_space);
   return 0;
 }
 

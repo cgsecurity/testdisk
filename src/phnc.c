@@ -81,36 +81,39 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   free(new_file_stats);
 }
 
-int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec_status_t status, const uint64_t offset, disk_t *disk_car, partition_t *partition, const unsigned int file_nbr, const time_t elapsed_time, const file_stat_t *file_stats)
+int photorec_progressbar(WINDOW *window, const unsigned int pass, const struct ph_param *params, const uint64_t offset, const time_t current_time)
 {
+  const partition_t *partition=params->partition;
+  const unsigned int sector_size=params->disk->sector_size;
   wmove(window,9,0);
   wclrtoeol(window);
-  if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
+  if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
   {
-    wprintw(window,"Bruteforce %10lu sectors remaining (test %u), %u files found\n",
-        (unsigned long)((offset-partition->part_offset)/disk_car->sector_size), pass, file_nbr);
+    wprintw(window,"Bruteforce %10lu sectors remaining (test %u), ",
+        (unsigned long)((offset-partition->part_offset)/sector_size),
+	pass);
   }
   else
   {
-    wprintw(window, "Pass %u - ", pass);
-    if(status==STATUS_FIND_OFFSET)
-      wprintw(window,"Reading sector %10llu/%llu, %u/10 headers found\n",
-          (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long long)(partition->part_size/disk_car->sector_size), file_nbr);
-    else
-      wprintw(window,"Reading sector %10llu/%llu, %u files found\n",
-          (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
-          (unsigned long long)(partition->part_size/disk_car->sector_size), file_nbr);
+    wprintw(window,"Pass %u - Reading sector %10llu/%llu, ",
+	pass,
+	(unsigned long long)((offset-partition->part_offset)/sector_size),
+	(unsigned long long)(partition->part_size/sector_size));
   }
+  if(params->status==STATUS_FIND_OFFSET)
+    wprintw(window,"%u/10 headers found\n", params->file_nbr);
+  else
+    wprintw(window,"%u files found\n", params->file_nbr);
   wmove(window,10,0);
   wclrtoeol(window);
-  if(elapsed_time>0)
+  if(current_time > params->real_start_time)
   {
+    const time_t elapsed_time=current_time - params->real_start_time;
     wprintw(window,"Elapsed time %uh%02um%02us",
 	(unsigned)(elapsed_time/60/60),
 	(unsigned)(elapsed_time/60%60),
 	(unsigned)(elapsed_time%60));
-    if(offset > partition->part_offset && status!=STATUS_EXT2_ON_BF && status!=STATUS_EXT2_OFF_BF)
+    if(offset > partition->part_offset && params->status!=STATUS_EXT2_ON_BF && params->status!=STATUS_EXT2_OFF_BF)
     {
       wprintw(window," - Estimated time to completion %uh%02um%02u\n",
 	  (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
@@ -118,7 +121,7 @@ int photorec_progressbar(WINDOW *window, const unsigned int pass, const photorec
 	  (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
     }
   }
-  photorec_info(window, file_stats);
+  photorec_info(window, params->file_stats);
   wrefresh(window);
   return check_enter_key_or_s(window);
 }

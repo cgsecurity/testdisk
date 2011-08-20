@@ -36,16 +36,30 @@ struct ph_options
   unsigned int expert;
   unsigned int lowmem;
   int verbose;
+  file_enable_t *list_file_format;
 };
 
+struct ph_param
+{
+  char *cmd_device;
+  char *cmd_run;
+  disk_t *disk;
+  partition_t *partition;
+  unsigned int blocksize;
+  unsigned int pass;
+  photorec_status_t status;
+  time_t real_start_time;
+  char *recup_dir;
+  /* */
+  unsigned int dir_num;
+  unsigned int file_nbr;
+  file_stat_t *file_stats;
+};
 
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
-int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
-    const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset,
-    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
-alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const struct ph_options *options, unsigned int *file_nbr,
-    const unsigned int blocksize, alloc_data_t *list_search_space,
-    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk);
+int file_finish(file_recovery_t *file_recovery, struct ph_param *params, 
+    alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 void write_stats_log(const file_stat_t *file_stats);
 void write_stats_stdout(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
@@ -60,7 +74,7 @@ int sorfile_stat_ts(const void *p1, const void *p2);
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num);
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
 void free_search_space(alloc_data_t *list_search_space);
-void set_filename(file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const disk_t *disk, const partition_t *partition, const int broken);
+void set_filename(file_recovery_t *file_recovery, struct ph_param *params);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

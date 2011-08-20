@@ -22,7 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int photorec_bf(disk_t *disk_car, partition_t *partition, const int verbose, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass);
+int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

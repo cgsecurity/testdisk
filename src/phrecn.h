@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *options, char *recup_dir, const int interface, file_enable_t *file_enable, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int carve_free_space_only);
+int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned int carve_free_space_only);
 void interface_file_select(file_enable_t *files_enable, char**current_cmd);
 void interface_options_photorec(struct ph_options *options, char**current_cmd);
 

@@ -176,9 +176,9 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
   }
 }
 
-static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct ph_options *options, const char *recup_dir, const int interface, file_stat_t *file_stats, unsigned int *file_nbr, const unsigned int blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num, const photorec_status_t status, const unsigned int pass)
+static int photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
-  uint64_t offset=0;
+  uint64_t offset;
   unsigned char *buffer_start;
   unsigned char *buffer_olddata;
   unsigned char *buffer;
@@ -186,6 +186,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
   time_t previous_time;
   int ind_stop=0;
   unsigned int buffer_size;
+  const unsigned int blocksize=params->blocksize; 
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
@@ -199,30 +200,29 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
   previous_time=start_time;
   memset(buffer_olddata,0,blocksize);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-  if(current_search_space!=list_search_space)
-    offset=current_search_space->start;
+  offset=current_search_space->start;
   if(options->verbose > 0)
-    info_list_search_space(list_search_space, current_search_space, disk_car->sector_size, 0, options->verbose);
+    info_list_search_space(list_search_space, current_search_space, params->disk->sector_size, 0, options->verbose);
   if(options->verbose > 1)
   {
     log_verbose("Reading sector %10llu/%llu\n",
-	(unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
-	(unsigned long long)((partition->part_size-1)/disk_car->sector_size));
+	(unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size),
+	(unsigned long long)((params->partition->part_size-1)/params->disk->sector_size));
   }
-  disk_car->pread(disk_car, buffer, READ_SIZE, offset);
+  params->disk->pread(params->disk, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
     int move_next=1;
     uint64_t old_offset=offset;
 #ifdef DEBUG
     log_debug("sector %llu\n",
-        (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size));
+        (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size));
     if(!(current_search_space->start<=offset && offset<=current_search_space->end))
     {
       log_critical("BUG: offset=%llu not in [%llu-%llu]\n",
-          (unsigned long long)(offset/disk_car->sector_size),
-          (unsigned long long)(current_search_space->start/disk_car->sector_size),
-          (unsigned long long)(current_search_space->end/disk_car->sector_size));
+          (unsigned long long)(offset/params->disk->sector_size),
+          (unsigned long long)(current_search_space->start/params->disk->sector_size),
+          (unsigned long long)(current_search_space->end/params->disk->sector_size));
       log_close();
       exit(1);
     }
@@ -241,7 +241,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
         if(options->verbose > 1)
         {
           log_verbose("Currently saving a tar file, sector %lu.\n",
-              (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
+              (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size));
         }
       }
       else
@@ -274,7 +274,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
             log_trace("A known header has been found, recovery of the previous file is finished\n");
 	  {
 	    alloc_data_t *datanext;
-	    datanext=file_finish2(&file_recovery, recup_dir, options, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+	    datanext=file_finish2(&file_recovery, params, options, list_search_space);
 	    if(datanext!=NULL)
 	    {
 	      current_search_space=datanext;
@@ -293,9 +293,9 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
               log_info("%s header found at sector %lu\n",
                   ((file_recovery.extension!=NULL && file_recovery.extension[0]!='\0')?
                    file_recovery.extension:file_recovery.file_stat->file_hint->description),
-                  (unsigned long)((file_recovery.location.start-partition->part_offset)/disk_car->sector_size));
+                  (unsigned long)((file_recovery.location.start-params->partition->part_offset)/params->disk->sector_size));
               log_info("file_recovery.location.start=%lu\n",
-                  (unsigned long)(file_recovery.location.start/disk_car->sector_size));
+                  (unsigned long)(file_recovery.location.start/params->disk->sector_size));
             }
 
             if(file_recovery.file_stat->file_hint==&file_hint_dir && options->verbose > 0)
@@ -305,7 +305,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
               if(dir_list!=NULL)
               {
 		log_info("Sector %lu\n",
-		    (unsigned long)(file_recovery.location.start/disk_car->sector_size));
+		    (unsigned long)(file_recovery.location.start/params->disk->sector_size));
 		dir_aff_log(NULL, dir_list);
                 delete_list_file(dir_list);
               }
@@ -315,8 +315,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
       }
       if(file_recovery.file_stat!=NULL && file_recovery.handle==NULL)
       {
-	set_filename(&file_recovery, recup_dir, *dir_num, disk_car, partition,
-	    (status==STATUS_EXT2_ON_SAVE_EVERYTHING||status==STATUS_EXT2_OFF_SAVE_EVERYTHING));
+	set_filename(&file_recovery, params);
         if(file_recovery.file_stat->file_hint->recover==1)
         {
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -336,7 +335,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
     {
       int res=1;
     /* try to skip ext2/ext3 indirect block */
-      if((status==STATUS_EXT2_ON || status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
+      if((params->status==STATUS_EXT2_ON || params->status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
           file_recovery.file_size_on_disk>=12*blocksize &&
           ind_block(buffer,blocksize)!=0)
       {
@@ -345,10 +344,10 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
         if(options->verbose > 1)
         {
           log_verbose("Skipping sector %10lu/%lu\n",
-              (unsigned long)((offset-partition->part_offset)/disk_car->sector_size),
-              (unsigned long)((partition->part_size-1)/disk_car->sector_size));
+              (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size),
+              (unsigned long)((params->partition->part_size-1)/params->disk->sector_size));
         }
-        memcpy(buffer,buffer_olddata,blocksize);
+        memcpy(buffer, buffer_olddata, blocksize);
       }
       else
       {
@@ -389,7 +388,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res!=2 &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(partition))
+      if(res!=2 &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
       {
       	res=2;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
@@ -398,7 +397,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
       if(res==2)
       {
 	alloc_data_t *datanext;
-	datanext=file_finish2(&file_recovery, recup_dir, options, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+	datanext=file_finish2(&file_recovery, params, options, list_search_space);
 	if(datanext!=NULL)
 	{
 	  current_search_space=datanext;
@@ -432,7 +431,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
 	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      datanext=file_finish2(&file_recovery, recup_dir, options, file_nbr, blocksize, list_search_space, dir_num,status, disk_car);
+      datanext=file_finish2(&file_recovery, params, options, list_search_space);
       if(datanext!=NULL)
       {
 	current_search_space=datanext;
@@ -458,33 +457,27 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
       if(options->verbose > 1)
       {
         log_verbose("Reading sector %10llu/%llu\n",
-	    (unsigned long long)((offset-partition->part_offset)/disk_car->sector_size),
-	    (unsigned long long)((partition->part_size-1)/disk_car->sector_size));
+	    (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size),
+	    (unsigned long long)((params->partition->part_size-1)/params->disk->sector_size));
       }
-      if(disk_car->pread(disk_car, buffer, READ_SIZE, offset) != READ_SIZE)
+      if(params->disk->pread(params->disk, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
-        if(interface!=0)
-        {
-          wmove(stdscr,11,0);
-          wclrtoeol(stdscr);
-          wprintw(stdscr,"Error reading sector %10lu\n",
-              (unsigned long)((offset-partition->part_offset)/disk_car->sector_size));
-        }
+	wmove(stdscr,11,0);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Error reading sector %10lu\n",
+	    (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size));
 #endif
       }
 #ifdef HAVE_NCURSES
-      if(interface!=0 && ind_stop==0)
+      if(ind_stop==0)
       {
         time_t current_time;
         current_time=time(NULL);
         if(current_time>previous_time)
         {
           previous_time=current_time;
-          ind_stop=photorec_progressbar(stdscr, pass, status, offset, disk_car,
-	      partition, *file_nbr,
-	      (current_time > real_start_time ? current_time - real_start_time: 0),
-	      file_stats);
+          ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
         }
       }
 #endif
@@ -492,7 +485,7 @@ static int photorec_aux(disk_t *disk_car, partition_t *partition, const struct p
   } /* end while(current_search_space!=list_search_space) */
   free(buffer_start);
 #ifdef HAVE_NCURSES
-  photorec_info(stdscr, file_stats);
+  photorec_info(stdscr, params->file_stats);
 #endif
   return ind_stop;
 }
@@ -659,11 +652,11 @@ static inline void list_append_block(alloc_list_t *list, const uint64_t offset, 
   }
 }
 
-static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const uint64_t start, const uint64_t end)
+static void test_files_aux(file_recovery_t *file_recovery, struct ph_param *params, const uint64_t start, const uint64_t end)
 {
   uint64_t datasize=end-start+1;
   unsigned char *buffer=(unsigned char *) MALLOC(datasize);
-  disk->pread(disk, buffer, datasize, start);
+  params->disk->pread(params->disk, buffer, datasize, start);
   if(file_recovery->file_stat==NULL)
   {
     struct td_list_head *tmpl;
@@ -696,7 +689,7 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
   }
   if(file_recovery->handle==NULL)
   {
-    set_filename(file_recovery, recup_dir, dir_num, disk, partition, 0);
+    set_filename(file_recovery, params);
     file_recovery->handle=fopen(file_recovery->filename, "w+b");
     if(file_recovery->handle==NULL)
     {
@@ -708,7 +701,7 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
   if(fwrite(buffer, datasize, 1, file_recovery->handle)<1)
   {
     log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
-    fclose(file_recovery->handle)
+    fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     free(buffer);
     return;
@@ -720,18 +713,18 @@ static void test_files_aux(disk_t *disk, partition_t *partition, file_recovery_t
   free(buffer);
 }
 
-static void test_files(disk_t *disk, partition_t *partition, alloc_data_t *list_search_space, char *recup_dir, unsigned int *dir_num, unsigned int *file_nbr)
+static void test_files(alloc_data_t *list_search_space, struct ph_param *params)
 {
   alloc_data_t *current_search_space=list_search_space;
   uint64_t offset;
   file_recovery_t file_recovery;
   reset_file_recovery(&file_recovery);
-  file_recovery->blocksize=512;
+  file_recovery.blocksize=512;
   offset=current_search_space->start;
   /* Recover a file with a known location */
-  test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 1289*512, (1304+1)*512-1);
-  test_files_aux(disk, partition, &file_recovery, recup_dir, *dir_num, 2881*512, (3259+1)*512-1);
-  file_finish(&file_recovery, recup_dir, 1, file_nbr, disk->sector_size, list_search_space, &current_search_space, &offset, dir_num, STATUS_EXT2_OFF, disk);
+  test_files_aux(&file_recovery, params, 1289*512, (1304+1)*512-1);
+  test_files_aux(&file_recovery, params, 2881*512, (3259+1)*512-1);
+  file_finish(&file_recovery, params, list_search_space, &current_search_space, &offset);
 
   /* Exclude some sectors from the search space */
   del_search_space(list_search_space, 121407*512, (121416+1)*512-1);
@@ -740,43 +733,36 @@ static void test_files(disk_t *disk, partition_t *partition, alloc_data_t *list_
 }
 #endif
 
-int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *options, char *recup_dir, const int interface, file_enable_t *files_enable, char **current_cmd, alloc_data_t *list_search_space, unsigned int blocksize, const unsigned int carve_free_space_only)
+int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned int carve_free_space_only)
 {
-  char *new_recup_dir=NULL;
-  file_stat_t *file_stats;
-  time_t real_start_time;
-  unsigned int file_nbr=0;
-  unsigned int dir_num=1;
   int ind_stop=0;
-  unsigned int pass;
   unsigned int blocksize_is_known=0;
-  photorec_status_t status;
+  params->file_nbr=0;
+  params->status=STATUS_FIND_OFFSET;
+  params->real_start_time=time(NULL);
+  params->dir_num=1;
+  params->file_stats=init_file_stats(options->list_file_format);
+
   screen_buffer_reset();
   log_info("\nAnalyse\n");
-  log_partition(disk_car,partition);
-  if(blocksize==0)
-    blocksize=disk_car->sector_size;
+  log_partition(params->disk, params->partition);
+  if(params->blocksize==0)
+    params->blocksize=params->disk->sector_size;
   else
     blocksize_is_known=1;
-  file_stats=init_file_stats(files_enable);
 
-  real_start_time=time(NULL);
   /* make the first recup_dir */
-  dir_num=photorec_mkdir(recup_dir, dir_num);
+  params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
 
   /* Open the XML output file */
-  xml_open(recup_dir, dir_num);
-  xml_setup(disk_car, partition);
+  xml_open(params->recup_dir, params->dir_num);
+  xml_setup(params->disk, params->partition);
   
-#if 0
-  test_files(disk_car, partition, list_search_space, recup_dir, &dir_num, &file_nbr);
-#endif
-  status=STATUS_FIND_OFFSET;
-  for(pass=0;status!=STATUS_QUIT;pass++)
+  for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
   {
-    unsigned int old_file_nbr=file_nbr;
-    log_info("Pass %u (blocksize=%u) ",pass,blocksize);
-    switch(status)
+    unsigned int old_file_nbr=params->file_nbr;
+    log_info("Pass %u (blocksize=%u) ", params->pass, params->blocksize);
+    switch(params->status)
     {
       case STATUS_FIND_OFFSET:			log_info("STATUS_FIND_OFFSET\n");	break;
       case STATUS_UNFORMAT:			log_info("STATUS_UNFORMAT\n");	break;
@@ -789,53 +775,50 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
       case STATUS_QUIT :			log_info("STATUS_QUIT\n");			break;
     }
 #ifdef HAVE_NCURSES
-    if(interface)
-    {
-      aff_copy(stdscr);
-      wmove(stdscr,4,0);
-      wprintw(stdscr,"%s",disk_car->description_short(disk_car));
-      mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
-      wmove(stdscr,6,0);
-      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-      wmove(stdscr,22,0);
-      wattrset(stdscr, A_REVERSE);
-      waddstr(stdscr,"  Stop  ");
-      wattroff(stdscr, A_REVERSE);
-      wrefresh(stdscr);
-    }
+    aff_copy(stdscr);
+    wmove(stdscr, 4, 0);
+    wprintw(stdscr, "%s", params->disk->description_short(params->disk));
+    mvwaddstr(stdscr, 5, 0, msg_PART_HEADER_LONG);
+    wmove(stdscr, 6, 0);
+    aff_part(stdscr, AFF_PART_ORDER|AFF_PART_STATUS, params->disk, params->partition);
+    wmove(stdscr, 22, 0);
+    wattrset(stdscr, A_REVERSE);
+    waddstr(stdscr, "  Stop  ");
+    wattroff(stdscr, A_REVERSE);
+    wrefresh(stdscr);
 #endif
-    if(status==STATUS_FIND_OFFSET && blocksize_is_known>0)
+    if(params->status==STATUS_FIND_OFFSET && blocksize_is_known>0)
     {
       ind_stop=0;
     }
-    else if(status==STATUS_UNFORMAT)
+    else if(params->status==STATUS_UNFORMAT)
     {
-      const unsigned int old_blocksize=blocksize;
-      blocksize=0;
-      ind_stop=fat_unformat(disk_car, partition, options, recup_dir, interface, &file_nbr, &blocksize, list_search_space, real_start_time, &dir_num);
-      if(blocksize==0)
-	blocksize=old_blocksize;
+      const unsigned int old_blocksize=params->blocksize;
+      params->blocksize=0;
+      ind_stop=fat_unformat(params, options, list_search_space);
+      if(params->blocksize==0)
+	params->blocksize=old_blocksize;
     }
-    else if(status==STATUS_FIND_OFFSET)
+    else if(params->status==STATUS_FIND_OFFSET)
     {
-      ind_stop=photorec_find_blocksize(disk_car, partition, options->verbose, interface, file_stats, &file_nbr, &blocksize, list_search_space, real_start_time);
+      ind_stop=photorec_find_blocksize(params, options, list_search_space);
     }
-    else if(status==STATUS_EXT2_ON_BF || status==STATUS_EXT2_OFF_BF)
+    else if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
     {
-      ind_stop=photorec_bf(disk_car, partition, options->verbose, recup_dir, interface, file_stats, &file_nbr, blocksize, list_search_space, real_start_time, &dir_num, status, pass);
-      session_save(list_search_space, disk_car, partition, files_enable, blocksize, options, carve_free_space_only);
+      ind_stop=photorec_bf(params, options, list_search_space);
+      session_save(list_search_space, params, options, carve_free_space_only);
     }
     else
     {
-      ind_stop=photorec_aux(disk_car, partition, options, recup_dir, interface, file_stats, &file_nbr, blocksize, list_search_space, real_start_time, &dir_num, status, pass);
-      session_save(list_search_space, disk_car, partition, files_enable, blocksize, options, carve_free_space_only);
+      ind_stop=photorec_aux(params, options, list_search_space);
+      session_save(list_search_space, params, options, carve_free_space_only);
     }
     if(ind_stop==3)
     { /* no more space */
 #ifdef HAVE_NCURSES
       char *dst;
       char *res;
-      dst=strdup(recup_dir);
+      dst=strdup(params->recup_dir);
       if(dst!=NULL)
       {
 	res=strrchr(dst, '/');
@@ -845,134 +828,133 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
       res=ask_location("Warning: no free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
       free(dst);
       if(res==NULL)
-        status=STATUS_QUIT;
+        params->status=STATUS_QUIT;
       else
       {
-        free(new_recup_dir);
-        new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-        strcpy(new_recup_dir,res);
-        strcat(new_recup_dir,"/");
-        strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-        recup_dir=new_recup_dir;
+        free(params->recup_dir);
+        params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+        strcpy(params->recup_dir,res);
+        strcat(params->recup_dir,"/");
+        strcat(params->recup_dir,DEFAULT_RECUP_DIR);
         free(res);
         /* Create the directory */
-        dir_num=photorec_mkdir(recup_dir,dir_num);
+        params->dir_num=photorec_mkdir(params->recup_dir,params->dir_num);
       }
 #else
-      status=STATUS_QUIT;
+      params->status=STATUS_QUIT;
 #endif
     }
     else if(ind_stop==2)
     {
       if(interface_cannot_create_file()!=0)
-	status=STATUS_QUIT;
+	params->status=STATUS_QUIT;
     }
     else if(ind_stop>0)
     {
-      if(session_save(list_search_space, disk_car, partition, files_enable, blocksize, options, carve_free_space_only) < 0)
+      if(session_save(list_search_space, params, options, carve_free_space_only) < 0)
       {
 	/* Failed to save the session! */
 #ifdef HAVE_NCURSES
 	if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
-	  status=STATUS_QUIT;
+	  params->status=STATUS_QUIT;
 #endif
       }
       else
       {
 #ifdef HAVE_NCURSES
 	if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
-	  status=STATUS_QUIT;
+	  params->status=STATUS_QUIT;
 #endif
       }
     }
     else if(options->paranoid>0)
     {
-      switch(status)
+      switch(params->status)
       {
         case STATUS_FIND_OFFSET:
 	  {
 	    uint64_t start_offset;
-	    file_nbr=0;
-	    status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+	    params->file_nbr=0;
+	    params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
 	    if(blocksize_is_known==0)
-	      blocksize=find_blocksize(list_search_space, disk_car->sector_size, &start_offset);
+	      params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
 	    else if(td_list_empty(&list_search_space->list))
 	      start_offset=0;
 	    else
-	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % blocksize;
+	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
 #ifdef HAVE_NCURSES
 	    if(options->expert>0)
 	    {
 	      if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
-		status=STATUS_UNFORMAT;
+		params->status=STATUS_UNFORMAT;
 	      else
 	      {
-		blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &start_offset);
-		update_blocksize(blocksize,list_search_space, start_offset);
+		params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
+		update_blocksize(params->blocksize, list_search_space, start_offset);
 	      }
 	    }
 	    else
 	    {
-	      update_blocksize(blocksize,list_search_space, start_offset);
+	      update_blocksize(params->blocksize, list_search_space, start_offset);
 	    }
 #else
-	    update_blocksize(blocksize,list_search_space, start_offset);
+	    update_blocksize(params->blocksize, list_search_space, start_offset);
 #endif
 	  }
 	  break;
 	case STATUS_UNFORMAT:
 	  {
-	    status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-	    file_nbr=0;
+	    params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+	    params->file_nbr=0;
 	  }
 	  break;
 	case STATUS_EXT2_ON:
-	  status=(options->paranoid>1?STATUS_EXT2_ON_BF:STATUS_EXT2_OFF);
+	  params->status=(options->paranoid>1?STATUS_EXT2_ON_BF:STATUS_EXT2_OFF);
 	  break;
 	case STATUS_EXT2_ON_BF:
-	  status=STATUS_EXT2_OFF;
+	  params->status=STATUS_EXT2_OFF;
 	  break;
 	case STATUS_EXT2_OFF:
 	  if(options->paranoid>1)
 	  {
-            status=STATUS_EXT2_OFF_BF;
+            params->status=STATUS_EXT2_OFF_BF;
           }
           else
           {
             if(options->keep_corrupted_file>0)
-              status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
+              params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
             else
             {
-              status=STATUS_QUIT;
+              params->status=STATUS_QUIT;
               unlink("photorec.ses");
             }
           }
           break;
         case STATUS_EXT2_OFF_BF:
           if(options->keep_corrupted_file>0)
-            status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
+            params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
           else
           {
-            status=STATUS_QUIT;
+            params->status=STATUS_QUIT;
             unlink("photorec.ses");
           }
           break;
         case STATUS_EXT2_ON_SAVE_EVERYTHING:
-          status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+          params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
           break;
         default:
-          status=STATUS_QUIT;
+          params->status=STATUS_QUIT;
           unlink("photorec.ses");
           break;
       }
     }
     else
     {
-      switch(status)
+      switch(params->status)
       {
         case STATUS_FIND_OFFSET:
-	  file_nbr=0;
-          status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
+	  params->file_nbr=0;
+          params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
 #ifdef HAVE_NCURSES
 	  if(options->expert>0)
 	  {
@@ -981,21 +963,21 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
 	    {
 	      alloc_data_t *tmp;
 	      tmp=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-	      offset=tmp->start%blocksize;
+	      offset=tmp->start % params->blocksize;
 	    }
-	    blocksize=menu_choose_blocksize(blocksize, disk_car->sector_size, &offset);
-	    update_blocksize(blocksize,list_search_space, offset);
+	    params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &offset);
+	    update_blocksize(params->blocksize, list_search_space, offset);
 	    if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
-	      status=STATUS_UNFORMAT;
+	      params->status=STATUS_UNFORMAT;
 	  }
 #endif
 	  break;
 	case STATUS_UNFORMAT:
-          status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
-          file_nbr=0;
+          params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
+          params->file_nbr=0;
           break;
         default:
-          status=STATUS_QUIT;
+          params->status=STATUS_QUIT;
           unlink("photorec.ses");
           break;
       }
@@ -1004,21 +986,15 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
       time_t current_time;
       current_time=time(NULL);
       log_info("Elapsed time %uh%02um%02us\n",
-          (unsigned)((current_time-real_start_time)/60/60),
-          (unsigned)((current_time-real_start_time)/60%60),
-          (unsigned)((current_time-real_start_time)%60));
+          (unsigned)((current_time-params->real_start_time)/60/60),
+          (unsigned)((current_time-params->real_start_time)/60%60),
+          (unsigned)((current_time-params->real_start_time)%60));
     }
-    update_stats(file_stats,list_search_space);
-    if(pass>0)
+    update_stats(params->file_stats, list_search_space);
+    if(params->pass>0)
     {
-      log_info("Pass %u +%u file%s\n",pass,file_nbr-old_file_nbr,(file_nbr-old_file_nbr<=1?"":"s"));
-      write_stats_log(file_stats);
-    }
-    if(interface==0)
-    {
-      printf("Pass %u +%u file%s\n",pass,file_nbr-old_file_nbr,(file_nbr-old_file_nbr<=1?"":"s"));
-      write_stats_stdout(file_stats);
-      fflush(stdout);
+      log_info("Pass %u +%u file%s\n",params->pass,params->file_nbr-old_file_nbr,(params->file_nbr-old_file_nbr<=1?"":"s"));
+      write_stats_log(params->file_stats);
     }
     log_flush();
   }
@@ -1041,7 +1017,7 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
     {
       char *filename;
       char *res;
-      char *dst_path=strdup(recup_dir);
+      char *dst_path=strdup(params->recup_dir);
       res=strrchr(dst_path, '/');
       if(res!=NULL)
 	*res='\0';
@@ -1049,22 +1025,22 @@ int photorec(disk_t *disk_car, partition_t *partition, const struct ph_options *
       strcpy(filename, dst_path);
       strcat(filename, "/");
       strcat(filename, DEFAULT_IMAGE_NAME);
-      gen_image(filename, disk_car, list_search_space);
+      gen_image(filename, params->disk, list_search_space);
       free(filename);
       free(dst_path);
     }
   }
 #endif
-  info_list_search_space(list_search_space, NULL, disk_car->sector_size, options->keep_corrupted_file, options->verbose);
+  info_list_search_space(list_search_space, NULL, params->disk->sector_size, options->keep_corrupted_file, options->verbose);
   /* Free memory */
   free_search_space(list_search_space);
 #ifdef HAVE_NCURSES
-  if(interface && *current_cmd==NULL)
-    recovery_finished(disk_car, partition, file_nbr, recup_dir, ind_stop);
+  if(params->cmd_run==NULL)
+    recovery_finished(params->disk, params->partition, params->file_nbr, params->recup_dir, ind_stop);
 #endif
-  free(file_stats);
+  free(params->file_stats);
+  params->file_stats=NULL;
   free_header_check();
-  free(new_recup_dir);
   xml_shutdown();
   xml_close();
   return 0;

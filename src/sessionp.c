@@ -67,7 +67,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   if(!f_session)
   {
     log_info("Can't open photorec.ses file: %s\n",strerror(errno));
-    session_save(NULL, NULL, NULL, NULL, 0, NULL, 0);
+    session_save(NULL, NULL, NULL, 0);
     return -1;
   }
   if(fstat(fileno(f_session), &stat_rec)<0)
@@ -158,7 +158,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   }
 }
 
-int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t *partition, const file_enable_t *files_enable, const unsigned int blocksize, const struct ph_options *options, const unsigned int carve_free_space_only)
+int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options, const unsigned int carve_free_space_only)
 {
   FILE *f_session;
   f_session=fopen(SESSION_FILENAME,"wb");
@@ -167,16 +167,17 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t 
     log_critical("Can't create photorec.ses file: %s\n",strerror(errno));
     return -1;
   }
-  if(disk!=NULL)
+  if(params!=NULL)
   {
     struct td_list_head *free_walker = NULL;
     unsigned int i;
+    const file_enable_t *files_enable=options->list_file_format;
     if(options->verbose>1)
     {
       log_trace("session_save\n");
     }
     fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",
-	(unsigned int)time(NULL), disk->device, disk->arch->part_name_option, partition->order, blocksize);
+	(unsigned int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order, params->blocksize);
     for(i=0;files_enable[i].file_hint!=NULL;i++)
     {
       if(files_enable[i].file_hint->extension!=NULL && files_enable[i].file_hint->extension[0]!='\0')
@@ -214,8 +215,8 @@ int session_save(alloc_data_t *list_free_space, disk_t *disk, const partition_t 
       alloc_data_t *current_free_space;
       current_free_space=td_list_entry(free_walker, alloc_data_t, list);
       fprintf(f_session,"%llu-%llu\n",
-	  (long long unsigned)(current_free_space->start/disk->sector_size),
-	  (long long unsigned)(current_free_space->end/disk->sector_size));
+	  (long long unsigned)(current_free_space->start/params->disk->sector_size),
+	  (long long unsigned)(current_free_space->end/params->disk->sector_size));
     }
   }
   { /* Reserve some space */

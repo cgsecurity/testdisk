@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-int fat_unformat(disk_t *disk, partition_t *partition, const struct ph_options *options, const char *recup_dir, const int interface, unsigned int *file_nbr, unsigned int *blocksize, alloc_data_t *list_search_space, const time_t real_start_time, unsigned int *dir_num);
+int fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 
 #ifdef __cplusplus
 } /* closing brace for extern "c" */

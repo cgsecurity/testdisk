@@ -74,13 +74,12 @@ static int spacerange_cmp(const struct td_list_head *a, const struct td_list_hea
 #define INTER_SELECT	(LINES-2-7-1)
 #endif
 
-void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *recup_dir, file_enable_t *file_enable, char **current_cmd, alloc_data_t*list_search_space)
+void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_data_t*list_search_space)
 {
   int insert_error=0;
   list_part_t *list_part;
   list_part_t *current_element;
   unsigned int current_element_num;
-  unsigned int blocksize=0;
   unsigned int carve_free_space_only=0;
   int done=0;
   int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
@@ -98,10 +97,11 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 	{0,NULL,NULL}
   };
 #endif
-  list_part=disk_car->arch->read_part(disk_car,options->verbose,0);
+  params->blocksize=0;
+  list_part=params->disk->arch->read_part(params->disk,options->verbose,0);
   {
     partition_t *partition_wd;
-    partition_wd=new_whole_disk(disk_car);
+    partition_wd=new_whole_disk(params->disk);
     list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
     if(insert_error>0)
     {
@@ -114,7 +114,7 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
     list_part_t *element;
     for(element=list_part;element!=NULL;element=element->next)
     {
-      log_partition(disk_car,element->part);
+      log_partition(params->disk,element->part);
     }
   }
   if(list_part->next!=NULL)
@@ -129,23 +129,21 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
   }
   while(done==0)
   {
-    if(*current_cmd!=NULL)
+    if(params->cmd_run!=NULL)
     {
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(*current_cmd[0]=='\0')
+      while(params->cmd_run[0]==',')
+	params->cmd_run++;
+      if(params->cmd_run[0]=='\0')
       {
 	part_free_list(list_part);
 	return;
       }
-      if(strncmp(*current_cmd,"search",6)==0)
+      if(strncmp(params->cmd_run,"search",6)==0)
       {
-	char *res;
-	(*current_cmd)+=6;
-	if(recup_dir!=NULL)
-	  res=(char *)recup_dir;
-	else
+	params->cmd_run+=6;
+	if(params->recup_dir==NULL)
 	{
+	  char *res;
 #ifdef HAVE_NCURSES
 	  res=ask_location("Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 #else
@@ -153,90 +151,86 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 #endif
 	  if(res!=NULL)
 	  {
-	    char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	    strcpy(new_recup_dir,res);
-	    strcat(new_recup_dir,"/");
-	    strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-	    if(res!=recup_dir)
-	      free(res);
-	    res=new_recup_dir;
+	    params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	    strcpy(params->recup_dir,res);
+	    strcat(params->recup_dir,"/");
+	    strcat(params->recup_dir,DEFAULT_RECUP_DIR);
+	    free(res);
 	  }
 	}
-	if(res!=NULL)
+	if(params->recup_dir!=NULL)
 	{
-	  partition_t *partition=current_element->part;
+	  params->partition=current_element->part;
 	  if(mode_init_space==INIT_SPACE_EXT2_GROUP)
 	  {
-	    blocksize=ext2_fix_group(list_search_space, disk_car, partition);
-	    if(blocksize==0)
+	    params->blocksize=ext2_fix_group(list_search_space, params->disk, params->partition);
+	    if(params->blocksize==0)
 	      display_message("Not a valid ext2/ext3/ext4 filesystem");
 	  }
 	  else if(mode_init_space==INIT_SPACE_EXT2_INODE)
 	  {
-	    blocksize=ext2_fix_inode(list_search_space, disk_car, partition);
-	    if(blocksize==0)
+	    params->blocksize=ext2_fix_inode(list_search_space, params->disk, params->partition);
+	    if(params->blocksize==0)
 	      display_message("Not a valid ext2/ext3/ext4 filesystem");
 	  }
 	  if(td_list_empty(&list_search_space->list))
 	  {
-	    init_search_space(list_search_space, disk_car, partition);
+	    init_search_space(list_search_space, params->disk, params->partition);
 	  }
 	  if(carve_free_space_only>0)
 	  {
-	    blocksize=remove_used_space(disk_car, partition, list_search_space);
+	    params->blocksize=remove_used_space(params->disk, params->partition, list_search_space);
 	  }
-	  photorec(disk_car, partition, options, res, 1, file_enable, current_cmd, list_search_space, blocksize, carve_free_space_only);
+	  photorec(params, options, list_search_space, carve_free_space_only);
 	}
-	if(res!=recup_dir)
-	  free(res);
       }
-      else if(strncmp(*current_cmd,"options",7)==0)
+      else if(strncmp(params->cmd_run,"options",7)==0)
       {
 	const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
-	(*current_cmd)+=7;
-	interface_options_photorec(options, current_cmd);
+	params->cmd_run+=7;
+	interface_options_photorec(options, &params->cmd_run);
 	if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
-	  hd_update_geometry(disk_car, options->allow_partial_last_cylinder, options->verbose);
+	  hd_update_geometry(params->disk, options->allow_partial_last_cylinder, options->verbose);
       }
-      else if(strncmp(*current_cmd,"fileopt",7)==0)
+      else if(strncmp(params->cmd_run,"fileopt",7)==0)
       {
-	(*current_cmd)+=7;
-	interface_file_select(file_enable,current_cmd);
+	params->cmd_run+=7;
+	interface_file_select(options->list_file_format, &params->cmd_run);
       }
-      else if(strncmp(*current_cmd,"blocksize,",10)==0)
+      else if(strncmp(params->cmd_run,"blocksize,",10)==0)
       {
-	(*current_cmd)+=10;
-	blocksize=atoi(*current_cmd);
-	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	  (*current_cmd)++;
+	params->cmd_run+=10;
+	params->blocksize=atoi(params->cmd_run);
+	while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
+	  params->cmd_run++;
       }
-      else if(strncmp(*current_cmd,"geometry,",9)==0)
+      else if(strncmp(params->cmd_run,"geometry,",9)==0)
       {
-	(*current_cmd)+=9;
-	change_geometry(disk_car,current_cmd);
+	params->cmd_run+=9;
+	change_geometry(params->disk, &params->cmd_run);
       }
-      else if(strncmp(*current_cmd,"inter",5)==0)
+      else if(strncmp(params->cmd_run,"inter",5)==0)
       {	/* Start interactive mode */
-	*current_cmd=NULL;
+	params->cmd_run=NULL;
       }
-      else if(strncmp(*current_cmd,"wholespace",10)==0)
+      else if(strncmp(params->cmd_run,"wholespace",10)==0)
       {
-	(*current_cmd)+=10;
+	params->cmd_run+=10;
 	carve_free_space_only=0;
       }
-      else if(strncmp(*current_cmd,"freespace",9)==0)
+      else if(strncmp(params->cmd_run,"freespace",9)==0)
       {
-	(*current_cmd)+=9;
+	params->cmd_run+=9;
 	carve_free_space_only=1;
       }
-      else if(strncmp(*current_cmd,"ext2_group,",11)==0)
+      else if(strncmp(params->cmd_run,"ext2_group,",11)==0)
       {
 	unsigned int groupnr;
-	(*current_cmd)+=11;
+	params->cmd_run+=11;
 	options->mode_ext2=1;
-	groupnr=atoi(*current_cmd);
-	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	  (*current_cmd)++;
+	groupnr=atoi(params->cmd_run);
+	while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
+	  params->cmd_run++;
 	if(mode_init_space==INIT_SPACE_WHOLE)
 	  mode_init_space=INIT_SPACE_EXT2_GROUP;
 	if(mode_init_space==INIT_SPACE_EXT2_GROUP)
@@ -251,14 +245,14 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 	    free(new_free_space);
         }
       }
-      else if(strncmp(*current_cmd,"ext2_inode,",11)==0)
+      else if(strncmp(params->cmd_run,"ext2_inode,",11)==0)
       {
 	unsigned int inodenr;
-	(*current_cmd)+=11;
+	params->cmd_run+=11;
 	options->mode_ext2=1;
-	inodenr=atoi(*current_cmd);
-	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	  (*current_cmd)++;
+	inodenr=atoi(params->cmd_run);
+	while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
+	  params->cmd_run++;
 	if(mode_init_space==INIT_SPACE_WHOLE)
 	  mode_init_space=INIT_SPACE_EXT2_INODE;
 	if(mode_init_space==INIT_SPACE_EXT2_INODE)
@@ -273,20 +267,20 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 	    free(new_free_space);
         }
       }
-      else if(isdigit(*current_cmd[0]))
+      else if(isdigit(params->cmd_run[0]))
       {
 	list_part_t *element;
 	unsigned int order;
-	order= atoi(*current_cmd);
-	while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	  (*current_cmd)++;
+	order= atoi(params->cmd_run);
+	while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
+	  params->cmd_run++;
 	for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
 	if(element!=NULL)
 	  current_element=element;
       }
       else
       {
-	log_critical("Syntax error in command line: %s\n",*current_cmd);
+	log_critical("Syntax error in command line: %s\n", params->cmd_run);
 	part_free_list(list_part);
 	return;
       }
@@ -298,7 +292,7 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
       unsigned int i;
       aff_copy(stdscr);
       wmove(stdscr,4,0);
-      wprintw(stdscr,"%s",disk_car->description_short(disk_car));
+      wprintw(stdscr,"%s",params->disk->description_short(params->disk));
       mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
 #if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
       mousemask(ALL_MOUSE_EVENTS, NULL);
@@ -313,12 +307,12 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 	{
 	  wattrset(stdscr, A_REVERSE);
 	  waddstr(stdscr, ">");
-	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
+	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,params->disk,element->part);
 	  wattroff(stdscr, A_REVERSE);
 	} else
 	{
 	  waddstr(stdscr, " ");
-	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
+	  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,params->disk,element->part);
 	}
       }
       wmove(stdscr,7+INTER_SELECT,5);
@@ -392,31 +386,27 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 	case 'S':
 	  if(current_element!=NULL)
 	  {
-	    char *res;
-	    partition_t *partition=current_element->part;
-	    ask_mode_ext2(disk_car, partition, &options->mode_ext2, &carve_free_space_only);
+	    params->partition=current_element->part;
+	    ask_mode_ext2(params->disk, params->partition, &options->mode_ext2, &carve_free_space_only);
 	    menu=0;
-	    if(recup_dir!=NULL)
-	      res=(char *)recup_dir;
-	    else
+	    if(params->recup_dir==NULL)
 	    {
+	      char *res;
 	      res=ask_location("Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 	      if(res!=NULL)
 	      {
-		char *new_recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-		strcpy(new_recup_dir,res);
-		strcat(new_recup_dir,"/");
-		strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-		if(res!=recup_dir)
-		  free(res);
-		res=new_recup_dir;
+		params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+		strcpy(params->recup_dir,res);
+		strcat(params->recup_dir,"/");
+		strcat(params->recup_dir,DEFAULT_RECUP_DIR);
+		free(res);
 	      }
 	    }
-	    if(res!=NULL)
+	    if(params->recup_dir!=NULL)
 	    {
 	      if(td_list_empty(&list_search_space->list))
 	      {
-		init_search_space(list_search_space, disk_car, partition);
+		init_search_space(list_search_space, params->disk, params->partition);
 	      }
 	      if(carve_free_space_only>0)
 	      {
@@ -424,42 +414,40 @@ void menu_photorec(disk_t *disk_car, struct ph_options *options, const char *rec
 		wmove(stdscr,5,0);
 		wprintw(stdscr, "Filesystem analysis, please wait...\n");
 		wrefresh(stdscr);
-		blocksize=remove_used_space(disk_car, partition, list_search_space);
+		params->blocksize=remove_used_space(params->disk, params->partition, list_search_space);
 		/* Only free space is carved, list_search_space is modified.
-		 * To carve the whole space, need to quit and reselect the partition */
+		 * To carve the whole space, need to quit and reselect the params->partition */
 		done = 1;
 	      }
-	      photorec(disk_car, partition, options, res, 1, file_enable, current_cmd, list_search_space, blocksize, carve_free_space_only);
+	      photorec(params, options, list_search_space, carve_free_space_only);
 	    }
-	    if(res!=recup_dir)
-	      free(res);
 	  }
 	  break;
 	case 'o':
 	case 'O':
 	  {
 	    const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
-	    interface_options_photorec(options, current_cmd);
+	    interface_options_photorec(options, &params->cmd_run);
 	    if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
-	      hd_update_geometry(disk_car, options->allow_partial_last_cylinder, options->verbose);
+	      hd_update_geometry(params->disk, options->allow_partial_last_cylinder, options->verbose);
 	    menu=1;
 	  }
 	  break;
 	case 'f':
 	case 'F':
-	  interface_file_select(file_enable, current_cmd);
+	  interface_file_select(options->list_file_format, &params->cmd_run);
 	  menu=2;
 	  break;
 	case 'g':
 	case 'G':
 	  if(options->expert!=0)
-	    change_geometry(disk_car, current_cmd);
+	    change_geometry(params->disk, &params->cmd_run);
 	  break;
       case 'a':
       case 'A':
-	if(disk_car->arch != &arch_none)
+	if(params->disk->arch != &arch_none)
 	{
-	  list_part=add_partition(disk_car, list_part, current_cmd);
+	  list_part=add_partition(params->disk, list_part, &params->cmd_run);
 	  current_element=list_part;
 	  current_element_num=0;
 	}

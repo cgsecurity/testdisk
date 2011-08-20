@@ -106,11 +106,8 @@ int main( int argc, char **argv )
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
-  const char *recup_dir=NULL;
   list_disk_t *list_disk=NULL;
   list_disk_t *element_disk;
-  char *cmd_device=NULL;
-  char *cmd_run=NULL;
   const char *logfile="photorec.log";
   const arch_fnct_t *arch=&arch_none;
   FILE *log_handle=NULL;
@@ -121,8 +118,13 @@ int main( int argc, char **argv )
     .mode_ext2=0,
     .expert=0,
     .lowmem=0,
-    .verbose=0
+    .verbose=0,
+    .list_file_format=list_file_enable
   };
+  struct ph_param params;
+  params.recup_dir=NULL;
+  params.cmd_device=NULL;
+  params.cmd_run=NULL;
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
@@ -169,13 +171,12 @@ int main( int argc, char **argv )
       int len=strlen(argv[i+1]);
       if(argv[i+1][len-1]=='\\' || argv[i+1][len-1]=='/')
       {
-        char *new_recup_dir=(char *)MALLOC(len+strlen(DEFAULT_RECUP_DIR)+1);
-        strcpy(new_recup_dir,argv[i+1]);
-        strcat(new_recup_dir,DEFAULT_RECUP_DIR);
-        recup_dir=new_recup_dir;	/* small memory leak */
+        params.recup_dir=(char *)MALLOC(len + strlen(DEFAULT_RECUP_DIR) + 1);
+        strcpy(params.recup_dir,argv[i+1]);
+        strcat(params.recup_dir,DEFAULT_RECUP_DIR);
       }
       else
-        recup_dir=argv[i+1];
+        params.recup_dir=strdup(argv[i+1]);
       i++;
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
@@ -198,13 +199,13 @@ int main( int argc, char **argv )
       else
       {
         disk_t *disk_car;
-        cmd_device=argv[++i];
-        cmd_run=argv[++i];
+        params.cmd_device=argv[++i];
+        params.cmd_run=argv[++i];
         /* There is no log currently */
-        disk_car=file_test_availability(cmd_device, options.verbose, arch, testdisk_mode);
+        disk_car=file_test_availability(params.cmd_device, options.verbose, arch, testdisk_mode);
         if(disk_car==NULL)
         {
-          printf("\nUnable to open file or device %s\n",cmd_device);
+          printf("\nUnable to open file or device %s\n", params.cmd_device);
           help=1;
         }
         else
@@ -232,6 +233,7 @@ int main( int argc, char **argv )
     printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s\n",
 	td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version());
     printf("OS: %s\n" , get_os());
+    free(params.recup_dir);
     return 0;
   }
   if(help!=0)
@@ -246,6 +248,7 @@ int main( int argc, char **argv )
         "in recup_dir directory.\n" \
         "\n" \
         "If you have problems with PhotoRec or bug reports, please contact me.\n");
+    free(params.recup_dir);
     return 0;
   }
   xml_set_command_line(argc, argv);
@@ -269,7 +272,10 @@ int main( int argc, char **argv )
 #ifdef HAVE_NCURSES
   /* ncurses need locale for correct unicode support */
   if(start_ncurses("PhotoRec", argv[0]))
+  {
+    free(params.recup_dir);
     return 1;
+  }
   {
     const char*filename=logfile;
     while(create_log!=TD_LOG_NONE && log_handle==NULL)
@@ -340,9 +346,9 @@ int main( int argc, char **argv )
     log_info("\n");
   }
   log_info("\n");
-  reset_list_file_enable(list_file_enable);
-  file_options_load(list_file_enable);
-  use_sudo=do_curses_photorec(&options, recup_dir, list_disk, list_file_enable, cmd_device, &cmd_run);
+  reset_list_file_enable(options.list_file_format);
+  file_options_load(options.list_file_format);
+  use_sudo=do_curses_photorec(&params, &options, list_disk);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
@@ -352,9 +358,9 @@ int main( int argc, char **argv )
   {
     printf("PhotoRec: Log file corrupted!\n");
   }
-  else if(cmd_run!=NULL && cmd_run[0]!='\0')
+  else if(params.cmd_run!=NULL && params.cmd_run[0]!='\0')
   {
-    printf("PhotoRec syntax error: %s\n", cmd_run);
+    printf("PhotoRec syntax error: %s\n", params.cmd_run);
   }
   else
   {
@@ -364,5 +370,6 @@ int main( int argc, char **argv )
   if(use_sudo>0)
     run_sudo(argc, argv);
 #endif
+  free(params.recup_dir);
   return 0;
 }

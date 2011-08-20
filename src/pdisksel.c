@@ -61,13 +61,13 @@
 #define INTER_NOTE_Y		(LINES-4)
 #endif
 
-static int photorec_disk_selection_cli(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space, const char *cmd_device, char **current_cmd)
+static int photorec_disk_selection_cli(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
 {
   const list_disk_t *element_disk;
   disk_t *disk=NULL;
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
-    if(strcmp(element_disk->disk->device,cmd_device)==0)
+    if(strcmp(element_disk->disk->device, params->cmd_device)==0)
       disk=element_disk->disk;
   }
   if(disk==NULL)
@@ -91,15 +91,15 @@ static int photorec_disk_selection_cli(struct ph_options *options, const char *r
     }
   }
   autodetect_arch(disk);
-  if(interface_partition_type(disk, options->verbose, current_cmd)==0)
-    menu_photorec(disk, options, recup_dir, file_enable, current_cmd, list_search_space);
+  params->disk=disk;
+  if(interface_partition_type(disk, options->verbose, &params->cmd_run)==0)
+    menu_photorec(params, options, list_search_space);
   return 0;
 }
 
 #ifdef HAVE_NCURSES
-static int photorec_disk_selection_ncurses(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, alloc_data_t *list_search_space)
+static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
 {
-  char * current_cmd=NULL;
   int command;
   int real_key;
   unsigned int menu=0;
@@ -267,10 +267,11 @@ static int photorec_disk_selection_ncurses(struct ph_options *options, const cha
 	  disk_t *disk=current_disk->disk;
 	  const int hpa_dco=is_hpa_or_dco(disk);
 	  autodetect_arch(disk);
+	  params->disk=disk;
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      (options->expert == 0 ||
-	       interface_partition_type(disk, options->verbose, &current_cmd)==0))
-	    menu_photorec(disk, options, recup_dir, file_enable, &current_cmd, list_search_space);
+	       interface_partition_type(disk, options->verbose, &params->cmd_run)==0))
+	    menu_photorec(params, options, list_search_space);
 	}
 	break;
       case 's':
@@ -288,13 +289,13 @@ static int photorec_disk_selection_ncurses(struct ph_options *options, const cha
 }
 #endif
 
-int do_curses_photorec(struct ph_options *options, const char *recup_dir, const list_disk_t *list_disk, file_enable_t *file_enable, char *cmd_device, char **current_cmd)
+int do_curses_photorec(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk)
 {
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
 #ifdef HAVE_NCURSES
-  if(cmd_device==NULL)
+  if(params->cmd_device==NULL)
   {
     char *saved_device=NULL;
     char *saved_cmd=NULL;
@@ -302,8 +303,8 @@ int do_curses_photorec(struct ph_options *options, const char *recup_dir, const 
     if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list) && ask_confirmation("Continue previous session ? (Y/N)")!=0)
     {
       /* yes */
-      *current_cmd=saved_cmd;
-      cmd_device=saved_device;
+      params->cmd_run=saved_cmd;
+      params->cmd_device=saved_device;
     }
     else
     {
@@ -313,10 +314,10 @@ int do_curses_photorec(struct ph_options *options, const char *recup_dir, const 
     }
   }
 #endif
-  if(cmd_device!=NULL && *current_cmd!=NULL)
-    return photorec_disk_selection_cli(options, recup_dir, list_disk, file_enable, &list_search_space, cmd_device, current_cmd);
+  if(params->cmd_device!=NULL && params->cmd_run!=NULL)
+    return photorec_disk_selection_cli(params, options, list_disk, &list_search_space);
 #ifdef HAVE_NCURSES
-  return photorec_disk_selection_ncurses(options, recup_dir, list_disk, file_enable, &list_search_space);
+  return photorec_disk_selection_ncurses(params, options, list_disk, &list_search_space);
 #else
   return 0;
 #endif

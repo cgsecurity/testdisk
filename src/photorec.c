@@ -577,25 +577,19 @@ static void free_list_allocation(alloc_list_t *list_allocation)
 
 /** file_finish()
     @param file_recovery - 
-    @param recup_dir - where the results go
-    @param paranoid
-    @param file_nbr
-    @param blocksize
+    @param struct ph_param *params
     @param alloc_data_t *list_search_space
     @param alloc_data_t **current_search_space
     @param *offset
-    @param dir_num
-    @param status
-    @param dist_t *disk
 
     @returns:
    -1: file not recovered, file_size=0 offset_error!=0
     0: file not recovered
     1: file recovered
  */
-int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int paranoid, unsigned int *file_nbr,
-    const unsigned int blocksize, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset,
-    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk)
+
+int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
+    alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
   int file_recovered=0;
 #ifdef DEBUG_FILE_FINISH
@@ -608,34 +602,31 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
 #endif
   if(file_recovery->handle)
   {
-    if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
-    {
-      if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
-      { /* Check if recovered file is valid */
-        file_recovery->file_check(file_recovery);
-      }
-      /* FIXME: need to adapt read_size to volume size to avoid this */
-      if(file_recovery->file_size > disk->disk_size)
-        file_recovery->file_size = disk->disk_size;
-      if(file_recovery->file_size > disk->disk_real_size)
-        file_recovery->file_size = disk->disk_real_size;
-      if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
-          file_recovery->file_size < file_recovery->min_filesize)
-      { 
-        log_info("File too small ( %llu < %llu), reject it\n",
-            (long long unsigned) file_recovery->file_size,
-            (long long unsigned) file_recovery->min_filesize);
-        file_recovery->file_size=0;
-        file_recovery->file_size_on_disk=0;
-      }
-#ifdef HAVE_FTRUNCATE
-      fflush(file_recovery->handle);
-      if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
-      {
-        log_critical("ftruncate failed.\n");
-      }
-#endif
+    if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL)
+    { /* Check if recovered file is valid */
+      file_recovery->file_check(file_recovery);
     }
+    /* FIXME: need to adapt read_size to volume size to avoid this */
+    if(file_recovery->file_size > params->disk->disk_size)
+      file_recovery->file_size = params->disk->disk_size;
+    if(file_recovery->file_size > params->disk->disk_real_size)
+      file_recovery->file_size = params->disk->disk_real_size;
+    if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
+	file_recovery->file_size < file_recovery->min_filesize)
+    { 
+      log_info("File too small ( %llu < %llu), reject it\n",
+	  (long long unsigned) file_recovery->file_size,
+	  (long long unsigned) file_recovery->min_filesize);
+      file_recovery->file_size=0;
+      file_recovery->file_size_on_disk=0;
+    }
+#ifdef HAVE_FTRUNCATE
+    fflush(file_recovery->handle);
+    if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
+    {
+      log_critical("ftruncate failed.\n");
+    }
+#endif
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
@@ -648,12 +639,11 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     {
       if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
 	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
-      if((++(*file_nbr))%MAX_FILES_PER_DIR==0)
+      if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
       {
-        *dir_num=photorec_mkdir(recup_dir,*dir_num+1);
+        params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
       }
-      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
-        file_recovery->file_stat->recovered++;
+      file_recovery->file_stat->recovered++;
     }
   }
   if(file_recovery->file_stat!=NULL)
@@ -669,13 +659,10 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
     }
     else
     {
-      list_space_used(file_recovery, disk->sector_size);
+      list_space_used(file_recovery, params->disk->sector_size);
       xml_log_file_recovered(file_recovery);
-      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING && status!=STATUS_FIND_OFFSET)
-      {
-	update_search_space(file_recovery,list_search_space,current_search_space,offset,blocksize);
-	file_recovered=1;			/* note that file was recovered */
-      }
+      update_search_space(file_recovery, list_search_space, current_search_space, offset, params->blocksize);
+      file_recovered=1;			/* note that file was recovered */
     }
     free_list_allocation(&file_recovery->location);
   }
@@ -692,9 +679,7 @@ int file_finish(file_recovery_t *file_recovery, const char *recup_dir, const int
   return file_recovered;
 }
 
-alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir, const struct ph_options *options, unsigned int *file_nbr,
-    const unsigned int blocksize, alloc_data_t *list_search_space,
-    unsigned int *dir_num, const photorec_status_t status, const disk_t *disk)
+alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   alloc_data_t *datanext=NULL;
 #ifdef DEBUG_FILE_FINISH
@@ -704,17 +689,18 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
 #endif
   if(file_recovery->handle)
   {
-    if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+    if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
+	params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
     {
       if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && options->paranoid>0)
       { /* Check if recovered file is valid */
         file_recovery->file_check(file_recovery);
       }
       /* FIXME: need to adapt read_size to volume size to avoid this */
-      if(file_recovery->file_size > disk->disk_size)
-        file_recovery->file_size = disk->disk_size;
-      if(file_recovery->file_size > disk->disk_real_size)
-        file_recovery->file_size = disk->disk_real_size;
+      if(file_recovery->file_size > params->disk->disk_size)
+        file_recovery->file_size = params->disk->disk_size;
+      if(file_recovery->file_size > params->disk->disk_real_size)
+        file_recovery->file_size = params->disk->disk_real_size;
 
       if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
           file_recovery->file_size < file_recovery->min_filesize)
@@ -745,11 +731,12 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
 	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
       if(file_recovery->file_rename!=NULL)
 	file_recovery->file_rename(file_recovery->filename);
-      if((++(*file_nbr))%MAX_FILES_PER_DIR==0)
+      if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
       {
-        *dir_num=photorec_mkdir(recup_dir,*dir_num+1);
+        params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
       }
-      if(status!=STATUS_EXT2_ON_SAVE_EVERYTHING && status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+      if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
+	  params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
       {
         file_recovery->file_stat->recovered++;
       }
@@ -761,12 +748,12 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, const char *recup_dir
     {
       /* File hasn't been sucessfully recovered */
       if(file_recovery->offset_error>0)
-	datanext=file_error(list_search_space, file_recovery, blocksize);
+	datanext=file_error(list_search_space, file_recovery, params->blocksize);
     }
     else
     {
       xml_log_file_recovered2(list_search_space, file_recovery);
-      datanext=file_truncate(list_search_space, file_recovery, disk->sector_size, blocksize);
+      datanext=file_truncate(list_search_space, file_recovery, params->disk->sector_size, params->blocksize);
     }
     free_list_allocation(&file_recovery->location);
   }
@@ -935,19 +922,23 @@ void free_search_space(alloc_data_t *list_search_space)
   }
 }
 
-void set_filename(file_recovery_t *file_recovery, const char *recup_dir, const unsigned int dir_num, const disk_t *disk, const partition_t *partition, const int broken)
+void set_filename(file_recovery_t *file_recovery, struct ph_param *params)
 {
+  const int broken=(params->status==STATUS_EXT2_ON_SAVE_EVERYTHING ||
+      params->status==STATUS_EXT2_OFF_SAVE_EVERYTHING);
   if(file_recovery->extension==NULL || file_recovery->extension[0]=='\0')
   {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u",recup_dir,
-	dir_num,(broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size));
+    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,
+	"%s.%u/%c%07u", params->recup_dir,
+	params->dir_num, (broken?'b':'f'),
+	(unsigned int)((file_recovery->location.start - params->partition->part_offset)/ params->disk->sector_size));
   }
   else
   {
-    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,"%s.%u/%c%07u.%s",recup_dir,
-	dir_num, (broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start-partition->part_offset)/disk->sector_size), file_recovery->extension);
+    snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,
+	"%s.%u/%c%07u.%s", params->recup_dir,
+	params->dir_num, (broken?'b':'f'),
+	(unsigned int)((file_recovery->location.start - params->partition->part_offset) / params->disk->sector_size), file_recovery->extension);
   }
 }
 
