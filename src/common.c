@@ -182,6 +182,8 @@ char* strip_dup(char* str)
   for (i = 0; str[i] != 0; i++)
     if (!isspace (str[i]))
       end=&str[i];
+  if(str == end)
+    return NULL;
   *(end+1) = 0;
   return strdup (str);
 }
