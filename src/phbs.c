@@ -100,6 +100,8 @@ int photorec_find_blocksize(struct ph_param *params, const struct ph_options *op
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+
+  params->file_nbr=0;
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
   buffer_size=blocksize + READ_SIZE;

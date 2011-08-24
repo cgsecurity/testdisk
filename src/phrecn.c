@@ -176,6 +176,18 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
   }
 }
 
+/* photorec_aux()
+ * @param struct ph_param *params
+ * @param const struct ph_options *options
+ * @param alloc_data_t *list_search_space
+ *
+ * @returns:
+ * 0: Completed
+ * 1: Stop by user request
+ * 2: Cannot create file
+ * 3: No space left
+ */
+
 static int photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   uint64_t offset;
@@ -736,20 +748,29 @@ static void test_files(alloc_data_t *list_search_space, struct ph_param *params)
 int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned int carve_free_space_only)
 {
   int ind_stop=0;
-  unsigned int blocksize_is_known=0;
+  const unsigned int blocksize_is_known=params->blocksize;
   params->file_nbr=0;
   params->status=STATUS_FIND_OFFSET;
   params->real_start_time=time(NULL);
   params->dir_num=1;
   params->file_stats=init_file_stats(options->list_file_format);
+  if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
+  {
+  }
+  else
+  {
+#ifdef HAVE_NCURSES
+    if(options->expert>0 &&
+	ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
+      params->status=STATUS_UNFORMAT;
+#endif
+  }
 
   screen_buffer_reset();
   log_info("\nAnalyse\n");
   log_partition(params->disk, params->partition);
   if(params->blocksize==0)
     params->blocksize=params->disk->sector_size;
-  else
-    blocksize_is_known=1;
 
   /* make the first recup_dir */
   params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
@@ -787,32 +808,40 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     wattroff(stdscr, A_REVERSE);
     wrefresh(stdscr);
 #endif
-    if(params->status==STATUS_FIND_OFFSET && blocksize_is_known>0)
+    if(params->status==STATUS_UNFORMAT)
     {
-      ind_stop=0;
-    }
-    else if(params->status==STATUS_UNFORMAT)
-    {
-      const unsigned int old_blocksize=params->blocksize;
-      params->blocksize=0;
       ind_stop=fat_unformat(params, options, list_search_space);
-      if(params->blocksize==0)
-	params->blocksize=old_blocksize;
+      params->blocksize=blocksize_is_known;
     }
     else if(params->status==STATUS_FIND_OFFSET)
     {
-      ind_stop=photorec_find_blocksize(params, options, list_search_space);
+      uint64_t start_offset=0;
+      if(blocksize_is_known>0)
+      {
+	ind_stop=0;
+	if(!td_list_empty(&list_search_space->list))
+	  start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
+      }
+      else
+      {
+	ind_stop=photorec_find_blocksize(params, options, list_search_space);
+	params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
+      }
+#ifdef HAVE_NCURSES
+      if(options->expert>0)
+	params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
+#endif
+      update_blocksize(params->blocksize, list_search_space, start_offset);
     }
     else if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
     {
       ind_stop=photorec_bf(params, options, list_search_space);
-      session_save(list_search_space, params, options, carve_free_space_only);
     }
     else
     {
       ind_stop=photorec_aux(params, options, list_search_space);
-      session_save(list_search_space, params, options, carve_free_space_only);
     }
+    session_save(list_search_space, params, options, carve_free_space_only);
     if(ind_stop==3)
     { /* no more space */
 #ifdef HAVE_NCURSES
@@ -849,7 +878,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       if(interface_cannot_create_file()!=0)
 	params->status=STATUS_QUIT;
     }
-    else if(ind_stop>0)
+    else if(ind_stop==1)
     {
       if(session_save(list_search_space, params, options, carve_free_space_only) < 0)
       {
@@ -867,124 +896,65 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #endif
       }
     }
-    else if(options->paranoid>0)
+    if(ind_stop==0)
     {
       switch(params->status)
       {
-        case STATUS_FIND_OFFSET:
-	  {
-	    uint64_t start_offset;
-	    params->file_nbr=0;
-	    params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-	    if(blocksize_is_known==0)
-	      params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
-	    else if(td_list_empty(&list_search_space->list))
-	      start_offset=0;
-	    else
-	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
-#ifdef HAVE_NCURSES
-	    if(options->expert>0)
-	    {
-	      if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
-		params->status=STATUS_UNFORMAT;
-	      else
-	      {
-		params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
-		update_blocksize(params->blocksize, list_search_space, start_offset);
-	      }
-	    }
-	    else
-	    {
-	      update_blocksize(params->blocksize, list_search_space, start_offset);
-	    }
-#else
-	    update_blocksize(params->blocksize, list_search_space, start_offset);
-#endif
-	  }
-	  break;
 	case STATUS_UNFORMAT:
-	  {
-	    params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-	    params->file_nbr=0;
-	  }
+	  params->status=STATUS_FIND_OFFSET;
+	  break;
+	case STATUS_FIND_OFFSET:
+	  params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+	  params->file_nbr=0;
 	  break;
 	case STATUS_EXT2_ON:
-	  params->status=(options->paranoid>1?STATUS_EXT2_ON_BF:STATUS_EXT2_OFF);
+	  if(options->paranoid>1)
+	    params->status=STATUS_EXT2_ON_BF;
+	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
+	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
+	  else
+	  {
+	    params->status=STATUS_QUIT;
+	    unlink("photorec.ses");
+	  }
 	  break;
 	case STATUS_EXT2_ON_BF:
-	  params->status=STATUS_EXT2_OFF;
+	  if(options->keep_corrupted_file>0)
+	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
+	  else
+	  {
+	    params->status=STATUS_QUIT;
+	    unlink("photorec.ses");
+	  }
 	  break;
 	case STATUS_EXT2_OFF:
 	  if(options->paranoid>1)
+	    params->status=STATUS_EXT2_OFF_BF;
+	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
+	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+	  else
 	  {
-            params->status=STATUS_EXT2_OFF_BF;
-          }
-          else
-          {
-            if(options->keep_corrupted_file>0)
-              params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
-            else
-            {
-              params->status=STATUS_QUIT;
-              unlink("photorec.ses");
-            }
-          }
-          break;
-        case STATUS_EXT2_OFF_BF:
-          if(options->keep_corrupted_file>0)
-            params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
-          else
-          {
-            params->status=STATUS_QUIT;
-            unlink("photorec.ses");
-          }
-          break;
-        case STATUS_EXT2_ON_SAVE_EVERYTHING:
-          params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
-          break;
-        default:
-          params->status=STATUS_QUIT;
-          unlink("photorec.ses");
-          break;
-      }
-    }
-    else
-    {
-      switch(params->status)
-      {
-        case STATUS_FIND_OFFSET:
-	  params->file_nbr=0;
-          params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
-#ifdef HAVE_NCURSES
-	  if(options->expert>0)
-	  {
-	    uint64_t offset=0;
-	    if(!td_list_empty(&list_search_space->list))
-	    {
-	      alloc_data_t *tmp;
-	      tmp=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-	      offset=tmp->start % params->blocksize;
-	    }
-	    params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &offset);
-	    update_blocksize(params->blocksize, list_search_space, offset);
-	    if(ask_confirmation("Try to unformat a FAT filesystem (Y/N)")!=0)
-	      params->status=STATUS_UNFORMAT;
+	    params->status=STATUS_QUIT;
+	    unlink("photorec.ses");
 	  }
-#endif
 	  break;
-	case STATUS_UNFORMAT:
-          params->status=(options->mode_ext2>0?STATUS_EXT2_ON_SAVE_EVERYTHING:STATUS_EXT2_OFF_SAVE_EVERYTHING);
-          params->file_nbr=0;
-          break;
-        default:
-          params->status=STATUS_QUIT;
-          unlink("photorec.ses");
-          break;
+	case STATUS_EXT2_OFF_BF:
+	  if(options->keep_corrupted_file>0)
+	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+	  else
+	  {
+	    params->status=STATUS_QUIT;
+	    unlink("photorec.ses");
+	  }
+	  break;
+	default:
+	  params->status=STATUS_QUIT;
+	  unlink("photorec.ses");
+	  break;
       }
     }
     {
-      time_t current_time;
-      current_time=time(NULL);
+      const time_t current_time=time(NULL);
       log_info("Elapsed time %uh%02um%02us\n",
           (unsigned)((current_time-params->real_start_time)/60/60),
           (unsigned)((current_time-params->real_start_time)/60%60),
