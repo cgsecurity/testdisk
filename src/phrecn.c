@@ -186,6 +186,7 @@ static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, co
  * 1: Stop by user request
  * 2: Cannot create file
  * 3: No space left
+ * >0: params->offset is set
  */
 
 static int photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
@@ -212,7 +213,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   previous_time=start_time;
   memset(buffer_olddata,0,blocksize);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-  offset=current_search_space->start;
+  offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose > 0)
     info_list_search_space(list_search_space, current_search_space, params->disk->sector_size, 0, options->verbose);
   if(options->verbose > 1)
@@ -339,6 +340,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
           { 
             log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
             ind_stop=2;
+	    params->offset=offset;
           }
         }
       }
@@ -377,6 +379,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 	    {
 	      /* Warn the user */
 	      ind_stop=3;
+	      params->offset=file_recovery.location.start;
 	    }
 	  }
 	}
@@ -490,6 +493,10 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
         {
           previous_time=current_time;
           ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
+	  if(file_recovery.file_stat!=NULL)
+	    params->offset=file_recovery.location.start;
+	  else
+	    params->offset=offset;
         }
       }
 #endif
@@ -754,8 +761,51 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   params->real_start_time=time(NULL);
   params->dir_num=1;
   params->file_stats=init_file_stats(options->list_file_format);
+  params->offset=-1;
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
+    while(params->cmd_run[0]==',')
+      params->cmd_run++;
+    if(strncmp(params->cmd_run,"status=unformat",15)==0)
+    {
+      params->status=STATUS_UNFORMAT;
+      params->cmd_run+=15;
+    }
+    else if(strncmp(params->cmd_run,"status=find_offset",18)==0)
+    {
+      params->status=STATUS_FIND_OFFSET;
+      params->cmd_run+=18;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_on_bf",17)==0)
+    {
+      params->status=STATUS_EXT2_ON_BF;
+      params->cmd_run+=17;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_on_save_everything",33)==0)
+    {
+      params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
+      params->cmd_run+=33;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_on",14)==0)
+    {
+      params->status=STATUS_EXT2_ON;
+      params->cmd_run+=14;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_off_bf",18)==0)
+    {
+      params->status=STATUS_EXT2_OFF_BF;
+      params->cmd_run+=18;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_off_save_everything",34)==0)
+    {
+      params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+      params->cmd_run+=34;
+    }
+    else if(strncmp(params->cmd_run,"status=ext2_off",15)==0)
+    {
+      params->status=STATUS_EXT2_OFF;
+      params->cmd_run+=15;
+    }
   }
   else
   {
@@ -785,8 +835,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     log_info("Pass %u (blocksize=%u) ", params->pass, params->blocksize);
     switch(params->status)
     {
-      case STATUS_FIND_OFFSET:			log_info("STATUS_FIND_OFFSET\n");	break;
       case STATUS_UNFORMAT:			log_info("STATUS_UNFORMAT\n");	break;
+      case STATUS_FIND_OFFSET:			log_info("STATUS_FIND_OFFSET\n");	break;
       case STATUS_EXT2_ON:			log_info("STATUS_EXT2_ON\n");	break;
       case STATUS_EXT2_ON_BF:			log_info("STATUS_EXT2_ON_BF\n");	break;
       case STATUS_EXT2_OFF:			log_info("STATUS_EXT2_OFF\n");	break;
@@ -842,6 +892,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       ind_stop=photorec_aux(params, options, list_search_space);
     }
     session_save(list_search_space, params, options, carve_free_space_only);
+
     if(ind_stop==3)
     { /* no more space */
 #ifdef HAVE_NCURSES
@@ -896,8 +947,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #endif
       }
     }
+
     if(ind_stop==0)
     {
+      params->offset=-1;
       switch(params->status)
       {
 	case STATUS_UNFORMAT:

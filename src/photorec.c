@@ -942,3 +942,45 @@ void set_filename(file_recovery_t *file_recovery, struct ph_param *params)
   }
 }
 
+static void set_search_start_aux(alloc_data_t **new_current_search_space, alloc_data_t *list_search_space, const uint64_t offset)
+{
+  struct td_list_head *search_walker = NULL;
+  td_list_for_each(search_walker, &list_search_space->list)
+  {
+    alloc_data_t *current_search_space;
+    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    if(current_search_space->start<=offset && offset<= current_search_space->end)
+    {
+      *new_current_search_space=current_search_space;
+      return;
+    }
+  }
+  /* not found */
+  *new_current_search_space=list_search_space;
+}
+
+uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space)
+{
+  uint64_t offset=(*new_current_search_space)->start;
+  if(params->offset!=-1)
+  {
+    offset=params->offset;
+    set_search_start_aux(new_current_search_space, list_search_space, offset);
+  }
+  else if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
+  {
+    offset=0;
+    while(*params->cmd_run==',')
+      params->cmd_run++;
+    while(*params->cmd_run >= '0' && *params->cmd_run <= '9')
+    {
+      offset=offset * 10 + (*params->cmd_run - '0');
+      params->cmd_run++;
+    }
+    offset*=params->disk->sector_size;
+    set_search_start_aux(new_current_search_space, list_search_space, offset);
+  }
+  return offset;
+}
+
+

@@ -209,7 +209,40 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
       fprintf(f_session,"freespace,");
     else
       fprintf(f_session,"wholespace,");
-    fprintf(f_session,"search,inter\n");
+    fprintf(f_session,"search,");
+    switch(params->status)
+    {
+      case STATUS_UNFORMAT:
+        fprintf(f_session, "status=unformat,");
+	break;
+      case STATUS_FIND_OFFSET:
+        fprintf(f_session, "status=find_offset,");
+	break;
+      case STATUS_EXT2_ON_BF:
+	fprintf(f_session, "status=ext2_on_bf,");
+	break;
+      case STATUS_EXT2_ON_SAVE_EVERYTHING:
+	fprintf(f_session, "status=ext2_on_save_everything,");
+	break;
+      case STATUS_EXT2_ON:
+	fprintf(f_session, "status=ext2_on,");
+	break;
+      case STATUS_EXT2_OFF_SAVE_EVERYTHING:
+	fprintf(f_session, "status=ext2_off_save_everything,");
+	break;
+      case STATUS_EXT2_OFF_BF:
+	fprintf(f_session, "status=ext2_off_bf,");
+	break;
+      case STATUS_EXT2_OFF:
+	fprintf(f_session, "status=ext2_off,");
+	break;
+      case STATUS_QUIT:
+        break;
+    }
+    if(params->status!=STATUS_QUIT && params->offset!=-1)
+      fprintf(f_session, "%llu,",
+	  (long long unsigned)(params->offset/params->disk->sector_size));
+    fprintf(f_session,"inter\n");
     td_list_for_each(free_walker, &list_free_space->list)
     {
       alloc_data_t *current_free_space;

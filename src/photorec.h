@@ -54,6 +54,7 @@ struct ph_param
   unsigned int dir_num;
   unsigned int file_nbr;
   file_stat_t *file_stats;
+  uint64_t offset;
 };
 
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
@@ -75,6 +76,7 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose);
 void free_search_space(alloc_data_t *list_search_space);
 void set_filename(file_recovery_t *file_recovery, struct ph_param *params);
+uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

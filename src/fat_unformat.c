@@ -176,6 +176,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 
 static int fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_offset, alloc_data_t *list_search_space)
 {
+  int ind_stop=0;
   uint64_t offset;
   uint64_t offset_end;
   unsigned char *buffer_start;
@@ -203,7 +204,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   }
   offset_end=current_search_space->end;
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
-  offset=current_search_space->start;
+  offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, options->verbose);
   disk->pread(disk, buffer, READ_SIZE, offset);
@@ -306,7 +307,9 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	  if(check_enter_key_or_s(stdscr))
 	  {
 	    log_info("PhotoRec has been stopped\n");
+	    params->offset=offset;
 	    offset = offset_end;
+	    ind_stop=1;
 	  }
 	}
       }
@@ -314,9 +317,19 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
     }
   }
   free(buffer_start);
-  return 0;
+  return ind_stop;
 }
 
+/* fat_unformat()
+ * @param struct ph_param *params
+ * @param const struct ph_options *options
+ * @param alloc_data_t *list_search_space
+ *
+ * @returns:
+ * 0: Completed or not possible
+ * 1: Stop by user request
+ *    params->offset is set
+ */
 int fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   unsigned int sectors_per_cluster=0;
@@ -344,7 +357,6 @@ int fat_unformat(struct ph_param *params, const struct ph_options *options, allo
     update_blocksize(params->blocksize, list_search_space, offset);
   }
   /* start_data is relative to the disk */
-  fat_unformat_aux(params, options, start_data, list_search_space);
-  return 0;
+  return fat_unformat_aux(params, options, start_data, list_search_space);
 }
 
