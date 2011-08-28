@@ -94,6 +94,7 @@ static const struct systypes none_sys_types[] = {
   {UP_FAT16,	"FAT16"},
   {UP_FAT32,	"FAT32"},
   {UP_FREEBSD,	"FreeBSD"},
+  {UP_GFS2,	"GFS2"},
   {UP_HFS,	"HFS"},
   {UP_HFSP,	"HFS+"},
   {UP_HFSX,	"HFSX"},

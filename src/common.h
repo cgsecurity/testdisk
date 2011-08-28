@@ -237,6 +237,7 @@ enum upart_type {
   UP_FAT32=0x0b,
   UP_FATX,
   UP_FREEBSD,
+  UP_GFS2,
   UP_HFS,
   UP_HFSP,
   UP_HFSX,

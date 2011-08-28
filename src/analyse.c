@@ -38,6 +38,7 @@
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
+#include "gfs2.h"
 #include "hfs.h"
 #include "hfsp.h"
 #include "jfs_superblock.h"
@@ -362,6 +363,7 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
     const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)data;
     const struct ufs_super_block *ufs=(const struct ufs_super_block *)data;
     const struct btrfs_super_block *btrfs=(const struct btrfs_super_block*)data;
+    const struct gfs2_sb *gfs2=(const struct gfs2_sb *)data;
     /* 64k offset */
     /* Test ReiserFS */
     if((memcmp(rfs->s_magic,"ReIs",4) == 0 ||
@@ -376,7 +378,9 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
     if(memcmp(&btrfs->magic, BTRFS_MAGIC, 8)==0 &&
       recover_btrfs(disk, btrfs, partition, verbose, dump_ind)==0)
       return 1;
-    //  if(recover_gfs2(disk,(buffer+0x400),partition,verbose,dump_ind)==0) return 1;
+    if(gfs2->sb_header.mh_magic==be32(GFS2_MAGIC) &&
+	recover_gfs2(disk, gfs2, partition, dump_ind)==0)
+      return 1;
   }
   return 0;
 }
@@ -409,7 +413,8 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose)
       check_cramfs(disk, partition, verbose)==0 ||
       check_xfs(disk, partition, verbose)==0 ||
       check_LUKS(disk, partition)==0 ||
-      check_btrfs(disk, partition, verbose)==0)
+      check_btrfs(disk, partition, verbose)==0 ||
+      check_gfs2(disk, partition)==0)
     return 0;
   return 1;
 }
