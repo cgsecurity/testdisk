@@ -54,6 +54,7 @@ file_C			= filegen.c \
 			  file_bmp.c \
 			  file_bz2.c \
 			  file_cab.c \
+			  file_caf.c \
 			  file_cam.c \
 			  file_cdt.c \
 			  file_chm.c \
