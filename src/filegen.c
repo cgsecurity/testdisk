@@ -188,40 +188,44 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     file_recovery->file_size++;
 }
 
-void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length)
+uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
 {
   unsigned char*buffer;
-  int64_t file_size;
-  if(footer_length==0 || file_recovery->file_size <= extra_length)
-    return ;
   buffer=(unsigned char*)MALLOC(4096+footer_length-1);
-  file_size=file_recovery->file_size-extra_length;
   memset(buffer+4096,0,footer_length-1);
   do
   {
     int i;
     int taille;
-    const unsigned int read_size=(file_size%4096!=0 ? file_size%4096 : 4096);
-    file_size-=read_size;
-    if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
+    const unsigned int read_size=(offset%4096!=0 ? offset%4096 : 4096);
+    offset-=read_size;
+    if(fseek(handle,offset,SEEK_SET)<0)
     {
       free(buffer);
-      return;
+      return 0;
     }
-    taille=fread(buffer,1,read_size,file_recovery->handle);
+    taille=fread(buffer, 1, read_size, handle);
     for(i=taille-1;i>=0;i--)
     {
       if(buffer[i]==*(const unsigned char *)footer && memcmp(buffer+i,footer,footer_length)==0)
       {
-        file_recovery->file_size=file_size + i + footer_length + extra_length;
         free(buffer);
-        return;
+        return offset + i;
       }
     }
     memcpy(buffer+read_size,buffer,footer_length-1);
-  } while(file_size>0);
-  file_recovery->file_size=0;
+  } while(offset>0);
   free(buffer);
+  return 0;
+}
+
+void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length)
+{
+  if(footer_length==0 || file_recovery->file_size <= extra_length)
+    return ;
+  file_recovery->file_size=file_rsearch(file_recovery->handle, file_recovery->file_size-extra_length, footer, footer_length);
+  if(file_recovery->file_size > 0)
+    file_recovery->file_size+= footer_length + extra_length;
 }
 
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
