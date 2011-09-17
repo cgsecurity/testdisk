@@ -2,7 +2,7 @@
 
     File: file_pdf.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2011 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>     /* free */
 #endif
+#include <ctype.h>
 #include "types.h"
 #include "filegen.h"
 #include "memmem.h"
@@ -61,6 +62,132 @@ static void register_header_check_pdf(file_stat_t *file_stat)
   register_header_check(0, pdf_header,sizeof(pdf_header), &header_check_pdf, file_stat);
 }
 
+static int hex(int c)
+{
+  if(c>='0' && c<='9')
+    return c-'0';
+  if(c>='A' && c<='F')
+    return c-'A'+10;
+  if(c>='a' && c<='f')
+    return c-'a'+10;
+  return -1;
+}
+
+static void file_rename_pdf(const char *old_filename)
+{
+  char title[512];
+  const unsigned char pattern[6]={ '/', 'T', 'i', 't', 'l', 'e' };
+  uint64_t offset;
+  FILE *handle;
+  unsigned char*buffer;
+  unsigned int i;
+  unsigned int j;
+  int bsize;
+  const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
+  if((handle=fopen(old_filename, "rb"))==NULL)
+    return;
+  if(fseek(handle, 0, SEEK_END)<0)
+  {
+    fclose(handle);
+    return;
+  }
+  offset=ftell(handle);
+  offset=file_rsearch(handle, offset, pattern, sizeof(pattern));
+  if(offset==0)
+  {
+    fclose(handle);
+    return;
+  }
+  offset+=sizeof(pattern);
+  if(fseek(handle, offset, SEEK_SET)<0)
+  {
+    fclose(handle);
+    return ;
+  }
+  buffer=(unsigned char*)MALLOC(512);
+  if((bsize=fread(buffer, 1, 512, handle)) <= 0)
+  {
+    free(buffer);
+    fclose(handle);
+    return ;
+  }
+  /* Skip spaces after /Title */
+  for(i=0; i<bsize && buffer[i]==' '; i++);
+  if(i==bsize)
+  {
+    /* Too much spaces */
+    free(buffer);
+    fclose(handle);
+    return ;
+  }
+  if(buffer[i]=='<')
+  {
+    int s=i;
+    /* hexa to ascii */
+    j=s;
+    buffer[j++]='(';
+    for(s++; s+1<bsize && buffer[s]!='>'; s+=2)
+      buffer[j++]=(hex(buffer[s])<<4) | hex(buffer[s+1]);
+    buffer[j]=')';
+  }
+  j=0;
+  if(buffer[i]=='(')
+  {
+    i++;	/* Skip '(' */
+    if(i+8<bsize && memcmp(&buffer[i], "\\376\\377", 8)==0)
+    {
+      /* escape utf-16 title */
+      i+=8;
+      while(i<bsize)
+      {
+	if(buffer[i]==')')
+	  break;
+	if(i+4<bsize && buffer[i]=='\\' && isdigit(buffer[i+1]) &&
+	    isdigit(buffer[i+2]) && isdigit(buffer[i+3]))
+	  i+=4;
+	else
+	  title[j++]=buffer[i++];
+      }
+    }
+    else if(i+3<bsize && memcmp(&buffer[i], &utf16, 3)==0)
+    {
+      /* utf-16 title */
+      i+=2;
+      while(i<bsize)
+      {
+	if(buffer[i]==')')
+	  break;
+	title[j++]=buffer[i+1];
+	i+=2;
+      }
+    }
+    else
+    {
+      /* ascii title */
+      while(i<bsize && buffer[i]!=')')
+	title[j++]=buffer[i++];
+    }
+  }
+  else
+  {
+    free(buffer);
+    fclose(handle);
+    return ;
+  }
+  /* Try to avoid some double-extensions */
+  if(j>4 &&
+      (memcmp(&title[j-4], ".doc", 4)==0 ||
+       memcmp(&title[j-4], ".xls", 4)==0))
+    j-=4;
+  else if(j>5 &&
+      (memcmp(&title[j-5], ".docx", 5)==0 ||
+       memcmp(&title[j-5], ".xlsx", 5)==0))
+    j-=5;
+  file_rename(old_filename, title, j, 0, NULL, 1);
+  free(buffer);
+  fclose(handle);
+}
+
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,pdf_header,sizeof(pdf_header))==0)
@@ -71,7 +198,10 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     if(td_memmem(buffer, buffer_size, "<</Illustrator ", 15) != NULL)
       file_recovery_new->extension="ai";
     else
+    {
       file_recovery_new->extension=file_hint_pdf.extension;
+      file_recovery_new->file_rename=&file_rename_pdf;
+    }
     if((src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
     {
       src+=sizeof(sig_linearized);
