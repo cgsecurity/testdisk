@@ -124,24 +124,23 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	block!=0xFFFFFFFE && i<fat_entries;
 	block=le32(fat[block]), i++)
     {
-      struct OLE_DIR *dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
+      struct OLE_DIR *dir_entries;
 #ifdef DEBUG_OLE
       log_info("read block %u\n", block);
 #endif
       if(!(block < fat_entries))
       {
 	file_recovery->file_size=0;
-	free(dir_entries);
 	free(fat);
 	return ;
       }
       if(fseek(file_recovery->handle, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
 	file_recovery->file_size=0;
-	free(dir_entries);
 	free(fat);
 	return ;
       }
+      dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
       if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file_recovery->handle)!=1)
       {
 	file_recovery->file_size=0;
@@ -189,9 +188,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   else
   {
     const uint32_t *fati=(const uint32_t *)(header+1);
-    const unsigned int fat_offset=(le32(fati[0])<<header->uSectorShift)+512;
+    const unsigned int fat_offset=(le32(fati[0]) << le16(header->uSectorShift))+512;
     fat=(const uint32_t *)&buffer[fat_offset];
-    fat_entries=(le32(header->num_FAT_blocks) << header->uSectorShift)/4;
+    fat_entries=(le32(header->num_FAT_blocks) << le16(header->uSectorShift))/4;
     if(fat_offset>buffer_size)
       fat_entries=0;
     else if(fat_offset+fat_entries>buffer_size)
@@ -311,12 +310,13 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
     if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
       return 0;
-    /* qbb file have reserved2=4 */
-    if(le32(header->reserved2)!=0 && le32(header->reserved2)!=4)
+    /* max file have reserved2=1
+     * qbb file have reserved2=4 */
+    if(le32(header->reserved2)!=0 && le32(header->reserved2)!=1 && le32(header->reserved2)!=4)
       return 0;
     if(le16(header->uMiniSectorShift)!=6)
       return 0;
-    /* qbb file have uSectorShift=12 */
+    /* max and qbb file have uSectorShift=12 */
     if(le16(header->uSectorShift)!=9 && le16(header->uSectorShift)!=12)
       return 0;
     /*
@@ -758,7 +758,10 @@ static void file_rename_doc(const char *old_filename)
   if(le16(header->uSectorShift)==12)
   {
     fclose(file);
-    file_rename(old_filename, NULL, 0, 0, "qbb", 1);
+    if(le32(header->reserved2)==1)
+      file_rename(old_filename, NULL, 0, 0, "max", 1);
+    else
+      file_rename(old_filename, NULL, 0, 0, "qbb", 1);
     return ;
   }
   if((fat=OLE_load_FAT(file, header))==NULL)
@@ -783,14 +786,14 @@ static void file_rename_doc(const char *old_filename)
 	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
 	block=le32(fat[block]), i++)
     {
-      struct OLE_DIR *dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
+      struct OLE_DIR *dir_entries;
       if(fseek(file, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
 	free(fat);
-	free(dir_entries);
 	fclose(file);
 	return ;
       }
+      dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
       if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file)!=1)
       {
 	free(fat);
