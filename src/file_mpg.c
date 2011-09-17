@@ -54,9 +54,37 @@ static void register_header_check_mpg(file_stat_t *file_stat)
 
 static int header_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg &&
-      !(buffer[0]==0x00 && buffer[1]==0x00 && buffer[2]==0x01 &&
-	buffer[3]==0xBA && (buffer[4]&0xF1)==0x21  && buffer[5]==0 && buffer[6]==1 && buffer[7]==0 && buffer[8]==1))
+  /* pack start code 0x1BA + MPEG-1 + SCR=0 */
+  /*
+   *       '01'                                            2	01
+       system_clock_reference_base [32..30]            3	00 0
+       marker_bit                                      1	1
+       system_clock_reference_base [29..15]           15	00		buffer[4]=0x44
+       								0000 0000	buffer[5]=0x00
+								0000 0
+       marker_bit                                      1	1
+       system_clock_reference_base [14..0]            15	00		buffer[6]=0x04
+
+       								0000 0000	buffer[7]=0x00
+								0000
+								0
+       marker_bit                                      1	1
+       system_clock_reference_extension                9 uimsbf
+       marker_bit                                      1
+       => 0100 0100
+  */
+
+  if(buffer[0]==0x00 && buffer[1]==0x00 && buffer[2]==0x01 && buffer[3]==0xBA &&
+      (((buffer[4]&0xF1)==0x21 && buffer[5]==0 && buffer[6]==1 && buffer[7]==0 && buffer[8]==1) ||
+       (buffer[4]==0x44 && buffer[5]==0 && buffer[6]==4 && buffer[7]==0 && (buffer[8]&0xfc)==4)))
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_mpg.extension;
+    file_recovery_new->data_check=&data_check_mpg;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
     return 0;
   /* MPEG-1 http://andrewduncan.ws/MPEG/MPEG-1.ps
    * MPEG-2 Program stream http://neuron2.net/library/mpeg2/iso13818-1.pdf
@@ -99,15 +127,15 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
   if(buffer[0]==0x00 && buffer[1]==0x00 && buffer[2]==0x01 &&
     (
      /* MPEG-1 system header start code, several per file */
-     (buffer[3]==0xBA && (buffer[4]&0xF1)==0x21) ||
+     (buffer[3]==0xBA && (buffer[4]&0xF1)==0x21 && (buffer[6]&1)==1 && (buffer[8]&1)==1) ||
      /* MPEG2 system header start code, several per file */
-     (buffer[3]==0xBA && (buffer[4]&0xc4)==0x44) ||
+     (buffer[3]==0xBA && (buffer[4]&0xc4)==0x44 && (buffer[6]&4)==4 && (buffer[8]&4)==4) ||
      /* MPEG-1 system header start code */
      (buffer[3]==0xBB && (buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01) ||
      /* MPEG-1 sequence header code, horizontal size>0 && vertical size>0, aspect_ratio!=0 */
      (buffer[3]==0xB3 &&
       (buffer[4]<<4)+(buffer[5]>>4)>0 &&
-      ((buffer[5]&&0x0f)<<8)+buffer[6]>0 &&
+      ((buffer[5]&0x0f)<<8)+buffer[6]>0 &&
       (buffer[7]>>4)!=0 && (buffer[7]>>4)!=15) ||
      /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object sequence start code */
      /* (buffer[3]==0xB0) || */
