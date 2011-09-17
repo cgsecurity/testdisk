@@ -144,6 +144,15 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   {
     return 0;
   }
+  /* Some JPG have two APP1 markers, avoid to dicard the first one */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_jpg &&
+      memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 &&
+      memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
+  {
+    return 0;
+  }
+
   /* Don't extract jpg inside AVI */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_riff &&
