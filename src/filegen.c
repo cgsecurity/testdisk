@@ -382,7 +382,10 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   /* Add original filename */
   if(offset < buffer_size && buffer!=NULL)
   {
+    char *dst_old=dst;
     int off;
+    int ok=0;
+    int bad=0;
     *dst++ = '_';
     for(off=offset; off<buffer_size && buffer[off]!='\0'; off++)
     {
@@ -393,14 +396,28 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 	case ':':
 	case '*':
 	  *dst++ = '_';
+	  bad++;
 	  break;
 	default:
 	  if(isprint(buffer[off]) && !isspace(buffer[off]))
+	  {
 	    *dst++ = buffer[off];
+	    ok++;
+	  }
 	  else
+	  {
 	    *dst++ = '_';
+	    bad++;
+	  }
 	  break;
       }
+    }
+    if(ok <= bad)
+      dst=dst_old;
+    else
+    {
+      while(dst > dst_old && *(dst-1)=='_')
+	dst--;
     }
   }
   /* Add extension */
@@ -458,7 +475,10 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
   /* Add original filename */
   if(offset < buffer_size && buffer!=NULL)
   {
+    char *dst_old=dst;
     int off;
+    int ok=0;
+    int bad=0;
     *dst++ = '_';
     for(off=offset; off<buffer_size && buffer[off]!='\0'; off+=2)
     {
@@ -469,14 +489,28 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
 	case ':':
 	case '*':
 	  *dst++ = '_';
+	  bad++;
 	  break;
 	default:
 	  if(isprint(buffer[off]) && !isspace(buffer[off]))
+	  {
 	    *dst++ = buffer[off];
+	    ok++;
+	  }
 	  else
+	  {
 	    *dst++ = '_';
+	    bad++;
+	  }
 	  break;
       }
+    }
+    if(ok <= bad)
+      dst=dst_old;
+    else
+    {
+      while(dst > dst_old && *(dst-1)=='_')
+	dst--;
     }
   }
   /* Add extension */
