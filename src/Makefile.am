@@ -66,6 +66,7 @@ file_C			= filegen.c \
 			  file_ctg.c \
 			  file_cwk.c \
 			  file_d2s.c \
+			  file_dar.c \
 			  file_dat.c \
 			  file_dbf.c \
 			  file_dbn.c \
