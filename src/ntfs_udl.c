@@ -67,6 +67,7 @@
 #endif
 
 #include "list.h"
+#include "list_sort.h"
 #include "log.h"
 #include "log_part.h"
 #include "ntfs_udl.h"
@@ -1181,7 +1182,7 @@ static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 			    new_file=ufile_to_file_data(file);
 			    if(new_file!=NULL)
 			    {
-			      td_list_add_sorted(&new_file->list, &dir_list->list, filesort);
+			      td_list_add_tail(&new_file->list, &dir_list->list);
 			      results++;
 			    }
 			  }
@@ -1194,6 +1195,7 @@ done:
 	free(buffer);
 	if (attr)
 		ntfs_attr_close(attr);
+	td_list_sort(&dir_list->list, filesort);
 }
 
 #ifdef HAVE_NCURSES

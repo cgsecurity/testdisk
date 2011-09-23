@@ -54,6 +54,7 @@
 #include "intrf.h"
 #include "intrfn.h"
 #include "list.h"
+#include "list_sort.h"
 #include "dir.h"
 #include "askloc.h"
 #include "log.h"
@@ -248,13 +249,14 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	      }
 #endif
 	      file_info->name=strdup(dir_entrie->d_name);
-	      td_list_add_sorted(&file_info->list, &dir_list.list, filesort);
+	      td_list_add_tail(&file_info->list, &dir_list.list);
 	      file_info=(file_info_t*)MALLOC(sizeof(*file_info));
 	    }
         }
       }
       free(file_info);
       closedir(dir);
+      td_list_sort(&dir_list.list, filesort);
     }
     if(dir_list.list.next!=&dir_list.list)
     {
