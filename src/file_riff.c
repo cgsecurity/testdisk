@@ -113,7 +113,11 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
     return;
   for(file_size=start; file_size < end;)
   {
-    fseek(fr->handle, file_size, SEEK_SET);
+    if(fseek(fr->handle, file_size, SEEK_SET)<0)
+    {
+      fr->offset_error=file_size;
+      return;
+    }
     if (fread(&list_header, sizeof(list_header), 1, fr->handle)!=1)
     {
       fr->offset_error=file_size;
@@ -148,9 +152,16 @@ static void file_check_avi(file_recovery_t *fr)
   {
     const uint64_t file_size=fr->file_size;
     riff_list_header list_header;
-    fseek(fr->handle, fr->file_size, SEEK_SET);
+    if(fseek(fr->handle, fr->file_size, SEEK_SET)<0)
+    {
+      fr->file_size=0;
+      return ;
+    }
     if (fread(&list_header, sizeof(list_header), 1, fr->handle)!=1)
+    {
+      fr->file_size=0;
       return;
+    }
 #ifdef DEBUG_RIFF
     log_riff_list(file_size, 0, &list_header);
 #endif
@@ -162,7 +173,10 @@ static void file_check_avi(file_recovery_t *fr)
     }
     check_riff_list(fr, 1, file_size + sizeof(list_header), file_size + 8 + le32(list_header.dwSize) - 1);
     if(fr->offset_error > 0)
+    {
+      fr->file_size=0;
       return;
+    }
     fr->file_size=file_size + 8 + le32(list_header.dwSize);
   }
 }
