@@ -178,6 +178,7 @@ file_C			= filegen.c \
 			  file_pct.c \
 			  file_pcx.c \
 			  file_pdf.c \
+			  file_pds.c \
 			  file_pfx.c \
 			  file_png.c \
 			  file_pnm.c \
