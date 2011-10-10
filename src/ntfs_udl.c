@@ -913,9 +913,17 @@ static int undelete_file(ntfs_volume *vol, long long inode)
 
 	td_list_for_each(item, &file->data) {
 	  char pathname[256];
+	  char defname[64];
 		struct data *d = td_list_entry(item, struct data, list);
-
-		name = file->pref_name;
+		if(file->pref_name)
+		{
+		  name = file->pref_name;
+		}
+		else
+		{
+		  sprintf(defname, "inode_%llu", (long long unsigned)file->inode);
+		  name = defname;
+		}
 
 		//dir_data->local_dir;
 		create_pathname(opts.dest, file->pref_pname, name, d->name, pathname, sizeof(pathname));
