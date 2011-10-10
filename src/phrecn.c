@@ -1034,7 +1034,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       data_size += current_search_space->end - current_search_space->start + 1;
     }
     snprintf(msg, sizeof(msg),
-	"Create a image_remaining.dd (%u MB) file with the unknown data (Answer N if not sure) (Y/N)",
+	"Create an image_remaining.dd (%u MB) file with the unknown data (Answer N if not sure) (Y/N)",
 	(unsigned int)(data_size/1000/1000));
     if(ask_confirmation("%s", msg)!=0)
     {
@@ -1044,6 +1044,11 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       res=strrchr(dst_path, '/');
       if(res!=NULL)
 	*res='\0';
+      else
+      {
+	dst_path[0]='.';
+	dst_path[1]='\0';
+      }
       filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
       strcpy(filename, dst_path);
       strcat(filename, "/");
