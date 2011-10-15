@@ -79,7 +79,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
     {
       aff_copy(stdscr);
       mvwaddstr(stdscr,4,0,disk_car->description(disk_car));
-      if(backup_list!=NULL)
+      if(!td_list_empty(&backup_list->list))
       {
 	mvwaddstr(stdscr,5,0,"Choose the backup you want to restore:");
 	mvwaddstr(stdscr,20,0,"PS: Don't worry you will have to confirm the partition restoration.");
@@ -90,7 +90,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
       }
       rewrite=0;
     }
-    if(backup_list!=NULL)
+    if(!td_list_empty(&backup_list->list))
     {
       backup_disk_t *backup=NULL;
       for(i=0,backup_walker=backup_list->list.next;
