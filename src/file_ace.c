@@ -70,11 +70,11 @@ typedef struct header_ace ace_header_t;
 
 static void file_check_ace(file_recovery_t *file_recovery)
 {
-  fseek(file_recovery->handle, 0, SEEK_SET);
-
   file_recovery->offset_error = 0;
   file_recovery->offset_ok = 0;
   file_recovery->file_size = 0;
+  if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
+    return ;
 #ifdef DEBUG_ACE
   log_trace("file_check_ace\n");
 #endif
@@ -83,9 +83,16 @@ static void file_check_ace(file_recovery_t *file_recovery)
     ace_header_t h;
     if(fread(&h, sizeof(h), 1, file_recovery->handle)!=1)
     {
+      file_recovery->offset_error=file_recovery->file_size;
+      file_recovery->file_size=0;
       return ;
     }
-    fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR);
+    if(fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
+    {
+      file_recovery->offset_error=file_recovery->file_size;
+      file_recovery->file_size=0;
+      return ;
+    }
 
 #ifdef DEBUG_ACE
     log_trace("file_ace: Block header at 0x%08lx: CRC16=0x%04X size=%u type=%u"
@@ -100,6 +107,8 @@ static void file_check_ace(file_recovery_t *file_recovery)
 #ifdef DEBUG_ACE
       log_trace("file_ace: Invalid block type %u\n", h.type);
 #endif
+      file_recovery->offset_error=file_recovery->file_size;
+      file_recovery->file_size=0;
       return ;
     }
 
@@ -109,6 +118,8 @@ static void file_check_ace(file_recovery_t *file_recovery)
 #ifdef DEBUG_ACE
       log_trace("file_ace: Invalid block size %u\n", le16(h.size));
 #endif
+      file_recovery->offset_error=file_recovery->file_size;
+      file_recovery->file_size=0;
       return ;
     }
 
@@ -129,6 +140,8 @@ static void file_check_ace(file_recovery_t *file_recovery)
 #ifdef DEBUG_ACE
           log_trace("file_ace: truncated file\n");
 #endif
+	  file_recovery->offset_error=file_recovery->file_size;
+	  file_recovery->file_size=0;
           return ;
         }
         crc32=get_crc32(buffer, count, crc32);
@@ -139,6 +152,8 @@ static void file_check_ace(file_recovery_t *file_recovery)
 #ifdef DEBUG_ACE
         log_trace("file_ace: bad CRC32: %04X vs %04X\n", le16(h.crc16), crc32);
 #endif
+	file_recovery->offset_error=file_recovery->file_size;
+	file_recovery->file_size=0;
         return ;
       }
     }
@@ -148,7 +163,12 @@ static void file_check_ace(file_recovery_t *file_recovery)
     if (le16(h.flags)&1)
     {
       file_recovery->file_size += le32(h.addsize);
-      fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+      if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
+      {
+	file_recovery->offset_error=file_recovery->file_size;
+	file_recovery->file_size=0;
+	return;
+      }
     }
   }
 }
