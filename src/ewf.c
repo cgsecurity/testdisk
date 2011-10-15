@@ -22,36 +22,53 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
+
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>	/* lseek, read, write, close */
 #endif
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h> 	/* open */
 #endif
+
 #include <stdio.h>
 #include <errno.h>
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>     /* free */
 #endif
+
 #ifdef HAVE_GLOB_H
 #include <glob.h>
 #endif
+
 #include "types.h"
 #include "common.h"
 #include "ewf.h"
 #include "fnctdsk.h"
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
 #include <libewf.h>
+
+#if !defined( LIBEWF_HANDLE )
+/* libewf version 2 no longer defines LIBEWF_HANDLE
+ */
+#define HAVE_LIBEWF_V2_API
+#endif
+
 #include "log.h"
 #include "hdaccess.h"
 
@@ -65,7 +82,7 @@ static int fewf_sync(disk_t *disk);
 
 struct info_fewf_struct
 {
-#ifdef HAVE_LIBEWF_HANDLE_T
+#if defined( HAVE_LIBEWF_V2_API )
   libewf_handle_t *handle;
 #else
   LIBEWF_HANDLE *handle;
@@ -86,9 +103,16 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
 #ifdef HAVE_GLOB_H
   glob_t globbuf;
 #endif
+
 #ifdef DEBUG_EWF
+#if defined( HAVE_LIBEWF_V2_API )
+  libewf_notify_set_stream( stderr, NULL );
+  libewf_notify_set_verbose( 1 );
+#else
   libewf_set_notify_values( stderr, 1 );
 #endif
+#endif
+
   data=(struct info_fewf_struct *)MALLOC(sizeof(*data));
   data->offset=0;
   strncpy(data->file_name,device,sizeof(data->file_name));
@@ -115,21 +139,73 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   num_files++;
 #endif /*HAVE_GLOB_H*/
   if(filenames!=NULL)
-    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
-  if(data->handle==NULL)
   {
-    log_error("libewf_open(%s) failed\n", device);
+#if defined( HAVE_LIBEWF_V2_API )
+    data->handle = NULL;
+
+    if( libewf_handle_initialize(
+         &( data->handle ),
+         NULL ) != 1 )
+    {
+      log_error("libewf_handle_initialize failed\n");
+
 #ifdef HAVE_GLOB_H
-    globfree(&globbuf);
+      globfree(&globbuf);
 #endif
-    free(filenames);
-    free(data);
-    return NULL;
+      free(filenames);
+      free(data);
+      return NULL;
+    }
+    if( libewf_handle_open(
+         data->handle,
+         filenames,
+         num_files,
+         LIBEWF_OPEN_READ,
+         NULL ) != 1 )
+    {
+      log_error("libewf_handle_open(%s) failed\n", device);
+
+      libewf_handle_free(
+       &( data->handle ),
+       NULL );
+
+#ifdef HAVE_GLOB_H
+      globfree(&globbuf);
+#endif
+      free(filenames);
+      free(data);
+      return NULL;
+    }
+#else
+    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
+    if(data->handle==NULL)
+    {
+      log_error("libewf_open(%s) failed\n", device);
+
+#ifdef HAVE_GLOB_H
+      globfree(&globbuf);
+#endif
+      free(filenames);
+      free(data);
+      return NULL;
+    }
+#endif /* defined( HAVE_LIBEWF_V2_API ) */
   }
+
+#if defined( HAVE_LIBEWF_V2_API )
+  if( libewf_handle_set_header_values_date_format(
+       data->handle,
+       LIBEWF_DATE_FORMAT_DAYMONTH,
+       NULL ) != 1 )
+  {
+    log_error("%s Unable to set header values date format\n", device);
+  }
+#else
   if( libewf_parse_header_values( data->handle, LIBEWF_DATE_FORMAT_DAYMONTH) != 1 )
   {
     log_error("%s Unable to parse EWF header values\n", device);
   }
+#endif
   disk=(disk_t *)MALLOC(sizeof(*disk));
   init_disk(disk);
   disk->arch=arch;
@@ -143,17 +219,30 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   disk->sync=fewf_sync;
   disk->access_mode=TESTDISK_O_RDONLY;
   disk->clean=fewf_clean;
-#ifdef LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS
+#if defined( HAVE_LIBEWF_V2_API ) || defined( LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS )
   {
-    uint32_t bytes_per_sector;
-    if(libewf_get_bytes_per_sector(data->handle, &bytes_per_sector)<0)
+    uint32_t bytes_per_sector = 0;
+
+#if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_get_bytes_per_sector(
+         data->handle,
+         &bytes_per_sector,
+         NULL ) != 1 )
+#else
+    if( libewf_get_bytes_per_sector(data->handle, &bytes_per_sector)<0)
+#endif
+    {
       disk->sector_size=DEFAULT_SECTOR_SIZE;
+    }
     else
+    {
       disk->sector_size=bytes_per_sector;
+    }
   }
 #else
   disk->sector_size=libewf_get_bytes_per_sector(data->handle);
 #endif
+
 //  printf("libewf_get_bytes_per_sector %u\n",disk->sector_size);
   if(disk->sector_size==0)
     disk->sector_size=DEFAULT_SECTOR_SIZE;
@@ -163,13 +252,25 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   disk->geom.sectors_per_head=1;
   disk->geom.bytes_per_sector=disk->sector_size;
   /* Get disk_real_size */
-#ifdef LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS
+#if defined( HAVE_LIBEWF_V2_API ) || defined( LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS )
   {
-    size64_t media_size;
+    size64_t media_size = 0;
+
+#if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_get_media_size(
+         data->handle,
+         &media_size,
+         NULL ) != 1 )
+#else
     if(libewf_get_media_size(data->handle, &media_size)<0)
+#endif
+    {
       disk->disk_real_size=0;
+    }
     else
+    {
       disk->disk_real_size=media_size;
+    }
   }
 #else
   disk->disk_real_size=libewf_get_media_size(data->handle);
@@ -210,7 +311,16 @@ static int fewf_clean(disk_t *disk)
   if(disk->data!=NULL)
   {
     struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
+#if defined( HAVE_LIBEWF_V2_API )
+    libewf_handle_close(
+     data->handle,
+     NULL);
+    libewf_handle_free(
+     &( data->handle ),
+     NULL );
+#else
     libewf_close(data->handle);
+#endif
     free(data->buffer);
     data->buffer=NULL;
     free(disk->data);
@@ -229,7 +339,16 @@ static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, cons
 {
   struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
   int64_t taille;
+#if defined( HAVE_LIBEWF_V2_API )
+  taille = libewf_handle_read_random(
+            data->handle,
+            buffer,
+            count,
+            offset,
+            NULL );
+#else
   taille=libewf_read_random(data->handle, buffer, count, offset);
+#endif
   if(taille!=count)
   {
     log_error("fewf_pread(xxx,%u,buffer,%lu(%u/%u/%u)) read err: ",
@@ -278,4 +397,5 @@ const char*td_ewf_version(void)
 {
   return "none";
 }
-#endif
+#endif /* defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF) */
+
