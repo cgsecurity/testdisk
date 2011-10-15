@@ -922,11 +922,11 @@ void file_check_tiff(file_recovery_t *fr)
   unsigned char *buffer=(unsigned char *)MALLOC(8192);
   int data_read;
   calculated_file_size = 0;
-  fseek(fr->handle, 0, SEEK_SET);
-  data_read=fread(buffer, 1, sizeof(buffer), fr->handle);
-  if(data_read < (int)sizeof(TIFFHeader))
+  if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
+      (data_read=fread(buffer, 1, sizeof(buffer), fr->handle)) < (int)sizeof(TIFFHeader))
   {
     free(buffer);
+    fr->file_size=0;
     return;
   }
   {
