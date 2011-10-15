@@ -273,7 +273,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   uint64_t offset=0;
   unsigned int j=0;
   unsigned char*buffer=(unsigned char*)MALLOC(4096);
-  fseek(file_recovery->handle, 0, SEEK_SET);
+  if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
+  {
+    free(buffer);
+    return ;
+  }
   while(offset < file_recovery->file_size)
   {
     int i;
@@ -291,7 +295,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	{
 	  const unsigned char *date_asc;
 	  struct tm tm_time;
-	  fseek(file_recovery->handle, offset+i+1, SEEK_SET);
+	  if(fseek(file_recovery->handle, offset+i+1, SEEK_SET)<0)
+	  {
+	    free(buffer);
+	    return ;
+	  }
 	  if(fread(buffer, 1, 22, file_recovery->handle) < 22)
 	  {
 	    free(buffer);
