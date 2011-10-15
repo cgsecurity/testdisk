@@ -68,6 +68,7 @@ static int header_check_lxo(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_size;
     return 1;
   }
+  return 0;
 }
 
 static void register_header_check_lxo(file_stat_t *file_stat)
