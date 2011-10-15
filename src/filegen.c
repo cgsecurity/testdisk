@@ -364,6 +364,8 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
   char *dst;
   char *directory_sep;
   int len=strlen(old_filename)+1;
+  if(buffer_size<0)
+    return ;
   if(offset < buffer_size && buffer!=NULL)
     len+=buffer_size-offset+1;
   if(new_ext!=NULL)
@@ -457,6 +459,8 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
   char *dst;
   char *directory_sep;
   int len=strlen(old_filename)+1;
+  if(buffer_size<0)
+    return ;
   if(offset < buffer_size && buffer!=NULL)
     len+=buffer_size-offset;
   if(new_ext!=NULL)
