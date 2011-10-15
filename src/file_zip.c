@@ -139,7 +139,6 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   zip_file_entry_t  file;
   uint32_t          len;
 
-  fr->file_size += sizeof(file);
   if (fread(&file, sizeof(file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -147,6 +146,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #endif
     return -1;
   }
+  fr->file_size += sizeof(file);
 #ifdef DEBUG_ZIP
   log_info("%u Comp=%u %u CRC32=0x%08X ",
       le32(file.compressed_size),
@@ -158,7 +158,6 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   if (len)
   {
     char *filename=(char *)MALLOC(len+1);
-    fr->file_size += len;
     if (fread(filename, len, 1, fr->handle) != 1)
     {
 #ifdef DEBUG_ZIP
@@ -167,6 +166,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       free(filename);
       return -1;
     }
+    fr->file_size += len;
     filename[len]='\0';
     if(first_filename[0]=='\0')
     {
@@ -236,7 +236,6 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   len = le16(file.extra_length);
   if (len>0)
   {
-    fr->file_size += len;
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -244,11 +243,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #endif
       return -1;
     }
+    fr->file_size += len;
   }
   len = le32(file.compressed_size);
   if (len>0)
   {
-    fr->file_size += len;
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -259,6 +258,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #ifdef DEBUG_ZIP
     log_trace("zip: Data of length %u\n", len);
 #endif
+    fr->file_size += len;
   }
 
   expected_compressed_size=0;
@@ -275,6 +275,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #ifdef DEBUG_ZIP
     log_trace("Searched footer, got length %lli\n", (long long int)pos);
 #endif
+    if (pos < 0)
+      return -1;
     if (pos > 0)
     {
       fr->file_size += pos;
@@ -297,7 +299,6 @@ static int zip_parse_central_dir(file_recovery_t *fr)
     uint32_t offset_header;           /** Relative offset of local header */
   } __attribute__ ((__packed__)) dir;
 
-  fr->file_size += 2;
   if (fseek(fr->handle, 2, SEEK_CUR) == -1)
   {
 #ifdef DEBUG_ZIP
@@ -305,8 +306,8 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += 2;
 
-  fr->file_size += sizeof(file);
   if (fread(&file, sizeof(file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -314,11 +315,11 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(file);
 #ifdef DEBUG_ZIP
   log_trace("zip: Central dir with CRC 0x%08X\n", file.crc32);
 #endif
 
-  fr->file_size += sizeof(dir);
   if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -326,10 +327,10 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(dir);
 
   /* Rest of the block - could attempt CRC check */
   len = le16(file.extra_length) + le16(dir.comment_length) + le16(file.filename_length);
-  fr->file_size += len;
   if (fseek(fr->handle, len, SEEK_CUR) == -1)
   {
 #ifdef DEBUG_ZIP
@@ -337,6 +338,7 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += len;
 #ifdef DEBUG_ZIP
   log_trace("zip: Data of total length %u\n", len);
 #endif
@@ -357,7 +359,6 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
     uint64_t offset;                  /** Offset of start of central directory */
   } __attribute__ ((__packed__)) dir;
 
-  fr->file_size += sizeof(dir);
   if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -365,11 +366,11 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(dir);
 
   if (dir.end_size > 0)
   {
     uint64_t len = le64(dir.end_size);
-    fr->file_size += len;
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -377,6 +378,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 #endif
       return -1;
     }
+    fr->file_size += len;
 #ifdef DEBUG_ZIP
     log_trace("zip: End of 64b central dir of length %llu\n", (long long unsigned)len);
 #endif
@@ -397,7 +399,6 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
     uint16_t comment_length;          /** Comment length */
   } __attribute__ ((__packed__)) dir;
 
-  fr->file_size += sizeof(dir);
   if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -405,11 +406,11 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(dir);
 
   if (dir.comment_length)
   {
     uint16_t len = le16(dir.comment_length);
-    fr->file_size += len;
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -417,6 +418,7 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
 #endif
       return -1;
     }
+    fr->file_size += len;
 #ifdef DEBUG_ZIP
     log_trace("zip: Comment of length %u\n", len);
 #endif
@@ -432,7 +434,6 @@ static int zip_parse_data_desc(file_recovery_t *fr)
     uint32_t uncompressed_size;      /** Uncompressed size (bytes) */
   } __attribute__ ((__packed__)) desc;
 
-  fr->file_size += sizeof(desc);
   if (fread(&desc, sizeof(desc), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -440,6 +441,7 @@ static int zip_parse_data_desc(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(desc);
 #ifdef DEBUG_ZIP
   log_info("%u %u CRC32=0x%08X\n",
       le32(desc.compressed_size),
@@ -455,7 +457,6 @@ static int zip_parse_signature(file_recovery_t *fr)
 {
   uint16_t len;
 
-  fr->file_size += 2;
   if (fread(&len, 2, 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -463,11 +464,11 @@ static int zip_parse_signature(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += 2;
 
   if (len)
   {
     len = le16(len);
-    fr->file_size += len;
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -475,6 +476,7 @@ static int zip_parse_signature(file_recovery_t *fr)
 #endif
       return -1;
     }
+    fr->file_size += len;
   }
 
   return 0;
@@ -488,7 +490,6 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
     uint32_t disk_total_number; /** Total number of disks */
   } __attribute__ ((__packed__)) loc;
 
-  fr->file_size += sizeof(loc);
   if (fread(&loc, sizeof(loc), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -496,6 +497,7 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 #endif
     return -1;
   }
+  fr->file_size += sizeof(loc);
   return 0;
 }
 
@@ -503,11 +505,12 @@ static void file_check_zip(file_recovery_t *fr)
 {
   const char *ext=NULL;
   unsigned int file_nbr=0;
-  fseek(fr->handle, 0, SEEK_SET);
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
   first_filename[0]='\0';
+  if(fseek(fr->handle, 0, SEEK_SET) < 0)
+    return ;
   while (1)
   {
     uint64_t file_size_old;
@@ -589,11 +592,14 @@ static void file_rename_zip(const char *old_filename)
   reset_file_recovery(&fr);
   if((fr.handle=fopen(old_filename, "rb"))==NULL)
     return;
-  fseek(fr.handle, 0, SEEK_SET);
   fr.file_size = 0;
   fr.offset_error=0;
   first_filename[0]='\0';
-
+  if(fseek(fr.handle, 0, SEEK_SET) < 0)
+  {
+    fclose(fr.handle);
+    return ;
+  }
   while (1)
   {
     uint32_t header;
