@@ -143,11 +143,20 @@ static const unsigned char header_reg[8]  	= "REGEDIT4";
 static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
 static const unsigned char header_rpp[16]	= { '<', 'R', 'E', 'A', 'P', 'E', 'R', '_', 'P', 'R', 'O', 'J', 'E', 'C', 'T', ' '};
 static const unsigned char header_rtf[5]	= { '{','\\','r','t','f'};
+static const unsigned char header_seenezsst[8]=  {
+  0x23, 'S' , 'e' , 'e' , 'N' , 'e' , 'z' , ' ' ,
+};
 /* firefox session store */
 static const unsigned char header_sessionstore[42]  	= "({\"windows\":[{\"tabs\":[{\"entries\":[{\"url\":\"";
 static const unsigned char header_sh[9]  	= "#!/bin/sh";
 static const unsigned char header_slk[10]  	= "ID;PSCALC3";
 static const unsigned char header_smil[6]  	= "<smil>";
+static const unsigned char header_snz_unix[8]=  {
+  'D' , 'E' , 'F' , 'A' , 'U' , 'L' , 'T' ,'\n'
+};
+static const unsigned char header_snz_win[9]=  {
+  'D' , 'E' , 'F' , 'A' , 'U' , 'L' , 'T' ,'\r', '\n'
+};
 static const unsigned char header_stl[6]	= "solid ";
 static const unsigned char header_stp[13]  	= "ISO-10303-21;";
 static const unsigned char header_ttd[55]	= "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00";
@@ -229,10 +238,13 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, header_ReturnPath,sizeof(header_ReturnPath), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rpp,sizeof(header_rpp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_rtf,sizeof(header_rtf), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_seenezsst, sizeof(header_seenezsst), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sessionstore, sizeof(header_sessionstore), &header_check_fasttxt, file_stat);
   register_header_check(0, header_sh,sizeof(header_sh), &header_check_fasttxt, file_stat);
   register_header_check(0, header_slk,sizeof(header_slk), &header_check_fasttxt, file_stat);
   register_header_check(0, header_smil,sizeof(header_smil), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_snz_unix, sizeof(header_snz_unix), &header_check_fasttxt, file_stat);
+  register_header_check(0, header_snz_win, sizeof(header_snz_win), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stl,sizeof(header_stl), &header_check_fasttxt, file_stat);
   register_header_check(0, header_stp,sizeof(header_stp), &header_check_fasttxt, file_stat);
   register_header_check(0, header_ttd, sizeof(header_ttd), &header_check_fasttxt, file_stat);
@@ -595,6 +607,23 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->extension="slk";
+    return 1;
+  }
+  if(memcmp(buffer,header_seenezsst,sizeof(header_seenezsst))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="SeeNezSST";
+    return 1;
+  }
+  if(memcmp(buffer,header_snz_unix,sizeof(header_snz_unix))==0 ||
+      memcmp(buffer,header_snz_win,sizeof(header_snz_win))==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="snz";
     return 1;
   }
   if(memcmp(buffer, header_mysql, sizeof(header_mysql))==0 ||
