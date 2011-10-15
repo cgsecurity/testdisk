@@ -527,7 +527,8 @@ static inline int jpeg_session_resume(struct jpeg_session_struct *jpeg_session)
   if(resume_memory((j_common_ptr)&jpeg_session->cinfo))
     return -1;
   src = (my_source_mgr *) jpeg_session->cinfo.src;
-  fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET);
+  if(fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
+    return -1;
   return 0;
 }
 
@@ -1061,7 +1062,8 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
     return ;
   offset=file_recovery->offset_error / file_recovery->blocksize * file_recovery->blocksize;
   i=file_recovery->offset_error % file_recovery->blocksize;
-  fseek(infile, offset, SEEK_SET);
+  if(fseek(infile, offset, SEEK_SET) < 0)
+    return ;
   do
   {
     while((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
@@ -1102,7 +1104,8 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   uint64_t thumb_offset=0;
   int nbytes;
   file_recovery->extra=0;
-  fseek(infile, 0, SEEK_SET);
+  if(fseek(infile, 0, SEEK_SET) < 0)
+    return 0;
   if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {
     unsigned int offset;
