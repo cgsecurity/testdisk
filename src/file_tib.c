@@ -75,33 +75,28 @@ static void file_check_tib(file_recovery_t *file_recovery)
   unsigned char*buffer=(unsigned char*)MALLOC(512);
   int64_t file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
-  if(fseek(file_recovery->handle, file_size, SEEK_SET)<0)
+  if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+      fread(buffer, 1, 512, file_recovery->handle) <= 0)
   {
     free(buffer);
-    return;
-  }
-  if(fread(buffer, 1, 512, file_recovery->handle)<=0)
-  {
-    free(buffer);
+    file_recovery->file_size=0;
     return;
   }
   if(memcmp(&buffer[512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
   {
     free(buffer);
+    file_recovery->file_size=0;
     return;
   }
 
   for(; file_size>0; file_size-=512)
   {
     unsigned int i;
-    if(fseek(file_recovery->handle, file_size, SEEK_SET)<0)
+    if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+	fread(buffer, 1, 512, file_recovery->handle) <= 0)
     {
       free(buffer);
-      return;
-    }
-    if(fread(buffer, 1, 512, file_recovery->handle)<=0)
-    {
-      free(buffer);
+      file_recovery->file_size=0;
       return;
     }
     for(i=0; i<512 && buffer[i]==0; i++);
