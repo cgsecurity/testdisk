@@ -73,12 +73,12 @@ static void file_check_spf(file_recovery_t *file_recovery)
 {
   unsigned char*buffer;
   buffer=(unsigned char*)MALLOC(READ_SIZE);
+  file_recovery->file_size=0;
   if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
     free(buffer);
     return;
   }
-  file_recovery->file_size=0;
   while(1)
   {
     int i;
