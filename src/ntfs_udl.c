@@ -1260,11 +1260,11 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  } else {
 	    strncpy(datestr, "                 ",sizeof(datestr));
 	  }
-	  if(COLS <= 1+17+1+7+1)
+	  if(COLS <= 1+17+1+9+1)
 	    wprintw(window, "%s", file_info->name);
 	  else
 	  {
-	    const unsigned int nbr=COLS - (1+17+1+7+1);
+	    const unsigned int nbr=COLS - (1+17+1+9+1);
 	    if(strlen(file_info->name) < nbr)
 	      wprintw(window, "%-*s", nbr, file_info->name);
 	    else
