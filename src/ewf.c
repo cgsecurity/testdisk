@@ -48,10 +48,6 @@
 #include <stdlib.h>     /* free */
 #endif
 
-#ifdef HAVE_GLOB_H
-#include <glob.h>
-#endif
-
 #include "types.h"
 #include "common.h"
 #include "ewf.h"
@@ -67,6 +63,10 @@
 /* libewf version 2 no longer defines LIBEWF_HANDLE
  */
 #define HAVE_LIBEWF_V2_API
+#endif
+
+#if !defined( HAVE_LIBEWF_V2_API ) && defined( HAVE_GLOB_H )
+#include <glob.h>
 #endif
 
 #include "log.h"
@@ -88,7 +88,7 @@ struct info_fewf_struct
   LIBEWF_HANDLE *handle;
 #endif
   uint64_t offset;
-  char file_name[DISKNAME_MAX];
+  char *file_name;
   int mode;
   void *buffer;
   unsigned int buffer_size;
@@ -100,28 +100,70 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   char **filenames= NULL;
   disk_t *disk=NULL;
   struct info_fewf_struct *data;
-#ifdef HAVE_GLOB_H
+#if !defined( HAVE_LIBEWF_V2_API ) && defined( HAVE_GLOB_H )
   glob_t globbuf;
 #endif
+  data=(struct info_fewf_struct *)MALLOC(sizeof(struct info_fewf_struct));
+  memset(data, 0, sizeof(struct info_fewf_struct)); 
+  data->file_name = strdup(device);
+  data->mode = mode;
 
-#ifdef DEBUG_EWF
 #if defined( HAVE_LIBEWF_V2_API )
+#ifdef DEBUG_EWF
   libewf_notify_set_stream( stderr, NULL );
   libewf_notify_set_verbose( 1 );
+#endif
+  if( libewf_glob(
+       data->file_name,
+       strlen(data->file_name),
+       LIBEWF_FORMAT_UNKNOWN,
+       &filenames,
+       (int *)&num_files,
+       NULL ) != 1 )
+  {
+      log_error("libewf_glob failed\n");
+      free(data);
+      return NULL;
+  }
+  if( libewf_handle_initialize(
+	&( data->handle ),
+	NULL ) != 1 )
+  {
+    log_error("libewf_handle_initialize failed\n");
+
+      libewf_glob_free(
+       filenames,
+       num_files,
+       NULL );
+    free(data);
+    return NULL;
+  }
+  if( libewf_handle_open(
+	data->handle,
+	filenames,
+	num_files,
+	LIBEWF_OPEN_READ,
+	NULL ) != 1 )
+  {
+    log_error("libewf_handle_open(%s) failed\n", device);
+
+    libewf_handle_free(
+	&( data->handle ),
+	NULL );
+
+      libewf_glob_free(
+       filenames,
+       num_files,
+       NULL );
+    free(data);
+    return NULL;
+  }
+
 #else
+#ifdef DEBUG_EWF
   libewf_set_notify_values( stderr, 1 );
 #endif
-#endif
-
-  data=(struct info_fewf_struct *)MALLOC(sizeof(*data));
-  data->offset=0;
-  strncpy(data->file_name,device,sizeof(data->file_name));
-  data->file_name[sizeof(data->file_name)-1]='\0';
-  data->buffer=NULL;
-  data->buffer_size=0;
-  data->mode=mode;
-  data->handle=NULL;
-#ifdef HAVE_GLOB_H
+#if defined( HAVE_GLOB_H )
   {
     globbuf.gl_offs = 0;
     glob(data->file_name, GLOB_DOOFFS, NULL, &globbuf);
@@ -133,64 +175,31 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
       }
     }
   }
-#else
-  filenames=(char **)MALLOC(1*sizeof(*filenames));
-  filenames[num_files] = data->file_name;
-  num_files++;
-#endif /*HAVE_GLOB_H*/
-  if(filenames!=NULL)
+  if(filenames==NULL)
   {
-#if defined( HAVE_LIBEWF_V2_API )
-    data->handle = NULL;
-
-    if( libewf_handle_initialize(
-         &( data->handle ),
-         NULL ) != 1 )
-    {
-      log_error("libewf_handle_initialize failed\n");
-
-#ifdef HAVE_GLOB_H
-      globfree(&globbuf);
-#endif
-      free(filenames);
-      free(data);
-      return NULL;
-    }
-    if( libewf_handle_open(
-         data->handle,
-         filenames,
-         num_files,
-         LIBEWF_OPEN_READ,
-         NULL ) != 1 )
-    {
-      log_error("libewf_handle_open(%s) failed\n", device);
-
-      libewf_handle_free(
-       &( data->handle ),
-       NULL );
-
-#ifdef HAVE_GLOB_H
-      globfree(&globbuf);
-#endif
-      free(filenames);
-      free(data);
-      return NULL;
-    }
-#else
-    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
-    if(data->handle==NULL)
-    {
-      log_error("libewf_open(%s) failed\n", device);
-
-#ifdef HAVE_GLOB_H
-      globfree(&globbuf);
-#endif
-      free(filenames);
-      free(data);
-      return NULL;
-    }
-#endif /* defined( HAVE_LIBEWF_V2_API ) */
+    globfree(&globbuf);
+    free(data);
+    return NULL;
   }
+#else
+  {
+    filenames=(char **)MALLOC(1*sizeof(*filenames));
+    filenames[num_files] = data->file_name;
+    num_files++;
+  }
+#endif
+  data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
+  if(data->handle==NULL)
+  {
+    log_error("libewf_open(%s) failed\n", device);
+#if defined( HAVE_GLOB_H )
+    globfree(&globbuf);
+#endif
+    free(filenames);
+    free(data);
+    return NULL;
+  }
+#endif /* defined( HAVE_LIBEWF_V2_API ) */
 
 #if defined( HAVE_LIBEWF_V2_API )
   if( libewf_handle_set_header_values_date_format(
@@ -276,10 +285,17 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
   disk->disk_real_size=libewf_get_media_size(data->handle);
 #endif
   update_disk_car_fields(disk);
-#ifdef HAVE_GLOB_H
+#if defined( HAVE_LIBEWF_V2_API )
+  libewf_glob_free(
+    filenames,
+    num_files,
+    NULL );
+#else
+#if defined( HAVE_GLOB_H )
   globfree(&globbuf);
 #endif
   free(filenames);
+#endif
   return disk;
 }
 
@@ -321,8 +337,12 @@ static int fewf_clean(disk_t *disk)
 #else
     libewf_close(data->handle);
 #endif
+    free(data->file_name);
+    data->file_name=NULL;
+
     free(data->buffer);
     data->buffer=NULL;
+
     free(disk->data);
     disk->data=NULL;
   }
