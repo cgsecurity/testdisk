@@ -1107,7 +1107,7 @@ static file_info_t *ufile_to_file_data(const struct ufile *file, const struct da
 
   new_file->stat.st_size=max(d->size_init, d->size_data);
 #ifdef DJGPP
-  new_file->file_size=file->max_size;
+  new_file->file_size=max(d->size_init, d->size_data);
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
   new_file->stat.st_blksize=512;	/* FIXME cluster_size */
