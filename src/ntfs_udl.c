@@ -1082,20 +1082,21 @@ free:
 	return result;
 }
 
-static file_info_t *ufile_to_file_data(const struct ufile *file)
+static file_info_t *ufile_to_file_data(const struct ufile *file, const struct data *d)
 {
-  file_info_t *new_file;
-  if(file->pref_name==NULL)
-    return NULL;
-  new_file=(file_info_t *)MALLOC(sizeof(*new_file));
-  if(file->pref_pname==NULL)
-    new_file->name=strdup(file->pref_name);
-  else
-  {
-    const unsigned int len=strlen(file->pref_name) + 1 + strlen(file->pref_pname) + 1;
-    new_file->name=(char *)MALLOC(len);
-    sprintf(new_file->name, "%s/%s", file->pref_pname, file->pref_name);
-  }
+  file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
+  char inode_name[32];
+  const unsigned int len=(file->pref_pname==NULL?0:strlen(file->pref_pname)) +
+    (file->pref_name==NULL?sizeof(inode_name):strlen(file->pref_name) + 1) +
+    (d->name==NULL?0:strlen(d->name) + 1) + 1;
+  sprintf(inode_name, "inode_%llu", (long long unsigned)file->inode);
+  new_file->name=(char *)MALLOC(len);
+  sprintf(new_file->name, "%s%s%s%s%s",
+      (file->pref_pname?file->pref_pname:""),
+      (file->pref_pname?"/":""),
+      (file->pref_name?file->pref_name:inode_name),
+      (d->name?":":""),
+      (d->name?d->name:""));
   new_file->stat.st_dev=0;
   new_file->stat.st_ino=file->inode;
   new_file->stat.st_mode = (file->directory ?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
@@ -1103,7 +1104,8 @@ static file_info_t *ufile_to_file_data(const struct ufile *file)
   new_file->stat.st_uid=0;
   new_file->stat.st_gid=0;
   new_file->stat.st_rdev=0;
-  new_file->stat.st_size=file->max_size;
+
+  new_file->stat.st_size=max(d->size_init, d->size_data);
 #ifdef DJGPP
   new_file->file_size=file->max_size;
 #endif
@@ -1186,12 +1188,17 @@ static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 			  percent = calc_percentage(file, vol);
 			  if (percent >0)
 			  {
-			    file_info_t *new_file;
-			    new_file=ufile_to_file_data(file);
-			    if(new_file!=NULL)
+			    struct td_list_head *item;
+			    td_list_for_each(item, &file->data)
 			    {
-			      td_list_add_tail(&new_file->list, &dir_list->list);
-			      results++;
+			      const struct data *d = td_list_entry(item, struct data, list);
+			      file_info_t *new_file;
+			      new_file=ufile_to_file_data(file, d);
+			      if(new_file!=NULL)
+			      {
+				td_list_add_tail(&new_file->list, &dir_list->list);
+				results++;
+			      }
 			    }
 			  }
 			  free_file(file);
