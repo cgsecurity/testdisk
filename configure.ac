@@ -584,6 +584,23 @@ else
   AC_MSG_WARN(Use of ntfs library disabled)
 fi
 
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_LIBNTFS
+#include <ntfs/volume.h>
+#include <ntfs/attrib.h>
+#endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/volume.h>
+#include <ntfs-3g/attrib.h>
+#endif
+]],
+[[ ntfs_mbstoucs(NULL,NULL); ]])],
+    [ac_cv_c_ntfs_mbstoucs_have_two_arguments=yes],
+    [ac_cv_c_ntfs_mbstoucs_have_two_arguments=no])
+if test "${ac_cv_c_ntfs_mbstoucs_have_two_arguments}" != "no"; then
+  AC_DEFINE([NTFS_MBSTOUCS_HAVE_TWO_ARGUMENTS], 1, [Define if ntfs_mbstoucs takes two parameters.])
+fi
+
 if test -z "${use_reiserfs}"; then
   AC_CHECK_LIB(reiserfs,libreiserfs_get_version,[
   AC_DEFINE([HAVE_LIBREISERFS],1,[Define to 1 if you have the reiserfs library (-lreiserfs).])

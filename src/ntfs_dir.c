@@ -401,8 +401,11 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     if(stream_name != NULL)
     {
       ntfschar *stream_name_ucs=NULL;
-      /* FIXME */
+#ifdef NTFS_MBSTOUCS_HAVE_TWO_ARGUMENTS
       const int len=ntfs_mbstoucs(stream_name, &stream_name_ucs);
+#else
+      const int len=ntfs_mbstoucs(stream_name, &stream_name_ucs, 0);
+#endif
       if(len < 0)
 	log_error("ntfs_mbstoucs failed\n");
       else
