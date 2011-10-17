@@ -209,83 +209,125 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
   if ((name_type & FILE_NAME_WIN32_AND_DOS) == FILE_NAME_DOS)
     goto free;
   {
-    s64 filesize = 0;
     ntfs_inode *ni;
-    ntfs_attr_search_ctx *ctx = NULL;
-    ATTR_RECORD *attr;
-    STANDARD_INFORMATION *si;
+    ntfs_attr_search_ctx *ctx_si = NULL;
+    file_data_t *new_file=NULL;
 
     result = -1;				/* Everything else is bad */
 
     ni = ntfs_inode_open(ls->vol, mref);
     if (!ni)
       goto release;
+    new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+    new_file->status=0;
+    new_file->prev=ls->current_file;
+    new_file->next=NULL;
+    new_file->stat.st_dev=0;
+    new_file->stat.st_ino=MREF(mref);
+    new_file->stat.st_mode = (dt_type == NTFS_DT_DIR?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
+    new_file->stat.st_nlink=1;
+    new_file->stat.st_uid=0;
+    new_file->stat.st_gid=0;
+    new_file->stat.st_rdev=0;
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
+#endif
 
-    ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
-    if (!ctx)
-      goto release;
-    if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, 0, 0, NULL,
-	  0, ctx))
-      goto release;
-    attr = ctx->attr;
-
-    si = (STANDARD_INFORMATION*)((char*)attr +
-                            le16_to_cpu(attr->value_offset));
-
-    if (!si)
-      goto release;
-
-    if (dt_type != NTFS_DT_DIR) {
-      if (!ntfs_attr_lookup(AT_DATA, AT_UNNAMED, 0, 0, 0,
-	    NULL, 0, ctx))
-	filesize = ntfs_get_attribute_value_length(
-	    ctx->attr);
+    ctx_si = ntfs_attr_get_search_ctx(ni, ni->mrec);
+    if (ctx_si)
+    {
+      if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, 0, 0, NULL, 0, ctx_si)==0)
+      {
+	const ATTR_RECORD *attr = ctx_si->attr;
+	const STANDARD_INFORMATION *si = (STANDARD_INFORMATION*)((char*)attr +
+	    le16_to_cpu(attr->value_offset));
+	if(si)
+	{
+	  new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
+	  new_file->stat.st_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
+	  new_file->stat.st_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
+	}
+      }
+      ntfs_attr_put_search_ctx(ctx_si);
     }
 
+    if (dt_type == NTFS_DT_DIR)
     {
-      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-      memcpy(new_file->name,filename,(MAX_PATH<sizeof(new_file->name)?MAX_PATH:sizeof(new_file->name)));
-      new_file->status=0;
-      new_file->prev=ls->current_file;
-      new_file->next=NULL;
-      new_file->stat.st_dev=0;
-      new_file->stat.st_ino=MREF(mref);
-      new_file->stat.st_mode = (dt_type == NTFS_DT_DIR?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
-      new_file->stat.st_nlink=1;
-      new_file->stat.st_uid=0;
-      new_file->stat.st_gid=0;
-      new_file->stat.st_rdev=0;
-      new_file->stat.st_size=filesize;
+      snprintf(new_file->name, sizeof(new_file->name), "%s", filename);
+      new_file->stat.st_size=0;
 #ifdef DJGPP
-      new_file->file_size=filesize;
+      new_file->file_size=0;
 #endif
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-      new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-      if(new_file->stat.st_blksize!=0)
-      {
-	new_file->stat.st_blocks=(filesize + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
-      }
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS)
+      new_file->stat.st_blocks=0;
 #endif
-#endif
-      new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
-      new_file->stat.st_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
-      new_file->stat.st_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
       new_file->prev=ls->current_file;
       new_file->next=NULL;
-      /* log_debug("fat: new file %s de=%p size=%u\n",new_file->name,de,de->size); */
       if(ls->current_file!=NULL)
-        ls->current_file->next=new_file;
+	ls->current_file->next=new_file;
       else
-        ls->dir_list=new_file;
+	ls->dir_list=new_file;
       ls->current_file=new_file;
+    }
+    else
+    {
+      ATTR_RECORD *rec;
+      int first=1;
+      ntfs_attr_search_ctx *ctx = NULL;
+      ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
+      /* A file has always an unnamed date stream and
+       * may have named alternate data streams (ADS) */
+      while((rec = find_attribute(AT_DATA, ctx)))
+      {
+	const s64 filesize = ntfs_get_attribute_value_length(ctx->attr);
+	if(first==0)
+	{
+	  const file_data_t *old_file=new_file;
+	  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+	  memcpy(new_file, old_file, sizeof(*new_file));
+	}
+	new_file->stat.st_size=filesize;
+#ifdef DJGPP
+	new_file->file_size=filesize;
+#endif
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) && defined(HAVE_STRUCT_STAT_ST_BLKSIZE)
+	if(new_file->stat.st_blksize!=0)
+	  new_file->stat.st_blocks=(filesize + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
+#endif
+	if (rec->name_length)
+	{
+	  char *stream_name=NULL;
+	  if (ntfs_ucstombs((ntfschar *) ((char *) rec + le16_to_cpu(rec->name_offset)),
+		rec->name_length, &stream_name, 0) < 0)
+	  {
+	    log_error("ERROR: Cannot translate name into current locale.\n");
+	    snprintf(new_file->name, sizeof(new_file->name), "%s:???", filename);
+	  }
+	  else
+	  {
+	    snprintf(new_file->name, sizeof(new_file->name), "%s:%s", filename, stream_name);
+	  }
+	}
+	else
+	{
+	  snprintf(new_file->name,sizeof(new_file->name), "%s", filename);
+	}
+	new_file->prev=ls->current_file;
+	new_file->next=NULL;
+	if(ls->current_file!=NULL)
+	  ls->current_file->next=new_file;
+	else
+	  ls->dir_list=new_file;
+	ls->current_file=new_file;
+
+	first=0;
+      }
+      ntfs_attr_put_search_ctx(ctx);
     }
 
     result = 0;
 release:
-    /* Release atrtibute search context and close the inode. */
-    if (ctx)
-      ntfs_attr_put_search_ctx(ctx);
+    /* close the inode. */
     if (ni)
       ntfs_inode_close(ni);
   }
@@ -341,18 +383,33 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   {
     char *buffer;
     char *new_file;
-    ntfs_attr *attr;
+    ntfs_attr *attr=NULL;
     FILE *f_out;
     s64 bytes_read, written;
     s64 offset;
     u32 block_size;
+    const char *stream_name=NULL;
     buffer = (char *)MALLOC(bufsize);
     if (!buffer)
     {
       ntfs_inode_close(inode);
       return -2;
     }
-    attr = ntfs_attr_open(inode, AT_DATA, NULL, 0);
+    stream_name=strrchr(dir_data->current_directory, ':');
+    if(stream_name)
+      stream_name++;
+    if(stream_name != NULL)
+    {
+      ntfschar *stream_name_ucs=NULL;
+      /* FIXME */
+      const int len=ntfs_mbstoucs(stream_name, &stream_name_ucs);
+      if(len < 0)
+	log_error("ntfs_mbstoucs failed\n");
+      else
+	attr = ntfs_attr_open(inode, AT_DATA, stream_name_ucs, len);
+    }
+    else
+      attr = ntfs_attr_open(inode, AT_DATA, NULL, 0);
     if (!attr)
     {
       log_error("Cannot find attribute type 0x%lx.\n", (long) AT_DATA);
