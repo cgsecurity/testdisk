@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-void change_geometry(disk_t *disk_car, char **current_cmd);
+int change_geometry(disk_t *disk_car, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -72,7 +72,7 @@ static int change_sector_size(disk_t *disk, const int cyl_modified, const unsign
   }
 }
 
-static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
+static int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 {
   int done = 0;
   int tmp_val=0;
@@ -93,7 +93,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       {
 	disk_car->geom.cylinders = tmp_val;
 	cyl_modified=1;
-	geo_modified=1;
+	if(geo_modified==0)
+	  geo_modified=1;
       }
       else
 	log_error("Illegal cylinders value\n");
@@ -107,7 +108,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       if (tmp_val > 0 && tmp_val <= MAX_HEADS)
       {
 	disk_car->geom.heads_per_cylinder = tmp_val;
-	geo_modified=1;
+	if(geo_modified==0)
+	  geo_modified=1;
 	if(cyl_modified==0)
 	  set_cylinders_from_size_up(disk_car);
       }
@@ -123,7 +125,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       /* SUN partition can have more than 63 sectors */
       if (tmp_val > 0) {
 	disk_car->geom.sectors_per_head = tmp_val;
-	geo_modified=1;
+	if(geo_modified==0)
+	  geo_modified=1;
 	if(cyl_modified==0)
 	  set_cylinders_from_size_up(disk_car);
       } else
@@ -137,6 +140,8 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	(*current_cmd)++;
       if(change_sector_size(disk_car, cyl_modified, tmp_val))
 	  log_error("Illegal sector size\n");
+      else
+	geo_modified=2;
     }
     else
     {
@@ -153,11 +158,14 @@ static void change_geometry_cli(disk_t *disk_car, char ** current_cmd)
     disk_car->disk_real_size=disk_car->disk_size;
 #endif
     log_info("New geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
+    if(geo_modified==2)
+      return 1;
   }
+  return 0;
 }
 
 #ifdef HAVE_NCURSES
-static void change_geometry_ncurses(disk_t *disk_car)
+static int change_geometry_ncurses(disk_t *disk_car)
 {
   int done = 0;
   char def[128];
@@ -208,7 +216,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             if (tmp_val > 0) {
               disk_car->geom.cylinders = tmp_val;
               cyl_modified=1;
-              geo_modified=1;
+	      if(geo_modified==0)
+		geo_modified=1;
             } else
               wprintw(stdscr,"Illegal cylinders value");
           }
@@ -224,7 +233,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             tmp_val = atoi(response);
             if (tmp_val > 0 && tmp_val <= MAX_HEADS) {
               disk_car->geom.heads_per_cylinder = tmp_val;
-              geo_modified=1;
+	      if(geo_modified==0)
+		geo_modified=1;
               if(cyl_modified==0)
 		set_cylinders_from_size_up(disk_car);
             } else
@@ -245,7 +255,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             /* TODO Check for the maximum value */
             if (tmp_val > 0) {
               disk_car->geom.sectors_per_head = tmp_val;
-              geo_modified=1;
+	      if(geo_modified==0)
+		geo_modified=1;
               if(cyl_modified==0)
 		set_cylinders_from_size_up(disk_car);
             } else
@@ -263,6 +274,8 @@ static void change_geometry_ncurses(disk_t *disk_car)
             tmp_val = atoi(response);
 	    if(change_sector_size(disk_car, cyl_modified, tmp_val))
 	      wprintw(stdscr,"Illegal sector size");
+	    else
+	      geo_modified=2;
           }
         }
         default_option=4;
@@ -284,20 +297,25 @@ static void change_geometry_ncurses(disk_t *disk_car)
     disk_car->disk_real_size=disk_car->disk_size;
 #endif
     log_info("New geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
+    if(geo_modified==2)
+      return 1;
   }
+  return 0;
 }
 #endif
 
-void change_geometry(disk_t *disk_car, char ** current_cmd)
+int change_geometry(disk_t *disk_car, char ** current_cmd)
 {
+  int res=0;
   if(*current_cmd!=NULL)
   {
-    change_geometry_cli(disk_car, current_cmd);
+    res=change_geometry_cli(disk_car, current_cmd);
     autoset_unit(disk_car);
-    return;
+    return res;
   }
 #ifdef HAVE_NCURSES
-  change_geometry_ncurses(disk_car);
+  res=change_geometry_ncurses(disk_car);
 #endif
   autoset_unit(disk_car);
+  return res;
 }

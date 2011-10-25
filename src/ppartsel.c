@@ -441,7 +441,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	case 'g':
 	case 'G':
 	  if(options->expert!=0)
-	    change_geometry(params->disk, &params->cmd_run);
+	    if(change_geometry(params->disk, &params->cmd_run))
+	      done=1;
 	  break;
       case 'a':
       case 'A':
