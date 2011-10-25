@@ -224,7 +224,6 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     new_file->next=NULL;
     new_file->stat.st_dev=0;
     new_file->stat.st_ino=MREF(mref);
-    new_file->stat.st_mode = (dt_type == NTFS_DT_DIR?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
     new_file->stat.st_nlink=1;
     new_file->stat.st_uid=0;
     new_file->stat.st_gid=0;
@@ -250,30 +249,30 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       }
       ntfs_attr_put_search_ctx(ctx_si);
     }
-
-    if (dt_type == NTFS_DT_DIR)
-    {
-      snprintf(new_file->name, sizeof(new_file->name), "%s", filename);
-      new_file->stat.st_size=0;
-#ifdef DJGPP
-      new_file->file_size=0;
-#endif
-#if defined(HAVE_STRUCT_STAT_ST_BLOCKS)
-      new_file->stat.st_blocks=0;
-#endif
-      new_file->prev=ls->current_file;
-      new_file->next=NULL;
-      if(ls->current_file!=NULL)
-	ls->current_file->next=new_file;
-      else
-	ls->dir_list=new_file;
-      ls->current_file=new_file;
-    }
-    else
     {
       ATTR_RECORD *rec;
       int first=1;
       ntfs_attr_search_ctx *ctx = NULL;
+      if (dt_type == NTFS_DT_DIR)
+      {
+	snprintf(new_file->name, sizeof(new_file->name), "%s", filename);
+	new_file->stat.st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
+	new_file->stat.st_size=0;
+#ifdef DJGPP
+	new_file->file_size=0;
+#endif
+#if defined(HAVE_STRUCT_STAT_ST_BLOCKS)
+	new_file->stat.st_blocks=0;
+#endif
+	new_file->prev=ls->current_file;
+	new_file->next=NULL;
+	if(ls->current_file!=NULL)
+	  ls->current_file->next=new_file;
+	else
+	  ls->dir_list=new_file;
+	ls->current_file=new_file;
+	first=0;
+      }
       ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
       /* A file has always an unnamed date stream and
        * may have named alternate data streams (ADS) */
@@ -286,6 +285,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
 	  memcpy(new_file, old_file, sizeof(*new_file));
 	}
+	new_file->stat.st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
 	new_file->stat.st_size=filesize;
 #ifdef DJGPP
 	new_file->file_size=filesize;
