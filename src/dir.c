@@ -311,6 +311,8 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
       for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
 	if(new_inode==inode_known[i]) /* Avoid loop */
 	  new_inode_ok=0;
+      if(strcmp(current_file->name, "..")==0)
+	  new_inode_ok=0;
       if(new_inode_ok>0)
       {
 	if(strlen(dir_data->current_directory)+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
