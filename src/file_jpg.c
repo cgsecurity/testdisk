@@ -39,12 +39,6 @@
 #include <setjmp.h>
 #endif
 #ifdef HAVE_JPEGLIB_H
-#ifdef __MINGW32__
-#ifndef HAVE_BOOLEAN
-#define HAVE_BOOLEAN
-typedef int boolean;
-#endif
-#endif
 #include <jpeglib.h>
 #include "suspend.h"
 #endif
@@ -236,7 +230,7 @@ typedef struct {
 
   FILE * infile;		/* source stream */
   JOCTET * buffer;		/* start of buffer */
-  boolean start_of_file;	/* have we gotten any data yet? */
+  int start_of_file;	/* have we gotten any data yet? */
   unsigned long int offset;
   unsigned long int file_size;
   unsigned long int file_size_max;
@@ -344,7 +338,7 @@ static void jpg_init_source (j_decompress_ptr cinfo)
  * the front of the buffer rather than discarding it.
  */
 
-static boolean jpg_fill_input_buffer (j_decompress_ptr cinfo)
+static int jpg_fill_input_buffer (j_decompress_ptr cinfo)
 {
   my_source_mgr * src = (my_source_mgr *) cinfo->src;
   size_t nbytes;
