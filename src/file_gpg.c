@@ -176,9 +176,9 @@ static  int is_valid_pubkey_algo(const int algo)
    *  19         - Reserved for ECDSA
    *  20         - Elgamal (Encrypt or Sign)
    *  21         - Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
-   *  100 to 110 - Private/Experimental algorith
+   *  100 to 110 - Private/Experimental algorithm
    */
-  if(algo>=100 && algo<=100)
+  if(algo>=100 && algo<=110)
     return 1;
   switch(algo)
   {
@@ -293,6 +293,10 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   /* Secret-Key Packet v4 followed by User ID Packet */
   if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==OPENPGP_TAG_USER_ID && is_valid_pubkey_algo(buffer[8])>0)
   {
+    /* 3: version
+     * 4: time
+     * 8: public-key algorithm
+     */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_gpg.extension;
     file_recovery_new->data_check=&data_check_gpg;
