@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_x3f(file_stat_t *file_stat);
 static int header_check_x3f(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -50,9 +51,24 @@ static void register_header_check_x3f(file_stat_t *file_stat)
   register_header_check(0, x3f_header,sizeof(x3f_header), &header_check_x3f, file_stat);
 }
 
+struct x3f_header
+{
+  uint32_t	id;
+  uint32_t	version;
+  unsigned char uuid[16];
+  uint32_t	mark;
+  uint32_t	columns;
+  uint32_t	rows;
+  uint32_t	rotation;
+  /* version 2.1 and later have additional fields */
+} __attribute__ ((__packed__));
+
 static int header_check_x3f(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{ /* http://www.x3f.info/technotes/FileDocs/X3F_Format.pdf */
-  if(memcmp(buffer,x3f_header,sizeof(x3f_header))==0)
+{
+  const struct x3f_header *h=(const struct x3f_header *)buffer;
+  const unsigned int rotation=le32(h->rotation);
+  if(memcmp(buffer,x3f_header,sizeof(x3f_header))==0 && 
+      (rotation==0 || rotation==90 || rotation==180 || rotation==270))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_x3f.extension;
