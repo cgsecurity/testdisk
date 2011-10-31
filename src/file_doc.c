@@ -212,7 +212,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       {
 #ifdef DEBUG_OLE
 	unsigned int j;
-	for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
+	for(j=0;j<64 && j<dir_entry->namsiz && dir_entry->name[j]!='\0';j+=2)
 	{
 	  log_info("%c",dir_entry->name[j]);
 	}
@@ -830,7 +830,7 @@ static void file_rename_doc(const char *old_filename)
 	    };
 #ifdef DEBUG_OLE
 	    unsigned int j;
-	    for(j=0;j<64 && dir_entry->name[j]!='\0' && j<dir_entry->namsiz;j+=2)
+	    for(j=0;j<64 && j<dir_entry->namsiz && dir_entry->name[j]!='\0';j+=2)
 	    {
 	      log_info("%c",dir_entry->name[j]);
 	    }
