@@ -1878,7 +1878,6 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
 
 int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface,const unsigned int expert, char**current_cmd)
 {
-  unsigned long int data_size;
   unsigned long int max_offset;
   unsigned int fat_length=0;
   unsigned int sectors_per_cluster=0;
@@ -2086,6 +2085,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
 #endif
   if(upart_type && (fat_length>1))
   {
+    unsigned long int data_size;
     /* Initialized by fat32_free_info */
     unsigned int free_cluster_count=0;
     unsigned int first_free_cluster=0;
