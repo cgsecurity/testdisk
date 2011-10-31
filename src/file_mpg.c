@@ -157,7 +157,6 @@ static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer
 {
   const unsigned char padding_iso_end[8]=     {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x01, 0xB9};
   const unsigned char sequence_end_iso_end[8]={0x00, 0x00, 0x01, 0xB7, 0x00, 0x00, 0x01, 0xB9};
-  unsigned int i;
   /* search padding + end code */
   if(buffer_size>=8 && memcmp(&buffer[buffer_size/2-4], padding_iso_end, sizeof(padding_iso_end))==0)
   {
@@ -167,6 +166,7 @@ static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer
   /* search video sequence end followed by iso end code*/
   if(buffer_size>=14)
   {
+    unsigned int i;
     for(i=buffer_size/2-7; i<buffer_size-7; i++)
     {
       if(buffer[i]==0x00 && memcmp(&buffer[i], sequence_end_iso_end, sizeof(sequence_end_iso_end))==0)
