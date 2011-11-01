@@ -363,7 +363,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
 #ifdef HAVE_GLOB_H
     list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, arch, testdisk_mode);
     /* Software Raid (partition level) */
-    list_disk=hd_glob_parse("/dev/md?", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/md*", list_disk, verbose, arch, testdisk_mode);
     list_disk=hd_glob_parse("/dev/sr?", list_disk, verbose, arch, testdisk_mode);
     /* Software (ATA)Raid configured (disk level) via dmraid */
     list_disk=hd_glob_parse("/dev/dm-*", list_disk, verbose, arch, testdisk_mode);
