@@ -222,7 +222,9 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     {
       /* Cubase Project File */
       file_recovery_new->extension="cpr";
-      file_recovery_new->calculated_file_size+=4;
+      file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
+	(((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
+	(uint64_t)buffer[7] + 12;
       return 1;
     }
     if(memcmp(&buffer[8],"AVI ",4)==0)
