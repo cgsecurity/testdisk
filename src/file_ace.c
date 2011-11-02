@@ -102,6 +102,10 @@ static void file_check_ace(file_recovery_t *file_recovery)
         (le16(h.flags)&1) ? le32(h.addsize):0);
 #endif
     /* Type 0=Archive header, 1=File block, 2=Recovery Record, 5 new_recovery ? */
+    if (h.type==0 && le16(h.size)==0)
+    {
+      return ;
+    }
     if (h.type!=0 && h.type!=1 && h.type!=2 && h.type!=5)
     {
 #ifdef DEBUG_ACE
