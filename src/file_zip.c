@@ -185,22 +185,47 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       {
 	msoffice=0;
 	sh3d=0;
-	if(len==36 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.calc", 36)==0)
-	  *ext="sxc";
-	else if(len==36 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.draw", 36)==0)
-	  *ext="sxd";
-	else if(len==39 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.impress", 39)==0)
-	  *ext="sxi";
-	else if(len==38 && memcmp(filename, "mimetypeapplication/vnd.sun.xml.writer", 38)==0)
-	  *ext="sxw";
-	else if(len==51 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
-	  *ext="odg";
-	else if(len==55 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
-	  *ext="odp";
-	else if(len==54 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
-	  *ext="ods";
-	else if(len==47 && memcmp(filename, "mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
-	  *ext="odt";
+	if(len==8 && memcmp(filename, "mimetype", 8)==0 &&
+	    le16(file.extra_length)==0 &&
+	    le32(file.compressed_size)==le32(file.uncompressed_size) &&
+	    le32(file.compressed_size)<=128)
+	{
+	  const int compressed_size=le32(file.uncompressed_size);
+	  unsigned char buffer[128];
+	  if( fread(buffer, compressed_size, 1, fr->handle)!=1)
+	  {
+#ifdef DEBUG_ZIP
+	    log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n",
+	    compressed_size);
+#endif
+	    return -1;
+	  }
+	  if (fseek(fr->handle, -compressed_size, SEEK_CUR) < 0)
+	  {
+	    log_info("fseek failed CGR\n");
+	    return -1;
+	  }
+	  if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
+	    *ext="sxc";
+	  else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.draw",28)==0)
+	    *ext="sxd";
+	  else if(compressed_size==31 && memcmp(buffer,"application/vnd.sun.xml.impress",31)==0)
+	    *ext="sxi";
+	  else if(compressed_size==30 && memcmp(buffer,"application/vnd.sun.xml.writer",30)==0)
+	    *ext="sxw";
+	  else if(compressed_size==39 && memcmp(buffer,"application/vnd.oasis.opendocument.text",39)==0)
+	    *ext="odt";
+	  else if(compressed_size==43 && memcmp(buffer,"application/vnd.oasis.opendocument.graphics",43)==0)
+	    *ext="odg";
+	  else if(compressed_size==46 && memcmp(buffer,"application/vnd.oasis.opendocument.spreadsheet",46)==0)
+	    *ext="ods";
+	  else if(compressed_size==47 && memcmp(buffer,"application/vnd.oasis.opendocument.presentation",47)==0)
+	    *ext="odp";
+	  else
+	  { /* default to writer */
+	    *ext="sxw";
+	  }
+	}
 	else if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
 	  msoffice=1;
 	else if(len==4 && memcmp(filename, "Home", 4)==0)
@@ -709,50 +734,43 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=21;
     file_recovery_new->file_check=&file_check_zip;
-    if(memcmp(&buffer[30],"mimetypeapplication/vnd.sun.xml.",32)==0)
-     {
-       if(memcmp(&buffer[62],"calc",4)==0)
-       {
-         file_recovery_new->extension="sxc";
-       }
-       else if(memcmp(&buffer[62],"draw",4)==0)
-       {
-         file_recovery_new->extension="sxd";
-       }
-       else if(memcmp(&buffer[62],"impress",7)==0)
-       {
-         file_recovery_new->extension="sxi";
-       }
-       else if(memcmp(&buffer[62],"writer",6)==0)
-       {
-         file_recovery_new->extension="sxw";
-       }
-       else
-       { /* default to writer */
-         file_recovery_new->extension="sxw";
-       }
-     }
-     else if(len==47 && memcmp(&buffer[30],"mimetypeapplication/vnd.oasis.opendocument.text",47)==0)
-       file_recovery_new->extension="odt";
-     else if(len==51 && memcmp(&buffer[30],"mimetypeapplication/vnd.oasis.opendocument.graphics",51)==0)
-       file_recovery_new->extension="odg";
-     else if(len==54 && memcmp(&buffer[30],"mimetypeapplication/vnd.oasis.opendocument.spreadsheet",54)==0)
-       file_recovery_new->extension="ods";
-     else if(len==55 && memcmp(&buffer[30],"mimetypeapplication/vnd.oasis.opendocument.presentation",55)==0)
-       file_recovery_new->extension="odp";
-     else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
-     {
-       if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
-         file_recovery_new->extension="docx";
-       else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
-         file_recovery_new->extension="xlsx";
-       else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
-         file_recovery_new->extension="pptx";
-       else
-         file_recovery_new->extension="docx";
-       file_recovery_new->file_rename=&file_rename_zip;
-     }
-     /* Extended Renoise song file */
+    if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
+    {
+      const unsigned int compressed_size=le32(file->uncompressed_size);
+      if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
+	file_recovery_new->extension="sxc";
+      else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
+	file_recovery_new->extension="sxd";
+      else if(compressed_size==31 && memcmp(&buffer[38],"application/vnd.sun.xml.impress",31)==0)
+	file_recovery_new->extension="sxi";
+      else if(compressed_size==30 && memcmp(&buffer[38],"application/vnd.sun.xml.writer",30)==0)
+	file_recovery_new->extension="sxw";
+      else if(compressed_size==39 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.text",39)==0)
+	file_recovery_new->extension="odt";
+      else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
+	file_recovery_new->extension="odg";
+      else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
+	file_recovery_new->extension="ods";
+      else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
+	file_recovery_new->extension="odp";
+      else
+      { /* default to writer */
+	file_recovery_new->extension="sxw";
+      }
+    }
+    else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
+    {
+      if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
+	file_recovery_new->extension="docx";
+      else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
+	file_recovery_new->extension="xlsx";
+      else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
+	file_recovery_new->extension="pptx";
+      else
+	file_recovery_new->extension="docx";
+      file_recovery_new->file_rename=&file_rename_zip;
+    }
+    /* Extended Renoise song file */
     else if(len==8 && memcmp(&buffer[30], "Song.xml", 8)==0)
       file_recovery_new->extension="xrns";
     else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
