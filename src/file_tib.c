@@ -85,7 +85,6 @@ static void file_check_tib(file_recovery_t *file_recovery)
   if(memcmp(&buffer[512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
   {
     free(buffer);
-    file_recovery->file_size=0;
     return;
   }
 
