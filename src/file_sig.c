@@ -201,7 +201,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
     }
     /* each line is composed of "extension offset signature" */
     {
-      const char *extension;
+      char *extension;
       unsigned int offset=0;
       unsigned char *tmp=NULL;
       unsigned int signature_max_size=512;
@@ -227,8 +227,15 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
       {
 	if(signature_size==signature_max_size)
 	{
+	  unsigned char *tmp_old=tmp;
 	  signature_max_size*=2;
 	  tmp=(unsigned char *)realloc(tmp, signature_max_size);
+	  if(tmp==NULL)
+	  {
+	    free(extension);
+	    free(tmp_old);
+	    return pos;
+	  }
 	}
 	if(isspace(*pos) || *pos=='\r' || *pos==',')
 	  pos++;
@@ -236,12 +243,18 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	{
 	  pos++;
 	  if(*pos=='\0')
+	  {
+	    free(extension);
 	    return pos;
+	  }
 	  else if(*pos=='\\')
 	  {
 	    pos++;
 	    if(*pos=='\0')
+	    {
+	      free(extension);
 	      return pos;
+	    }
 	    else if(*pos=='b')
 	      tmp[signature_size++]='\b';
 	    else if(*pos=='n')
@@ -262,7 +275,10 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    pos++;
 	  }
 	  if(*pos!='\'')
+	  {
+	    free(extension);
 	    return pos;
+	  }
 	  pos++;
 	}
 	else if(*pos=='"')
@@ -272,14 +288,24 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  {
 	    if(signature_size==signature_max_size)
 	    {
+	      unsigned char *tmp_old=tmp;
 	      signature_max_size*=2;
 	      tmp=(unsigned char *)realloc(tmp, signature_max_size);
+	      if(tmp==NULL)
+	      {
+		free(extension);
+		free(tmp_old);
+		return pos;
+	      }
 	    }
 	    if(*pos=='\\')
 	    {
 	      pos++;
 	      if(*pos=='\0')
+	      {
+		free(extension);
 		return pos;
+	      }
 	      else if(*pos=='b')
 		tmp[signature_size++]='\b';
 	      else if(*pos=='n')
@@ -297,7 +323,10 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	      tmp[signature_size++]=*pos;;
 	  }
 	  if(*pos!='"')
+	  {
+	    free(extension);
 	    return pos;
+	  }
 	  pos++;
 	}
 	else if(*pos=='0' && (*(pos+1)=='x' || *(pos+1)=='X'))
@@ -327,7 +356,10 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  }
 	}
 	else
+	{
+	  free(extension);
 	  return pos;
+	}
       }
       if(*pos=='\n')
 	pos++;
@@ -339,6 +371,10 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	memcpy(signature, tmp, signature_size);
 	register_header_check(offset, signature, signature_size, &header_check_sig, file_stat);
 	signature_insert(extension, offset, signature, signature_size);
+      }
+      else
+      {
+	free(extension);
       }
       free(tmp);
     }
