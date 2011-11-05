@@ -72,7 +72,6 @@ int main(int argc, char **argv)
   int readsize;
   int readsize_min;
   int readsize_max;
-  int first_disk_readsize;
   uint64_t readok=0;
   uint64_t location;
   uint64_t old_status_location=0;
@@ -115,10 +114,10 @@ int main(int argc, char **argv)
     readsize_max=16*sector_size;
     readsize=readsize_min;
     first_disk=current_disk;
-    first_disk_readsize=readsize;
     if(posix_memalign(&res,4096,readsize_max)!=0)
     {
       printf("posix_memalign failed\n");
+      close(disk_dst);
       return 1;
     }
     buffer=(char*)res;
@@ -171,7 +170,6 @@ int main(int argc, char **argv)
       {
 	gap=-1;
 	first_disk=current_disk;
-	first_disk_readsize=readsize;
 	location+=readsize;
 	if(readsize<readsize_max)
 	  readsize*=2;
@@ -217,12 +215,14 @@ int main(int argc, char **argv)
     if((oldlog=fopen("diskcp.log","r"))==NULL)
     {
       printf("Can't read diskcp.log file\n");
+      close(disk_dst);
       return 1;
     }
     if((log=fopen("diskcp2.log","w"))==NULL)
     {
       printf("Can't create diskcp2.log file\n");
       fclose(oldlog);
+      close(disk_dst);
       return 1;
     }
     {
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
       long long unsigned end[3];
       char status[3];
       int nbr=0;
-      while(fscanf(oldlog,"%llu - %llu %c", &start[nbr], &end[nbr], &status[nbr])==3)
+      while(fscanf(oldlog,"%20llu - %20llu %c", &start[nbr], &end[nbr], &status[nbr])==3)
       {
 	printf("%llu - %llu %c\n", &start[nbr], &end[nbr], &status[nbr]);
 	if(nbr==3 && status[1]==STATUS_NON_TRIED && status[2]==STATUS_DONE)
