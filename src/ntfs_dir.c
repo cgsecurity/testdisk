@@ -307,6 +307,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	  {
 	    snprintf(new_file->name, sizeof(new_file->name), "%s:%s", filename, stream_name);
 	  }
+	  free(stream_name);
 	}
 	else
 	{
