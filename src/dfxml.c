@@ -80,11 +80,18 @@ FILE *xml_open(const char *recup_dir, const unsigned int dir_num)
 void xml_set_command_line(const int argc, char **argv)
 {
   int i;
-  command_line = (char *)calloc(1, 1);
+  int len=argc;
+  if(command_line!=NULL)
+    return ;
   /* Capture the command line */
   for(i=0; i<argc; i++)
   {
-    command_line = (char *)realloc(command_line, strlen(command_line) + 2 + strlen(argv[i]));
+    len+=strlen(argv[i]);
+  }
+  command_line = (char *)MALLOC(len);
+  command_line[0]='\0';
+  for(i=0; i<argc; i++)
+  {
     if(i>0)
       strcat(command_line," ");
     strcat(command_line, argv[i]);
