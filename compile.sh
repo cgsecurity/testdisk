@@ -211,7 +211,7 @@ then
 #        rm -f $compiledir/Makefile
         cd $compiledir/ntfsprogs-$VER_NTFSPROGS
 # --disable-default-device-io-ops is need for NT 4
-        CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
+        ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
         cd $pwd_saved
   fi
 fi
@@ -301,7 +301,7 @@ then
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
                 ;;
-	  i686-pc-mingw32|x86_64-pc-mingw32)
+	  i686-pc-mingw32|x86_64-pc-mingw32|x86_64-w64-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok
                 ;;
 	  arm-marvell-linux-gnu)
