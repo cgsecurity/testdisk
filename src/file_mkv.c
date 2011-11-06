@@ -139,7 +139,6 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     uint64_t header_data_size=0;
     char *doctype=NULL;
     const unsigned char *p;
-    unsigned int info_size;
     unsigned int header_data_offset;
     unsigned int segment_offset;
     unsigned int segment_data_offset;
