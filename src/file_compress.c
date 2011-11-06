@@ -43,11 +43,11 @@ const file_hint_t file_hint_compress= {
   .register_header_check=&register_header_check_compress
 };
 
-static const unsigned char compress_header[10]	= {'S', 'Z', 'D', 'D', 0x88, 0xf0, 0x27, 0x33, 'A', 0x00};
+static const unsigned char compress_header[9]	= {'S', 'Z', 'D', 'D', 0x88, 0xf0, 0x27, 0x33, 'A'};
 
 static void register_header_check_compress(file_stat_t *file_stat)
 {
-  register_header_check(0, compress_header,      sizeof(compress_header), 	&header_check_compress, file_stat);
+  register_header_check(0, compress_header, sizeof(compress_header), &header_check_compress, file_stat);
 }
 
 static int header_check_compress(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
