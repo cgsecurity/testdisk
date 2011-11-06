@@ -2,7 +2,8 @@
 
     File: file_mkv.c
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2007,2011 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2011 Nick Schrader <nick.schrader@iserv-gis.de>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +30,10 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
+#ifdef DEBUG_MKV
+#include "log.h"
+#endif
 
 static void register_header_check_mkv(file_stat_t *file_stat);
 static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -43,23 +48,149 @@ const file_hint_t file_hint_mkv= {
   .register_header_check=&register_header_check_mkv
 };
 
-static const unsigned char mkv_header[4]= { 0x1a,0x45,0xdf,0xa3};
+static const unsigned char *EBML_find(const unsigned char *buffer, const unsigned int buffer_size, const unsigned char *EBML_Header, const unsigned int EBML_size)
+{
+  const unsigned char *p = buffer;
+  unsigned int p_size = buffer_size;
+  int found = 0;
+  do
+  {
+    p = (const unsigned char *)memchr(p, EBML_Header[0], p_size);
+    if (p == NULL)
+      return NULL;
+    p_size-=(p-buffer);
+    if (memcmp(p, EBML_Header, EBML_size) == 0)
+      found = 1;
+    else
+      p++;
+  } while(found == 0);
+  if (p_size-EBML_size > 0)
+  {
+    p+=EBML_size;
+    return p;
+  }
+  return NULL;
+}
+
+static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size, uint64_t *uint64)
+{
+  unsigned char test_bit = 0x80;
+  unsigned int i, bytes = 1;
+  if(p_size==0 || *p== 0x00)
+    return -1;
+  while((*p & test_bit) != test_bit)
+  {
+    test_bit >>= 1;
+    bytes++;
+  }
+  if(p_size < bytes)
+    return -1;
+  *uint64 = *p - test_bit; //eliminate first bit
+  for(i=1; i<bytes; i++)
+  {
+    *uint64 <<= 8;
+    *uint64 += p[i];
+  }
+  return bytes;
+}
+
+static int EBML_read_string(const unsigned char *p, const unsigned int p_size, char **string)
+{
+  uint64_t strlength;
+  unsigned char test_bit = 0x80;
+  unsigned int i, bytes = 1;
+  if(p_size==0 || *p== 0x00)
+    return -1;
+  while((*p & test_bit) != test_bit)
+  {
+    test_bit >>= 1;
+    bytes++;
+  }
+  if(p_size < bytes)
+    return -1;
+  strlength = (uint64_t)(*p - test_bit); //eliminate first bit
+  for(i=1; i<bytes; i++)
+  {
+    strlength <<= 8;
+    strlength += p[i];
+  }
+  if(p_size < bytes + strlength)
+    return -1;
+  *string = (char *)MALLOC(strlength+1);
+  memcpy(*string, p+bytes, strlength);
+  (*string)[strlength] = '\0';
+  return bytes+strlength;
+}
+
+static const unsigned char EBML_header[4]= { 0x1a,0x45,0xdf,0xa3};
 
 static void register_header_check_mkv(file_stat_t *file_stat)
 {
-  register_header_check(0, mkv_header,sizeof(mkv_header), &header_check_mkv, file_stat);
+  register_header_check(0, EBML_header,sizeof(EBML_header), &header_check_mkv, file_stat);
 }
 
 static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,mkv_header,sizeof(mkv_header))==0 && memcmp(buffer+8,"matroska",8)==0)
+  const unsigned char EBML_DocType[2]= { 0x42,0x82};
+  const unsigned char EBML_Segment[4]= { 0x18,0x53,0x80,0x67};
+  if(memcmp(buffer,EBML_header,sizeof(EBML_header))==0)
   {
+    uint64_t segment_size=0;
+    uint64_t header_data_size=0;
+    char *doctype=NULL;
+    const unsigned char *p;
+    unsigned int info_size;
+    unsigned int header_data_offset;
+    unsigned int segment_offset;
+    unsigned int segment_data_offset;
+    int len;
+
+    if((len=EBML_read_unsigned(buffer+sizeof(EBML_header),
+	  buffer_size-sizeof(EBML_header), &header_data_size)) < 0)
+      return 0;
+    header_data_offset = sizeof(EBML_header) + len;
+    segment_offset = header_data_offset + header_data_size;
+#ifdef DEBUG_MKV
+    log_info("header_data_offset %llu\n", (long long unsigned) header_data_offset);
+    log_info("header_data_size   %llu\n", (long long unsigned) header_data_size);
+    log_info("segment_offset     %llu\n", (long long unsigned) segment_offset);
+#endif
+    if(segment_offset +sizeof(EBML_Segment) >= buffer_size)
+      return 0;
+    if(memcmp(&buffer[segment_offset], EBML_Segment, sizeof(EBML_Segment)) != 0)
+      return 0;
+    p=&buffer[segment_offset+sizeof(EBML_Segment)];
+    if((len=EBML_read_unsigned(p, buffer_size-(p-buffer), &segment_size)) < 0)
+      return 0;
+    segment_data_offset=segment_offset+sizeof(EBML_Segment)+len;
+    /* Check if size is unkown */
+    if(segment_size == (1LL << (7 * len)) - 1)
+      segment_size=0;
+#ifdef DEBUG_MKV
+    log_info("segment_data_offset %llu\n", (long long unsigned) segment_data_offset);
+    log_info("segment size %llu\n", (long long unsigned) segment_size);
+#endif
+    /* get EBML_DocType, it will be used to set the file extension */
+    p=EBML_find(&buffer[header_data_offset], header_data_size, EBML_DocType, sizeof(EBML_DocType));
+    if (p == NULL || EBML_read_string(p, header_data_size-(p-&buffer[header_data_offset]), &doctype) < 0)
+      return 0;
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mkv.extension;
-    file_recovery_new->min_filesize=0;
-    file_recovery_new->calculated_file_size=(uint64_t)(buffer[0x20]<<24)+(((uint64_t)buffer[0x21])<<16)+(((uint64_t)buffer[0x22])<<8)+((uint64_t)buffer[0x23])+0x24;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
+    if(strcmp(doctype,"matroska")==0)
+      file_recovery_new->extension=file_hint_mkv.extension;
+    else if(strcmp(doctype,"webm")==0)
+      file_recovery_new->extension="webm";
+    else
+      file_recovery_new->extension="ebml";
+    free(doctype);
+    if(segment_size > 0)
+    {
+      file_recovery_new->calculated_file_size = segment_data_offset + segment_size;
+#ifdef DEBUG_MKV
+      log_info("file size    %llu\n", (long long unsigned) file_recovery_new->calculated_file_size);
+#endif
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+    }
     return 1;
   }
   return 0;
