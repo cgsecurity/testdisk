@@ -225,7 +225,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   params->disk->pread(params->disk, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
-    int move_next=1;
+    int file_recovered=0;
     uint64_t old_offset=offset;
 #ifdef DEBUG
     log_debug("sector %llu\n",
@@ -286,19 +286,12 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
           if(options->verbose > 1)
             log_trace("A known header has been found, recovery of the previous file is finished\n");
 	  {
-	    alloc_data_t *datanext;
-	    datanext=file_finish2(&file_recovery, params, options, list_search_space);
-	    if(datanext!=NULL)
-	    {
-	      current_search_space=datanext;
-	      offset=current_search_space->start;
-	      move_next=0;
-	    }
+	    file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
 	  }
           reset_file_recovery(&file_recovery);
           if(options->lowmem > 0)
             forget(list_search_space,current_search_space);
-          if(move_next!=0)
+          if(file_recovered==0)
           {
 	    file_recovery_cpy(&file_recovery, &file_recovery_new);
             if(options->verbose > 1)
@@ -411,14 +404,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
       }
       if(res==2)
       {
-	alloc_data_t *datanext;
-	datanext=file_finish2(&file_recovery, params, options, list_search_space);
-	if(datanext!=NULL)
-	{
-	  current_search_space=datanext;
-	  offset=current_search_space->start;
-	  move_next=0;
-	}
+	file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
 	reset_file_recovery(&file_recovery);
 	if(options->lowmem > 0)
 	  forget(list_search_space,current_search_space);
@@ -429,41 +415,34 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
       log_info("PhotoRec has been stopped\n");
       current_search_space=list_search_space;
     }
-    else if(move_next!=0)
+    else if(file_recovered==0)
     {
       get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
     }
-    else // if(move_next==0)
+    else if(file_recovered>0)
     {
       /* try to recover the previous file, otherwise stay at the current location */
       get_prev_file_header(list_search_space, &current_search_space, &offset);
     }
     if(current_search_space==list_search_space)
     {
-      alloc_data_t *datanext;
 #ifdef DEBUG_GET_NEXT_SECTOR
       log_trace("current_search_space==list_search_space=%p (prev=%p,next=%p)\n",
 	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      datanext=file_finish2(&file_recovery, params, options, list_search_space);
-      if(datanext!=NULL)
-      {
-	current_search_space=datanext;
-	offset=current_search_space->start;
-	move_next=0;
-      }
+      file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
       reset_file_recovery(&file_recovery);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }
     buffer_olddata+=blocksize;
     buffer+=blocksize;
-    if(move_next==0 ||
+    if(file_recovered==1 ||
         old_offset+blocksize!=offset ||
         buffer+read_size>buffer_start+buffer_size)
     {
-      if(move_next==0)
+      if(file_recovered==1)
         memset(buffer_start,0,blocksize);
       else
         memcpy(buffer_start,buffer_olddata,blocksize);

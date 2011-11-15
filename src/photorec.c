@@ -593,9 +593,9 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
 {
   int file_recovered=0;
 #ifdef DEBUG_FILE_FINISH
-  log_debug("file_finish start %lu (%lu-%lu)\n", (long unsigned int)((*offset)/blocksize),
-      (unsigned long int)((*current_search_space)->start/blocksize),
-      (unsigned long int)((*current_search_space)->end/blocksize));
+  log_debug("file_finish start %lu (%lu-%lu)\n", (long unsigned int)((*offset)/params->blocksize),
+      (unsigned long int)((*current_search_space)->start/params->blocksize),
+      (unsigned long int)((*current_search_space)->end/params->blocksize));
   log_debug("file_recovery->offset_error=%llu\n", (long long unsigned)file_recovery->offset_error);
   log_debug("file_recovery->handle %s NULL\n", (file_recovery->handle!=NULL?"!=":"=="));
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
@@ -673,17 +673,30 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
   else
     reset_file_recovery(file_recovery);
 #ifdef DEBUG_FILE_FINISH
-  log_debug("file_finish end %lu (%lu-%lu)\n\n", (long unsigned int)((*offset)/blocksize),
-      (unsigned long int)((*current_search_space)->start/blocksize),
-      (unsigned long int)((*current_search_space)->end/blocksize));
+  log_debug("file_finish end %lu (%lu-%lu)\n\n", (long unsigned int)((*offset)/params->blocksize),
+      (unsigned long int)((*current_search_space)->start/params->blocksize),
+      (unsigned long int)((*current_search_space)->end/params->blocksize));
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
 #endif
   return file_recovered;
 }
 
-alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+/*  file_finish2()
+    @param file_recovery - 
+    @param struct ph_param *params
+    const struct ph_options *options
+    @param alloc_data_t *list_search_space
+    @param alloc_data_t **current_search_space
+    @param *offset
+
+    @returns:
+   -1: file not recovered, file_size=0 offset_error!=0
+    0: file not recovered
+    1: file recovered
+ */
+int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
-  alloc_data_t *datanext=NULL;
+  int file_recovered=0;
 #ifdef DEBUG_FILE_FINISH
   log_debug("file_recovery->offset_error=%llu\n", (long long unsigned)file_recovery->offset_error);
   log_debug("file_recovery->handle %s NULL\n", (file_recovery->handle!=NULL?"!=":"=="));
@@ -750,14 +763,24 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *para
     {
       /* File hasn't been sucessfully recovered */
       if(file_recovery->offset_error>0)
-	datanext=file_error(list_search_space, file_recovery, params->blocksize);
+      {
+	alloc_data_t *datanext=file_error(list_search_space, file_recovery, params->blocksize);
+	if(datanext!=NULL)
+	{
+	  *current_search_space=datanext;
+	  *offset=datanext->start;
+	  file_recovered=-1;
+	}
+      }
     }
     else
     {
 #ifdef ENABLE_DFXML
       xml_log_file_recovered2(list_search_space, file_recovery);
 #endif
-      datanext=file_truncate(list_search_space, file_recovery, params->disk->sector_size, params->blocksize);
+      *current_search_space=file_truncate(list_search_space, file_recovery, params->disk->sector_size, params->blocksize);
+      *offset=(*current_search_space)->start;
+      file_recovered=1;
     }
     free_list_allocation(&file_recovery->location);
   }
@@ -769,7 +792,7 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *para
 #ifdef DEBUG_FILE_FINISH
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
 #endif
-  return datanext;
+  return file_recovered;
 }
 
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose)
@@ -848,15 +871,13 @@ static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, 
 
 static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
 {
-  alloc_data_t *spacenext;
   alloc_data_t *datanext;
   if(file->filename!=NULL)
     log_info("%s\t", file->filename);
   else
     log_info("?\t");
-  spacenext=file_truncate_aux(space, file->loc, file->file_size, sector_size, blocksize);
+  datanext=file_truncate_aux(space, file->loc, file->file_size, sector_size, blocksize);
   log_info("\n");
-  datanext=td_list_entry(&spacenext->list.next, alloc_data_t, list);
   return datanext;
 }
 
