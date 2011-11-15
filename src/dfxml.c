@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
 
+#ifdef ENABLE_DFXML
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -371,3 +372,4 @@ void xml_log_file_recovered2(const alloc_data_t *space, const file_recovery_t *f
   xml_pop("byte_runs");
   xml_pop("fileobject");
 }
+#endif

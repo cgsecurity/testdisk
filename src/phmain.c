@@ -251,7 +251,9 @@ int main( int argc, char **argv )
     free(params.recup_dir);
     return 0;
   }
+#ifdef ENABLE_DFXML
   xml_set_command_line(argc, argv);
+#endif
   if(create_log!=TD_LOG_NONE)
     log_handle=log_open(logfile, create_log);
 #ifdef HAVE_SETLOCALE

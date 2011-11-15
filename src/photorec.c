@@ -660,7 +660,9 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
     else
     {
       list_space_used(file_recovery, params->disk->sector_size);
+#ifdef ENABLE_DFXML
       xml_log_file_recovered(file_recovery);
+#endif
       update_search_space(file_recovery, list_search_space, current_search_space, offset, params->blocksize);
       file_recovered=1;			/* note that file was recovered */
     }
@@ -752,7 +754,9 @@ alloc_data_t *file_finish2(file_recovery_t *file_recovery, struct ph_param *para
     }
     else
     {
+#ifdef ENABLE_DFXML
       xml_log_file_recovered2(list_search_space, file_recovery);
+#endif
       datanext=file_truncate(list_search_space, file_recovery, params->disk->sector_size, params->blocksize);
     }
     free_list_allocation(&file_recovery->location);

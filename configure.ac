@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[6.13-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="May 2011"
+TESTDISKDATE="November 2011"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -210,6 +210,15 @@ AC_ARG_ENABLE([ncmouse],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-mouse]) ;;
      esac],
      [use_ncmouse=false])
+
+AC_ARG_ENABLE([dfxml],
+    AS_HELP_STRING(--disable-dfxml),
+    [case "${enableval}" in
+      yes) AC_DEFINE([ENABLE_DFXML],1,[Define to 1 if DFXML log is enabled]) ;;
+      no) ;;
+      *) AC_MSG_ERROR([bad value ${enableval} for --enable-dfxml]) ;;
+     esac],
+    [AC_DEFINE([ENABLE_DFXML],1,[Define to 1 if DFXML log is enabled])])
 
 use_icon=no
 

@@ -825,9 +825,11 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   /* make the first recup_dir */
   params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
 
+#ifdef ENABLE_DFXML
   /* Open the XML output file */
   xml_open(params->recup_dir, params->dir_num);
   xml_setup(params->disk, params->partition);
+#endif
   
   for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
   {
@@ -1069,8 +1071,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   free(params->file_stats);
   params->file_stats=NULL;
   free_header_check();
+#ifdef ENABLE_DFXML
   xml_shutdown();
   xml_close();
+#endif
   return 0;
 }
 
