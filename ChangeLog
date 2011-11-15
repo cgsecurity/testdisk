@@ -1,3 +1,357 @@
+
+2011-11-15 - Christophe Grenier
+    Fix a potential endless loop (PhotoRec 6.12 affected, not 6.11.3)
+
+2011-11-15 - Christophe Grenier
+    Use "./configure --disable-dfxml" to disable DFXML feature
+
+2011-11-06 - Christophe Grenier
+    Handle x86_64-w64-mingw32 compilation target
+
+2011-11-06 - Christophe Grenier
+    PhotoRec: fix MS Compress signature
+
+2011-11-06 - Christophe Grenier
+    Remove unused variable
+
+2011-11-06 - Nick Schrader
+    PhotoRec: minimal EBML decoder to recover .mkv and .webm files
+
+2011-11-05 - Christophe Grenier
+    When listing ADS, free the stream name after usage
+
+2011-11-05 - Christophe Grenier
+    Remove memory leak in error paths in file_sig.c
+
+2011-11-05 - Christophe Grenier
+    Close a file descriptor leak in diskcp.c
+
+2011-11-05 - Christophe Grenier
+    Modify xml_set_command_line to avoid using realloc
+
+2011-11-02 - Christophe Grenier
+    PhotoRec: fix OpenDocument extension detection
+    Regression introduced in #bfa7d012cffb1b6ef60fba4c8b526ef9c3aaad4f
+
+2011-11-02 - Christophe Grenier
+    file_tib.c Fix regression introduced in #c63960562842934ff3929b2d537ecd901027d5cb
+
+2011-11-02 - Christophe Grenier
+    PhotoRec: fix Assassin's Creed II .save recovery
+
+2011-11-02 - Christophe Grenier
+    file_riff.c: Fix regression introduced in #bd92f8847e15aadfe676e7e56e3f934547dd762b
+
+2011-11-02 - Christophe Grenier
+    file_ace.c Fix regression introduced in #bbd33e63af7fb5f51de719a986f52f00bc6ce614
+
+2011-11-01 - Christophe Grenier
+    PhotoRec: recover CATIA .catdrawing
+
+2011-11-01 - Christophe Grenier
+    Search for Linux /dev/md* device instead of /dev/md?
+
+2011-10-31 - Christophe Grenier
+    Avoid a potential out of bound read access in debug code
+
+2011-10-31 - Christophe Grenier
+    Restrict variable context
+
+2011-10-31 - Christophe Grenier
+    Restrict variable context
+
+2011-10-30 - Christophe Grenier
+    PhotoRec: check rotation field when recovering .x3f Sigma raw
+
+2011-10-30 - Christophe Grenier
+    PhotoRec: stricter check for compressed flash .swc
+
+2011-10-30 - Christophe Grenier
+    PhotoRec: modify .pyc recovery to recover Python byte-compiled 2.6, 2.7, 3.0, 3.1 and 3.2
+
+2011-10-30 - Christophe Grenier
+    PhotoRec: allow more crypto algorithms in .gpg detection
+
+2011-10-25 - Christophe Grenier
+    Show Alternate Data Stream from NTFS directory
+
+2011-10-25 - Christophe Grenier
+    PhotoRec: Partition table need to be read again if sector size has been changed,
+    so force the user to select again the disk.
+
+2011-10-25 - Christophe Grenier
+    Use "int" instead of "boolean" in src/file_jpg.c
+
+2011-10-25 - Christophe Grenier
+    Don't follow ".." when listing the whole filesystem
+
+2011-10-17 - Christophe Grenier
+    DOS/DJGPP: Fix NTFS Alternate Data Stream filesize
+
+2011-10-17 - Christophe Grenier
+    ntfs_mbstoucs takes 2 parameters in ntfs-3g and 3 in ntfsprogs
+
+2011-10-17 - Christophe Grenier
+    NTFS listing: display Alternate Data Stream (ADS)
+
+2011-10-17 - Christophe Grenier
+    NTFS undelete: list Alternate Data Stream (ADS)
+
+2011-10-16 - Christophe Grenier
+    NTFS undelete: fix filesize display
+
+2011-10-16 - Christophe Grenier
+    Remove EWF pathname limit
+    Reorder src/ewf.c for HAVE_LIBEWF_V2_API
+
+2011-10-15 - Christophe Grenier
+    Fix detection of empty list when loading partitions list from backup.log
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: add missing return value to header_check_lxo()
+
+2011-10-15 - Joachim Metz
+    Deal with libewf v2 new API
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: recover SeeNezSST and snz text files
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in zip file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in tiff file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in tib file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in psf file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in pzh file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in pdf file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in nk2 file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in jpg file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check that buffer_size >= 0 in file_rename() and file_rename_unicode()
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in DOC file validation
+
+2011-10-15 - Christophe Grenier
+    PhotoRec: check fseek return value in ACE file validation
+
+2011-10-10 - Christophe Grenier
+    PhotoRec: update dwg signature
+
+2011-10-10 - Christophe Grenier
+    Use inode number in filename when undeleting NTFS file if no name has been found.
+
+2011-10-10 - Christophe Grenier
+    PhotoRec: fix destination path when creating image_remaining.dd
+
+2011-09-23 - Christophe Grenier
+    Speedup file sorting in NTFS undelete and local file listing by using merge sort instead of insertion sort
+
+2011-09-23 - Christophe Grenier
+    Fix dependancies on list.[ch] files
+
+2011-09-23 - Christophe Grenier
+    PhotoRec: recover pds sonar data files created by Reson software
+
+2011-09-23 - Christophe Grenier
+    PhotoRec: recover lxo/lwo 3d model files
+
+2011-09-23 - Christophe Grenier
+    PhotoRec: fix RIFF filesize detection
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: rename pdf using the title
+    The pdf isn't decoded, so it's not 100% reliable.
+
+2011-09-17 - Christophe Grenier
+    new function file_rsearch() to search a pattern in a file from the end
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: when renaming file, filter out name with too much bad chars
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: recover Assassin's Creed II .save backup
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: recover dar3 .dar archive
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: recover Core Audio Format .caf files
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: better detection of new mpg
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: Some JPG have two APP1 markers, avoid to dicard the first one
+
+2011-09-17 - Christophe Grenier
+    PhotoRec: recover 3ds .max file
+
+2011-08-28 - Christophe Grenier
+    PhotoRec: detect IFO file size
+
+2011-08-28 - Christophe Grenier
+    Locate lost GFS2 partition but not yet the size
+
+2011-08-28 - Christophe Grenier
+    PhotoRec session management: restart PhotoRec at the same location than previously
+
+2011-08-24 - Christophe Grenier
+    PhotoRec: remove some useless steps when carving ext2/3/4 filesystem and keeping corrupted files
+
+2011-08-24 - Christophe Grenier
+    common.c was missing ctype.h header
+
+2011-08-20 - Christophe Grenier
+    Huge code cleanup for Photorec: reduce the numbers of parameters of some functions
+
+2011-08-20 - Christophe Grenier
+    strip_dup(): return NULL for empty string
+
+2011-07-31 - Christophe Grenier
+    Check for both uuid_create() and uuid_generate() to solve a compilation issue on Mac OS X 10.8
+
+2011-07-21 - Christophe Grenier
+    PhotoRec: recover Sweet Home 3D .sh3d files
+
+2011-07-21 - Christophe Grenier
+    PhotoRec: choose the partition table type only in expert mode
+
+2011-07-21 - Christophe Grenier
+    PhotoRec: fix bug introduce by commit a217bf73ff63bde0b73acfb6232631b7e06e3d8e
+
+2011-07-21 - Christophe Grenier
+    PhotoRec: use a single parameter to forward the options (code cleanup)
+
+2011-07-20 - Christophe Grenier
+    Add detection of Vmware VMFS partition
+
+2011-07-15 - Christophe Grenier
+    PhotoRec: recover Hierarchical Data Format 4 .hdf
+
+2011-07-15 - Christophe Grenier
+    PhotoRec: recover Didson Data File .ddf (v3 and v4)
+
+2011-07-15 - Christophe Grenier
+    New scarrier message for NTFS MFT fixing
+
+2011-07-15 - Christophe Grenier
+    PhotoRec: stricter signature for Fujifilm Raw file (.raf)
+
+2011-07-15 - Christophe Grenier
+    PhotoRec: avoid '*' in filename
+
+2011-07-15 - Christophe Grenier
+    Allow booting from FAT logical partition by setting FAT hidden field in the same way than for primary partition.
+
+2011-06-30 - Christophe Grenier
+    Fix typo: mathlab -> matlab
+
+2011-06-30 - Christophe Grenier
+    Check exFAT boot sector validity when listing files
+
+2011-06-30 - Christophe Grenier
+    Fix ntfsprogs support when using mingw compiler
+
+2011-06-30 - Christophe Grenier
+    PhotoRec: recover ENVI .hdr file
+
+2011-06-30 - Christophe Grenier
+    PhotoRec: "ftyp" must only be seen at the beginning of .mov
+
+2011-06-30 - Christophe Grenier
+    Log HDD serial number and firmware revision
+
+2011-06-30 - Christophe Grenier
+    Read HDD serial number and firmware revision (Windows)
+
+2011-06-30 - Christophe Grenier
+    Read HDD serial number and firmware revision (Linux)
+
+2011-06-17 - Christophe Grenier
+    Enable gcc -Wformat=2 checks during compilation
+
+2011-06-17 - Sander Lepik
+    Turn off an error if -Werror=format-security is enforced
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: recover .wpb OpenCanvas files
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: recover .vmg Nokia Text Message
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: recover .TiVo video record
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: recover .par2 parchive
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: recover .oci OpenCanvas Image
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: use a bigger buffer to detect Illustrator .ai
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: handle .mov files using 64-bit atom size
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: handle large avi files using "AVIX"
+
+2011-06-17 - Christophe Grenier
+    PhotoRec: identify Delcam Powershape .psmodel files from first entry in OLE document
+
+2011-06-17 - Christophe Grenier
+    txt recovery: remove an unwanted debug line
+
+2011-06-17 - Christophe Grenier
+    MPG recovery: try to avoid to concatenate several MPG files
+
+2011-06-17 - Christophe Grenier
+    jpg recovery: use jpg size to avoid to recover the thumb instead of the jpg file itself
+
+2011-06-17 - Christophe Grenier
+    getpwuid() isn't static binary friendly, avoid this function
+
+2011-06-17 - Christophe Grenier
+    update configure.ac to avoid a warning with autoconf 2.68
+
+2011-06-02 - Christophe Grenier
+    PhotoRec: recover Games Factory .gam files
+
+2011-06-02 - Christophe Grenier
+    PhotoRec: workaroud in progress bar when time goes backward
+
+2011-06-02 - Christophe Grenier
+    Fix manifests for UAC
+
+2011-06-02 - Christophe Grenier
+    PhotoRec: recover .gcs GCstart (personal collections manager) files
+
+2011-06-02 - Christophe Grenier
+    PhotoRec: recover Delcam PowerSHAPE .psmodel files
+
+2011-06-02 - Christophe Grenier
+    Image Creation creates an image file if missing
+    Fix bug introduced by commit #1115ff8b64c468b704e895e324eeea39aba194cd
+
+2011-05-11 - Christophe Grenier
+    TestDisk & PhotoRec 6.12
+
 2011-05-11 - Christophe Grenier
     Add TestDisk 6.12 news
 

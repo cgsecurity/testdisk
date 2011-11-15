@@ -1,5 +1,23 @@
 Current news
 ============
+6.13
+Fix UAC manifests for Windows, so users don't need to use right-click "Run As Administrator" 
+
+TestDisk
+- Fix image creation, image.dd file wasn't created (Regression introduced in 6.12)
+- Detect Vmware VMFS partition
+- Locate lost GFS2 partition but not yet the size
+- Log HDD serial number and firmware revision
+- List NTFS Alternate Data Streams (ADS) 
+
+PhotoRec
+- Session recovery restarts at the previous location
+- Better MPEG recovery, there should be less concatenated videos.
+- Better JPG recovery, there should be less cases where thumbnails were recovered instead of the picture itself.
+- Handle large avi files using "AVIX" or mov files using 64-bit chunk size.
+- Rename recovered pdf using the title (not perfect)
+- Major cleanup of PhotoRec core code 
+
 6.12
 fidentify, a little utility sharing PhotoRec signature database, is now build by default. It identifies the type of data contained in a file and reports the extension as seen by PhotoRec. It is similar to the Unix file command. Add compatibility with
 - libewf 20110312
