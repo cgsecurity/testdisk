@@ -32,30 +32,30 @@ Obsoletes:	testdisk-doc
 
 %description
 Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
-NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS, Linux Raid, Linux Swap,
-LVM, LVM2, NSS, ReiserFS, UFS, XFS
+NTFS, ext2, ext3, ext4, btrfs, BeFS, CramFS, HFS, JFS, Linux Raid, Linux
+Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 PhotoRec is a signature based file recovery utility. It handles more than
 200 file formats including JPG, MSOffice, OpenOffice documents.
 
 %description -l pl.UTF8
 Narzędzie sprawdzające i odzyskujące partycje. Pracuje z partycjami:
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
+FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, btrfs, BeFS, CramFS, HFS, JFS,
 Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 PhotoRec is a signature based file recovery utility. It handles more than
 200 file formats including JPG, MSOffice, OpenOffice documents.
 
 %description -l fr.UTF8
 TestDisk vérifie et récupère les partitions. Fonctionne avec
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
+FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, btrfs, BeFS, CramFS, HFS, JFS,
 Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 PhotoRec utilise un mécanisme de signature pour récupérer des fichiers perdus.
-Il gère plus d'une centaine de formats de fichiers dont les JPEG,
+Il reconnait plus de 200 de formats de fichiers dont les JPEG,
 les documents MSOffice ou OpenOffice.
 
 %description -l ru_RU.UTF8
 Программа для проверки и восстановления разделов диска.
 Поддерживает следующие типы разделов:
-FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, BeFS, CramFS, HFS, JFS,
+FAT12, FAT16, FAT32, NTFS, ext2, ext3, ext4, btrfs, BeFS, CramFS, HFS, JFS,
 Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS
 PhotoRec is a signature based file recovery utility. It handles more than
 200 file formats including JPG, MSOffice, OpenOffice documents.
