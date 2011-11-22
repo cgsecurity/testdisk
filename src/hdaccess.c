@@ -940,7 +940,6 @@ static void disk_get_model(const int hd_h, disk_t *dev, const unsigned int verbo
     memset(&hdi, 0, sizeof(hdi));
     if (ioctl (hd_h, HDIO_GET_IDENTITY, &hdi)==0)
     {
-      int i;
       char tmp[41];
       if(dev->model==NULL)
       {
@@ -1112,57 +1111,94 @@ static int file_clean(disk_t *disk_car)
   return generic_clean(disk_car);
 }
 
-static int file_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret=-1;
-  int fd=((struct info_file_struct *)disk_car->data)->handle;
-#if defined(HAVE_PREAD) && !defined(__CYGWIN__)
+  int fd=((struct info_file_struct *)disk->data)->handle;
+#if defined(__CYGWIN__)
+  if(lseek(fd,offset,SEEK_SET) < 0)
+  {
+    log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n",
+	fd, (unsigned)(count/disk->sector_size),
+	(long unsigned int)(offset/disk->sector_size),
+	offset2cylinder(disk,offset),
+	offset2head(disk,offset),
+	offset2sector(disk,offset),
+	strerror(errno));
+    return -1;
+  }
+  {
+    /* November 28, 2004, CGR: cygwin read function is about 10 times slower
+       because it reads 60k each time, so lets call ReadFile directly */
+    DWORD dwByteRead;
+    HANDLE handle=(HANDLE)get_osfhandle(fd);
+    if(ReadFile(handle, buf,count,&dwByteRead,NULL)==0)
+    {
+      LPVOID lpMsgBuf;
+      DWORD dw = GetLastError(); 
+      FormatMessage(
+	  FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	  FORMAT_MESSAGE_FROM_SYSTEM,
+	  NULL,
+	  dw,
+	  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	  (LPTSTR) &lpMsgBuf,
+	  0, NULL );
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) ReadFile %s\n",
+	fd, (unsigned)(count/disk->sector_size),
+	(long unsigned int)(offset/disk->sector_size),
+	offset2cylinder(disk, offset),
+	offset2head(disk, offset),
+	offset2sector(disk, offset),
+	(char*)lpMsgBuf);
+      LocalFree(lpMsgBuf);
+      return -1;
+    }
+    return dwByteRead;
+  }
+#elif defined(__MINGW32__)
+  if(_lseeki64(fd,offset,SEEK_SET) < 0)
+  {
+    log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n",
+	fd, (unsigned)(count/disk->sector_size),
+	(long unsigned int)(offset/disk->sector_size),
+	offset2cylinder(disk, offset),
+	offset2head(disk, offset),
+	offset2sector(disk, offset),
+	strerror(errno));
+    return -1;
+  }
+  ret=read(fd, buf, count);
+#else
+#if defined(HAVE_PREAD)
   ret=pread(fd,buf,count,offset);
   if(ret<0 && errno == ENOSYS)
 #endif
   {
-#ifdef __MINGW32__
-    if(_lseeki64(fd,offset,SEEK_SET)==-1)
-    {
-      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) seek err %s\n", fd,
-          (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
-          strerror(errno));
-      return -1;
-    }
-#else
     if(lseek(fd,offset,SEEK_SET)==(off_t)-1)
     {
-      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n", fd,
-          (unsigned)(count/disk_car->sector_size), (long unsigned int)(offset/disk_car->sector_size),
-          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset),
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) lseek err %s\n",
+	  fd, (unsigned)(count/disk->sector_size),
+	  (long unsigned int)(offset/disk->sector_size),
+          offset2cylinder(disk, offset),
+	  offset2head(disk, offset),
+	  offset2sector(disk, offset),
           strerror(errno));
       return -1;
     }
-#endif
-#if defined(__CYGWIN__)
-    {
-      /* November 28, 2004, CGR: cygwin read function is about 10 times slower
-         because it reads 60k each time, so lets call ReadFile directly */
-      DWORD dwByteRead;
-      HANDLE handle=(HANDLE)get_osfhandle(fd);
-      ret=ReadFile(handle, buf,count,&dwByteRead,NULL);
-      if(ret==0)
-        ret=-1;
-      else
-        ret=dwByteRead;
-    }
-#else
     ret=read(fd, buf, count);
-#endif
   }
+#endif
   if(ret!=count)
   {
-    if(offset+count <= disk_car->disk_size && offset+count <= disk_car->disk_real_size)
+    if(offset+count <= disk->disk_size && offset+count <= disk->disk_real_size)
     {
-      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) read err: ", fd,
-          (unsigned)(count/disk_car->sector_size), (long unsigned)(offset/disk_car->sector_size),
-          offset2cylinder(disk_car,offset), offset2head(disk_car,offset), offset2sector(disk_car,offset));
+      log_error("file_pread(%d,%u,buffer,%lu(%u/%u/%u)) read err: ",
+	  fd, (unsigned)(count/disk->sector_size),
+	  (long unsigned)(offset/disk->sector_size),
+          offset2cylinder(disk, offset),
+	  offset2head(disk, offset),
+	  offset2sector(disk, offset));
       if(ret<0)
         log_error("%s\n", strerror(errno));
       else if(ret==0)
@@ -1180,7 +1216,7 @@ static int file_pread_aux(disk_t *disk_car, void *buf, const unsigned int count,
 #ifdef HDCLONE
   else
   {
-    int handle_clone=((struct info_file_struct *)disk_car->data)->handle_clone;
+    int handle_clone=((struct info_file_struct *)disk->data)->handle_clone;
     if(handle_clone>0)
     {
       pwrite(handle_clone, buf, count, offset);
@@ -1469,13 +1505,11 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
 #endif
   {
     unsigned char *buffer;
-    struct tdewf_file_header *ewf;
     const uint8_t evf_file_signature[8] = { 'E', 'V', 'F', 0x09, 0x0D, 0x0A, 0xFF, 0x00 };
     if(verbose>1)
       log_verbose("file_test_availability %s is a file\n", device);
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
-    ewf=(struct tdewf_file_header*)buffer;
     if(read(hd_h,buffer,DEFAULT_SECTOR_SIZE)<0)
     {
       memset(buffer,0,DEFAULT_SECTOR_SIZE);
