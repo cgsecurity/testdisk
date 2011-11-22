@@ -90,6 +90,7 @@ static int data_check_caf(const unsigned char *buffer, const unsigned int buffer
     {
       file_recovery->data_check=NULL;
       file_recovery->file_check=NULL;
+      return 2;
     }
   }
 #ifdef DEBUG_CAF
