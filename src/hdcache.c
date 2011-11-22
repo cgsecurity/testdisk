@@ -121,9 +121,9 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
 	i++, cache_buffer_nbr=(cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR)
     {
       const struct cache_buffer_struct *cache=&data->cache[cache_buffer_nbr];
-      if(cache->buffer!=NULL && cache->cache_size>0 &&
-	  cache->cache_offset <= offset &&
-	  offset < cache->cache_offset +cache->cache_size)
+      if(cache->cache_offset <= offset &&
+	  offset < cache->cache_offset +cache->cache_size &&
+	  cache->buffer!=NULL && cache->cache_size>0)
       {
 	const unsigned int data_available= cache->cache_size + cache->cache_offset - offset;
 	const int res=cache->cache_status + cache->cache_offset - offset;
@@ -196,16 +196,16 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
     cache->cache_size=0;
     /* split the read sector by sector */
     {
-      unsigned int i;
+      unsigned int off;
       memset(buffer, 0, count);
-      for(i=0;i*disk_car->sector_size<count;i++)
+      for(off=0; off<count; off+=disk_car->sector_size)
       {
 	if(cache_pread_aux(disk_car, 
-	    (unsigned char*)buffer+i*disk_car->sector_size,
-	    (count>(i+1)*disk_car->sector_size?disk_car->sector_size:count - i*disk_car->sector_size),
-	    offset+i*disk_car->sector_size, 0) <= 0)
+	    (unsigned char*)buffer+off,
+	    (disk_car->sector_size < count - off ? disk_car->sector_size : count - off),
+	    offset+off, 0) <= 0)
 	{
-	  return i*disk_car->sector_size;
+	  return off;
 	}
       }
       return count;
