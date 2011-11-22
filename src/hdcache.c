@@ -187,7 +187,7 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
     }
     /* Read failure */
     data->last_io_error_nbr++;
-    if(count<=disk_car->sector_size || disk_car->sector_size<=0 || data->last_io_error_nbr>1)
+    if(count_new<=disk_car->sector_size || disk_car->sector_size<=0 || data->last_io_error_nbr>1)
     {
       memcpy(buffer, cache->buffer, count);
       return cache->cache_status;
