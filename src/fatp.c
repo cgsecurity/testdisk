@@ -196,6 +196,11 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
       return 0;
     }
     sector_size=fat_sector_size(fat_header);
+    if(sector_size==0)
+    {
+      free(buffer);
+      return 0;
+    }
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
     part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
