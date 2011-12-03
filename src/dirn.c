@@ -68,7 +68,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
     int pos_num=0;
     file_data_t *pos=dir_list;
     int old_LINES=LINES;
-    int status=FILE_STATUS_MARKED;
+    unsigned int status=FILE_STATUS_MARKED;
     aff_copy(window);
     wmove(window,3,0);
     aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
@@ -457,6 +457,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		    wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
 		  if(copy_bad > 0)
 		    wprintw(window,"Copy done! (Failed to copy some files)");
+		  else if(copy_ok == 0)
+		    wprintw(window,"No file selected");
 		  else
 		    wprintw(window,"Copy done!");
 		}
