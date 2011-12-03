@@ -776,6 +776,10 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
       file_recovery_new->extension="plist";
 #endif
     }
+    else if(td_memmem(buffer, buffer_size, "<PremiereData Version=", 22)!=NULL)
+    {
+      file_recovery_new->extension="prproj";
+    }
     else
       file_recovery_new->extension="xml";
     file_recovery_new->file_check=&file_check_xml;
