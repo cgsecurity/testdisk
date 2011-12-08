@@ -69,7 +69,7 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
 #define ANALYSE_Y	5
 #define INTER_BAD_PART	10
 #endif
-static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int align,const int verbose);
+static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int verbose);
 static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr);
 /* Optimization */
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
@@ -1041,7 +1041,7 @@ static list_part_t *reduce_structure(list_part_t *list_part)
   return list_part;
 }
 
-static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, const int max_ext, const int align, const int verbose)
+static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, const int max_ext, const int verbose)
 {
   /* list_part need to be sorted! */
   /* All extended partitions of an P_EXTENDX are P_EXTENDED */
@@ -1100,7 +1100,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, cons
       CHS_t start;
       part_extended_offset=deb->part->part_offset-1;
       offset2CHS_inline(disk, part_extended_offset, &start);
-      if(align>0 && (start.cylinder>0 || start.head>1))
+      if(start.cylinder>0 || start.head>1)
       {
 	start.cylinder=0;
 	start.head=1;
@@ -1351,7 +1351,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	list_part_t *parts;
 	uint64_t partext_offset=0;
 	uint64_t partext_size=0;
-	list_part=add_ext_part_i386(disk_car,list_part,!max_ext,2,verbose);
+	list_part=add_ext_part_i386(disk_car, list_part, !max_ext, verbose);
 	for(parts=list_part;parts!=NULL;parts=parts->next)
 	  if(parts->part->status==STATUS_EXT)
 	  {
@@ -1360,7 +1360,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	  }
 	if(partext_offset>0)
 	{
-	  list_part=add_ext_part_i386(disk_car,list_part,max_ext,2,verbose);
+	  list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
 	  for(parts=list_part;parts!=NULL;parts=parts->next)
 	    if(parts->part->status==STATUS_EXT)
 	    {
@@ -1440,7 +1440,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	    break;
 	  case 'E':
 	    max_ext=!max_ext;
-	    list_part=add_ext_part_i386(disk_car,list_part,max_ext,2,verbose);
+	    list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
 	    do_again=1;
 	    break;
 	}
