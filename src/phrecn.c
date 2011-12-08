@@ -1060,11 +1060,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #ifdef HAVE_NCURSES
 static void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 6;
+  unsigned int menu = 5;
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
-    { 'A',NULL,"" },
     { 'K',NULL,"Keep corrupted files"},
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
@@ -1088,13 +1087,12 @@ static void interface_options_photorec_ncurses(struct ph_options *options)
 	menuOptions[0].name="Paranoid : Yes (Brute force enabled)";
 	break;
     }
-    menuOptions[1].name=options->allow_partial_last_cylinder?"Allow partial last cylinder : Yes":"Allow partial last cylinder : No";
-    menuOptions[2].name=options->keep_corrupted_file?"Keep corrupted files : Yes":"Keep corrupted files : No";
-    menuOptions[3].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
-    menuOptions[4].name=options->expert?"Expert mode : Yes":"Expert mode : No";
-    menuOptions[5].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    menuOptions[1].name=options->keep_corrupted_file?"Keep corrupted files : Yes":"Keep corrupted files : No";
+    menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
+    menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
+    menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PAKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -1103,10 +1101,6 @@ static void interface_options_photorec_ncurses(struct ph_options *options)
 	  options->paranoid++;
 	else
 	  options->paranoid=0;
-	break;
-      case 'a':
-      case 'A':
-	options->allow_partial_last_cylinder=!options->allow_partial_last_cylinder;
 	break;
       case 'k':
       case 'K':
@@ -1158,7 +1152,6 @@ void interface_options_photorec(struct ph_options *options, char **current_cmd)
 	(*current_cmd)+=8;
 	options->paranoid=1;
       }
-      /* TODO: allow_partial_last_cylinder */
       /* keep_corrupted_file */
       else if(strncmp(*current_cmd,"keep_corrupted_file_no",22)==0)
       {
@@ -1201,8 +1194,7 @@ void interface_options_photorec(struct ph_options *options, char **current_cmd)
   /* write new options to log file */
   log_info("New options :\n Paranoid : %s\n", options->paranoid?"Yes":"No");
   log_info(" Brute force : %s\n", ((options->paranoid)>1?"Yes":"No"));
-  log_info(" Allow partial last cylinder : %s\n Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n",
-      options->allow_partial_last_cylinder?"Yes":"No",
+  log_info(" Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n",
       options->keep_corrupted_file?"Yes":"No",
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",

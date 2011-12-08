@@ -1594,7 +1594,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
   return NULL;
 }
 
-void hd_update_geometry(disk_t *disk, const int allow_partial_last_cylinder, const int verbose)
+void hd_update_geometry(disk_t *disk, const int verbose)
 {
   if(disk->autodetect!=0)
   {
@@ -1609,43 +1609,6 @@ void hd_update_geometry(disk_t *disk, const int allow_partial_last_cylinder, con
     }
     free(buffer);
   }
-  if((unsigned int)(disk->geom.cylinders+1)!=0)	/* Avoid to wrap */
-  {
-    uint64_t pos;
-    CHS_t pos_CHS;
-    pos_CHS.cylinder=disk->geom.cylinders-1+1;
-    if(allow_partial_last_cylinder)
-    {
-      pos_CHS.head=0;
-      pos_CHS.sector=1;
-    }
-    else
-    {
-      pos_CHS.head=disk->geom.heads_per_cylinder-1;
-      pos_CHS.sector=disk->geom.sectors_per_head;
-    }
-    pos=CHS2offset(disk,&pos_CHS);
-#ifdef DJGPP
-    if(disk->description==disk_description)
-    {
-      struct info_disk_struct*data=disk->data;
-      data->geo_phys.cylinders=0;
-    }
-#endif
-    {
-      unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
-      if((unsigned)disk->pread(disk, buffer, disk->sector_size, pos) == disk->sector_size)
-      {
-	disk->geom.cylinders++;
-	if(disk->disk_size < (uint64_t)disk->geom.cylinders * disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size)
-	{
-	  disk->disk_size = (uint64_t)disk->geom.cylinders * disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
-	  log_info("Computes LBA from CHS for %s\n",disk->description(disk));
-	}
-      }
-      free(buffer);
-    }
-  }
 #ifdef DJGPP
   if(disk->description==disk_description)
   {
@@ -1655,7 +1618,7 @@ void hd_update_geometry(disk_t *disk, const int allow_partial_last_cylinder, con
 #endif
 }
 
-void hd_update_all_geometry(const list_disk_t * list_disk, const int allow_partial_last_cylinder, const int verbose)
+void hd_update_all_geometry(const list_disk_t * list_disk, const int verbose)
 {
   const list_disk_t *element_disk;
   if(verbose>1)
@@ -1663,7 +1626,7 @@ void hd_update_all_geometry(const list_disk_t * list_disk, const int allow_parti
     log_trace("hd_update_all_geometry\n");
   }
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-    hd_update_geometry(element_disk->disk,allow_partial_last_cylinder,verbose);
+    hd_update_geometry(element_disk->disk, verbose);
 }
 
 void init_disk(disk_t *disk)

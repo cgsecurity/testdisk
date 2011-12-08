@@ -193,7 +193,6 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
       fprintf(f_session, "paranoid,");
     else
       fprintf(f_session, "paranoid_bf,");
-    /* TODO: allow_partial_last_cylinder ? */
     if(options->keep_corrupted_file>0)
       fprintf(f_session, "keep_corrupted_file,");
     else

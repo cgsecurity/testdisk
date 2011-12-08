@@ -30,7 +30,6 @@ typedef enum photorec_status photorec_status_t;
 struct ph_options
 {
   int paranoid;
-  int allow_partial_last_cylinder;
   int keep_corrupted_file;
   unsigned int mode_ext2;
   unsigned int expert;

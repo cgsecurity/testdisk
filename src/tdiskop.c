@@ -55,7 +55,6 @@ extern const arch_fnct_t arch_none;
 static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
 {
   int align=2;
-  int allow_partial_last_cylinder=0;
   int ask_part_order=0;
   unsigned int expert=0;
   char options[16];
@@ -73,7 +72,6 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
 	list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
 	if(disk_car->arch==&arch_i386)
 	{
-	  const int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
 	  const list_part_t *element;
 	  for(element=list_part;element!=NULL;element=element->next)
 	  {
@@ -87,11 +85,6 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
 	    (*current_cmd)+=10;
 	    search_vista_part=1;
 	  }
-	  if(search_vista_part==1)
-	    allow_partial_last_cylinder=1;
-	  if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	    hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
-	  log_info("Allow partial last cylinder : %s\n", allow_partial_last_cylinder>0?"Yes":"No");
 	  log_info("search_vista_part: %d\n", search_vista_part);
 	}
 	interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, search_vista_part, current_cmd);
@@ -110,11 +103,8 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
     }
     else if(strncmp(*current_cmd,"options,",8)==0)
     {
-      const int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
       (*current_cmd)+=8;
-      interface_options(&dump_ind, &align,&allow_partial_last_cylinder,&expert,current_cmd);
-      if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+      interface_options(&dump_ind, &align, &expert,current_cmd);
     }
     else if(strncmp(*current_cmd,"delete",6)==0)
     {
@@ -137,7 +127,6 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
 static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
 {
   int align=2;
-  int allow_partial_last_cylinder=0;
   int ask_part_order=0;
   int command;
   int real_key;
@@ -183,7 +172,6 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	  list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
 	  if(disk_car->arch==&arch_i386)
 	  {
-	    const int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
 	    const list_part_t *element;
 	    for(element=list_part;element!=NULL;element=element->next)
 	    {
@@ -196,11 +184,6 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	      if(ask_confirmation("Should TestDisk search for partition created under Vista or later ? [Y/N] (answer Yes if unsure)")!=0)
 		search_vista_part=1;
 	    }
-	    if(search_vista_part==1)
-	      allow_partial_last_cylinder=1;
-	    if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	      hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
-	    log_info("Allow partial last cylinder : %s\n", allow_partial_last_cylinder>0?"Yes":"No");
 	    log_info("search_vista_part: %d\n", search_vista_part);
 	  }
 	  interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, search_vista_part, current_cmd);
@@ -222,10 +205,7 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
       case 'o':
       case 'O':
 	{
-	  const int old_allow_partial_last_cylinder=allow_partial_last_cylinder;
-	  interface_options(&dump_ind, &align,&allow_partial_last_cylinder,&expert, current_cmd);
-	  if(old_allow_partial_last_cylinder!=allow_partial_last_cylinder)
-	    hd_update_geometry(disk_car,allow_partial_last_cylinder,verbose);
+	  interface_options(&dump_ind, &align, &expert, current_cmd);
 	}
 	break;
       case 't':

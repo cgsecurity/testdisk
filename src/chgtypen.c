@@ -437,6 +437,6 @@ int interface_partition_type(disk_t *disk_car, const int verbose, char**current_
   }
   log_info("%s\n",disk_car->description_short(disk_car));
   log_info("Partition table type: %s\n",disk_car->arch->part_name);
-  hd_update_geometry(disk_car, 0,verbose);
+  hd_update_geometry(disk_car, verbose);
   return 0;
 }

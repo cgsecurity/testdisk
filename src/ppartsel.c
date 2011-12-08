@@ -186,11 +186,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       }
       else if(strncmp(params->cmd_run,"options",7)==0)
       {
-	const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
 	params->cmd_run+=7;
 	interface_options_photorec(options, &params->cmd_run);
-	if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
-	  hd_update_geometry(params->disk, options->allow_partial_last_cylinder, options->verbose);
       }
       else if(strncmp(params->cmd_run,"fileopt",7)==0)
       {
@@ -426,10 +423,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	case 'o':
 	case 'O':
 	  {
-	    const int old_allow_partial_last_cylinder=options->allow_partial_last_cylinder;
 	    interface_options_photorec(options, &params->cmd_run);
-	    if(old_allow_partial_last_cylinder!=options->allow_partial_last_cylinder)
-	      hd_update_geometry(params->disk, options->allow_partial_last_cylinder, options->verbose);
 	    menu=1;
 	  }
 	  break;

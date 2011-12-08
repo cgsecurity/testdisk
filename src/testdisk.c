@@ -270,7 +270,7 @@ int main( int argc, char **argv )
     }
 #endif
     if(safe==0)
-      hd_update_all_geometry(list_disk,0,verbose);
+      hd_update_all_geometry(list_disk, verbose);
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
       printf("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
@@ -379,7 +379,7 @@ int main( int argc, char **argv )
   wrefresh(stdscr);
 #endif
   if(safe==0)
-    hd_update_all_geometry(list_disk,0,verbose);
+    hd_update_all_geometry(list_disk, verbose);
   /* save disk parameters to rapport */
   log_info("Hard disk list\n");
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)

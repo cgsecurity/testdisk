@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-void interface_options(int *dump_ind, int *align, int *allow_partial_last_cylinder, unsigned int *expert, char**current_cmd);
+void interface_options(int *dump_ind, int *align, unsigned int *expert, char**current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

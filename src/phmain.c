@@ -113,7 +113,6 @@ int main( int argc, char **argv )
   FILE *log_handle=NULL;
   struct ph_options options={
     .paranoid=1,
-    .allow_partial_last_cylinder=0,
     .keep_corrupted_file=0,
     .mode_ext2=0,
     .expert=0,
@@ -327,7 +326,7 @@ int main( int argc, char **argv )
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
     list_disk=hd_parse(list_disk, options.verbose, arch, testdisk_mode);
-  hd_update_all_geometry(list_disk, 0, options.verbose);
+  hd_update_all_geometry(list_disk, options.verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {

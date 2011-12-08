@@ -34,9 +34,9 @@
 #include "toptions.h"
 
 #ifdef HAVE_NCURSES
-static void interface_options_ncurses(int *dump_ind, int *align, int *allow_partial_last_cylinder, unsigned int *expert)
+static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *expert)
 {
-  unsigned int menu = 4;
+  unsigned int menu = 3;
   /* ncurses interface */
   while (1)
   {
@@ -46,7 +46,6 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
     {
       { 'E',NULL,"Expert mode adds some functionalities"},
       { 'C',NULL,"Partitions are aligned on cylinder/head boundaries" },
-      { 'A',NULL,""},
       { 'D',NULL,"Dump essential sectors" },
       { 'Q',"[ Ok ]","Done with changing options"},
       { 0, NULL, NULL }
@@ -64,10 +63,9 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
 	menuOptions[1].name="Cylinder boundary : Yes";
 	break;
     }
-    menuOptions[2].name=*allow_partial_last_cylinder?"Allow partial last cylinder : Yes":"Allow partial last cylinder : No";
-    menuOptions[3].name=*dump_ind?"Dump : Yes":"Dump : No";
+    menuOptions[2].name=*dump_ind?"Dump : Yes":"Dump : No";
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECADQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECDQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'd':
@@ -80,10 +78,6 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
 	  (*align)++;
 	else
 	  *align=0;
-	break;
-      case 'a':
-      case 'A':
-	*allow_partial_last_cylinder=!*allow_partial_last_cylinder;
 	break;
       case 'e':
       case 'E':
@@ -98,12 +92,12 @@ static void interface_options_ncurses(int *dump_ind, int *align, int *allow_part
 }
 #endif
 
-void interface_options(int *dump_ind, int *align, int *allow_partial_last_cylinder, unsigned int *expert, char**current_cmd)
+void interface_options(int *dump_ind, int *align, unsigned int *expert, char**current_cmd)
 {
   if(*current_cmd==NULL)
   {
 #ifdef HAVE_NCURSES
-    interface_options_ncurses(dump_ind, align, allow_partial_last_cylinder, expert);
+    interface_options_ncurses(dump_ind, align, expert);
 #endif
   }
   /* write new options to log file */
@@ -111,16 +105,14 @@ void interface_options(int *dump_ind, int *align, int *allow_partial_last_cylind
   switch(*align)
   {
     case 0:
-      log_info("Cylinder boundary : No");
+      log_info("Cylinder boundary : No\n");
       break;
     case 1:
-      log_info("Cylinder boundary : Head boundary only");
+      log_info("Cylinder boundary : Head boundary only\n");
       break;
     case 2:
-      log_info("Cylinder boundary : Yes");
+      log_info("Cylinder boundary : Yes\n");
       break;
   }
-  log_info("\n Allow partial last cylinder : %s\n Expert mode : %s\n",
-      *allow_partial_last_cylinder?"Yes":"No",
-      *expert?"Yes":"No");
+  log_info(" Expert mode : %s\n", *expert?"Yes":"No");
 }
