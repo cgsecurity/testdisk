@@ -28,6 +28,9 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
