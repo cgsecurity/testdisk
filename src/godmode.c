@@ -57,7 +57,6 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
-static void align_structure(list_part_t *list_part,const unsigned int location_boundary);
 static list_part_t *reduce_structure(list_part_t *list_part);
 static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
 static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
@@ -91,14 +90,59 @@ static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS)
 }
 /* Optimization end */
 
-static void align_structure(list_part_t *list_part, const unsigned int location_boundary)
+static unsigned int align_structure_aux(const uint64_t offset, const disk_t *disk)
 {
-  list_part_t *element;
-  for(element=list_part;element!=NULL;element=element->next)
+  unsigned int tmp;
+  if(offset % (1024*1024) == 0)
+    return 1024*1024;
+  tmp=disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
+  if(offset % tmp == 0 || offset % tmp == disk->geom.sectors_per_head * disk->sector_size)
+    return tmp;
+  tmp= disk->geom.sectors_per_head * disk->sector_size;
+  if(offset % tmp == 0)
+    return tmp;
+  return disk->sector_size;
+}
+
+static void align_structure(list_part_t *list_part, const disk_t *disk, const unsigned int align)
+{
+  if(disk->arch==&arch_i386)
   {
-    uint64_t partition_end;
-    partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
-    element->part->part_size=partition_end-element->part->part_offset+1;
+    list_part_t *element;
+    for(element=list_part; element!=NULL; element=element->next)
+    {
+      uint64_t partition_end;
+      unsigned int location_boundary;
+      if(align==0)
+	location_boundary=disk->sector_size;
+      else 
+	location_boundary=align_structure_aux(element->part->part_offset, disk);
+      partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
+      element->part->part_size=partition_end-element->part->part_offset+1;
+    }
+    return ;
+  }
+  {
+    list_part_t *element;
+    unsigned int location_boundary;
+    if(disk->arch==&arch_mac)
+    {
+      location_boundary=4096;
+    }
+    else if(disk->arch==&arch_sun)
+    {
+      location_boundary=disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
+    }
+    else
+    {	/* arch_none, arch_xbox, arch_gpt */
+      location_boundary=disk->sector_size;
+    }
+    for(element=list_part; element!=NULL; element=element->next)
+    {
+      uint64_t partition_end;
+      partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
+      element->part->part_size=partition_end-element->part->part_offset+1;
+    }
   }
 }
 
@@ -1089,118 +1133,114 @@ static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, cons
     return list_part;
   if(nbr_entries==4 || max_ext!=0)
   {
-    if(verbose>1)
+    if(verbose>0)
     {
-      log_trace("add_ext_part_i386: max\n");
+      log_info("add_ext_part_i386: max\n");
     }
     if(deb->prev==NULL)
     {
-      CHS_t start;
-      part_extended_offset=deb->part->part_offset-1;
-      offset2CHS_inline(disk, part_extended_offset, &start);
-      if(start.cylinder>0 || start.head>1)
-      {
-	start.cylinder=0;
-	start.head=1;
-	start.sector=1;
-	part_extended_offset=CHS2offset_inline(disk, &start);
-      }
+      uint64_t tmp;
+      part_extended_offset=deb->part->part_offset - disk->sector_size;
+      if(deb->part->part_offset%(1024*1024)==0)
+	tmp=1024*1024;
+      else
+	tmp=disk->geom.sectors_per_head * disk->sector_size;
+      if(tmp < part_extended_offset)
+	part_extended_offset=tmp;
     }
     else
     {
-      CHS_t start;
-      start.cylinder=offset2cylinder(disk, deb->prev->part->part_offset+deb->prev->part->part_size-1)+1;
-      start.head=0;
-      start.sector=1;
-      part_extended_offset=CHS2offset_inline(disk, &start);
-      if(part_extended_offset >= deb->part->part_offset)
+      uint64_t tmp;
+      part_extended_offset=deb->prev->part->part_offset + deb->prev->part->part_size;
+      /* round up part_extended_offset */
+      if(deb->part->part_offset%(1024*1024)==0)
       {
-	offset2CHS_inline(disk, deb->prev->part->part_offset+deb->prev->part->part_size-1+1, &start);
-	start.sector=1;
-	start.head++;
-	if(start.head >= disk->geom.heads_per_cylinder)
-	{
-	  start.cylinder++;
-	  start.head=0;
-	}
-	part_extended_offset=CHS2offset_inline(disk, &start);
-	if(part_extended_offset >= deb->part->part_offset)
-	{
-	  part_extended_offset=deb->prev->part->part_offset+deb->prev->part->part_size-1+1;
-	}
+	tmp=(part_extended_offset+1024*1024-1)/(1024*1024)*(1024*1024);
       }
+      else
+      {
+	CHS_t start;
+	start.cylinder=offset2cylinder(disk, part_extended_offset-1)+1;
+	start.head=0;
+	start.sector=1;
+	tmp=CHS2offset_inline(disk, &start);
+      }
+      if(tmp < deb->part->part_offset &&
+	  (deb->prev==NULL || tmp >= deb->prev->part->part_offset + deb->prev->part->part_size))
+	part_extended_offset=tmp;
     }
     if(fin->next==NULL)
     {
-      CHS_t end;
-      end.cylinder=disk->geom.cylinders-1;
-      end.head=disk->geom.heads_per_cylinder-1;
-      end.sector=disk->geom.sectors_per_head;
-      part_extended_end=CHS2offset_inline(disk, &end);
-      if(disk->disk_size-disk->sector_size < part_extended_end)
-	part_extended_end=disk->disk_size-disk->sector_size;
+      part_extended_end=fin->part->part_offset + fin->part->part_size - disk->sector_size;
+      /* In some weird cases, a partition may end after the end of the disk */
+      if(part_extended_end < disk->disk_size - disk->sector_size)
+	part_extended_end=disk->disk_size - disk->sector_size;
+    }
+    else
+      part_extended_end=fin->next->part->part_offset - disk->sector_size;
+    /* round down part_extended_end */
+    if(part_extended_offset%(1024*1024)==0)
+    {
+      const uint64_t tmp=part_extended_end/(1024*1024)*(1024*1024) - disk->sector_size;
+      if(fin->part->part_offset + fin->part->part_size - disk->sector_size <= tmp)
+	part_extended_end=tmp;
     }
     else
     {
+      uint64_t tmp;
       CHS_t end;
-      end.cylinder=offset2cylinder(disk, fin->next->part->part_offset)-1; /* 8 october 2002 */
+      end.cylinder=offset2cylinder(disk, part_extended_end)-1;
       end.head=disk->geom.heads_per_cylinder-1;
       end.sector=disk->geom.sectors_per_head;
-      part_extended_end=CHS2offset_inline(disk, &end);
-      if(part_extended_end <= fin->part->part_offset+fin->part->part_size-1)
-      {
-	offset2CHS_inline(disk, fin->next->part->part_offset-1, &end);
-	end.sector=disk->geom.sectors_per_head;
-	if(end.head>0)
-	  end.head--;
-	else
-	{
-	  end.cylinder--;
-	  end.head=disk->geom.heads_per_cylinder-1;
-	}
-	part_extended_end=CHS2offset_inline(disk, &end);
-	if(part_extended_end <= fin->part->part_offset+fin->part->part_size-1)
-	{
-	  part_extended_end=fin->next->part->part_offset-1;
-	}
-      }
+      tmp=CHS2offset_inline(disk, &end);
+      if(fin->part->part_offset + fin->part->part_size - disk->sector_size <= tmp)
+	part_extended_end=tmp;
     }
   }
   else
   {
-    CHS_t start;
-    CHS_t end;
-    if(verbose>1)
+    uint64_t tmp;
+    if(verbose>0)
     {
-      log_trace("add_ext_part_i386: min\n");
+      log_info("add_ext_part_i386: min\n");
     }
-    offset2CHS_inline(disk, deb->part->part_offset-1, &start);
-    start.sector=1;
-    part_extended_offset=CHS2offset_inline(disk, &start);
-    if(deb->prev && part_extended_offset <= deb->prev->part->part_offset+deb->prev->part->part_size-1)
+    part_extended_offset=deb->part->part_offset - disk->sector_size;
+    /* round down part_extended_offset */
+    if(deb->part->part_offset%(1024*1024)==0)
     {
-      offset2CHS_inline(disk, deb->part->part_offset-1, &start);
+      tmp=part_extended_offset/(1024*1024)*(1024*1024);
+    }
+    else
+    {
+      CHS_t start;
+      start.cylinder=offset2cylinder(disk, part_extended_offset);
+      if(start.cylinder==0)
+	start.head=1;
+      else
+	start.head=0;
       start.sector=1;
-      part_extended_offset=CHS2offset_inline(disk, &start);
-      if(part_extended_offset <= deb->prev->part->part_offset+deb->prev->part->part_size-1)
-      {
-	part_extended_offset=deb->part->part_offset-1;
-      }
+      tmp=CHS2offset_inline(disk, &start);
     }
-    offset2CHS_inline(disk, fin->part->part_offset+fin->part->part_size-1, &end);
-    end.head=disk->geom.heads_per_cylinder-1;
-    end.sector=disk->geom.sectors_per_head;
-    part_extended_end=CHS2offset_inline(disk, &end);
-    if(fin->next && part_extended_end >= fin->next->part->part_offset)
+    if(tmp > 0 && tmp < deb->part->part_offset &&
+	(deb->prev==NULL || tmp >= deb->prev->part->part_offset + deb->prev->part->part_size))
+      part_extended_offset=tmp;
+
+    part_extended_end=fin->part->part_offset + fin->part->part_size - disk->sector_size;
+    /* round up part_extended_end */
+    if(part_extended_offset%(1024*1024)==0)
     {
-      offset2CHS_inline(disk, fin->part->part_offset+fin->part->part_size-1, &end);
+      tmp=(part_extended_end+1024*1024-1)/(1024*1024)*(1024*1024) - disk->sector_size;
+    }
+    else
+    {
+      CHS_t end;
+      offset2CHS_inline(disk, part_extended_end, &end);
+      end.head=disk->geom.heads_per_cylinder-1;
       end.sector=disk->geom.sectors_per_head;
+      tmp=CHS2offset_inline(disk, &end);
     }
-    part_extended_end=CHS2offset_inline(disk, &end);
-    if(fin->next && part_extended_end >= fin->next->part->part_offset)
-    {
-      part_extended_end=fin->part->part_offset+fin->part->part_size-1;
-    }
+    if(tmp < disk->disk_size)
+      part_extended_end=tmp;
   }
   new_partition=partition_new(disk->arch);
   new_partition->order=order;
@@ -1248,7 +1288,7 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
   return 0;
 }
 
-int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, int align, const int ask_part_order, const unsigned int expert, const int search_vista_part, char **current_cmd)
+int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, const int search_vista_part, char **current_cmd)
 {
   int res_interface_write;
   int fast_mode=0;
@@ -1283,47 +1323,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 #endif
       }
     }
-    {
-      unsigned int location_boundary;
-      if(disk_car->arch==&arch_i386)
-      {
-	unsigned int partition_vista=0;
-	unsigned int partition_nonvista=0;
-	for(element=list_part;element!=NULL;element=element->next)
-	{
-	  if(element->part->part_offset%(2048*512)==0 && element->part->part_size%(2048*512)==0)
-	    partition_vista=1;
-	  else
-	    partition_nonvista=1;
-	}
-	if(partition_vista>0 && partition_nonvista==0)
-	  location_boundary=2048*512;
-	else
-	{
-	  if(partition_vista>0 && partition_nonvista>0)
-	    align=0;
-	  if(align==0)
-	    location_boundary=disk_car->sector_size;
-	  else if(align==1)
-	    location_boundary=disk_car->geom.sectors_per_head * disk_car->sector_size;
-	  else
-	    location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
-	}
-      }
-      else if(disk_car->arch==&arch_mac)
-      {
-	location_boundary=4096;
-      }
-      else if(disk_car->arch==&arch_sun)
-      {
-	location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
-      }
-      else
-      {	/* arch_none, arch_xbox, arch_gpt */
-	location_boundary=disk_car->sector_size;
-      }
-      align_structure(list_part, location_boundary);
-    }
+    align_structure(list_part, disk_car, align);
 
     disk_car->arch->init_structure(disk_car,list_part,verbose);
     if(verbose>0)

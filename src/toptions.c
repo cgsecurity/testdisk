@@ -45,24 +45,13 @@ static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *e
     struct MenuItem menuOptions[]=
     {
       { 'E',NULL,"Expert mode adds some functionalities"},
-      { 'C',NULL,"Partitions are aligned on cylinder/head boundaries" },
+      { 'C',NULL,"Align partitions to cylinder or 1MiB boundaries" },
       { 'D',NULL,"Dump essential sectors" },
       { 'Q',"[ Ok ]","Done with changing options"},
       { 0, NULL, NULL }
     };
     menuOptions[0].name=*expert?"Expert mode : Yes":"Expert mode : No";
-    switch(*align)
-    {
-      case 0:
-	menuOptions[1].name="Cylinder boundary : No";
-	break;
-      case 1:
-	menuOptions[1].name="Cylinder boundary : Head boundary only";
-	break;
-      case 2:
-	menuOptions[1].name="Cylinder boundary : Yes";
-	break;
-    }
+    menuOptions[1].name=*align?"Align partition: Yes":"No";
     menuOptions[2].name=*dump_ind?"Dump : Yes":"Dump : No";
     aff_copy(stdscr);
     car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECDQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
@@ -74,10 +63,7 @@ static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *e
 	break;
       case 'c':
       case 'C':
-	if(*align<2)
-	  (*align)++;
-	else
-	  *align=0;
+	*align=!*align;
 	break;
       case 'e':
       case 'E':
@@ -101,18 +87,8 @@ void interface_options(int *dump_ind, int *align, unsigned int *expert, char**cu
 #endif
   }
   /* write new options to log file */
-  log_info("New options :\n Dump : %s\n ", (*dump_ind?"Yes":"No"));
-  switch(*align)
-  {
-    case 0:
-      log_info("Cylinder boundary : No\n");
-      break;
-    case 1:
-      log_info("Cylinder boundary : Head boundary only\n");
-      break;
-    case 2:
-      log_info("Cylinder boundary : Yes\n");
-      break;
-  }
-  log_info(" Expert mode : %s\n", *expert?"Yes":"No");
+  log_info("New options :\n");
+  log_info(" Dump : %s\n", (*dump_ind?"Yes":"No"));
+  log_info(" Align partition: %s\n", (*align?"Yes":"No"));
+  log_info(" Expert mode : %s\n", (*expert?"Yes":"No"));
 }

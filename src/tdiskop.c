@@ -54,7 +54,7 @@ extern const arch_fnct_t arch_none;
 
 static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
 {
-  int align=2;
+  int align=1;
   int ask_part_order=0;
   unsigned int expert=0;
   char options[16];
@@ -126,7 +126,7 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
 #ifdef HAVE_NCURSES
 static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
 {
-  int align=2;
+  int align=1;
   int ask_part_order=0;
   int command;
   int real_key;
