@@ -274,10 +274,10 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
   return y;
 }
 
-int menu_to_command(const int yinfo, const int y_org, const int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const int y_real, const int x_real)
+int menu_to_command(const unsigned int yinfo, const unsigned int y_org, const unsigned int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int y_real, const unsigned int x_real)
 {
-  int y=y_org;
-  int x=x_org;
+  unsigned int y=y_org;
+  unsigned int x=x_org;
   unsigned int i, lmargin = x, ymargin = y;
   unsigned int lenNameMax=0;
   for( i = 0; menuItems[i].key!=0; i++ )
@@ -292,8 +292,8 @@ int menu_to_command(const int yinfo, const int y_org, const int x_org, const str
   {
     unsigned int lenName;
     const char *mi;
-    const int x_old=x;
-    const int y_old=y;
+    const unsigned int x_old=x;
+    const unsigned int y_old=y;
     /* Search next available button */
     while( menuItems[i].key!=0 && strchr(available, menuItems[i].key)==NULL )
     {
@@ -349,9 +349,12 @@ int wmenuSelect(WINDOW *window, const int yinfo, const int y, const int x, const
 
 int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y_org, const int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key)
 {
-  int y=y_org;
-  int x=x_org;
-  int i, ylast = y, key = 0;
+  unsigned int y=y_org;
+  unsigned int x=x_org;
+  unsigned int i;
+  unsigned int ylast = y;
+  int key = 0;
+
   /*
      if( ( menuType & ( MENU_HORIZ | MENU_VERT ) )==0 )    
      {
@@ -601,7 +604,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
     { 0, NULL, NULL }
   };
   nbr_line=(lng+0x10-1)/0x10;
-  if(nbr_line<=DUMP_MAX_LINES)
+  if(nbr_line <= (unsigned)DUMP_MAX_LINES)
   {
     options="Q";
   }
@@ -612,7 +615,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
   {
     unsigned char car;
     unsigned int i,j;
-    for (i=pos; (i<nbr_line)&&((i-pos)<DUMP_MAX_LINES); i++)
+    for (i=pos; i<nbr_line && (i-pos) < (unsigned)DUMP_MAX_LINES; i++)
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
       wclrtoeol(window);
@@ -670,7 +673,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
         if(strchr(options,'N')!=NULL)
         {
           menu=0;
-          if(pos>DUMP_MAX_LINES-1)
+          if(pos > (unsigned)(DUMP_MAX_LINES-1))
             pos-=DUMP_MAX_LINES-1;
           else
             pos=0;
@@ -711,14 +714,14 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
   };
   /* ncurses interface */
   nbr_line=(lng+0x08-1)/0x08;
-  if(nbr_line<=DUMP_MAX_LINES)
+  if(nbr_line <= (unsigned)DUMP_MAX_LINES)
   {
     options="Q";
   }
   do
   {
     unsigned int i,j;
-    for (i=pos; (i<nbr_line)&&((i-pos)<DUMP_MAX_LINES); i++)
+    for (i=pos; i<nbr_line && (i-pos) < (unsigned)DUMP_MAX_LINES; i++)
     {
       wmove(window,DUMP_Y+i-pos,DUMP_X);
       wclrtoeol(window);
@@ -823,7 +826,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
         if(strchr(options,'N')!=NULL)
         {
           menu=0;
-          if(pos>DUMP_MAX_LINES-1)
+          if(pos > (unsigned)(DUMP_MAX_LINES-1))
             pos-=DUMP_MAX_LINES-1;
           else
             pos=0;

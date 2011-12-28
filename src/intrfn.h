@@ -51,7 +51,7 @@ int screen_buffer_display(WINDOW *window, const char *options_org, const struct 
 int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key);
 int wmenuSelect(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int menuDefault);
 int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, const unsigned int menuDefault);
-int menu_to_command(const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const int y_real, const int x_real);
+int menu_to_command(const unsigned int yinfo, const unsigned int y, const unsigned int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int y_real, const unsigned int x_real);
 int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
 int interface_partition_type_ncurses(disk_t *disk_car);
