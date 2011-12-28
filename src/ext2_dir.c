@@ -70,17 +70,17 @@ static void dir_partition_ext2_close(dir_data_t *dir_data);
 static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
 
 static struct struct_io_manager my_struct_manager = {
-        magic: EXT2_ET_MAGIC_IO_MANAGER,
-        name: "TestDisk I/O Manager",
-        open: my_open,
-        close: my_close,
-        set_blksize: my_set_blksize,
-        read_blk: my_read_blk,
-        write_blk: my_write_blk,
-        flush: my_flush,
-	write_byte: NULL,
+        .magic = EXT2_ET_MAGIC_IO_MANAGER,
+        .name ="TestDisk I/O Manager",
+        .open = my_open,
+        .close = my_close,
+        .set_blksize = my_set_blksize,
+        .read_blk = my_read_blk,
+        .write_blk= my_write_blk,
+        .flush = my_flush,
+	.write_byte= NULL,
 #ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_SET_OPTION
-	set_option: NULL
+	.set_option= NULL
 #endif
 };
 static file_data_t *ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster);
