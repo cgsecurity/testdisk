@@ -83,7 +83,8 @@ file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, co
   unsigned int inode;
   int utf8=1;
 #ifdef HAVE_WCTOMB
-  wctomb(NULL, 0);
+  if(wctomb(NULL, 0) < 0)
+    utf8=0;
 #endif
 GetNew:
   status=0;
