@@ -481,7 +481,7 @@ static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_
   const unsigned int blocksize=params->blocksize;
   const uint64_t original_offset_error=file_recovery->offset_error;
   const uint64_t original_offset_ok=file_recovery->offset_ok;
-  const int blocs_to_skip=file_recovery->extra / blocksize;
+  const unsigned int blocs_to_skip=file_recovery->extra / blocksize;
   unsigned int i;
   log_info("photorec_bf_frag_fast %s, original_offset_ok=%llu, original_offset_error=%llu, blocs_to_skip=%d, extra=%llu\n",
       file_recovery->filename,
