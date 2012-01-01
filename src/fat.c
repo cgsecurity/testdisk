@@ -485,9 +485,9 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
   }
   if(fat_sector_size(fat_header)!=disk_car->sector_size)
   {
-    screen_buffer_add("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",
+    screen_buffer_add("check_FAT: number of bytes per sector mismatches %u (FAT) != %u (HD)\n",
 	fat_sector_size(fat_header), disk_car->sector_size);
-    log_error("check_FAT: Incorrect number of bytes per sector %u (FAT) != %u (HD)\n",
+    log_error("check_FAT: number of bytes per sector mismatches %u (FAT) != %u (HD)\n",
 	fat_sector_size(fat_header), disk_car->sector_size);
     return 1;
   }
@@ -660,14 +660,14 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     comp_FAT(disk_car,partition,fat_length,le16(fat_header->reserved));
   if(le16(fat_header->heads)!=disk_car->geom.heads_per_cylinder)
   {
-    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (FAT) != %u (HD)\n",
+    screen_buffer_add("Warning: number of heads/cylinder mismatches %u (FAT) != %u (HD)\n",
 	le16(fat_header->heads), disk_car->geom.heads_per_cylinder);
     log_warning("heads/cylinder %u (FAT) != %u (HD)\n",
 	le16(fat_header->heads), disk_car->geom.heads_per_cylinder);
   }
   if(le16(fat_header->secs_track)!=disk_car->geom.sectors_per_head)
   {
-    screen_buffer_add("Warning: Incorrect number of sectors per track %u (FAT) != %u (HD)\n",
+    screen_buffer_add("Warning: number of sectors per track mismatches %u (FAT) != %u (HD)\n",
 	le16(fat_header->secs_track), disk_car->geom.sectors_per_head);
     log_warning("sect/track %u (FAT) != %u (HD)\n",
 	le16(fat_header->secs_track), disk_car->geom.sectors_per_head);

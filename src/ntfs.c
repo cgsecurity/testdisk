@@ -144,23 +144,23 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
   }
   if(le16(ntfs_header->heads)!=disk_car->geom.heads_per_cylinder)
   {
-    screen_buffer_add("Warning: Incorrect number of heads/cylinder %u (NTFS) != %u (HD)\n",
+    screen_buffer_add("Warning: number of heads/cylinder mismatches %u (NTFS) != %u (HD)\n",
 	le16(ntfs_header->heads), disk_car->geom.heads_per_cylinder);
     log_warning("heads/cylinder %u (NTFS) != %u (HD)\n",
 	le16(ntfs_header->heads), disk_car->geom.heads_per_cylinder);
   }
   if(le16(ntfs_header->secs_track)!=disk_car->geom.sectors_per_head)
   {
-    screen_buffer_add("Warning: Incorrect number of sectors per track %u (NTFS) != %u (HD)\n",
+    screen_buffer_add("Warning: number of sectors per track mismatches %u (NTFS) != %u (HD)\n",
 	le16(ntfs_header->secs_track), disk_car->geom.sectors_per_head);
     log_warning("sect/track %u (NTFS) != %u (HD)\n",
 	le16(ntfs_header->secs_track), disk_car->geom.sectors_per_head);
   }
   if(ntfs_sector_size(ntfs_header)!=disk_car->sector_size)
   {
-    screen_buffer_add("Warning: Incorrect number of bytes per sector %u (NTFS) != %u (HD)\n",
+    screen_buffer_add("Warning: number of bytes per sector mismatches %u (NTFS) != %u (HD)\n",
 	ntfs_sector_size(ntfs_header), disk_car->sector_size);
-    log_warning("Warning: Incorrect number of bytes per sector %u (NTFS) != %u (HD)\n",
+    log_warning("Warning: number of bytes per sector mismatches %u (NTFS) != %u (HD)\n",
 	ntfs_sector_size(ntfs_header), disk_car->sector_size);
   }
 
