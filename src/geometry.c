@@ -211,7 +211,8 @@ static int change_geometry_ncurses(disk_t *disk_car)
         {
           sprintf(def, "%lu", disk_car->geom.cylinders);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
-          if (get_string(response, sizeof(response), def) > 0) {
+	  wclrtoeol(stdscr);
+          if (get_string(stdscr, response, sizeof(response), def) > 0) {
             tmp_val = atol(response);
             if (tmp_val > 0) {
               disk_car->geom.cylinders = tmp_val;
@@ -229,7 +230,8 @@ static int change_geometry_ncurses(disk_t *disk_car)
         {
           sprintf(def, "%u", disk_car->geom.heads_per_cylinder);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
-          if (get_string(response, sizeof(response), def) > 0) {
+	  wclrtoeol(stdscr);
+          if (get_string(stdscr, response, sizeof(response), def) > 0) {
             tmp_val = atoi(response);
             if (tmp_val > 0 && tmp_val <= MAX_HEADS) {
               disk_car->geom.heads_per_cylinder = tmp_val;
@@ -249,7 +251,8 @@ static int change_geometry_ncurses(disk_t *disk_car)
           sprintf(def, "%u", disk_car->geom.sectors_per_head);
           /* FIXME SUN partition can have more than 63 sectors */
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track (1-63): ");
-          if (get_string(response, sizeof(response), def) > 0)
+	  wclrtoeol(stdscr);
+          if (get_string(stdscr, response, sizeof(response), def) > 0)
           {
             tmp_val = atoi(response);
             /* TODO Check for the maximum value */
@@ -270,7 +273,8 @@ static int change_geometry_ncurses(disk_t *disk_car)
         {
           sprintf(def, "%u", disk_car->sector_size);
           mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the sector size (512, 1024, 2048, 4096, 8192): ");
-          if (get_string(response, sizeof(response), def) > 0) {
+	  wclrtoeol(stdscr);
+          if (get_string(stdscr, response, sizeof(response), def) > 0) {
             tmp_val = atoi(response);
 	    if(change_sector_size(disk_car, cyl_modified, tmp_val))
 	      wprintw(stdscr,"Illegal sector size");
