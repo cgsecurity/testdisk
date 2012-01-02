@@ -486,6 +486,9 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #ifndef HAVE_STRNCASECMP
 int strncasecmp(const char * s1, const char * s2, size_t len);
 #endif
+#ifndef HAVE_STRCASESTR
+char * strcasestr (const char *haystack, const char *needle);
+#endif
 /*
  * td_min()/td_max() macros that also do
  * strict type-checking.. See the

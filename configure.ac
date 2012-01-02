@@ -731,7 +731,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([atexit atoll chdir chmod delscreen dirname dup2 execv ftruncate fsync getcwd geteuid getpwuid lstat memalign memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strchr strdup strerror strncasecmp strptime strtol touchwin utime vsnprintf wctomb])
+AC_CHECK_FUNCS([atexit atoll chdir chmod delscreen dirname dup2 execv ftruncate fsync getcwd geteuid getpwuid lstat memalign memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strchr strdup strerror strcasestr strncasecmp strptime strtol touchwin utime vsnprintf wctomb])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi

@@ -1119,7 +1119,7 @@ static file_info_t *ufile_to_file_data(const struct ufile *file, const struct da
 #endif
 #endif
   new_file->stat.st_atime=new_file->stat.st_ctime=new_file->stat.st_mtime=file->date;
-  new_file->status=FILE_STATUS_DELETED;
+  new_file->status=0;
   return new_file;
 }
 
@@ -1216,7 +1216,89 @@ done:
 #ifdef HAVE_NCURSES
 #define INTER_DIR (LINES-25+16)
 
-static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir_list)
+static struct td_list_head *ntfs_next_non_deleted(struct td_list_head *current_file, const struct td_list_head *end)
+{
+  struct td_list_head *walker=current_file;
+  while(walker->next!=end)
+  {
+    const file_info_t *file_info;
+    walker=walker->next;
+    file_info=td_list_entry(walker, file_info_t, list);
+    if((file_info->status&FILE_STATUS_DELETED)==0)
+      return walker;
+  }
+  return current_file;
+}
+
+static struct td_list_head *ntfs_prev_non_deleted(struct td_list_head *current_file, const struct td_list_head *start)
+{
+  struct td_list_head *walker=current_file;
+  while(walker->prev!=start)
+  {
+    const file_info_t *file_info;
+    walker=walker->prev;
+    file_info=td_list_entry(walker, file_info_t, list);
+    if((file_info->status&FILE_STATUS_DELETED)==0)
+      return walker;
+  }
+  return current_file;
+}
+
+static uint64_t ask_int_ncurses(const char *string)
+{
+  WINDOW *local_win;
+  int startx, starty, width, height;
+  uint64_t min_size=0;
+  char response[128];
+  height = 3;
+  width = 40;
+  starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  startx = (COLS - width) / 2;		/* of the window		*/
+
+  local_win = newwin(height, width, starty, startx);
+  keypad(local_win, TRUE); 		/* Need it to get arrow key */
+  box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 *  lines			*/
+  wmove(local_win,1,1);
+  waddstr(local_win, string);
+  wrefresh(local_win);			/* Show that box 		*/
+  if (get_string(local_win, response, 16, NULL) > 0)
+  {
+    min_size = strtoull(response, NULL, 10);
+  }
+  wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  wrefresh(local_win);
+  delwin(local_win);
+  return min_size;
+}
+
+static const char *ask_string_ncurses(const char *string)
+{
+  WINDOW *local_win;
+  int startx, starty, width, height;
+  static char response[128];
+  height = 3;
+  width = 60;
+  starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  startx = (COLS - width) / 2;		/* of the window		*/
+
+  local_win = newwin(height, width, starty, startx);
+  keypad(local_win, TRUE); 		/* Need it to get arrow key */
+  box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 *  lines			*/
+  wmove(local_win,1,1);
+  waddstr(local_win, string);
+  wrefresh(local_win);			/* Show that box 		*/
+  get_string(local_win, response, 40, NULL);
+  wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  wrefresh(local_win);
+  delwin(local_win);
+  return &response[0];
+}
+
+static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list)
 {
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data->private_dir_data;
   WINDOW *window=(WINDOW*)dir_data->display;
@@ -1234,60 +1316,66 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
     do
     {
       struct td_list_head *file_walker = NULL;
-      int i=0;
+      int i;
       int car;
+      for(i=5; i<=6+INTER_DIR; i++)
+      {
+	wmove(window, i, 0);
+	wclrtoeol(window);	/* before addstr for BSD compatibility */
+      }
+      i=0;
       td_list_for_each(file_walker,&dir_list->list)
       {
+	char		datestr[80];
+	struct tm		*tm_p;
+	file_info_t *file_info;
+	file_info=td_list_entry(file_walker, file_info_t, list);
+	if((file_info->status&FILE_STATUS_DELETED)!=0)
+	  continue;
 	if(i++<offset)
 	  continue;
+	wmove(window, 6-1+i-offset, 0);
+	wclrtoeol(window);	/* before addstr for BSD compatibility */
+	if(file_walker==current_file)
 	{
-	  file_info_t *file_info;
-	  struct tm		*tm_p;
-	  char		datestr[80];
-	  file_info=td_list_entry(file_walker, file_info_t, list);
-	  wmove(window, 6-1+i-offset, 0);
-	  wclrtoeol(window);	/* before addstr for BSD compatibility */
-	  if(file_walker==current_file)
-	  {
-	    wattrset(window, A_REVERSE);
-	    waddstr(window, ">");
-	  }
-	  else
-	    waddstr(window, " ");
-	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
-	    wbkgdset(window,' ' | COLOR_PAIR(2));
-	  if(file_info->stat.st_mtime!=0)
-	  {
-	    tm_p = localtime(&file_info->stat.st_mtime);
-	    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-		tm_p->tm_mday, monstr[tm_p->tm_mon],
-		1900 + tm_p->tm_year, tm_p->tm_hour,
-		tm_p->tm_min);
-	    /* May have to use %d instead of %e */
-	  } else {
-	    strncpy(datestr, "                 ",sizeof(datestr));
-	  }
-	  if(COLS <= 1+17+1+9+1)
-	    wprintw(window, "%s", file_info->name);
-	  else
-	  {
-	    const unsigned int nbr=COLS - (1+17+1+9+1);
-	    if(strlen(file_info->name) < nbr)
-	      wprintw(window, "%-*s", nbr, file_info->name);
-	    else
-	      wprintw(window, "%-*s", nbr, &file_info->name[strlen(file_info->name) - nbr]);
-	  }
-	  wprintw(window, " %s ", datestr);
-#ifdef DJGPP
-	  wprintw(window, "%9llu", (long long unsigned int)file_info->file_size);
-#else
-	  wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
-#endif
-	  if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
-	    wbkgdset(window,' ' | COLOR_PAIR(0));
-	  if(file_walker==current_file)
-	    wattroff(window, A_REVERSE);
+	  wattrset(window, A_REVERSE);
+	  waddstr(window, ">");
 	}
+	else
+	  waddstr(window, " ");
+	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(2));
+	if(file_info->stat.st_mtime!=0)
+	{
+	  tm_p = localtime(&file_info->stat.st_mtime);
+	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	      tm_p->tm_mday, monstr[tm_p->tm_mon],
+	      1900 + tm_p->tm_year, tm_p->tm_hour,
+	      tm_p->tm_min);
+	  /* May have to use %d instead of %e */
+	} else {
+	  strncpy(datestr, "                 ",sizeof(datestr));
+	}
+	if(COLS <= 1+17+1+9+1)
+	  wprintw(window, "%s", file_info->name);
+	else
+	{
+	  const unsigned int nbr=COLS - (1+17+1+9+1);
+	  if(strlen(file_info->name) < nbr)
+	    wprintw(window, "%-*s", nbr, file_info->name);
+	  else
+	    wprintw(window, "%-*s", nbr, &file_info->name[strlen(file_info->name) - nbr]);
+	}
+	wprintw(window, " %s ", datestr);
+#ifdef DJGPP
+	wprintw(window, "%9llu", (long long unsigned int)file_info->file_size);
+#else
+	wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
+#endif
+	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	if(file_walker==current_file)
+	  wattroff(window, A_REVERSE);
 	if(offset+INTER_DIR<=i)
 	  break;
       }
@@ -1359,45 +1447,106 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
       {
 	case KEY_UP:
 	case '8':
-	  if(current_file->prev!=&dir_list->list)
+	  file_walker=ntfs_prev_non_deleted(current_file, &dir_list->list);
+	  if(current_file!=file_walker)
 	  {
-	    current_file=current_file->prev;
+	    current_file=file_walker;
 	    pos_num--;
 	  }
 	  break;
 	case KEY_DOWN:
 	case '2':
-	  if(current_file->next!=&dir_list->list)
+	  file_walker=ntfs_next_non_deleted(current_file, &dir_list->list);
+	  if(current_file!=file_walker)
 	  {
-	    current_file=current_file->next;
+	    current_file=file_walker;
 	    pos_num++;
 	  }
 	  break;
 	case KEY_PPAGE:
-	  for(i=0; i<INTER_DIR-1 && current_file->prev!=&dir_list->list; i++)
+	  for(i=0; i<INTER_DIR-1; i++)
 	  {
-	    current_file=current_file->prev;
-	    pos_num--;
+	    file_walker=ntfs_prev_non_deleted(current_file, &dir_list->list);
+	    if(current_file!=file_walker)
+	    {
+	      current_file=file_walker;
+	      pos_num--;
+	    }
+	    else
+	      i=INTER_DIR;
 	  }
 	  break;
 	case KEY_NPAGE:
-	  for(i=0; i<INTER_DIR-1 && current_file->next!=&dir_list->list; i++)
+	  for(i=0; i<INTER_DIR-1;  i++)
 	  {
-	    current_file=current_file->next;
-	    pos_num++;
+	    file_walker=ntfs_next_non_deleted(current_file, &dir_list->list);
+	    if(current_file!=file_walker)
+	    {
+	      current_file=file_walker;
+	      pos_num++;
+	    }
+	    else
+	      i=INTER_DIR;
 	  }
 	  break;
 	case 'a':
 	  {
-	    int status;
+	    unsigned int status;
 	    file_info_t *file_info;
 	    file_info=td_list_entry(current_file, file_info_t, list);
 	    status=(file_info->status^FILE_STATUS_MARKED)&FILE_STATUS_MARKED;
 	    td_list_for_each(file_walker,&dir_list->list)
 	    {
 	      file_info=td_list_entry(file_walker, file_info_t, list);
-	      if((file_info->status & FILE_STATUS_MARKED)!=status)
+	      if((file_info->status&FILE_STATUS_DELETED)==0 &&
+		  (file_info->status & FILE_STATUS_MARKED)!=status)
 		file_info->status^=FILE_STATUS_MARKED;
+	    }
+	  }
+	  break;
+	case 'f':
+	  {
+	    const char *needle=ask_string_ncurses("Filename filter ");
+	    if(needle!=NULL && needle[0]!='\0')
+	    {
+	      td_list_for_each(file_walker,&dir_list->list)
+	      {
+		file_info_t *file_info;
+		file_info=td_list_entry(file_walker, file_info_t, list);
+		if((file_info->status&FILE_STATUS_DELETED)==0 &&
+		    strcasestr(file_info->name, needle)==NULL)
+		  file_info->status|=FILE_STATUS_DELETED;
+	      }
+	      pos_num=0;
+	      current_file=ntfs_next_non_deleted(&dir_list->list, &dir_list->list);
+	    }
+	  }
+	  break;
+	case 'r':
+	  td_list_for_each(file_walker,&dir_list->list)
+	  {
+	    file_info_t *file_info;
+	    file_info=td_list_entry(file_walker, file_info_t, list);
+	    file_info->status&=~FILE_STATUS_DELETED;
+	  }
+	  pos_num=0;
+	  current_file=dir_list->list.next;
+	  break;
+	case 's':
+	  {
+	    uint64_t min_size=ask_int_ncurses("Minimum file size ");
+	    if(min_size>0)
+	    {
+	      td_list_for_each(file_walker,&dir_list->list)
+	      {
+		file_info_t *file_info;
+		file_info=td_list_entry(file_walker, file_info_t, list);
+		if((file_info->status&FILE_STATUS_DELETED)==0 &&
+		    file_info->stat.st_size < min_size)
+		  file_info->status|=FILE_STATUS_DELETED;
+	      }
+	      pos_num=0;
+	      current_file=ntfs_next_non_deleted(&dir_list->list, &dir_list->list);
 	    }
 	  }
 	  break;
@@ -1406,9 +1555,10 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	    file_info_t *file_info;
 	    file_info=td_list_entry(current_file, file_info_t, list);
 	    file_info->status^=FILE_STATUS_MARKED;
-	    if(current_file->next!=&dir_list->list)
+	    file_walker=ntfs_next_non_deleted(current_file, &dir_list->list);
+	    if(current_file!=file_walker)
 	    {
-	      current_file=current_file->next;
+	      current_file=file_walker;
 	      pos_num++;
 	    }
 	  }
@@ -1534,7 +1684,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 }
 #endif
 
-static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir_list, char**current_cmd)
+static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list, char**current_cmd)
 {
   log_list_file(disk_car, partition, dir_data, dir_list);
   if(*current_cmd!=NULL)

@@ -139,6 +139,31 @@ int strncasecmp(const char * s1, const char * s2, size_t len)
 }
 #endif
 
+#ifndef HAVE_STRCASESTR
+char * strcasestr (const char *haystack, const char *needle)
+{
+  const char *p, *startn = NULL, *np = NULL;
+  for (p = haystack; *p; p++)
+  {
+    if (np)
+    {
+      if (toupper(*p) == toupper(*np))
+      {
+	if (!*++np)
+	  return startn;
+      }
+      else
+	np = NULL;
+    }
+    else if (toupper(*p) == toupper(*needle))
+    {
+      np = needle + 1;
+      startn = p;
+    }
+  }
+  return NULL;
+}
+#endif
 unsigned int up2power(const unsigned int number)
 {
   /* log_trace("up2power(%u)=>%u\n",number, (1<<up2power_aux(number-1))); */
