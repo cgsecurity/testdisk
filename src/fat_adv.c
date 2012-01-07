@@ -1831,7 +1831,11 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
   {
     wmove(stdscr,INTER_FAT_ASK_Y, INTER_FAT_ASK_X);
     fat2_location=ask_number(fat2_location,0,max_sector_offset,"FAT2 location ");
-    if(fat2_location>*reserved)
+    if(fat2_location == *reserved)
+    {
+      *fats=1;
+    }
+    else if(fat2_location > *reserved)
     {
       *fat_length=fat2_location-*reserved;
       wmove(stdscr,INTER_FAT_ASK_Y, INTER_FAT_ASK_X);
@@ -2016,7 +2020,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       (fat_length==0)||(reserved==0))
   {
     uint64_t start_data=0;
-    if(find_sectors_per_cluster(disk_car, partition, verbose, dump_ind, interface,&sectors_per_cluster,&start_data)==0)
+    if(find_sectors_per_cluster(disk_car, partition, verbose, dump_ind, interface, &sectors_per_cluster, &start_data, upart_type)==0)
     {
       display_message("Can't find cluster size\n");
       return 0;
@@ -2064,9 +2068,12 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
 	fat_length=(start_data-reserved-((dir_entries-1)/16+1))/fats;
 	break;
       case UP_FAT32:
-	reserved=32;
-	if((start_data&1)!=0)
-	  reserved+=1;
+	if(reserved==0)
+	{
+	  reserved=32;
+	  if((start_data&1)!=0)
+	    reserved+=1;
+	}
 	fat_length=(start_data-reserved)/fats;
 	break;
       default:	/* No compiler warning */

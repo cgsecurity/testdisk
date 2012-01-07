@@ -115,7 +115,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
     }
   } /* end while(current_search_space!=list_search_space) */
   free(buffer_start);
-  return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk->sector_size);
+  return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk->sector_size, UP_UNK);
 }
 
 static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int block_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const file_data_t *file)

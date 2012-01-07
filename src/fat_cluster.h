@@ -42,9 +42,9 @@ struct cluster_offset_struct
   unsigned int  first_sol;
 };
 
-int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset);
+int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset, const upart_type_t upart_type);
 upart_type_t no_of_cluster2part_type(const unsigned long int no_of_cluster);
-int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors);
+int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors, const upart_type_t upart_type);
 
 #ifdef __cplusplus
 } /* closing brace for extern "c" */

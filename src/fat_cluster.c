@@ -40,7 +40,7 @@
 
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
-int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org)
+int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org, const upart_type_t upart_type)
 {
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
@@ -96,10 +96,10 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
     }
   }
   free(buffer);
-  return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk_car->sector_size);
+  return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk_car->sector_size, upart_type);
 }
 
-int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors)
+int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const unsigned int nbr_sector_cluster,unsigned int *sectors_per_cluster, uint64_t *offset, const int verbose, const unsigned long int part_size_in_sectors, const upart_type_t upart_type)
 {
   cluster_offset_t *cluster_offset;
   unsigned int i,j;
@@ -162,13 +162,14 @@ int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const u
     unsigned int nbr_max=0;
     for(i=0;i<nbr_sol;i++)
     {
+      const upart_type_t upart_type_new=no_of_cluster2part_type((part_size_in_sectors-cluster_offset[i].offset)/cluster_offset[i].sectors_per_cluster);
       if(verbose>0)
       {
         log_verbose("sectors_per_cluster=%u offset=%lu nbr=%u ",
             cluster_offset[i].sectors_per_cluster,
             cluster_offset[i].offset,
             cluster_offset[i].nbr);
-        switch(no_of_cluster2part_type((part_size_in_sectors-cluster_offset[i].offset)/cluster_offset[i].sectors_per_cluster))
+        switch(upart_type_new)
         {
           case UP_FAT12:
             log_info("FAT : 12\n");
@@ -183,7 +184,8 @@ int find_sectors_per_cluster_aux(const sector_cluster_t *sector_cluster, const u
             break;
         }
       }
-      if(cluster_offset[i].nbr>nbr_max)
+      if((upart_type==UP_UNK || upart_type==upart_type_new) &&
+	  cluster_offset[i].nbr>nbr_max)
       {
 	nbr_max=cluster_offset[i].nbr;
 	*sectors_per_cluster=cluster_offset[i].sectors_per_cluster;
