@@ -49,21 +49,24 @@
 #define INTER_EDIT_X		EDIT_X
 #define INTER_EDIT_Y		22
 
-static void interface_editor_position(const disk_t *disk_car, uint64_t *lba);
+static void interface_editor_location(const disk_t *disk, uint64_t *lba);
 static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, const int menu_pos);
-static void interface_editor_ncurses(disk_t *disk_car);
+static void interface_editor_ncurses(disk_t *disk);
 
-static void interface_editor_ncurses(disk_t *disk_car)
+static void interface_editor_ncurses(disk_t *disk)
 {
   int done = 0;
   uint64_t hd_offset=0;
-  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-  log_info("%s\n",disk_car->description(disk_car));
+  unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
+  log_info("%s\n",disk->description(disk));
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s", disk->description_short(disk));
   while (done==0)
   {
     static struct MenuItem menuEditor[]=
     {
-      { 'C', "Change position", "" },
+      { 'C', "Change location", "" },
       { 'D', "Dump", "Dump sector" },
       { 'Q', "Quit",""},
       { 0, NULL, NULL }
@@ -72,7 +75,7 @@ static void interface_editor_ncurses(disk_t *disk_car)
     {
       case 'c':
       case 'C':
-	interface_editor_position(disk_car,&hd_offset);
+	interface_editor_location(disk,&hd_offset);
 	break;
       case 'd':
       case 'D':
@@ -80,27 +83,27 @@ static void interface_editor_ncurses(disk_t *disk_car)
 	  int menu_pos=KEY_DOWN;
 	  while(done==0)
 	  {
-	    wmove(stdscr,4,0);
+	    wmove(stdscr,5,0);
 	    wclrtoeol(stdscr);
-	    wprintw(stdscr,"%lu ", (unsigned long)(hd_offset/disk_car->sector_size));
-	    aff_LBA2CHS(disk_car,hd_offset/disk_car->sector_size);
-	    if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
+	    wprintw(stdscr,"%lu ", (unsigned long)(hd_offset/disk->sector_size));
+	    aff_LBA2CHS(disk, hd_offset/disk->sector_size);
+	    if((unsigned)disk->pread(disk, buffer, disk->sector_size, hd_offset) != disk->sector_size)
 	    {
 	      wprintw(stdscr,msg_PART_RD_ERR);
 	    }
 	    {
-	      menu_pos=dump_editor(buffer,disk_car->sector_size,menu_pos);
+	      menu_pos=dump_editor(buffer, disk->sector_size, menu_pos);
 	      switch(menu_pos)
 	      {
 		case KEY_UP:
 		  if(hd_offset>0)
-		    hd_offset-=disk_car->sector_size;
+		    hd_offset-=disk->sector_size;
 		  else
 		    menu_pos=KEY_DOWN;
 		  break;
 		case KEY_DOWN:
-		  if(hd_offset<disk_car->disk_size)
-		    hd_offset+=disk_car->sector_size;
+		  if(hd_offset<disk->disk_size)
+		    hd_offset+=disk->sector_size;
 		  else
 		    menu_pos=KEY_UP;
 		  break;
@@ -123,75 +126,100 @@ static void interface_editor_ncurses(disk_t *disk_car)
   free(buffer);
 }
 
-static void interface_editor_position(const disk_t *disk_car,uint64_t *lba)
+static void interface_editor_location(const disk_t *disk, uint64_t *lba)
 {
-  CHS_t position;
-  int done = 0;
-  char def[128];
-  char response[128];
-  unsigned long int tmp_val;
-  int command;
-  position.cylinder=offset2cylinder(disk_car,*lba);
-  position.head=offset2head(disk_car,*lba);
-  position.sector=offset2sector(disk_car,*lba);
-  while (done==0) {
-	static struct MenuItem menuGeometry[]=
-	{
-	  { 'c', "Cylinders", "Change cylinder" },
-	  { 'h', "Heads", "Change head" },
-	  { 's', "Sectors", "Change sector" },
-	  { 'd', "Done", "Done with changing" },
-	  { 0, NULL, NULL }
-	};
-	wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
-	wclrtoeol(stdscr);
-	wrefresh(stdscr);
-	command=wmenuSimple(stdscr,menuGeometry, 3);
-	switch (command) {
-	  case 'c':
-	  case 'C':
-		sprintf(def, "%lu", position.cylinder);
-		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
-		if (get_string(stdscr, response, sizeof(response), def) > 0) {
-		  tmp_val = atol(response);
-		  if (tmp_val < disk_car->geom.cylinders) {
-			position.cylinder = tmp_val;
-		  } else
-			wprintw(stdscr,"Illegal cylinders value");
-		}
-		break;
-	  case 'h':
-	  case 'H':
-		sprintf(def, "%u", position.head);
-		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
-		if (get_string(stdscr, response, sizeof(response), def) > 0) {
-		  tmp_val = atoi(response);
-		  if (tmp_val < disk_car->geom.heads_per_cylinder) {
-			position.head = tmp_val;
-		  } else
-			wprintw(stdscr,"Illegal heads value");
-		}
-		break;
-	  case 's':
-	  case 'S':
-		sprintf(def, "%u", position.sector);
-		mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track: ");
-		if (get_string(stdscr, response, sizeof(response), def) > 0) {
-		  tmp_val = atoi(response);
-		  if (tmp_val > 0 && tmp_val <= disk_car->geom.sectors_per_head ) {
-			position.sector = tmp_val;
-		  } else
-			wprintw(stdscr,"Illegal sectors value");
-		}
-		break;
-	  case key_ESC:
-	  case 'd':
-	  case 'D':
-		done = 1;
-		break;
+  const struct MenuItem menuGeometry[]=
+  {
+    { 'c', "Cylinders", "Change cylinder" },
+    { 'h', "Heads", "Change head" },
+    { 's', "Sectors", "Change sector" },
+    { 'l', "Logical Sectors", "Change logical sector" },
+    { 'd', "Done", "Done with changing" },
+    { 0, NULL, NULL }
+  };
+  int default_option=4;
+  while (1)
+  {
+    CHS_t location;
+    char def[128];
+    char response[128];
+    unsigned long int tmp_val;
+    int command;
+    wmove(stdscr,5,0);
+    wclrtoeol(stdscr);
+    wprintw(stdscr,"%lu ", (unsigned long)(*lba/disk->sector_size));
+    aff_LBA2CHS(disk, *lba / disk->sector_size);
+    offset2CHS(disk, *lba, &location);
+    wmove(stdscr,INTER_GEOM_Y, INTER_GEOM_X);
+    wclrtoeol(stdscr);
+    wrefresh(stdscr);
+    command=wmenuSimple(stdscr, menuGeometry, default_option);
+    switch (command) {
+      case 'c':
+      case 'C':
+	sprintf(def, "%lu", location.cylinder);
+	mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of cylinders: ");
+	if (get_string(stdscr, response, sizeof(response), def) > 0) {
+	  tmp_val = atol(response);
+	  if (tmp_val < disk->geom.cylinders) {
+	    location.cylinder = tmp_val;
+	    *lba=CHS2offset(disk,&location);
+	  } else
+	    wprintw(stdscr,"Illegal cylinders value");
 	}
+	default_option=1;
+	break;
+      case 'h':
+      case 'H':
+	sprintf(def, "%u", location.head);
+	mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of heads: ");
+	if (get_string(stdscr, response, sizeof(response), def) > 0) {
+	  tmp_val = atoi(response);
+	  if (tmp_val < disk->geom.heads_per_cylinder) {
+	    location.head = tmp_val;
+	    *lba=CHS2offset(disk,&location);
+	  } else
+	    wprintw(stdscr,"Illegal heads value");
+	}
+	default_option=2;
+	break;
+      case 's':
+      case 'S':
+	sprintf(def, "%u", location.sector);
+	mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the number of sectors per track: ");
+	if (get_string(stdscr, response, sizeof(response), def) > 0) {
+	  tmp_val = atoi(response);
+	  if (tmp_val > 0 && tmp_val <= disk->geom.sectors_per_head ) {
+	    location.sector = tmp_val;
+	    *lba=CHS2offset(disk,&location);
+	  } else
+	    wprintw(stdscr,"Illegal sectors value");
+	}
+	default_option=3;
+	break;
+      case 'l':
+      case 'L':
+	{
+	  uint64_t l_sector;
+	  sprintf(def, "%lu", (unsigned long)(*lba / disk->sector_size));
+	  mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the logical sector offset: ");
+	  if (get_string(stdscr, response, sizeof(response), def) > 0) {
+	    l_sector= strtoul(response, NULL, 10);
+	    l_sector*=disk->sector_size;
+	    if (l_sector <= disk->disk_size) {
+	      *lba=l_sector;
+	    } else
+	      wprintw(stdscr,"Illegal logical sector value");
+	  }
+	  default_option=4;
+	}
+	break;
+      case key_ESC:
+      case 'd':
+      case 'D':
+	return;
+    }
   }
-  *lba=CHS2offset(disk_car,&position);
 }
 
 static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, const int menu_pos)
@@ -287,9 +315,9 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
 }
 #endif
 
-void interface_editor(disk_t *disk_car)
+void interface_editor(disk_t *disk)
 {
 #ifdef HAVE_NCURSES
-  interface_editor_ncurses(disk_car);
+  interface_editor_ncurses(disk);
 #endif
 }
