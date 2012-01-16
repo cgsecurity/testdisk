@@ -44,6 +44,16 @@ const file_hint_t file_hint_wpd= {
 };
 
 static const unsigned char wpd_header[4]= {0xff, 'W','P','C'};
+struct wpd_hdr
+{
+  unsigned char magic[4];
+  uint32_t	documentOffset;
+  uint8_t	productType;
+  uint8_t	fileType;
+  uint8_t	majorVersion;
+  uint8_t	minorVersion;
+  uint16_t	documentEncryption;
+} __attribute__ ((__packed__));
 
 static void register_header_check_wpd(file_stat_t *file_stat)
 {
@@ -52,15 +62,30 @@ static void register_header_check_wpd(file_stat_t *file_stat)
 
 static int header_check_wpd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct wpd_hdr *hdr=(const struct wpd_hdr *)buffer;
   if(memcmp(buffer, wpd_header, sizeof(wpd_header))==0 &&
-    buffer[0x10]==5 && buffer[0x11]==0)
+      hdr->fileType==0x0a && hdr->majorVersion==0x02)
   {
+    /* WP 6 */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_wpd.extension;
     file_recovery_new->min_filesize=24;
     file_recovery_new->calculated_file_size=(uint64_t)buffer[20]+(((uint64_t)buffer[21])<<8)+(((uint64_t)buffer[22])<<16)+(((uint64_t)buffer[23])<<24);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
+  if(memcmp(buffer, wpd_header, sizeof(wpd_header))==0 &&
+      (
+       /* WP5 */
+       (hdr->fileType==0x0a && hdr->majorVersion==0x00) ||
+       /* WP MAC 2.x, 3.0-3.5, 3.5e */
+       (hdr->fileType==0x2c && (hdr->majorVersion>=0x02 && hdr->majorVersion<=0x04))
+      )
+    )
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_wpd.extension;
     return 1;
   }
   return 0;
