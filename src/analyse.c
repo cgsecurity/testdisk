@@ -55,6 +55,7 @@
 #include "sysv.h"
 #include "ufs.h"
 #include "vmfs.h"
+#include "wbfs.h"
 #include "xfs.h"
 #include "zfs.h"
 #include "log.h"
@@ -146,6 +147,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   const struct luks_phdr *luks=(const struct luks_phdr *)buffer;
   const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
   const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
+  const struct wbfs_head *wbfs=(const struct wbfs_head *)buffer;
   const struct xfs_sb *xfs=(const struct xfs_sb *)buffer;
   const union swap_header *swap_header=(const union swap_header *)buffer;
   static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
@@ -201,6 +203,9 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
     partition->part_offset-=le64(sb1->super_offset)*512;
     return 1;
   }
+  if(memcmp(&wbfs->magic,"WBFS",4)==0 &&
+      recover_WBFS(disk, wbfs, partition, verbose, dump_ind)==0)
+    return 1;
   /* Try to locate logical partition that may host truecrypt encrypted filesystem */
   if(buffer[0x1fe]==0x55 && buffer[0x1ff]==0xAA &&
     recover_i386_logical(disk, buffer, partition)==0 &&

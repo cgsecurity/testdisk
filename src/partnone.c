@@ -122,6 +122,7 @@ static const struct systypes none_sys_types[] = {
   {UP_UFS2,	"UFS 2"},
   {UP_UNK,	"Unknown"},
   {UP_VMFS,	"VMFS"},
+  {UP_WBFS,	"WBFS"},
   {UP_XFS,	"XFS"},
   {UP_XFS2,	"XFS 2"},
   {UP_XFS3,	"XFS 3"},
@@ -423,6 +424,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_VMFS:
       ret=check_VMFS(disk_car, partition);
+      break;
+    case UP_WBFS:
+      ret=check_WBFS(disk_car, partition);
       break;
     case UP_XFS:
     case UP_XFS2:
