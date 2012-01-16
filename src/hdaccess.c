@@ -1452,7 +1452,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       return fewf_init(device, arch, testdisk_mode);
 #endif
     }
-    return disk_car;
+    return NULL;
   }
   disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
   disk_car->arch=arch;
