@@ -49,7 +49,6 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
 {
   unsigned int i;
   unsigned int nbr;
-  unsigned int others=0;
   file_stat_t *new_file_stats;
   for(i=0;file_stats[i].file_hint!=NULL;i++);
   nbr=i;
@@ -58,25 +57,41 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   new_file_stats=(file_stat_t*)MALLOC(nbr*sizeof(file_stat_t));
   memcpy(new_file_stats, file_stats, nbr*sizeof(file_stat_t));
   qsort(new_file_stats, nbr, sizeof(file_stat_t), sorfile_stat_ts);
-  for(i=0;i<nbr && new_file_stats[i].recovered>0;i++)
+  if(nbr<=10)
   {
-    if(i<10)
+    for(i=0; i<nbr; i++)
     {
       wmove(window,11+i,0);
       wclrtoeol(window);
       wprintw(window, "%s: %u recovered\n",
-          (new_file_stats[i].file_hint->extension!=NULL?
-           new_file_stats[i].file_hint->extension:""),
-          new_file_stats[i].recovered);
+	  (new_file_stats[i].file_hint->extension!=NULL?
+	   new_file_stats[i].file_hint->extension:""),
+	  new_file_stats[i].recovered);
     }
-    else
-      others+=new_file_stats[i].recovered;
   }
-  if(others>0)
+  else
   {
-    wmove(window,11+10,0);
-    wclrtoeol(window);
-    wprintw(window, "others: %u recovered\n", others);
+    unsigned int others=0;
+    for(i=0;i<nbr && new_file_stats[i].recovered>0;i++)
+    {
+      if(i<10)
+      {
+	wmove(window,11+i,0);
+	wclrtoeol(window);
+	wprintw(window, "%s: %u recovered\n",
+	    (new_file_stats[i].file_hint->extension!=NULL?
+	     new_file_stats[i].file_hint->extension:""),
+	    new_file_stats[i].recovered);
+      }
+      else
+	others+=new_file_stats[i].recovered;
+    }
+    if(others>0)
+    {
+      wmove(window,11+10,0);
+      wclrtoeol(window);
+      wprintw(window, "others: %u recovered\n", others);
+    }
   }
   free(new_file_stats);
 }
