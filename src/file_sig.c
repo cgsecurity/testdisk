@@ -45,7 +45,7 @@ static void register_header_check_sig(file_stat_t *file_stat);
 static int header_check_sig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sig= {
-  .extension="",
+  .extension="custom",
   .description="Own custom signatures",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
