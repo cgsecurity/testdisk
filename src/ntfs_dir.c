@@ -386,7 +386,6 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     char *new_file;
     ntfs_attr *attr=NULL;
     FILE *f_out;
-    s64 bytes_read, written;
     s64 offset;
     u32 block_size;
     const char *stream_name=NULL;
@@ -440,6 +439,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     offset = 0;
     for (;;)
     {
+      s64 bytes_read, written;
       if (block_size > 0) {
 	// These types have fixup
 	bytes_read = ntfs_attr_mst_pread(attr, offset, 1, block_size, buffer);
