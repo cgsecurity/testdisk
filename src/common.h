@@ -367,6 +367,7 @@ struct param_disk_struct
   int (*sync)(disk_t *disk_car);
   int (*clean)(disk_t *disk_car);
   const arch_fnct_t *arch;
+  const arch_fnct_t *arch_autodetected;
   void *data;
   uint64_t disk_real_size;
   uint64_t user_max;

@@ -93,11 +93,19 @@ void autodetect_arch(disk_t *disk)
     disk->arch=&arch_mac;
     list_part=disk->arch->read_part(disk,verbose,0);
   }
-  if(list_part==NULL)
-    disk->arch=arch;
-  part_free_list(list_part);
 #ifndef DEBUG_PARTAUTO
   log_set_levels(old_levels);
 #endif
-  log_info("Partition table type (auto): %s\n", disk->arch->part_name);
+  if(list_part!=NULL)
+  {
+    disk->arch_autodetected=disk->arch;
+    log_info("Partition table type (auto): %s\n", disk->arch->part_name);
+  }
+  else
+  {
+    disk->arch_autodetected=NULL;
+    disk->arch=arch;
+    log_info("Partition table type default to %s\n", arch->part_name);
+  }
+  part_free_list(list_part);
 }

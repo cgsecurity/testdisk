@@ -1293,6 +1293,17 @@ int interface_partition_type_ncurses(disk_t *disk_car)
     wprintw(stdscr,"%s\n",disk_car->description_short(disk_car));
     wmove(stdscr,INTER_PARTITION_Y-1,0);
     wprintw(stdscr,"Please select the partition table type, press Enter when done.");
+    if(disk_car->arch_autodetected!=NULL)
+    {
+      wmove(stdscr,19,0);
+      wprintw(stdscr, "Hint: ");
+      if(has_colors())
+	wbkgdset(stdscr,' ' | COLOR_PAIR(2));
+      wprintw(stdscr, "%s", disk_car->arch_autodetected->part_name);
+      if(has_colors())
+	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      wprintw(stdscr, " partition table type has been detected.");
+    }
     wmove(stdscr,20,0);
     wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
     wmove(stdscr,21,0);
