@@ -1426,6 +1426,61 @@ void display_message(const char*msg)
 #endif
 }
 
+uint64_t ask_int_ncurses(const char *string)
+{
+  WINDOW *local_win;
+  int startx, starty, width, height;
+  uint64_t min_size=0;
+  char response[128];
+  height = 3;
+  width = 40;
+  starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  startx = (COLS - width) / 2;		/* of the window		*/
+
+  local_win = newwin(height, width, starty, startx);
+  keypad(local_win, TRUE); 		/* Need it to get arrow key */
+  box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 *  lines			*/
+  wmove(local_win,1,1);
+  waddstr(local_win, string);
+  wrefresh(local_win);			/* Show that box 		*/
+  if (get_string(local_win, response, 16, NULL) > 0)
+  {
+    min_size = strtoull(response, NULL, 10);
+  }
+  wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  wrefresh(local_win);
+  delwin(local_win);
+  return min_size;
+}
+
+const char *ask_string_ncurses(const char *string)
+{
+  WINDOW *local_win;
+  int startx, starty, width, height;
+  static char response[128];
+  height = 3;
+  width = 60;
+  starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  startx = (COLS - width) / 2;		/* of the window		*/
+
+  local_win = newwin(height, width, starty, startx);
+  keypad(local_win, TRUE); 		/* Need it to get arrow key */
+  box(local_win, 0 , 0);		/* 0, 0 gives default characters 
+					 * for the vertical and horizontal
+					 *  lines			*/
+  wmove(local_win,1,1);
+  waddstr(local_win, string);
+  wrefresh(local_win);			/* Show that box 		*/
+  get_string(local_win, response, 40, NULL);
+  wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+  wrefresh(local_win);
+  delwin(local_win);
+  return &response[0];
+}
+
+
 #else
 #include "log.h"
 #include "intrfn.h"

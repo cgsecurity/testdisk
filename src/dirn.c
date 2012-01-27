@@ -467,6 +467,26 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      }
 	    }
 	    break;	
+	  case 'f':
+	    {
+	      const char *needle=ask_string_ncurses("Filename to find ? ");
+	      if(needle!=NULL && needle[0]!='\0')
+	      {
+		file_data_t *pos_org=pos;
+		const int pos_num_org=pos_num;
+		while(strcmp(pos->name, needle)!=0 && pos->next!=NULL)
+		{
+		  pos=pos->next;
+		  pos_num++;
+		}
+		if(strcmp(pos->name, needle)!=0)
+		{
+		  pos=pos_org;
+		  pos_num=pos_num_org;
+		}
+	      }
+	    }
+	    break;
 	}
 	if(pos_num<offset)
 	  offset=pos_num;
