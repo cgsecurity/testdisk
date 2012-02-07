@@ -909,6 +909,9 @@ static void file_rename_doc(const char *old_filename)
 	      ext="dgn";
 	    else if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0", 14)==0)
 	      ext="psmodel";
+	    /* Windows Sticky Notes */
+	    else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0", 14)==0)
+	      ext="snt";
 	  }
 	}
       }
