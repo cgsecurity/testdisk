@@ -224,7 +224,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 #endif
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 	  is_db++;
-	else if(sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+	else if(sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
+	      memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0", 14)==0))
 	  is_db++;
 	/* 3ds max */
 	if(memcmp(&dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
@@ -283,6 +284,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       }
       if(ext!=NULL)
 	return ext;
+      /* Thumbs.db */
       if(is_db==2)
 	return "db";
     }
