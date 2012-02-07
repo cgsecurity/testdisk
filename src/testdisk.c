@@ -65,6 +65,7 @@
 #include "tdisksel.h"
 #include "tlog.h"
 #include "autoset.h"
+#include "hidden.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
@@ -263,28 +264,50 @@ int main( int argc, char **argv )
     /* Activate the cache */
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
       element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
-#ifdef DJGPP
-    for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-    {
-      printf("%s\n",element_disk->disk->description(element_disk->disk));
-    }
-#endif
     if(safe==0)
       hd_update_all_geometry(list_disk, verbose);
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
-      printf("%s, sector size=%u\n",element_disk->disk->description(element_disk->disk),element_disk->disk->sector_size);
+      disk_t *disk=element_disk->disk;
+      const int hpa_dco=is_hpa_or_dco(disk);
+      printf("%s\n", disk->description(disk));
+      printf("Sector size:%u\n", disk->sector_size);
+      if(disk->model!=NULL)
+	printf("Model: %s", disk->model);
+      if(disk->serial_no!=NULL)
+	printf(", S/N:%s", disk->serial_no);
+      if(disk->fw_rev!=NULL)
+	printf(", FW:%s", disk->fw_rev);
+      printf("\n");
+      if(hpa_dco!=0)
+      {
+	if(disk->sector_size!=0)
+	  printf("size       %llu sectors\n", (long long unsigned)(disk->disk_real_size/disk->sector_size));
+	if(disk->user_max!=0)
+	  printf("user_max   %llu sectors\n", (long long unsigned)disk->user_max);
+	if(disk->native_max!=0)
+	  printf("native_max %llu sectors\n", (long long unsigned)(disk->native_max+1));
+	if(disk->dco!=0)
+	  printf("dco        %llu sectors\n", (long long unsigned)(disk->dco+1));
+	if(hpa_dco&1)
+	  printf("Host Protected Area (HPA) present.\n");
+	if(hpa_dco&2)
+	  printf("Device Configuration Overlay (DCO) present.\n");
+      }
+      printf("\n");
     }
-    printf("\n");
 
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
-      autodetect_arch(element_disk->disk);
+      disk_t *disk=element_disk->disk;
+      const int hpa_dco=is_hpa_or_dco(disk);
+      autodetect_arch(disk);
       if(unit==UNIT_DEFAULT)
-	autoset_unit(element_disk->disk);
+	autoset_unit(disk);
       else
-	element_disk->disk->unit=unit;
-      interface_list(element_disk->disk, verbose, saveheader, create_backup);
+	disk->unit=unit;
+      interface_list(disk, verbose, saveheader, create_backup);
+      printf("\n");
     }
     delete_list_disk(list_disk);
     return 0;
