@@ -230,6 +230,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	  msoffice=1;
 	else if(len==4 && memcmp(filename, "Home", 4)==0)
 	  sh3d=1;
+	else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
+	  *ext="mmap";
       }
       else if(file_nbr==1 && sh3d==1)
       {
