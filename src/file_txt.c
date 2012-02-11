@@ -1180,18 +1180,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="ini";
     else if(strstr(buffer_lower, "<?php")!=NULL)
       ext="php";
-    else if(strstr(buffer_lower, sign_java1)!=NULL ||
-	strstr(buffer_lower, sign_java3)!=NULL ||
-	strstr(buffer_lower, sign_java4)!=NULL)
-    {
-#ifdef DJGPP
-      ext="jav";
-#else
-      ext="java";
-#endif
-    }
-    else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
-      ext="f";
     else if(is_csv>0)
       ext="csv";
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
@@ -1210,6 +1198,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="asp";
     else if(strstr(buffer_lower, sign_html)!=NULL)
       ext="html";
+    else if(strstr(buffer_lower, sign_java1)!=NULL ||
+	strstr(buffer_lower, sign_java3)!=NULL ||
+	strstr(buffer_lower, sign_java4)!=NULL)
+    {
+#ifdef DJGPP
+      ext="jav";
+#else
+      ext="java";
+#endif
+    }
+    else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
+      ext="f";
     else if(strstr(buffer_lower, "\\score {")!=NULL)
       ext="ly"; 	/* LilyPond http://lilypond.org*/
     else if(strstr(buffer_lower, sign_h)!=NULL && l>50)
