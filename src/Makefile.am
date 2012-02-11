@@ -47,6 +47,7 @@ file_C			= filegen.c \
 			  file_asm.c \
 			  file_atd.c \
 			  file_au.c \
+			  file_axx.c \
 			  file_bac.c \
 			  file_bim.c \
 			  file_bkf.c \
