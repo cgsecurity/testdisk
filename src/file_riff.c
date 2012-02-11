@@ -50,11 +50,7 @@ const file_hint_t file_hint_riff= {
 };
 
 static const unsigned char riff_header[4]= {'R','I','F','F'};
-
-static void register_header_check_riff(file_stat_t *file_stat)
-{
-  register_header_check(0, riff_header,sizeof(riff_header), &header_check_riff, file_stat);
-}
+static const unsigned char rifx_header[4]= {'R','I','F','X'};
 
 typedef struct {
   uint32_t dwFourCC;
@@ -210,6 +206,12 @@ int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
+void file_check_size_rifx(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size<file_recovery->calculated_file_size)
+    file_recovery->file_size=0;
+}
+
 static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,riff_header,sizeof(riff_header))==0)
@@ -271,3 +273,27 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
   }
   return 0;
 }
+
+static int header_check_rifx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(memcmp(buffer,rifx_header,sizeof(rifx_header))!=0)
+    return 0;
+  if(memcmp(&buffer[8],"Egg!",4)==0)
+  {
+    /* After Effects */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_size_rifx;
+    file_recovery_new->calculated_file_size=(uint64_t)buffer[7]+(((uint64_t)buffer[6])<<8)+(((uint64_t)buffer[5])<<16)+(((uint64_t)buffer[4])<<24)+8;
+    file_recovery_new->extension="aep";
+    return 1;
+  }
+  return 0;
+}
+
+static void register_header_check_riff(file_stat_t *file_stat)
+{
+  register_header_check(0, riff_header,sizeof(riff_header), &header_check_riff, file_stat);
+  register_header_check(0, rifx_header,sizeof(rifx_header), &header_check_rifx, file_stat);
+}
+
+
