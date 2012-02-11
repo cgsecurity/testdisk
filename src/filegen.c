@@ -401,7 +401,8 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 	case '\\':
 	case ':':
 	case '*':
-	  *dst++ = '_';
+	  if(*(dst-1) != '_')
+	    *dst++ = '_';
 	  bad++;
 	  break;
 	default:
@@ -412,7 +413,8 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 	  }
 	  else
 	  {
-	    *dst++ = '_';
+	    if(*(dst-1) != '_')
+	      *dst++ = '_';
 	    bad++;
 	  }
 	  break;
