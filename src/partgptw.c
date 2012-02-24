@@ -217,7 +217,6 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   gpt->hdr_size=le32(92);
   gpt->hdr_entries=le32(hdr_entries);
   gpt->hdr_entsz=le32(sizeof(struct gpt_ent));
-  gpt->hdr_crc_self=le32(0);
   gpt->__reserved=le32(0);
   gpt->hdr_lba_start=le64(1 + gpt_entries_size/disk_car->sector_size + 1);
   gpt->hdr_lba_end=le64((disk_car->disk_size-1 - gpt_entries_size)/disk_car->sector_size - 1);
@@ -226,6 +225,7 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   gpt->hdr_lba_self=le64(1);
   gpt->hdr_lba_alt=le64((disk_car->disk_size-1)/disk_car->sector_size);
   gpt->hdr_lba_table=le64(1+1);
+  gpt->hdr_crc_self=le32(0);
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
   if((unsigned)disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
@@ -242,6 +242,7 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   gpt->hdr_lba_self=le64((disk_car->disk_size-1)/disk_car->sector_size);
   gpt->hdr_lba_alt=le64(1);
   gpt->hdr_lba_table=le64((disk_car->disk_size-1 - gpt_entries_size)/disk_car->sector_size);
+  gpt->hdr_crc_self=le32(0);
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
   if((unsigned)disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
