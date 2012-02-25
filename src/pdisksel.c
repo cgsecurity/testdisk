@@ -61,6 +61,8 @@
 #define INTER_NOTE_Y		(LINES-4)
 #endif
 
+extern const arch_fnct_t arch_none;
+
 static int photorec_disk_selection_cli(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
 {
   const list_disk_t *element_disk;
@@ -90,7 +92,7 @@ static int photorec_disk_selection_cli(struct ph_param *params, struct ph_option
       current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
     }
   }
-  autodetect_arch(disk);
+  autodetect_arch(disk, &arch_none);
   params->disk=disk;
   if(interface_partition_type(disk, options->verbose, &params->cmd_run)==0)
     menu_photorec(params, options, list_search_space);
@@ -266,7 +268,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	{
 	  disk_t *disk=current_disk->disk;
 	  const int hpa_dco=is_hpa_or_dco(disk);
-	  autodetect_arch(disk);
+	  autodetect_arch(disk, &arch_none);
 	  params->disk=disk;
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      (options->expert == 0 ||

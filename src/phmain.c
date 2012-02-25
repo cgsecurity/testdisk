@@ -78,7 +78,6 @@
 #include "pdisksel.h"
 #include "dfxml.h"
 
-extern const arch_fnct_t arch_none;
 extern file_enable_t list_file_enable[];
 
 #ifdef HAVE_SIGACTION
@@ -109,7 +108,6 @@ int main( int argc, char **argv )
   list_disk_t *list_disk=NULL;
   list_disk_t *element_disk;
   const char *logfile="photorec.log";
-  const arch_fnct_t *arch=&arch_none;
   FILE *log_handle=NULL;
   struct ph_options options={
     .paranoid=1,
@@ -201,7 +199,7 @@ int main( int argc, char **argv )
         params.cmd_device=argv[++i];
         params.cmd_run=argv[++i];
         /* There is no log currently */
-        disk_car=file_test_availability(params.cmd_device, options.verbose, arch, testdisk_mode);
+        disk_car=file_test_availability(params.cmd_device, options.verbose, testdisk_mode);
         if(disk_car==NULL)
         {
           printf("\nUnable to open file or device %s\n", params.cmd_device);
@@ -213,7 +211,7 @@ int main( int argc, char **argv )
     }
     else
     {
-      disk_t *disk_car=file_test_availability(argv[i], options.verbose, arch, testdisk_mode);
+      disk_t *disk_car=file_test_availability(argv[i], options.verbose, testdisk_mode);
       if(disk_car==NULL)
       {
         printf("\nUnable to open file or device %s\n",argv[i]);
@@ -325,7 +323,7 @@ int main( int argc, char **argv )
   screen_buffer_reset();
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
-    list_disk=hd_parse(list_disk, options.verbose, arch, testdisk_mode);
+    list_disk=hd_parse(list_disk, options.verbose, testdisk_mode);
   hd_update_all_geometry(list_disk, options.verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)

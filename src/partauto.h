@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-void autodetect_arch(disk_t *disk);
+void autodetect_arch(disk_t *disk, const arch_fnct_t *arch);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

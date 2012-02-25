@@ -31,7 +31,7 @@ struct info_disk_struct
   int bad_geometry;
 };
 
-disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode);
+disk_t *hd_identify(const int verbose, const unsigned int disk, const int testdisk_mode);
 const char *disk_description(disk_t *disk_car);
 
 #ifdef __cplusplus

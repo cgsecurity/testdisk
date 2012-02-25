@@ -112,6 +112,8 @@
 //#define HDCLONE 1
 #endif
 
+extern const arch_fnct_t arch_none;
+
 struct tdewf_file_header
 {
         /* The EWF file signature (magic header)
@@ -204,7 +206,7 @@ list_disk_t *insert_new_disk_nodup(list_disk_t *list_disk, disk_t *disk_car, con
 #endif
 
 #ifdef HAVE_GLOB_H
-static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_disk, const int verbose, const arch_fnct_t *arch, const int testdisk_mode)
+static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_disk, const int verbose, const int testdisk_mode)
 {
   glob_t globbuf;
   globbuf.gl_offs = 0;
@@ -214,7 +216,7 @@ static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_
     unsigned int i;
     for (i=0; i<globbuf.gl_pathc; i++)
     {
-      list_disk=insert_new_disk(list_disk,file_test_availability(globbuf.gl_pathv[i], verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(globbuf.gl_pathv[i], verbose, testdisk_mode));
     }
   }
   globfree(&globbuf);
@@ -223,14 +225,14 @@ static list_disk_t *hd_glob_parse(const char *device_pattern, list_disk_t *list_
 #endif
 
 
-list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct_t *arch, const int testdisk_mode)
+list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testdisk_mode)
 {
   unsigned int i;
 #ifdef DJGPP
   int ind_stop=0;
   for(i=0x80;(i<0x88)&&!ind_stop;i++)
   {
-    disk_t *disk_car=hd_identify(verbose,i,arch,testdisk_mode);
+    disk_t *disk_car=hd_identify(verbose, i, testdisk_mode);
     if(disk_car)
       list_disk=insert_new_disk(list_disk,disk_car);
     else
@@ -247,7 +249,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     for(i=0;i<16;i++)
     {
       device_scsi[strlen(device_scsi)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi, verbose, testdisk_mode));
     }
 #endif
     /* Disk */
@@ -258,7 +260,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       {
 	disk_t *disk_car;
 	sprintf(device_hd,"\\\\.\\PhysicalDrive%u", i);
-	disk_car=file_test_availability_win32(device_hd,verbose,arch,testdisk_mode);
+	disk_car=file_test_availability_win32(device_hd, verbose, testdisk_mode);
 	if(do_insert>0 || (testdisk_mode&TESTDISK_O_ALL)==TESTDISK_O_ALL)
 	  list_disk=insert_new_disk(list_disk,disk_car);
 	else
@@ -270,7 +272,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     {
       disk_t *disk_car;
       device_cdrom[strlen(device_cdrom)-2]=i;
-      disk_car=file_test_availability_win32(device_cdrom,verbose,arch,testdisk_mode);
+      disk_car=file_test_availability_win32(device_cdrom, verbose, testdisk_mode);
       if((testdisk_mode&TESTDISK_O_ALL)==TESTDISK_O_ALL)
 	list_disk=insert_new_disk(list_disk,disk_car);
       else
@@ -284,12 +286,12 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     for(i=0;i<20;i++)
     {
       snprintf(device, sizeof(device), "/dev/disk%u", i);
-      list_disk=insert_new_disk(list_disk,file_test_availability(device, verbose, arch, testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device, verbose, testdisk_mode));
     }
     for(i=0;i<20;i++)
     {
       snprintf(device, sizeof(device), "/dev/rdisk%u", i);
-      list_disk=insert_new_disk(list_disk,file_test_availability(device, verbose, arch, testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device, verbose, testdisk_mode));
     }
   }
 #elif defined(TARGET_LINUX)
@@ -307,13 +309,13 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     for(i=0;i<8;i++)
     {
       device_ide[strlen(device_ide)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide, verbose, testdisk_mode));
     }
     /* Disk SCSI */
     for(i=0;i<26;i++)
     {
       device_scsi[strlen(device_scsi)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi, verbose, testdisk_mode));
     }
     /* Device RAID Compaq */
     for(j=0;j<8;j++)
@@ -322,51 +324,51 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       for(i=0;i<8;i++)
       {
 	device_ida[strlen(device_ida)-1]='0'+i;
-	list_disk=insert_new_disk(list_disk,file_test_availability(device_ida,verbose,arch,testdisk_mode));
+	list_disk=insert_new_disk(list_disk, file_test_availability(device_ida, verbose, testdisk_mode));
       }
     }
     for(i=0;i<8;i++)
     {
       device_cciss[strlen(device_cciss)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_cciss,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_cciss, verbose, testdisk_mode));
     }
     /* Device RAID */
     for(i=0;i<10;i++)
     {
       snprintf(device,sizeof(device),"/dev/rd/c0d%u",i);
-      list_disk=insert_new_disk(list_disk,file_test_availability(device,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device, verbose, testdisk_mode));
     }
     /* Device RAID IDE */
     for(i=0;i<15;i++)
     {
       snprintf(device,sizeof(device),"/dev/ataraid/d%u",i);
-      list_disk=insert_new_disk(list_disk,file_test_availability(device,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device, verbose, testdisk_mode));
     }
     /* Parallel port IDE disk */
     for(i=0;i<4;i++)
     {
       device_p_ide[strlen(device_p_ide)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_p_ide,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_p_ide, verbose, testdisk_mode));
     }
     /* I2O hard disk */
     for(i=0;i<26;i++)
     {
       device_i2o_hd[strlen(device_i2o_hd)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_i2o_hd,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_i2o_hd, verbose, testdisk_mode));
     }
     /* Memory card */
     for(i=0;i<10;i++)
     {
       device_mmc[strlen(device_mmc)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_mmc,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_mmc, verbose, testdisk_mode));
     }
 #ifdef HAVE_GLOB_H
-    list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, testdisk_mode);
     /* Software Raid (partition level) */
-    list_disk=hd_glob_parse("/dev/md*", list_disk, verbose, arch, testdisk_mode);
-    list_disk=hd_glob_parse("/dev/sr?", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/md*", list_disk, verbose, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/sr?", list_disk, verbose, testdisk_mode);
     /* Software (ATA)Raid configured (disk level) via dmraid */
-    list_disk=hd_glob_parse("/dev/dm-*", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/dm-*", list_disk, verbose, testdisk_mode);
 #endif
   }
 #elif defined(TARGET_SOLARIS)
@@ -377,14 +379,14 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
       if(i!=7)
       {
 	rdsk[13]='0'+i;
-	list_disk=insert_new_disk(list_disk,file_test_availability(rdsk,verbose,arch,testdisk_mode));
+	list_disk=insert_new_disk(list_disk, file_test_availability(rdsk, verbose, testdisk_mode));
       }
     }
   }
 #elif defined(__HAIKU__)
   {
 #ifdef HAVE_GLOB_H
-    list_disk=hd_glob_parse("/dev/disk/*/*/master/raw", list_disk, verbose, arch, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/disk/*/*/master/raw", list_disk, verbose, testdisk_mode);
 #endif
   }
 #else
@@ -406,61 +408,61 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const arch_fnct
     for(i=0;i<8;i++)
     {
       device_ide[strlen(device_ide)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_ide2[strlen(device_ide2)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide2,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide2, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_ide3[strlen(device_ide3)-2]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide3,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide3, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_ide4[strlen(device_ide4)-2]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide4,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide4, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_ide_hd[strlen(device_ide_hd)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_ide_hd,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_ide_hd, verbose, testdisk_mode));
     }
     /* Disk SCSI */
     for(i=0;i<8;i++)
     {
       device_scsi[strlen(device_scsi)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_scsi2[strlen(device_scsi2)-2]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi2,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi2, verbose, testdisk_mode));
     }
     for(i=0;i<8;i++)
     {
       device_scsi_hd[strlen(device_scsi_hd)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_scsi_hd,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi_hd, verbose, testdisk_mode));
     }
     /* optical disks */
     for(i=0;i<8;i++)
     {
       device_optdisk[strlen(device_scsi)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_optdisk,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_optdisk, verbose, testdisk_mode));
     } 
     /* CD */
     for(i=0;i<8;i++)
     {
       device_cd[strlen(device_cd)-1]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_cd,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_cd, verbose, testdisk_mode));
     }
     /* VND */
     for(i=0;i<4;i++)
     {
       device_vnd[strlen(device_vnd)-2]='0'+i;
-      list_disk=insert_new_disk(list_disk,file_test_availability(device_vnd,verbose,arch,testdisk_mode));
+      list_disk=insert_new_disk(list_disk, file_test_availability(device_vnd, verbose, testdisk_mode));
     }
   }
 #endif
@@ -1335,7 +1337,7 @@ static void autoset_geometry(disk_t *disk, const unsigned char *buffer, const in
     disk->geom.sectors_per_head / disk->geom.heads_per_cylinder;
 }
 
-disk_t *file_test_availability(const char *device, const int verbose, const arch_fnct_t *arch, int testdisk_mode)
+disk_t *file_test_availability(const char *device, const int verbose, int testdisk_mode)
 {
   disk_t *disk_car=NULL;
   struct stat stat_rec;
@@ -1440,7 +1442,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       else if(strcmp(device, "/dev/sda135") == 0)
 	dos_nr = 0x87;
       if(dos_nr>0)
-	disk_car = hd_identify(verbose, dos_nr, arch, testdisk_mode);
+	disk_car = hd_identify(verbose, dos_nr, testdisk_mode);
       if(disk_car!=NULL)
 	return disk_car;
     }
@@ -1449,13 +1451,13 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
     if(strncmp(device,"/dev/",5)!=0)
     {
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF) && defined(HAVE_GLOB_H)
-      return fewf_init(device, arch, testdisk_mode);
+      return fewf_init(device, testdisk_mode);
 #endif
     }
     return NULL;
   }
   disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
-  disk_car->arch=arch;
+  disk_car->arch=&arch_none;
   init_disk(disk_car);
   disk_car->device=strdup(device);
   data=(struct info_file_struct *)MALLOC(sizeof(*data));
@@ -1532,7 +1534,7 @@ disk_t *file_test_availability(const char *device, const int verbose, const arch
       free(disk_car);
       close(hd_h);
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
-      return fewf_init(device, arch, testdisk_mode);
+      return fewf_init(device, testdisk_mode);
 #else
       return NULL;
 #endif
@@ -1612,7 +1614,7 @@ void hd_update_geometry(disk_t *disk, const int verbose)
 #ifdef DJGPP
   if(disk->description==disk_description)
   {
-    struct info_disk_struct*data=disk->data;
+    struct info_disk_struct*data=(struct info_disk_struct*)disk->data;
     data->geo_phys.cylinders=disk->geom.cylinders;
   }
 #endif

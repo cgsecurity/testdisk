@@ -53,6 +53,8 @@
 #include "hdaccess.h"
 #include "alignio.h"
 
+extern const arch_fnct_t arch_none;
+
 static unsigned int file_win32_compute_sector_size(HANDLE handle);
 static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
@@ -246,7 +248,7 @@ static uint64_t filewin32_setfilepointer(HANDLE handle, const char *device)
   return disk_size;
 }
 
-disk_t *file_test_availability_win32(const char *device, const int verbose, const arch_fnct_t *arch, int testdisk_mode)
+disk_t *file_test_availability_win32(const char *device, const int verbose, int testdisk_mode)
 {
   disk_t *disk_car=NULL;
   HANDLE handle=INVALID_HANDLE_VALUE;
@@ -314,7 +316,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, cons
     struct info_file_win32_struct *data;
     disk_car=(disk_t *)MALLOC(sizeof(*disk_car));
     init_disk(disk_car);
-    disk_car->arch=arch;
+    disk_car->arch=&arch_none;
     disk_car->device=strdup(device);
     data=(struct info_file_win32_struct *)MALLOC(sizeof(*data));
     data->handle=handle;

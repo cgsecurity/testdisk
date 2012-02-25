@@ -190,7 +190,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	{
 	  disk_t *disk=current_disk->disk;
 	  const int hpa_dco=is_hpa_or_dco(disk);
-	  autodetect_arch(disk);
+	  autodetect_arch(disk, NULL);
 	  autoset_unit(disk);
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
@@ -242,7 +242,7 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
       (*current_cmd)++;
     {
       disk_t *disk=current_disk->disk;
-      autodetect_arch(disk);
+      autodetect_arch(disk, NULL);
       autoset_unit(disk);
       if(interface_check_disk_capacity(disk)==0 &&
           interface_check_disk_access(disk, current_cmd)==0 &&

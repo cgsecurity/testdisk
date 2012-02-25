@@ -72,6 +72,8 @@
 #include "log.h"
 #include "hdaccess.h"
 
+extern const arch_fnct_t arch_none;
+
 static const char *fewf_description(disk_t *disk);
 static const char *fewf_description_short(disk_t *disk);
 static int fewf_clean(disk_t *disk);
@@ -94,7 +96,7 @@ struct info_fewf_struct
   unsigned int buffer_size;
 };
 
-disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
+disk_t *fewf_init(const char *device, const int mode)
 {
   unsigned int num_files=0;
   char **filenames= NULL;
@@ -217,7 +219,7 @@ disk_t *fewf_init(const char *device, const arch_fnct_t *arch, const int mode)
 #endif
   disk=(disk_t *)MALLOC(sizeof(*disk));
   init_disk(disk);
-  disk->arch=arch;
+  disk->arch=&arch_none;
   disk->device=strdup(device);
   disk->data=data;
   disk->description=fewf_description;

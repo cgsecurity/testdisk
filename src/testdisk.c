@@ -67,10 +67,6 @@
 #include "autoset.h"
 #include "hidden.h"
 
-extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_sun;
-
 #ifdef HAVE_SIGACTION
 static struct sigaction action;
 static void sighup_hdlr(int sig);
@@ -108,13 +104,6 @@ int main( int argc, char **argv )
   const char *cmd_device=NULL;
   char *cmd_run=NULL;
   const char *logfile="testdisk.log";
-#ifdef TARGET_SOLARIS
-  const arch_fnct_t *arch=&arch_sun;
-#elif defined __APPLE__
-  const arch_fnct_t *arch=&arch_mac;
-#else
-  const arch_fnct_t *arch=&arch_i386;
-#endif
   FILE *log_handle=NULL;
   /* srand needed for GPT creation (weak is ok) */
   srand(time(NULL));
@@ -196,7 +185,7 @@ int main( int argc, char **argv )
 	disk_t *disk_car;
 	cmd_device=argv[++i];
 	cmd_run=argv[++i];
-	disk_car=file_test_availability(cmd_device,verbose,arch,testdisk_mode);
+	disk_car=file_test_availability(cmd_device, verbose, testdisk_mode);
 	if(disk_car==NULL)
 	{
 	  printf("\nUnable to open file or device %s\n",cmd_device);
@@ -208,7 +197,7 @@ int main( int argc, char **argv )
     }
     else
     {
-      disk_t *disk_car=file_test_availability(argv[i],verbose,arch,testdisk_mode);
+      disk_t *disk_car=file_test_availability(argv[i], verbose, testdisk_mode);
       if(disk_car==NULL)
       {
 	printf("\nUnable to open file or device %s\n",argv[i]);
@@ -260,7 +249,7 @@ int main( int argc, char **argv )
     printf("Please wait...\n");
     /* Scan for available device only if no device or image has been supplied in parameter */
     if(list_disk==NULL)
-      list_disk=hd_parse(list_disk,verbose,arch,testdisk_mode);
+      list_disk=hd_parse(list_disk, verbose, testdisk_mode);
     /* Activate the cache */
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
       element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
@@ -301,7 +290,7 @@ int main( int argc, char **argv )
     {
       disk_t *disk=element_disk->disk;
       const int hpa_dco=is_hpa_or_dco(disk);
-      autodetect_arch(disk);
+      autodetect_arch(disk, NULL);
       if(unit==UNIT_DEFAULT)
 	autoset_unit(disk);
       else
@@ -389,7 +378,7 @@ int main( int argc, char **argv )
 #endif
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
-    list_disk=hd_parse(list_disk,verbose,arch,testdisk_mode);
+    list_disk=hd_parse(list_disk, verbose, testdisk_mode);
   /* Activate the cache */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);

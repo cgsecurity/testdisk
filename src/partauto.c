@@ -42,10 +42,9 @@ extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 
-void autodetect_arch(disk_t *disk)
+void autodetect_arch(disk_t *disk, const arch_fnct_t *arch)
 {
   list_part_t *list_part=NULL;
-  const arch_fnct_t *arch=disk->arch;
 #ifdef DEBUG_PARTAUTO
   const int verbose=2;
 #else
@@ -53,7 +52,6 @@ void autodetect_arch(disk_t *disk)
   unsigned int old_levels;
   old_levels=log_set_levels(0);
 #endif
-  if(list_part==NULL)
   {
     disk->arch=&arch_none;
     list_part=disk->arch->read_part(disk,verbose,0);
@@ -100,12 +98,31 @@ void autodetect_arch(disk_t *disk)
   {
     disk->arch_autodetected=disk->arch;
     log_info("Partition table type (auto): %s\n", disk->arch->part_name);
+    part_free_list(list_part);
+    return ;
+  }
+  disk->arch_autodetected=NULL;
+  if(arch!=NULL)
+  {
+    disk->arch=arch;
   }
   else
   {
-    disk->arch_autodetected=NULL;
-    disk->arch=arch;
-    log_info("Partition table type default to %s\n", arch->part_name);
+#ifdef TARGET_SOLARIS
+    disk->arch=&arch_sun;
+#elif defined __APPLE__
+#ifdef TESTDISK_LSB
+    disk->arch=&arch_gpt;
+#else
+    disk->arch=&arch_mac;
+#endif
+#else
+    /* PC/Intel partition table is limited to 2 TB, 2^32 512-bytes sectors */
+    if(disk->disk_size < ((uint64_t)1<<(32+9)))
+      disk->arch=&arch_i386;
+    else
+      disk->arch=&arch_gpt;
+#endif
   }
-  part_free_list(list_part);
+  log_info("Partition table type default to %s\n", disk->arch->part_name);
 }

@@ -46,6 +46,9 @@
 #define HDPARM_BUF_SIZ 0x1A
 #define MAX_IO_NBR 3
 #define MAX_HD_ERR 100
+
+extern const arch_fnct_t arch_none;
+
 static void free_dos_buffer(void);
 static int alloc_cmd_dos_buffer(void);
 static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
@@ -350,7 +353,7 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   return 0;
 }
 
-disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_t *arch, const int testdisk_mode)
+disk_t *hd_identify(const int verbose, const unsigned int disk, const int testdisk_mode)
 {
   unsigned char buf[0x200];
   memset(buf,0,sizeof(buf));
@@ -368,7 +371,7 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const arch_fnct_
     data->disk=disk;
     data->bad_geometry=0;
     data->mode_enh=0;
-    disk_car->arch=arch;
+    disk_car->arch=&arch_none;
     snprintf(device,sizeof(device),"/dev/sda%u",disk);
     disk_car->device=strdup(device);
     disk_car->model=NULL;
