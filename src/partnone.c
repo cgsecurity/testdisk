@@ -66,6 +66,7 @@
 #include "ufs.h"
 #include "xfs.h"
 #include "vmfs.h"
+#include "wbfs.h"
 #include "log.h"
 
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
