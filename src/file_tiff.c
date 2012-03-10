@@ -955,6 +955,7 @@ void file_check_tiff(file_recovery_t *fr)
   else if(strcmp(fr->extension,"cr2")==0 ||
       strcmp(fr->extension,"dcr")==0 ||
       strcmp(fr->extension,"nef")==0 ||
+      strcmp(fr->extension,"orf")==0 ||
       strcmp(fr->extension,"pef")==0 ||
       strcmp(fr->extension,"sr2")==0 ||
       (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
