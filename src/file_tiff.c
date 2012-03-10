@@ -923,7 +923,7 @@ void file_check_tiff(file_recovery_t *fr)
   int data_read;
   calculated_file_size = 0;
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
-      (data_read=fread(buffer, 1, sizeof(buffer), fr->handle)) < (int)sizeof(TIFFHeader))
+      (data_read=fread(buffer, 1, 8192, fr->handle)) < (int)sizeof(TIFFHeader))
   {
     free(buffer);
     fr->file_size=0;
