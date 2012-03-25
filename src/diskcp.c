@@ -139,6 +139,7 @@ int main(int argc, char **argv)
 	if(read(disk_src[current_disk],buffer,readsize)==readsize)
 	{
 	  lseek(disk_dst, location, SEEK_SET);
+	  /* FIXME need to check write return value */
 	  write(disk_dst,buffer,readsize);
 	  readok+=readsize;
 	  status=STATUS_DONE;
@@ -178,7 +179,7 @@ int main(int argc, char **argv)
       {
 	char buf[100];
 	printf("Sector %llu", (unsigned long long) (location/sector_size));
-	printf(" (%s)", size_to_unit(location), buf);
+	printf(" (%s)", size_to_unit(location, buf));
 	printf(" - Recovered %s\r", size_to_unit(readok, buf));
 	fflush(stdout);
 	current_disk=(current_disk+1)%nbr_disk;
@@ -232,7 +233,7 @@ int main(int argc, char **argv)
       int nbr=0;
       while(fscanf(oldlog,"%20llu - %20llu %c", &start[nbr], &end[nbr], &status[nbr])==3)
       {
-	printf("%llu - %llu %c\n", &start[nbr], &end[nbr], &status[nbr]);
+	printf("%llu - %llu %c\n", start[nbr], end[nbr], status[nbr]);
 	if(nbr==3 && status[1]==STATUS_NON_TRIED && status[2]==STATUS_DONE)
 	{
 	  for(location=end[nbr];location>=start[nbr];location-=readsize_min)
