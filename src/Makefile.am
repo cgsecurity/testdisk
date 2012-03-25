@@ -215,6 +215,7 @@ file_C			= filegen.c \
 			  file_rns.c \
 			  file_rpm.c \
 			  file_rw2.c \
+			  file_rx2.c \
 			  file_save.c \
 			  file_ses.c \
 			  file_sib.c \
