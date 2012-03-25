@@ -10,5 +10,3 @@ You can download it from http://www.cgsecurity.org/wiki/TestDisk_Download
 TestDisk & PhotoRec documentation can be found online:
 - http://www.cgsecurity.org/wiki/TestDisk
 - http://www.cgsecurity.org/wiki/PhotoRec
-Documentation can be downloaded from
-- http://www.cgsecurity.org/wiki/TestDisk_Download

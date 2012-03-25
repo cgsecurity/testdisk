@@ -21,5 +21,3 @@ TestDisk doesn't need to be installed, you only need to
 TestDisk & PhotoRec documentation can be found online:
 - http://www.cgsecurity.org/wiki/TestDisk
 - http://www.cgsecurity.org/wiki/PhotoRec
-Documentation can be downloaded from
-- http://www.cgsecurity.org/wiki/TestDisk_Download
