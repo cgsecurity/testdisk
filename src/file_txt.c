@@ -565,8 +565,8 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   }
   if(memcmp(buffer,header_rtf,sizeof(header_rtf))==0 &&
       ! (file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-	file_recovery->file_stat->file_hint==&file_hint_doc) &&
-	  strstr(file_recovery->filename,".snt")!=NULL)
+	file_recovery->file_stat->file_hint==&file_hint_doc &&
+	  strstr(file_recovery->filename,".snt")!=NULL))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -781,6 +781,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
     }
     else if(td_memmem(buffer, buffer_size, "<PremiereData Version=", 22)!=NULL)
     {
+      file_recovery_new->data_check=NULL;
       file_recovery_new->extension="prproj";
     }
     else
