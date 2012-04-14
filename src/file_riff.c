@@ -36,8 +36,6 @@
 
 int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void register_header_check_riff(file_stat_t *file_stat);
-static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_avi(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_riff= {
   .extension="riff",
@@ -46,7 +44,7 @@ const file_hint_t file_hint_riff= {
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-	.register_header_check=&register_header_check_riff
+  .register_header_check=&register_header_check_riff
 };
 
 static const unsigned char riff_header[4]= {'R','I','F','F'};
@@ -206,7 +204,7 @@ int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
-void file_check_size_rifx(file_recovery_t *file_recovery)
+static void file_check_size_rifx(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size<file_recovery->calculated_file_size)
     file_recovery->file_size=0;
