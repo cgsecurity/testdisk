@@ -235,10 +235,10 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     ctx_si = ntfs_attr_get_search_ctx(ni, ni->mrec);
     if (ctx_si)
     {
-      if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, 0, 0, NULL, 0, ctx_si)==0)
+      if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, CASE_SENSITIVE, 0, NULL, 0, ctx_si)==0)
       {
 	const ATTR_RECORD *attr = ctx_si->attr;
-	const STANDARD_INFORMATION *si = (STANDARD_INFORMATION*)((char*)attr +
+	const STANDARD_INFORMATION *si = (const STANDARD_INFORMATION*)((const char*)attr +
 	    le16_to_cpu(attr->value_offset));
 	if(si)
 	{
