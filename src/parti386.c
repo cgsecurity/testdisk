@@ -1293,22 +1293,35 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
 
 static void set_next_status_i386(const disk_t *disk_car, partition_t *partition)
 {
-  if(partition->status==STATUS_LOG)
-    partition->status=STATUS_DELETED;
-  else
-    partition->status++;
-  if(partition->status==STATUS_LOG && parti386_can_be_ext(disk_car,partition)==0)
-    partition->status=STATUS_DELETED;
+  /* STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG */
+  switch(partition->status)
+  {
+    case STATUS_PRIM_BOOT:
+      if(parti386_can_be_ext(disk_car,partition)!=0)
+	partition->status=STATUS_LOG;
+      else
+	partition->status=STATUS_DELETED;
+      break;
+    case STATUS_LOG:		partition->status=STATUS_DELETED; break;
+    case STATUS_DELETED:	partition->status=STATUS_PRIM; break;
+    default:			partition->status=STATUS_PRIM_BOOT; break;
+  }
 }
 
 static void set_prev_status_i386(const disk_t *disk_car, partition_t *partition)
 {
-  if(partition->status==STATUS_DELETED)
-    partition->status=STATUS_LOG;
-  else
-    partition->status--;
-  if(partition->status==STATUS_LOG && parti386_can_be_ext(disk_car,partition)==0)
-    partition->status--;
+  switch(partition->status)
+  {
+    case STATUS_DELETED:
+      if(parti386_can_be_ext(disk_car,partition)!=0)
+	partition->status=STATUS_LOG;
+      else
+	partition->status=STATUS_PRIM_BOOT;
+      break;
+    case STATUS_LOG:		partition->status=STATUS_PRIM_BOOT; break;
+    case STATUS_PRIM_BOOT:	partition->status=STATUS_PRIM; break;
+    default:			partition->status=STATUS_DELETED; break;
+  }
 }
 
 static int set_part_type_i386(partition_t *partition, unsigned int part_type)
