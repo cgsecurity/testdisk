@@ -48,8 +48,8 @@ static unsigned int index_header_check(void);
 
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
-  const file_check_t *fc_a=td_list_entry(a, const file_check_t, list);
-  const file_check_t *fc_b=td_list_entry(b, const file_check_t, list);
+  const file_check_t *fc_a=td_list_entry_const(a, const file_check_t, list);
+  const file_check_t *fc_b=td_list_entry_const(b, const file_check_t, list);
   int res;
   if(fc_a->length==0 && fc_b->length!=0)
     return -1;

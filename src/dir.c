@@ -340,8 +340,8 @@ int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data
 
 int filesort(const struct td_list_head *a, const struct td_list_head *b)
 {
-  const file_info_t *file_a=td_list_entry(a, file_info_t, list);
-  const file_info_t *file_b=td_list_entry(b, file_info_t, list);
+  const file_info_t *file_a=td_list_entry_const(a, const file_info_t, list);
+  const file_info_t *file_b=td_list_entry_const(b, const file_info_t, list);
   /* Directories must be listed before files */
   const int res=((file_b->stat.st_mode&LINUX_S_IFDIR)-(file_a->stat.st_mode&LINUX_S_IFDIR));
   if(res)

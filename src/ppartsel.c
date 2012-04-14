@@ -59,8 +59,8 @@ enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_E
 
 static int spacerange_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
-  const alloc_data_t *space_a=td_list_entry(a, const alloc_data_t, list);
-  const alloc_data_t *space_b=td_list_entry(b, const alloc_data_t, list);
+  const alloc_data_t *space_a=td_list_entry_const(a, const alloc_data_t, list);
+  const alloc_data_t *space_b=td_list_entry_const(b, const alloc_data_t, list);
   if(space_a->start < space_b->start)
     return -1;
   if(space_a->start > space_b->start)

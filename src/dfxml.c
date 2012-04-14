@@ -332,7 +332,7 @@ static void xml_log_file_recovered2_aux(const alloc_data_t *space, const alloc_d
   uint64_t size=0;
   for(tmp=&file->list; tmp!=&space->list; tmp=tmp->next)
   {
-    const alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
+    const alloc_data_t *element=td_list_entry_const(tmp, const alloc_data_t, list);
     if(size >= file_size)
       return ;
     if(element->data>0)
