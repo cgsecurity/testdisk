@@ -41,7 +41,6 @@ static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partitio
 static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
   unsigned char *buffer;
-  const uint16_t *p16;
   unsigned int cluster;
   const uint64_t hd_offset=partition->part_offset+(uint64_t)fat_offset*sector_size;
   uint64_t start_free=0;
@@ -49,7 +48,6 @@ static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, a
   unsigned long int offset_s_prev=0;
   log_trace("fat12_remove_used_space\n");
   buffer=(unsigned char *)MALLOC(2*sector_size);
-  p16=(const uint16_t*)buffer;
   del_search_space(list_search_space, partition->part_offset,
       partition->part_offset+(uint64_t)(start_data*sector_size)-1);
   for(cluster=2; cluster<=no_of_cluster+1; cluster++)

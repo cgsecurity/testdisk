@@ -99,7 +99,9 @@ static int header_check_cow(const unsigned char *buffer, const unsigned int buff
   }
   if(memcmp(buffer, cow_header2, sizeof(cow_header2))==0)
   {
+#ifdef DEBUG_COW
     const QCowHeader2_t *header=(const QCowHeader2_t*)buffer;
+#endif
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_cow.extension;
 #ifdef DEBUG_COW

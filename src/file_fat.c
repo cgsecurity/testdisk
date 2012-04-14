@@ -60,7 +60,7 @@ static void register_header_check_fat(file_stat_t *file_stat)
 static int header_check_fat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)buffer;
-  uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
+  uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length,fat_length_calc;
   if(!(le16(fat_header->marker)==0xAA55
         && (fat_header->ignored[0]==0xeb || fat_header->ignored[0]==0xe9)
@@ -91,10 +91,8 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
   part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
-  start_fat2=start_fat1+(fat_header->fats>1?fat_length:0);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
   no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
-  end_data=start_data+no_of_cluster*fat_header->sectors_per_cluster-1;
   if(no_of_cluster<4085)
   {
     /* FAT12 */
@@ -102,7 +100,6 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
       return 0;
     if((le16(fat_header->fat_length)>256)||(le16(fat_header->fat_length)==0))
       return 0;
-    start_rootdir=start_fat2+fat_length;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)*2/3-1)*3/2/fat_sector_size(fat_header));
   }
   else if(no_of_cluster<65525)
@@ -112,7 +109,6 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
       return 0;
     if((get_dir_entries(fat_header)==0)||(get_dir_entries(fat_header)%16!=0))
       return 0;
-    start_rootdir=start_fat2+fat_length;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/2-1)*2/fat_sector_size(fat_header));
   }
   else
@@ -124,7 +120,6 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
       return 0;
     if((le32(fat_header->root_cluster)<2) ||(le32(fat_header->root_cluster)>=2+no_of_cluster))
       return 0;
-    start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->sectors_per_cluster;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/4-1)*4/fat_sector_size(fat_header));
   }
   if(fat_length<fat_length_calc)

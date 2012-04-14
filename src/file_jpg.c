@@ -1174,8 +1174,9 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	    {
 	      unsigned int j=thumb_offset+2;
 	      unsigned int thumb_sos_found=0;
-	      unsigned int j_old;
-	      j_old=j;
+#ifdef DEBUG_JPEG
+	      unsigned int j_old=j;
+#endif
 	      if(buffer[thumb_offset]!=0xff)
 	      {
 		file_recovery->offset_error=thumb_offset;
@@ -1239,7 +1240,9 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 		}
 		if(file_recovery->offset_ok<j)
 		  file_recovery->offset_ok=j;
+#ifdef DEBUG_JPEG
 		j_old=j;
+#endif
 		j+=2+(buffer[j+2]<<8)+buffer[j+3];
 	      }
 	      if(thumb_sos_found>0 && extract_thumb>0

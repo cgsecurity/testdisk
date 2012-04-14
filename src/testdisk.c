@@ -289,7 +289,6 @@ int main( int argc, char **argv )
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     {
       disk_t *disk=element_disk->disk;
-      const int hpa_dco=is_hpa_or_dco(disk);
       autodetect_arch(disk, NULL);
       if(unit==UNIT_DEFAULT)
 	autoset_unit(disk);

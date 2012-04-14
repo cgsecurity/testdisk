@@ -87,8 +87,6 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
     do
     {
       uint64_t naxis_size=1;
-      unsigned int naxis=0;
-      naxis_size=1;
       /* Header is composed of 80 character fixed-length strings */
       for(; i<buffer_size &&
 	  memcmp(&buffer[i], "END ", 4)!=0;
@@ -96,12 +94,12 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
       {
 	if(memcmp(&buffer[i], "NAXIS ",6)==0)
 	{
-	  naxis=fits_get_val(&buffer[i]);
+	  /* naxis value is dicarded */
+	  fits_get_val(&buffer[i]);
 	}
 	else if(memcmp(&buffer[i], "NAXIS",5)==0)
 	{
-	  uint64_t naxis_val;
-	  naxis_val=fits_get_val(&buffer[i]);
+	  const uint64_t naxis_val=fits_get_val(&buffer[i]);
 	  if(naxis_val>0)
 	    naxis_size*=naxis_val;
 	}
