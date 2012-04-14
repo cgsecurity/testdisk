@@ -103,7 +103,7 @@ struct file_hint_struct
 typedef struct
 {
   struct td_list_head list;
-  const unsigned char *value;
+  const void *value;
   unsigned int length;
   unsigned int offset;
   int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
@@ -132,13 +132,12 @@ int data_check_size(const unsigned char *buffer, const unsigned int buffer_size,
 void file_check_size_lax(file_recovery_t *file_recovery);
 void file_check_size(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
-void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
-  int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
+void register_header_check(const unsigned int offset, const void *value, const unsigned int length, int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 file_stat_t * init_file_stats(file_enable_t *files_enable);
-void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
-void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
+void file_rename(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
+void file_rename_unicode(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

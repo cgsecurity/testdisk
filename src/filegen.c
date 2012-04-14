@@ -74,12 +74,11 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
     newe->file_checks[i].list.prev=&newe->file_checks[i].list;
     newe->file_checks[i].list.next=&newe->file_checks[i].list;
   }
-  td_list_add_tail(&file_check_new->list, &newe->file_checks[file_check_new->length==0?0:file_check_new->value[0]].list);
+  td_list_add_tail(&file_check_new->list, &newe->file_checks[file_check_new->length==0?0:((const unsigned char *)file_check_new->value)[0]].list);
   td_list_add_tail(&newe->list, &pos->list);
 }
 
-void register_header_check(const unsigned int offset, const unsigned char *value, const unsigned int length, 
-  int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
+void register_header_check(const unsigned int offset, const void *value, const unsigned int length, int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat)
 {
@@ -104,7 +103,7 @@ static void index_header_check_aux(file_check_t *file_check_new)
 	  pos->offset < file_check_new->offset+file_check_new->length)
       {
 	td_list_add_sorted(&file_check_new->list,
-	    &pos->file_checks[file_check_new->value[pos->offset-file_check_new->offset]].list,
+	    &pos->file_checks[((const unsigned char *)file_check_new->value)[pos->offset-file_check_new->offset]].list,
 	    file_check_cmp);
 	return ;
       }
@@ -355,7 +354,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
-void file_rename(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
+void file_rename(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
@@ -393,9 +392,10 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
     int ok=0;
     int bad=0;
     *dst++ = '_';
-    for(off=offset; off<buffer_size && buffer[off]!='\0'; off++)
+    src=&((const char *)buffer)[offset];
+    for(off=offset; off<buffer_size && *src!='\0'; off++, src++)
     {
-      switch(buffer[off])
+      switch(*src)
       {
 	case '/':
 	case '\\':
@@ -406,9 +406,9 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 	  bad++;
 	  break;
 	default:
-	  if(isprint(buffer[off]) && !isspace(buffer[off]))
+	  if(isprint(*src) && !isspace(*src))
 	  {
-	    *dst++ = buffer[off];
+	    *dst++ = *src;
 	    ok++;
 	  }
 	  else
@@ -452,7 +452,7 @@ void file_rename(const char *old_filename, const unsigned char *buffer, const in
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
-void file_rename_unicode(const char *old_filename, const unsigned char *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
+void file_rename_unicode(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
@@ -490,9 +490,10 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
     int ok=0;
     int bad=0;
     *dst++ = '_';
-    for(off=offset; off<buffer_size && buffer[off]!='\0'; off+=2)
+    src=&((const char *)buffer)[offset];
+    for(off=offset; off<buffer_size && *src!='\0'; off+=2, src+=2)
     {
-      switch(buffer[off])
+      switch(*src)
       {
 	case '/':
 	case '\\':
@@ -502,14 +503,15 @@ void file_rename_unicode(const char *old_filename, const unsigned char *buffer, 
 	  bad++;
 	  break;
 	default:
-	  if(isprint(buffer[off]) && !isspace(buffer[off]))
+	  if(isprint(*src) && !isspace(*src))
 	  {
-	    *dst++ = buffer[off];
+	    *dst++ = *src;
 	    ok++;
 	  }
 	  else
 	  {
-	    *dst++ = '_';
+	    if(*(dst-1) != '_')
+	      *dst++ = '_';
 	    bad++;
 	  }
 	  break;
