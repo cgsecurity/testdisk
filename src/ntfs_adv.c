@@ -58,7 +58,6 @@ struct s_info_mft
   uint64_t mftmirr_lcn;
 };
 
-static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int interface, const unsigned int cluster_size, const uint64_t mft_lcn, const uint64_t mftmirr_lcn, const uint32_t mft_record_size, const uint32_t index_block_size, char**current_cmd);
 #ifdef HAVE_NCURSES
 static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2);
 static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header);
