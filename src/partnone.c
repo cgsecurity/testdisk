@@ -222,7 +222,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
       res=search_type_64(buffer_disk, disk, partition,verbose,0);
   }
   if(res<=0)
-    res=(recover_ISO(disk, (const struct iso_primary_descriptor*)(buffer_disk+0x200), partition, verbose, 0)==0);
+    res=(recover_ISO((const struct iso_primary_descriptor*)(buffer_disk+0x200), partition)==0);
   if(res<=0)
   {
   /* 64k offset */
@@ -332,7 +332,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_BeFS(disk_car,partition);
       break;
     case UP_BTRFS:
-      ret=check_btrfs(disk_car, partition, verbose);
+      ret=check_btrfs(disk_car, partition);
       break;
     case UP_CRAMFS:
       ret=check_cramfs(disk_car,partition,verbose);

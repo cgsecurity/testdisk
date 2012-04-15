@@ -80,7 +80,7 @@ static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *p
   return 0;
 }
 
-int recover_ISO(disk_t *disk_car, const struct iso_primary_descriptor *iso, partition_t *partition, const int verbose, const int dump_ind)
+int recover_ISO(const struct iso_primary_descriptor *iso, partition_t *partition)
 {
   if(test_ISO(iso, partition)!=0)
     return 1;

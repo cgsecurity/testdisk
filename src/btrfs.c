@@ -37,10 +37,21 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition, const int verbose);
 static int test_btrfs(const struct btrfs_super_block *sb, partition_t *partition);
 
-int check_btrfs(disk_t *disk_car,partition_t *partition,const int verbose)
+static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition)
+{
+  set_part_name(partition, sb->label, sizeof(partition->partname));
+  strncpy(partition->info,"btrfs",sizeof(partition->info));
+  if(le64(sb->bytenr)!=partition->part_offset + BTRFS_SUPER_INFO_OFFSET)
+  {
+    strcat(partition->info," Backup superblock");
+  }
+  /* last mounted => date */
+  return 0;
+}
+
+int check_btrfs(disk_t *disk_car,partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(BTRFS_SUPER_INFO_SIZE);
   if(disk_car->pread(disk_car, buffer, BTRFS_SUPER_INFO_SIZE, partition->part_offset + BTRFS_SUPER_INFO_OFFSET) != BTRFS_SUPER_INFO_SIZE)
@@ -53,20 +64,8 @@ int check_btrfs(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  set_btrfs_info((struct btrfs_super_block*)buffer, partition, verbose);
+  set_btrfs_info((struct btrfs_super_block*)buffer, partition);
   free(buffer);
-  return 0;
-}
-
-static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition, const int verbose)
-{
-  set_part_name(partition, sb->label, sizeof(partition->partname));
-  strncpy(partition->info,"btrfs",sizeof(partition->info));
-  if(le64(sb->bytenr)!=partition->part_offset + BTRFS_SUPER_INFO_OFFSET)
-  {
-    strcat(partition->info," Backup superblock");
-  }
-  /* last mounted => date */
   return 0;
 }
 
@@ -89,7 +88,7 @@ int recover_btrfs(disk_t *disk, const struct btrfs_super_block *sb, partition_t 
   }
   if(partition==NULL)
     return 0;
-  set_btrfs_info(sb, partition, verbose);
+  set_btrfs_info(sb, partition);
   partition->part_type_i386=P_LINUX;
   partition->part_type_mac=PMAC_LINUX;
   partition->part_type_sun=PSUN_LINUX;

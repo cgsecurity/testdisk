@@ -138,7 +138,7 @@ struct btrfs_super_block {
 	uint8_t sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
 } __attribute__ ((__packed__));
 
-int check_btrfs(disk_t *disk_car,partition_t *partition,const int verbose);
+int check_btrfs(disk_t *disk_car,partition_t *partition);
 int recover_btrfs(disk_t *disk_car, const struct btrfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus

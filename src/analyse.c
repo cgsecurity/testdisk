@@ -418,7 +418,7 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose)
       check_cramfs(disk, partition, verbose)==0 ||
       check_xfs(disk, partition, verbose)==0 ||
       check_LUKS(disk, partition)==0 ||
-      check_btrfs(disk, partition, verbose)==0 ||
+      check_btrfs(disk, partition)==0 ||
       check_gfs2(disk, partition)==0)
     return 0;
   return 1;
