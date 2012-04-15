@@ -36,7 +36,12 @@
 #include "wbfs.h"
 
 static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int dump_ind);
-static int set_WBFS_info(const struct wbfs_head *sb, partition_t *partition);
+
+static int set_WBFS_info(partition_t *partition)
+{
+  memcpy(partition->info,"WBFS",5);
+  return 0;
+}
 
 int check_WBFS(disk_t *disk,partition_t *partition)
 {
@@ -51,14 +56,8 @@ int check_WBFS(disk_t *disk,partition_t *partition)
     free(buffer);
     return 1;
   }
-  set_WBFS_info((struct wbfs_head*)buffer, partition);
+  set_WBFS_info(partition);
   free(buffer);
-  return 0;
-}
-
-static int set_WBFS_info(const struct wbfs_head *sb, partition_t *partition)
-{
-  memcpy(partition->info,"WBFS",5);
   return 0;
 }
 
@@ -68,7 +67,7 @@ int recover_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partitio
     return 1;
   if(partition==NULL)
     return 0;
-  set_WBFS_info(sb, partition);
+  set_WBFS_info(partition);
   partition->part_type_i386=P_NTFS;
   partition->part_size=(uint64_t)be32(sb->n_hd_sec)<<(sb->hd_sec_sz_s);
   partition->blocksize=0;
