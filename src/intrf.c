@@ -138,7 +138,6 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   const arch_fnct_t *arch=partition->arch;
   if(arch==NULL)
   {
-    arch=disk_car->arch;
     log_error("BUG: No arch for a partition\n");
     msg[0]='\0';
     return msg;
