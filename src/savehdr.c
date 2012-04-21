@@ -173,16 +173,11 @@ backup_disk_t *partition_load(const disk_t *disk_car, const int verbose)
           case 'L':	new_partition->status=STATUS_LOG; break;
           default:	new_partition->status=STATUS_DELETED; break;
         }
-        if(new_partition->status!=STATUS_DELETED)
         {
           int insert_error=0;
           new_backup->list_part=insert_new_partition(new_backup->list_part, new_partition, 0, &insert_error);
           if(insert_error>0)
             free(new_partition);
-        }
-        else
-        {
-          free(new_partition);
         }
       }
       else
@@ -223,33 +218,22 @@ int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose)
   fprintf(f_backup,"#%u %s\n",(unsigned int)time(NULL), disk_car->description(disk_car));
   for(parts=list_part;parts!=NULL;parts=parts->next)
   {
+    char status='D';
     switch(parts->part->status)
     {
-      case STATUS_PRIM:
-      case STATUS_PRIM_BOOT:
-      case STATUS_EXT:
-      case STATUS_LOG:
-	{
-	  char status='D';
-	  switch(parts->part->status)
-	  {
-	    case STATUS_PRIM:           status='P'; break;
-	    case STATUS_PRIM_BOOT:      status='*'; break;
-	    case STATUS_EXT:            status='E'; break;
-	    case STATUS_EXT_IN_EXT:     status='X'; break;
-	    case STATUS_LOG:            status='L'; break;
-	    case STATUS_DELETED:        status='D'; break;
-	  }
-	  fprintf(f_backup,"%2d : start=%9lu, size=%9lu, Id=%02X, %c\n",
-	      parts->part->order, (unsigned long)(parts->part->part_offset/disk_car->sector_size),
-	      (unsigned long)(parts->part->part_size/disk_car->sector_size),
-	      (disk_car->arch->get_part_type!=NULL ?  disk_car->arch->get_part_type(parts->part) : 0),
-	      status);
-	}
-	break;
-      default:
-	break;
+      case STATUS_PRIM:           status='P'; break;
+      case STATUS_PRIM_BOOT:      status='*'; break;
+      case STATUS_EXT:            status='E'; break;
+      case STATUS_EXT_IN_EXT:     status='X'; break;
+      case STATUS_LOG:            status='L'; break;
+      case STATUS_DELETED:        status='D'; break;
     }
+    fprintf(f_backup,"%2d : start=%9lu, size=%9lu, Id=%02X, %c\n",
+	(parts->part->order < 100 ? parts->part->order : 0),
+	(unsigned long)(parts->part->part_offset/disk_car->sector_size),
+	(unsigned long)(parts->part->part_size/disk_car->sector_size),
+	(disk_car->arch->get_part_type!=NULL ?  disk_car->arch->get_part_type(parts->part) : 0),
+	status);
   }
   fclose(f_backup);
   return 0;

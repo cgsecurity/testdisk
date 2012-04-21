@@ -377,6 +377,14 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	  rewrite=1;
         }
 	break;
+      case 'b':
+      case 'B':
+	if(partition_save(disk_car,list_part,verbose)<0)
+	  display_message("Can't create backup.log.\n");
+	else
+	  display_message("Results saved in backup.log.\n");
+	rewrite=1;
+        break;
       case 'l':
       case 'L':
 	if(disk_car->arch != &arch_none)
