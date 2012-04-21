@@ -47,6 +47,7 @@
 #include "log.h"
 #include "file_jpg.h"
 #include "file_tiff.h"
+#include "setdate.h"
 
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_riff;
@@ -1263,6 +1264,8 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 		      log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
 		    }
 		    fclose(out);
+		    if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+		      set_date(thumbname, file_recovery->time, file_recovery->time);
 		  }
 		  else
 		  {
