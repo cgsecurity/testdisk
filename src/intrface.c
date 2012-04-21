@@ -50,18 +50,28 @@
 
 extern const arch_fnct_t arch_none;
 
-void interface_list(disk_t *disk_car, const int verbose, const int saveheader, const int backup)
+void interface_list(disk_t *disk, const int verbose, const int saveheader, const int backup)
 {
   list_part_t *list_part;
+  list_part_t *parts;
   log_info("\nAnalyse ");
-  log_info("%s\n",disk_car->description(disk_car));
-  printf("%s\n",disk_car->description(disk_car));
+  log_info("%s\n", disk->description(disk));
+  printf("%s\n", disk->description(disk));
   printf(msg_PART_HEADER_LONG);
-  list_part=disk_car->arch->read_part(disk_car,verbose,saveheader);
-  screen_buffer_to_stdout();
+  list_part=disk->arch->read_part(disk,verbose,saveheader);
+
+  for(parts=list_part; parts!=NULL; parts=parts->next)
+  {
+    const char *msg;
+    const partition_t *partition=parts->part;
+    msg=aff_part_aux(AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
+    printf("%s\n", msg);
+    if(partition->info[0]!='\0')
+      printf("     %s\n", partition->info);
+  }
   if(backup>0)
   {
-    partition_save(disk_car,list_part,verbose);
+    partition_save(disk, list_part, verbose);
   }
   part_free_list(list_part);
 }
