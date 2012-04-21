@@ -198,10 +198,11 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
 {
   const char*buffer=(const char*)fat_header;
   partition->fsname[0]='\0';
+  partition->blocksize=fat_sector_size(fat_header)* fat_header->sectors_per_cluster;
   switch(partition->upart_type)
   {
     case UP_FAT12:
-      snprintf(partition->info,sizeof(partition->info),"FAT12");
+      snprintf(partition->info, sizeof(partition->info), "FAT12, blocksize=%u", partition->blocksize);
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
         set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
@@ -210,7 +211,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       }
       break;
     case UP_FAT16:
-      snprintf(partition->info,sizeof(partition->info),"FAT16");
+      snprintf(partition->info, sizeof(partition->info), "FAT16, blocksize=%u", partition->blocksize);
       if(buffer[38]==0x29)	/* BS_BootSig */
       {
         set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
@@ -219,7 +220,7 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       }
       break;
     case UP_FAT32:
-      snprintf(partition->info,sizeof(partition->info),"FAT32");
+      snprintf(partition->info, sizeof(partition->info), "FAT32, blocksize=%u", partition->blocksize);
       fat32_set_part_name(disk_car,partition,fat_header);
       break;
     default:

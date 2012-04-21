@@ -60,6 +60,7 @@ int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
 
 static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose)
 {
+  partition->blocksize=EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size);
   set_part_name(partition,sb->s_volume_name,16);
   /* sb->s_last_mounted seems to be unemployed in kernel 2.2.16 */
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_HUGE_FILE)!=0 ||
@@ -68,12 +69,11 @@ static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partiti
       EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE)!=0 ||
       EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_64BIT)!=0 ||
       EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_MMP)!=0)
-    strncpy(partition->info,"EXT4",sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "ext4 blocksize=%u", partition->blocksize);
   else if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
-    strncpy(partition->info,"EXT3",sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "ext3 blocksize=%u", partition->blocksize);
   else
-    strncpy(partition->info,"EXT2",sizeof(partition->info));
-
+    snprintf(partition->info, sizeof(partition->info), "ext2 blocksize=%u", partition->blocksize);
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_LARGE_FILE)!=0)
     strcat(partition->info," Large file");
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER)!=0)
@@ -120,7 +120,6 @@ int recover_EXT2(disk_t *disk, const struct ext2_super_block *sb,partition_t *pa
   partition->part_type_sun=PSUN_LINUX;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
   partition->part_size=(uint64_t)le32(sb->s_blocks_count)*(EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
-  partition->blocksize=EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size);
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->s_uuid);
   if(verbose>0)
   {

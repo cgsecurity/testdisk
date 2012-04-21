@@ -41,8 +41,9 @@ static int test_btrfs(const struct btrfs_super_block *sb, partition_t *partition
 
 static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition)
 {
+  partition->blocksize=le32(sb->dev_item.sector_size);
   set_part_name(partition, sb->label, sizeof(partition->partname));
-  strncpy(partition->info,"btrfs",sizeof(partition->info));
+  snprintf(partition->info, sizeof(partition->info), "btrfs blocksize=%u", partition->blocksize);
   if(le64(sb->bytenr)!=partition->part_offset + BTRFS_SUPER_INFO_OFFSET)
   {
     strcat(partition->info," Backup superblock");
@@ -94,7 +95,6 @@ int recover_btrfs(disk_t *disk, const struct btrfs_super_block *sb, partition_t 
   partition->part_type_sun=PSUN_LINUX;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
   partition->part_size=(uint64_t)le64(sb->dev_item.total_bytes);
-  partition->blocksize=le32(sb->dev_item.sector_size);
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->fsid);
   if(verbose>0)
   {

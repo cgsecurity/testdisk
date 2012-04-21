@@ -113,10 +113,11 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
 static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose)
 {
   partition->fsname[0]='\0';
+  partition->blocksize=ntfs_header->sectors_per_cluster*ntfs_sector_size(ntfs_header);
   if(partition->sb_offset==0)
-    strncpy(partition->info, "NTFS", sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "NTFS, blocksize=%u", partition->blocksize);
   else
-    strncpy(partition->info, "NTFS found using backup sector!", sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "NTFS found using backup sector, blocksize=%u", partition->blocksize);
   return ntfs_read_MFT(disk_car, partition, ntfs_header, 0x60, verbose);
 }
 

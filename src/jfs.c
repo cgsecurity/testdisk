@@ -60,7 +60,9 @@ int check_JFS(disk_t *disk_car, partition_t *partition)
 
 static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
 {
-  snprintf(partition->info,sizeof(partition->info),"JFS %u",(unsigned int)le32(sb->s_version));
+  partition->blocksize=le32(sb->s_bsize);
+  snprintf(partition->info, sizeof(partition->info), "JFS %u, blocksize=%u",
+      (unsigned int)le32(sb->s_version), partition->blocksize);
   partition->fsname[0]='\0';
   if(le32(sb->s_version)==1)
   {
@@ -86,7 +88,6 @@ int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *p
   partition->sborg_offset=64*512;
   partition->sb_size=JFS_SUPERBLOCK_SIZE;
   partition->sb_offset=0;
-  partition->blocksize=le32(sb->s_bsize);
   guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb->s_uuid);
   if(verbose>0)
   {

@@ -74,7 +74,10 @@ static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *p
   const unsigned int logical_block_size2=iso->logical_block_size[3] | (iso->logical_block_size[2]<<8);
   set_part_name_chomp(partition, (const unsigned char*)iso->volume_id, 32);
   if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
+  {
+    partition->blocksize=logical_block_size;
     snprintf(partition->info, sizeof(partition->info), "ISO9660");
+  }
   else
     snprintf(partition->info, sizeof(partition->info), "ISO");
   return 0;
@@ -93,7 +96,6 @@ int recover_ISO(const struct iso_primary_descriptor *iso, partition_t *partition
     if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
     {	/* ISO 9660 */
       partition->part_size=(uint64_t)volume_space_size * logical_block_size;
-      partition->blocksize=logical_block_size;
     }
   }
   return 0;
