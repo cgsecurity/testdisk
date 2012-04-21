@@ -59,7 +59,10 @@ int check_LUKS(disk_t *disk_car,partition_t *partition)
 
 static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition)
 {
-  sprintf(partition->info,"LUKS %u (Data size unknown)",be16(sb->version));
+  if(partition->part_size > 0)
+    sprintf(partition->info,"LUKS %u", be16(sb->version));
+  else
+    sprintf(partition->info,"LUKS %u (Data size unknown)", be16(sb->version));
   return 0;
 }
 
