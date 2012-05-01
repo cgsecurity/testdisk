@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[6.14-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="January 2012"
+TESTDISKDATE="May 2012"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -183,6 +183,16 @@ AC_ARG_ENABLE([sudo],
 AC_ARG_WITH(sudo-bin,
     AS_HELP_STRING(--with-sudo-bin=PROG,location of the sudo binary),
     [SUDO_BIN="${withval}"])
+
+AC_ARG_WITH(uuid-lib,
+    AS_HELP_STRING(--with-uuid-lib=DIR,location of the uuid library),
+    [ uuid_lib_a="${withval}/libuuid.a"
+    LDFLAGS="${LDFLAGS} -L${withval}" ])
+
+AC_ARG_WITH(uuid-includes,
+    AS_HELP_STRING(--with-uuid-includes=DIR,location of the uuid includes files),
+    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+
 
 AC_ARG_ENABLE([missing-uuid-ok],
     AS_HELP_STRING(--enable-missing-uuid-ok, [force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)]),
