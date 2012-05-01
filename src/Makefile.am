@@ -141,6 +141,7 @@ file_C			= filegen.c \
 			  file_jpg.c \
 			  file_kdb.c \
 			  file_ldf.c \
+			  file_lit.c \
 			  file_lnk.c \
 			  file_logic.c \
 			  file_lso.c \
