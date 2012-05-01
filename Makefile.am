@@ -4,7 +4,7 @@ SUBDIRS = src
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh \
 	progsreiserfs-journal.patch progsreiserfs-file-read.patch \
 	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
-	doc_src/testdisk.8.in doc_src/photorec.8.in doc_src/fidentify.8.in doc/online.html \
+	doc_src/testdisk.8.in doc_src/photorec.8.in doc_src/fidentify.8.in documentation.html \
 	dos/readme.txt \
 	ico/photorec.ico ico/testdisk.ico \
 	linux/testdisk.spec.in \
@@ -17,9 +17,7 @@ man_MANS		= doc_src/testdisk.8 doc_src/photorec.8 doc_src/fidentify.8
 
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)
-	$(mkinstalldirs) $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
-	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README $(top_srcdir)/THANKS $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/
-#	$(INSTALL_DATA) $(top_srcdir)/doc/* $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/html
+	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README $(top_srcdir)/THANKS $(top_srcdir)/documentation.html $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)/
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(datadir)/doc/$(PACKAGE)-$(VERSION)
