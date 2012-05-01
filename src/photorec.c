@@ -574,6 +574,66 @@ static void free_list_allocation(alloc_list_t *list_allocation)
     free(allocated_space);
   }
 }
+/* file_finish_aux()
+    @param file_recovery - handle!=NULL
+    @param struct ph_param *params
+*/
+
+static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid)
+{
+  if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
+      params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+  {
+    if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
+    { /* Check if recovered file is valid */
+      file_recovery->file_check(file_recovery);
+    }
+    /* FIXME: need to adapt read_size to volume size to avoid this */
+    if(file_recovery->file_size > params->disk->disk_size)
+      file_recovery->file_size = params->disk->disk_size;
+    if(file_recovery->file_size > params->disk->disk_real_size)
+      file_recovery->file_size = params->disk->disk_real_size;
+    if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
+	file_recovery->file_size < file_recovery->min_filesize)
+    { 
+      log_info("File too small ( %llu < %llu), reject it\n",
+	  (long long unsigned) file_recovery->file_size,
+	  (long long unsigned) file_recovery->min_filesize);
+      file_recovery->file_size=0;
+      file_recovery->file_size_on_disk=0;
+    }
+  }
+  if(file_recovery->file_size==0)
+  {
+    fclose(file_recovery->handle);
+    file_recovery->handle=NULL;
+    /* File is zero-length; erase it */
+    unlink(file_recovery->filename);
+  }
+  else
+  {
+#ifdef HAVE_FTRUNCATE
+    fflush(file_recovery->handle);
+    if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
+    {
+      log_critical("ftruncate failed.\n");
+    }
+#endif
+    fclose(file_recovery->handle);
+    file_recovery->handle=NULL;
+    if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+      set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
+    if(file_recovery->file_rename!=NULL)
+      file_recovery->file_rename(file_recovery->filename);
+    if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
+    {
+      params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
+    }
+    if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
+	params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+      file_recovery->file_stat->recovered++;
+  }
+}
 
 /** file_finish()
     @param file_recovery - 
@@ -601,51 +661,7 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
 #endif
   if(file_recovery->handle)
-  {
-    if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL)
-    { /* Check if recovered file is valid */
-      file_recovery->file_check(file_recovery);
-    }
-    /* FIXME: need to adapt read_size to volume size to avoid this */
-    if(file_recovery->file_size > params->disk->disk_size)
-      file_recovery->file_size = params->disk->disk_size;
-    if(file_recovery->file_size > params->disk->disk_real_size)
-      file_recovery->file_size = params->disk->disk_real_size;
-    if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
-	file_recovery->file_size < file_recovery->min_filesize)
-    { 
-      log_info("File too small ( %llu < %llu), reject it\n",
-	  (long long unsigned) file_recovery->file_size,
-	  (long long unsigned) file_recovery->min_filesize);
-      file_recovery->file_size=0;
-      file_recovery->file_size_on_disk=0;
-    }
-#ifdef HAVE_FTRUNCATE
-    fflush(file_recovery->handle);
-    if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
-    {
-      log_critical("ftruncate failed.\n");
-    }
-#endif
-    fclose(file_recovery->handle);
-    file_recovery->handle=NULL;
-    //    log_debug("%s %llu\n",file_recovery->filename,(long long unsigned)file_recovery->file_size);
-    if(file_recovery->file_size==0)
-    {
-      /* File is zero-length; erase it */
-      unlink(file_recovery->filename);
-    }
-    else
-    {
-      if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
-	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
-      if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
-      {
-        params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
-      }
-      file_recovery->file_stat->recovered++;
-    }
-  }
+    file_finish_aux(file_recovery, params, 1);
   if(file_recovery->file_stat!=NULL)
   {
     list_truncate(&file_recovery->location,file_recovery->file_size);
@@ -703,60 +719,7 @@ int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const 
   info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
 #endif
   if(file_recovery->handle)
-  {
-    if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
-	params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
-    {
-      if(file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && options->paranoid>0)
-      { /* Check if recovered file is valid */
-        file_recovery->file_check(file_recovery);
-      }
-      /* FIXME: need to adapt read_size to volume size to avoid this */
-      if(file_recovery->file_size > params->disk->disk_size)
-        file_recovery->file_size = params->disk->disk_size;
-      if(file_recovery->file_size > params->disk->disk_real_size)
-        file_recovery->file_size = params->disk->disk_real_size;
-
-      if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
-          file_recovery->file_size < file_recovery->min_filesize)
-      { 
-        log_info("File too small ( %llu < %llu), reject it\n",
-            (long long unsigned) file_recovery->file_size,
-            (long long unsigned) file_recovery->min_filesize);
-        file_recovery->file_size=0;
-        file_recovery->file_size_on_disk=0;
-      }
-#ifdef HAVE_FTRUNCATE
-      fflush(file_recovery->handle);
-      if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
-      {
-        log_critical("ftruncate failed.\n");
-      }
-#endif
-    }
-    fclose(file_recovery->handle);
-    file_recovery->handle=NULL;
-    if(file_recovery->file_size==0)
-    {
-      unlink(file_recovery->filename);
-    }
-    else
-    {
-      if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
-	set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
-      if(file_recovery->file_rename!=NULL)
-	file_recovery->file_rename(file_recovery->filename);
-      if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
-      {
-        params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
-      }
-      if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
-	  params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
-      {
-        file_recovery->file_stat->recovered++;
-      }
-    }
-  }
+    file_finish_aux(file_recovery, params, options->paranoid);
   if(file_recovery->file_stat!=NULL)
   {
     if(file_recovery->file_size==0)
