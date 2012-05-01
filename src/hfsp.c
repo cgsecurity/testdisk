@@ -36,7 +36,17 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_HFSP_info(partition_t *partition);
+static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh)
+{
+  partition->blocksize=be32(vh->blocksize);
+  partition->fsname[0]='\0';
+  if(partition->upart_type==UP_HFSP)
+    snprintf(partition->info, sizeof(partition->info), "HFS+ blocksize=%u", partition->blocksize);
+  else
+    snprintf(partition->info, sizeof(partition->info), "HFSX blocksize=%u", partition->blocksize);
+  return 0;
+}
+
 
 int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -51,7 +61,7 @@ int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose)
     free(buffer);
     return 1;
   }
-  set_HFSP_info(partition);
+  set_HFSP_info(partition, (const struct hfsp_vh *)buffer);
   free(buffer);
   return 0;
 }
@@ -73,7 +83,7 @@ int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partiti
     partition->part_offset-=partition->sb_offset;
   }
   partition->part_size=part_size;
-  set_HFSP_info(partition);
+  set_HFSP_info(partition, vh);
   partition->part_type_i386=P_HFSP;
   partition->part_type_mac=PMAC_HFS;
   partition->part_type_gpt=GPT_ENT_TYPE_MAC_HFS;
@@ -122,14 +132,3 @@ int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,
   }
   return 0;
 }
-
-static int set_HFSP_info(partition_t *partition)
-{
-  partition->fsname[0]='\0';
-  if(partition->upart_type==UP_HFSP)
-    strncpy(partition->info,"HFS+",sizeof(partition->info));
-  else
-    strncpy(partition->info,"HFSX",sizeof(partition->info));
-  return 0;
-}
-
