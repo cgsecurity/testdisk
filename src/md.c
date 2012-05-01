@@ -247,7 +247,7 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
   {
     unsigned int i;
     sprintf(partition->fsname,"md%u",(unsigned int)le32(sb->md_minor));
-    sprintf(partition->info,"md %u.%u.%u Raid %u: devices",
+    sprintf(partition->info,"md %u.%u.%u L.Endian Raid %u: devices",
         (unsigned int)le32(sb->major_version),
         (unsigned int)le32(sb->minor_version),
         (unsigned int)le32(sb->patch_version),
@@ -273,7 +273,7 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu",
+    sprintf(partition->info,"md %u.x L.Endian Raid %u - Array Slot : %lu",
 	(unsigned int)le32(sb1->major_version),
 	(unsigned int)le32(sb1->level),
 	(long unsigned)le32(sb1->dev_number));
@@ -310,7 +310,7 @@ static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partit
   {
     unsigned int i;
     sprintf(partition->fsname,"md%u",(unsigned int)be32(sb->md_minor));
-    sprintf(partition->info,"md %u.%u.%u Raid %u: devices",
+    sprintf(partition->info,"md %u.%u.%u B.Endian Raid %u: devices",
         (unsigned int)be32(sb->major_version),
         (unsigned int)be32(sb->minor_version),
         (unsigned int)be32(sb->patch_version),
@@ -336,7 +336,7 @@ static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partit
   {
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
     set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x Raid %u - Array Slot : %lu",
+    sprintf(partition->info,"md %u.x B.Endian Raid %u - Array Slot : %lu",
 	(unsigned int)be32(sb1->major_version),
 	(unsigned int)be32(sb1->level),
 	(long unsigned)be32(sb1->dev_number));
