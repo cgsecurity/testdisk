@@ -159,6 +159,7 @@ file_C			= filegen.c \
 			  file_mid.c \
 			  file_mk5.c \
 			  file_mkv.c \
+			  file_mobi.c \
 			  file_mov.c \
 			  file_mp3.c \
 			  file_mpg.c \
