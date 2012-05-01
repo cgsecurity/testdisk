@@ -48,7 +48,7 @@ const file_hint_t file_hint_tiff= {
   .extension="tif",
   .description="Tag Image File Format and some raw file formats (pef/nef/dcr/sr2/cr2)",
   .min_header_distance=0,
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .max_filesize=100*1024*1024,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_tiff
@@ -945,7 +945,7 @@ void file_check_tiff(file_recovery_t *fr)
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu\n", (unsigned long long)calculated_file_size);
 #endif
-  if(fr->file_size < calculated_file_size)
+  if(fr->file_size < calculated_file_size || calculated_file_size==0)
     fr->file_size=0;
     /* PhotoRec isn't yet capable to find the correct filesize for
      * Sony arw and dng,
