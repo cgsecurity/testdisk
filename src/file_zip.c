@@ -244,6 +244,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	  *ext="xlsx";
 	else if(strncmp(filename, "ppt/", 4)==0)
 	  *ext="pptx";
+	else
+	  *ext="docx";
       }
     }
     if(*ext==NULL)
