@@ -284,7 +284,7 @@ static int set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition
 	if (le16(sb1->dev_roles[i-1]) != 0xffff)
 	  break;
       strcat(partition->info, " (");
-      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 7; d++)
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
       {
 	const int role = le16(sb1->dev_roles[d]);
 	if (d)
@@ -347,7 +347,7 @@ static int set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partit
 	if (be16(sb1->dev_roles[i-1]) != 0xffff)
 	  break;
       strcat(partition->info, " (");
-      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 7; d++)
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
       {
 	const int role = be16(sb1->dev_roles[d]);
 	if (d)
