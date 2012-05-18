@@ -42,8 +42,6 @@
 #include "hdaccess.h"
 #include "fnctdsk.h"
 
-extern const arch_fnct_t arch_i386;
-
 QPhotorec::QPhotorec(QWidget *parent)
 {
   setupUi(this);
@@ -66,14 +64,13 @@ void QPhotorec::setupUi(QWidget *MainWindow)
 void QPhotorec::ashow()
 {
   int verbose=1;
-  const arch_fnct_t *arch=&arch_i386;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
-  list_disk_t *list_disk;
+  list_disk_t *list_disk=NULL;
   list_disk_t *element_disk;
 
-  list_disk=hd_parse(list_disk,verbose,arch,testdisk_mode);
+  list_disk=hd_parse(list_disk, verbose, testdisk_mode);
 
-  hd_update_all_geometry(list_disk,0,verbose);
+  hd_update_all_geometry(list_disk, verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
