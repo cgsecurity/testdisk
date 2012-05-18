@@ -50,6 +50,7 @@
 #include "setdate.h"
 
 extern const file_hint_t file_hint_indd;
+extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_riff;
 extern int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
@@ -73,9 +74,12 @@ static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
 static const unsigned char jpg_header_app12[4]= { 0xff,0xd8,0xff,0xec};
 static const unsigned char jpg_header_com[4]= { 0xff,0xd8,0xff,0xfe};
 static const unsigned char jpg_footer[2]= { 0xff,0xd9};
-static const unsigned char jpg_header_app0_avi[0x14]= {
-  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+static const unsigned char jpg_header_app0_avi[0x0c]= {
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00
+};
+static const unsigned char jpg_header_app0_jfif11_null[0x14]= {
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01,
+  0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 static void register_header_check_jpg(file_stat_t *file_stat)
@@ -113,47 +117,48 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
 
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  unsigned int width=0;
-  unsigned int height=0;
-  jpg_get_size(buffer, buffer_size, &height, &width);
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_indd)
-    return 0;
-  /* Don't recover the thumb instead of the jpg itself */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_jpg &&
-      file_recovery->file_size <= 1024 &&
-      memcmp(buffer, jpg_header_app12, sizeof(jpg_header_app12))==0)
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
   {
-    log_info("jpg %llu %llu\n",
-	(long long unsigned)file_recovery->calculated_file_size,
-	(long long unsigned)file_recovery->file_size);
-    return 0;
+    unsigned int width=0;
+    unsigned int height=0;
+    jpg_get_size(buffer, buffer_size, &height, &width);
+    if(file_recovery->file_stat->file_hint==&file_hint_indd)
+      return 0;
+    if( file_recovery->file_stat->file_hint==&file_hint_jpg)
+    {
+      /* Don't recover the thumb instead of the jpg itself */
+      if( file_recovery->file_size <= 1024 &&
+	  memcmp(buffer, jpg_header_app12, sizeof(jpg_header_app12))==0)
+      {
+	log_info("jpg %llu %llu\n",
+	    (long long unsigned)file_recovery->calculated_file_size,
+	    (long long unsigned)file_recovery->file_size);
+	return 0;
+      }
+      /* Don't recover the thumb instead of the jpg itself */
+      if(file_recovery->file_size <= 4096 &&
+	  memcmp(buffer, jpg_header_app0, sizeof(jpg_header_app0))==0 &&
+	  width>0 && width<200 && height>0 && height<200)
+      {
+	return 0;
+      }
+      /* Some JPG have two APP1 markers, avoid to dicard the first one */
+      if( memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 &&
+	  memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
+      {
+	return 0;
+      }
+    }
+    /* Don't extract jpg inside AVI */
+    if( file_recovery->file_stat->file_hint==&file_hint_riff &&
+	(memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||
+	 file_recovery->data_check == &data_check_avi_stream))
+      return 0;
+    /* Don't extract jpg inside MOV */
+    if( file_recovery->file_stat->file_hint==&file_hint_mov &&
+	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
+      return 0;
   }
-  /* Don't recover the thumb instead of the jpg itself */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_jpg &&
-      file_recovery->file_size <= 4096 &&
-      memcmp(buffer, jpg_header_app0, sizeof(jpg_header_app0))==0 &&
-      width>0 && width<200 && height>0 && height<200)
-  {
-    return 0;
-  }
-  /* Some JPG have two APP1 markers, avoid to dicard the first one */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_jpg &&
-      memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 &&
-      memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
-  {
-    return 0;
-  }
-
-  /* Don't extract jpg inside AVI */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_riff &&
-      (memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||
-       file_recovery->data_check == &data_check_avi_stream))
-    return 0;
   if(buffer[0]==0xff && buffer[1]==0xd8)
   {
     unsigned int i=2;
