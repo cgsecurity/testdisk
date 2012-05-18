@@ -1004,7 +1004,8 @@ Doc: \r (0xD)
 	   td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
 	   td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
 	   td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL) ||
+	   td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL &&
+	   td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)==NULL) ||
 	  /* Text should not be found in zip because of compression except .sh3d */
 	  (file_recovery->file_stat->file_hint==&file_hint_zip &&
 	   td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL &&
