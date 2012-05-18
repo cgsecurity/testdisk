@@ -4,16 +4,11 @@
 # Comment the version definition to not compile the library
 VER_E2FSPROGS=
 VER_PROGSREISERFS="0.3.1-rc8"
-VER_LIBEWF=20100226
-#VER_LIBEWF=20110312
+#VER_LIBEWF=20100226
+VER_LIBEWF=20120504
 smp_mflags="-j 2"
 crosscompile_target=
 prefix=/usr/
-if [ "$CC" = "gcc295" ];
-then
-  VER_NTFSPROGS=
-  VER_LIBNTFS3G=
-fi
 if [ -z "$1" ];
 then
   compiledir=.
@@ -21,19 +16,32 @@ else
   compiledir=$1
   if [ "$1" != "$CC" ];
   then
-    VER_E2FSPROGS=1.41.8
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
   fi
 fi
 case "$crosscompile_target" in
-  *-msdosdjgpp|*-cygwin|*-mingw32)
+  "")
+  ;;
+  *-msdosdjgpp)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
+	VER_E2FSPROGS=1.41.8
+  ;;
+  *-cygwin|*-mingw32)
+	VER_LIBNTFS3G=
+	VER_NTFSPROGS="2.0.0"
+	VER_E2FSPROGS=1.42.2
+  ;;
+  i686-apple-darwin9|powerpc-apple-darwin)
+	VER_LIBNTFS3G="2011.3.28-RC"
+	VER_NTFSPROGS=
+	VER_E2FSPROGS=1.41.8
   ;;
   *)
 	VER_LIBNTFS3G="2011.3.28-RC"
 	VER_NTFSPROGS=
+	VER_E2FSPROGS=1.42.2
   ;;
 esac
 prefix=/usr/$crosscompile_target
