@@ -726,6 +726,20 @@ do
 done
 unset option
 
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2
+do
+  SAVE_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS $option"
+  AC_MSG_CHECKING([whether g++ understands $option])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+      [has_option=yes],
+      [has_option=no; CXXFLAGS="$SAVE_CXXFLAGS"])
+  AC_MSG_RESULT($has_option)
+  unset has_option
+  unset SAVE_CXXFLAGS
+done
+unset option
+
 #if defined __GNUC__ && !defined _FORTIFY_SOURCE
 AC_DEFINE([_FORTIFY_SOURCE], 2, [enable compile-time and run-time bounds-checking, and some warnings])
 #endif
@@ -738,7 +752,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([atexit atoll chdir chmod delscreen dirname dup2 execv ftruncate fsync getcwd geteuid getpwuid lstat memalign memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strchr strdup strerror strcasestr strncasecmp strptime strtol touchwin utime vsnprintf wctomb])
+AC_CHECK_FUNCS([ atexit atoll chdir chmod delscreen dirname dup2 execv fdatasync fsync ftruncate getcwd geteuid getpwuid lstat memalign memchr memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strcasecmp strcasestr strchr strdup strerror strncasecmp strptime strrchr strstr strtol strtoul strtoull touchwin uname utime vsnprintf wctomb ])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
