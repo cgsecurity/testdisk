@@ -11,18 +11,29 @@
 //
 #ifndef QPHOTOREC_H
 #define QPHOTOREC_H
-#include <QDialog>
-class QListWidget;
-class QPushButton;
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <QWidget>
+#include <QListWidget>
+#include <QPushButton>
+#include "types.h"
+#include "common.h"
 
 class QPhotorec: public QWidget
 {
+  	Q_OBJECT
+
         public:
                 QPhotorec(QWidget *parent = 0);
-		void setupUi(QWidget *MainWindow);
-                void ashow();
+                void disk_sel();
+                void no_disk();
+		void partition_selection(disk_t *disk);
+        private slots:
+		void disk_selected();
         private:
                 QListWidget *HDDlistWidget;
                 QPushButton *btn;
+		list_disk_t *list_disk;
 };
 #endif

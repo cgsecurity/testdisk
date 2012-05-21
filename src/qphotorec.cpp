@@ -34,50 +34,132 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#include <QApplication>
 #include <QtGui>
-#include "qphotorec.h"
 #include "types.h"
 #include "common.h"
 #include "hdcache.h"
 #include "hdaccess.h"
 #include "fnctdsk.h"
+#include "qphotorec.h"
 
-QPhotorec::QPhotorec(QWidget *parent)
+QPhotorec::QPhotorec(QWidget *parent) : QWidget(parent)
 {
-  setupUi(this);
-}
-
-void QPhotorec::setupUi(QWidget *MainWindow)
-{
-  MainWindow->setWindowTitle(tr("QPhotorec"));
-  HDDlistWidget = new QListWidget();
-  QVBoxLayout *mainLayout = new QVBoxLayout();
-  mainLayout->addWidget(HDDlistWidget);
-  QPushButton *button_next = new QPushButton("&Proceed");
-  mainLayout->addWidget(button_next);
-  QPushButton *button_quit= new QPushButton("&Quit");
-  mainLayout->addWidget(button_quit);
-  MainWindow->setLayout(mainLayout);
-  ashow();
-}
-
-void QPhotorec::ashow()
-{
-  int verbose=1;
-  int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
-  list_disk_t *list_disk=NULL;
+  const int verbose=1;
+  const int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   list_disk_t *element_disk;
 
-  list_disk=hd_parse(list_disk, verbose, testdisk_mode);
+  list_disk=hd_parse(NULL, verbose, testdisk_mode);
 
   hd_update_all_geometry(list_disk, verbose);
   /* Activate the cache, even if photorec has its own */
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
-  /* save disk parameters to rapport */
+  if(list_disk==NULL)
+    no_disk();
+  else
+    disk_sel();
+}
+
+void QPhotorec::partition_selection(disk_t *disk)
+{
+  this->setWindowTitle(tr("QPhotoRec: partition selection"));
+  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
+  QPushButton *button_quit= new QPushButton("&Quit");
+
+  QVBoxLayout *mainLayout = new QVBoxLayout();
+  mainLayout->addWidget(t_copy);
+  mainLayout->addWidget(button_quit);
+//  delete this->layout;
+  this->setLayout(mainLayout);
+  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+}
+
+void QPhotorec::disk_selected()
+{
+  if(HDDlistWidget->selectedItems().count()==1)
+  {
+    list_disk_t *element_disk;
+    const QString& s = HDDlistWidget->selectedItems()[0]->text();
+    for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+    {
+      disk_t *disk=element_disk->disk;
+      if(QString(disk->description_short(disk)).compare(s)==0)
+      {
+	return partition_selection(disk);
+      }
+    }
+  }
+}
+
+void QPhotorec::no_disk()
+{
+  this->setWindowTitle(tr("QPhotoRec"));
+  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
+  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
+  QLabel *t_no_disk = new QLabel("No harddisk found\n");
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+  t_no_disk->setText("No harddisk found\n"
+      "You need to be administrator to use this program.\n"
+      "Under Win9x, use the DOS version instead.\n"
+      "Under Vista or later, select this program, right-click and choose \"Run as administrator\".\n");
+#elif defined(DJGPP)
+#else
+#ifdef HAVE_GETEUID
+  if(geteuid()!=0)
+  {
+    t_no_disk->setText("No harddisk found\n"
+	"You need to be root to use PhotoRec.");
+  }
+#endif
+#endif
+  QPushButton *button_quit= new QPushButton("&Quit");
+
+  QVBoxLayout *mainLayout = new QVBoxLayout();
+  mainLayout->addWidget(t_copy);
+  mainLayout->addWidget(t_free_soft);
+  mainLayout->addWidget(t_no_disk);
+  mainLayout->addWidget(button_quit);
+  this->setLayout(mainLayout);
+  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+}
+
+
+void QPhotorec::disk_sel()
+{
+  list_disk_t *element_disk;
+  this->setWindowTitle(tr("QPhotoRec"));
+  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
+  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
+  QLabel *t_select = new QLabel("Please select a media");
+
+  HDDlistWidget = new QListWidget();
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
     disk_t *disk=element_disk->disk;
     HDDlistWidget->addItem(disk->description_short(disk));
   }
+  HDDlistWidget->setToolTip("Disk capacity must be correctly detected for a successful recovery.\n"
+      "If a disk listed above has incorrect size, check HD jumper settings, BIOS\n"
+      "detection, and install the latest OS patches and disk drivers."
+  );
+
+  QPushButton *button_proceed = new QPushButton("&Proceed");
+  QPushButton *button_quit= new QPushButton("&Quit");
+
+  QHBoxLayout *B_layout = new QHBoxLayout;
+  B_layout->addWidget(button_proceed);
+  B_layout->addWidget(button_quit);
+
+  QVBoxLayout *mainLayout = new QVBoxLayout();
+  mainLayout->addWidget(t_copy);
+  mainLayout->addWidget(t_free_soft);
+  mainLayout->addWidget(t_select);
+  mainLayout->addWidget(HDDlistWidget);
+  mainLayout->addLayout(B_layout);
+  this->setLayout(mainLayout);
+
+  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+  connect( button_proceed, SIGNAL(clicked()), this, SLOT(disk_selected()));
+  connect( HDDlistWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(disk_selected()));
 }

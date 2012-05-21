@@ -777,6 +777,7 @@ if test "$use_qt" = "true";
 then
   PKG_CHECK_MODULES(QTCORE, QtCore >= 4.0.1)
   PKG_CHECK_MODULES(QTGUI,  QtGui  >= 4.0.1)
+  MOC=`$PKG_CONFIG QtGui --variable=moc_location`
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   CXXFLAGS="$CXXFLAGS $QTCORE_CFLAGS $QTGUI_CFLAGS"
 fi
@@ -794,6 +795,7 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(MOC)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
 AC_SUBST(photorecf_LDADD)

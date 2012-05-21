@@ -18,6 +18,8 @@ else
   then
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
+    PKG_CONFIG_PATH=/usr/$crosscompile_target/lib/pkgconfig
+    export PKG_CONFIG_PATH
   fi
 fi
 case "$crosscompile_target" in
@@ -309,8 +311,8 @@ then
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
                 ;;
-	  i686-pc-mingw32|x86_64-pc-mingw32|x86_64-w64-mingw32)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok
+	  i686-pc-mingw32|x86_64-pc-mingw32|i686-w64-mingw32|x86_64-w64-mingw32)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok --enable-qt
                 ;;
 	  arm-marvell-linux-gnu)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs
