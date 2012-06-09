@@ -80,6 +80,7 @@ static int fewf_clean(disk_t *disk);
 static void *fewf_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_nopwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset);
+static int fewf_pwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_sync(disk_t *disk);
 
 struct info_fewf_struct
@@ -108,13 +109,19 @@ disk_t *fewf_init(const char *device, const int mode)
   data=(struct info_fewf_struct *)MALLOC(sizeof(struct info_fewf_struct));
   memset(data, 0, sizeof(struct info_fewf_struct)); 
   data->file_name = strdup(device);
+  data->handle=NULL;
   data->mode = mode;
 
-#if defined( HAVE_LIBEWF_V2_API )
 #ifdef DEBUG_EWF
+#if defined( HAVE_LIBEWF_V2_API )
   libewf_notify_set_stream( stderr, NULL );
   libewf_notify_set_verbose( 1 );
+#else
+  libewf_set_notify_values( stderr, 1 );
 #endif
+#endif
+
+#if defined( HAVE_LIBEWF_V2_API )
   if( libewf_glob(
        data->file_name,
        strlen(data->file_name),
@@ -140,32 +147,7 @@ disk_t *fewf_init(const char *device, const int mode)
     free(data);
     return NULL;
   }
-  if( libewf_handle_open(
-	data->handle,
-	filenames,
-	num_files,
-	LIBEWF_OPEN_READ,
-	NULL ) != 1 )
-  {
-    log_error("libewf_handle_open(%s) failed\n", device);
-
-    libewf_handle_free(
-	&( data->handle ),
-	NULL );
-
-      libewf_glob_free(
-       filenames,
-       num_files,
-       NULL );
-    free(data);
-    return NULL;
-  }
-
-#else
-#ifdef DEBUG_EWF
-  libewf_set_notify_values( stderr, 1 );
-#endif
-#if defined( HAVE_GLOB_H )
+#elif defined( HAVE_GLOB_H )
   {
     globbuf.gl_offs = 0;
     glob(data->file_name, GLOB_DOOFFS, NULL, &globbuf);
@@ -190,18 +172,65 @@ disk_t *fewf_init(const char *device, const int mode)
     num_files++;
   }
 #endif
-  data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
+
+  if((mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR)
+  {
+#if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_open(
+	  data->handle,
+	  filenames,
+	  num_files,
+	  LIBEWF_OPEN_READ_WRITE,
+	  NULL ) != 1 )
+    {
+      log_error("libewf_handle_open(%s) failed\n", device);
+    }
+#else
+    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ_WRITE);
+    if(data->handle==NULL)
+    {
+      log_error("libewf_open(%s) failed\n", device);
+    }
+#endif /* defined( HAVE_LIBEWF_V2_API ) */
+  }
   if(data->handle==NULL)
   {
-    log_error("libewf_open(%s) failed\n", device);
+    data->mode&=~TESTDISK_O_RDWR;
+#if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_open(
+	  data->handle,
+	  filenames,
+	  num_files,
+	  LIBEWF_OPEN_READ,
+	  NULL ) != 1 )
+    {
+      log_error("libewf_handle_open(%s) failed\n", device);
+
+      libewf_handle_free(
+	  &( data->handle ),
+	  NULL );
+
+      libewf_glob_free(
+	  filenames,
+	  num_files,
+	  NULL );
+      free(data);
+      return NULL;
+    }
+#else
+    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
+    if(data->handle==NULL)
+    {
+      log_error("libewf_open(%s) failed\n", device);
 #if defined( HAVE_GLOB_H )
-    globfree(&globbuf);
+      globfree(&globbuf);
 #endif
-    free(filenames);
-    free(data);
-    return NULL;
-  }
+      free(filenames);
+      free(data);
+      return NULL;
+    }
 #endif /* defined( HAVE_LIBEWF_V2_API ) */
+  }
 
 #if defined( HAVE_LIBEWF_V2_API )
   if( libewf_handle_set_header_values_date_format(
@@ -226,9 +255,9 @@ disk_t *fewf_init(const char *device, const int mode)
   disk->description_short=fewf_description_short;
   disk->pread_fast=fewf_pread_fast;
   disk->pread=fewf_pread;
-  disk->pwrite=fewf_nopwrite;
+  disk->pwrite=(data->mode&TESTDISK_O_RDWR?fewf_pwrite:fewf_nopwrite);
   disk->sync=fewf_sync;
-  disk->access_mode=TESTDISK_O_RDONLY;
+  disk->access_mode=(data->mode&TESTDISK_O_RDWR);
   disk->clean=fewf_clean;
 #if defined( HAVE_LIBEWF_V2_API ) || defined( LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS )
   {
@@ -384,6 +413,31 @@ static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, cons
       log_error("Partial read\n");
     if(taille<=0)
       return -1;
+  }
+  return taille;
+}
+
+static int fewf_pwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset)
+{
+  struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
+  int64_t taille;
+#if defined( HAVE_LIBEWF_V2_API )
+  taille = libewf_handle_write_random(
+            data->handle,
+            buffer,
+            count,
+            offset,
+            NULL );
+#else
+  taille=libewf_write_random(data->handle, buffer, count, offset);
+#endif
+  if(taille!=count)
+  {
+    log_error("fewf_pwrite(xxx,%u,buffer,%lu(%u/%u/%u)) write err: ",
+	(unsigned)(count/disk->sector_size), (long unsigned)(offset/disk->sector_size),
+	offset2cylinder(disk,offset), offset2head(disk,offset), offset2sector(disk,offset));
+    log_error("%s\n", strerror(errno));
+    return -1;
   }
   return taille;
 }
