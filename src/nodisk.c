@@ -49,7 +49,9 @@ int intrf_no_disk_ncurses(const char *prog_name)
   wmove(stdscr,9,0);
   wprintw(stdscr,"Under Win9x, use the DOS version instead.\n");
   wmove(stdscr,10,0);
-  wprintw(stdscr,"Under Vista, select %s, right-click and choose \"Run as administrator\".\n", prog_name);
+  wprintw(stdscr,"Under Vista or later, select %s, right-click and\n", prog_name);
+  wmove(stdscr,11,0);
+  wprintw(stdscr,"choose \"Run as administrator\".\n");
 #elif defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID
