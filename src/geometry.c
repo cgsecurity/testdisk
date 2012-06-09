@@ -41,6 +41,8 @@
 #include "geometry.h"
 #include "autoset.h"
 
+#define MAX_HEADS 255u
+
 static inline void set_cylinders_from_size_up(disk_t *disk_car)
 {
   disk_car->geom.cylinders=(disk_car->disk_size / disk_car->sector_size +

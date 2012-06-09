@@ -36,11 +36,7 @@ struct efi_guid_s
   uint8_t  node[6];
 } __attribute__ ((__packed__));
 
-#define DEFAULT_SECTOR_SIZE     0x200
-
-#define MAX_CYLINDERS 65535
-#define MAX_HEADS 255
-#define MAX_SECTORS 63
+#define DEFAULT_SECTOR_SIZE     0x200u
 
 #define DISKNAME_MAX	64
 #define DISKDESCRIPTION_MAX	128
