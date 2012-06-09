@@ -19,6 +19,14 @@ else
     crosscompile_target=$1
     TESTDISKCC=$crosscompile_target-gcc
     PKG_CONFIG_PATH=/usr/$crosscompile_target/lib/pkgconfig
+    if [ ! -d $PKG_CONFIG_PATH ];
+    then
+      PKG_CONFIG_PATH=/usr/$crosscompile_target/sys-root/mingw/lib/pkgconfig
+    fi
+    if [ ! -d $PKG_CONFIG_PATH ];
+    then
+      unset PKG_CONFIG_PATH
+    fi
     export PKG_CONFIG_PATH
   fi
 fi

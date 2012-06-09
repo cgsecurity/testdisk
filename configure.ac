@@ -777,7 +777,10 @@ if test "$use_qt" = "true";
 then
   PKG_CHECK_MODULES(QTCORE, QtCore >= 4.0.1)
   PKG_CHECK_MODULES(QTGUI,  QtGui  >= 4.0.1)
-  MOC=`$PKG_CONFIG QtGui --variable=moc_location`
+  AC_CHECK_TOOLS(MOC,[moc-qt4 moc],)
+  if test x$MOC = x ; then
+	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
+  fi 
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   CXXFLAGS="$CXXFLAGS $QTCORE_CFLAGS $QTGUI_CFLAGS"
 fi
