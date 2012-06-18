@@ -35,5 +35,6 @@ class QPhotorec: public QWidget
                 QListWidget *HDDlistWidget;
                 QPushButton *btn;
 		list_disk_t *list_disk;
+		void clearWidgets();
 };
 #endif

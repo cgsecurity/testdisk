@@ -35,7 +35,9 @@
 #include <time.h>
 #endif
 #include <QApplication>
-#include <QtGui>
+#include <QLayoutItem>
+#include <QLabel>
+#include <QLayout>
 #include "types.h"
 #include "common.h"
 #include "hdcache.h"
@@ -43,7 +45,7 @@
 #include "fnctdsk.h"
 #include "qphotorec.h"
 
-QPhotorec::QPhotorec(QWidget *parent) : QWidget(parent)
+QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
 {
   const int verbose=1;
   const int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -67,11 +69,14 @@ void QPhotorec::partition_selection(disk_t *disk)
   QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
   QPushButton *button_quit= new QPushButton("&Quit");
 
-  QVBoxLayout *mainLayout = new QVBoxLayout();
+  clearWidgets();
+  QLayout *mainLayout = this->layout();
+  QLabel *t_disk = new QLabel(disk->description_short(disk));
+  
   mainLayout->addWidget(t_copy);
+  mainLayout->addWidget(t_disk);
   mainLayout->addWidget(button_quit);
-//  delete this->layout;
-  this->setLayout(mainLayout);
+  
   connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
 }
 
@@ -147,19 +152,34 @@ void QPhotorec::disk_sel()
   QPushButton *button_proceed = new QPushButton("&Proceed");
   QPushButton *button_quit= new QPushButton("&Quit");
 
-  QHBoxLayout *B_layout = new QHBoxLayout;
+  QWidget *B_widget = new QWidget(this);
+  QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
   B_layout->addWidget(button_proceed);
   B_layout->addWidget(button_quit);
+  B_widget->setLayout(B_layout);
 
   QVBoxLayout *mainLayout = new QVBoxLayout();
+  //QLayout *mainLayout = this->layout();
   mainLayout->addWidget(t_copy);
   mainLayout->addWidget(t_free_soft);
   mainLayout->addWidget(t_select);
   mainLayout->addWidget(HDDlistWidget);
-  mainLayout->addLayout(B_layout);
+  mainLayout->addWidget(B_widget);
   this->setLayout(mainLayout);
 
   connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
   connect( button_proceed, SIGNAL(clicked()), this, SLOT(disk_selected()));
   connect( HDDlistWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(disk_selected()));
+}
+
+void QPhotorec::clearWidgets()
+{
+  while(1)
+  {
+    QLayoutItem *layoutwidget;
+    layoutwidget = this->layout()->takeAt(0);
+    if(layoutwidget==NULL)
+      return ;
+    layoutwidget->widget()->deleteLater();
+  }
 }
