@@ -66,25 +66,26 @@ struct dd_struct
 
 static void file_check_hdf(file_recovery_t *file_recovery)
 {
-  unsigned int offset;
-  struct ddh_struct ddh;
-  struct dd_struct *dd=(struct dd_struct *)MALLOC(2*65536);
-  struct dd_struct *p;
   uint64_t file_size=0;
-  for(offset=4; offset>0; offset=be32(ddh.next))
+  unsigned int offset_old=4;
+  unsigned int offset=4;
+  struct dd_struct *dd=(struct dd_struct *)MALLOC(sizeof(struct dd_struct)*65536);
+  do
   {
+    struct ddh_struct ddh;
+    const struct dd_struct *p;
     unsigned int i;
     if(fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
 	fread(&ddh, sizeof(ddh), 1, file_recovery->handle) !=1 ||
 	be16(ddh.size)==0 ||
-	fread(dd, 2*be16(ddh.size), 1, file_recovery->handle) !=1)
+	fread(dd, sizeof(struct dd_struct)*be16(ddh.size), 1, file_recovery->handle) !=1)
     {
       free(dd);
       file_recovery->file_size=0;
       return ;
     }
-    if(file_size < offset + 2*be16(ddh.size))
-      file_size = offset + 2*be16(ddh.size);
+    if(file_size < offset + sizeof(struct dd_struct) * be16(ddh.size))
+      file_size = offset + sizeof(struct dd_struct) * be16(ddh.size);
 #ifdef DEBUG_HDF
     log_info("size=%u next=%lu\n", be16(ddh.size), be32(ddh.next));
 #endif
@@ -97,7 +98,9 @@ static void file_check_hdf(file_recovery_t *file_recovery)
       if(file_size < be32(p->offset) + be32(p->length))
 	file_size = be32(p->offset) + be32(p->length);
     }
-  }
+    offset_old=offset;
+    offset=be32(ddh.next);
+  } while(offset > offset_old);
   free(dd);
 #ifdef DEBUG_HDF
   log_info("file_size %llu\n", (long long unsigned)file_size);
