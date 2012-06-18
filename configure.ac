@@ -726,7 +726,7 @@ do
 done
 unset option
 
-for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $option"
@@ -775,14 +775,13 @@ AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
 if test "$use_qt" = "true";
 then
-  PKG_CHECK_MODULES(QTCORE, QtCore >= 4.0.1)
   PKG_CHECK_MODULES(QTGUI,  QtGui  >= 4.0.1)
   AC_CHECK_TOOLS(MOC,[moc-qt4 moc],)
   if test x$MOC = x ; then
 	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
   fi 
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
-  CXXFLAGS="$CXXFLAGS $QTCORE_CFLAGS $QTGUI_CFLAGS"
+  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
 fi
 
 # e2fsprogs may be using pthread
@@ -799,10 +798,11 @@ AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(MOC)
+AC_SUBST(fidentify_LDADD)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
 AC_SUBST(photorecf_LDADD)
 AC_SUBST(qphotorec_LDADD)
-AC_SUBST(fidentify_LDADD)
+AC_SUBST(qphotorec_CXXFLAGS)
 AC_CONFIG_FILES([Makefile src/Makefile linux/testdisk.spec doc_src/testdisk.8 doc_src/photorec.8 doc_src/fidentify.8])
 AC_OUTPUT
