@@ -286,6 +286,7 @@ qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $
 
 fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c suspend_no.c
 
+CLEANFILES = moc_*.cpp
 DISTCLEANFILES = *~ core
 
 small: $(sbin_PROGRAMS) $(bin_PROGRAMS)
