@@ -203,6 +203,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
+  memset(&file_recovery, 0, sizeof(file_recovery));
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
   buffer_size=blocksize + READ_SIZE;
