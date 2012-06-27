@@ -190,17 +190,17 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
 	need_to_check_file=0;
 	if(offset==current_search_space->start)
 	{
-	  struct td_list_head *tmpl;
+	  const struct td_list_head *tmpl;
 	  file_recovery_t file_recovery_new;
 	  file_recovery_new.blocksize=blocksize;
 	  file_recovery_new.file_stat=NULL;
 	  td_list_for_each(tmpl, &file_check_list.list)
 	  {
-	    struct td_list_head *tmp;
-	    const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+	    const struct td_list_head *tmp;
+	    const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
 	    td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
 	    {
-	      const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	      const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
 	      if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 		  file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
 	      {

@@ -133,7 +133,7 @@ int photorec_find_blocksize(struct ph_param *params, const struct ph_options *op
       }
       else
       {
-	struct td_list_head *tmpl;
+	const struct td_list_head *tmpl;
         file_recovery_new.file_stat=NULL;
 	td_list_for_each(tmpl, &file_check_list.list)
 	{
