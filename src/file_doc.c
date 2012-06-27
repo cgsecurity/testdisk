@@ -302,14 +302,16 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
     if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
       return 0;
-    /* max file have reserved2=1
-     * qbb file have reserved2=4 */
-    if(le32(header->reserved2)!=0 && le32(header->reserved2)!=1 && le32(header->reserved2)!=4)
-      return 0;
     if(le16(header->uMiniSectorShift)!=6)
       return 0;
     /* max and qbb file have uSectorShift=12 */
     if(le16(header->uSectorShift)!=9 && le16(header->uSectorShift)!=12)
+      return 0;
+    if(le16(header->uSectorShift)==9 && le32(header->csectDir)!=0)
+      return 0;
+    /* max file have csectDir=1
+     * qbb file have csectDir=4 */
+    if(le16(header->uSectorShift)==12 && le32(header->csectDir)==0)
       return 0;
     /*
        num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
@@ -501,7 +503,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
     return NULL;
   minifat=(uint32_t*)MALLOC(le32(header->csectMiniFat) << le16(header->uSectorShift));
   minifat_pos=(unsigned char*)minifat;
-  block=le32(header->dir_flag);
+  block=le32(header->MiniFat_block);
   for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
   {
     if(fseek(IN, ((uint64_t)block << le16(header->uSectorShift)) + 512, SEEK_SET) < 0)
@@ -751,7 +753,7 @@ static void file_rename_doc(const char *old_filename)
   if(le16(header->uSectorShift)==12)
   {
     fclose(file);
-    if(le32(header->reserved2)==1)
+    if(le32(header->csectDir)==1)
       file_rename(old_filename, NULL, 0, 0, "max", 1);
     else
       file_rename(old_filename, NULL, 0, 0, "qbb", 1);

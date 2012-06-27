@@ -35,8 +35,8 @@
 
 struct OLE_HDR
 {
-	char			magic[8];				/*0*/
-	char			clsid[16];				/*8*/
+	char		magic[8];				/*0*/
+	char		clsid[16];				/*8*/
 	uint16_t	uMinorVersion;			/*24*/
 	uint16_t	uDllVersion;			/*26*/
 	uint16_t	uByteOrder;				/*28*/
@@ -44,12 +44,12 @@ struct OLE_HDR
 	uint16_t	uMiniSectorShift;		/*32*/
 	uint16_t	reserved;				/*34*/
 	uint32_t	reserved1;				/*36*/
-	uint32_t	reserved2;				/*40*/
+	uint32_t	csectDir;			/*40 Number of sectors in directory chains for 4KB sectors */
 	uint32_t	num_FAT_blocks;			/*44*/
 	uint32_t	root_start_block;		/*48*/
 	uint32_t	dfsignature;			/*52*/
 	uint32_t	miniSectorCutoff;		/*56*/
-	uint32_t	dir_flag;				/*60 first sec in the mini fat chain*/
+	uint32_t	MiniFat_block;			/*60 first sec in the mini fat chain*/
 	uint32_t	csectMiniFat;			/*64 number of sectors in the minifat */
 	uint32_t	FAT_next_block;			/*68*/
 	uint32_t	num_extra_FAT_blocks;	/*72*/
