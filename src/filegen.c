@@ -140,11 +140,11 @@ void free_header_check(void)
   td_list_for_each_safe(tmpl, nextl, &file_check_list.list)
   {
     unsigned int i;
-    struct td_list_head *tmp;
-    struct td_list_head *next;
     file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
     for(i=0;i<256;i++)
     {
+      struct td_list_head *tmp;
+      struct td_list_head *next;
       td_list_for_each_safe(tmp, next, &pos->file_checks[i].list)
       {
 #ifdef DEBUG_HEADER_CHECK
