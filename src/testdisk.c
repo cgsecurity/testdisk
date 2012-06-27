@@ -233,12 +233,16 @@ int main( int argc, char **argv )
 	"It works with :\n" \
 	"- BeFS (BeOS)                           - BSD disklabel (Free/Open/Net BSD)\n" \
 	"- CramFS, Compressed File System        - DOS/Windows FAT12, FAT16 and FAT32\n" \
+	"- XBox FATX                             - Windows exFAT\n" \
 	"- HFS, HFS+, Hierarchical File System   - JFS, IBM's Journaled File System\n" \
-	"- Linux Ext2 and Ext3                   - Linux Raid\n" \
-	"- Linux Swap                            - LVM, LVM2, Logical Volume Manager\n" \
-	"- Netware NSS                           - NTFS (Windows NT/2K/XP/2003)\n" \
-	"- ReiserFS 3.5, 3.6 and 4               - Sun Solaris i386 disklabel\n" \
-	"- UFS and UFS2 (Sun/BSD/...)            - XFS, SGI's Journaled File System\n" \
+	"- Linux btrfs                           - Linux ext2, ext3 and ext4\n" \
+	"- Linux GFS2                            - Linux LUKS\n" \
+	"- Linux Raid                            - Linux Swap\n" \
+	"- LVM, LVM2, Logical Volume Manager     - Netware NSS\n" \
+	"- Windows NTFS                          - ReiserFS 3.5, 3.6 and 4\n" \
+	"- Sun Solaris i386 disklabel            - UFS and UFS2 (Sun/BSD/...)\n" \
+	"- XFS, SGI's Journaled File System      - Wii WBFS\n" \
+	"- Sun ZFS\n" \
 	"\n" \
 	"If you have problems with TestDisk or bug reports, please contact me.\n");
     return 0;
