@@ -1215,13 +1215,13 @@ static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, con
     memset((char*)buf+ret,0,count-ret);
   }
 #ifdef HDCLONE
-  else
+  if(ret>0)
   {
     int handle_clone=((struct info_file_struct *)disk->data)->handle_clone;
     if(handle_clone>0)
     {
-      pwrite(handle_clone, buf, count, offset);
-      fdatasync(handle_clone);
+      pwrite(handle_clone, buf, ret, offset);
+//      fdatasync(handle_clone);
     }
   }
 #endif
@@ -1572,9 +1572,9 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
       char *new_file=(char *)MALLOC(strlen(device)+5);
       sprintf(new_file, "%s.dd", device);
 #ifdef O_LARGEFILE
-      data->handle_clone=open(new_file, O_CREAT|O_EXCL|O_LARGEFILE|O_WRONLY,00600);
+      data->handle_clone=open(new_file, O_CREAT|O_LARGEFILE|O_RDWR,00600);
 #else
-      data->handle_clone=open(new_file, O_CREAT|O_EXCL|O_WRONLY,00600);
+      data->handle_clone=open(new_file, O_CREAT|O_RDWR,00600);
 #endif
       free(new_file);
     }
