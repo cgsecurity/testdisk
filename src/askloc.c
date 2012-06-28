@@ -23,7 +23,6 @@
 #include <config.h>
 #endif
  
-#ifdef HAVE_NCURSES
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -59,6 +58,26 @@
 #include "askloc.h"
 #include "log.h"
 
+static char *td_getcwd(char *buf, unsigned long size)
+{
+  /* buf must non-NULL*/
+#ifdef HAVE_GETCWD
+  if(getcwd(buf, size)!=NULL)
+    return buf;
+#endif
+  buf[0]='.';
+  buf[1]='\0';
+  return buf;
+}
+
+char *get_default_location(void)
+{
+  char dst_directory[4096];
+  td_getcwd(dst_directory, sizeof(dst_directory));
+  return strdup(dst_directory);
+}
+
+#ifdef HAVE_NCURSES
 extern const char *monstr[];
 
 #define INTER_DIR (LINES-25+16)
@@ -561,5 +580,5 @@ static int aff_txt(int line, WINDOW *window, const char *_format, ...)
   va_end(ap);
   return line;
 }
-
 #endif
+

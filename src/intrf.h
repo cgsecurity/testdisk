@@ -70,9 +70,7 @@ int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf,
 void screen_buffer_to_log(void);
 void screen_buffer_to_interface(void);
 void screen_buffer_to_stdout(void);
-char *get_default_location(void);
 void dump_ncurses(const void *nom_dump, unsigned int lng);
-char *td_getcwd(char *buf, unsigned long size);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

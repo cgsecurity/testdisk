@@ -206,25 +206,6 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
 #define PATH_DRIVE_LENGTH 9
 #endif
 
-char *td_getcwd(char *buf, unsigned long size)
-{
-  /* buf must non-NULL*/
-#ifdef HAVE_GETCWD
-  if(getcwd(buf, size)!=NULL)
-    return buf;
-#endif
-  buf[0]='.';
-  buf[1]='\0';
-  return buf;
-}
-
-char *get_default_location(void)
-{
-  char dst_directory[4096];
-  td_getcwd(dst_directory, sizeof(dst_directory));
-  return strdup(dst_directory);
-}
-
 unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...)
 {
   if(*current_cmd!=NULL)

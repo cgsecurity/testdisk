@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 char *ask_location(const char*msg, const char *src_dir, const char *dst_org);
+char *get_default_location(void);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
