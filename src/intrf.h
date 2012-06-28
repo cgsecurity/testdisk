@@ -56,21 +56,15 @@ struct MenuItem
 /* '\014' == ^L */
 #define key_REDRAWKEY 		'\014'
 
-void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
 void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA);
 const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
 void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const partition_t *partition);
 
-int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
-unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 5, 6)));
-void not_implemented(const char *msg);
 void screen_buffer_reset(void);
 int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf, 1, 2)));
 void screen_buffer_to_log(void);
-void screen_buffer_to_interface(void);
 void screen_buffer_to_stdout(void);
-void dump_ncurses(const void *nom_dump, unsigned int lng);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

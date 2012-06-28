@@ -41,13 +41,19 @@ extern "C" {
 
 void aff_copy(WINDOW *window);
 void aff_copy_short(WINDOW *window);
+void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
 void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
+unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 int ask_YN(WINDOW *window);
+int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
 int check_enter_key_or_s(WINDOW *window);
 void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigned int lng);
 void dump(WINDOW *window,const void *nom_dump,unsigned int lng);
+void dump_ncurses(const void *nom_dump, unsigned int lng);
+void not_implemented(const char *msg);
 int screen_buffer_display_ext(WINDOW *window, const char *options_org, const struct MenuItem *menuItems, unsigned int *menu);
 int screen_buffer_display(WINDOW *window, const char *options_org, const struct MenuItem *menuItems);
+void screen_buffer_to_interface(void);
 int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key);
 int wmenuSelect(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int menuDefault);
 int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, const unsigned int menuDefault);
