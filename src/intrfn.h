@@ -46,6 +46,7 @@ void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car
 unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 int ask_YN(WINDOW *window);
 int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
+int ask_confirmation_with_default(const int key_default, const char*_format, ...) __attribute__ ((format (printf, 2, 3)));
 int check_enter_key_or_s(WINDOW *window);
 void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigned int lng);
 void dump(WINDOW *window,const void *nom_dump,unsigned int lng);

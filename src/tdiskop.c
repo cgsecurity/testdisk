@@ -181,7 +181,8 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	    if(search_vista_part==0)
 	    {
 	      log_info("Ask the user for vista mode\n");
-	      if(ask_confirmation("Should TestDisk search for partition created under Vista or later ? [Y/N] (answer Yes if unsure)")!=0)
+	      if(ask_confirmation_with_default('Y',
+		    "Should TestDisk search for partition created under Vista or later ? [Y/N] (answer Yes if unsure)")!=0)
 		search_vista_part=1;
 	    }
 	    log_info("search_vista_part: %d\n", search_vista_part);

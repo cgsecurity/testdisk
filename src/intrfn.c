@@ -988,13 +988,13 @@ void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA)
 
 int ask_YN(WINDOW *window)
 {
-  char res;
+  int res;
   curs_set(1);
   wrefresh(window);
   do
   {
     res=toupper(wgetch(window));
-  } while((res!=c_NO)&&(res!=c_YES));
+  } while(res!=c_NO && res!=c_YES);
   curs_set(0);
   wprintw(window,"%c\n",res);
   return (res==c_YES);
@@ -1016,6 +1016,45 @@ int ask_confirmation(const char*_format, ...)
   touchwin(stdscr);
 #endif
   return res;
+}
+
+int ask_confirmation_with_default(const int key_default, const char*_format, ...)
+{
+  va_list ap;
+  int res;
+  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
+  aff_copy(window);
+  va_start(ap,_format);
+  vaff_txt(4, window, _format, ap);
+  va_end(ap);
+  curs_set(1);
+  wrefresh(window);
+  do
+  {
+    res=wgetch(window);
+    switch(res)
+    {
+#ifdef PADENTER
+      case PADENTER:
+#endif
+      case KEY_ENTER:
+      case '\n':
+      case '\r':
+	res=key_default;
+	break;
+      default:
+      res=toupper(res);
+      break;
+    }
+  } while(res!=c_NO && res!=c_YES);
+  curs_set(0);
+  wprintw(window,"%c\n",res);
+  delwin(window);
+  (void) clearok(stdscr, TRUE);
+#ifdef HAVE_TOUCHWIN
+  touchwin(stdscr);
+#endif
+  return (res==c_YES);
 }
 
 void not_implemented(const char *msg)
