@@ -76,7 +76,6 @@ static int spacerange_cmp(const struct td_list_head *a, const struct td_list_hea
 
 void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_data_t*list_search_space)
 {
-  int insert_error=0;
   list_part_t *list_part;
   list_part_t *current_element;
   unsigned int current_element_num;
@@ -100,6 +99,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   params->blocksize=0;
   list_part=params->disk->arch->read_part(params->disk,options->verbose,0);
   {
+    int insert_error=0;
     partition_t *partition_wd;
     partition_wd=new_whole_disk(params->disk);
     list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
