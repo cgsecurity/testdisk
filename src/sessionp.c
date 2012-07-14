@@ -172,6 +172,9 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
     struct td_list_head *free_walker = NULL;
     unsigned int i;
     const file_enable_t *files_enable=options->list_file_format;
+    unsigned int disable=0;
+    unsigned int enable=0;
+    unsigned int enable_by_default=0;
     if(options->verbose>1)
     {
       log_trace("session_save\n");
@@ -180,9 +183,50 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
 	(unsigned int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order, params->blocksize);
     for(i=0;files_enable[i].file_hint!=NULL;i++)
     {
-      if(files_enable[i].file_hint->extension!=NULL && files_enable[i].file_hint->extension[0]!='\0')
+      if(files_enable[i].enable==0)
+	disable++;
+      else
+	enable++;
+      if(files_enable[i].enable==files_enable[i].file_hint->enable_by_default)
+	enable_by_default++;
+    }
+    if(enable_by_default >= disable && enable_by_default >= enable)
+    {
+      for(i=0;files_enable[i].file_hint!=NULL;i++)
       {
-	fprintf(f_session,"%s,%s,",files_enable[i].file_hint->extension,(files_enable[i].enable!=0?"enable":"disable"));
+	if(files_enable[i].enable!=files_enable[i].file_hint->enable_by_default &&
+	      files_enable[i].file_hint->extension!=NULL &&
+	      files_enable[i].file_hint->extension[0]!='\0')
+	{
+	  fprintf(f_session,"%s,%s,", files_enable[i].file_hint->extension,
+	      (files_enable[i].enable!=0?"enable":"disable"));
+	}
+      }
+    }
+    else if(enable > disable)
+    {
+      fprintf(f_session,"everything,enable,");
+      for(i=0;files_enable[i].file_hint!=NULL;i++)
+      {
+	if(files_enable[i].enable==0 &&
+	      files_enable[i].file_hint->extension!=NULL &&
+	      files_enable[i].file_hint->extension[0]!='\0')
+	{
+	  fprintf(f_session,"%s,disable,", files_enable[i].file_hint->extension);
+	}
+      }
+    }
+    else
+    {
+      fprintf(f_session,"everything,disable,");
+      for(i=0;files_enable[i].file_hint!=NULL;i++)
+      {
+	if(files_enable[i].enable!=0 &&
+	      files_enable[i].file_hint->extension!=NULL &&
+	      files_enable[i].file_hint->extension[0]!='\0')
+	{
+	  fprintf(f_session,"%s,enable,", files_enable[i].file_hint->extension);
+	}
       }
     }
     /* Save options */
