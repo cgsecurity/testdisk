@@ -90,7 +90,7 @@ static void update_location(void)
   search_location_nbr++;
 }
 
-void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode, const int search_vista_part)
+void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode)
 {
   /* test_nbr==1... */
   if(disk_car->arch==&arch_i386)
@@ -113,12 +113,9 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
       search_location_info[search_location_nbr].offset=CHS_to_offset(0,2,1,disk_car);
       search_location_info[search_location_nbr].inc=CHS_to_offset(1,0,0,disk_car);
     }
-    if(search_vista_part>0)
-    {
-      search_location_info[search_location_nbr].offset=0;
-      search_location_info[search_location_nbr].inc=2048*512;
-      update_location();
-    }
+    search_location_info[search_location_nbr].offset=0;
+    search_location_info[search_location_nbr].inc=2048*512;
+    update_location();
   }
   else
   {
@@ -148,12 +145,9 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
       search_location_info[search_location_nbr].inc=location_boundary;
       update_location();
     }
-    if(search_vista_part>0)
-    {
-      search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,7,disk_car);
-      search_location_info[search_location_nbr].inc=2048*512;
-      update_location();
-    }
+    search_location_info[search_location_nbr].offset=CHS_to_offset(0,0,7,disk_car);
+    search_location_info[search_location_nbr].inc=2048*512;
+    update_location();
     /* test_nbr==3 ou test_nbr==4, NTFS or HFS backup boot sector */
     if(disk_car->arch==&arch_i386)
     {
@@ -167,12 +161,9 @@ void search_location_init(const disk_t *disk_car, const unsigned int location_bo
       search_location_info[search_location_nbr].inc=location_boundary;
       update_location();
     }
-    if(search_vista_part>0)
-    {
-      search_location_info[search_location_nbr].offset=(2048-1)*512;
-      search_location_info[search_location_nbr].inc=2048*512;
-      update_location();
-    }
+    search_location_info[search_location_nbr].offset=(2048-1)*512;
+    search_location_info[search_location_nbr].inc=2048*512;
+    update_location();
     /* test_nbr==5*/
     {
       int s_log_block_size;

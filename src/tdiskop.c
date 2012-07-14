@@ -67,27 +67,9 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
     {
       (*current_cmd)+=7;
       {
-	int search_vista_part=0;
 	list_part_t *list_part;
 	list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
-	if(disk_car->arch==&arch_i386)
-	{
-	  const list_part_t *element;
-	  for(element=list_part;element!=NULL;element=element->next)
-	  {
-	    if(element->part->part_offset%(2048*512)==0 && element->part->part_size%(2048*512)==0)
-	      search_vista_part=1;
-	  }
-	  while(*current_cmd[0]==',')
-	    (*current_cmd)++;
-	  if(strncmp(*current_cmd,"mode_vista",10)==0)
-	  {
-	    (*current_cmd)+=10;
-	    search_vista_part=1;
-	  }
-	  log_info("search_vista_part: %d\n", search_vista_part);
-	}
-	interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, search_vista_part, current_cmd);
+	interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
 	part_free_list(list_part);
       }
     }
@@ -167,27 +149,9 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
       case 'a':
       case 'A':
 	{
-	  int search_vista_part=0;
 	  list_part_t *list_part;
 	  list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
-	  if(disk_car->arch==&arch_i386)
-	  {
-	    const list_part_t *element;
-	    for(element=list_part;element!=NULL;element=element->next)
-	    {
-	      if(element->part->part_offset%(2048*512)==0 && element->part->part_size%(2048*512)==0)
-		search_vista_part=1;
-	    }
-	    if(search_vista_part==0)
-	    {
-	      log_info("Ask the user for vista mode\n");
-	      if(ask_confirmation_with_default('Y',
-		    "Should TestDisk search for partition created under Vista or later ? [Y/N] (answer Yes if unsure)")!=0)
-		search_vista_part=1;
-	    }
-	    log_info("search_vista_part: %d\n", search_vista_part);
-	  }
-	  interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, search_vista_part, current_cmd);
+	  interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
 	  part_free_list(list_part);
 	}
 	break;

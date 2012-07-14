@@ -72,7 +72,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
 static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr);
 /* Optimization */
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, const int search_vista_part, char **current_cmd);
+static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd);
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
@@ -409,7 +409,7 @@ static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned in
    - Geometry: don't care
 */
 
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, const int search_vista_part, char **current_cmd)
+static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd)
 {
   unsigned char *buffer_disk;
   unsigned char *buffer_disk0;
@@ -514,7 +514,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   }
   search_location=min_location;
   /* Not every sector will be examined */
-  search_location_init(disk_car, location_boundary, fast_mode, search_vista_part);
+  search_location_init(disk_car, location_boundary, fast_mode);
   /* Scan the disk */
   while(ind_stop==0 && search_location < search_location_max)
   {
@@ -553,7 +553,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       if(disk_car->arch==&arch_i386)
         search_now|= (start.sector==1 && fast_mode>1) ||
           (start.sector==1 && start.head<=2) ||
-          (search_vista_part>0 && search_location%(2048*512)==0);
+          search_location%(2048*512)==0;
       else
         search_now|= (search_location%location_boundary==0);
       while(try_offset_raid_nbr>0 && try_offset_raid[0]<=search_location)
@@ -610,7 +610,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           {
             if((disk_car->arch==&arch_i386 &&
                   ((start.sector==7 && (start.head<=2 || fast_mode>1)) ||
-                   (search_vista_part>0 && search_location%(2048*512)==(7-1)*512))) ||
+                   search_location%(2048*512)==(7-1)*512)) ||
                 (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(7-1)*512)))
               res=search_FAT_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
             test_nbr++;
@@ -620,7 +620,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	{
 	  if((disk_car->arch==&arch_i386 &&
 		((start.sector==13 && (start.head<=2 || fast_mode>1)) ||
-		 (search_vista_part>0 && search_location%(2048*512)==(13-1)*disk_car->sector_size))) ||
+		 search_location%(2048*512)==(13-1)*disk_car->sector_size)) ||
 	      (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(13-1)*disk_car->sector_size)))
 	    res=search_EXFAT_backup(buffer_disk, disk_car, partition);
 	  test_nbr++;
@@ -630,7 +630,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
 		  (start.head==disk_car->geom.heads_per_cylinder-1 || fast_mode>1)) ||
-                 (search_vista_part>0 && search_location%(2048*512)==(2048-1)*512))) ||
+                 search_location%(2048*512)==(2048-1)*512)) ||
               (disk_car->arch!=&arch_i386 && search_location%location_boundary==(location_boundary-512) &&
                search_location>0))
             res=search_NTFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
@@ -641,7 +641,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           if((disk_car->arch==&arch_i386 &&
                 ((start.sector==disk_car->geom.sectors_per_head &&
 		  (start.head==disk_car->geom.heads_per_cylinder-1 || fast_mode>1)) ||
-                 (search_vista_part>0 && search_location%(2048*512)==(2048-1)*512))) ||
+		 search_location%(2048*512)==(2048-1)*512)) ||
               (disk_car->arch!=&arch_i386 && search_location%location_boundary==(location_boundary-512) &&
                search_location>0))
             res=search_HFS_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
@@ -1288,7 +1288,7 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
   return 0;
 }
 
-int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, const int search_vista_part, char **current_cmd)
+int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd)
 {
   int res_interface_write;
   int fast_mode=0;
@@ -1306,7 +1306,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     wmove(stdscr,5,0);
 #endif
     res_interface_write=0;
-    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, 1, search_vista_part, current_cmd);
+    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, 1, current_cmd);
     if(list_part!=NULL && (disk_car->arch==&arch_i386 || disk_car->arch==&arch_sun))
     { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
       unsigned int heads_per_cylinder;
