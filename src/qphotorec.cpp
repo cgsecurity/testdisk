@@ -43,7 +43,10 @@
 #include "hdcache.h"
 #include "hdaccess.h"
 #include "fnctdsk.h"
+#include "filegen.h"
+#include "photorec.h"
 #include "qphotorec.h"
+#include "intrf.h"
 
 QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
 {
@@ -65,19 +68,54 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
 
 void QPhotorec::partition_selection(disk_t *disk)
 {
-  this->setWindowTitle(tr("QPhotoRec: partition selection"));
+  list_part_t *list_part;
+  list_part_t *element;
   QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
+  QLabel *t_disk = new QLabel(disk->description_short(disk));
+  QPushButton *button_proceed = new QPushButton("&Proceed");
   QPushButton *button_quit= new QPushButton("&Quit");
+
+  QWidget *B_widget = new QWidget(this);
+  QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
+  B_layout->addWidget(button_proceed);
+  B_layout->addWidget(button_quit);
+  B_widget->setLayout(B_layout);
+
+  PartListWidget= new QListWidget();
+  list_part=disk->arch->read_part(disk, 0, 0);
+  {
+    int insert_error=0;
+    partition_t *partition_wd;
+    partition_wd=new_whole_disk(disk);
+    list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
+    if(insert_error>0)
+    {
+      free(partition_wd);
+    }
+  }
+  if(list_part==NULL)
+    return;
+  for(element=list_part; element!=NULL; element=element->next)
+  {
+    const char *msg;
+    msg=aff_part_aux(AFF_PART_ORDER|AFF_PART_STATUS, disk, element->part);
+    PartListWidget->addItem(msg);
+  }
 
   clearWidgets();
   QLayout *mainLayout = this->layout();
-  QLabel *t_disk = new QLabel(disk->description_short(disk));
+//  this->setWindowTitle(tr("QPhotoRec: partition selection"));
   
   mainLayout->addWidget(t_copy);
   mainLayout->addWidget(t_disk);
-  mainLayout->addWidget(button_quit);
+  mainLayout->addWidget(PartListWidget);
+  mainLayout->addWidget(B_widget);
+
+  this->setLayout(mainLayout);
   
   connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+//  connect( button_proceed, SIGNAL(clicked()), this, SLOT(partition_selected()));
+//  connect( PartListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(partition_selected()));
 }
 
 void QPhotorec::disk_selected()
@@ -159,7 +197,6 @@ void QPhotorec::disk_sel()
   B_widget->setLayout(B_layout);
 
   QVBoxLayout *mainLayout = new QVBoxLayout();
-  //QLayout *mainLayout = this->layout();
   mainLayout->addWidget(t_copy);
   mainLayout->addWidget(t_free_soft);
   mainLayout->addWidget(t_select);

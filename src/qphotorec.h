@@ -33,6 +33,7 @@ class QPhotorec: public QWidget
 		void disk_selected();
         private:
                 QListWidget *HDDlistWidget;
+                QListWidget *PartListWidget;
                 QPushButton *btn;
 		list_disk_t *list_disk;
 		void clearWidgets();
