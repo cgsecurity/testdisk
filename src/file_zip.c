@@ -230,6 +230,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	  msoffice=1;
 	else if(len==4 && memcmp(filename, "Home", 4)==0)
 	  sh3d=1;
+	else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
+	  *ext="kmz";	/* Zipped Keyhole Markup Language (KML) used by Google Earth */
       }
       else if(file_nbr==1 && sh3d==1)
       {
