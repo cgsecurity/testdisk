@@ -107,7 +107,8 @@ static int header_check_pst(const unsigned char *buffer, const unsigned int buff
   }
   if(memcmp(buffer,pst_header,sizeof(pst_header))==0)
   {
-    if(buffer[INDEX_TYPE_OFFSET]==0x0e)
+    if(buffer[INDEX_TYPE_OFFSET]==0x0e ||
+	buffer[INDEX_TYPE_OFFSET]==0x0f)
     {
       /* Outlook 2000 and older versions */
       reset_file_recovery(file_recovery_new);
@@ -120,7 +121,8 @@ static int header_check_pst(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->file_check=&file_check_size;
       return 1;
     }
-    else if(buffer[INDEX_TYPE_OFFSET]==0x17)
+    else
+//      if(buffer[INDEX_TYPE_OFFSET]==0x15 || buffer[INDEX_TYPE_OFFSET]==0x17)
     { /* Outlook 2003 */
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_pst.extension;
