@@ -186,58 +186,57 @@ static int filtre(unsigned char car)
   switch(car)
   {
     case 0x7c:  /* similar to | */
-    case 0x80:
-    case 0x92:
-    case 0x99:
-    case 0x9c:	/* 'œ' */
+    case 0x80:	/* 'â‚¬' */
+    case 0x92:	/* 'â€™' */
+    case 0x99:	/* 'â„¢' */
+    case 0x9c:	/* 'Å“' */
     case 0xa0:  /* nonbreaking space */
-    case 0xa1:  /* '¡' */
-    case 0xa2:
-    case 0xa3:	/* '£' */
-    case 0xa7:	/* '§' */
-    case 0xa8:
-    case 0xa9:	/* '©' */
-    case 0xab:	/* '«' */
-    case 0xae:	/* '®' */
-    case 0xb0:	/* '°' */
-    case 0xb4:  /* '´' */
-    case 0xb7:
-    case 0xbb:  /* '»' */
-    case 0xc0:  /* 'À' */
-    case 0xc7:  /* 'Ç' */
-    case 0xc9:  /* 'É' */
-    case 0xd6:  /* 'Ö' */
-    case 0xd7:
-    case 0xd9:  /* 'Ù' */
-    case 0xdf:
-    case 0xe0: 	/* 'à' */
-    case 0xe1: 	/* 'á' */
-    case 0xe2: 	/* 'â' */
-    case 0xe3:  /* 'ã' */
-    case 0xe4: 	/* 'ä' */
-    case 0xe6:  /* 'æ' */
-    case 0xe7: 	/* 'ç' */
-    case 0xe8: 	/* 'è' */
-    case 0xe9: 	/* 'é' */
-    case 0xea: 	/* 'ê' */
-    case 0xeb: 	/* 'ë' */
-    case 0xed:  /* 'í' */
-    case 0xee: 	/* 'î' */
-    case 0xef: 	/* 'ï' */
-    case 0xf4: 	/* 'ô' */
-    case 0xf6: 	/* 'ö' */
-    case 0xf8:  /* 'ø' */
-    case 0xf9: 	/* 'ù' */
-    case 0xfa:  /* 'ú' */
-    case 0xfb: 	/* 'û' */
-    case 0xfc: 	/* 'ü' */
+    case 0xa1:  /* 'Â¡' */
+    case 0xa2:	/* 'Â¢' */
+    case 0xa3:	/* 'Â£' */
+    case 0xa7:	/* 'Â§' */
+    case 0xa8:	/* 'Â¨' */
+    case 0xa9:	/* 'Â©' */
+    case 0xab:	/* 'Â«' */
+    case 0xae:	/* 'Â®' */
+    case 0xb0:	/* 'Â°' */
+    case 0xb4:  /* 'Â´' */
+    case 0xb7:	/* 'Â·' */
+    case 0xbb:  /* 'Â»' */
+    case 0xc0:  /* 'Ã€' */
+    case 0xc7:  /* 'Ã‡' */
+    case 0xc9:  /* 'Ã‰' */
+    case 0xd6:  /* 'Ã–' */
+    case 0xd7:	/* 'Ã—' */
+    case 0xd9:  /* 'Ã™' */
+    case 0xdf:	/* 'ÃŸ' */
+    case 0xe0: 	/* 'Ã ' */
+    case 0xe1: 	/* 'Ã¡' */
+    case 0xe2: 	/* 'Ã¢' */
+    case 0xe3:  /* 'Ã£' */
+    case 0xe4: 	/* 'Ã¤' */
+    case 0xe6:  /* 'Ã¦' */
+    case 0xe7: 	/* 'Ã§' */
+    case 0xe8: 	/* 'Ã¨' */
+    case 0xe9: 	/* 'Ã©' */
+    case 0xea: 	/* 'Ãª' */
+    case 0xeb: 	/* 'Ã«' */
+    case 0xed:  /* 'Ã­' */
+    case 0xee: 	/* 'Ã®' */
+    case 0xef: 	/* 'Ã¯' */
+    case 0xf4: 	/* 'Ã´' */
+    case 0xf6: 	/* 'Ã¶' */
+    case 0xf8:  /* 'Ã¸' */
+    case 0xf9: 	/* 'Ã¹' */
+    case 0xfa:  /* 'Ãº' */
+    case 0xfb: 	/* 'Ã»' */
+    case 0xfc: 	/* 'Ã¼' */
       return 1;
   }
-  if((car=='\b')||(car=='\t')||(car=='\r')||(car=='\n')
-    ||((car>=' ')&&(car<='~'))
-    ||((car>=0x82)&&(car<=0x8d))
-    ||((car>=0x93)&&(car<=0x98))
-    )
+  if(car=='\b' || car=='\t' || car=='\r' || car=='\n' ||
+      (car >=  ' ' && car <=  '~') ||
+      (car >= 0x82 && car <= 0x8d) ||
+      (car >= 0x93 && car <= 0x98))
     return 1;
   return 0;
 }
