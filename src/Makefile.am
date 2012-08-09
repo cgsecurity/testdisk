@@ -267,6 +267,7 @@ file_C			= filegen.c \
 			  file_xsv.c \
 			  file_xpt.c \
 			  file_xv.c \
+			  file_xz.c \
 			  file_zip.c
 
 file_H			= ext2.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h

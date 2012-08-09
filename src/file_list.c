@@ -270,6 +270,7 @@ extern const file_hint_t file_hint_xm;
 extern const file_hint_t file_hint_xsv;
 extern const file_hint_t file_hint_xpt;
 extern const file_hint_t file_hint_xv;
+extern const file_hint_t file_hint_xz;
 extern const file_hint_t file_hint_zip;
 
 file_enable_t list_file_enable[]=
@@ -517,6 +518,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_xsv  },
   { .enable=0, .file_hint=&file_hint_xpt  },
   { .enable=0, .file_hint=&file_hint_xv   },
+  { .enable=0, .file_hint=&file_hint_xz   },
   { .enable=0, .file_hint=&file_hint_zip  },
   { .enable=0, .file_hint=NULL }
 };
