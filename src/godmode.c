@@ -1343,7 +1343,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
       list_part=reduce_structure(list_part);
       /* sort list_part */
       list_part=sort_partition_list(list_part);
-      /* Creer la partition etendue globale, cherche à aligner la partition */
+      /* Create PC/Intel Extended partition */
       /* if(disk_car->arch==&arch_i386) */
       {
 	list_part_t *parts;
