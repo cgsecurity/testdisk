@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 	old_status);
     fclose(log);
   }
-  /* Pass 2: lire depuis la fin jusqu'à ce qu'il y ai une erreur */
+  /* Pass 2: read until a read error occurs */
   {
     FILE *oldlog;
     if((oldlog=fopen("diskcp.log","r"))==NULL)
