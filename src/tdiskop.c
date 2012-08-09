@@ -49,7 +49,7 @@
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_none;
 #define INTER_DISK_X	0
-#define INTER_DISK_Y	7
+#define INTER_DISK_Y	8
 
 
 static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
@@ -106,7 +106,7 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
 }
 
 #ifdef HAVE_NCURSES
-static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
+static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const int saveheader, char **current_cmd)
 {
   int align=1;
   int ask_part_order=0;
@@ -126,17 +126,24 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	{'E',"Editor","Basic disk editor"},
 	{0,NULL,NULL}
   };
-  unsigned int menu=(disk_car->arch == &arch_none ? 1 : 0);
+  unsigned int menu=(disk->arch == &arch_none ? 1 : 0);
   strcpy(options, "AGOPTQ");
-  if(disk_car->arch->write_MBR_code!=NULL)
+  if(disk->arch->write_MBR_code!=NULL)
     strcat(options,"C");
-  if(disk_car->arch->erase_list_part!=NULL)
+  if(disk->arch->erase_list_part!=NULL)
     strcat(options,"D");
   while(1)
   {
     aff_copy(stdscr);
     wmove(stdscr,5,0);
-    wprintw(stdscr,"%s\n",disk_car->description(disk_car));
+    wprintw(stdscr, "%s\n", disk->description_short(disk));
+    wmove(stdscr,6,0);
+    if(disk->geom.heads_per_cylinder == 1 && disk->geom.sectors_per_head == 1)
+      wprintw(stdscr, "     %lu sectors", disk->geom.cylinders);
+    else
+      wprintw(stdscr, "     CHS %lu %u %u",
+	  disk->geom.cylinders, disk->geom.heads_per_cylinder, disk->geom.sectors_per_head);
+    wprintw(stdscr, " - sector size=%u", disk->sector_size);
     wmove(stdscr,20,0);
     wprintw(stdscr,"Note: Correct disk geometry is required for a successful recovery. 'Analyse'");
     wmove(stdscr,21,0);
@@ -150,22 +157,22 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
       case 'A':
 	{
 	  list_part_t *list_part;
-	  list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
-	  interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
+	  list_part=interface_analyse(disk, verbose, saveheader, current_cmd);
+	  interface_recovery(disk, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
 	  part_free_list(list_part);
 	}
 	break;
       case 'd':
       case 'D':
-	write_clean_table(disk_car);
+	write_clean_table(disk);
 	break;
       case 'c':
       case 'C':
-	write_MBR_code(disk_car);
+	write_MBR_code(disk);
 	break;
       case 'g':
       case 'G':
-	change_geometry(disk_car, current_cmd);
+	change_geometry(disk, current_cmd);
 	break;
       case 'o':
       case 'O':
@@ -175,11 +182,11 @@ static int menu_disk_ncurses(disk_t *disk_car, const int verbose,int dump_ind, c
 	break;
       case 't':
       case 'T':
-	interface_adv(disk_car, verbose, dump_ind, expert, current_cmd);
+	interface_adv(disk, verbose, dump_ind, expert, current_cmd);
 	break;
       case 'e':
       case 'E':
-	interface_editor(disk_car);
+	interface_editor(disk);
 	break;
       case 'q':
       case 'Q':

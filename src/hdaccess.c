@@ -149,8 +149,6 @@ struct info_file_struct
 };
 
 static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, const int verbose);
-static const char *file_description(disk_t *disk_car);
-static const char *file_description_short(disk_t *disk_car);
 static int file_clean(disk_t *disk_car);
 static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
 static void *file_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
@@ -1057,16 +1055,24 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
 }
 #endif
 
-static const char *file_description(disk_t *disk_car)
+static const char *file_description(disk_t *disk)
 {
-  const struct info_file_struct *data=(const struct info_file_struct *)disk_car->data;
+  const struct info_file_struct *data=(const struct info_file_struct *)disk->data;
   char buffer_disk_size[100];
-  size_to_unit(disk_car->disk_size, buffer_disk_size);
-  snprintf(disk_car->description_txt, sizeof(disk_car->description_txt),"Disk %s - %s - CHS %lu %u %u%s",
-      disk_car->device, buffer_disk_size,
-      disk_car->geom.cylinders, disk_car->geom.heads_per_cylinder, disk_car->geom.sectors_per_head,
-      ((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
-  return disk_car->description_txt;
+  size_to_unit(disk->disk_size, buffer_disk_size);
+  if(disk->geom.heads_per_cylinder == 1 && disk->geom.sectors_per_head == 1)
+    snprintf(disk->description_txt, sizeof(disk->description_txt),
+	"Disk %s - %s - %lu sectors%s",
+	disk->device, buffer_disk_size,
+	disk->geom.cylinders,
+	((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+  else
+    snprintf(disk->description_txt, sizeof(disk->description_txt),
+	"Disk %s - %s - CHS %lu %u %u%s",
+	disk->device, buffer_disk_size,
+	disk->geom.cylinders, disk->geom.heads_per_cylinder, disk->geom.sectors_per_head,
+	((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
+  return disk->description_txt;
 }
 
 static const char *file_description_short(disk_t *disk_car)
