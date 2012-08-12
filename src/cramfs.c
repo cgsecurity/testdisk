@@ -43,16 +43,23 @@ static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, pa
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(CRAMFS_SUPERBLOCK_SIZE);
-  if(disk_car->pread(disk_car, buffer, CRAMFS_SUPERBLOCK_SIZE, partition->part_offset + 0x200) != CRAMFS_SUPERBLOCK_SIZE)
+  if(disk_car->pread(disk_car, buffer, CRAMFS_SUPERBLOCK_SIZE, partition->part_offset + 0x200) == CRAMFS_SUPERBLOCK_SIZE)
   {
-    free(buffer);
-    return 1;
+    if(test_cramfs(disk_car, (struct cramfs_super*)buffer, partition, verbose)==0)
+    {
+      set_cramfs_info((struct cramfs_super*)buffer, partition);
+      free(buffer);
+      return 0;
+    }
   }
-  if(test_cramfs(disk_car, (struct cramfs_super*)buffer, partition, verbose)==0)
+  if(disk_car->pread(disk_car, buffer, CRAMFS_SUPERBLOCK_SIZE, partition->part_offset) == CRAMFS_SUPERBLOCK_SIZE)
   {
-    set_cramfs_info((struct cramfs_super*)buffer, partition);
-    free(buffer);
-    return 0;
+    if(test_cramfs(disk_car, (struct cramfs_super*)buffer, partition, verbose)==0)
+    {
+      set_cramfs_info((struct cramfs_super*)buffer, partition);
+      free(buffer);
+      return 0;
+    }
   }
   free(buffer);
   return 1;

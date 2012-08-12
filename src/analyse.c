@@ -139,7 +139,9 @@ int search_FAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
 
 int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
+  /* Expect a buffer filled with 8k to handle the SWAP detection */
   const pv_disk_t *pv=(const pv_disk_t *)buffer;
+  const struct cramfs_super *cramfs=(const struct cramfs_super *)buffer;
   const struct disk_fatx *fatx_block=(const struct disk_fatx*)buffer;
   const struct disk_netware *netware_block=(const struct disk_netware *)buffer;
   const struct exfat_super_block *exfat_header=(const struct exfat_super_block *)buffer;
@@ -205,6 +207,9 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   }
   if(memcmp(&wbfs->magic,"WBFS",4)==0 &&
       recover_WBFS(disk, wbfs, partition, verbose, dump_ind)==0)
+    return 1;
+  if(cramfs->magic==le32(CRAMFS_MAGIC) &&
+      recover_cramfs(disk, cramfs, partition, verbose, dump_ind)==0)
     return 1;
   /* Try to locate logical partition that may host truecrypt encrypted filesystem */
   if(buffer[0x1fe]==0x55 && buffer[0x1ff]==0xAA &&
