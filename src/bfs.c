@@ -85,7 +85,9 @@ static int test_BeFS(disk_t *disk_car, const struct disk_super_block*beos_block,
 
 static int set_BeFS_info(const struct disk_super_block *beos_block, partition_t *partition)
 {
+  partition->blocksize= 1 << le32(beos_block->block_shift);
   partition->info[0]='\0';
+  snprintf(partition->info, sizeof(partition->info), "BeFS blocksize=%u", partition->blocksize);
   set_part_name(partition,beos_block->name,B_OS_NAME_LENGTH);
   return 0;
 }
