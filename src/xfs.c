@@ -112,21 +112,26 @@ int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition
 
 static int set_xfs_info(const struct xfs_sb *sb, partition_t *partition)
 {
+  partition->blocksize=be32(sb->sb_blocksize);
   partition->fsname[0]='\0';
   partition->info[0]='\0';
   switch(partition->upart_type)
   {
     case UP_XFS:
-      strncpy(partition->info,"XFS <=6.1",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "XFS <=6.1 blocksize=%u", partition->blocksize);
       break;
     case UP_XFS2:
-      strncpy(partition->info,"XFS 6.2 - attributes",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "XFS 6.2 - attributes blocksize=%u", partition->blocksize);
       break;
     case UP_XFS3:
-      strncpy(partition->info,"XFS 6.2 - new inode version",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "XFS 6.2 - new inode version blocksize=%u", partition->blocksize);
       break;
     case UP_XFS4:
-      strncpy(partition->info,"XFS 6.2+ - bitmap version",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "XFS 6.2+ - bitmap version blocksize=%u", partition->blocksize);
       break;
     default:
       return 1;
