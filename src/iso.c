@@ -76,7 +76,8 @@ static int set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *p
   if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
   {
     partition->blocksize=logical_block_size;
-    snprintf(partition->info, sizeof(partition->info), "ISO9660");
+    snprintf(partition->info, sizeof(partition->info),
+	"ISO9660 blocksize=%u", partition->blocksize);
   }
   else
     snprintf(partition->info, sizeof(partition->info), "ISO");
