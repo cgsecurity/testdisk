@@ -104,6 +104,9 @@ static const struct systypes none_sys_types[] = {
   {UP_JFS,	"JFS"},
   {UP_LINSWAP,	"Linux SWAP"},
   {UP_LINSWAP2,	"Linux SWAP 2"},
+  {UP_LINSWAP_8K,	"Linux SWAP"},
+  {UP_LINSWAP2_8K,	"Linux SWAP 2"},
+  {UP_LINSWAP2_8KBE,	"Linux SWAP 2"},
   {UP_LUKS,	"Linux LUKS"},
   {UP_LVM,	"Linux LVM"},
   {UP_LVM2,	"Linux LVM2"},
@@ -195,7 +198,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
     partition_reset(partition,&arch_none);
   if(res<=0)
   {
-    if(disk->pread(disk, buffer_disk, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 8 * DEFAULT_SECTOR_SIZE)
+    if(disk->pread(disk, buffer_disk, 16 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 16 * DEFAULT_SECTOR_SIZE)
       res=search_type_2(buffer_disk, disk, partition,verbose,0);
   }
   if(res<=0)
@@ -208,8 +211,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   }
   if(res<=0)
   {
-    if(disk->pread(disk, buffer_disk, 4096, partition->part_offset + 4096) == 4096)
-      res=search_type_8(buffer_disk, disk, partition,verbose,0);
+    res=search_type_8(buffer_disk, disk, partition,verbose,0);
   }
   if(res<=0)
   {
@@ -376,6 +378,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_LINSWAP:
     case UP_LINSWAP2:
+    case UP_LINSWAP_8K:
+    case UP_LINSWAP2_8K:
+    case UP_LINSWAP2_8KBE:
       ret=check_Linux_SWAP(disk_car, partition);
       break;
     case UP_LUKS:

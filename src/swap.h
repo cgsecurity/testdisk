@@ -23,8 +23,8 @@
 extern "C" {
 #endif
 
-#define PAGE_SIZE 0x1000        /* PAGE de 4K pour P_LINSWAP */
-#define SWAP_SIZE PAGE_SIZE
+#define PAGE_SIZE 0x1000        /* 4k page */
+#define PAGE_8K	  0x2000        /* 8K page */
 
 union swap_header {
   struct
@@ -42,6 +42,11 @@ union swap_header {
 	unsigned int padding[125];
 	unsigned int badpages[1];
   } info;
+  struct
+  {
+	char reserved[PAGE_8K- 10];
+	char magic[10];
+  } magic8k;
 };
 
 int check_Linux_SWAP(disk_t *disk_car, partition_t *partition);

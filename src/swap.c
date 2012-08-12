@@ -36,10 +36,13 @@
 static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t *partition);
 static int test_Linux_SWAP(const union swap_header *swap_header, partition_t *partition);
 
+/* Page size can be 4k or 8k */
+#define MAX_PAGE_SIZE 8192
+
 int check_Linux_SWAP(disk_t *disk_car, partition_t *partition)
 {
-  unsigned char *buffer=(unsigned char*)MALLOC(SWAP_SIZE);
-  if(disk_car->pread(disk_car, buffer, SWAP_SIZE, partition->part_offset) != SWAP_SIZE)
+  unsigned char *buffer=(unsigned char*)MALLOC(MAX_PAGE_SIZE);
+  if(disk_car->pread(disk_car, buffer, MAX_PAGE_SIZE, partition->part_offset) != MAX_PAGE_SIZE)
   {
     free(buffer);
     return 1;
@@ -57,14 +60,32 @@ int check_Linux_SWAP(disk_t *disk_car, partition_t *partition)
 static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t *partition)
 {
   partition->fsname[0]='\0';
+  partition->blocksize=4096;
   switch(partition->upart_type)
   {
     case UP_LINSWAP:
-      snprintf(partition->info,sizeof(partition->info),"SWAP version %u",swap_header->info.version);
+      snprintf(partition->info, sizeof(partition->info), "SWAP version %u, pagesize=%u",
+	  le32(swap_header->info.version), partition->blocksize);
       break;
     case UP_LINSWAP2:
-      snprintf(partition->info,sizeof(partition->info),"SWAP2 version %u",swap_header->info.version);
+      snprintf(partition->info, sizeof(partition->info), "SWAP2 version %u, pagesize=%u",
+	  le32(swap_header->info.version), partition->blocksize);
 /*      set_part_name(partition,swap_header->info.volume_name,16); */
+      break;
+    case UP_LINSWAP_8K:
+      partition->blocksize=8192;
+      snprintf(partition->info, sizeof(partition->info), "SWAP version %u, pagesize=%u",
+	  le32(swap_header->info.version), partition->blocksize);
+      break;
+    case UP_LINSWAP2_8K:
+      partition->blocksize=8192;
+      snprintf(partition->info, sizeof(partition->info), "SWAP2 version %u, pagesize=%u",
+	  le32(swap_header->info.version), partition->blocksize);
+      break;
+    case UP_LINSWAP2_8KBE:
+      partition->blocksize=8192;
+      snprintf(partition->info, sizeof(partition->info), "SWAP2 version %u, pagesize=%u",
+	  be32(swap_header->info.version), partition->blocksize);
       break;
     default:
       partition->info[0]='\0';
@@ -82,9 +103,20 @@ static int test_Linux_SWAP(const union swap_header *swap_header, partition_t *pa
   }
   if(memcmp(swap_header->magic.magic,"SWAPSPACE2",10)==0)
   {
-    if(swap_header->info.last_page==0)
-      return 1;
     partition->upart_type=UP_LINSWAP2;
+    return 0;
+  }
+  if(memcmp(swap_header->magic8k.magic,"SWAP-SPACE",10)==0)
+  {
+    partition->upart_type=UP_LINSWAP_8K;
+    return 0;
+  }
+  if(memcmp(swap_header->magic8k.magic,"SWAPSPACE2",10)==0)
+  {
+    if(le32(swap_header->info.version) <= be32(swap_header->info.version))
+      partition->upart_type=UP_LINSWAP2_8K;
+    else
+      partition->upart_type=UP_LINSWAP2_8KBE;
     return 0;
   }
   return 1;
@@ -114,7 +146,34 @@ int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partit
       }
       break;
     case UP_LINSWAP2:
-      partition->part_size=(uint64_t)(swap_header->info.last_page - 1)*PAGE_SIZE;
+      if(swap_header->info.last_page==0)
+	partition->part_size=PAGE_SIZE;
+      else
+	partition->part_size=(uint64_t)(le32(swap_header->info.last_page) - 1)*PAGE_SIZE;
+      break;
+    case UP_LINSWAP_8K:
+      {
+	int i, j;
+	for(i=PAGE_8K - 10 - 1; i>=0; i--)
+	  if(swap_header->magic8k.reserved[i]!=(char)0)
+	    break;
+	for(j=7;j>=0;j--)
+	  if((swap_header->magic8k.reserved[i]&(1<<j))!=(char)0)
+	    break;
+	partition->part_size=(uint64_t)((8*i+j+1)*PAGE_8K);
+      }
+      break;
+    case UP_LINSWAP2_8K:
+      if(swap_header->info.last_page==0)
+	partition->part_size=PAGE_8K;
+      else
+	partition->part_size=(uint64_t)(le32(swap_header->info.last_page) - 1)*PAGE_8K;
+      break;
+    case UP_LINSWAP2_8KBE:
+      if(swap_header->info.last_page==0)
+	partition->part_size=PAGE_8K;
+      else
+	partition->part_size=(uint64_t)(be32(swap_header->info.last_page) - 1)*PAGE_8K;
       break;
     default:
       return 1;

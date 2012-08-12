@@ -165,7 +165,8 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
     log_trace("search_type_0 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
-  if(memcmp(swap_header->magic.magic, "SWAP", 4)==0 &&
+  if((memcmp(swap_header->magic.magic, "SWAP", 4)==0 ||
+	memcmp(swap_header->magic8k.magic, "SWAP", 4)==0) &&
       recover_Linux_SWAP(swap_header, partition)==0)
     return 1;
   if(memcmp((const char *)pv->id,LVM_ID,sizeof(pv->id)) == 0 &&

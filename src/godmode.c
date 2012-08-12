@@ -689,7 +689,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             test_nbr=14;
 	  else
 	  {
-	    if(disk_car->pread(disk_car, buffer_disk0, 8 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 8 * DEFAULT_SECTOR_SIZE)
+	    if(disk_car->pread(disk_car, buffer_disk0, 16 * DEFAULT_SECTOR_SIZE, partition->part_offset) == 16 * DEFAULT_SECTOR_SIZE)
 	      res=search_type_2(buffer_disk0,disk_car,partition,verbose,dump_ind);
 	    else
 	      res=-1;
