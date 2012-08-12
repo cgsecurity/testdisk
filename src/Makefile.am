@@ -283,7 +283,9 @@ photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(
 
 photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c moc_qphotorec.cpp
+qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
+
+nodist_qphotorec_SOURCES = moc_qphotorec.cpp
 
 fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h fat_common.c suspend_no.c
 
