@@ -66,7 +66,7 @@ static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, pa
   if(le32(sb->fs_magic)==UFS_MAGIC && le32(sb->fs_size) > 0 &&
     (le32(sb->fs_fsize)==512 || le32(sb->fs_fsize)==1024 || le32(sb->fs_fsize)==2048 || le32(sb->fs_fsize)==4096))
   {
-    partition->upart_type = UP_UFS;
+    partition->upart_type = UP_UFS2_LE;
     if(verbose>1)
       log_info("\nUFS Marker at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
     return 0;
@@ -82,7 +82,7 @@ static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, pa
   if(le32(sb->fs_magic)==UFS2_MAGIC && le64(sb->fs_u11.fs_u2.fs_size) > 0 &&
     (le32(sb->fs_fsize)==512 || le32(sb->fs_fsize)==1024 || le32(sb->fs_fsize)==2048 || le32(sb->fs_fsize)==4096))
   {
-    partition->upart_type = UP_UFS2;
+    partition->upart_type = UP_UFS2_LE;
     if(verbose>1)
       log_info("\nUFS2 Marker at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
     return 0;
@@ -107,9 +107,9 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
     log_info("recover_ufs\n");
     dump_log(sb,sizeof(*sb));
   }
-  switch(le32(sb->fs_magic))
+  switch(partition->upart_type)
   {
-    case UFS_MAGIC:
+    case UP_UFS_LE:
       partition->part_size = (uint64_t)le32(sb->fs_size)*le32(sb->fs_fsize);
       if(verbose>1)
       {
@@ -117,7 +117,7 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
 	log_info("fs_sblkno %lu\n", (long unsigned)le32(sb->fs_sblkno));
       }
       break;
-    case UFS2_MAGIC:
+    case UP_UFS2_LE:
       partition->part_size = (uint64_t)le64(sb->fs_u11.fs_u2.fs_size)*le32(sb->fs_fsize);
       if(verbose>1)
       {
@@ -126,17 +126,14 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
 	log_info("fs_sblockloc %llu\n", (long long unsigned)le64(sb->fs_u11.fs_u2.fs_sblockloc));
       }
       break;
-  }
-  switch(be32(sb->fs_magic))
-  {
-    case UFS_MAGIC:
+    case UP_UFS:
       partition->part_size = (uint64_t)be32(sb->fs_size)*be32(sb->fs_fsize);
       if(verbose>1)
       {
 	log_info("fs_size %lu, fs_fsize %lu\n",(long unsigned)be32(sb->fs_size),(long unsigned)be32(sb->fs_fsize));
       }
       break;
-    case UFS2_MAGIC:
+    case UP_UFS2:
       partition->part_size = (uint64_t)be64(sb->fs_u11.fs_u2.fs_size)*be32(sb->fs_fsize);
       if(verbose>1)
       {
@@ -180,14 +177,27 @@ static int set_ufs_info(const struct ufs_super_block *sb, partition_t *partition
   partition->info[0]='\0';
   switch(partition->upart_type)
   {
+    case UP_UFS_LE:
+    case UP_UFS2_LE:
+      partition->blocksize=le32(sb->fs_fsize);
+      break;
+    default:
+      partition->blocksize=be32(sb->fs_fsize);
+  }
+  switch(partition->upart_type)
+  {
     case UP_UFS:
+    case UP_UFS_LE:
     default:
       set_part_name(partition,(const char*)sb->fs_u11.fs_u1.fs_fsmnt,sizeof(partition->fsname));
-      strncpy(partition->info,"UFS1",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "UFS1 blocksize=%u", partition->blocksize);
       break;
     case UP_UFS2:
+    case UP_UFS2_LE:
       set_part_name(partition,(const char*)sb->fs_u11.fs_u2.fs_fsmnt,sizeof(partition->fsname));
-      strncpy(partition->info,"UFS2",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "UFS2 blocksize=%u", partition->blocksize);
       break;
   }
   return 0;
