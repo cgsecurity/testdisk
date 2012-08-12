@@ -42,7 +42,15 @@ static int set_rfs_info(const struct reiserfs_super_block *sb, partition_t *part
 static int test_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb, partition_t *partition, const int verbose);
 
 static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb*sb, partition_t *partition, const int verbose);
-static int set_rfs4_info(partition_t *partition);
+
+static int set_rfs4_info(const struct reiser4_master_sb *sb4, partition_t *partition)
+{
+  partition->fsname[0]='\0';
+  partition->blocksize=le16(sb4->blocksize);
+  snprintf(partition->info, sizeof(partition->info),
+      "ReiserFS 4 blocksize=%u", partition->blocksize);
+  return 0;
+}
 
 int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -60,7 +68,7 @@ int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose)
   }
   if(test_rfs4(disk_car, (struct reiser4_master_sb*)buffer, partition, verbose)==0)
   {
-    set_rfs4_info(partition);
+    set_rfs4_info((const struct reiser4_master_sb*)buffer, partition);
     free(buffer);
     return 0;
   }
@@ -179,7 +187,7 @@ int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partitio
     partition->part_type_sun= PSUN_LINUX;
     partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
     guid_cpy(&partition->part_uuid, (const efi_guid_t *)&sb4->uuid);
-    set_rfs4_info(partition);
+    set_rfs4_info(sb4, partition);
     return 0;
   }
   return 1;
@@ -188,26 +196,32 @@ int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partitio
 static int set_rfs_info(const struct reiserfs_super_block *sb, partition_t *partition)
 {
   partition->fsname[0]='\0';
-  partition->info[0]='\0';
+  partition->blocksize=le16(sb->s_blocksize);
   switch(partition->upart_type)
   {
     case UP_RFS:
-      strncpy(partition->info,"ReiserFS 3.5 with standard journal",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "ReiserFS 3.5 with standard journal blocksize=%u", partition->blocksize);
       break;
     case UP_RFS2:
-      strncpy(partition->info,"ReiserFS 3.6 with standard journal",sizeof(partition->info));
+      snprintf(partition->info, sizeof(partition->info),
+	  "ReiserFS 3.6 with standard journal blocksize=%u", partition->blocksize);
       set_part_name(partition,(const char*)sb->s_label,16);
       break;
     case UP_RFS3:
       if(le16(sb->sb_version)==1)
-	strncpy(partition->info,"ReiserFS 3.5 with non standard journal",sizeof(partition->info));
+	snprintf(partition->info, sizeof(partition->info),
+	    "ReiserFS 3.5 with non standard journal blocksize=%u", partition->blocksize);
       else if(le16(sb->sb_version)==2)
-	strncpy(partition->info,"ReiserFS 3.6 with non standard journal",sizeof(partition->info));
+	snprintf(partition->info, sizeof(partition->info),
+	    "ReiserFS 3.6 with non standard journal blocksize=%u", partition->blocksize);
       else
-	strncpy(partition->info,"ReiserFS ? with non standard journal",sizeof(partition->info));
+	snprintf(partition->info, sizeof(partition->info),
+	    "ReiserFS 3.? with non standard journal blocksize=%u", partition->blocksize);
       set_part_name(partition,(const char*)sb->s_label,16);
       break;
     default:
+      partition->info[0]='\0';
       return 1;
   }
   if (le16(sb->s_state) == REISERFS_ERROR_FS)
@@ -217,17 +231,3 @@ static int set_rfs_info(const struct reiserfs_super_block *sb, partition_t *part
   return 0;
 }
 
-static int set_rfs4_info(partition_t *partition)
-{
-  partition->fsname[0]='\0';
-  partition->info[0]='\0';
-  switch(partition->upart_type)
-  {
-    case UP_RFS4:
-      strncpy(partition->info,"ReiserFS 4",sizeof(partition->info));
-      break;
-    default:
-      return 1;
-  }
-  return 0;
-}
