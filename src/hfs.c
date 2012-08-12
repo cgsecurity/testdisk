@@ -123,7 +123,9 @@ int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,c
 static int set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb)
 {
   unsigned int name_size=sizeof(hfs_mdb->drVN)-1;
-  snprintf(partition->info,sizeof(partition->info),"HFS");
+  partition->blocksize=be32(hfs_mdb->drAlBlkSiz);
+  snprintf(partition->info, sizeof(partition->info),
+      "HFS blocksize=%u", partition->blocksize);
   if(name_size>hfs_mdb->drVN[0])
     name_size=hfs_mdb->drVN[0];
   memcpy(partition->fsname,&hfs_mdb->drVN[0]+1,name_size);
