@@ -167,8 +167,8 @@ static int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
     /* There is a little offset ... */
   if(le16(sb->s_magic)!=EXT2_SUPER_MAGIC)
     return 1;
-  if (le32(sb->s_free_blocks_count) >= le32(sb->s_blocks_count)) return 2;
-  if (le32(sb->s_free_inodes_count) >= le32(sb->s_inodes_count)) return 3;
+  if (le32(sb->s_free_blocks_count) > le32(sb->s_blocks_count)) return 2;
+  if (le32(sb->s_free_inodes_count) > le32(sb->s_inodes_count)) return 3;
   if (le16(sb->s_errors)!=0 &&
       (le16(sb->s_errors) != EXT2_ERRORS_CONTINUE) &&
       (le16(sb->s_errors) != EXT2_ERRORS_RO) &&
