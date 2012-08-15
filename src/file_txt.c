@@ -116,6 +116,8 @@ static const txt_header_t fasttxt_headers[] = {
   { "FILE \"",						 6, "cue"},
   /* Lotus Data Interchange Format */
   { "TABLE\r\n0,1\r\n",					12, "dif"},
+  /* Designer, a Photobook Designer Software */
+  { "vSg4q7j8GLrtf",					13, "dp"},
   /* EMKA IOX file */
   { "1\t\t\t\t\tthis file\t", 				16,
 #ifdef DJGPP
