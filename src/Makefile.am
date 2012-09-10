@@ -50,6 +50,7 @@ file_C			= filegen.c \
 			  file_axx.c \
 			  file_bac.c \
 			  file_bim.c \
+			  file_binvox.c \
 			  file_bkf.c \
 			  file_bld.c \
 			  file_bmp.c \
