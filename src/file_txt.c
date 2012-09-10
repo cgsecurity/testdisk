@@ -595,6 +595,10 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=NULL;
     file_recovery_new->extension="prproj";
   }
+  else if(td_memmem(buffer, buffer_size, "<SCRIBUS", 8)!=NULL)
+  {
+    file_recovery_new->extension="sla";
+  }
   else
     file_recovery_new->extension="xml";
   file_recovery_new->file_check=&file_check_xml;
