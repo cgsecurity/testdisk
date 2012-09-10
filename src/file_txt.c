@@ -77,7 +77,6 @@ const file_hint_t file_hint_txt= {
   .register_header_check=&register_header_check_txt
 };
 
-static const unsigned char header_ReceivedFrom[14]= {'R','e','c','e','i','v','e','d',':',' ','f','r','o','m'};
 static unsigned char ascii_char[256];
 
 static void register_header_check_txt(file_stat_t *file_stat)
@@ -718,14 +717,13 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
 
 static void file_check_emlx(file_recovery_t *file_recovery)
 {
-  const unsigned char emlx_footer[9]= {'<', '/', 'p', 'l', 'i', 's', 't', '>', 0x0a};
   if(file_recovery->file_size < file_recovery->calculated_file_size)
     file_recovery->file_size=0;
   else
   {
     if(file_recovery->file_size > file_recovery->calculated_file_size+2048)
       file_recovery->file_size=file_recovery->calculated_file_size+2048;
-    file_search_footer(file_recovery, emlx_footer, sizeof(emlx_footer), 0);
+    file_search_footer(file_recovery, "</plist>\n", 9, 0);
   }
 }
 
@@ -734,8 +732,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   static char *buffer_lower=NULL;
   static unsigned int buffer_lower_size=0;
   unsigned int l=0;
-  const char sign_h[]			= "/*";
-  static const unsigned char header_ReturnPath[13]= {'R','e','t','u','r','n','-','P','a','t','h',':',' '};
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int i;
@@ -743,8 +739,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     for(i=0;i<10 && isdigit(buffer[i]);i++)
       tmp=tmp*10+buffer[i]-'0';
     if(buffer[i]==0x0a &&
-      (memcmp(buffer+i+1, header_ReturnPath, sizeof(header_ReturnPath))==0 ||
-       memcmp(buffer+i+1, header_ReceivedFrom, sizeof(header_ReceivedFrom))==0) &&
+      (memcmp(buffer+i+1, "Return-Path: ", 13)==0 ||
+       memcmp(buffer+i+1, "Received: from", 14)==0) &&
         !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
           file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
           strcmp(file_recovery->extension,"mbox")==0))
@@ -940,7 +936,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="f";
     else if(strstr(buffer_lower, "\\score {")!=NULL)
       ext="ly"; 	/* LilyPond http://lilypond.org*/
-    else if(strstr(buffer_lower, sign_h)!=NULL && l>50)
+    else if(strstr(buffer_lower, "/*")!=NULL && l>50)
       ext="h";
     else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;

@@ -156,7 +156,6 @@ static int header_check_mpg(const unsigned char *buffer, const unsigned int buff
 static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const unsigned char padding_iso_end[8]=     {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x01, 0xB9};
-  const unsigned char sequence_end_iso_end[8]={0x00, 0x00, 0x01, 0xB7, 0x00, 0x00, 0x01, 0xB9};
   /* search padding + end code */
   if(buffer_size>=8 && memcmp(&buffer[buffer_size/2-4], padding_iso_end, sizeof(padding_iso_end))==0)
   {
@@ -169,6 +168,7 @@ static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer
     unsigned int i;
     for(i=buffer_size/2-7; i<buffer_size-7; i++)
     {
+      const unsigned char sequence_end_iso_end[8]={0x00, 0x00, 0x01, 0xB7, 0x00, 0x00, 0x01, 0xB9};
       if(buffer[i]==0x00 && memcmp(&buffer[i], sequence_end_iso_end, sizeof(sequence_end_iso_end))==0)
       {
 	file_recovery->calculated_file_size=file_recovery->file_size+i+sizeof(sequence_end_iso_end)-buffer_size/2;

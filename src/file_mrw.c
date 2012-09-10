@@ -79,9 +79,9 @@ struct prd {
 /* Minolta */
 static int header_check_mrw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned char prd_header[4]= { 0x00,'P','R','D'};
   if(memcmp(buffer,mrw_header,sizeof(mrw_header))==0)
   {
+    const unsigned char prd_header[4]= { 0x00,'P','R','D'};
     const struct hdr *mrmhdr = (const struct hdr*)buffer;
     if(memcmp(mrmhdr->data,prd_header,sizeof(prd_header))==0)
     {

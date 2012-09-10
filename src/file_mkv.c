@@ -134,10 +134,11 @@ static void register_header_check_mkv(file_stat_t *file_stat)
 
 static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned char EBML_DocType[2]= { 0x42,0x82};
-  const unsigned char EBML_Segment[4]= { 0x18,0x53,0x80,0x67};
-  if(memcmp(buffer,EBML_header,sizeof(EBML_header))==0)
+  if(memcmp(buffer,EBML_header,sizeof(EBML_header))!=0)
+    return 0;
   {
+    const unsigned char EBML_DocType[2]= { 0x42,0x82};
+    const unsigned char EBML_Segment[4]= { 0x18,0x53,0x80,0x67};
     uint64_t segment_size=0;
     uint64_t header_data_size=0;
     char *doctype=NULL;
@@ -193,7 +194,6 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
     }
-    return 1;
   }
-  return 0;
+  return 1;
 }
