@@ -281,6 +281,8 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
     date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x132, &potential_error);
   if(date_asc==NULL || date_asc < (const char *)tiff || &date_asc[18] >= (const char *)tiff + tiff_size)
     return (time_t)0;
+  if(memcmp(date_asc, "0000", 4)==0)
+    return (time_t)0;
   memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
   tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
