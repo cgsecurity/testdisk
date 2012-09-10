@@ -1057,7 +1057,7 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
 int check_VFAT_volume_name(const char *name, const unsigned int max_size)
 {
   unsigned int i;
-  for(i=0;name[i]!='\0' && i<max_size;i++)
+  for(i=0; i<max_size && name[i]!='\0'; i++)
   {
     if(name[i] < 0x20)
       return 1;

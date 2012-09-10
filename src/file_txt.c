@@ -640,7 +640,7 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
   {
     unsigned int i;
     /* From someone@somewhere */
-    for(i=5; buffer[i]!=' ' && buffer[i]!='@' && i<200; i++);
+    for(i=5; i<200 && buffer[i]!=' ' && buffer[i]!='@'; i++);
     if(buffer[i]!='@')
       return 0;
   }
