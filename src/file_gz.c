@@ -72,14 +72,6 @@ static void register_header_check_gz(file_stat_t *file_stat)
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
-  static const unsigned char xournal_header[0x2e]  = {
-    '<', '?', 'x', 'm', 'l', ' ', 'v', 'e',
-    'r', 's', 'i', 'o', 'n', '=', '"', '1',
-    '.', '0', '"', ' ', 's', 't', 'a', 'n',
-    'd', 'a', 'l', 'o', 'n', 'e', '=', '"',
-    'n', 'o', '"', '?', '>', '\n', '<', 'x',
-    'o', 'u', 'r', 'n', 'a', 'l'
-  };
   /* gzip file format:
    * a 10-byte header, containing a magic number, a version number and a timestamp
    * optional extra headers, such as the original file name,
@@ -122,6 +114,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
     if(buffer_size>off && 512>off)
     {
+      static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,
+	'S', 'c', 'h', 'e', 'm', 'a', 't', 'i', 'c'};
       const unsigned char *buffer_compr=buffer+off;
       unsigned char buffer_uncompr[512];
       const unsigned int comprLen=(buffer_size<512?buffer_size:512)-off;
@@ -164,7 +158,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 	file_recovery_new->extension="pvp";
 	return 1;
       }
-      if(memcmp(buffer_uncompr, xournal_header, sizeof(xournal_header))==0)
+      if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal", 46)==0)
       {
 	/* Xournal, http://xournal.sourceforge.net/ */
 	file_recovery_new->extension="xoj";
@@ -185,6 +179,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       if(memcmp(buffer_uncompr, "<?xml version=", 14) == 0)
       {
 	file_recovery_new->extension="xml.gz";
+	return 1;
+      }
+      if(memcmp(buffer_uncompr, schematic_header, sizeof(schematic_header))==0)
+      {
+	/* Minecraft Schematic File */
+	file_recovery_new->extension="schematic";
 	return 1;
       }
       {
