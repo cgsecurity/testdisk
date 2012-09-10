@@ -1273,7 +1273,6 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
       td_list_for_each(file_walker,&dir_list->list)
       {
 	char		datestr[80];
-	struct tm		*tm_p;
 	file_info_t *file_info;
 	file_info=td_list_entry(file_walker, file_info_t, list);
 	if((file_info->status&FILE_STATUS_DELETED)!=0)
@@ -1293,7 +1292,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
 	if(file_info->stat.st_mtime!=0)
 	{
-	  tm_p = localtime(&file_info->stat.st_mtime);
+	  const struct tm *tm_p= localtime(&file_info->stat.st_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
 	      1900 + tm_p->tm_year, tm_p->tm_hour,

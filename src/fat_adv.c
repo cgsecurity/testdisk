@@ -203,7 +203,6 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
     for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
     for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
     {
-      struct tm		*tm_p;
       char str[11];
       char		datestr[80];
       wmove(window,8+i-offset,0);
@@ -217,7 +216,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	waddstr(window, " ");
       if(current_file->stat.st_mtime!=0)
       {
-	tm_p = localtime(&current_file->stat.st_mtime);
+	const struct tm	*tm_p=localtime(&current_file->stat.st_mtime);
 	snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	    tm_p->tm_mday, monstr[tm_p->tm_mon],
 	    1900 + tm_p->tm_year, tm_p->tm_hour,

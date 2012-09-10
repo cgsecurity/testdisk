@@ -129,7 +129,7 @@ int recover_EXT2(disk_t *disk, const struct ext2_super_block *sb,partition_t *pa
   partition->sb_size=EXT2_SUPERBLOCK_SIZE;
   if(le16(sb->s_block_group_nr)>0)
   {
-    unsigned long int block_nr=(le32(sb->s_first_data_block)+le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group));
+    const unsigned long int block_nr=(le32(sb->s_first_data_block)+le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group));
     if(partition->part_offset< (uint64_t)block_nr * (EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
     {
       log_error("recover_EXT2: part_offset problem\n");

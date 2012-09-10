@@ -550,12 +550,11 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 
 static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
 {
-  struct tm		*tm_p;
   char str[11];
   char		datestr[80];
   if(file_info->stat.st_mtime!=0)
   {
-    tm_p = localtime(&file_info->stat.st_mtime);
+    const struct tm *tm_p= localtime(&file_info->stat.st_mtime);
     snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
         tm_p->tm_mday, monstr[tm_p->tm_mon],
         1900 + tm_p->tm_year, tm_p->tm_hour,
