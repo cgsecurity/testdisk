@@ -85,7 +85,7 @@ static int set_Linux_SWAP_info(const union swap_header *swap_header,partition_t 
     case UP_LINSWAP2_8KBE:
       partition->blocksize=8192;
       snprintf(partition->info, sizeof(partition->info), "SWAP2 version %u, pagesize=%u",
-	  be32(swap_header->info.version), partition->blocksize);
+	  (unsigned int)be32(swap_header->info.version), partition->blocksize);
       break;
     default:
       partition->info[0]='\0';

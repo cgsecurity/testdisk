@@ -140,6 +140,8 @@ int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t 
 	log_info("fs_size %lu, fs_fsize %lu\n", (long unsigned)be64(sb->fs_u11.fs_u2.fs_size), (long unsigned)be32(sb->fs_fsize));
       }
       break;
+    default: /* BUG if hit*/
+      break;
   }
 
   set_ufs_info(sb, partition);
