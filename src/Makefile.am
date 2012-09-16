@@ -101,6 +101,7 @@ file_C			= filegen.c \
 			  file_ext.c \
 			  file_ext2.c \
 			  file_fat.c \
+			  file_fbf.c \
 			  file_fbk.c \
 			  file_fcp.c \
 			  file_fcs.c \
