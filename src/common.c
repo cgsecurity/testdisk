@@ -41,9 +41,14 @@
 #include <io.h>
 #endif
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "log.h"
+
+static int32_t secwest=0;
 
 static unsigned int up2power_aux(const unsigned int number);
 
@@ -214,4 +219,46 @@ char* strip_dup(char* str)
   return strdup (str);
 }
 
+/* Convert a MS-DOS time/date pair to a UNIX date (seconds since 1 1 70). */
+
+int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
+{
+  static int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
+  /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
+
+  int month,year,secs;
+
+  /* first subtract and mask after that... Otherwise, if
+     f_date == 0, bad things happen */
+  month = ((f_date >> 5) - 1) & 15;
+  year = f_date >> 9;
+  secs = (f_time & 31)*2+60*((f_time >> 5) & 63)+(f_time >> 11)*3600+86400*
+    ((f_date & 31)-1+day_n[month]+(year/4)+year*365-((year & 3) == 0 &&
+      month < 2 ? 1 : 0)+3653);
+  /* days since 1.1.70 plus 80's leap day */
+  return secs+secwest;
+}
+
+void set_secwest(void)
+{
+  struct  tm *tmptr;
+  time_t t;
+
+  t = time(NULL);
+  tmptr = localtime(&t);
+#ifdef HAVE_STRUCT_TM_TM_GMTOFF
+  secwest = -1 * tmptr->tm_gmtoff;
+#elif defined (DJGPP)
+  secwest = 0;
+#else
+#if defined (__CYGWIN__)
+  secwest = _timezone;
+#else
+  secwest = timezone;
+#endif
+  /* account for daylight savings */
+  if (tmptr->tm_isdst)
+    secwest -= 3600;
+#endif
+}
 

@@ -61,7 +61,6 @@ struct exfat_dir_struct
 };
 
 
-static int date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster);
 static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
 static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
@@ -177,26 +176,6 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
   return dir_list;
 }
 
-static int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
-		  /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
-
-/* Convert a MS-DOS time/date pair to a UNIX date (seconds since 1 1 70). */
-
-static int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
-{
-	int month,year,secs;
-
-	/* first subtract and mask after that... Otherwise, if
-	   f_date == 0, bad things happen */
-	month = ((f_date >> 5) - 1) & 15;
-	year = f_date >> 9;
-	secs = (f_time & 31)*2+60*((f_time >> 5) & 63)+(f_time >> 11)*3600+86400*
-	    ((f_date & 31)-1+day_n[month]+(year/4)+year*365-((year & 3) == 0 &&
-	    month < 2 ? 1 : 0)+3653);
-			/* days since 1.1.70 plus 80's leap day */
-	return secs+secwest;
-}
-
 enum {exFAT_FOLLOW_CLUSTER, exFAT_NEXT_FREE_CLUSTER, exFAT_NEXT_CLUSTER};
 
 static int is_EOC(const unsigned int cluster)
@@ -273,29 +252,6 @@ static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_da
     dir_list=dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data->param);
   free(buffer_dir);
   return dir_list;
-}
-
-static void set_secwest(void)
-{
-  struct  tm *tmptr;
-  time_t t;
-
-  t = time(NULL);
-  tmptr = localtime(&t);
-#ifdef HAVE_STRUCT_TM_TM_GMTOFF
-  secwest = -1 * tmptr->tm_gmtoff;
-#elif defined (DJGPP)
-  secwest = 0;
-#else
-#if defined (__CYGWIN__)
-  secwest = _timezone;
-#else
-  secwest = timezone;
-#endif
-  /* account for daylight savings */
-  if (tmptr->tm_isdst)
-    secwest -= 3600;
-#endif
 }
 
 int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const int verbose)
