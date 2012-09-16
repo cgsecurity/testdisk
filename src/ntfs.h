@@ -55,6 +55,24 @@ struct ntfs_boot_sector {
 	uint8_t  	bootstrap[426];             	/* 0x54 Irrelevant (boot up code). */
 	uint16_t	marker;				/* 0x1FE */
 	} __attribute__ ((__packed__));
+
+struct ntfs_mft_record {
+  uint32_t	magic;		/* FILE */
+  uint16_t	usa_ofs;
+  uint16_t	usa_count;
+  uint64_t	lsn;
+  uint16_t	sequence_number;
+  uint16_t	link_count;
+  uint16_t	attrs_offset;	/* Must be aligned to 8-byte boundary */
+  uint16_t	flags;
+  uint32_t	bytes_in_use;	/* Must be aligned to 8-byte boundary */
+  uint32_t	bytes_allocated;
+  uint64_t	base_mft_record;
+  uint16_t	next_attr_instance;
+  uint16_t	reserved;		/* NTFS 3.1+ */
+  uint32_t	mft_record_number;	/* NTFS 3.1+ */
+} __attribute__ ((__packed__));
+
 int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const int dump_ind);
 int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2);
 int log_ntfs_info(const struct ntfs_boot_sector *ntfs_header);

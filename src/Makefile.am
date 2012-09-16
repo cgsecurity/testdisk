@@ -159,6 +159,7 @@ file_C			= filegen.c \
 			  file_mdf.c \
 			  file_mfa.c \
 			  file_mfg.c \
+			  file_mft.c \
 			  file_mid.c \
 			  file_mig.c \
 			  file_mk5.c \

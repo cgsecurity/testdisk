@@ -161,6 +161,7 @@ extern const file_hint_t file_hint_mdb;
 extern const file_hint_t file_hint_mdf;
 extern const file_hint_t file_hint_mfa;
 extern const file_hint_t file_hint_mfg;
+extern const file_hint_t file_hint_mft;
 extern const file_hint_t file_hint_mid;
 extern const file_hint_t file_hint_mig;
 extern const file_hint_t file_hint_mk5;
@@ -414,6 +415,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_mdf  },
   { .enable=0, .file_hint=&file_hint_mfa  },
   { .enable=0, .file_hint=&file_hint_mfg  },
+  { .enable=0, .file_hint=&file_hint_mft  },
   { .enable=0, .file_hint=&file_hint_mid  },
   { .enable=0, .file_hint=&file_hint_mig  },
   { .enable=0, .file_hint=&file_hint_mk5  },
