@@ -138,6 +138,7 @@ extern const file_hint_t file_hint_ico;
 extern const file_hint_t file_hint_ifo;
 extern const file_hint_t file_hint_imb;
 extern const file_hint_t file_hint_indd;
+extern const file_hint_t file_hint_info;
 extern const file_hint_t file_hint_iso;
 extern const file_hint_t file_hint_it;
 extern const file_hint_t file_hint_itunes;
@@ -389,6 +390,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_ifo  },
   { .enable=0, .file_hint=&file_hint_imb  },
   { .enable=0, .file_hint=&file_hint_indd  },
+  { .enable=0, .file_hint=&file_hint_info  },
   { .enable=0, .file_hint=&file_hint_iso  },
   { .enable=0, .file_hint=&file_hint_it  },
   { .enable=0, .file_hint=&file_hint_itunes  },

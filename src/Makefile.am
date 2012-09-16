@@ -136,6 +136,7 @@ file_C			= filegen.c \
 			  file_ifo.c \
 			  file_imb.c \
 			  file_indd.c \
+			  file_info.c \
 			  file_iso.c \
 			  file_it.c \
 			  file_itu.c \
