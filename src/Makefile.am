@@ -149,6 +149,7 @@ file_C			= filegen.c \
 			  file_itu.c \
 			  file_jpg.c \
 			  file_kdb.c \
+			  file_kdbx.c \
 			  file_ldf.c \
 			  file_lit.c \
 			  file_lnk.c \

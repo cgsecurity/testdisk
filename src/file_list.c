@@ -151,6 +151,7 @@ extern const file_hint_t file_hint_it;
 extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_kdb;
+extern const file_hint_t file_hint_kdbx;
 extern const file_hint_t file_hint_ldf;
 extern const file_hint_t file_hint_lit;
 extern const file_hint_t file_hint_logic;
@@ -411,6 +412,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_itunes  },
   { .enable=0, .file_hint=&file_hint_jpg  },
   { .enable=0, .file_hint=&file_hint_kdb  },
+  { .enable=0, .file_hint=&file_hint_kdbx },
   { .enable=0, .file_hint=&file_hint_ldf  },
   { .enable=0, .file_hint=&file_hint_lit  },
   { .enable=0, .file_hint=&file_hint_logic},
