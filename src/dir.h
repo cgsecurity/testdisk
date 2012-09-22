@@ -57,7 +57,7 @@ struct dir_data
 #define	FILE_STATUS_DELETED	1
 #define	FILE_STATUS_MARKED	2
 
-/* TODO: add status to file_info and migrate file_data to file_info */
+/* TODO: migrate file_data to file_info */
 struct file_data
 {
   file_data_t *prev;

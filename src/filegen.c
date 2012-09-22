@@ -122,6 +122,7 @@ static unsigned int index_header_check(void)
   struct td_list_head *tmp;
   struct td_list_head *next;
   unsigned int nbr=0;
+ /* Initialize file_check_list from file_check_plist */
   td_list_for_each_prev_safe(tmp, next, &file_check_plist.list)
   {
     file_check_t *current_check;
