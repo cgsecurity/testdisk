@@ -2,7 +2,7 @@
 
     File: fat_unformat.c
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2009-2012 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -52,10 +52,13 @@
 #include "pnext.h"
 #include "setdate.h"
 
-#define READ_SIZE 1024*512
+#define READ_SIZE 4*1024*1024
 static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
 {
   uint64_t offset=0;
+  uint64_t next_offset=0;
+  uint64_t diff_offset=0;
+  time_t previous_time=0;
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
   alloc_data_t *current_search_space;
@@ -76,16 +79,8 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   while(current_search_space!=list_search_space && nbr_subdir<10)
   {
     const uint64_t old_offset=offset;
-#ifdef HAVE_NCURSES
-    if((offset&(1024*disk->sector_size-1))==0)
-    {
-      wmove(stdscr,9,0);
-      wclrtoeol(stdscr);
-      wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk->sector_size),(unsigned long)(partition->part_size/disk->sector_size),nbr_subdir);
-      wrefresh(stdscr);
-    }
-#endif
-    if(memcmp(buffer,         ".          ", 8+3)==0 &&
+    if(buffer[0]=='.' &&
+	memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
       const unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
@@ -103,6 +98,24 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
         buffer+512>buffer_start+READ_SIZE)
     {
       buffer=buffer_start;
+#ifdef HAVE_NCURSES
+      if(offset > next_offset)
+      {
+	const time_t current_time=time(NULL);
+	if(current_time==previous_time)
+	  diff_offset>>=1;
+	else
+	  diff_offset<<=1;
+	if(diff_offset < disk->sector_size)
+	  diff_offset=disk->sector_size;
+	next_offset=offset+diff_offset;
+	previous_time=current_time;
+	wmove(stdscr,9,0);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Search subdirectory %10lu/%lu %u",(unsigned long)(offset/disk->sector_size),(unsigned long)(partition->part_size/disk->sector_size),nbr_subdir);
+	wrefresh(stdscr);
+      }
+#endif
       if(verbose>1)
       {
         log_verbose("Reading sector %10llu/%llu\n",
@@ -118,7 +131,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk->sector_size, UP_UNK);
 }
 
-static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int block_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const file_data_t *file)
+static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_data_t *file)
 {
   char *new_file;	
   FILE *f_out;
@@ -128,13 +141,27 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 #else
   unsigned int file_size=file->stat.st_size;
 #endif
-  unsigned long int no_of_cluster;
-  unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
+  const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
+  unsigned char *buffer_file=(unsigned char *)MALLOC(cluster_size);
   cluster = file->stat.st_ino;
   new_file=(char *)MALLOC(1024);
-  snprintf(new_file, 1024, "%s.%u/f%07u-%s", recup_dir, dir_num,
-      (unsigned int)((start_data - partition->part_offset + (uint64_t)(cluster-2)*block_size)/disk->sector_size),
+  snprintf(new_file, 1024, "%s.%u/inode_%u", recup_dir, dir_num, inode_num);
+#ifdef HAVE_MKDIR
+#ifdef __MINGW32__
+  mkdir(new_file);
+#else
+  mkdir(new_file, 0775);
+#endif
+#endif
+  snprintf(new_file, 1024, "%s.%u/inode_%u/%s", recup_dir, dir_num, inode_num,
       file->name);
+  if((f_out=fopen(new_file, "rb"))!=NULL)
+  {
+    fclose(f_out);
+    snprintf(new_file, 1024, "%s.%u/inode_%u/f%07u-%s", recup_dir, dir_num, inode_num,
+	(unsigned int)((start_data - partition->part_offset + (uint64_t)(cluster-2)*cluster_size)/disk->sector_size),
+	file->name);
+  }
   log_info("fat_copy_file %s\n", new_file);
   f_out=fopen(new_file, "wb");
   if(!f_out)
@@ -144,11 +171,10 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
     free(buffer_file);
     return -1;
   }
-  no_of_cluster=(partition->part_size - start_data) / block_size;
   while(cluster>=2 && cluster<=no_of_cluster+2 && file_size>0)
   {
-    const uint64_t start=start_data + (uint64_t)(cluster-2)*block_size;
-    unsigned int toread = block_size;
+    const uint64_t start=start_data + (uint64_t)(cluster-2)*cluster_size;
+    unsigned int toread = cluster_size;
     if (toread > file_size)
       toread = file_size;
     if((unsigned)disk->pread(disk, buffer_file, toread, start) != toread)
@@ -174,7 +200,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   return 0;
 }
 
-static int fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_offset, alloc_data_t *list_search_space)
+static int fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_data, alloc_data_t *list_search_space)
 {
   int ind_stop=0;
   uint64_t offset;
@@ -183,15 +209,16 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   unsigned char *buffer;
   time_t start_time;
   time_t previous_time;
-  const unsigned int blocksize=params->blocksize;
-  const unsigned int read_size=(blocksize>65536?blocksize:65536);
+  const unsigned int cluster_size=params->blocksize;
+  const unsigned int read_size=(cluster_size>65536?cluster_size:65536);
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
   disk_t *disk=params->disk;
   const partition_t *partition=params->partition;
+  const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
 
   reset_file_recovery(&file_recovery);
-  file_recovery.blocksize=blocksize;
+  file_recovery.blocksize=cluster_size;
   buffer_start=(unsigned char *)MALLOC(READ_SIZE);
   buffer=buffer_start;
   start_time=time(NULL);
@@ -208,54 +235,83 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   if(options->verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, options->verbose);
   disk->pread(disk, buffer, READ_SIZE, offset);
-  for(;offset < offset_end; offset+=blocksize)
+  for(;offset < offset_end; offset+=cluster_size)
   {
-    if(memcmp(buffer,         ".          ", 8+3)==0 &&
+    if(buffer[0]=='.' &&
+	memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
       file_data_t *dir_list;
       dir_list=dir_fat_aux(buffer,read_size,0,0);
       if(dir_list!=NULL)
       {
+	unsigned int dir_inode=0;
 	const file_data_t *current_file;
 	log_info("Sector %llu\n", (long long unsigned)offset/disk->sector_size);
 	dir_aff_log(NULL, dir_list);
-	del_search_space(list_search_space, offset, offset + blocksize -1);
+	del_search_space(list_search_space, offset, offset + cluster_size -1);
 	current_file=dir_list;
 	while(current_file!=NULL)
 	{
-	  if(strcmp(current_file->name,".")==0 &&
-	      LINUX_S_ISDIR(current_file->stat.st_mode)!=0 &&
-	      current_file!=dir_list)
+	  if(current_file->stat.st_ino<2 ||
+	      current_file->stat.st_ino >= no_of_cluster+2)
 	    current_file=NULL;
-	  else if(current_file->stat.st_ino>2 &&
-	      LINUX_S_ISREG(current_file->stat.st_mode)!=0)
+	  else if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
 	  {
-	    const uint64_t file_start=start_offset + (uint64_t)(current_file->stat.st_ino - 2) * blocksize;
-#ifdef DJGPP
-	    const uint64_t file_end=file_start+(current_file->file_size+blocksize-1)/blocksize*blocksize - 1;
+	    if(strcmp(current_file->name,".")==0)
+	    {
+	      if(current_file==dir_list)
+		dir_inode=current_file->stat.st_ino;
+	      else
+		current_file=NULL;
+	    }
+	    else if(strcmp(current_file->name,"..")==0)
+	    {
+	      if(current_file!=dir_list->next)
+		current_file=NULL;
+	    }
+	    else
+	    {
+#ifdef HAVE_MKDIR
+	      char *new_file=(char *)MALLOC(1024);
+	      snprintf(new_file, 1024, "%s.%u/inode_%u/inode_%u_%s",
+		  params->recup_dir, params->dir_num, dir_inode,
+		  (unsigned int)current_file->stat.st_ino, current_file->name);
+#ifdef __MINGW32__
+	      mkdir(new_file);
 #else
-	    const uint64_t file_end=file_start+(current_file->stat.st_size+blocksize-1)/blocksize*blocksize - 1;
+	      mkdir(new_file, 0775);
+#endif
+	      free(new_file);
+#endif
+	    }
+	  }
+	  else if(LINUX_S_ISREG(current_file->stat.st_mode)!=0)
+	  {
+	    const uint64_t file_start=start_data + (uint64_t)(current_file->stat.st_ino - 2) * cluster_size;
+#ifdef DJGPP
+	    const uint64_t file_end=file_start+(current_file->file_size+cluster_size-1)/cluster_size*cluster_size - 1;
+#else
+	    const uint64_t file_end=file_start+(current_file->stat.st_size+cluster_size-1)/cluster_size*cluster_size - 1;
 #endif
 	    if(file_end < partition->part_offset + partition->part_size)
 	    {
-	      if(fat_copy_file(disk, partition, blocksize, start_offset, params->recup_dir, params->dir_num, current_file)==0)
+	      if(fat_copy_file(disk, partition, cluster_size, start_data, params->recup_dir, params->dir_num, dir_inode, current_file)==0)
 	      {
 		params->file_nbr++;
 		del_search_space(list_search_space, file_start, file_end);
 	      }
-	      current_file=current_file->next;
 	    }
 	    else
 	      current_file=NULL;
 	  }
-	  else
+	  if(current_file!=NULL)
 	    current_file=current_file->next;
 	}
 	delete_list_file(dir_list);
       }
     }
-    buffer+=blocksize;
+    buffer+=cluster_size;
     if(buffer+read_size>buffer_start+READ_SIZE)
     {
       buffer=buffer_start;
