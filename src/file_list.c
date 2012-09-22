@@ -72,6 +72,7 @@ extern const file_hint_t file_hint_cm;
 extern const file_hint_t file_hint_compress;
 extern const file_hint_t file_hint_cow;
 extern const file_hint_t file_hint_crw;
+extern const file_hint_t file_hint_csh;
 extern const file_hint_t file_hint_ctg;
 extern const file_hint_t file_hint_cwk;
 extern const file_hint_t file_hint_d2s;
@@ -332,6 +333,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_compress },
   { .enable=0, .file_hint=&file_hint_cow  },
   { .enable=0, .file_hint=&file_hint_crw  },
+  { .enable=0, .file_hint=&file_hint_csh  },
   { .enable=0, .file_hint=&file_hint_ctg  },
   { .enable=0, .file_hint=&file_hint_cwk  },
   { .enable=0, .file_hint=&file_hint_d2s  },
