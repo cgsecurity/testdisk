@@ -254,6 +254,7 @@ file_C			= filegen.c \
 			  file_tivo.c \
 			  file_torrent.c \
 			  file_tph.c \
+			  file_tpl.c \
 			  file_ttf.c \
 			  file_txt.c \
 			  file_tz.c \

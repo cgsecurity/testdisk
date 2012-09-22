@@ -256,6 +256,7 @@ extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_tivo;
 extern const file_hint_t file_hint_torrent;
 extern const file_hint_t file_hint_tph;
+extern const file_hint_t file_hint_tpl;
 extern const file_hint_t file_hint_ts;
 extern const file_hint_t file_hint_ttf;
 extern const file_hint_t file_hint_txt;
@@ -516,6 +517,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_tivo  },
   { .enable=0, .file_hint=&file_hint_torrent  },
   { .enable=0, .file_hint=&file_hint_tph  },
+  { .enable=0, .file_hint=&file_hint_tpl  },
   { .enable=0, .file_hint=&file_hint_ts   },
   { .enable=0, .file_hint=&file_hint_ttf  },
   { .enable=0, .file_hint=&file_hint_fasttxt  },
