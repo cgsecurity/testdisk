@@ -33,6 +33,7 @@ extern const file_hint_t file_hint_DB;
 extern const file_hint_t file_hint_a;
 extern const file_hint_t file_hint_abcdp;
 extern const file_hint_t file_hint_abr;
+extern const file_hint_t file_hint_acb;
 extern const file_hint_t file_hint_accdb;
 extern const file_hint_t file_hint_ace;
 extern const file_hint_t file_hint_addressbook;
@@ -290,6 +291,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_a    },
   { .enable=0, .file_hint=&file_hint_abcdp},
   { .enable=0, .file_hint=&file_hint_abr  },
+  { .enable=0, .file_hint=&file_hint_acb  },
   { .enable=0, .file_hint=&file_hint_accdb},
   { .enable=0, .file_hint=&file_hint_ace  },
   { .enable=0, .file_hint=&file_hint_addressbook},
