@@ -80,6 +80,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   list_part_t *current_element;
   unsigned int current_element_num;
   unsigned int carve_free_space_only=0;
+  unsigned int user_blocksize=0;
   int done=0;
   int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
 #ifdef HAVE_NCURSES
@@ -181,6 +182,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	  {
 	    params->blocksize=remove_used_space(params->disk, params->partition, list_search_space);
 	  }
+	  if(user_blocksize > 0)
+	    params->blocksize=user_blocksize;
 	  photorec(params, options, list_search_space, carve_free_space_only);
 	}
       }
@@ -197,7 +200,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       else if(strncmp(params->cmd_run,"blocksize,",10)==0)
       {
 	params->cmd_run+=10;
-	params->blocksize=atoi(params->cmd_run);
+	user_blocksize=atoi(params->cmd_run);
 	while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
 	  params->cmd_run++;
       }
