@@ -1235,8 +1235,9 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
       offset=0;
       old_LINES=LINES;
     }
-    wmove(stdscr,5,4);
+    wmove(stdscr,5,0);
     wclrtoeol(stdscr);
+    wmove(stdscr,5,4);
     if(offset>0)
       wprintw(stdscr,"Previous");
     for(i=offset;files_enable[i].file_hint!=NULL && i<offset+INTER_FSELECT;i++)
