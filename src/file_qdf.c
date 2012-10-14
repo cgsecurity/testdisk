@@ -30,9 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_qdf(file_stat_t *file_stat);
-static int header_check_qdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_qdf= {
   .extension="qdf",
@@ -41,25 +39,17 @@ const file_hint_t file_hint_qdf= {
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-	.register_header_check=&register_header_check_qdf
+  .register_header_check=&register_header_check_qdf
 };
-
-static const unsigned char qdf_header[6]  = { 0xAC, 0x9E, 0xBD, 0x8F, 0x00, 0x00};
-static const unsigned char qdf_header2[0x10]  = {
-  0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-static void register_header_check_qdf(file_stat_t *file_stat)
-{
-  register_header_check(0, qdf_header, sizeof(qdf_header), &header_check_qdf, file_stat);
-
-  register_header_check(0, qdf_header2, sizeof(qdf_header2), &header_check_qdf, file_stat);
-}
 
 static int header_check_qdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_qdf.extension;
   return 1;
+}
+static void register_header_check_qdf(file_stat_t *file_stat)
+{
+  static const unsigned char qdf_header[6]  = { 0xAC, 0x9E, 0xBD, 0x8F, 0x00, 0x00};
+  register_header_check(0, qdf_header, sizeof(qdf_header), &header_check_qdf, file_stat);
 }
