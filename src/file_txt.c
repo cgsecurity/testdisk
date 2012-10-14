@@ -757,23 +757,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       return 1;
     }
   }
-  if(buffer_lower_size<buffer_size_test+16)
-  {
-    free(buffer_lower);
-    buffer_lower=NULL;
-  }
-  /* Don't malloc/free memory every time, small memory leak */
-  if(buffer_lower==NULL)
-  {
-    buffer_lower_size=buffer_size_test+16;
-    buffer_lower=(char *)MALLOC(buffer_lower_size);
-  }
-  l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
-  if(l<10)
-    return 0;
-  /* strncasecmp */
-  if(memcmp(buffer_lower, "@echo off", 9)==0 ||
-      memcmp(buffer_lower, "rem ", 4)==0)
+  if(strncasecmp(buffer, "@echo off", 9)==0 ||
+      strncasecmp(buffer, "rem ", 4)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -781,7 +766,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="bat";
     return 1;
   }
-  if(memcmp(buffer_lower, "<%@ language=\"vbscript", 22)==0)
+  if(strncasecmp(buffer, "<%@ language=\"vbscript", 22)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -789,7 +774,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="asp";
     return 1;
   }
-  if(memcmp(buffer_lower, "version 4.00\r\nbegin", 20)==0)
+  if(strncasecmp(buffer, "version 4.00\r\nbegin", 20)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -797,7 +782,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="vb";
     return 1;
   }
-  if(memcmp(buffer_lower, "begin:vcard", 11)==0)
+  if(strncasecmp(buffer, "begin:vcard", 11)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -808,7 +793,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   if(buffer[0]=='#' && buffer[1]=='!')
   {
     unsigned int ll=l-2;
-    const unsigned char *haystack=(const unsigned char *)buffer_lower+2;
+    const unsigned char *haystack=(const unsigned char *)buffer+2;
     const unsigned char *res;
     res=(const unsigned char *)memchr(haystack,'\n',ll);
     if(res!=NULL)
@@ -849,6 +834,20 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   {
     return 0;
   }
+  if(buffer_lower_size<buffer_size_test+16)
+  {
+    free(buffer_lower);
+    buffer_lower=NULL;
+  }
+  /* Don't malloc/free memory every time, small memory leak */
+  if(buffer_lower==NULL)
+  {
+    buffer_lower_size=buffer_size_test+16;
+    buffer_lower=(char *)MALLOC(buffer_lower_size);
+  }
+  l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
+  if(l<10)
+    return 0;
   {
     const char *ext=NULL;
     /* ind=~0: random
@@ -903,8 +902,11 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	  ind+=stats[i]*(stats[i]-1);
       ind=ind/l/(l-1);
     }
+    /* Windows Autorun */
+    if(strstr(buffer_lower, "[autorun]")!=NULL)
+      ext="inf";
     /* Detect .ini */
-    if(buffer[0]=='[' && is_ini(buffer_lower) && l>50)
+    else if(buffer[0]=='[' && is_ini(buffer_lower) && l>50)
       ext="ini";
     else if(strstr(buffer_lower, "<?php")!=NULL)
       ext="php";
@@ -913,11 +915,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, "\\begin{")!=NULL)
       ext="tex";
-    else if(strstr(buffer_lower, "#include")!=NULL)
+    else if(strstr(buffer, "#include")!=NULL)
       ext="c";
-    /* Windows Autorun */
-    else if(strstr(buffer_lower, "[autorun]")!=NULL)
-      ext="inf";
     else if(strstr(buffer_lower, "<%@")!=NULL)
       ext="jsp";
     else if(strstr(buffer_lower, "<%=")!=NULL)
@@ -926,9 +925,17 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="asp";
     else if(strstr(buffer_lower, "<html")!=NULL)
       ext="html";
-    else if(strstr(buffer_lower, "class")!=NULL ||
-	strstr(buffer_lower, "private static")!=NULL ||
+    else if(strstr(buffer_lower, "private static")!=NULL ||
 	strstr(buffer_lower, "public interface")!=NULL)
+    {
+#ifdef DJGPP
+      ext="jav";
+#else
+      ext="java";
+#endif
+    }
+    else if(strstr(buffer_lower, "class")!=NULL &&
+	(l>=100 || file_recovery==NULL))
     {
 #ifdef DJGPP
       ext="jav";
