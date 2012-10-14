@@ -104,8 +104,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
 #endif
   {
     unsigned int block;
-    unsigned int fat_entries;
-    fat_entries=(le32(header->num_FAT_blocks)==0 ?
+    const unsigned int fat_entries=(le32(header->num_FAT_blocks)==0 ?
 	109:
 	(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
 #ifdef DEBUG_OLE
@@ -128,12 +127,18 @@ static void file_check_doc(file_recovery_t *file_recovery)
       }
       if(fseek(file_recovery->handle, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
+#ifdef DEBUG_OLE
+	log_info("fseek failed%u\n");
+#endif
 	free(fat);
 	return ;
       }
       dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
       if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file_recovery->handle)!=1)
       {
+#ifdef DEBUG_OLE
+	log_info("fread failed%u\n");
+#endif
 	free(dir_entries);
 	free(fat);
 	return ;
@@ -145,9 +150,14 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
 	    sid++,dir_entry++)
 	{
-	  if(le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
-	      (le32(dir_entry->start_block) > fat_entries || le32(dir_entry->size) > doc_file_size))
+	    if(le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
+		((le32(dir_entry->size) >= le32(header->miniSectorCutoff)
+		  && le32(dir_entry->start_block) > fat_entries) ||
+		 le32(dir_entry->size) > doc_file_size))
 	  {
+#ifdef DEBUG_OLE
+	    log_info("error at sid %u\n", sid);
+#endif
 	    free(dir_entries);
 	    free(fat);
 	    return ;
@@ -216,8 +226,10 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	{
 	  log_info("%c",dir_entry->name[j]);
 	}
+	for(;j<64;j+=2)
+	  log_info(" ");
 	log_info(" type %u", dir_entry->type);
-	log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
+	log_info(" Flags=%s", (dir_entry->bflags==0?"Red  ":"Black"));
 	log_info(" sector %u (%u bytes)\n",
 	    (unsigned int)le32(dir_entry->start_block),
 	    (unsigned int)le32(dir_entry->size));
@@ -265,7 +277,8 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	if(memcmp(&dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
 	  return "vsd";
 	/* SolidWorks */
-	if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
+	if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0 ||
+	    memcmp(&dir_entry->name,"I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0",44)==0)
 	{
 #ifdef DJGPP
 	  return "sld";
@@ -385,7 +398,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="sdw";
     }
     else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
-    {	/* Flash */
+    {	/* Flash Project File */
       file_recovery_new->extension="fla";
     }
     else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
@@ -893,7 +906,9 @@ static void file_rename_doc(const char *old_filename)
 	    else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
 	      ext="vsd";
 	    /* SolidWorks */
-	    else if(memcmp(dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0)
+	    else if(memcmp(&dir_entry->name, "s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0", 26)==0 ||
+		memcmp(&dir_entry->name,
+		  "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0", 44)==0)
 	    {
 #ifdef DJGPP
 	      ext="sld";
