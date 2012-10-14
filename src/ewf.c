@@ -134,19 +134,6 @@ disk_t *fewf_init(const char *device, const int mode)
       free(data);
       return NULL;
   }
-  if( libewf_handle_initialize(
-	&( data->handle ),
-	NULL ) != 1 )
-  {
-    log_error("libewf_handle_initialize failed\n");
-
-      libewf_glob_free(
-       filenames,
-       num_files,
-       NULL );
-    free(data);
-    return NULL;
-  }
 #elif defined( HAVE_GLOB_H )
   {
     globbuf.gl_offs = 0;
@@ -176,6 +163,19 @@ disk_t *fewf_init(const char *device, const int mode)
   if((mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR)
   {
 #if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_initialize(
+	  &( data->handle ),
+	  NULL ) != 1 )
+    {
+      log_error("libewf_handle_initialize failed\n");
+
+      libewf_glob_free(
+	  filenames,
+	  num_files,
+	  NULL );
+      free(data);
+      return NULL;
+    }
     if( libewf_handle_open(
 	  data->handle,
 	  filenames,
@@ -197,6 +197,19 @@ disk_t *fewf_init(const char *device, const int mode)
   {
     data->mode&=~TESTDISK_O_RDWR;
 #if defined( HAVE_LIBEWF_V2_API )
+    if( libewf_handle_initialize(
+	  &( data->handle ),
+	  NULL ) != 1 )
+    {
+      log_error("libewf_handle_initialize failed\n");
+
+      libewf_glob_free(
+	  filenames,
+	  num_files,
+	  NULL );
+      free(data);
+      return NULL;
+    }
     if( libewf_handle_open(
 	  data->handle,
 	  filenames,
