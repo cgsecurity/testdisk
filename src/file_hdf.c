@@ -95,13 +95,15 @@ static void file_check_hdf(file_recovery_t *file_recovery)
       log_info("tag=0x%04x, ref=%u, offset=%lu, length=%lu\n",
 	  be16(p->tag), be16(p->ref), be32(p->offset), be32(p->length));
 #endif
-      if(file_size < be32(p->offset) + be32(p->length))
-	file_size = be32(p->offset) + be32(p->length);
+      if((unsigned)be32(p->offset)!=(unsigned)(-1) &&
+	file_size < (unsigned)be32(p->offset) + (unsigned)be32(p->length))
+	file_size = (unsigned)be32(p->offset) + (unsigned)be32(p->length);
     }
     offset_old=offset;
     offset=be32(ddh.next);
   } while(offset > offset_old);
   free(dd);
+  file_size++;
 #ifdef DEBUG_HDF
   log_info("file_size %llu\n", (long long unsigned)file_size);
 #endif
