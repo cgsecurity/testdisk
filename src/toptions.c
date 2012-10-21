@@ -51,7 +51,7 @@ static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *e
       { 0, NULL, NULL }
     };
     menuOptions[0].name=*expert?"Expert mode : Yes":"Expert mode : No";
-    menuOptions[1].name=*align?"Align partition: Yes":"No";
+    menuOptions[1].name=*align?"Align partition: Yes":"Align partition: No";
     menuOptions[2].name=*dump_ind?"Dump : Yes":"Dump : No";
     aff_copy(stdscr);
     car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "ECDQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
