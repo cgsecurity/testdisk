@@ -350,7 +350,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
 	else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
 	  file_recovery_new->extension="sdc";
       }
-      if(strcmp(file_recovery_new->extension,"wps")==0)
+      else if(strcmp(file_recovery_new->extension,"wps")==0)
       {
 	/* Distinguish between MS Works .wps and MS Publisher .pub */
 	if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)

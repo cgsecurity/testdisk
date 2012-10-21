@@ -50,12 +50,10 @@ const file_hint_t file_hint_dir= {
   .register_header_check=&register_header_check_dir
 };
 
-static const unsigned char *dir_header=(const unsigned char *)".          ";
-
 static void file_rename_fatdir(const char *old_filename)
 {
   unsigned char buffer[512];
-  unsigned char buffer_cluster[32];
+  char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   unsigned int cluster;

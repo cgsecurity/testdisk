@@ -47,7 +47,7 @@ const file_hint_t file_hint_ext2_sb= {
 static void file_rename_ext(const char *old_filename)
 {
   unsigned char buffer[512];
-  unsigned char buffer_cluster[32];
+  char buffer_cluster[32];
   FILE *file;
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer;
   int buffer_size;
@@ -101,7 +101,7 @@ static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int 
 static void file_rename_extdir(const char *old_filename)
 {
   unsigned char buffer[512];
-  unsigned char buffer_cluster[32];
+  char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   const uint32_t *inode=(const uint32_t *)&buffer[0];

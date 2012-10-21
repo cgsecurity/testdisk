@@ -48,7 +48,7 @@ const file_hint_t file_hint_mft= {
 static void file_rename_mft(const char *old_filename)
 {
   unsigned char buffer[512];
-  unsigned char buffer_cluster[32];
+  char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)&buffer;

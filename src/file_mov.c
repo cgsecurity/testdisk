@@ -192,6 +192,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       }
       else if(td_memmem(&buffer[i+8], search_size-8, "3gp", 3)!=NULL)
       {
+	/* Video for 3G mobile phone (GSM) */
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3gp";
 	file_recovery_new->data_check=data_check_mov;
@@ -201,6 +202,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       }
       else if(td_memmem(&buffer[i+8], search_size-8, "3g2", 3)!=NULL)
       {
+	/* Video for 3G mobile phone (CDMA) */
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3g2";
 	file_recovery_new->data_check=data_check_mov;

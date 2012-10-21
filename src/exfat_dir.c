@@ -66,8 +66,6 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
 static void dir_partition_exfat_close(dir_data_t *dir_data);
 
-static int32_t secwest;
-
 static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 {
 	while (len--) {
