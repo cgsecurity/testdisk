@@ -2,7 +2,7 @@
 
     File: file_gpg.c
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008-2012 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,13 +30,12 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#ifdef DEBUG_GPG
 #include "log.h"
+#endif
 
 static void register_header_check_gpg(file_stat_t *file_stat);
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static unsigned int openpgp_packet_tag(const unsigned char *buf);
-static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *length_type);
 
 const file_hint_t file_hint_gpg= {
   .extension="gpg",
@@ -56,46 +55,50 @@ const file_hint_t file_hint_gpg= {
 #define OPENPGP_TAG_SIGNATURE			2
 /* Symmetric-Key Encrypted Session Key Packets */
 #define OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY	3
-/*
- * One-Pass Signature Packets (Tag 4)
- * Secret-Key Packet (Tag 5)
- * Public-Key Packet (Tag 6)
- * Secret-Subkey Packet (Tag 7)
- * Compressed Data Packet (Tag 8)
- */
+/* One-Pass Signature Packets (Tag 4) */
+#define OPENPGP_TAG_ONE_PASS_SIG		4
+/* Secret-Key Packet (Tag 5) */
+#define OPENPGP_TAG_SEC_KEY			5
+/* Public-Key Packet (Tag 6)*/
+#define OPENPGP_TAG_PUB_KEY			6
+/* Secret-Subkey Packet (Tag 7)	*/
+#define OPENPGP_TAG_SEC_SUBKEY			7
+/* Compressed Data Packet (Tag 8) */
 /* Symmetrically Encrypted Data Packet */
 #define OPENPGP_TAG_SYM_ENC_DATA		9
-/* Marker Packet (Obsolete Literal Packet) (Tag 10)
- * Literal Data Packet (Tag 11)
- * Trust Packet (Tag 12)
- */
+/* Marker Packet (Tag 10) */
+#define OPENPGP_TAG_MARKER			10
+/* Literal Data Packet (Tag 11)
+ * Trust Packet (Tag 12) */
+#define OPENPGP_TAG_TRUST			12
  /* User ID Packet */
 #define OPENPGP_TAG_USER_ID			13
- /* Public-Subkey Packet (Tag 14)
- * User Attribute Packet (Tag 17)
+ /* Public-Subkey Packet (Tag 14) */
+#define OPENPGP_TAG_PUB_SUBKEY			14
+/* User Attribute Packet (Tag 17)
  */
 /* Sym. Encrypted Integrity Protected Data Packet */
 #define OPENPGP_TAG_SYM_ENC_INTEGRITY		18
  /* Modification Detection Code Packet (Tag 19) */
-static const unsigned char gpg_header_pkey_enc[1]= {0x85};
-static const unsigned char gpg_header_symkey_enc[1]= {0x8c};
-static const unsigned char gpg_header_seckey[1]= {0x95};
+
 static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
-#if 0
-static const unsigned char gpg_header_pkey[1]= {0x99};
-#endif
 
 static void register_header_check_gpg(file_stat_t *file_stat)
 {
+  static const unsigned char gpg_header_pkey_enc[1]= {0x85};
+  static const unsigned char gpg_header_symkey_enc[1]= {0x8c};
+  static const unsigned char gpg_header_seckey[1]= {0x95};
+#if 1
+  static const unsigned char gpg_header_pkey[1]= {0x99};
+#endif
   register_header_check(0, gpg_header_seckey, sizeof(gpg_header_seckey), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_symkey_enc, sizeof(gpg_header_symkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey_enc, sizeof(gpg_header_pkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);
-#if 0
+#if 1
   register_header_check(0, gpg_header_pkey, sizeof(gpg_header_pkey), &header_check_gpg, file_stat);
 #endif
 }
-
 
 static unsigned int openpgp_packet_tag(const unsigned char *buf)
 {
@@ -105,64 +108,52 @@ static unsigned int openpgp_packet_tag(const unsigned char *buf)
   return ((buf[0]&0x40)==0?((buf[0]>>2)&0x0f):(buf[0]&0x3f));
 }
 
-static unsigned int openpgp_length_type(const unsigned char *buf, unsigned int *length_type)
+static unsigned int old_format_packet_length(const unsigned char *buf, unsigned int *length_type, int *indeterminate_length)
 {
-  /* Bit 7 -- Always one */
-  if((buf[0]&0x80)==0)
+  /* Old format */
+  switch(buf[0]&0x3)
   {
-    /* Invalid */
-    *length_type=0;
-    return 0;
+    case 0:
+      *length_type=2;
+      return buf[1];
+    case 1:
+      *length_type=3;
+      return (buf[1] << 8) | buf[2];
+    case 2:
+      *length_type=5;
+      return (buf[1] << 24) |(buf[2] << 16) |  (buf[3] << 8) | buf[4];
+    default:
+      *length_type=1;
+      *indeterminate_length=1;
+      return 0;
   }
-#ifdef DEBUG_GPG
-  log_info("%02x %02x %02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
-#endif
-  if((buf[0]&0x40)==0)
-  {
-    /* Old format */
-#ifdef DEBUG_GPG
-    log_info(" old_format\n");
-#endif
-    switch(buf[0]&0x3)
-    {
-      case 0:
-	*length_type=2;
-	return buf[1];
-      case 1:
-	*length_type=3;
-	return (buf[1] << 8) | buf[2];
-      case 2:
-	*length_type=5;
-	return (buf[1] << 24) |(buf[2] << 16) |  (buf[3] << 8) | buf[4];
-      default:
-	*length_type=1;
-	return 0;
-    }
-  }
-#ifdef DEBUG_GPG
-  log_info(" new_format\n");
-#endif
-  /* One-Octet Lengths */
-  if(buf[1]<=191)
+}
+
+static unsigned int new_format_packet_length(const unsigned char *buf, unsigned int *length_type, int *partial_body_length)
+{
+  *partial_body_length=0;
+  /* One-Octet Body Length */
+  if(buf[0]<=191)
   {
     *length_type=1;
-    return buf[1];
+    return buf[0];
   }
-  /* Two-Octet Lengths */
-  if(buf[1]<=223)
+  /* Two-Octet Body Length */
+  if(buf[0]<=223)
   {
     *length_type=2;
-    return ((buf[1] - 192) << 8) + buf[2] + 192;
+    return ((buf[0] - 192) << 8) + buf[1] + 192;
   }
-  /* Five-Octet Lengths */
-  if(buf[1]==255)
+  /* Five-Octet Body Length */
+  if(buf[0]==255)
   {
     *length_type=5;
-    return (buf[2] << 24) | (buf[3] << 16) | (buf[4] << 8)  | buf[5];
+    return (buf[1] << 24) | (buf[2] << 16) | (buf[3] << 8)  | buf[4];
   }
   /* Partial Body Lengths */
   *length_type=1;
-  return 1 << (buf[1]& 0x1F);
+  *partial_body_length=1;
+  return 1 << (buf[0]& 0x1F);
 }
 
 static  int is_valid_pubkey_algo(const int algo)
@@ -229,116 +220,380 @@ static int is_valid_sym_algo(const int algo)
       return 0;
   }
 }
+
+static int is_valid_S2K(const unsigned int algo)
+{
+  /*  ID          S2K Type
+   *  --          --------
+   *  0           Simple S2K
+   *  1           Salted S2K
+   *  2           Reserved value
+   *  3           Iterated and Salted S2K
+   *  100 to 110  Private/Experimental S2K
+   */
+  return (algo==0 || algo==1 || algo==3);
+}
+
+static void file_check_gpg(file_recovery_t *file_recovery)
+{
+  unsigned int tag=0;
+  unsigned int nbr=0;
+  int partial_body_length=0;
+  int stop=0;
+  off_t offset=0;
+  unsigned char buffer[32];
+  const uint64_t org_file_size=file_recovery->file_size;
+  file_recovery->file_size=0;
+  while(stop==0)
+  {
+    unsigned int i=0;
+    unsigned int length_type=0;
+    unsigned int length;
+    const int old_partial_body_length=partial_body_length;
+    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
+	fread(&buffer, sizeof(buffer), 1, file_recovery->handle) != 1)
+      return;
+
+    if(partial_body_length==0)
+    {
+      if((buffer[i]&0x80)==0)	
+	break;	/* Invalid */
+      tag=openpgp_packet_tag(&buffer[i]);
+      if((buffer[i]&0x40)==0)
+      {
+	length=old_format_packet_length(&buffer[i], &length_type, &stop);
+      }
+      else
+      {
+	length=new_format_packet_length(&buffer[i+1], &length_type, &partial_body_length);
+	length_type++;
+      }
+    }
+    else
+    {
+      length=new_format_packet_length(&buffer[i], &length_type, &partial_body_length);
+    }
+#ifdef DEBUG_GPG
+    log_info("GPG 0x%04x: %02u tag=%2u, size=%u + %u)\n",
+	i, nbr, tag, length_type, length);
+#endif
+#if 0
+    if(tag==0 || tag==15 || (tag>19 && tag!=61))	/* Reserved or unused */
+      return;
+#endif
+    if(length_type==0)
+      break;	/* Don't know how to find the size */
+    i+=length_type;
+    offset+=length_type;
+    if(old_partial_body_length==0)
+    {
+      if(tag==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
+      {
+	/* uint8_t  version	must be 3
+	 * uint64_t pub_key_id
+	 * uint8_t  pub_key_algo
+	 *          encrypted_session_key	*/
+	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]))
+	{
+#ifdef DEBUG_GPG
+	  log_info("GPG :pubkey enc packet: version %u, algo %u, keyid %02X%02X%02X%02X%02X%02X%02X%02X\n",
+	      buffer[i], buffer[i+1+8],
+	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
+	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
+#endif
+	}
+	else
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_SIGNATURE)
+      {
+	/* v3 - length=5 */
+	if(buffer[i]==3 && buffer[i+1]==5 && is_valid_pubkey_algo(buffer[i+1+1+5+8]))
+	{
+#ifdef DEBUG_GPG
+	  log_info(":signature packet: algo %u\n", buffer[i+1+1+5+8]);
+	  log_info(":signature packet: sig_class 0x%02x\n", buffer[i+1+1]);
+#endif
+	}
+	/* v4 */
+	else if(buffer[i]==4 && is_valid_pubkey_algo(buffer[i+2]))
+	{
+#ifdef DEBUG_GPG
+	  log_info(":signature packet: algo %u\n", buffer[i+2]);
+#endif
+	}
+	else
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
+      {
+	/* v4 */
+	if(buffer[i]==4 && is_valid_sym_algo(buffer[i+1]) && is_valid_S2K(buffer[i+2]))
+	{
+	}
+	else
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_ONE_PASS_SIG)
+      {
+	if(buffer[i]==3 && is_valid_sym_algo(buffer[i+1]))
+	{
+	}
+	else
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_SYM_ENC_DATA)
+      {
+      }
+      else if(tag==OPENPGP_TAG_MARKER)
+      {
+	/* Must be at the beginning of the packet */
+	if(nbr!=0)
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_SYM_ENC_INTEGRITY)
+      {
+#ifdef DEBUG_GPG
+	log_info("GPG :encrypted data packet:\n");
+#endif
+	/* Version must be 1 */
+	if(buffer[i]!=1)
+	  return;
+      }
+      else if(tag==OPENPGP_TAG_PUB_KEY ||
+	  tag==OPENPGP_TAG_PUB_SUBKEY ||
+	  tag==OPENPGP_TAG_SEC_KEY||
+	  tag==OPENPGP_TAG_SEC_SUBKEY)
+      {
+	if((buffer[i]==2 || buffer[i]==3) && is_valid_pubkey_algo(buffer[i+1+4+2]))
+	{ /* version 2 or 3 */
+	}
+	else if(buffer[i]==4 && is_valid_pubkey_algo(buffer[i+1+4]))
+	{ /* version 4 */
+	}
+	else
+	  return;
+      }
+    }
+    if(partial_body_length==0)
+      nbr++;
+    offset+=length;
+  }
+  if(nbr<2)
+    return;
+  file_recovery->file_size=(stop==0?org_file_size:(uint64_t)offset);
+}
+
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  unsigned int potential_frame_offset=0;
-  unsigned int packet_tag[5];
-  unsigned int length_type[5];
-  unsigned int length[5];
+  unsigned int packet_tag[16];
   unsigned int nbr=0;
-  unsigned int i;
-  int start_recovery=0;
+  unsigned int i=0;
+  int partial_body_length=0;
+  int stop=0;
   memset(packet_tag, 0, sizeof(packet_tag));
-  memset(length_type, 0, sizeof(length_type));
-  memset(length, 0, sizeof(length));
-  while(nbr<5 && potential_frame_offset < buffer_size - 5)
+  while(nbr<16 && i < buffer_size - 20 && stop==0)
   {
-    packet_tag[nbr]=openpgp_packet_tag(&buffer[potential_frame_offset]);
-    if(packet_tag[nbr]==0)	/* Reserved */
-      break;
-    length[nbr]=openpgp_length_type(&buffer[potential_frame_offset], &length_type[nbr]);
-    if(length_type[nbr]==0)
+    unsigned int length_type=0;
+    unsigned int tag;
+    unsigned int length;
+    const int old_partial_body_length=partial_body_length;
+    if(partial_body_length==0)
+    {
+      if((buffer[i]&0x80)==0)	
+	break;	/* Invalid */
+      packet_tag[nbr]=openpgp_packet_tag(&buffer[i]);
+      if((buffer[i]&0x40)==0)
+      {
+	length=old_format_packet_length(&buffer[i], &length_type, &stop);
+      }
+      else
+      {
+	length=new_format_packet_length(&buffer[i+1], &length_type, &partial_body_length);
+	length_type++;
+      }
+    }
+    else
+    {
+      length=new_format_packet_length(&buffer[i], &length_type, &partial_body_length);
+    }
+    tag=packet_tag[nbr];
+#ifdef DEBUG_GPG
+    log_info("GPG 0x%04x: %02u tag=%2u, size=%u + %u)\n",
+	i, nbr, tag, length_type, length);
+#endif
+#if 0
+    if(tag==0 || tag==15 || (tag>19 && tag!=61))	/* Reserved or unused */
+      return 0;
+#endif
+    if(length_type==0)
       break;	/* Don't know how to find the size */
-    potential_frame_offset+=length_type[nbr];
-    potential_frame_offset+=length[nbr];
-    nbr++;
+    i+=length_type;
+    if(old_partial_body_length==0)
+    {
+      if(tag==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
+      {
+	/* uint8_t  version	must be 3
+	 * uint64_t pub_key_id
+	 * uint8_t  pub_key_algo
+	 *          encrypted_session_key	*/
+	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]))
+	{
+#ifdef DEBUG_GPG
+	  log_info("GPG :pubkey enc packet: version %u, algo %u, keyid %02X%02X%02X%02X%02X%02X%02X%02X\n",
+	      buffer[i], buffer[i+1+8],
+	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
+	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
+#endif
+	}
+	else
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_SIGNATURE)
+      {
+	/* v3 - length=5 */
+	if(buffer[i]==3 && buffer[i+1]==5 && is_valid_pubkey_algo(buffer[i+1+1+5+8]))
+	{
+#ifdef DEBUG_GPG
+	  log_info(":signature packet: algo %u\n", buffer[i+1+1+5+8]);
+	  log_info(":signature packet: sig_class 0x%02x\n", buffer[i+1+1]);
+#endif
+	}
+	/* v4 */
+	else if(buffer[i]==4 && is_valid_pubkey_algo(buffer[i+2]))
+	{
+#ifdef DEBUG_GPG
+	  log_info(":signature packet: algo %u\n", buffer[i+2]);
+#endif
+	}
+	else
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
+      {
+	/* v4 */
+	if(buffer[i]==4 && is_valid_sym_algo(buffer[i+1]) && is_valid_S2K(buffer[i+2]))
+	{
+	}
+	else
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_ONE_PASS_SIG)
+      {
+	if(buffer[i]==3 && is_valid_sym_algo(buffer[i+1]))
+	{
+	}
+	else
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_SYM_ENC_DATA)
+      {
+	unsigned int j;
+	int ok=0;
+	/* The symmetric cipher used may be specified in a Public-Key or
+	 * Symmetric-Key Encrypted Session Key packet that precedes the
+	 * Symmetrically Encrypted Data packet.
+	 * PhotoRec assumes it must */
+	for(j=0; j<nbr; j++)
+	{
+	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
+	      packet_tag[j]==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
+	    ok=1;
+	}
+	if(ok==0)
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_MARKER)
+      {
+	/* Must be at the beginning of the packet */
+	if(nbr!=0)
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_SYM_ENC_INTEGRITY)
+      {
+	unsigned int j;
+	int ok=0;
+#ifdef DEBUG_GPG
+	log_info("GPG :encrypted data packet:\n");
+#endif
+	/* Version must be 1 */
+	if(buffer[i]!=1)
+	  return 0;
+	/* The symmetric cipher used MUST be specified in a Public-Key or
+	 * Symmetric-Key Encrypted Session Key packet that precedes the
+	 * Symmetrically Encrypted Data packet. */
+	for(j=0; j<nbr; j++)
+	{
+	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
+	      packet_tag[j]==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
+	    ok=1;
+	}
+	if(ok==0)
+	  return 0;
+      }
+      else if(tag==OPENPGP_TAG_PUB_KEY ||
+	  tag==OPENPGP_TAG_PUB_SUBKEY ||
+	  tag==OPENPGP_TAG_SEC_KEY||
+	  tag==OPENPGP_TAG_SEC_SUBKEY)
+      {
+	if((buffer[i]==2 || buffer[i]==3) && is_valid_pubkey_algo(buffer[i+1+4+2]))
+	{ /* version 2 or 3 */
+	}
+	else if(buffer[i]==4 && is_valid_pubkey_algo(buffer[i+1+4]))
+	{ /* version 4 */
+	}
+	else
+	  return 0;
+      }
+    }
+    if(partial_body_length==0)
+      nbr++;
+    i+=length;
   }
   if(nbr<2)
     return 0;
-#ifdef DEBUG_GPG
-  for(i=0;i<nbr;i++)
-  {
-    log_info("%02u gpg tag %u, size=%u (0x%x - %u)\n",
-	i, packet_tag[i], length[i], length[i], length_type[i]);
-  }
-#endif
-  if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0 && packet_tag[1]== OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY)
+  if(memcmp(buffer, pgp_header, sizeof(pgp_header))==0)
   {
     reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_gpg;
     file_recovery_new->extension="pgp";
     return 1;
   }
-  /* Public-Key Encrypted Session Key Packet v3 */
-  if(buffer[0]==0x85 && buffer[3]==0x03 && is_valid_pubkey_algo(buffer[3+1+8]))
-  {
-    for(i=1;i<nbr;i++)
-    {
-      /* Sym. Encrypted and Integrity Protected Data Packet */
-      if(packet_tag[i]==OPENPGP_TAG_SYM_ENC_INTEGRITY)
-      {
-	start_recovery=1;
-	break;
-      }
-      /* Public-Key Encrypted Session Key Packet */
-      else if(packet_tag[i]!=OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
-	return 0;
-    }
-  }
-  if(start_recovery>0)
+  if( /* encrypted_data.gpg */
+      ((packet_tag[0]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
+	packet_tag[0]==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY) &&
+       (packet_tag[1]==OPENPGP_TAG_SYM_ENC_DATA ||
+	packet_tag[1]==OPENPGP_TAG_SYM_ENC_INTEGRITY)) ||
+       /* pubring.gpg */
+      (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
+       packet_tag[1]==OPENPGP_TAG_USER_ID &&
+       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+       packet_tag[3]==OPENPGP_TAG_TRUST) ||
+      (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
+       packet_tag[1]==OPENPGP_TAG_USER_ID &&
+       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+       packet_tag[3]==OPENPGP_TAG_PUB_SUBKEY) ||
+       /* secring.gpg */
+      (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
+       packet_tag[1]==OPENPGP_TAG_USER_ID &&
+       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+       packet_tag[3]==OPENPGP_TAG_TRUST) ||
+      (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
+       packet_tag[1]==61 &&
+       packet_tag[2]==61 &&
+       packet_tag[3]==61)
+    )
   {
     reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_gpg;
     file_recovery_new->extension=file_hint_gpg.extension;
     return 1;
   }
-  /* Secret-Key Packet v4 followed by User ID Packet */
-  if(buffer[0]==0x95 && buffer[3]==0x04 && packet_tag[1]==OPENPGP_TAG_USER_ID && is_valid_pubkey_algo(buffer[8])>0)
-  {
-    /* 3: version
-     * 4: time
-     * 8: public-key algorithm
-     */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_gpg.extension;
-    file_recovery_new->data_check=&data_check_gpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  /* symkey enc packet: version 4 followed by Symmetrically Encrypted Data Packet */
-  if(buffer[0]==0x8c && buffer[2]==0x04 && is_valid_sym_algo(buffer[3])>0 && packet_tag[1]==OPENPGP_TAG_SYM_ENC_DATA)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_gpg.extension;
-    return 1;
-  }
-  /* Public-Key Packet + User ID Packet */
-#if 0
-  if(buffer[0]==0x99 && packet_tag[1]==OPENPGP_TAG_USER_ID)
-    start_recovery=1;
+#ifdef DEBUG_GPG
+  log_info("tag don't match: nbr=%u - ", nbr);
+  for(i=0; i<nbr; i++)
+    log_info(" %u", packet_tag[i]);
+  log_info("\n");
 #endif
   return 0;
 }
-
-static int data_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
-  {
-    unsigned int packet_tag;
-    unsigned int length_type;
-    unsigned int length;
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    packet_tag=openpgp_packet_tag(&buffer[i]);
-    if(packet_tag==0)	/* Reserved */
-      return 2;
-    length=openpgp_length_type(&buffer[i], &length_type);
-    if(length_type==0)
-      return 2;	/* Don't know how to find the size */
-#ifdef DEBUG_GPG
-    log_info("gpg tag %u, size=%u\n", packet_tag, length);
-#endif
-    file_recovery->calculated_file_size+=length_type;
-    file_recovery->calculated_file_size+=length;
-  }
-  return 1;
-}
-
