@@ -102,11 +102,13 @@ typedef struct
 } txt_header_t;
 
 static const txt_header_t fasttxt_headers[] = {
+  /* Unix shell */
   { "#!/bin/bash", 					11, "sh"},
   { "#!/bin/ksh",					10, "sh"},
   { "#!/bin/sh",					 9, "sh"},
   /* Opera Hotlist bookmark/contact list/notes */
   { "Opera Hotlist version 2.0",			25, "adr"},
+  /* Microsoft VB Class module */
   { "VERSION 1.0 CLASS\r\nBEGIN",			24, "cls"},
   /* Cue sheet often begins by the music genre
    * or by the filename
@@ -142,16 +144,24 @@ static const txt_header_t fasttxt_headers[] = {
   { "--- Mnemosyne Data Base --- Format Version 2 ---", 48, "mem"},
   /* Mozilla, firefox, thunderbird msf (Mail Summary File) */
   { "// <!-- <mdb:mork:z", 				19, "msf"},
+  /* MySQL, phpMyAdmin, PostgreSQL dump */
   { "-- MySQL dump ",					14, "sql"},
   { "-- phpMyAdmin SQL Dump",				22, "sql"},
   { "--\n-- PostgreSQL database cluster dump",		38, "sql"},
   { "--\r\n-- PostgreSQL database cluster dump",	39, "sql"},
+  /* Quantum GIS  */
   { "<!DOCTYPE qgis ",					15, "qgs"},
+  /* Real Media  */
   { "rtsp://",						 7, "ram"},
+  /* Windows registry config file */
   { "REGEDIT4",						 8, "reg"},
+  /*  Reaper Project */
   { "<REAPER_PROJECT ",					16, "rpp"},
+  /* Olfaction SeeNez subtitle */
   { "#SeeNez ",						 8, "SeeNezSST"},
+  /* Sylk, Multiplan Symbolic Link Interchange  */
   { "ID;PSCALC3",					10, "slk"},
+  /* Olfaction SeeNez odorama */
   { "DEFAULT\n",					 8, "snz"},
   { "DEFAULT\r\n",					 9, "snz"},
   /* ISO 10303 is an ISO standard for the computer-interpretable
@@ -164,6 +174,7 @@ static const txt_header_t fasttxt_headers[] = {
   { "[InternetShortcut]",				18, "url"},
   /* Windows Play List*/
   {"<?wpl version=\"1.0\"?>",				21, "wpl"},
+  /* Windows URL / Internet Shortcut */
   {"BEGIN:VBKM",					10, "url"},
   /* firefox session store */
   { "({\"windows\":[{\"tabs\":[{\"entries\":[{\"url\":\"", 42,
@@ -455,6 +466,7 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
+  /* vcalendar  */
   file_recovery_new->extension="ics";
   /* DTSTART:19970714T133000            ;Local time
    * DTSTART:19970714T173000Z           ;UTC time
@@ -497,6 +509,7 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
       strstr(buffer_lower, "private static")!=NULL ||
       strstr(buffer_lower, "public interface")!=NULL)
   {
+    /* source code in java */
 #ifdef DJGPP
     file_recovery_new->extension="jav";
 #else
@@ -504,7 +517,10 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
 #endif
   }
   else
+  {
+    /* perl module */
     file_recovery_new->extension="pm";
+  }
   free(buffer_lower);
   return 1;
 }
@@ -529,6 +545,7 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_html;
   file_recovery_new->file_check=&file_check_size;
+  /* Hypertext Markup Language (HTML) */
 #ifdef DJGPP
   file_recovery_new->extension="htm";
 #else
@@ -551,57 +568,79 @@ static void file_check_svg(file_recovery_t *file_recovery)
 
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const char *tmp;
+  /* buffer may not be null-terminated */
+  char *buf=(char *)MALLOC(buffer_size+1);
+  memcpy(buf, buffer, buffer_size);
+  buf[buffer_size]='\0';
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
-  if(td_memmem(buffer, buffer_size, "Version_grisbi", 14)!=NULL)
+  file_recovery_new->extension=NULL;
+  tmp=strchr(buf,'<');
+  while(tmp!=NULL && file_recovery_new->extension==NULL)
   {
-    /* Grisbi - Personal Finance Manager XML data */
-    file_recovery_new->extension="gsb";
-  }
-  else if(td_memmem(buffer, buffer_size, "QBFSD", 5)!=NULL)
-    file_recovery_new->extension="fst";
-  else if(td_memmem(buffer, buffer_size, "<collection type=\"GC", 20)!=NULL)
-  {
-    /* GCstart, personal collections manager, http://www.gcstar.org/ */
-    file_recovery_new->extension="gcs";
-  }
-  else if(td_memmem(buffer, buffer_size, "<html", 5)!=NULL)
-  {
-    file_recovery_new->data_check=&data_check_html;
+    if(strncasecmp(tmp, "<Grisbi>", 8)==0)
+    {
+      /* Grisbi - Personal Finance Manager XML data */
+      file_recovery_new->extension="gsb";
+    }
+    else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
+    {
+      /* GCstart, personal collections manager, http://www.gcstar.org/ */
+      file_recovery_new->extension="gcs";
+    }
+    else if(strncasecmp(tmp, "<html", 5)==0)
+    {
+      file_recovery_new->data_check=&data_check_html;
 #ifdef DJGPP
-    file_recovery_new->extension="htm";
+      file_recovery_new->extension="htm";
 #else
-    file_recovery_new->extension="html";
+      file_recovery_new->extension="html";
 #endif
-  }
-  else if(td_memmem(buffer, buffer_size, "<svg", 4)!=NULL)
-  {
-    /* Scalable Vector Graphics */
-    file_recovery_new->extension="svg";
-    file_recovery_new->file_check=&file_check_svg;
-    return 1;
-  }
-  else if(td_memmem(buffer, buffer_size, "<!DOCTYPE plist ", 16)!=NULL)
-  {
-    /* Mac OS X property list */
+    }
+    else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
+    {
+      /* QuickBook */
+      file_recovery_new->extension="fst";
+    }
+    else if(strncasecmp(tmp, "<svg", 4)==0)
+    {
+      /* Scalable Vector Graphics */
+      file_recovery_new->extension="svg";
+      file_recovery_new->file_check=&file_check_svg;
+      free(buf);
+      return 1;
+    }
+    else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
+    {
+      /* Mac OS X property list */
 #ifdef DJGPP
-    file_recovery_new->extension="pli";
+      file_recovery_new->extension="pli";
 #else
-    file_recovery_new->extension="plist";
+      file_recovery_new->extension="plist";
 #endif
+    }
+    else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
+    {
+      /* Adobe Premiere project  */
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->extension="prproj";
+    }
+    else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
+    {
+      /* Scribus XML file */
+      file_recovery_new->extension="sla";
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
   }
-  else if(td_memmem(buffer, buffer_size, "<PremiereData Version=", 22)!=NULL)
+  if(file_recovery_new->extension==NULL)
   {
-    file_recovery_new->data_check=NULL;
-    file_recovery_new->extension="prproj";
-  }
-  else if(td_memmem(buffer, buffer_size, "<SCRIBUS", 8)!=NULL)
-  {
-    file_recovery_new->extension="sla";
-  }
-  else
+    /* XML Extensible Markup Language */
     file_recovery_new->extension="xml";
+  }
   file_recovery_new->file_check=&file_check_xml;
+  free(buf);
   return 1;
 }
 
@@ -614,6 +653,7 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
+  /* Rich Text Format */
   file_recovery_new->extension="rtf";
   return 1;
 }
@@ -753,40 +793,45 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->calculated_file_size=tmp+i+1;
       file_recovery_new->data_check=NULL;
       file_recovery_new->file_check=&file_check_emlx;
+      /* Mac OSX mail */
       file_recovery_new->extension="emlx";
       return 1;
     }
   }
-  if(strncasecmp(buffer, "@echo off", 9)==0 ||
-      strncasecmp(buffer, "rem ", 4)==0)
+  if(strncasecmp((const char *)buffer, "@echo off", 9)==0 ||
+      strncasecmp((const char *)buffer, "rem ", 4)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    /* Dos/Windows bath */
     file_recovery_new->extension="bat";
     return 1;
   }
-  if(strncasecmp(buffer, "<%@ language=\"vbscript", 22)==0)
+  if(strncasecmp((const char *)buffer, "<%@ language=\"vbscript", 22)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    /* Microsoft Active Server Pages */
     file_recovery_new->extension="asp";
     return 1;
   }
-  if(strncasecmp(buffer, "version 4.00\r\nbegin", 20)==0)
+  if(strncasecmp((const char *)buffer, "version 4.00\r\nbegin", 20)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    /* Microsoft Visual Basic */
     file_recovery_new->extension="vb";
     return 1;
   }
-  if(strncasecmp(buffer, "begin:vcard", 11)==0)
+  if(strncasecmp((const char *)buffer, "begin:vcard", 11)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    /* vcard, electronic business cards */
     file_recovery_new->extension="vcf";
     return 1;
   }
@@ -803,6 +848,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
+      /* Perl script */
       file_recovery_new->extension="pl";
       return 1;
     }
@@ -811,6 +857,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
+      /* Python script */
       file_recovery_new->extension="py";
       return 1;
     }
@@ -819,6 +866,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
+      /* Ruby script */
       file_recovery_new->extension="rb";
       return 1;
     }
@@ -906,16 +954,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     if(strstr(buffer_lower, "[autorun]")!=NULL)
       ext="inf";
     /* Detect .ini */
-    else if(buffer[0]=='[' && is_ini(buffer_lower) && l>50)
+    else if(buffer[0]=='[' && l>50 && is_ini(buffer_lower))
       ext="ini";
+    /* php (Hypertext Preprocessor) script */
     else if(strstr(buffer_lower, "<?php")!=NULL)
       ext="php";
+    /* Comma separated values */
     else if(is_csv>0)
       ext="csv";
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, "\\begin{")!=NULL)
       ext="tex";
-    else if(strstr(buffer, "#include")!=NULL)
+    else if(strstr(buffer_lower, "#include")!=NULL)
       ext="c";
     else if(strstr(buffer_lower, "<%@")!=NULL)
       ext="jsp";
@@ -943,14 +993,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="java";
 #endif
     }
+    /* Fortran */
     else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
       ext="f";
+    /* LilyPond http://lilypond.org*/
     else if(strstr(buffer_lower, "\\score {")!=NULL)
-      ext="ly"; 	/* LilyPond http://lilypond.org*/
+      ext="ly";
+    /* C header file */
     else if(strstr(buffer_lower, "/*")!=NULL && l>50)
       ext="h";
     else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;
+    /* JavaScript Object Notation  */
     else if(memcmp(buffer_lower, "{\"", 2)==0)
       ext="json";
     else
