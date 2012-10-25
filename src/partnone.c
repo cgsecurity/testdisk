@@ -124,6 +124,8 @@ static const struct systypes none_sys_types[] = {
   {UP_SYSV4,	"SysV 4"},
   {UP_UFS,	"UFS"},
   {UP_UFS2,	"UFS 2"},
+  {UP_UFS_LE,	"UFS - Little Endian"},
+  {UP_UFS2_LE,	"UFS 2 - Little Endian"},
   {UP_UNK,	"Unknown"},
   {UP_VMFS,	"VMFS"},
   {UP_WBFS,	"WBFS"},
