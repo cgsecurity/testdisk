@@ -9,7 +9,8 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	ico/photorec.ico ico/testdisk.ico \
 	linux/testdisk.spec.in \
 	src/icon_ph.rc src/icon_tst.rc \
-	win/readme.txt win/photorec_win.exe.manifest win/testdisk_win.exe.manifest
+	win/readme.txt win/photorec_win.exe.manifest win/testdisk_win.exe.manifest \
+	Android.mk jni/Android.mk
 
 AUTOMAKE_OPTIONS = gnits
 
