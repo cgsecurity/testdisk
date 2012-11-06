@@ -1505,7 +1505,13 @@ int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, 
 const char*td_jpeg_version(void)
 {
 #if defined(HAVE_LIBJPEG)
-#if defined(JPEG_LIB_VERSION)
+#ifdef LIBJPEG_TURBO_VERSION
+#define td_xstr(s) td_str(s)
+#define td_str(s) #s
+  static char buffer[32];
+  sprintf(buffer,"libjpeg-turbo-%s", "" td_xstr(LIBJPEG_TURBO_VERSION));
+  return buffer;
+#elif defined(JPEG_LIB_VERSION)
   static char buffer[32];
   sprintf(buffer,"%d", JPEG_LIB_VERSION);
   return buffer;
