@@ -63,10 +63,14 @@ struct file_data
   file_data_t *prev;
   file_data_t *next;
   char	name[DIR_NAME_LEN];
-  struct stat stat;
-#ifdef DJGPP
-  uint64_t file_size;
-#endif
+  uint32_t st_ino;
+  uint32_t st_mode;
+  uint32_t st_uid;
+  uint32_t st_gid;
+  uint64_t st_size;
+  time_t	td_atime;	/* time of last access */
+  time_t	td_mtime;   /* time of last modification */
+  time_t	td_ctime;   /* time of last status change */
   unsigned int status;
 };
 
@@ -74,10 +78,14 @@ typedef struct
 {
   struct td_list_head list;
   char *name;
-  struct stat stat;
-#ifdef DJGPP
-  uint64_t file_size;
-#endif
+  uint32_t st_ino;
+  uint32_t st_mode;
+  uint32_t st_uid;
+  uint32_t st_gid;
+  uint64_t st_size;
+  time_t    td_atime;   /* time of last access */
+  time_t    td_mtime;   /* time of last modification */
+  time_t    td_ctime;   /* time of last status change */
   unsigned int status;
 } file_info_t;
 

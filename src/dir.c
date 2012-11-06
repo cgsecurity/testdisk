@@ -161,10 +161,10 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
   {
     char		datestr[80];
     char str[11];
-    if(current_file->stat.st_mtime)
+    if(current_file->td_mtime)
     {
       struct tm		*tm_p;
-      tm_p = localtime(&current_file->stat.st_mtime);
+      tm_p = localtime(&current_file->td_mtime);
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
 	  1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -177,21 +177,17 @@ int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list)
     } else {
       strncpy(datestr, "                 ",sizeof(datestr));
     }
-    mode_string(current_file->stat.st_mode,str);
+    mode_string(current_file->st_mode, str);
     if((current_file->status&FILE_STATUS_DELETED)!=0)
       log_info("X");
     else
       log_info(" ");
     log_info("%7lu %s %5u  %5u %9llu %s ",
-	(unsigned long int)current_file->stat.st_ino,
+	(unsigned long int)current_file->st_ino,
 	str,
-	(unsigned int)current_file->stat.st_uid,
-	(unsigned int)current_file->stat.st_gid,
-#ifdef DJGPP
-	(long long unsigned int)current_file->file_size,
-#else
-	(long long unsigned int)current_file->stat.st_size,
-#endif
+	(unsigned int)current_file->st_uid,
+	(unsigned int)current_file->st_gid,
+	(long long unsigned int)current_file->st_size,
 	datestr);
     if(dir_data!=NULL && (dir_data->param&FLAG_LIST_PATHNAME)!=0)
     {
@@ -224,10 +220,10 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
       log_info("X");
     else
       log_info(" ");
-    if(current_file->stat.st_mtime)
+    if(current_file->td_mtime)
     {
       struct tm		*tm_p;
-      tm_p = localtime(&current_file->stat.st_mtime);
+      tm_p = localtime(&current_file->td_mtime);
 
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
@@ -241,15 +237,11 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
     } else {
       strncpy(datestr, "                 ",sizeof(datestr));
     }
-    mode_string(current_file->stat.st_mode,str);
-    log_info("%7lu ",(unsigned long int)current_file->stat.st_ino);
+    mode_string(current_file->st_mode, str);
+    log_info("%7lu ",(unsigned long int)current_file->st_ino);
     log_info("%s %5u %5u ", 
-	str, (unsigned int)current_file->stat.st_uid, (unsigned int)current_file->stat.st_gid);
-#ifdef DJGPP
-    log_info("%9llu", (long long unsigned int)current_file->file_size);
-#else
-    log_info("%9llu", (long long unsigned int)current_file->stat.st_size);
-#endif
+	str, (unsigned int)current_file->st_uid, (unsigned int)current_file->st_gid);
+    log_info("%9llu", (long long unsigned int)current_file->st_size);
     log_info(" %s %s\n", datestr, current_file->name);
   }
   return test_date;
@@ -301,9 +293,9 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
   inode_known[dir_nbr++]=inode;
   for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
   {
-    if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
+    if(LINUX_S_ISDIR(current_file->st_mode)!=0)
     {
-      const unsigned long int new_inode=current_file->stat.st_ino;
+      const unsigned long int new_inode=current_file->st_ino;
       unsigned int new_inode_ok=1;
       unsigned int i;
       if(new_inode<2)
@@ -343,13 +335,13 @@ int filesort(const struct td_list_head *a, const struct td_list_head *b)
   const file_info_t *file_a=td_list_entry_const(a, const file_info_t, list);
   const file_info_t *file_b=td_list_entry_const(b, const file_info_t, list);
   /* Directories must be listed before files */
-  const int res=((file_b->stat.st_mode&LINUX_S_IFDIR)-(file_a->stat.st_mode&LINUX_S_IFDIR));
+  const int res=((file_b->st_mode&LINUX_S_IFDIR)-(file_a->st_mode&LINUX_S_IFDIR));
   if(res)
     return res;
   /* . and .. must listed before the other directories */
-  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, ".")==0)
+  if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, ".")==0)
     return -1;
-  if((file_a->stat.st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, "..")==0 &&
+  if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, "..")==0 &&
       !strcmp(file_b->name, ".")==0)
     return -1;
   /* Files and directories are sorted by name */

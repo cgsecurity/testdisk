@@ -116,7 +116,7 @@ void get_dos_drive_list(struct td_list_head *list)
     new_drive=(file_info_t*)MALLOC(sizeof(*new_drive));
     new_drive->name=(char*)MALLOC(4);
     sprintf(new_drive->name, "%c:/", i);
-    new_drive->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+    new_drive->st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
     td_list_add_tail(&new_drive->list, list);
   }
 }
@@ -236,6 +236,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 #endif
           )
         {
+	  struct stat file_stat;
           strcpy(current_file,dst_directory);
 #if defined(DJGPP) || defined(__OS2__)
           if(current_file[0]!='\0'&&current_file[1]!='\0'&&current_file[2]!='\0'&&current_file[3]!='\0')
@@ -245,26 +246,34 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
               strcat(current_file,SPATH_SEP);
           strcat(current_file,dir_entrie->d_name);
 #ifdef HAVE_LSTAT
-          if(lstat(current_file,&file_info->stat)==0)
+          if(lstat(current_file,&file_stat)==0)
 #else
-            if(stat(current_file,&file_info->stat)==0)
+            if(stat(current_file,&file_stat)==0)
 #endif
 	    {
+	      file_info->st_ino=file_stat.st_ino;
+	      file_info->st_mode=file_stat.st_mode;
+	      file_info->st_uid=file_stat.st_uid;
+	      file_info->st_gid=file_stat.st_gid;
+	      file_info->st_size=file_stat.st_size;
+	      file_info->td_atime=file_stat.st_atime;
+	      file_info->td_mtime=file_stat.st_mtime;
+	      file_info->td_ctime=file_stat.st_ctime;
 #if defined(DJGPP) || defined(__OS2__)
 	      /* If the C library doesn't use posix definition, st_mode need to be fixed */
-	      if(S_ISDIR(file_info->stat.st_mode))
-		file_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+	      if(S_ISDIR(file_info->st_mode))
+		file_info->st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
 	      else
-		file_info->stat.st_mode=LINUX_S_IFREG|LINUX_S_IRWXUGO;
+		file_info->st_mode=LINUX_S_IFREG|LINUX_S_IRWXUGO;
 #endif
 #ifdef __CYGWIN__
 	      /* Fix Drive list */
 	      if(memcmp(dst_directory, "/cygdrive", 9)==0 && (dst_directory[10]=='\0' || dst_directory[11]=='\0'))
 	      {
-		file_info->stat.st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
-		file_info->stat.st_mtime=0;
-		file_info->stat.st_uid=0;
-		file_info->stat.st_gid=0;
+		file_info->st_mode=LINUX_S_IFDIR|LINUX_S_IRWXUGO;
+		file_info->td_mtime=0;
+		file_info->st_uid=0;
+		file_info->st_gid=0;
 	      }
 #endif
 	      file_info->name=strdup(dir_entrie->d_name);
@@ -499,7 +508,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		file_info_t *file_info;
 		file_info=td_list_entry(current_file, file_info_t, list);
 		if(current_file!=&dir_list.list &&
-		  (LINUX_S_ISDIR(file_info->stat.st_mode) || LINUX_S_ISLNK(file_info->stat.st_mode)))
+		  (LINUX_S_ISDIR(file_info->st_mode) || LINUX_S_ISLNK(file_info->st_mode)))
 		if(current_file!=&dir_list.list)
 		{
 		  if(strcmp(file_info->name, ".")==0)
@@ -552,9 +561,9 @@ static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
 {
   char str[11];
   char		datestr[80];
-  if(file_info->stat.st_mtime!=0)
+  if(file_info->td_mtime!=0)
   {
-    const struct tm *tm_p= localtime(&file_info->stat.st_mtime);
+    const struct tm *tm_p= localtime(&file_info->td_mtime);
     snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
         tm_p->tm_mday, monstr[tm_p->tm_mon],
         1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -563,10 +572,10 @@ static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
   } else {
     strncpy(datestr, "                 ",sizeof(datestr));
   }
-  mode_string(file_info->stat.st_mode,str);
+  mode_string(file_info->st_mode, str);
   wprintw(window, "%s %5u %5u ", 
-      str, (unsigned int)file_info->stat.st_uid, (unsigned int)file_info->stat.st_gid);
-  wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
+      str, (unsigned int)file_info->st_uid, (unsigned int)file_info->st_gid);
+  wprintw(window, "%9llu", (long long unsigned int)file_info->st_size);
   /* screen may overlap due to long filename */
   wprintw(window, " %s %s", datestr, file_info->name);
 }

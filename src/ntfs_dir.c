@@ -222,15 +222,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
     new_file->status=0;
     new_file->prev=ls->current_file;
     new_file->next=NULL;
-    new_file->stat.st_dev=0;
-    new_file->stat.st_ino=MREF(mref);
-    new_file->stat.st_nlink=1;
-    new_file->stat.st_uid=0;
-    new_file->stat.st_gid=0;
-    new_file->stat.st_rdev=0;
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    new_file->stat.st_blksize=DEFAULT_SECTOR_SIZE;
-#endif
+    new_file->st_ino=MREF(mref);
+    new_file->st_uid=0;
+    new_file->st_gid=0;
 
     ctx_si = ntfs_attr_get_search_ctx(ni, ni->mrec);
     if (ctx_si)
@@ -242,9 +236,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	    le16_to_cpu(attr->value_offset));
 	if(si)
 	{
-	  new_file->stat.st_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
-	  new_file->stat.st_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
-	  new_file->stat.st_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
+	  new_file->td_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
+	  new_file->td_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
+	  new_file->td_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
 	}
       }
       ntfs_attr_put_search_ctx(ctx_si);
@@ -256,14 +250,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       if (dt_type == NTFS_DT_DIR)
       {
 	snprintf(new_file->name, sizeof(new_file->name), "%s", filename);
-	new_file->stat.st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
-	new_file->stat.st_size=0;
-#ifdef DJGPP
-	new_file->file_size=0;
-#endif
-#if defined(HAVE_STRUCT_STAT_ST_BLOCKS)
-	new_file->stat.st_blocks=0;
-#endif
+	new_file->st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
+	new_file->st_size=0;
 	new_file->prev=ls->current_file;
 	new_file->next=NULL;
 	if(ls->current_file!=NULL)
@@ -285,15 +273,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
 	  memcpy(new_file, old_file, sizeof(*new_file));
 	}
-	new_file->stat.st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
-	new_file->stat.st_size=filesize;
-#ifdef DJGPP
-	new_file->file_size=filesize;
-#endif
-#if defined(HAVE_STRUCT_STAT_ST_BLOCKS) && defined(HAVE_STRUCT_STAT_ST_BLKSIZE)
-	if(new_file->stat.st_blksize!=0)
-	  new_file->stat.st_blocks=(filesize + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
-#endif
+	new_file->st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
+	new_file->st_size=filesize;
 	if (rec->name_length)
 	{
 	  char *stream_name=NULL;
@@ -373,7 +354,7 @@ enum { bufsize = 4096 };
 
 static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
 {
-  const unsigned long int first_inode=file->stat.st_ino;
+  const unsigned long int first_inode=file->st_ino;
   ntfs_inode *inode;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
   inode = ntfs_inode_open (ls->vol, first_inode);
@@ -464,7 +445,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       offset += bytes_read;
     }
     fclose(f_out);
-    set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+    set_date(new_file, file->td_atime, file->td_mtime);
     free(new_file);
     ntfs_attr_close(attr);
     free(buffer);

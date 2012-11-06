@@ -136,14 +136,10 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   char *new_file;	
   FILE *f_out;
   unsigned int cluster;
-#ifdef DJGPP
-  unsigned int file_size=file->file_size;
-#else
-  unsigned int file_size=file->stat.st_size;
-#endif
+  unsigned int file_size=file->st_size;
   const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
   unsigned char *buffer_file=(unsigned char *)MALLOC(cluster_size);
-  cluster = file->stat.st_ino;
+  cluster = file->st_ino;
   new_file=(char *)MALLOC(1024);
   snprintf(new_file, 1024, "%s.%u/inode_%u", recup_dir, dir_num, inode_num);
 #ifdef HAVE_MKDIR
@@ -185,7 +181,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
     {
       log_error("fat_copy_file: no space left on destination.\n");
       fclose(f_out);
-      set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+      set_date(new_file, file->td_atime, file->td_mtime);
       free(new_file);
       free(buffer_file);
       return -1;
@@ -194,7 +190,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
     cluster++;
   }
   fclose(f_out);
-  set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+  set_date(new_file, file->td_atime, file->td_mtime);
   free(new_file);
   free(buffer_file);
   return 0;
@@ -253,15 +249,15 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	current_file=dir_list;
 	while(current_file!=NULL)
 	{
-	  if(current_file->stat.st_ino<2 ||
-	      current_file->stat.st_ino >= no_of_cluster+2)
+	  if(current_file->st_ino<2 ||
+	      current_file->st_ino >= no_of_cluster+2)
 	    current_file=NULL;
-	  else if(LINUX_S_ISDIR(current_file->stat.st_mode)!=0)
+	  else if(LINUX_S_ISDIR(current_file->st_mode)!=0)
 	  {
 	    if(strcmp(current_file->name,".")==0)
 	    {
 	      if(current_file==dir_list)
-		dir_inode=current_file->stat.st_ino;
+		dir_inode=current_file->st_ino;
 	      else
 		current_file=NULL;
 	    }
@@ -276,7 +272,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	      char *new_file=(char *)MALLOC(1024);
 	      snprintf(new_file, 1024, "%s.%u/inode_%u/inode_%u_%s",
 		  params->recup_dir, params->dir_num, dir_inode,
-		  (unsigned int)current_file->stat.st_ino, current_file->name);
+		  (unsigned int)current_file->st_ino, current_file->name);
 #ifdef __MINGW32__
 	      mkdir(new_file);
 #else
@@ -286,14 +282,10 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 #endif
 	    }
 	  }
-	  else if(LINUX_S_ISREG(current_file->stat.st_mode)!=0)
+	  else if(LINUX_S_ISREG(current_file->st_mode)!=0)
 	  {
-	    const uint64_t file_start=start_data + (uint64_t)(current_file->stat.st_ino - 2) * cluster_size;
-#ifdef DJGPP
-	    const uint64_t file_end=file_start+(current_file->file_size+cluster_size-1)/cluster_size*cluster_size - 1;
-#else
-	    const uint64_t file_end=file_start+(current_file->stat.st_size+cluster_size-1)/cluster_size*cluster_size - 1;
-#endif
+	    const uint64_t file_start=start_data + (uint64_t)(current_file->st_ino - 2) * cluster_size;
+	    const uint64_t file_end=file_start+(current_file->st_size+cluster_size-1)/cluster_size*cluster_size - 1;
 	    if(file_end < partition->part_offset + partition->part_size)
 	    {
 	      if(fat_copy_file(disk, partition, cluster_size, start_data, params->recup_dir, params->dir_num, dir_inode, current_file)==0)

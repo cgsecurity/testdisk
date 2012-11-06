@@ -1097,28 +1097,13 @@ static file_info_t *ufile_to_file_data(const struct ufile *file, const struct da
       (file->pref_name?file->pref_name:inode_name),
       (d->name?":":""),
       (d->name?d->name:""));
-  new_file->stat.st_dev=0;
-  new_file->stat.st_ino=file->inode;
-  new_file->stat.st_mode = (file->directory ?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
-  new_file->stat.st_nlink=0;
-  new_file->stat.st_uid=0;
-  new_file->stat.st_gid=0;
-  new_file->stat.st_rdev=0;
+  new_file->st_ino=file->inode;
+  new_file->st_mode = (file->directory ?LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO:LINUX_S_IFREG | LINUX_S_IRUGO);
+  new_file->st_uid=0;
+  new_file->st_gid=0;
 
-  new_file->stat.st_size=max(d->size_init, d->size_data);
-#ifdef DJGPP
-  new_file->file_size=max(d->size_init, d->size_data);
-#endif
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-  new_file->stat.st_blksize=512;	/* FIXME cluster_size */
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-  if(new_file->stat.st_blksize!=0)
-  {
-    new_file->stat.st_blocks=(file->max_size + new_file->stat.st_blksize - 1) / new_file->stat.st_blksize;
-  }
-#endif
-#endif
-  new_file->stat.st_atime=new_file->stat.st_ctime=new_file->stat.st_mtime=file->date;
+  new_file->st_size=max(d->size_init, d->size_data);
+  new_file->td_atime=new_file->td_ctime=new_file->td_mtime=file->date;
   new_file->status=0;
   return new_file;
 }
@@ -1290,9 +1275,9 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  waddstr(window, " ");
 	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
-	if(file_info->stat.st_mtime!=0)
+	if(file_info->td_mtime!=0)
 	{
-	  const struct tm *tm_p= localtime(&file_info->stat.st_mtime);
+	  const struct tm *tm_p= localtime(&file_info->td_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
 	      1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -1312,11 +1297,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	    wprintw(window, "%-*s", nbr, &file_info->name[strlen(file_info->name) - nbr]);
 	}
 	wprintw(window, " %s ", datestr);
-#ifdef DJGPP
-	wprintw(window, "%9llu", (long long unsigned int)file_info->file_size);
-#else
-	wprintw(window, "%9llu", (long long unsigned int)file_info->stat.st_size);
-#endif
+	wprintw(window, "%9llu", (long long unsigned int)file_info->st_size);
 	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if(file_walker==current_file)
@@ -1487,7 +1468,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		file_info_t *file_info;
 		file_info=td_list_entry(file_walker, file_info_t, list);
 		if((file_info->status&FILE_STATUS_DELETED)==0 &&
-		    file_info->stat.st_size < min_size)
+		    file_info->st_size < min_size)
 		  file_info->status|=FILE_STATUS_DELETED;
 	      }
 	      pos_num=0;
@@ -1513,12 +1494,12 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	    file_info_t *file_info;
 	    file_info=td_list_entry(current_file, file_info_t, list);
 	    if(current_file!=&dir_list->list &&
-		LINUX_S_ISDIR(file_info->stat.st_mode)==0)
+		LINUX_S_ISDIR(file_info->st_mode)==0)
 	    {
 	      if(dir_data->local_dir==NULL)
 	      {
 		char *res;
-		if(LINUX_S_ISDIR(file_info->stat.st_mode)!=0)
+		if(LINUX_S_ISDIR(file_info->st_mode)!=0)
 		  res=ask_location("Please select a destination where %s and any files below will be copied.",
 		      file_info->name, NULL);
 		else
@@ -1538,7 +1519,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 		if(has_colors())
 		  wbkgdset(window,' ' | COLOR_PAIR(0));
 		wrefresh(window);
-		res=undelete_file(ls->vol, file_info->stat.st_ino);
+		res=undelete_file(ls->vol, file_info->st_ino);
 		wmove(window,5,0);
 		wclrtoeol(window);
 		if(res < -1)
@@ -1586,7 +1567,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	      file_info=td_list_entry(file_walker, file_info_t, list);
 	      if((file_info->status&FILE_STATUS_MARKED)!=0)
 	      {
-		if(undelete_file(ls->vol, file_info->stat.st_ino) < 0)
+		if(undelete_file(ls->vol, file_info->st_ino) < 0)
 		  file_bad++;
 		else
 		{

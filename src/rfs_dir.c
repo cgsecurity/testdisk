@@ -449,11 +449,16 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
       new_file->status=0;
       new_file->prev=ls->current_file;
       new_file->next=NULL;
-      new_file->stat.st_size=entity->stat.st_size;
-#ifdef DJGPP
-      new_file->file_size=entity->stat.st_size;
-#endif
-      memcpy(&new_file->stat,&entity->stat,sizeof(new_file->stat));
+      new_file->st_ino=entity->stat.st_ino;
+      new_file->st_mode=entity->stat.st_mode;
+//      new_file->st_nlink=entity->stat.st_nlink;
+      new_file->st_uid=entity->stat.st_uid;
+      new_file->st_gid=entity->stat.st_gid;
+      new_file->st_size=entity->stat.st_size;
+//      new_file->st_blksize=entity->stat.st_blksize;
+      new_file->td_atime=entity->stat.st_atime;
+      new_file->td_mtime=entity->stat.st_mtime;
+      new_file->td_ctime=entity->stat.st_ctime;
       reiserfs_object_free(entity);
       if(ls->current_file)
 	ls->current_file->next=new_file;
@@ -543,8 +548,8 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
 #endif
   reiserfs_file_close(in);
   fclose(f_out);
-  set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
-  set_mode(new_file, file->stat.st_mode);
+  set_date(new_file, file->td_atime, file->td_mtime);
+  set_mode(new_file, file->st_mode);
   free(new_file);
   return error;
 }

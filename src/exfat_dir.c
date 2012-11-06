@@ -110,29 +110,14 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
       file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
       sec_count=entry->sec_count;
       new_file->name[0]=0;
-      new_file->stat.st_dev=0;
-      new_file->stat.st_ino=0;
-      new_file->stat.st_mode = EXFAT_MKMODE(entry->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
-      new_file->stat.st_nlink=0;
-      new_file->stat.st_uid=0;
-      new_file->stat.st_gid=0;
-      new_file->stat.st_rdev=0;
-      new_file->stat.st_size=0;
-#ifdef DJGPP
-      new_file->file_size=0;
-#endif
-#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-      new_file->stat.st_blksize=0;
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-      if(new_file->stat.st_blksize!=0)
-      {
-	new_file->stat.st_blocks=0;
-      }
-#endif
-#endif
-      new_file->stat.st_atime=date_dos2unix(le16(entry->atime),le16(entry->adate));
-      new_file->stat.st_ctime=date_dos2unix(le16(entry->ctime),le16(entry->cdate));
-      new_file->stat.st_mtime=date_dos2unix(le16(entry->mtime),le16(entry->mdate));
+      new_file->st_ino=0;
+      new_file->st_mode = EXFAT_MKMODE(entry->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
+      new_file->st_uid=0;
+      new_file->st_gid=0;
+      new_file->st_size=0;
+      new_file->td_atime=date_dos2unix(le16(entry->atime),le16(entry->adate));
+      new_file->td_ctime=date_dos2unix(le16(entry->ctime),le16(entry->cdate));
+      new_file->td_mtime=date_dos2unix(le16(entry->mtime),le16(entry->mdate));
       new_file->status=((entry->type&0x80)==0x80?0:FILE_STATUS_DELETED);
       new_file->prev=current_file;
       new_file->next=NULL;
@@ -149,14 +134,11 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
       {
 	/* Stream extension */
 	const struct exfat_stream_ext_entry *entry=(const struct exfat_stream_ext_entry*)&buffer[offset];
-	current_file->stat.st_size=le64(entry->data_length);
-#ifdef DJGPP
-	current_file->file_size=le64(entry->data_length);
-#endif
-	current_file->stat.st_ino=le32(entry->first_cluster);
+	current_file->st_size=le64(entry->data_length);
+	current_file->st_ino=le32(entry->first_cluster);
 #if 0
 	if((entry->first_cluster&2)!=0)
-	  current_file->stat.st_size=0;
+	  current_file->st_size=0;
 #endif
       }
       else if((buffer[offset]&0x7f)==0x41)
@@ -313,11 +295,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
   const unsigned int cluster_shift=exfat_header->block_per_clus_bits + exfat_header->blocksize_bits;
   unsigned char *buffer_file=(unsigned char *)MALLOC(1<<cluster_shift);
   unsigned int cluster;
-#ifdef DJGPP
-  unsigned int file_size=file->file_size;
-#else
-  unsigned int file_size=file->stat.st_size;
-#endif
+  uint64_t file_size=file->st_size;
   unsigned int exfat_meth=exFAT_FOLLOW_CLUSTER;
   uint64_t start_exfat1,clus_blocknr;
   unsigned long int total_clusters;
@@ -329,7 +307,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     free(buffer_file);
     return -1;
   }
-  cluster = file->stat.st_ino;
+  cluster = file->st_ino;
   start_exfat1=le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
   clus_blocknr=le32(exfat_header->clus_blocknr);
   total_clusters=le32(exfat_header->total_clusters);
@@ -351,7 +329,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     {
       log_error("exfat_copy: no space left on destination.\n");
       fclose(f_out);
-      set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+      set_date(new_file, file->td_atime, file->td_mtime);
       free(new_file);
       free(buffer_file);
       return -1;
@@ -364,7 +342,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
 	const unsigned int next_cluster=get_next_cluster(disk, partition, UP_FAT32, start_exfat1, cluster);
 	if(next_cluster>=2 && next_cluster<=total_clusters)
 	  cluster=next_cluster;
-	else if(cluster==file->stat.st_ino && next_cluster==0)
+	else if(cluster==file->st_ino && next_cluster==0)
 	  exfat_meth=exFAT_NEXT_FREE_CLUSTER;	/* Recovery of a deleted file */
 	else
 	  exfat_meth=exFAT_NEXT_CLUSTER;		/* exFAT is corrupted, don't trust it */
@@ -379,7 +357,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     }
   }
   fclose(f_out);
-  set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
+  set_date(new_file, file->td_atime, file->td_mtime);
   free(new_file);
   free(buffer_file);
   return 0;

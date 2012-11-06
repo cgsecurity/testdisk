@@ -235,26 +235,18 @@ static int list_dir_proc2(ext2_ino_t dir,
     new_file->status=FILE_STATUS_DELETED;
   else
     new_file->status=0;
-  new_file->stat.st_dev=0;
-  new_file->stat.st_ino=ino;
-  new_file->stat.st_mode=inode.i_mode;
-  new_file->stat.st_nlink=inode.i_links_count;
-  new_file->stat.st_uid=inode.i_uid;
-  new_file->stat.st_gid=inode.i_gid;
-  new_file->stat.st_rdev=0;
-  new_file->stat.st_size=LINUX_S_ISDIR(inode.i_mode)?inode.i_size:
+  new_file->st_ino=ino;
+  new_file->st_mode=inode.i_mode;
+//  new_file->st_nlink=inode.i_links_count;
+  new_file->st_uid=inode.i_uid;
+  new_file->st_gid=inode.i_gid;
+  new_file->st_size=LINUX_S_ISDIR(inode.i_mode)?inode.i_size:
     inode.i_size| ((uint64_t)inode.i_size_high << 32);
-#ifdef DJGPP
-  new_file->file_size=LINUX_S_ISDIR(inode.i_mode)?inode.i_size:
-    inode.i_size| ((uint64_t)inode.i_size_high << 32);
-#endif
-  new_file->stat.st_blksize=blocksize;
-#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-  new_file->stat.st_blocks=inode.i_blocks;
-#endif
-  new_file->stat.st_atime=inode.i_atime;
-  new_file->stat.st_mtime=inode.i_mtime;
-  new_file->stat.st_ctime=inode.i_ctime;
+//  new_file->st_blksize=blocksize;
+//  new_file->st_blocks=inode.i_blocks;
+  new_file->td_atime=inode.i_atime;
+  new_file->td_mtime=inode.i_mtime;
+  new_file->td_ctime=inode.i_ctime;
   if(ls->current_file!=NULL)
     ls->current_file->next=new_file;
   else
@@ -303,14 +295,14 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     char            buffer[8192];
     ext2_file_t     e2_file;
 
-    if (ext2fs_read_inode(ls->current_fs, file->stat.st_ino, &inode)!=0)
+    if (ext2fs_read_inode(ls->current_fs, file->st_ino, &inode)!=0)
     {
       free(new_file);
       fclose(f_out);
       return -1;
     }
 
-    retval = ext2fs_file_open(ls->current_fs, file->stat.st_ino, 0, &e2_file);
+    retval = ext2fs_file_open(ls->current_fs, file->st_ino, 0, &e2_file);
     if (retval) {
       log_error("Error while opening ext2 file %s\n", dir_data->current_directory);
       free(new_file);
@@ -343,8 +335,8 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       error = -6;
     }
     fclose(f_out);
-    set_date(new_file, file->stat.st_atime, file->stat.st_mtime);
-    set_mode(new_file, file->stat.st_mode);
+    set_date(new_file, file->td_atime, file->td_mtime);
+    set_mode(new_file, file->st_mode);
   }
   free(new_file);
   return error;
