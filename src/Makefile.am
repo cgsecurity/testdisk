@@ -266,6 +266,7 @@ file_C			= filegen.c \
 			  file_vmdk.c \
 			  file_vmg.c \
 			  file_wdp.c \
+			  file_wim.c \
 			  file_win.c \
 			  file_wks.c \
 			  file_wmf.c \
