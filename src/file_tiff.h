@@ -30,6 +30,8 @@ extern "C" {
 #define TIFFTAG_MODEL                   272     /* scanner model name/number */
 #define	TIFFTAG_STRIPOFFSETS		273	/* offsets to data strips */
 #define	TIFFTAG_STRIPBYTECOUNTS		279	/* bytes counts for strips */
+#define TIFFTAG_TILEOFFSETS		324
+#define TIFFTAG_TILEBYTECOUNTS		325
 #define TIFFTAG_SUBIFD                  330
 #define	TIFFTAG_JPEGIFOFFSET		513	/* !pointer to SOI marker */
 #define	TIFFTAG_JPEGIFBYTECOUNT		514	/* !JFIF stream length */
