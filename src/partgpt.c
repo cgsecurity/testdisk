@@ -139,7 +139,7 @@ arch_fnct_t arch_gpt=
   .is_part_known=&is_part_known_gpt
 };
 
-list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int saveheader)
+static list_part_t *read_part_gpt_aux(disk_t *disk_car, const int verbose, const int saveheader, const uint64_t hdr_lba)
 {
   struct gpt_hdr *gpt;
   struct gpt_ent* gpt_entries;
@@ -149,8 +149,8 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   uint64_t gpt_entries_offset;
 
   gpt=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
-  screen_buffer_reset();
-  if((unsigned)disk_car->pread(disk_car, gpt, disk_car->sector_size, disk_car->sector_size) != disk_car->sector_size)
+  if((unsigned)disk_car->pread(disk_car, gpt, disk_car->sector_size,
+	hdr_lba * disk_car->sector_size) != disk_car->sector_size)
   {
     free(gpt);
     return NULL;
@@ -167,7 +167,9 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     log_info("hdr_lba_self=%llu\n", (long long unsigned)le64(gpt->hdr_lba_self));
     log_info("hdr_lba_alt=%llu (expected %llu)\n",
 	(long long unsigned)le64(gpt->hdr_lba_alt),
-	(long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size));
+	(hdr_lba==1?
+	 (long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size):
+	 1));
     log_info("hdr_lba_start=%llu\n", (long long unsigned)le64(gpt->hdr_lba_start));
     log_info("hdr_lba_end=%llu\n", (long long unsigned)le64(gpt->hdr_lba_end));
     log_info("hdr_lba_table=%llu\n",
@@ -196,7 +198,7 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     }
     gpt->hdr_crc_self=le32(origcrc);
   }
-  if(le64(gpt->hdr_lba_self)!=1)
+  if(le64(gpt->hdr_lba_self)!=hdr_lba)
   {
     screen_buffer_add("Bad GPT partition, invalid LBA self location.\n");
     free(gpt);
@@ -239,12 +241,15 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
     return NULL;
   }
   gpt_entries_offset=(uint64_t)le64(gpt->hdr_lba_table) * disk_car->sector_size;
-  if((uint64_t) le64(gpt->hdr_lba_self) + le32(gpt->hdr_size) - 1 >= gpt_entries_offset ||
-      gpt_entries_offset >= le64(gpt->hdr_lba_start) * disk_car->sector_size)
+  if(hdr_lba==1)
   {
-    screen_buffer_add( "GPT: The primary GUID Partition Entry array must be located after the primary GUID Partition Table Header and end before the FirstUsableLBA.\n");
-    free(gpt);
-    return NULL;
+    if((uint64_t) le64(gpt->hdr_lba_self) + le32(gpt->hdr_size) - 1 >= gpt_entries_offset ||
+	gpt_entries_offset >= le64(gpt->hdr_lba_start) * disk_car->sector_size)
+    {
+      screen_buffer_add( "GPT: The primary GUID Partition Entry array must be located after the primary GUID Partition Table Header and end before the FirstUsableLBA.\n");
+      free(gpt);
+      return NULL;
+    }
   }
 
   gpt_entries=(struct gpt_ent*)MALLOC(gpt_entries_size);
@@ -296,6 +301,19 @@ list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int savehe
   free(gpt_entries);
   free(gpt);
   return new_list_part;
+}
+
+list_part_t *read_part_gpt(disk_t *disk, const int verbose, const int saveheader)
+{
+  list_part_t *list_part;
+  screen_buffer_reset();
+  if((list_part=read_part_gpt_aux(disk, verbose, saveheader, 1))!=NULL)
+    return list_part;
+  screen_buffer_add( "Trying alternate GPT\n");
+  list_part=read_part_gpt_aux(disk, verbose, saveheader, 
+      (disk->disk_size-1)/disk->sector_size);
+  screen_buffer_to_log();
+  return list_part;
 }
 
 static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *list_part)
