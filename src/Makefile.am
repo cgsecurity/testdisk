@@ -316,10 +316,18 @@ moc_qphotorec.cpp: qphotorec.h
 	$(MOC) $< -o $@
 
 Android.mk: Makefile.am
-	androgenizer -:PROJECT photorec \
+	androgenizer \
+	-:PROJECT photorec \
 	-:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
 	-:EXECUTABLE photorec \
 	-:SOURCES $(photorec_SOURCES) \
 	-:CFLAGS $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CFLAGS) $(CFLAGS) \
 	-:LDFLAGS $(photorec_LDADD) $(LIBS) \
+	\
+	-:PROJECT testdisk \
+	-:REL_TOP $(top_srcdir) -:ABS_TOP $(abs_top_srcdir) \
+	-:EXECUTABLE testdisk \
+	-:SOURCES $(testdisk_SOURCES) \
+	-:CFLAGS $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CFLAGS) $(CFLAGS) \
+	-:LDFLAGS $(testdisk_LDADD) $(LIBS) \
 > $@
