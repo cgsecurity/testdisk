@@ -129,8 +129,7 @@ static FILE *open_signature_file(void)
     if (home != NULL)
     {
       FILE*handle;
-      char *filename=NULL;
-      filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_SIG)+1);
+      char *filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_SIG)+1);
       strcpy(filename, home);
       strcat(filename, DOT_PHOTOREC_SIG);
       handle=fopen(filename,"rb");
@@ -145,8 +144,7 @@ static FILE *open_signature_file(void)
   }
 #endif
   {
-    FILE*handle=NULL;
-    handle=fopen(PHOTOREC_SIG,"rb");
+    FILE *handle=fopen(PHOTOREC_SIG,"rb");
     if(handle!=NULL)
     {
       log_info("Open signature file %s\n", PHOTOREC_SIG);
@@ -334,8 +332,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  pos+=2;
 	  while(isxdigit(*pos) && isxdigit(*(pos+1)))
 	  {
-	    unsigned int val=0;
-	    val=(*pos);
+	    unsigned int val=(*pos);
 	    if(*pos>='0' && *pos<='9')
 	      val-='0';
 	    else if(*pos>='A' && *pos<='F')

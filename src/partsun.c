@@ -274,9 +274,8 @@ static void set_next_status_sun(const disk_t *disk_car, partition_t *partition)
 
 static int test_structure_sun(list_part_t *list_part)
 { /* Return 1 if bad*/
-  list_part_t *new_list_part=NULL;
   int res;
-  new_list_part=gen_sorted_partition_list(list_part);
+  list_part_t *new_list_part=gen_sorted_partition_list(list_part);
   res=is_part_overlapping(new_list_part);
   part_free_list_only(new_list_part);
   return res;

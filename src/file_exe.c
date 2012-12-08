@@ -171,8 +171,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
     )
   {
     /* MSDOS EXE */
-    uint64_t coff_offset=0;
-    coff_offset=le16(dos_hdr->blocks_in_file)*512;
+    uint64_t coff_offset=le16(dos_hdr->blocks_in_file)*512;
     if(le16(dos_hdr->bytes_in_last_block))
       coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
 

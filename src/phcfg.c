@@ -107,8 +107,7 @@ static FILE *file_options_save_aux(void)
   }
   if(filename!=NULL)
   {
-    FILE*handle=NULL;
-    handle=fopen(filename,"wb");
+    FILE *handle=fopen(filename,"wb");
     if(handle)
     {
       log_info("Create file %s\n", filename);
@@ -121,8 +120,7 @@ static FILE *file_options_save_aux(void)
   }
 #endif
   {
-    FILE*handle=NULL;
-    handle=fopen(PHOTOREC_CFG,"wb");
+    FILE *handle=fopen(PHOTOREC_CFG,"wb");
     if(handle)
     {
       log_info("Create file %s\n", PHOTOREC_CFG);
@@ -178,8 +176,7 @@ static FILE *file_options_load_aux(void)
     if (home != NULL)
     {
       FILE*handle;
-      char *filename=NULL;
-      filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_CFG)+1);
+      char *filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_CFG)+1);
       strcpy(filename, home);
       strcat(filename, DOT_PHOTOREC_CFG);
       handle=fopen(filename,"rb");
@@ -194,8 +191,7 @@ static FILE *file_options_load_aux(void)
   }
 #endif
   {
-    FILE*handle=NULL;
-    handle=fopen(PHOTOREC_CFG,"rb");
+    FILE *handle=fopen(PHOTOREC_CFG,"rb");
     if(handle!=NULL)
     {
       log_info("Load parameters from %s\n", PHOTOREC_CFG);
