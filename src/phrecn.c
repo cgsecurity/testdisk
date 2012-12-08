@@ -363,7 +363,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 	{
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	  { 
-	    log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
+	    log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
 	    if(errno==EFBIG)
 	    {
 	      /* File is too big for the destination filesystem */
@@ -619,7 +619,7 @@ static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *li
       disk->pread(disk, buffer, read_size, offset);
       if(fwrite(buffer, read_size, 1, out)<1)
       {
-	log_critical("Cannot write to file %s:%s\n", filename, strerror(errno));
+	log_critical("Cannot write to file %s: %s\n", filename, strerror(errno));
 	free(buffer);
 	fclose(out);
 	return ;
@@ -699,7 +699,7 @@ static void test_files_aux(file_recovery_t *file_recovery, struct ph_param *para
   }
   if(fwrite(buffer, datasize, 1, file_recovery->handle)<1)
   {
-    log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+    log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     free(buffer);

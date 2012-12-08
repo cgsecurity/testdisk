@@ -253,7 +253,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
 	  {
 	    if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	    { 
-	      log_critical("Cannot write to file %s:%s\n", file_recovery.filename, strerror(errno));
+	      log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
 	      ind_stop=3;
 	    }
 	  }
@@ -386,7 +386,7 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
 	    }
 	    if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
 	    {
-	      log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+	      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
 	      return BF_ERR_STOP;
@@ -413,7 +413,7 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
 	    params->disk->pread(params->disk, block_buffer, blocksize, *offset);
 	    if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
 	    {
-	      log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+	      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
 	      return BF_ERR_STOP;
@@ -544,7 +544,7 @@ static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_
       }
       if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
       {
-	log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+	log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	fclose(file_recovery->handle);
 	file_recovery->handle=NULL;
 	return BF_ERR_STOP;
@@ -811,7 +811,7 @@ static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recove
     /* FIXME: Handle ext2/ext3 */
     if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
     {
-      log_critical("Cannot write to file %s:%s\n", file_recovery->filename, strerror(errno));
+      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
       fclose(file_recovery->handle);
       file_recovery->handle=NULL;
       free(buffer);

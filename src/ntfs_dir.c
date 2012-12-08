@@ -180,9 +180,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type)
 {
-  char *filename = NULL;
   int result = 0;
-  filename = (char *)calloc (1, MAX_PATH);
+  char *filename = (char *)calloc (1, MAX_PATH);
   if (!filename)
   {
     log_critical("ntfs_td_list_entry calloc failed\n");
@@ -369,7 +368,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     FILE *f_out;
     s64 offset;
     u32 block_size;
-    const char *stream_name=NULL;
+    char *stream_name;
     buffer = (char *)MALLOC(bufsize);
     if (!buffer)
     {
@@ -407,7 +406,20 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       block_size = index_get_size(inode);
     else
       block_size = 0;
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    if(stream_name)
+    {
+      /* fopen() create normal files instead of ADS with ':' replaced by an UTF char
+       * replace ':' by '_' instead */
+      stream_name--;
+      *stream_name='_';
+      f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
+    }
+    else
+      f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
+#else
     f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
+#endif
     if(!f_out)
     {
       log_critical("Can't create file %s: %s\n",new_file, strerror(errno));
