@@ -248,7 +248,7 @@ void set_secwest(void)
   tmptr = localtime(&t);
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
   secwest = -1 * tmptr->tm_gmtoff;
-#elif defined (DJGPP)
+#elif defined (DJGPP) || defined(__ANDROID__)
   secwest = 0;
 #else
 #if defined (__CYGWIN__)
