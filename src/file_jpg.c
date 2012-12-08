@@ -115,6 +115,142 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
   }
 }
 
+struct MP_IFD_Field
+{
+  uint16_t tag;
+  uint16_t type;
+  uint32_t count;
+  char     value[0];
+} __attribute__ ((__packed__));
+
+struct MP_Entry
+{
+  uint32_t attr;
+  uint32_t size;
+  uint32_t offset;
+  uint16_t dep1;
+  uint16_t dep2;
+} __attribute__ ((__packed__));
+
+static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
+{
+  const uint16_t *tmp16;
+  const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
+  unsigned int offset=le32(*tmp32);
+  unsigned int i;
+  unsigned int nbr;
+  unsigned int NumberOfImages=0;
+  unsigned int MPEntry_offset=0;
+  const struct MP_Entry* MPEntry;
+  uint64_t max_offset=0;
+#ifdef DEBUG_JPEG
+  log_info("check_mpo_le\n");
+#endif
+  if(offset+2 >= size)
+    return 0;
+  tmp16=(const uint16_t*)(&mpo[offset]);
+  nbr=le16(*tmp16);
+  offset+=2;
+  for(i=0; i< nbr; i++)
+  {
+    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)(&mpo[offset]);
+    if(offset+12 > size)
+      return 0;
+    switch(le16(field->tag))
+    {
+      case 0xb000:
+	/* MPFVersion, type must be undefined */
+	if(le16(field->type)!=7 || le32(field->count)!=4)
+	  return 0;
+	break;
+      case 0xb001:
+	/* NumberOfImages, type must be long */
+	if(le16(field->type)!=4 || le32(field->count)!=1)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  NumberOfImages=le32(*tmp);
+	}
+	break;
+      case 0xb002:
+	/* MPEntry, type must be undefined */
+	if(le16(field->type)!=7 || le32(field->count)!=16*NumberOfImages)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  MPEntry_offset=le32(*tmp);
+	}
+	break;
+    }
+    offset+=12;
+  }
+#ifdef DEBUG_JPEG
+  log_info("MPEntry_offset=%u, NumberOfImages=%u\n", MPEntry_offset, NumberOfImages);
+#endif
+  if(MPEntry_offset + 16*NumberOfImages > size)
+    return 0;
+  for(i=0, MPEntry=(const struct MP_Entry*)(&mpo[MPEntry_offset]);
+      i<NumberOfImages;
+      i++, MPEntry++)
+  {
+    uint64_t tmp=le32(MPEntry->offset)+le32(MPEntry->size);
+#ifdef DEBUG_JPEG
+    log_info("offset=%lu, size=%lu\n",
+	(long unsigned)le32(MPEntry->offset),
+	(long unsigned)le32(MPEntry->size));
+#endif
+    if(le32(MPEntry->offset)>0)
+      tmp+=mpo_offset;
+    if(max_offset < tmp)
+      max_offset = tmp;
+  }
+  return max_offset;
+}
+
+static void file_check_mpo(file_recovery_t *fr)
+{
+  unsigned char buffer[512];
+  uint64_t offset=0;
+  unsigned int size=0;
+  size_t nbytes;
+  const unsigned char *mpo;
+  uint64_t max_offset=0;
+  do
+  {
+    offset+=2+size;
+    fseek(fr->handle, offset, SEEK_SET);
+    nbytes=fread(&buffer, 1, sizeof(buffer), fr->handle);
+//    log_info("file_check_mpo offset=%llu => nbytes=%d, buffer=%02x %02x\n",
+//    (long long unsigned)offset, nbytes, buffer[0], buffer[1]);
+    /* 0xda SOS Start Of Scan */
+    if(nbytes<8 || buffer[0]!=0xff || buffer[1]==0xda)
+    {
+      fr->file_size=0;
+      return ;
+    }
+    size=(buffer[2]<<8)+buffer[3];
+  } while(!(buffer[1]==0xe2 &&
+	  buffer[4]=='M' && buffer[5]=='P' && buffer[6]=='F' && buffer[7]==0));
+#ifdef DEBUG_JPEG
+  log_info("Found at %lu\n", (long unsigned)offset);
+#endif
+  if(2+size < nbytes)
+    size=nbytes-2;
+  if(size<12)
+  {
+    fr->file_size=0;
+    return ;
+  }
+  offset+=8;
+  size-=8;
+  mpo=buffer+8;
+  if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
+    max_offset=check_mpo_le(mpo, offset, size);
+  else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
+    return ;
+  fr->file_size=( max_offset > fr->file_size ? 0: max_offset);
+}
+
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
@@ -161,12 +297,11 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   }
   if(buffer[0]==0xff && buffer[1]==0xd8)
   {
+    int mpo=0;
     unsigned int i=2;
     time_t jpg_time=0;
-    while(i<6*512 && i+4<buffer_size)
+    while(i+4<buffer_size && buffer[i]==0xff)
     {
-      if(buffer[i]!=0xff)
-	return 0;
       /* 0x00 */
       /* 0x01 */
       /* 0xc4 Define Huffman table */
@@ -194,6 +329,16 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
       }
+      else if(buffer[i+1]==0xe2)
+      {
+	/* APP2 Exif information */
+	if(i+8 < buffer_size &&
+	    buffer[i+4]=='M' && buffer[i+5]=='P' && buffer[i+6]=='F' && buffer[i+7]==0)
+	{
+	  /* Multi-picture format */
+	  mpo=1;
+	}
+      }
       else if((buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||
 	 buffer[i+1]==0xfe ||
 	 buffer[i+1]==0xdb)
@@ -202,24 +347,42 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       else
       {
 	reset_file_recovery(file_recovery_new);
-	file_recovery_new->extension=file_hint_jpg.extension;
-	file_recovery_new->file_check=&file_check_jpg;
 	file_recovery_new->min_filesize=(i>288?i:288);
-	file_recovery_new->data_check=&data_check_jpg;
 	file_recovery_new->calculated_file_size=2;
 	file_recovery_new->time=jpg_time;
+	if(mpo > 0)
+	{
+	  file_recovery_new->extension="mpo";
+	  file_recovery_new->file_check=&file_check_mpo;
+	}
+	else
+	{
+	  file_recovery_new->extension=file_hint_jpg.extension;
+	  file_recovery_new->file_check=&file_check_jpg;
+	  file_recovery_new->data_check=&data_check_jpg;
+	}
 	return 1;
       }
       i+=2+(buffer[i+2]<<8)+buffer[i+3];
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_jpg.extension;
-    file_recovery_new->file_check=&file_check_jpg;
-    file_recovery_new->min_filesize=i;
-    file_recovery_new->data_check=&data_check_jpg;
-    file_recovery_new->calculated_file_size=2;
-    file_recovery_new->time=jpg_time;
-    return 1;
+    if(i >= 6*512)
+    {
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->min_filesize=i;
+      file_recovery_new->calculated_file_size=2;
+      file_recovery_new->time=jpg_time;
+      if(mpo > 0)
+      {
+	file_recovery_new->extension="mpo";
+      }
+      else
+      {
+	file_recovery_new->extension=file_hint_jpg.extension;
+	file_recovery_new->file_check=&file_check_jpg;
+	file_recovery_new->data_check=&data_check_jpg;
+      }
+      return 1;
+    }
   }
   return 0;
 }
