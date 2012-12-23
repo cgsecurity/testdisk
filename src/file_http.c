@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_http(file_stat_t *file_stat);
-static int header_check_http(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_http= {
   .extension="http",
@@ -39,28 +38,18 @@ const file_hint_t file_hint_http= {
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
-  .enable_by_default=1,
+  .enable_by_default=0,
   .register_header_check=&register_header_check_http
 };
 
-static const unsigned char http_header[22]=  {
-  'H', 'T', 'T', 'P', '/', '1', '.', '1',
-  ' ', '2', '0', '0', ' ', 'O', 'K', '\r',
-  '\n', 'D', 'a', 't', 'e', ':'
-};
+static int header_check_http(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_http.extension;
+  return 1;
+}
 
 static void register_header_check_http(file_stat_t *file_stat)
 {
-  register_header_check(0, http_header, sizeof(http_header), &header_check_http, file_stat);
-}
-
-static int header_check_http(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, http_header, sizeof(http_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_http.extension;
-    return 1;
-  }
-  return 0;
+  register_header_check(0, "HTTP/1.1 200 OK\r\nDate:", 22, &header_check_http, file_stat);
 }
