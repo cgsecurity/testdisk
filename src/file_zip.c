@@ -94,6 +94,17 @@ struct zip_file_entry {
 } __attribute__ ((__packed__));
 typedef struct zip_file_entry zip_file_entry_t;
 
+struct zip64_extra_entry
+{
+  uint16_t tag;
+  uint16_t size;
+  uint64_t uncompressed_size;
+  uint64_t compressed_size;
+  uint64_t offset;		/* Offset of local header record */
+  uint32_t disk_start_number;	/* Number of the disk on which this file starts  */
+} __attribute__ ((__packed__));
+typedef struct zip64_extra_entry zip64_extra_entry_t;
+
 static uint32_t expected_compressed_size=0;
 
 static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size)
@@ -137,8 +148,8 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
 static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const unsigned int file_nbr)
 {
   zip_file_entry_t  file;
-  uint32_t          len;
-
+  zip64_extra_entry_t extra;
+  uint64_t          len;
   if (fread(&file, sizeof(file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -161,7 +172,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     if (fread(filename, len, 1, fr->handle) != 1)
     {
 #ifdef DEBUG_ZIP
-      log_trace("zip: Unexpected EOF in file_entry header: %u bytes expected\n", len);
+      log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
 #endif
       free(filename);
       return -1;
@@ -265,29 +276,41 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   log_info("\n");
 #endif
   len = le16(file.extra_length);
+  memset(&extra, 0, sizeof(extra));
   if (len>0)
   {
-    if (fseek(fr->handle, len, SEEK_CUR) == -1)
+    if (fread(&extra, sizeof(extra), 1, fr->handle) != 1)
     {
 #ifdef DEBUG_ZIP
-      log_trace("zip: Unexpected EOF in file_entry header: %u bytes expected\n", len);
+      log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
+#endif
+    }
+    if (fseek(fr->handle, fr->file_size, SEEK_SET) == -1 ||
+	fseek(fr->handle, len, SEEK_CUR) == -1)
+    {
+#ifdef DEBUG_ZIP
+      log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
 #endif
       return -1;
     }
     fr->file_size += len;
   }
   len = le32(file.compressed_size);
+  if(len==0xffffffff && le16(extra.tag)==1)
+  {
+    len = le64(extra.compressed_size);
+  }
   if (len>0)
   {
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
-      log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n", len);
+      log_trace("zip: Unexpected EOF in file_entry data: %lu bytes expected\n", len);
 #endif
       return -1;
     }
 #ifdef DEBUG_ZIP
-    log_trace("zip: Data of length %u\n", len);
+    log_trace("zip: Data of length %lu\n", len);
 #endif
     fr->file_size += len;
   }
