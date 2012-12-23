@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[6.14-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="May 2012"
+TESTDISKDATE="December 2012"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -229,6 +229,31 @@ AC_ARG_ENABLE([dfxml],
       *) AC_MSG_ERROR([bad value ${enableval} for --enable-dfxml]) ;;
      esac],
     [AC_DEFINE([ENABLE_DFXML],1,[Define to 1 if DFXML log is enabled])])
+
+# Enable code coverage collection
+AC_ARG_ENABLE(coverage,
+[  --enable-coverage[=LEVEL]
+			  enable compiler's code coverage collection.
+			  Use to measure compiler performance and locate
+			  unused parts of the compiler. With LEVEL, specify
+			  optimization. Values are opt, noopt,
+			  default is noopt],
+[case "${enableval}" in
+  yes|noopt)
+    coverage_flags="--coverage -frandom-seed=\$@ -O0"
+    ;;
+  opt)
+    coverage_flags="--coverage -frandom-seed=\$@ -O2"
+    ;;
+  no)
+    # a.k.a. --disable-coverage
+    coverage_flags=""
+    ;;
+  *)
+    AC_MSG_ERROR(unknown coverage setting $enableval)
+    ;;
+esac],
+[coverage_flags=""])
 
 use_icon=no
 
@@ -792,6 +817,7 @@ ACX_PTHREAD([enable_threads="pthread"],[enable_threads="no"])
 CFLAGS="$SAVE_CFLAGS"
 
 photorecf_LDADD=$photorec_LDADD
+CFLAGS="$CFLAGS $coverage_flags"
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
