@@ -141,12 +141,16 @@ int main( int argc, char **argv )
     {
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
+      if(log_handle==NULL)
+	log_handle=log_open(logfile, create_log);
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
+      if(log_handle==NULL)
+	log_handle=log_open(logfile, create_log);
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
       testdisk_mode|=TESTDISK_O_ALL;
@@ -304,8 +308,6 @@ int main( int argc, char **argv )
     delete_list_disk(list_disk);
     return 0;
   }
-  if(create_log!=TD_LOG_NONE)
-    log_handle=log_open(logfile, create_log);
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {
