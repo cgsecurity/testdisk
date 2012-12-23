@@ -299,7 +299,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       else if(is_ntfs(partition))
 	options="tlubcq";
       else if(is_exfat(partition))
-	options="tlbcq";
+	options="tlubcq";
       else if(is_linux(partition))
       {
 	if(partition->upart_type==UP_EXT2)
@@ -355,7 +355,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  (*current_cmd)+=10;
 	  command='s';
 	}
-	else
+	else if(isdigit(*current_cmd[0]))
 	{
 	  unsigned int order;
 	  order= atoi(*current_cmd);
@@ -448,8 +448,10 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    }
 	    else if(is_part_ntfs(partition))
 	    {
-	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
-//	      exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
+	      if(partition->upart_type==UP_EXFAT)
+		exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
+	      else
+		ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
 	      rewrite=1;
 	    }
 	    else if(partition->upart_type==UP_FAT32)
