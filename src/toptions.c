@@ -24,6 +24,7 @@
 #endif
  
 #include <stdio.h>
+#include <string.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -80,7 +81,33 @@ static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *e
 
 void interface_options(int *dump_ind, int *align, unsigned int *expert, char**current_cmd)
 {
-  if(*current_cmd==NULL)
+  if(*current_cmd!=NULL)
+  {
+    int keep_asking=1;
+    do
+    {
+      while(*current_cmd[0]==',')
+	(*current_cmd)++;
+      if(strncmp(*current_cmd,"dump",4)==0)
+      {
+	(*current_cmd)+=4;
+	*dump_ind=1;
+      }
+      else if(strncmp(*current_cmd,"align",5)==0)
+      {
+	(*current_cmd)+=5;
+	*align=1;
+      }
+      else if(strncmp(*current_cmd,"expert",6)==0)
+      {
+	(*current_cmd)+=6;
+	*expert=1;
+      }
+      else
+	keep_asking=0;
+    } while(keep_asking>0);
+  }
+  else
   {
 #ifdef HAVE_NCURSES
     interface_options_ncurses(dump_ind, align, expert);
