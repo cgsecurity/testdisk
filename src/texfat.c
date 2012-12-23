@@ -61,13 +61,16 @@ static void exFAT_dump_ncurses(disk_t *disk, const partition_t *partition, const
 }
 #endif
 
-static void exFAT_dump(disk_t *disk, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs)
+static void exFAT_dump(disk_t *disk, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs, char **current_cmd)
 {
   log_info("Superblock                        Backup superblock\n");
   dump2_log(buffer_bs, buffer_backup_bs, 12 * disk->sector_size);
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  exFAT_dump_ncurses(disk, partition, buffer_bs, buffer_backup_bs);
+    exFAT_dump_ncurses(disk, partition, buffer_bs, buffer_backup_bs);
 #endif
+  }
 }
 
 int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd)
@@ -233,7 +236,7 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, c
 #endif
 	break;
       case 'D':
-	exFAT_dump(disk, partition, buffer_bs, buffer_backup_bs);
+	exFAT_dump(disk, partition, buffer_bs, buffer_backup_bs, current_cmd);
 	break;
     }
   }

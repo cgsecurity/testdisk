@@ -37,6 +37,7 @@
 #include "intrfn.h"
 #include "dirpart.h"
 #include "ntfs.h"
+#include "ntfs_fix.h"
 #include "io_redir.h"
 #include "log.h"
 #include "log_part.h"
@@ -276,7 +277,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	  dir_partition(disk_car, partition, 0,current_cmd);
 	break;
       case 'M':
-        repair_MFT(disk_car, partition, verbose, expert);
+        repair_MFT(disk_car, partition, verbose, expert, current_cmd);
 	break;
       case 'R': /* R : rebuild boot sector */
 	rebuild_NTFS_BS(disk_car, partition, verbose, 1, expert, current_cmd);

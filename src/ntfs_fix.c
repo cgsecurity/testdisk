@@ -40,6 +40,7 @@
 #include "ntfs.h"
 #include "dir.h"
 #include "ntfs_dir.h"
+#include "ntfs_fix.h"
 #include "io_redir.h"
 #include "log.h"
 #include "intrfn.h"
@@ -49,7 +50,7 @@
 #define INTER_MFT_X		0
 #define INTER_MFT_Y  		18
 
-int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert)
+int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd)
 {
   struct ntfs_boot_sector *ntfs_header;
   unsigned char *buffer_mft;
@@ -124,7 +125,8 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   if(memcmp(buffer_mft, buffer_mftmirr, mftmirr_size_bytes)==0)
   {
     log_info("MFT and MFT mirror matches perfectly.\n");
-    display_message("MFT and MFT mirror matches perfectly.\n");
+    if(*current_cmd==NULL)
+      display_message("MFT and MFT mirror matches perfectly.\n");
     free(buffer_mftmirr);
     free(buffer_mft);
     free(ntfs_header);

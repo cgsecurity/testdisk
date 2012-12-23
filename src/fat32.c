@@ -64,14 +64,17 @@ static void dump_fat32_ncurses(disk_t *disk_car, const partition_t *partition, c
 }
 #endif
 
-static void dump_fat32(disk_t *disk_car, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs)
+static void dump_fat32(disk_t *disk_car, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs, char **current_cmd)
 {
   log_info("Boot sector                        Backup boot sector\n");
   dump2_log(buffer_bs, buffer_backup_bs, 3*disk_car->sector_size);
   log_fat2_info((const struct fat_boot_sector*)buffer_bs,(const struct fat_boot_sector*)buffer_backup_bs,UP_FAT32,disk_car->sector_size);
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  dump_fat32_ncurses(disk_car, partition, buffer_bs, buffer_backup_bs);
+    dump_fat32_ncurses(disk_car, partition, buffer_bs, buffer_backup_bs);
 #endif
+  }
 }
 
 int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd)
@@ -227,9 +230,9 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	if(strchr(options,'L')!=NULL)
 	  command='L';
       }
-      else if(strncmp(*current_cmd,"repairfat",8)==0)
+      else if(strncmp(*current_cmd,"repairfat",9)==0)
       {
-	(*current_cmd)+=8;
+	(*current_cmd)+=9;
 	if(strchr(options,'C')!=NULL)
 	  command='C';
       }
@@ -290,10 +293,10 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 #endif
 	break;
       case 'C':
-	repair_FAT_table(disk_car,partition,verbose);
+	repair_FAT_table(disk_car, partition, verbose, current_cmd);
 	break;
       case 'D':
-	dump_fat32(disk_car, partition, buffer_bs, buffer_backup_bs);
+	dump_fat32(disk_car, partition, buffer_bs, buffer_backup_bs, current_cmd);
 	break;
       case 'L':
 	if(strchr(options,'O')==NULL && strchr(options,'B')!=NULL)

@@ -903,13 +903,16 @@ static void fat32_dump_ncurses(disk_t *disk_car, const partition_t *partition, c
 }
 #endif
 
-static void fat32_dump(disk_t *disk_car, const partition_t *partition, const upart_type_t upart_type, const unsigned char *orgboot, const unsigned char *newboot)
+static void fat32_dump(disk_t *disk_car, const partition_t *partition, const upart_type_t upart_type, const unsigned char *orgboot, const unsigned char *newboot, char **current_cmd)
 {
   log_info("     Rebuild Boot sector           Boot sector\n");
   dump2_log(newboot,orgboot, (unsigned int)(upart_type==UP_FAT32?3*disk_car->sector_size:DEFAULT_SECTOR_SIZE));
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  fat32_dump_ncurses(disk_car, partition, upart_type, orgboot, newboot);
+    fat32_dump_ncurses(disk_car, partition, upart_type, orgboot, newboot);
 #endif
+  }
 }
 
 static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const upart_type_t upart_type, const unsigned char *orgboot, const unsigned char*newboot, const int error, char **current_cmd)
@@ -1007,7 +1010,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
       case 'd':
       case 'D':
 	if(strchr(options,'D')!=NULL)
-	  fat32_dump(disk_car, partition, upart_type, orgboot, newboot);
+	  fat32_dump(disk_car, partition, upart_type, orgboot, newboot, current_cmd);
 	break;
       case 'l':
       case 'L':
@@ -2207,7 +2210,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
   return 0;
 }
 
-int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose)
+int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
 {
   unsigned long int fat_length,sector;
   uint64_t start_rootdir,start_data;
@@ -2253,7 +2256,10 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
   }
   if(error==0)
   {
-    display_message("TestDisk doesn't seem needed to reset the root directory.\n");
+    if(*current_cmd!=NULL)
+      log_info("TestDisk doesn't seem needed to reset the root directory.\n");
+    else
+      display_message("TestDisk doesn't seem needed to reset the root directory.\n");
     free(buffer);
     return 0;
   }
@@ -2286,7 +2292,7 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
 enum fat_status_type { FAT_UNREADABLE=0, FAT_CORRUPTED=1, FAT_OK=2 };
 enum fat_ask_repair { FAT_REPAIR_ASK=0, FAT_REPAIR_YES=1, FAT_REPAIR_NO=2 };
 
-int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose)
+int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
 {
   if(check_FAT(disk_car,partition,verbose)!=0)
   {
@@ -2800,7 +2806,10 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
     }
     if(fat_damaged==0)
     {
-      display_message("FATs seems Ok, nothing to do.\n");
+      if(current_cmd!=NULL)
+	log_info("FATs seems Ok, nothing to do.\n");
+      else
+	display_message("FATs seems Ok, nothing to do.\n");
     }
     else
     {

@@ -1,8 +1,8 @@
 /*
 
-    File: fat_adv.h
+    File: ntfs_fix.h
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2012 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,17 +19,12 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifndef _FAT_ADV_H
-#define _FAT_ADV_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int rebuild_FAT_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind,const int interface, const unsigned int expert, char**current_cmd);
-int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd);
-int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd);
+int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
-#endif
 #endif

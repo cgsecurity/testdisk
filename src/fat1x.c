@@ -62,13 +62,16 @@ static void dump_fat1x_ncurses(disk_t *disk_car, partition_t *partition, const u
 }
 #endif
 
-static void dump_fat1x(disk_t *disk_car, partition_t *partition, const unsigned char *buffer_bs)
+static void dump_fat1x(disk_t *disk_car, partition_t *partition, const unsigned char *buffer_bs, char **current_cmd)
 {
   log_info("Boot sector\n");
   dump_log(buffer_bs, FAT1x_BOOT_SECTOR_SIZE);
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  dump_fat1x_ncurses(disk_car, partition, buffer_bs);
+    dump_fat1x_ncurses(disk_car, partition, buffer_bs);
 #endif
+  }
 }
 
 int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd)
@@ -153,9 +156,9 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	if(strchr(options,'L')!=NULL)
 	  command='L';
       }
-      else if(strncmp(*current_cmd,"repairfat",8)==0)
+      else if(strncmp(*current_cmd,"repairfat",9)==0)
       {
-	(*current_cmd)+=8;
+	(*current_cmd)+=9;
 	if(strchr(options,'C')!=NULL)
 	  command='C';
       }
@@ -184,13 +187,13 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	rebuild_FAT_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
 	break;
       case 'D':
-	dump_fat1x(disk_car, partition, buffer_bs);
+	dump_fat1x(disk_car, partition, buffer_bs, current_cmd);
 	break;
       case 'C':
-	repair_FAT_table(disk_car,partition,verbose);
+	repair_FAT_table(disk_car, partition, verbose, current_cmd);
 	break;
       case 'I':
-	FAT_init_rootdir(disk_car,partition,verbose);
+	FAT_init_rootdir(disk_car, partition, verbose, current_cmd);
 	break;
       case 'L':
 	dir_partition(disk_car, partition, 0,current_cmd);

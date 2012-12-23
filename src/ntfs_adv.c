@@ -85,13 +85,16 @@ static void ntfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, co
 } 
 #endif
 
-static void ntfs_dump(disk_t *disk_car, const partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot)
+static void ntfs_dump(disk_t *disk_car, const partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, char **current_cmd)
 {
   log_info("     Rebuild Boot sector           Boot sector\n");
   dump2_log(newboot, orgboot, NTFS_SECTOR_SIZE);
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  ntfs_dump_ncurses(disk_car, partition, orgboot, newboot);
+    ntfs_dump_ncurses(disk_car, partition, orgboot, newboot);
 #endif
+  }
 }
 
 static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, const int error, char **current_cmd)
@@ -123,7 +126,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     else if(strncmp(*current_cmd,"dump",4)==0)
     {
       (*current_cmd)+=4;
-      ntfs_dump(disk_car, partition, orgboot, newboot);
+      ntfs_dump(disk_car, partition, orgboot, newboot, current_cmd);
     }
     else if(strncmp(*current_cmd,"noconfirm,",10)==0)
     {

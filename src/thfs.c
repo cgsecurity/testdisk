@@ -62,13 +62,16 @@ static void hfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, con
 }
 #endif
 
-static void hfs_dump(disk_t *disk_car, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs)
+static void hfs_dump(disk_t *disk_car, const partition_t *partition, const unsigned char *buffer_bs, const unsigned char *buffer_backup_bs, char **current_cmd)
 {
   log_info("Superblock                        Backup superblock\n");
   dump2_log(buffer_bs, buffer_backup_bs, HFSP_BOOT_SECTOR_SIZE);
+  if(*current_cmd==NULL)
+  {
 #ifdef HAVE_NCURSES
-  hfs_dump_ncurses(disk_car, partition, buffer_bs, buffer_backup_bs);
+    hfs_dump_ncurses(disk_car, partition, buffer_bs, buffer_backup_bs);
 #endif
+  }
 }
 
 int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
@@ -204,6 +207,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
     {
       log_flush();
 #ifdef HAVE_NCURSES
+      wredrawln(stdscr,0,getmaxy(stdscr));
       command=screen_buffer_display_ext(stdscr, options, menu_hfsp, &menu);
 #else
       command=0;
@@ -246,7 +250,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 #endif
 	break;
       case 'D':
-	hfs_dump(disk_car, partition, buffer_bs, buffer_backup_bs);
+	hfs_dump(disk_car, partition, buffer_bs, buffer_backup_bs, current_cmd);
 	break;
     }
   }
