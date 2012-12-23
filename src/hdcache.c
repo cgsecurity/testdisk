@@ -83,8 +83,19 @@ static void *cache_get_data_p(disk_t *disk, const unsigned int count, const uint
     const struct cache_buffer_struct *cache=&data->cache[cache_buffer_nbr];
     if(cache->buffer!=NULL && cache->cache_size>0 &&
 	cache->cache_offset <= offset &&
-	offset + count < cache->cache_offset + cache->cache_size)
+	offset + count < cache->cache_offset + cache->cache_size &&
+	offset + count >= offset)
+    {
+#ifdef DEBUG_CACHE
+      log_info("cache_get_data_p(buffer, count=%u, offset=%llu)\n",
+	  count, (long long unsigned)offset);
+      log_info("cache use %5u count=%u, coffset=%llu, cstatus=%d\n",
+	      cache_buffer_nbr, cache->cache_size, (long long unsigned)cache->cache_offset,
+	      cache->cache_status);
+	  data->nbr_fnct_sect+=count;
+#endif
       return cache->buffer + offset - cache->cache_offset;
+    }
   }
   return NULL;
 }

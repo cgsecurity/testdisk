@@ -249,10 +249,13 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   }
   if(res<=0)
   { /* Search NTFS backup */
-    partition->part_offset = disk->disk_size - disk->sector_size;
-    res=search_NTFS_backup(buffer_disk, disk, partition, verbose, 0);
-    if(res>0 && partition->part_offset!=0)
-      res=0;
+    if(disk->disk_size > disk->sector_size)
+    {
+      partition->part_offset = disk->disk_size - disk->sector_size;
+      res=search_NTFS_backup(buffer_disk, disk, partition, verbose, 0);
+      if(res>0 && partition->part_offset!=0)
+	res=0;
+    }
   }
   if(res<=0)
   {
