@@ -228,6 +228,7 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
     file_recovery->file_size+= footer_length + extra_length;
 }
 
+#if 0
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
 {
   const unsigned int read_size=4096;
@@ -268,6 +269,7 @@ void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*f
   file_recovery->file_size=0;
   free(buffer);
 }
+#endif
 
 int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
