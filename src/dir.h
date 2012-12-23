@@ -33,8 +33,10 @@ extern "C" {
 #define FLAG_LIST_MASK12	2
 #define FLAG_LIST_MASK16	4
 #define FLAG_LIST_PATHNAME	8
+#define FLAG_LIST_ADS		16
 /* capabilities */
 #define CAPA_LIST_DELETED	1
+#define CAPA_LIST_ADS		2
 
 typedef struct dir_data dir_data_t;
 typedef struct file_data file_data_t;
@@ -56,6 +58,7 @@ struct dir_data
 
 #define	FILE_STATUS_DELETED	1
 #define	FILE_STATUS_MARKED	2
+#define	FILE_STATUS_ADS		4
 
 /* TODO: migrate file_data to file_info */
 struct file_data

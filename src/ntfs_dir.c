@@ -266,6 +266,9 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       while((rec = find_attribute(AT_DATA, ctx)))
       {
 	const s64 filesize = ntfs_get_attribute_value_length(ctx->attr);
+	if(rec->name_length &&
+	    (ls->dir_data->param & FLAG_LIST_ADS)!=FLAG_LIST_ADS)
+	  continue;
 	if(first==0)
 	{
 	  const file_data_t *old_file=new_file;
@@ -277,6 +280,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	if (rec->name_length)
 	{
 	  char *stream_name=NULL;
+	  new_file->status=FILE_STATUS_ADS;
 	  if (ntfs_ucstombs((ntfschar *) ((char *) rec + le16_to_cpu(rec->name_offset)),
 		rec->name_length, &stream_name, 0) < 0)
 	  {
@@ -339,7 +343,7 @@ static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir
   if (inode->mrec->flags & MFT_RECORD_IS_DIRECTORY) {
     if(ntfs_readdir(inode, &pos, ls, (ntfs_filldir_t)ntfs_td_list_entry)<0)
     {
-      log_error("ntfs_readdir failed\n");
+      log_error("ntfs_readdir failed for cluster %lu\n", cluster);
     }
   }
   else
@@ -356,6 +360,8 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   const unsigned long int first_inode=file->st_ino;
   ntfs_inode *inode;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
+  char *stream_name;
+  stream_name=strrchr(dir_data->current_directory, ':');
   inode = ntfs_inode_open (ls->vol, first_inode);
   if (!inode) {
     log_error("ntfs_copy: ntfs_inode_open failed\n");
@@ -368,14 +374,12 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     FILE *f_out;
     s64 offset;
     u32 block_size;
-    char *stream_name;
     buffer = (char *)MALLOC(bufsize);
     if (!buffer)
     {
       ntfs_inode_close(inode);
       return -2;
     }
-    stream_name=strrchr(dir_data->current_directory, ':');
     if(stream_name)
       stream_name++;
     if(stream_name != NULL)
@@ -534,6 +538,7 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
     ls->current_file=NULL;
     ls->vol=vol;
     ls->my_data=my_data;
+    ls->dir_data=dir_data;
 #ifdef HAVE_ICONV
     if ((ls->cd = iconv_open("UTF-8", "UTF-16LE")) == (iconv_t)(-1))
     {
@@ -542,9 +547,9 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
 #endif
     strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
     dir_data->current_inode=FILE_root;
-    dir_data->param=0;
+    dir_data->param=FLAG_LIST_ADS;
     dir_data->verbose=verbose;
-    dir_data->capabilities=0;
+    dir_data->capabilities=CAPA_LIST_ADS;
     dir_data->get_dir=ntfs_dir;
     dir_data->copy_file=ntfs_copy;
     dir_data->close=&dir_partition_ntfs_close;

@@ -167,6 +167,19 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	else
 	  waddstr(window," to hide deleted files");
       }
+      else if((dir_data->capabilities&CAPA_LIST_ADS)!=0)
+      {
+	waddstr(window,", ");
+	if(has_colors())
+	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
+	waddstr(window,"h");
+	if(has_colors())
+	  wbkgdset(window,' ' | COLOR_PAIR(0));
+	if((dir_data->param&FLAG_LIST_ADS)==0)
+	  waddstr(window," to unhide Alternate Data Stream");
+	else
+	  waddstr(window," to hide Alternate Data Stream");
+      }
       wmove(window,LINES-2,4);
       if(has_colors())
 	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
@@ -227,6 +240,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	case 'h':
 	  if((dir_data->capabilities&CAPA_LIST_DELETED)!=0)
 	    dir_data->param^=FLAG_LIST_DELETED;
+	  else if((dir_data->capabilities&CAPA_LIST_ADS)!=0)
+	    dir_data->param^=FLAG_LIST_ADS;
 	  return inode;
       }
       if(dir_list!=NULL)
@@ -252,7 +267,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  case ':':
 	    if(!(pos->name[0]=='.' && pos->name[1]=='\0') &&
 		!(pos->name[0]=='.' && pos->name[1]=='.' && pos->name[2]=='\0'))
-	    pos->status^=FILE_STATUS_MARKED;
+	      pos->status^=FILE_STATUS_MARKED;
 	    if(pos->next!=NULL)
 	    {
 	      pos=pos->next;
