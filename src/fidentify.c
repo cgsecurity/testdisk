@@ -55,7 +55,7 @@ extern file_check_list_t file_check_list;
 
 #define READ_SIZE 1024*512
 
-static int file_identify(const char *filename)
+static int file_identify(const char *filename, const unsigned int check)
 {
   FILE *file;
   unsigned char *buffer_start;
@@ -80,7 +80,6 @@ static int file_identify(const char *filename)
     free(buffer_start);
     return 0;
   }
-  fclose(file);
   {
     struct td_list_head *tmpl;
     file_recovery_t file_recovery_new;
@@ -105,20 +104,31 @@ static int file_identify(const char *filename)
     }
     if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
     {
-      printf("%s: %s\n", filename,
+      printf("%s: %s", filename,
 	  ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
 	   file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
+      if(check > 0 && file_recovery_new.file_check!=NULL)
+      {
+	file_recovery_new.handle=file;
+	fseek(file_recovery_new.handle, 0, SEEK_END);
+	file_recovery_new.file_size=ftell(file_recovery_new.handle);
+	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
+	(file_recovery_new.file_check)(&file_recovery_new);
+	printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
+      }
+      printf("\n");
     }
     else
     {
       printf("%s: unknown\n", filename);
     }
+    fclose(file);
   }
   free(buffer_start);
   return 0;
 }
 
-static void file_identify_dir(const char *current_dir)
+static void file_identify_dir(const char *current_dir, const unsigned int check)
 {
   DIR *dir;
   struct dirent *entry;
@@ -141,9 +151,9 @@ static void file_identify_dir(const char *current_dir)
 #endif
 	{
 	  if(S_ISDIR(buf_stat.st_mode))
-	    file_identify_dir(current_file);
+	    file_identify_dir(current_file, check);
 	  else if(S_ISREG(buf_stat.st_mode))
-	    file_identify(current_file);
+	    file_identify(current_file, check);
 	}
     }
   }
@@ -152,13 +162,14 @@ static void file_identify_dir(const char *current_dir)
 
 int main(int argc, char **argv)
 {
+  int i;
+  unsigned int check=0;
   FILE *log_handle=NULL;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
   log_handle=log_open("fidentify.log", TD_LOG_CREATE);
   if(log_handle!=NULL)
   {
-    int i;
     time_t my_time;
 #ifdef HAVE_DUP2
     dup2(fileno(log_handle),2);
@@ -179,10 +190,18 @@ int main(int argc, char **argv)
       file_enable->enable=1;
   }
   file_stats=init_file_stats(list_file_enable);
+  i=1;
   if(argc>1)
   {
-    int i;
-    for(i=1; i<argc; i++)
+    if(strcmp(argv[1], "-check")==0)
+    {
+      check++;
+      i++;
+    }
+  }
+  if(argc>i)
+  {
+    for(; i<argc; i++)
     {
       struct stat buf_stat;
 #ifdef HAVE_LSTAT
@@ -192,14 +211,14 @@ int main(int argc, char **argv)
 #endif
 	{
 	  if(S_ISDIR(buf_stat.st_mode))
-	    file_identify_dir(argv[i]);
+	    file_identify_dir(argv[i], check);
 	  else if(S_ISREG(buf_stat.st_mode))
-	    file_identify(argv[i]);
+	    file_identify(argv[i], check);
 	}
     }
   }
   else
-    file_identify_dir(".");
+    file_identify_dir(".", check);
   free_header_check();
   free(file_stats);
   log_close();
