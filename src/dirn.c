@@ -61,6 +61,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
    *  other: new inode
    * */
   int quit=0;
+  int ask_destination=1;
   WINDOW *window=(WINDOW*)dir_data->display;
   do
   {
@@ -347,14 +348,17 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		  strcat(dir_data->current_directory,"/");
 		if(strcmp(pos->name,".")!=0)
 		  strcat(dir_data->current_directory,pos->name);
-		if(dir_data->local_dir==NULL)
+		if(dir_data->local_dir==NULL || ask_destination>0)
 		{
+		  char *local_dir=dir_data->local_dir;
 		  if(LINUX_S_ISDIR(pos->st_mode)!=0)
 		    dir_data->local_dir=ask_location("Please select a destination where %s and any files below will be copied.",
-			dir_data->current_directory, NULL);
+			dir_data->current_directory, local_dir);
 		  else
 		    dir_data->local_dir=ask_location("Please select a destination where %s will be copied.",
-			dir_data->current_directory, NULL);
+			dir_data->current_directory, local_dir);
+		  free(local_dir);
+		  ask_destination=0;
 		}
 		if(dir_data->local_dir!=NULL)
 		{
@@ -402,9 +406,12 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  case 'C':
 	    if(dir_data->copy_file!=NULL)
 	    {
-	      if(dir_data->local_dir==NULL)
+	      if(dir_data->local_dir==NULL || ask_destination>0)
 	      {
-		dir_data->local_dir=ask_location("Please select a destination where the marked files will be copied.", NULL, NULL);
+		char *local_dir=dir_data->local_dir;
+		dir_data->local_dir=ask_location("Please select a destination where the marked files will be copied.", NULL, local_dir);
+		free(local_dir);
+		ask_destination=0;
 	      }
 	      if(dir_data->local_dir!=NULL)
 	      {
