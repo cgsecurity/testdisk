@@ -404,6 +404,9 @@ void file_rename(const char *old_filename, const void *buffer, const int buffer_
 	case '\\':
 	case ':':
 	case '*':
+	case '<':
+	case '>':
+	case '|':
 	  if(*(dst-1) != '_')
 	    *dst++ = '_';
 	  bad++;
