@@ -99,6 +99,12 @@ void xml_set_command_line(const int argc, char **argv)
   }
 }
 
+void xml_clear_command_line(void)
+{
+  free(command_line);
+  command_line=NULL;
+}
+
 void xml_close()
 {
   if(xml_handle==NULL)

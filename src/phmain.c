@@ -370,5 +370,8 @@ int main( int argc, char **argv )
     run_sudo(argc, argv);
 #endif
   free(params.recup_dir);
+#ifdef ENABLE_DFXML
+  xml_clear_command_line();
+#endif
   return 0;
 }

@@ -37,6 +37,7 @@ void xml_out2s(const char *tag, const char *value);
 void xml_out2i(const char *tag, const uint64_t value);
 void xml_setup(disk_t *disk, const partition_t *partition);
 void xml_set_command_line(const int argc, char **argv);
+void xml_clear_command_line(void);
 void xml_add_DFXML_creator(const char *package, const char *version);
 void xml_shutdown(void);
 void xml_log_file_recovered(const file_recovery_t *file_recovery);
