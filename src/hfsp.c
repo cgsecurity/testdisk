@@ -96,7 +96,11 @@ int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partiti
 
 int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind)
 {
-  if (!(be32(vh->blocksize)%512==0 && be32(vh->blocksize)!=0 && be32(vh->free_blocks)<=be32(vh->total_blocks)))
+  if (be32(vh->free_blocks) > be32(vh->total_blocks))
+    return 1;
+  /* Blocksize must be a multiple of 512 */
+  if (be32(vh->blocksize)<512 ||
+      ((be32(vh->blocksize)-1) & be32(vh->blocksize))!=0)
     return 1;
   /* http://developer.apple.com/technotes/tn/tn1150.html */
   if (be16(vh->version)==4 && vh->signature==be16(HFSP_VOLHEAD_SIG))

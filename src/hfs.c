@@ -88,8 +88,9 @@ int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,c
   /* Check for HFS signature */
   if (hfs_mdb->drSigWord!=be16(HFS_SUPER_MAGIC))
     return 1;
-  /* Check for valid blocksize */
-  if(be32(hfs_mdb->drAlBlkSiz)%512!=0 || be32(hfs_mdb->drAlBlkSiz)==0)
+  /* Blocksize must be a multiple of 512 */
+  if(be32(hfs_mdb->drAlBlkSiz)<512 ||
+      ((be32(hfs_mdb->drAlBlkSiz)-1) & be32(hfs_mdb->drAlBlkSiz))!=0)
     return 1;
   /* Check for valid number of allocation blocks */
   if(be16(hfs_mdb->drNmAlBlks)==0)
