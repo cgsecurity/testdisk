@@ -62,6 +62,17 @@ static void register_header_check_doc(file_stat_t *file_stat)
   register_header_check(0, doc_header,sizeof(doc_header), &header_check_doc, file_stat);
 }
 
+const char WilcomDesignInformationDDD[56]=
+{
+  0x05, '\0', 'W', '\0', 'i', '\0', 'l', '\0',
+  'c', '\0', 'o', '\0', 'm', '\0', 'D', '\0',
+  'e', '\0', 's', '\0', 'i', '\0', 'g', '\0',
+  'n', '\0', 'I', '\0', 'n', '\0', 'f', '\0',
+  'o', '\0', 'r', '\0', 'm', '\0', 'a', '\0',
+  't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
+  'D', '\0', 'D', '\0', 'D', '\0', '\0', '\0'
+};
+
 static void file_check_doc(file_recovery_t *file_recovery)
 {
   unsigned char buffer_header[512];
@@ -87,7 +98,12 @@ static void file_check_doc(file_recovery_t *file_recovery)
       le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
     return ;
   if((fat=OLE_load_FAT(file_recovery->handle, header))==NULL)
+  {
+#ifdef DEBUG_OLE
+    log_info("OLE_load_FAT failed\n");
+#endif
     return ;
+  }
   /* Search how many entries are not used at the end of the FAT */
   for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
       i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF;
@@ -96,6 +112,10 @@ static void file_check_doc(file_recovery_t *file_recovery)
   doc_file_size=512+(((le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
   if(doc_file_size > doc_file_size_org)
   {
+#ifdef DEBUG_OLE
+    log_info("doc_file_size %llu > doc_file_size_org %llu\n",
+    (unsigned long long)doc_file_size, (unsigned long long)doc_file_size_org);
+#endif
     free(fat);
     return ;
   }
@@ -128,7 +148,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
       if(fseek(file_recovery->handle, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
 #ifdef DEBUG_OLE
-	log_info("fseek failed%u\n");
+	log_info("fseek failed\n");
 #endif
 	free(fat);
 	return ;
@@ -137,7 +157,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
       if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file_recovery->handle)!=1)
       {
 #ifdef DEBUG_OLE
-	log_info("fread failed%u\n");
+	log_info("fread failed\n");
 #endif
 	free(dir_entries);
 	free(fat);
@@ -222,7 +242,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       {
 #ifdef DEBUG_OLE
 	unsigned int j;
-	for(j=0;j<64 && j<dir_entry->namsiz && dir_entry->name[j]!='\0';j+=2)
+	for(j=0;j<64 && j<le16(dir_entry->namsiz) && dir_entry->name[j]!='\0';j+=2)
 	{
 	  log_info("%c",dir_entry->name[j]);
 	}
@@ -239,59 +259,96 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	else if(sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
 	      memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0", 14)==0))
 	  is_db++;
-	/* 3ds max */
-	if(memcmp(&dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
-	  return "max";
-	/* MS Excel
-	 * Note: Microsoft Works Spreadsheet contains the same signature */
-	if(memcmp(&dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
-	  ext="xls";
-	if(memcmp(&dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
-	  return "sda";
-	if(memcmp(&dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
-	  return "sdc";
-	/* Microsoft Works Spreadsheet or Chart */
-	if(memcmp(&dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
-	  return "xlr";
-	/* HP Photosmart Photo Printing Album */
-	if(memcmp(&dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
-	  return "albm";
-	/* SigmaPlot .jnb */
-	if(memcmp(&dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
-	  return "jnb";
-	if(memcmp(&dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
-	  return "ppt";
-	/* Microsoft Works .wps */
-	if(memcmp(&dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
-	  return "wps";
-	/* Outlook */
-	if(memcmp(&dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
-	  return "msg";
-	/* Licom AlphaCAM */
-	if(memcmp(&dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
-	  return "amb";
-	/* Note: False positive with StarImpress sdd files */
-	if(memcmp(&dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
-	  return "sdw";
-	/* Visio */
-	if(memcmp(&dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
-	  return "vsd";
-	/* SolidWorks */
-	if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0",26)==0 ||
-	    memcmp(&dir_entry->name,"I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0",44)==0)
+	switch(le16(dir_entry->namsiz))
 	{
+	  case 12:
+	    /* 3ds max */
+	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
+	      return "max";
+	    /* Licom AlphaCAM */
+	    else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
+	      return "amb";
+	    break;
+	  case 18:
+	    /* MS Excel
+	     * Note: Microsoft Works Spreadsheet contains the same signature */
+	    if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0\0\0",18)==0)
+	      ext="xls";
+	    /* Microsoft Works .wps */
+	    else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0\0\0",18)==0)
+	      return "wps";
+	    break;
+	  case 20:
+	    /* Page Maker */
+	    if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0\0\0", 20)==0)
+	      return "p65";
+	    break;
+	  case 22:
+	    /* SigmaPlot .jnb */
+	    if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0", 22)==0)
+	      return "jnb";
+	    break;
+	  case 24:
+	    /* HP Photosmart Photo Printing Album */
+	    if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
+	      return "albm";
+	    break;
+	  case 28:
+	    /* Microsoft Works Spreadsheet or Chart */
+	    if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0\0\0",28)==0)
+	      return "xlr";
+	    /* Visio */
+	    else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",28)==0)
+	      return "vsd";
+	/* SolidWorks */
+	    else if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0\0\0",28)==0)
+	    {
 #ifdef DJGPP
-	  return "sld";
+	      return "sld";
 #else
-	  return "sldprt";
+	      return "sldprt";
 #endif
+	    }
+	    break;
+	  case 34:
+	    if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
+	      return "sdc";
+	    break;
+	  case 36:
+	    if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
+	      return "sda";
+	    break;
+	  case 38:
+	    /* Quattro Pro spreadsheet */
+	    if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0\0\0", 38)==0)
+	      return "qpw";
+	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0W\0r\0i\0t\0e\0r\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 38)==0)
+	      return "sdw";
+	    break;
+	  case 40:
+	    if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
+	      return "ppt";
+	    /* Outlook */
+	    else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0\0\0",40)==0)
+	      return "msg";
+	    break;
+	  case 46:
+	    if(memcmp(dir_entry->name,
+		  "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0\0\0", 46)==0)
+	    {
+#ifdef DJGPP
+	      return "sld";
+#else
+	      return "sldprt";
+#endif
+	    }
+	    break;
+	  case 56:
+	    /* Wilcom ES Software */
+	    if(memcmp(dir_entry->name, WilcomDesignInformationDDD, 56)==0)
+	      return "emb";
+	    break;
 	}
-	/* Quattro Pro spreadsheet */
-	if(memcmp(&dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
-	  return "qpw";
-	/* Page Maker */
-	if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0", 18)==0)
-	  return "p65";
 	if(sid==1 && memcmp(&dir_entry->name, "D\0g\0n", 6)==0)
 	  return "dgn";
       }
@@ -340,15 +397,10 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
     if(file_recovery_new->extension!=NULL)
     {
-      if(strcmp(file_recovery_new->extension,"sdw")==0)
+      if(strcmp(file_recovery_new->extension,"sda")==0)
       {
-	/* Distinguish between sda/sdc/sdd/sdw */
 	if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
 	  file_recovery_new->extension="sdd";
-	else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
-	  file_recovery_new->extension="sda";
-	else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
-	  file_recovery_new->extension="sdc";
       }
       else if(strcmp(file_recovery_new->extension,"wps")==0)
       {
@@ -559,6 +611,10 @@ static const char *software2ext(const unsigned int count, const unsigned char *s
     return "ppt";
   if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
     return "doc";
+  if(count==21 && memcmp(software, "TurboCAD for Windows", 21)==0)
+    return "tcw";
+  if(count==22 && memcmp(software, "TurboCAD pour Windows", 22)==0)
+    return "tcw";
   return NULL;
 }
 
@@ -827,27 +883,17 @@ static void file_rename_doc(const char *old_filename)
 	{
 	  if(dir_entry->type!=NO_ENTRY)
 	  {
-	    const char SummaryInformation[38]=
+	    const char SummaryInformation[40]=
 	    {
 	      0x05, '\0', 'S', '\0', 'u', '\0', 'm', '\0',
 	      'm', '\0', 'a', '\0', 'r', '\0', 'y', '\0',
 	      'I', '\0', 'n', '\0', 'f', '\0', 'o', '\0',
 	      'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
-	      'i', '\0', 'o', '\0', 'n', '\0'
-	    };
-	    const char WilcomDesignInformationDDD[54]=
-	    {
-	      0x05, '\0', 'W', '\0', 'i', '\0', 'l', '\0',
-	      'c', '\0', 'o', '\0', 'm', '\0', 'D', '\0',
-	      'e', '\0', 's', '\0', 'i', '\0', 'g', '\0',
-	      'n', '\0', 'I', '\0', 'n', '\0', 'f', '\0',
-	      'o', '\0', 'r', '\0', 'm', '\0', 'a', '\0',
-	      't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
-	      'D', '\0', 'D', '\0', 'D', '\0'
+	      'i', '\0', 'o', '\0', 'n', '\0', '\0', '\0'
 	    };
 #ifdef DEBUG_OLE
 	    unsigned int j;
-	    for(j=0;j<64 && j<dir_entry->namsiz && dir_entry->name[j]!='\0';j+=2)
+	    for(j=0;j<64 && j<le16(dir_entry->namsiz) && dir_entry->name[j]!='\0';j+=2)
 	    {
 	      log_info("%c",dir_entry->name[j]);
 	    }
@@ -857,78 +903,119 @@ static void file_rename_doc(const char *old_filename)
 		(unsigned int)le32(dir_entry->start_block),
 		(unsigned int)le32(dir_entry->size));
 #endif
-	    if(memcmp(dir_entry->name, WilcomDesignInformationDDD, sizeof(WilcomDesignInformationDDD))==0)
+	    switch(le16(dir_entry->namsiz))
 	    {
-	      /* Wilcom ES Software */
-	      ext="emb";
-	    }
-	    if(memcmp(dir_entry->name, SummaryInformation, sizeof(SummaryInformation))==0)
-	    {
-	      OLE_parse_summary(file, fat, fat_entries, header, ministream_block, ministream_size,
-		  le32(dir_entry->start_block), le32(dir_entry->size),
-		  &ext, &title, &file_time);
-	    }
-	    /* 3ds max */
-	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0",10)==0)
-	      ext="max";
-	    /* MS Excel
-	     * Note: Microsoft Works Spreadsheet contains the same signature */
-	    else if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0",16)==0)
-	      ext="xls";
-	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0",16)==0)
-	      ext="sda";
-	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0",16)==0)
-	      ext="sdc";
-	    /* Microsoft Works Spreadsheet or Chart */
-	    else if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0",26)==0)
-	      ext="xlr";
-	    /* HP Photosmart Photo Printing Album */
-	    else if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0",22)==0)
-	      ext="albm";
-	    /* SigmaPlot .jnb */
-	    else if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0", 20)==0)
-	      ext="jnb";
-	    else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0",20)==0)
-	      ext="ppt";
-	    /* Microsoft Works .wps */
-	    else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0",16)==0)
-	      ext="wps";
-	    /* Outlook */
-	    else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0",38)==0)
-	      ext="msg";
-	    /* Licom AlphaCAM */
-	    else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0",10)==0)
-	      ext="amb";
-	    /* Note: False positive with StarImpress sdd files */
-	    else if(memcmp(dir_entry->name,"S\0f\0x\0D\0o\0c\0u\0m\0e\0n\0t\0",22)==0)
-	      ext="sdw";
-	    /* Visio */
-	    else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0",26)==0)
-	      ext="vsd";
-	    /* SolidWorks */
-	    else if(memcmp(&dir_entry->name, "s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0", 26)==0 ||
-		memcmp(&dir_entry->name,
-		  "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0", 44)==0)
-	    {
+	      case 12:
+		/* 3ds max */
+		if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
+		  ext="max";
+		/* Licom AlphaCAM */
+		else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
+		  ext="amb";
+		break;
+	      case 16:
+		if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0\0\0", 16)==0)
+		  ext="psmodel";
+		/* Windows Sticky Notes */
+		else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0\0\0", 16)==0)
+		  ext="snt";
+		break;
+	      case 18:
+		/* MS Excel
+		 * Note: Microsoft Works Spreadsheet contains the same signature */
+		if(ext==NULL &&
+		    memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0\0\0",18)==0)
+		  ext="xls";
+		/* Microsoft Works .wps */
+		else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0\0\0",18)==0)
+		  ext="wps";
+		break;
+	      case 20:
+		/* Page Maker */
+		if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0\0\0", 20)==0)
+		  ext="p65";
+		break;
+	      case 22:
+		/* SigmaPlot .jnb */
+		if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0", 22)==0)
+		  ext="jnb";
+		break;
+	      case 24:
+		/* HP Photosmart Photo Printing Album */
+		if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
+		  ext="albm";
+		break;
+	      case 28:
+		/* Microsoft Works Spreadsheet or Chart */
+		if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0\0\0",28)==0)
+		  ext="xlr";
+		/* Visio */
+		else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",28)==0)
+		  ext="vsd";
+		/* SolidWorks */
+		else if(memcmp(&dir_entry->name, "s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0\0\0", 28)==0)
+		{
 #ifdef DJGPP
-	      ext="sld";
+		  ext="sld";
 #else
-	      ext="sldprt";
+		  ext="sldprt";
 #endif
+		}
+		break;
+	      case 34:
+		if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
+		  ext="sdc";
+		break;
+	      case 36:
+		/* sda=StarDraw, sdd=StarImpress*/
+		if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
+		  ext="sda";
+		break;
+	      case 38:
+		/* Quattro Pro spreadsheet */
+		if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0\0\0", 38)==0)
+		  ext="qpw";
+		else if(memcmp(dir_entry->name, "S\0t\0a\0r\0W\0r\0i\0t\0e\0r\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 38)==0)
+		  ext="sdw";
+		break;
+	      case 40:
+		if(memcmp(dir_entry->name, SummaryInformation, 40)==0)
+		{
+		  OLE_parse_summary(file, fat, fat_entries, header,
+		      ministream_block, ministream_size,
+		      le32(dir_entry->start_block), le32(dir_entry->size),
+		      &ext, &title, &file_time);
+		}
+		else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
+		  ext="ppt";
+		/* Outlook */
+		else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0\0\0",40)==0)
+		  ext="msg";
+		break;
+	      case 46:
+		if(memcmp(dir_entry->name,
+		      "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0\0\0", 46)==0)
+		{
+#ifdef DJGPP
+		  ext="sld";
+#else
+		  ext="sldprt";
+#endif
+		}
+		break;
+	      case 56:
+		/* Wilcom ES Software */
+		if(memcmp(dir_entry->name, WilcomDesignInformationDDD, 56)==0)
+		  ext="emb";
+		break;
 	    }
-	    /* Quattro Pro spreadsheet */
-	    else if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0", 36)==0)
-	      ext="qpw";
-	    /* Page Maker */
-	    else if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0", 18)==0)
-	      ext="p65";
-	    else if(sid==1 && memcmp(dir_entry->name, "D\0g\0n", 6)==0)
+	    if(sid==1 && le16(dir_entry->namsiz) >=6 &&
+		memcmp(dir_entry->name, "D\0g\0n", 6)==0)
 	      ext="dgn";
-	    else if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0", 14)==0)
-	      ext="psmodel";
-	    /* Windows Sticky Notes */
-	    else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0", 14)==0)
-	      ext="snt";
+#ifdef DEBUG_OLE
+	    if(ext!=NULL)
+	      log_info("Found %s %u\n", ext, le16(dir_entry->namsiz));
+#endif
 	  }
 	}
       }
