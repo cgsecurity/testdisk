@@ -631,6 +631,11 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
       /* Scribus XML file */
       file_recovery_new->extension="sla";
     }
+    else if(strncasecmp(tmp, "<FictionBook", 12)==0)
+    {
+      /* FictionBook, see http://www.fictionbook.org */
+      file_recovery_new->extension="fb2";
+    }
     tmp++;
     tmp=strchr(tmp,'<');
   }
