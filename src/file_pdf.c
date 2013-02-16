@@ -111,13 +111,13 @@ static void file_rename_pdf(const char *old_filename)
     fclose(handle);
     return ;
   }
+  fclose(handle);
   /* Skip spaces after /Title */
   for(i=0; i<bsize && buffer[i]==' '; i++);
   if(i==bsize)
   {
     /* Too much spaces */
     free(buffer);
-    fclose(handle);
     return ;
   }
   if(buffer[i]=='<')
@@ -171,7 +171,6 @@ static void file_rename_pdf(const char *old_filename)
   else
   {
     free(buffer);
-    fclose(handle);
     return ;
   }
   /* Try to avoid some double-extensions */
@@ -185,7 +184,6 @@ static void file_rename_pdf(const char *old_filename)
     j-=5;
   file_rename(old_filename, title, j, 0, NULL, 1);
   free(buffer);
-  fclose(handle);
 }
 
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
