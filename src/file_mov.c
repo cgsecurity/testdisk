@@ -31,7 +31,6 @@
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
-#include "memmem.h"
 
 static void register_header_check_mov(file_stat_t *file_stat);
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -122,7 +121,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
     /* check for commun atom type */
     if(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t')
     {
-      if(atom_size > 256)
+      if(atom_size != 20)
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
@@ -133,7 +132,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
     }
     if(buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e')
     {
-      if(atom_size > 256)
+      if(atom_size != 8)
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
@@ -165,14 +164,16 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
     if(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p')
     {
       unsigned int search_size=buffer_size-i;
+      if(atom_size < 20 || (atom_size&3)!=0 || atom_size>256)
+	return 0;
       if(search_size > atom_size)
 	search_size=atom_size;
-      if(td_memmem(&buffer[i+8], search_size-8, "isom", 4)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "mp41", 4)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "mp42", 4)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "mmp4", 4)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "M4B", 3)!=NULL ||
-	  td_memmem(&buffer[i+8], search_size-8, "M4P", 3)!=NULL)
+      if(memcmp(&buffer[i+8], "isom", 4)==0 ||
+	  memcmp(&buffer[i+8], "mp41", 4)==0 ||
+	  memcmp(&buffer[i+8], "mp42", 4)==0 ||
+	  memcmp(&buffer[i+8], "mmp4", 4)==0 ||
+	  memcmp(&buffer[i+8], "M4B", 3)==0 ||
+	  memcmp(&buffer[i+8], "M4P", 3)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mp4";
@@ -181,7 +182,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(td_memmem(&buffer[i+8], search_size-8, "M4A", 3)!=NULL)
+      else if(memcmp(&buffer[i+8], "M4A ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="acc";
@@ -190,7 +191,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(td_memmem(&buffer[i+8], search_size-8, "3gp", 3)!=NULL)
+      else if(memcmp(&buffer[i+8], "3gp", 3)==0)
       {
 	/* Video for 3G mobile phone (GSM) */
 	reset_file_recovery(file_recovery_new);
@@ -200,7 +201,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(td_memmem(&buffer[i+8], search_size-8, "3g2", 3)!=NULL)
+      else if(memcmp(&buffer[i+8], "3g2", 3)==0)
       {
 	/* Video for 3G mobile phone (CDMA) */
 	reset_file_recovery(file_recovery_new);
@@ -210,7 +211,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(td_memmem(&buffer[i+8], search_size-8, "jp2", 3)!=NULL)
+      else if(memcmp(&buffer[i+8], "jp2", 3)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="jp2";
@@ -219,7 +220,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(td_memmem(&buffer[i+8], search_size-8, "qt", 2)!=NULL)
+      else if(memcmp(&buffer[i+8], "qt  ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mov";
