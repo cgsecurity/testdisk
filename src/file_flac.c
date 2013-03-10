@@ -32,7 +32,6 @@
 #include "common.h"
 
 static void register_header_check_flac(file_stat_t *file_stat);
-static int header_check_flac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_flac= {
   .extension="flac",
@@ -44,25 +43,21 @@ const file_hint_t file_hint_flac= {
 	.register_header_check=&register_header_check_flac
 };
 
-static const unsigned char flac_header[4]= {'f', 'L', 'a', 'C'};
+static int header_check_flac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+  file_recovery_new->extension="flc";
+#else
+  file_recovery_new->extension=file_hint_flac.extension;
+#endif
+}
 
 static void register_header_check_flac(file_stat_t *file_stat)
 {
+  /* Stream marker followed by STREAMINFO Metadata block */
+  static const unsigned char flac_header[4]= {'f', 'L', 'a', 'C', 0x00};
+  static const unsigned char flac_header2[4]= {'f', 'L', 'a', 'C', 0x80};
   register_header_check(0, flac_header,sizeof(flac_header), &header_check_flac, file_stat);
+  register_header_check(0, flac_header2,sizeof(flac_header2), &header_check_flac, file_stat);
 }
-
-static int header_check_flac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, flac_header, sizeof(flac_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-#ifdef DJGPP
-    file_recovery_new->extension="flc";
-#else
-    file_recovery_new->extension=file_hint_flac.extension;
-#endif
-    return 1;
-  }
-  return 0;
-}
-
