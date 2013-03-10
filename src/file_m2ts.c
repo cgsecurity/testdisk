@@ -98,8 +98,14 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
     file_recovery_new->extension="ts";
   file_recovery_new->min_filesize=192;
   file_recovery_new->calculated_file_size=0;
+  /* data_check_ts_192 is for a check at header_check_m2ts() beginning
+   * so always define data_check even if it will only really work
+   * for blocksize >= 3 */
   file_recovery_new->data_check=&data_check_ts_192;
-  file_recovery_new->file_check=&file_check_size_lax;
+  if(file_recovery_new->blocksize > 5/2)
+  {
+    file_recovery_new->file_check=&file_check_size_lax;
+  }
   return 1;
 }
 
