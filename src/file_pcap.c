@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_pcap(file_stat_t *file_stat);
-static int header_check_pcap(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_pcap= {
   .extension="pcap",
@@ -43,25 +42,21 @@ const file_hint_t file_hint_pcap= {
   .register_header_check=&register_header_check_pcap
 };
 
-static const unsigned char pcap_header[4]	= {0xd4, 0xc3, 0xb2, 0xa1};
-/* pcap low-endian header */
+static int header_check_pcap(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+  file_recovery_new->extension="pcp";
+#else
+  file_recovery_new->extension=file_hint_pcap.extension;
+#endif
+  return 1;
+}
 
 static void register_header_check_pcap(file_stat_t *file_stat)
 {
-  register_header_check(0, pcap_header,      sizeof(pcap_header), 	&header_check_pcap, file_stat);
-}
-
-static int header_check_pcap(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, pcap_header, sizeof(pcap_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-#ifdef DJGPP
-    file_recovery_new->extension="pcp";
-#else
-    file_recovery_new->extension=file_hint_pcap.extension;
-#endif
-    return 1;
-  }
-  return 0;
+  static const unsigned char pcap_le_header1[6]	= {0xd4, 0xc3, 0xb2, 0xa1, 0x01, 0x00};
+  static const unsigned char pcap_le_header2[6]	= {0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00};
+  register_header_check(0, pcap_le_header1, sizeof(pcap_le_header1), &header_check_pcap, file_stat);
+  register_header_check(0, pcap_le_header2, sizeof(pcap_le_header2), &header_check_pcap, file_stat);
 }
