@@ -142,7 +142,7 @@ static void file_check_avi(file_recovery_t *fr)
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
-  while(1)
+  while(fr->file_size!=fr->calculated_file_size)
   {
     const uint64_t file_size=fr->file_size;
     riff_list_header list_header;
@@ -162,7 +162,6 @@ static void file_check_avi(file_recovery_t *fr)
     if(memcmp(&list_header.dwList, "RIFF", 4) != 0)
     {
       fr->offset_error=fr->file_size;
-      fr->file_size=fr->file_size;
       return;
     }
     check_riff_list(fr, 1, file_size + sizeof(list_header), file_size + 8 + le32(list_header.dwSize) - 1);
@@ -217,16 +216,21 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24)+8;
+    file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
     if(memcmp(&buffer[8],"NUND",4)==0)
     {
       /* Cubase Project File */
       file_recovery_new->extension="cpr";
-      file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
-	(((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
-	(uint64_t)buffer[7] + 12;
+      file_recovery_new->calculated_file_size+=12;
       return 1;
     }
+    /* Windows Animated Cursor */
+    else if(memcmp(&buffer[8],"ACON",4)==0)
+    {
+      file_recovery_new->extension="ani";
+      return 1;
+    }
+    file_recovery_new->calculated_file_size+=8;
     if(memcmp(&buffer[8],"AVI ",4)==0)
     {
       const riff_list_header list_movi={
@@ -262,9 +266,6 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     /* MIDI Instruments Definition File */
     else if(memcmp(&buffer[8],"IDF LIST",8)==0)
       file_recovery_new->extension="idf";
-    /* Windows Animated Cursor */
-    else if(memcmp(&buffer[8],"ACON",4)==0)
-      file_recovery_new->extension="ani";
     else
       file_recovery_new->extension="avi";
     return 1;
