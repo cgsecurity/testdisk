@@ -36,7 +36,6 @@
 /* #define DEBUG_ACE */
 
 static void register_header_check_ace(file_stat_t *file_stat);
-static int header_check_ace(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ace= {
   .extension="ace",
@@ -47,13 +46,6 @@ const file_hint_t file_hint_ace= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_ace
 };
-
-static const unsigned char ace_header[7] = { '*','*','A','C','E','*','*'};
-
-static void register_header_check_ace(file_stat_t *file_stat)
-{
-  register_header_check(7, ace_header,sizeof(ace_header), &header_check_ace, file_stat);
-}
 
 struct header_ace {
   uint16_t crc16;      /** Lower 16bits of CRC32 over block up from HEAD_TYPE */
@@ -81,7 +73,12 @@ static void file_check_ace(file_recovery_t *file_recovery)
   while (!feof(file_recovery->handle))
   {
     ace_header_t h;
-    if(fread(&h, sizeof(h), 1, file_recovery->handle)!=1)
+    size_t res;
+    memset(&h, 0, sizeof(h));
+    res=fread(&h, 1, sizeof(h), file_recovery->handle);
+    if(res==0)
+      return ;
+    if(res != sizeof(h))
     {
       file_recovery->offset_error=file_recovery->file_size;
       file_recovery->file_size=0;
@@ -179,19 +176,24 @@ static void file_check_ace(file_recovery_t *file_recovery)
 
 static int header_check_ace(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[7],ace_header,sizeof(ace_header))==0 && buffer[4]==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ace.extension;
-    file_recovery_new->min_filesize=
-         2 + /* CRC16 */
-         2 + /* Head size */
-         1 + /* Head type */
-         2 + /* Flags */
-         7 + /* Signature */
-         16; /* Minimal size for marker header */
-    file_recovery_new->file_check=&file_check_ace;
-    return 1;
-  }
-  return 0;
+  const ace_header_t *h=(const ace_header_t *)buffer;
+  if(le16(h->size) < 1+2 || h->type!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ace.extension;
+  file_recovery_new->min_filesize=
+    2 + /* CRC16 */
+    2 + /* Head size */
+    1 + /* Head type */
+    2 + /* Flags */
+    7 + /* Signature */
+    16; /* Minimal size for marker header */
+  file_recovery_new->file_check=&file_check_ace;
+  return 1;
+}
+
+static void register_header_check_ace(file_stat_t *file_stat)
+{
+  static const unsigned char ace_header[7] = { '*','*','A','C','E','*','*'};
+  register_header_check(7, ace_header,sizeof(ace_header), &header_check_ace, file_stat);
 }
