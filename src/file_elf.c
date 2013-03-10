@@ -32,7 +32,6 @@
 #include "filegen.h"
 
 static void register_header_check_elf(file_stat_t *file_stat);
-static int header_check_elf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_elf= {
   .extension="elf",
@@ -44,20 +43,17 @@ const file_hint_t file_hint_elf= {
   .register_header_check=&register_header_check_elf
 };
 
-static const unsigned char elf_header[4]  = { 0x7f, 'E','L','F'};
+static int header_check_elf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_elf.extension;
+  return 1;
+}
 
 static void register_header_check_elf(file_stat_t *file_stat)
 {
-  register_header_check(0, elf_header,sizeof(elf_header), &header_check_elf, file_stat);
-}
-
-static int header_check_elf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,elf_header,sizeof(elf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_elf.extension;
-    return 1;
-  }
-  return 0;
+  static const unsigned char elf_header16[4]  = { 0x7f, 'E','L','F',0x01};
+  static const unsigned char elf_header32[4]  = { 0x7f, 'E','L','F',0x02};
+  register_header_check(0, elf_header16, sizeof(elf_header16), &header_check_elf, file_stat);
+  register_header_check(0, elf_header32, sizeof(elf_header32), &header_check_elf, file_stat);
 }
