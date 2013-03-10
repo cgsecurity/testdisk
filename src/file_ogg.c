@@ -57,14 +57,18 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
 {
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_ogg &&
-      file_recovery->calculated_file_size == file_recovery->file_size)
+      (file_recovery->blocksize < (27+255)/2 ||
+       file_recovery->calculated_file_size == file_recovery->file_size))
     return 0;
   if(memcmp(buffer,ogg_header,sizeof(ogg_header))==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->calculated_file_size=0;
-    file_recovery_new->data_check=&data_check_ogg;
-    file_recovery_new->file_check=&file_check_size;
+    if(file_recovery_new->blocksize > (27+255)/2)
+    {
+      file_recovery_new->data_check=&data_check_ogg;
+      file_recovery_new->file_check=&file_check_size;
+    }
     /* Ogg data, Theora video */
     if(memcmp(&buffer[28], sign_theora, sizeof(sign_theora))==0)
       file_recovery_new->extension="ogm";
