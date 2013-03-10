@@ -29,6 +29,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "log.h"
+#include "common.h"
 
 static void register_header_check_emf(file_stat_t *file_stat);
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -43,6 +44,42 @@ const file_hint_t file_hint_emf= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_emf
 };
+
+typedef struct {
+  uint32_t iType;
+  uint32_t nSize;
+} U_EMR;
+
+typedef struct {
+  int32_t left;
+  int32_t top;
+  int32_t right;
+  int32_t bottom;
+} U_RECTL;
+
+typedef struct {
+  int32_t cx;
+  int32_t cy;
+} U_SIZEL;
+
+struct EMF_HDR
+{
+  U_EMR emr;
+  U_RECTL rclBounds;
+  U_RECTL rclFrame;
+  uint32_t dSignature;
+  uint32_t nVersion;
+  uint32_t nBytes;
+  uint32_t nRecords;
+  uint16_t nHandles;
+  uint16_t sReserved;
+  uint32_t nDescription;
+  uint32_t offDescription;
+  uint32_t nPalEntries;
+  U_SIZEL szlDevice;
+  U_SIZEL szlMillimeters; 
+} __attribute__ ((__packed__));
+
 
 static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
 static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
@@ -176,8 +213,11 @@ static void register_header_check_emf(file_stat_t *file_stat)
 
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
   if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
-      memcmp(&buffer[0x28],emf_sign,sizeof(emf_sign))==0)
+      memcmp(&buffer[0x28],emf_sign,sizeof(emf_sign))==0 &&
+      le32(hdr->nBytes) >= 88 &&
+      le16(hdr->sReserved)==0)
   {
     unsigned int atom_size;
     atom_size=buffer[4]+(buffer[5]<<8)+(buffer[6]<<16)+(buffer[7]<<24);
