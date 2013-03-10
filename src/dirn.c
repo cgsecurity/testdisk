@@ -244,6 +244,11 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  else if((dir_data->capabilities&CAPA_LIST_ADS)!=0)
 	    dir_data->param^=FLAG_LIST_ADS;
 	  return inode;
+	case 0x0c:	/* ctrl+L */
+	  touchwin(stdscr);
+	  touchwin(window);
+	  wrefresh(window);
+	  break;
       }
       if(dir_list!=NULL)
       {
