@@ -54,24 +54,21 @@ static void file_rename_exs(const char *old_filename)
   file_rename(old_filename, buffer, buffer_size, 0x14, "exs", 0);
 }
 
-static const unsigned char exs_header[8]=  {
-  0x01, 0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00
-};
-
 static int header_check_exs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], exs_header, sizeof(exs_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_exs.extension;
-    file_recovery_new->file_rename=file_rename_exs;
-    return 1;
-  }
-  return 0;
+  if(memcmp(&buffer[0x10], "TBOS", 4)!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_exs.extension;
+  file_recovery_new->file_rename=file_rename_exs;
+  return 1;
 }
 
 static void register_header_check_exs(file_stat_t *file_stat)
 {
+  static const unsigned char exs_header[8]=  {
+    0x01, 0x01, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00
+  };
   register_header_check(0, exs_header, sizeof(exs_header), &header_check_exs, file_stat);
 }
 
