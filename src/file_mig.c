@@ -64,15 +64,23 @@ static void file_check_mig(file_recovery_t *file_recovery)
   file_recovery->file_size=0;
   while(1)
   {
-    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
-	fread(&h, sizeof(h), 1, file_recovery->handle) != 1)
+    size_t res;
+    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
     {
 #ifdef DEBUG_MIG
-      log_info("0x%lx no header\n", (long unsigned)offset);
+      log_info("0x%lx fseek failed\n", (long unsigned)offset);
 #endif
       return ;
     }
-    if(le32(h.magic)!=0x5354524d)	/* STRM=stream */
+    res=fread(&h, 1, sizeof(h), file_recovery->handle);
+    if(res < 8)
+    {
+#ifdef DEBUG_MIG
+      log_info("0x%lx not enough data\n", (long unsigned)offset);
+#endif
+      return ;
+    }
+    if(res < sizeof(h) || le32(h.magic)!=0x5354524d)	/* STRM=stream */
     {
 #ifdef DEBUG_MIG
       log_info("0x%lx no magic %x\n", (long unsigned)offset, le32(h.magic));
