@@ -169,13 +169,13 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
 	http://www.dv.co.yu/mpgscript/mpeghdr.htm
   */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      ((potential_frame_offset==0 && file_recovery->file_stat->file_hint==&file_hint_mp3)||
+      (file_recovery->file_stat->file_hint==&file_hint_mp3 ||
        file_recovery->file_stat->file_hint==&file_hint_mkv))
     return 0;
-  if(!(buffer[potential_frame_offset+0]==0xFF &&
-	((buffer[potential_frame_offset+1]&0xFE)==0xFA ||
-	 (buffer[potential_frame_offset+1]&0xFE)==0xF2 ||
-	 (buffer[potential_frame_offset+1]&0xFE)==0xE2)))
+  if(!(buffer[0]==0xFF &&
+	((buffer[1]&0xFE)==0xFA ||
+	 (buffer[1]&0xFE)==0xF2 ||
+	 (buffer[1]&0xFE)==0xE2)))
     return 0;
   while(potential_frame_offset+1 < buffer_size &&
       potential_frame_offset+1 < 2048)
@@ -222,9 +222,12 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->calculated_file_size=potential_frame_offset;
     file_recovery_new->min_filesize=287;
-    file_recovery_new->data_check=&data_check_mp3;
     file_recovery_new->extension=file_hint_mp3.extension;
-    file_recovery_new->file_check=&file_check_size;
+    if(file_recovery_new->blocksize >= 16/2)
+    {
+      file_recovery_new->data_check=&data_check_mp3;
+      file_recovery_new->file_check=&file_check_size;
+    }
     return 1;
   }
   return 0;
@@ -252,17 +255,22 @@ static int data_check_id3(const unsigned char *buffer, const unsigned int buffer
 
 static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+#ifdef DEBUG_MP3
+  log_info("data_check_mp3  file_size=%llu, calculated_file_size=%llu\n",
+      (long long unsigned)file_recovery->file_size,
+      (long long unsigned)file_recovery->calculated_file_size);
+#endif
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
     unsigned int MMT_size;
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    /*
-    log_trace("data_check_mp3 start i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
+#ifdef DEBUG_MP3
+    log_info("data_check_mp3 start i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
 	i, buffer_size,
 	(long unsigned)file_recovery->calculated_file_size,
 	(long unsigned)file_recovery->file_size);
-    */
+#endif
     if(buffer[i+0]==0xFF && ((buffer[i+1]&0xE0)==0xE0))
     {
       const unsigned int mpeg_version	=(buffer[i+1]>>3)&0x03;
