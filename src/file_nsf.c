@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_nsf(file_stat_t *file_stat);
-static int header_check_nsf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_nsf= {
   .extension="nsf",
@@ -43,22 +42,21 @@ const file_hint_t file_hint_nsf= {
   .register_header_check=&register_header_check_nsf
 };
 
-static const unsigned char nsf_header[6]=  {
-  0x1a, 0x00, 0x00, 0x04, 0x00, 0x00
-};
+static int header_check_nsf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* I hope it's a valid check */
+  if(buffer[0x10]!=0x25 || buffer[0x11]!=0x85)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_nsf.extension;
+  return 1;
+}
 
 static void register_header_check_nsf(file_stat_t *file_stat)
 {
+  static const unsigned char nsf_header[6]=  {
+    0x1a, 0x00, 0x00, 0x04, 0x00, 0x00
+  };
   register_header_check(0, nsf_header, sizeof(nsf_header), &header_check_nsf, file_stat);
 }
 
-static int header_check_nsf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, nsf_header, sizeof(nsf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_nsf.extension;
-    return 1;
-  }
-  return 0;
-}
