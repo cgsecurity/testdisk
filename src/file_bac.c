@@ -34,8 +34,6 @@
 #include "memmem.h"
 
 static void register_header_check_bac(file_stat_t *file_stat);
-static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_bac= {
   .extension="bac",
@@ -46,26 +44,6 @@ const file_hint_t file_hint_bac= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_bac
 };
-
-static const unsigned char bac_header[8]={ 0, 0, 0, 0, 'B', 'B', '0', '2' };
-static void register_header_check_bac(file_stat_t *file_stat)
-{
-  register_header_check(8, bac_header, sizeof(bac_header), &header_check_bac, file_stat);
-}
-
-static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[8], bac_header, sizeof(bac_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_bac.extension;
-    file_recovery_new->data_check=data_check_bac;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->calculated_file_size=0;
-    return 1;
-  }
-  return 0;
-}
 
 static int data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -95,3 +73,21 @@ static int data_check_bac(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
+static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_bac.extension;
+  file_recovery_new->calculated_file_size=0;
+  if(file_recovery_new->blocksize >= 0x18/2)
+  {
+    file_recovery_new->data_check=data_check_bac;
+    file_recovery_new->file_check=&file_check_size;
+  }
+  return 1;
+}
+
+static void register_header_check_bac(file_stat_t *file_stat)
+{
+  static const unsigned char bac_header[8]={ 0, 0, 0, 0, 'B', 'B', '0', '2' };
+  register_header_check(8, bac_header, sizeof(bac_header), &header_check_bac, file_stat);
+}
