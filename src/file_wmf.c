@@ -45,27 +45,22 @@ const file_hint_t file_hint_wmf= {
 	.register_header_check=&register_header_check_wmf
 };
 
-static const unsigned char apm_header[6] = { 0xd7, 0xcd, 0xc6, 0x9a, 0x00, 0x00 };
-static const unsigned char emf_header[6] = { 0x20, 0x45, 0x4D, 0x46, 0x00, 0x00 };
-/* WMF: file_type=disk, header size=9, version=3.0 */
-static const unsigned char wmf_header[6] = { 0x01, 0x00, 0x09, 0x00, 0x00, 0x03 };
+static int header_check_wmf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[0x10]!=0 || buffer[0x11]!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_wmf.extension;
+  return 1;
+}
 
 static void register_header_check_wmf(file_stat_t *file_stat)
 {
+  static const unsigned char apm_header[6] = { 0xd7, 0xcd, 0xc6, 0x9a, 0x00, 0x00 };
+  static const unsigned char emf_header[6] = { 0x20, 0x45, 0x4D, 0x46, 0x00, 0x00 };
+  /* WMF: file_type=disk, header size=9, version=3.0 */
+  static const unsigned char wmf_header[6] = { 0x01, 0x00, 0x09, 0x00, 0x00, 0x03 };
   register_header_check(0, apm_header,sizeof(apm_header), &header_check_wmf, file_stat);
   register_header_check(0, emf_header,sizeof(emf_header), &header_check_wmf, file_stat);
   register_header_check(0, wmf_header,sizeof(wmf_header), &header_check_wmf, file_stat);
-}
-
-static int header_check_wmf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,apm_header,sizeof(apm_header))==0 ||
-      memcmp(buffer,emf_header,sizeof(emf_header))==0 ||
-      memcmp(buffer,wmf_header,sizeof(wmf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_wmf.extension;
-    return 1;
-  }
-  return 0;
 }
