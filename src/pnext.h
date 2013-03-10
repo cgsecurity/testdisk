@@ -62,7 +62,6 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
         (unsigned long long)((*current_search_space)->start/512),
         (unsigned long long)((*current_search_space)->end/512));
     log_flush();
-    bug();
     log_close();
     exit(1);
   }
@@ -72,10 +71,3 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
   else
     get_next_header(list_search_space, current_search_space, offset);
 }
-
-#ifdef DEBUG_GET_NEXT_SECTOR
-void bug(void)
-{
-  log_critical("bug\n");
-}
-#endif
