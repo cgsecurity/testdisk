@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_spss(file_stat_t *file_stat);
-static int header_check_spss(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_spss= {
   .extension="sav",
@@ -43,20 +42,15 @@ const file_hint_t file_hint_spss= {
   .register_header_check=&register_header_check_spss
 };
 
-static const unsigned char spss_header[4]= {'$', 'F', 'L', '2'};
+static int header_check_spss(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_spss.extension;
+  return 1;
+}
 
 static void register_header_check_spss(file_stat_t *file_stat)
 {
-  register_header_check(0, spss_header,sizeof(spss_header), &header_check_spss, file_stat);
-}
-
-static int header_check_spss(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,spss_header,sizeof(spss_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_spss.extension;
-    return 1;
-  }
-  return 0;
+  /* Check record type + beginning of product name*/
+  register_header_check(0, "$FL2@(#) SPSS DATA FILE", 23, &header_check_spss, file_stat);
 }
