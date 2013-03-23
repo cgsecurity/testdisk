@@ -36,9 +36,9 @@ const file_hint_t file_hint_dsc= {
   .extension="dsc",
   .description="Nikon dsc",
   .min_header_distance=0,
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .max_filesize=1024*1024,
   .recover=0,
-  .enable_by_default=1,
+  .enable_by_default=0,
   .register_header_check=&register_header_check_dsc
 };
 
