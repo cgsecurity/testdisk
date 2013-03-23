@@ -33,7 +33,6 @@
 #include "filegen.h"
 
 static void register_header_check_ds2(file_stat_t *file_stat);
-static int header_check_ds2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ds2= {
   .extension="ds2",
@@ -45,7 +44,6 @@ const file_hint_t file_hint_ds2= {
   .register_header_check=&register_header_check_ds2
 };
 
-static const unsigned char ds2_header[4]= { 0x03, 'd','s','2'};
 /* 
    Digital Speech Standard (.ds2) is a digital speech recording format
    that is an evolution from dss standard which was jointly developed
@@ -57,32 +55,33 @@ static const unsigned char ds2_header[4]= { 0x03, 'd','s','2'};
    Filesize is always a multiple of 512
 */
 
-static void register_header_check_ds2(file_stat_t *file_stat)
-{
-  register_header_check(0, ds2_header,sizeof(ds2_header), &header_check_ds2, file_stat);
-}
-
 static int header_check_ds2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,ds2_header,sizeof(ds2_header))==0)
-  {
-    struct tm tm_time;
-    const unsigned char *date_asc=&buffer[0x26];
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ds2.extension;
-    file_recovery_new->min_filesize=0x200;
-    memset(&tm_time, 0, sizeof(tm_time));
-    tm_time.tm_sec=(date_asc[10]-'0')*10+(date_asc[11]-'0');	/* seconds 0-59 */
-    tm_time.tm_min=(date_asc[8]-'0')*10+(date_asc[9]-'0');      /* minutes 0-59 */
-    tm_time.tm_hour=(date_asc[6]-'0')*10+(date_asc[7]-'0');     /* hours   0-23*/
-    tm_time.tm_mday=(date_asc[4]-'0')*10+(date_asc[5]-'0');	/* day of the month 1-31 */
-    tm_time.tm_mon=(date_asc[2]-'0')*10+(date_asc[3]-'0')-1;	/* month 1-12 */
-    tm_time.tm_year=(date_asc[0]-'0')*10+(date_asc[1]-'0');        	/* year */
-    if(tm_time.tm_year<80)
-      tm_time.tm_year+=100;	/* year 2000 - 2079 */
-    tm_time.tm_isdst = -1;	/* unknown daylight saving time */
-    file_recovery_new->time=mktime(&tm_time);
-    return 1;
-  }
-  return 0;
+  struct tm tm_time;
+  const unsigned char *date_asc=&buffer[0x26];
+  unsigned int i;
+  for(i=0; i<24; i++)
+    if(!isdigit(date_asc[i]))
+      return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ds2.extension;
+  file_recovery_new->min_filesize=0x200;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[10]-'0')*10+(date_asc[11]-'0');	/* seconds 0-59 */
+  tm_time.tm_min=(date_asc[8]-'0')*10+(date_asc[9]-'0');      /* minutes 0-59 */
+  tm_time.tm_hour=(date_asc[6]-'0')*10+(date_asc[7]-'0');     /* hours   0-23*/
+  tm_time.tm_mday=(date_asc[4]-'0')*10+(date_asc[5]-'0');	/* day of the month 1-31 */
+  tm_time.tm_mon=(date_asc[2]-'0')*10+(date_asc[3]-'0')-1;	/* month 1-12 */
+  tm_time.tm_year=(date_asc[0]-'0')*10+(date_asc[1]-'0');        	/* year */
+  if(tm_time.tm_year<80)
+    tm_time.tm_year+=100;	/* year 2000 - 2079 */
+  tm_time.tm_isdst = -1;	/* unknown daylight saving time */
+  file_recovery_new->time=mktime(&tm_time);
+  return 1;
+}
+
+static void register_header_check_ds2(file_stat_t *file_stat)
+{
+  static const unsigned char ds2_header[4]= { 0x03, 'd','s','2'};
+  register_header_check(0, ds2_header,sizeof(ds2_header), &header_check_ds2, file_stat);
 }
