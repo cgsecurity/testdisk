@@ -156,6 +156,13 @@ static unsigned int new_format_packet_length(const unsigned char *buf, unsigned 
   return 1 << (buf[0]& 0x1F);
 }
 
+static int is_valid_mpi(const uint16_t *size)
+{
+  if(be16(*size) <= 16384)
+    return (be16(*size)+7)/8;
+  return -1;
+}
+
 static  int is_valid_pubkey_algo(const int algo)
 {
   /*  1          - RSA (Encrypt or Sign)
@@ -169,8 +176,6 @@ static  int is_valid_pubkey_algo(const int algo)
    *  21         - Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
    *  100 to 110 - Private/Experimental algorithm
    */
-  if(algo>=100 && algo<=110)
-    return 1;
   switch(algo)
   {
     case 1:
@@ -178,10 +183,7 @@ static  int is_valid_pubkey_algo(const int algo)
     case 3:
     case 16:
     case 17:
-    case 18:
-    case 19:
     case 20:
-    case 21:
       return 1;
     default:
       return 0;
@@ -289,18 +291,41 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     {
       if(tag==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
       {
+	const uint16_t *mpi=(const uint16_t *)&buffer[i+1+8+1];
+	const int len=is_valid_mpi(mpi);
 	/* uint8_t  version	must be 3
 	 * uint64_t pub_key_id
 	 * uint8_t  pub_key_algo
 	 *          encrypted_session_key	*/
-	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]))
+	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]) &&
+	    len>0)
 	{
 #ifdef DEBUG_GPG
 	  log_info("GPG :pubkey enc packet: version %u, algo %u, keyid %02X%02X%02X%02X%02X%02X%02X%02X\n",
 	      buffer[i], buffer[i+1+8],
 	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
+	  log_info(" data: [ %u bits]\n", be16(*mpi));
 #endif
+	  if(1+8+1+2+len > length)
+	    return ;
+	  if(buffer[i+1+8]==16 || buffer[i+1+8]==20)
+	  {
+	    int len2;
+	    unsigned char tmp[2];
+	    if(fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
+		fread(&tmp, sizeof(tmp), 1, file_recovery->handle) != 1)
+	      return;
+	    mpi=(const uint16_t *)&tmp[0];
+	    len2=is_valid_mpi(mpi);
+#ifdef DEBUG_GPG
+	    log_info(" data: [ %u bits]\n", be16(*mpi));
+#endif
+	    if(len2 <= 0)
+	      return ;
+	    if(1+8+1+2+len+2+len2 > length)
+	      return ;
+	  }
 	}
 	else
 	  return;
@@ -433,18 +458,38 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     {
       if(tag==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
       {
+	const uint16_t *mpi=(const uint16_t *)&buffer[i+1+8+1];
+	const int len=is_valid_mpi(mpi);
 	/* uint8_t  version	must be 3
 	 * uint64_t pub_key_id
 	 * uint8_t  pub_key_algo
 	 *          encrypted_session_key	*/
-	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]))
+	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]) &&
+	    len>0)
 	{
 #ifdef DEBUG_GPG
 	  log_info("GPG :pubkey enc packet: version %u, algo %u, keyid %02X%02X%02X%02X%02X%02X%02X%02X\n",
 	      buffer[i], buffer[i+1+8],
 	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
+	  log_info(" data: [ %u bits]\n", be16(*mpi));
 #endif
+	  if(1+8+1+2+len > length)
+	    return 0;
+	  if((buffer[i+1+8]==16 || buffer[i+1+8]==20) &&
+	      i+1+8+1+2+len+2<buffer_size)
+	  {
+	    int len2;
+	    mpi=(const uint16_t *)&buffer[i+1+8+1+2+len];
+	    len2=is_valid_mpi(mpi);
+#ifdef DEBUG_GPG
+	    log_info(" data: [ %u bits]\n", be16(*mpi));
+#endif
+	    if(len2 <= 0)
+	      return 0;
+	    if(1+8+1+2+len+2+len2 > length)
+	      return 0;
+	  }
 	}
 	else
 	  return 0;
