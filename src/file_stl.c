@@ -44,31 +44,28 @@ const file_hint_t file_hint_stl= {
   .register_header_check=&register_header_check_stl
 };
 
-static const unsigned char stl_header[6]={ 's', 'o', 'l', 'i', 'd', ' '};
-static const unsigned char spaces[16]={
-  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  /* STL Binary format
+   * http://www.ennex.com/~fabbers/StL.asp	*/
+  for(i=0; i<80 && buffer[i]!='\0'; i++);
+  if(i>64)
+    return 0;
+  for(i++; i<80 && buffer[i]==' '; i++);
+  if(i!=80)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_stl.extension;
+  file_recovery_new->calculated_file_size=80+4+50*
+    (uint64_t)(buffer[80]+(buffer[81]<<8)+(buffer[82]<<16)+(buffer[93]<<24));
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
 
 static void register_header_check_stl(file_stat_t *file_stat)
 {
-  register_header_check(0, stl_header,sizeof(stl_header), &header_check_stl, file_stat);
-}
-
-static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, stl_header, sizeof(stl_header))==0 &&
-      memcmp(buffer+0x40, spaces, sizeof(spaces))==0)
-  {
-    /* STL Binary format
-     * http://www.ennex.com/~fabbers/StL.asp	*/
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_stl.extension;
-    file_recovery_new->calculated_file_size=80+4+50*
-      (uint64_t)(buffer[80]+(buffer[81]<<8)+(buffer[82]<<16)+(buffer[93]<<24));
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  /* STL Ascii format is recovered in file_txt.c */
-  return 0;
+  /* Note: STL Ascii format is recovered in file_txt.c */
+  register_header_check(0, "solid ", 6, &header_check_stl, file_stat);
 }
