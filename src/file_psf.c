@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_psf(file_stat_t *file_stat);
-static int header_check_psf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_psf= {
   .extension="psf",
@@ -43,25 +42,20 @@ const file_hint_t file_hint_psf= {
   .register_header_check=&register_header_check_psf
 };
 
-static const unsigned char psf_header[8]=  {
-  'P', 'S', 'D', '5', 'R', 'D', 'O', 'C'
-};
+static int header_check_psf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_psf)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_psf.extension;
+  file_recovery_new->calculated_file_size=((uint64_t)buffer[28]<<24)+((uint64_t)buffer[29]<<16)+((uint64_t)buffer[30]<<8)+((uint64_t)buffer[31]<<0) + 272;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
 
 static void register_header_check_psf(file_stat_t *file_stat)
 {
-  register_header_check(12, psf_header, sizeof(psf_header), &header_check_psf, file_stat);
-}
-
-static int header_check_psf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[12], psf_header, sizeof(psf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_psf.extension;
-    file_recovery_new->calculated_file_size=((uint64_t)buffer[28]<<24)+((uint64_t)buffer[29]<<16)+((uint64_t)buffer[30]<<8)+((uint64_t)buffer[31]<<0) + 272;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  register_header_check(12, "PSD5RDOC", 8, &header_check_psf, file_stat);
 }
