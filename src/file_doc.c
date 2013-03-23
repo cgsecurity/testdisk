@@ -602,23 +602,45 @@ static uint64_t get64u(const void *buffer, const unsigned int offset)
   return le64(*val);
 }
 
-static const char *software2ext(const unsigned int count, const unsigned char *software)
+static void software2ext(const char **ext, const unsigned int count, const unsigned char *software)
 {
   if(count>=12 && memcmp(software, "MicroStation", 12)==0)
-    return "dgn";
+  {
+    *ext="dgn";
+    return;
+  }
   if(count>=14 && memcmp(software, "Microsoft Word", 14)==0)
-    return "doc";
+  {
+    *ext="doc";
+    return;
+  }
   if(count>=15 && memcmp(software, "Microsoft Excel", 15)==0)
-    return "xls";
+  {
+    if(*ext==NULL || strcmp(*ext,"sldprt")!=0)
+      *ext="xls";
+    return;
+  }
   if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
-    return "ppt";
+  {
+    *ext="ppt";
+    return;
+  }
   if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
-    return "doc";
+  {
+    *ext="doc";
+    return;
+  }
   if(count==21 && memcmp(software, "TurboCAD for Windows", 21)==0)
-    return "tcw";
+  {
+    *ext="tcw";
+    return;
+  }
   if(count==22 && memcmp(software, "TurboCAD pour Windows", 22)==0)
-    return "tcw";
-  return NULL;
+  {
+    *ext="tcw";
+    return;
+  }
+  return ;
 }
 
 static const char *software_uni2ext(const unsigned int count, const unsigned char *software)
@@ -681,7 +703,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
 	  log_info("\n");
 	}
 #endif
-	*ext=software2ext(count, &dataPt[valStart + 4]);
+	software2ext(ext, count, &dataPt[valStart + 4]);
       }
       /* tag: Software, type: VT_LPWSTR */
       if(tag==0x12 && type==31)
@@ -802,6 +824,8 @@ static void file_rename_doc(const char *old_filename)
   struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
   time_t file_time=0;
   unsigned int fat_entries;
+  if(strstr(old_filename, ".sdd")!=NULL)
+    ext="sdd";
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
 #ifdef DEBUG_OLE
@@ -847,7 +871,7 @@ static void file_rename_doc(const char *old_filename)
     /* FFFFFFFE = ENDOFCHAIN
      * Use a loop count i to avoid endless loop */
 #ifdef DEBUG_OLE
-    log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
+    log_info("file_rename_doc root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
     for(block=le32(header->root_start_block), i=0;
 	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
@@ -970,8 +994,9 @@ static void file_rename_doc(const char *old_filename)
 		  ext="sdc";
 		break;
 	      case 36:
-		/* sda=StarDraw, sdd=StarImpress*/
-		if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
+		/* sda=StarDraw, sdd=StarImpress */
+		if((ext==NULL || strcmp(ext,"sdd")!=0) &&
+		    memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
 		  ext="sda";
 		break;
 	      case 38:
