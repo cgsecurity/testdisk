@@ -32,7 +32,6 @@
 #include "log.h"
 
 static void register_header_check_ogg(file_stat_t *file_stat);
-static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_ogg= {
@@ -45,38 +44,33 @@ const file_hint_t file_hint_ogg= {
   .register_header_check=&register_header_check_ogg
 };
 
-static const unsigned char ogg_header[4]= {'O','g','g','S'};
+/* header=OggS, version=0 */
+static const unsigned char ogg_header[5]= {'O','g','g','S', 0x00};
 static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
-
-static void register_header_check_ogg(file_stat_t *file_stat)
-{
-  register_header_check(0, ogg_header,sizeof(ogg_header), &header_check_ogg, file_stat);
-}
 
 static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  /* http://en.wikipedia.org/wiki/Ogg#File_format */
+  /* Return if not Beginning Of Stream and already saving the file */
+  if(buffer[5]&0x02!=0x02 &&
+      file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_ogg &&
       (file_recovery->blocksize < (27+255)/2 ||
        file_recovery->calculated_file_size == file_recovery->file_size))
     return 0;
-  if(memcmp(buffer,ogg_header,sizeof(ogg_header))==0)
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->calculated_file_size=0;
+  if(file_recovery_new->blocksize > (27+255)/2)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->calculated_file_size=0;
-    if(file_recovery_new->blocksize > (27+255)/2)
-    {
-      file_recovery_new->data_check=&data_check_ogg;
-      file_recovery_new->file_check=&file_check_size;
-    }
-    /* Ogg data, Theora video */
-    if(memcmp(&buffer[28], sign_theora, sizeof(sign_theora))==0)
-      file_recovery_new->extension="ogm";
-    else
-      file_recovery_new->extension=file_hint_ogg.extension;
-    return 1;
+    file_recovery_new->data_check=&data_check_ogg;
+    file_recovery_new->file_check=&file_check_size;
   }
-  return 0;
+  /* Ogg data, Theora video */
+  if(memcmp(&buffer[28], sign_theora, sizeof(sign_theora))==0)
+    file_recovery_new->extension="ogm";
+  else
+    file_recovery_new->extension=file_hint_ogg.extension;
+  return 1;
 }
 
 /* http://www.ietf.org/rfc/rfc3533.txt */
@@ -115,3 +109,7 @@ static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
+static void register_header_check_ogg(file_stat_t *file_stat)
+{
+  register_header_check(0, ogg_header,sizeof(ogg_header), &header_check_ogg, file_stat);
+}
