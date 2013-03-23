@@ -807,8 +807,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       return 1;
     }
   }
-  if(strncasecmp((const char *)buffer, "@echo off", 9)==0 ||
-      strncasecmp((const char *)buffer, "rem ", 4)==0)
+  if(strncasecmp((const char *)buffer, "@echo off", 9)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
@@ -905,6 +904,15 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
   if(l<10)
     return 0;
+  if(strncasecmp((const char *)buffer, "rem ", 4)==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    /* Dos/Windows bath */
+    file_recovery_new->extension="bat";
+    return 1;
+  }
   {
     const char *ext=NULL;
     /* ind=~0: random
