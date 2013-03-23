@@ -75,6 +75,7 @@ static void file_rename_par2(const char *old_filename)
     uint64_t length;
     int buffer_size;
     unsigned char buffer[4096];
+    const uint64_t *lengthp=(const uint64_t *)&buffer[8];
     if(fseek(file, offset, SEEK_SET)<0)
     {
       fclose(file);
@@ -86,7 +87,7 @@ static void file_rename_par2(const char *old_filename)
       fclose(file);
       return;
     }
-    length=le64((*(const uint64_t *)(&buffer[8])));
+    length=le64(*lengthp);
     if(length % 4 !=0 || length < 16 ||
 	memcmp(&buffer, &par2_header, sizeof(par2_header))!=0)
     {
