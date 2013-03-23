@@ -47,7 +47,7 @@ extern const file_hint_t file_hint_pdf;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_zip;
 
-static inline int filtre(unsigned char car);
+static inline int filtre(unsigned int car);
 
 static void register_header_check_txt(file_stat_t *file_stat);
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -193,7 +193,7 @@ static const txt_header_t fasttxt_headers[] = {
 // #define DEBUG_FILETXT
 
 /* return 1 if char can be found in text file */
-static int filtre(unsigned char car)
+static int filtre(unsigned int car)
 {
   switch(car)
   {
@@ -266,7 +266,7 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
     if((*p & 0xf0)==0xe0 && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
     { /* UTF8 l=3 */
 #ifdef DEBUG_TXT
-      log_info("UTF8 l=3 0x%02x 0x%02x 0x02x\n", *p, *(p+1),*(p+2));
+      log_info("UTF8 l=3 0x%02x 0x%02x 0x%02x\n", *p, *(p+1),*(p+2));
 #endif
       *q = '\0';
       switch (*p)
