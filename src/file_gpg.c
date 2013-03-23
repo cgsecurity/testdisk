@@ -307,7 +307,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
 	  log_info(" data: [ %u bits]\n", be16(*mpi));
 #endif
-	  if(1+8+1+2+len > length)
+	  if((unsigned)(1+8+1+2+len) > length)
 	    return ;
 	  if(buffer[i+1+8]==16 || buffer[i+1+8]==20)
 	  {
@@ -323,7 +323,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 #endif
 	    if(len2 <= 0)
 	      return ;
-	    if(1+8+1+2+len+2+len2 > length)
+	    if((unsigned)(1+8+1+2+len+2+len2) > length)
 	      return ;
 	  }
 	}
@@ -474,7 +474,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
 	  log_info(" data: [ %u bits]\n", be16(*mpi));
 #endif
-	  if(1+8+1+2+len > length)
+	  if((unsigned)(1+8+1+2+len) > length)
 	    return 0;
 	  if((buffer[i+1+8]==16 || buffer[i+1+8]==20) &&
 	      i+1+8+1+2+len+2<buffer_size)
@@ -487,7 +487,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 #endif
 	    if(len2 <= 0)
 	      return 0;
-	    if(1+8+1+2+len+2+len2 > length)
+	    if((unsigned)(1+8+1+2+len+2+len2) > length)
 	      return 0;
 	  }
 	}
