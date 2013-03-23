@@ -31,9 +31,7 @@
 #include "common.h"
 #include "filegen.h"
 
-
 static void register_header_check_reg(file_stat_t *file_stat);
-static int header_check_reg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_reg= {
   .extension="reg",
@@ -58,7 +56,7 @@ struct creg_file_header
   uint32_t uk4;
 } __attribute__ ((__packed__));
 
-typedef struct rgdb_block
+struct rgdb_block
 {
   uint32_t RGDB_ID;		/* RGDB */
   uint32_t size;
