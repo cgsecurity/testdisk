@@ -35,9 +35,7 @@
 extern const file_hint_t file_hint_mkv;
 
 static void register_header_check_mp3(file_stat_t *file_stat);
-static int header_check_id3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static int header_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
 static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i, const unsigned int buffer_size);
@@ -52,14 +50,6 @@ const file_hint_t file_hint_mp3= {
   .register_header_check=&register_header_check_mp3
 };
 
-static const unsigned char id3_header[3]= {'I','D','3'};
-static const unsigned char mp3_header[1]= {0xFF};
-
-static void register_header_check_mp3(file_stat_t *file_stat)
-{
-  register_header_check(0, id3_header,sizeof(id3_header), &header_check_id3, file_stat);
-  register_header_check(0, mp3_header,sizeof(mp3_header), &header_check_mp3, file_stat);
-}
 
 #define MPEG_V25	0
 #define MPEG_V2		0x2
@@ -463,4 +453,12 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
     size+=0x80;	/* TAG footer */
   /* log_trace("search_MMT: MMT found size=%u (0x%x)\n", size, size); */
   return(size);
+}
+
+static void register_header_check_mp3(file_stat_t *file_stat)
+{
+  static const unsigned char id3_header[3]= {'I','D','3'};
+  static const unsigned char mp3_header[1]= {0xFF};
+  register_header_check(0, id3_header,sizeof(id3_header), &header_check_id3, file_stat);
+  register_header_check(0, mp3_header,sizeof(mp3_header), &header_check_mp3, file_stat);
 }
