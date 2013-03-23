@@ -158,7 +158,7 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
   */
 
   /* MPEG-1 system header start code */
-  if((buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01)
+  if((buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01 && buffer[11]==0xff)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
