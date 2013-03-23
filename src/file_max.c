@@ -33,7 +33,6 @@
 
 
 static void register_header_check_max(file_stat_t *file_stat);
-static int header_check_max(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_max= {
   .extension="max",
@@ -45,20 +44,14 @@ const file_hint_t file_hint_max= {
   .register_header_check=&register_header_check_max
 };
 
-static const unsigned char max_header[4]  = { 'V','i','G','F'};
+static int header_check_max(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_max.extension;
+  return 1;
+}
 
 static void register_header_check_max(file_stat_t *file_stat)
 {
-  register_header_check(0, max_header,sizeof(max_header), &header_check_max, file_stat);
-}
-
-static int header_check_max(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,max_header,sizeof(max_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_max.extension;
-    return 1;
-  }
-  return 0;
+  register_header_check(0, "ViGFk", 5, &header_check_max, file_stat);
 }
