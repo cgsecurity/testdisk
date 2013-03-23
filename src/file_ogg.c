@@ -52,7 +52,7 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
 {
   /* http://en.wikipedia.org/wiki/Ogg#File_format */
   /* Return if not Beginning Of Stream and already saving the file */
-  if(buffer[5]&0x02!=0x02 &&
+  if((buffer[5]&0x02)!=0x02 &&
       file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_ogg &&
       (file_recovery->blocksize < (27+255)/2 ||
