@@ -1127,20 +1127,16 @@ static int header_check_smil(const unsigned char *buffer, const unsigned int buf
 
 static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  static const unsigned char spaces[16]={
-    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
-  if(memcmp(buffer+0x40, spaces, sizeof(spaces))!=0)
-  {
-    /* StereoLithography - STL Ascii format
-     * http://www.ennex.com/~fabbers/StL.asp	*/
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->data_check=&data_check_txt;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension="stl";
-    return 1;
-  }
-  return 0;
+  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
+  if(td_memmem(buffer, buffer_size_test, "facet normal", 12)==NULL)
+    return 0;
+  /* StereoLithography - STL Ascii format
+   * http://www.ennex.com/~fabbers/StL.asp	*/
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="stl";
+  return 1;
 }
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
