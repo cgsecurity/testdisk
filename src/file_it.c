@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_it(file_stat_t *file_stat);
-static int header_check_it(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_it= {
   .extension="it",
@@ -43,21 +42,44 @@ const file_hint_t file_hint_it= {
   .register_header_check=&register_header_check_it
 };
 
-static const unsigned char it_header[4]=  {
-  'I' , 'M' , 'P' , 'M' };
-
-static void register_header_check_it(file_stat_t *file_stat)
+/* http://schismtracker.org/wiki/ITTECH.TXT */
+struct impulse_header
 {
-  register_header_check(0, it_header, sizeof(it_header), &header_check_it, file_stat);
-}
+  uint32_t magic;
+  char	   song_name[26];
+  uint16_t PHiligt;
+  uint16_t OrdNum;
+  uint16_t InsNum;
+  uint16_t SmpNum;
+  uint16_t PatNum;
+  uint16_t Cwtv;
+  uint16_t Cmwt;
+  uint16_t Flags;
+  uint16_t Special;
+  uint8_t  GV;
+  uint8_t  MV;
+  uint8_t  IS;
+  uint8_t  IT;
+  uint8_t  Sep;
+  uint8_t  PWD;
+  uint16_t MsgLgth;
+  uint16_t MsgOff;
+  uint32_t Reserved;
+  char     Chnl_Pan[64];
+  char     Chnl_Vol[64];
+} __attribute__ ((__packed__));
 
 static int header_check_it(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], it_header, sizeof(it_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_it.extension;
-    return 1;
-  }
-  return 0;
+  const struct impulse_header *header=(const struct impulse_header *)buffer;
+  if(header->Reserved!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_it.extension;
+  return 1;
+}
+
+static void register_header_check_it(file_stat_t *file_stat)
+{
+  register_header_check(0, "IMPM", 4, &header_check_it, file_stat);
 }
