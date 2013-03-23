@@ -98,10 +98,12 @@ static void file_rename_mov(const char *old_filename)
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   uint64_t i=0;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p')
+  {
+  }
+  else if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
-      file_recovery->calculated_file_size == file_recovery->file_size &&
-      !(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p'))
+      file_recovery->calculated_file_size == file_recovery->file_size)
   { /* PhotoRec is already trying to recover this mov file */
     return 0;
   }
@@ -185,7 +187,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       else if(memcmp(&buffer[i+8], "M4A ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
-	file_recovery_new->extension="acc";
+	/* acc ? */
+	file_recovery_new->extension="m4p";
 	file_recovery_new->data_check=data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
