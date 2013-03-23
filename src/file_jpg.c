@@ -49,6 +49,7 @@
 #include "file_tiff.h"
 #include "setdate.h"
 
+extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_riff;
@@ -259,6 +260,9 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
+      return 0;
+    if(file_recovery->file_stat->file_hint==&file_hint_doc &&
+      strstr(file_recovery->filename, ".albm")!=NULL)
       return 0;
     if( file_recovery->file_stat->file_hint==&file_hint_jpg)
     {
