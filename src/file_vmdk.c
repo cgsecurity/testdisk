@@ -43,55 +43,54 @@ const file_hint_t file_hint_vmdk= {
   .register_header_check=&register_header_check_vmdk
 };
 
-static const unsigned char vmdk_header4[4]= { 'K','D','M','V'};
-static const unsigned char vmdk_header3[4]= { 'C','O','W','D'};
-
+/* http://www.vmware.com/app/vmdk/?src=vmdk */
 typedef struct {
-    uint32_t version;
-    uint32_t flags;
-    uint32_t disk_sectors;
-    uint32_t granularity;
-    uint32_t l1dir_offset;
-    uint32_t l1dir_size;
-    uint32_t file_sectors;
-    uint32_t cylinders;
-    uint32_t heads;
-    uint32_t sectors_per_track;
+  uint32_t magic;
+  uint32_t version;
+  uint32_t flags;
+  uint32_t disk_sectors;
+  uint32_t granularity;
+  uint32_t l1dir_offset;
+  uint32_t l1dir_size;
+  uint32_t file_sectors;
+  uint32_t cylinders;
+  uint32_t heads;
+  uint32_t sectors_per_track;
 } VMDK3Header;
 
 typedef struct {
-    uint32_t version;
-    uint32_t flags;
-    int64_t capacity;
-    int64_t granularity;
-    int64_t desc_offset;
-    int64_t desc_size;
-    int32_t num_gtes_per_gte;
-    int64_t rgd_offset;
-    int64_t gd_offset;
-    int64_t grain_offset;
-    char filler[1];
-    char check_bytes[4];
+  uint32_t magic;
+  uint32_t version;
+  uint32_t flags;
+  int64_t capacity;
+  int64_t granularity;
+  int64_t desc_offset;
+  int64_t desc_size;
+  int32_t num_gtes_per_gte;
+  int64_t rgd_offset;
+  int64_t gd_offset;
+  int64_t grain_offset;
+  char filler[1];
+  char check_bytes[4];
 } __attribute__((packed)) VMDK4Header;
-
-static void register_header_check_vmdk(file_stat_t *file_stat)
-{
-  register_header_check(0, vmdk_header3,sizeof(vmdk_header3), &header_check_vmdk, file_stat);
-  register_header_check(0, vmdk_header4,sizeof(vmdk_header4), &header_check_vmdk, file_stat);
-}
 
 static int header_check_vmdk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,vmdk_header3, sizeof(vmdk_header3))==0 ||
-      memcmp(buffer,vmdk_header4, sizeof(vmdk_header4))==0)
-  {
-    reset_file_recovery(file_recovery_new);
+  reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
-    file_recovery_new->extension="vmd";
+  file_recovery_new->extension="vmd";
 #else
-    file_recovery_new->extension=file_hint_vmdk.extension;
+  file_recovery_new->extension=file_hint_vmdk.extension;
 #endif
-    return 1;
-  }
-  return 0;
+  return 1;
+}
+
+static void register_header_check_vmdk(file_stat_t *file_stat)
+{
+  static const unsigned char vmdk_header3_1[8]= { 'C','O','W','D', 0x01, 0x00, 0x00, 0x00};
+  static const unsigned char vmdk_header4_1[8]= { 'K','D','M','V', 0x01, 0x00, 0x00, 0x00};
+  static const unsigned char vmdk_header4_2[8]= { 'K','D','M','V', 0x02, 0x00, 0x00, 0x00};
+  register_header_check(0, vmdk_header3_1,sizeof(vmdk_header3_1), &header_check_vmdk, file_stat);
+  register_header_check(0, vmdk_header4_1,sizeof(vmdk_header4_1), &header_check_vmdk, file_stat);
+  register_header_check(0, vmdk_header4_2,sizeof(vmdk_header4_2), &header_check_vmdk, file_stat);
 }
