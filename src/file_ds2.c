@@ -29,6 +29,7 @@
 #include <time.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "filegen.h"
 
