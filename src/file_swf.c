@@ -77,7 +77,7 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
     const unsigned int comprLen=(buffer_size<512?buffer_size:512)-8;
     const unsigned int uncomprLen=512-1;
     int err;
-    const unsigned char *data=&buffer_uncompr;
+    const unsigned char *data=(const unsigned char *)&buffer_uncompr;
     unsigned int offset_bit=5;
     unsigned int nbit;
     /* a twip is 1/20th of a logical pixel */
