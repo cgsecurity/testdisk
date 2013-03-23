@@ -61,7 +61,7 @@ static int header_check_orf_IIRO(const unsigned char *buffer, const unsigned int
 
 static void register_header_check_orf(file_stat_t *file_stat)
 {
-  static const unsigned char orf_header_IIRS[4]= { 0x49, 0x49, 0x52, 0x53};
+  static const unsigned char orf_header_IIRS[8]= { 0x49, 0x49, 0x52, 0x53, 0x08, 0x00, 0x00, 0x00};
   static const unsigned char orf_header_IIRO[8]= { 'I', 'I', 'R', 'O', 0x08, 0x00, 0x00, 0x00};
   register_header_check(0, orf_header_IIRS, sizeof(orf_header_IIRS), &header_check_orf_IIRS, file_stat);
   register_header_check(0, orf_header_IIRO, sizeof(orf_header_IIRO), &header_check_orf_IIRO, file_stat);
