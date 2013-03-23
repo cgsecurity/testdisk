@@ -106,13 +106,16 @@ static void file_check_doc(file_recovery_t *file_recovery)
   }
   /* Search how many entries are not used at the end of the FAT */
   for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
-      i>((le32(header->num_FAT_blocks)-1)<<le16(header->uSectorShift))/4 && le32(fat[i])==0xFFFFFFFF;
+      i>0 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
   doc_file_size=512+(((le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
   if(doc_file_size > doc_file_size_org)
   {
 #ifdef DEBUG_OLE
+    log_info("doc_file_size=512+((%u<<%u)/4-%u)<<%u\n",
+	le32(header->num_FAT_blocks), le16(header->uSectorShift),
+	freesect_count, le16(header->uSectorShift));
     log_info("doc_file_size %llu > doc_file_size_org %llu\n",
     (unsigned long long)doc_file_size, (unsigned long long)doc_file_size_org);
 #endif
@@ -219,7 +222,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   /* FFFFFFFE = ENDOFCHAIN
    * Use a loop count i to avoid endless loop */
 #ifdef DEBUG_OLE
-    log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
+    log_info("ole_get_file_extension root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
   for(block=le32(header->root_start_block), i=0;
       block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
