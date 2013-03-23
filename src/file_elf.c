@@ -52,8 +52,8 @@ static int header_check_elf(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_elf(file_stat_t *file_stat)
 {
-  static const unsigned char elf_header16[4]  = { 0x7f, 'E','L','F',0x01};
-  static const unsigned char elf_header32[4]  = { 0x7f, 'E','L','F',0x02};
+  static const unsigned char elf_header16[5]  = { 0x7f, 'E','L','F',0x01};
+  static const unsigned char elf_header32[5]  = { 0x7f, 'E','L','F',0x02};
   register_header_check(0, elf_header16, sizeof(elf_header16), &header_check_elf, file_stat);
   register_header_check(0, elf_header32, sizeof(elf_header32), &header_check_elf, file_stat);
 }
