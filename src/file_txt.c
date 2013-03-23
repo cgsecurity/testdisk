@@ -542,6 +542,10 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
 
 static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+      strcmp(file_recovery->extension,"mbox")==0)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_html;
   file_recovery_new->file_check=&file_check_size;
