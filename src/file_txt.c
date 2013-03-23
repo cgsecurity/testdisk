@@ -984,11 +984,11 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="tex";
     else if(strstr(buffer_lower, "#include")!=NULL)
       ext="c";
-    else if(strstr(buffer_lower, "<%@")!=NULL)
+    else if(l>20 && strstr(buffer_lower, "<%@")!=NULL)
       ext="jsp";
-    else if(strstr(buffer_lower, "<%=")!=NULL)
+    else if(l>20 && strstr(buffer_lower, "<%=")!=NULL)
       ext="jsp";
-    else if(strstr(buffer_lower, "<% ")!=NULL)
+    else if(l>20 && strstr(buffer_lower, "<% ")!=NULL)
       ext="asp";
     else if(strstr(buffer_lower, "<html")!=NULL)
       ext="html";
