@@ -1120,7 +1120,7 @@ static int file_clean(disk_t *disk_car)
 
 static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
 {
-  long int ret=-1;
+  long int ret;
   int fd=((struct info_file_struct *)disk->data)->handle;
 #if defined(__CYGWIN__)
   if(lseek(fd,offset,SEEK_SET) < 0)
@@ -1249,7 +1249,7 @@ static void *file_pread_fast(disk_t *disk, void *buf, const unsigned int count, 
 static int file_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   int fd=((struct info_file_struct *)disk_car->data)->handle;
-  long int ret=-1;
+  long int ret;
 #if defined(HAVE_PWRITE) && !defined(__CYGWIN__)
   ret=pwrite(fd,buf,count,offset);
   if(ret<0 && errno == ENOSYS)
