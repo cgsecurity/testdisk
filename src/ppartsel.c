@@ -79,7 +79,6 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   list_part_t *list_part;
   list_part_t *current_element;
   unsigned int current_element_num;
-  unsigned int carve_free_space_only=0;
   unsigned int user_blocksize=0;
   int done=0;
   int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
@@ -178,13 +177,13 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	  {
 	    init_search_space(list_search_space, params->disk, params->partition);
 	  }
-	  if(carve_free_space_only>0)
+	  if(params->carve_free_space_only>0)
 	  {
 	    params->blocksize=remove_used_space(params->disk, params->partition, list_search_space);
 	  }
 	  if(user_blocksize > 0)
 	    params->blocksize=user_blocksize;
-	  photorec(params, options, list_search_space, carve_free_space_only);
+	  photorec(params, options, list_search_space);
 	}
       }
       else if(strncmp(params->cmd_run,"options",7)==0)
@@ -216,12 +215,12 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       else if(strncmp(params->cmd_run,"wholespace",10)==0)
       {
 	params->cmd_run+=10;
-	carve_free_space_only=0;
+	params->carve_free_space_only=0;
       }
       else if(strncmp(params->cmd_run,"freespace",9)==0)
       {
 	params->cmd_run+=9;
-	carve_free_space_only=1;
+	params->carve_free_space_only=1;
       }
       else if(strncmp(params->cmd_run,"ext2_group,",11)==0)
       {
@@ -387,7 +386,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	  if(current_element!=NULL)
 	  {
 	    params->partition=current_element->part;
-	    ask_mode_ext2(params->disk, params->partition, &options->mode_ext2, &carve_free_space_only);
+	    ask_mode_ext2(params->disk, params->partition, &options->mode_ext2, &params->carve_free_space_only);
 	    menu=0;
 	    if(params->recup_dir==NULL)
 	    {
@@ -408,7 +407,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	      {
 		init_search_space(list_search_space, params->disk, params->partition);
 	      }
-	      if(carve_free_space_only>0)
+	      if(params->carve_free_space_only>0)
 	      {
 		aff_copy(stdscr);
 		wmove(stdscr,5,0);
@@ -419,7 +418,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 		 * To carve the whole space, need to quit and reselect the params->partition */
 		done = 1;
 	      }
-	      photorec(params, options, list_search_space, carve_free_space_only);
+	      photorec(params, options, list_search_space);
 	    }
 	  }
 	  break;

@@ -150,7 +150,7 @@ static FILE *fopen_with_retry(const char *path, const char *mode)
 }
 #endif
 
-static alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, const unsigned int content)
+static inline alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, const unsigned int content)
 {
   if(!(data->start <= offset && offset <= data->end))
   {
@@ -197,6 +197,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   unsigned char *buffer;
   time_t start_time;
   time_t previous_time;
+  time_t next_checkpoint;
   int ind_stop=0;
   unsigned int buffer_size;
   const unsigned int blocksize=params->blocksize; 
@@ -212,6 +213,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   buffer=buffer_olddata+blocksize;
   start_time=time(NULL);
   previous_time=start_time;
+  next_checkpoint=start_time+5*60;
   memset(buffer_olddata,0,blocksize);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
   offset=set_search_start(params, &current_search_space, list_search_space);
@@ -477,6 +479,12 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 	    params->offset=file_recovery.location.start;
 	  else
 	    params->offset=offset;
+	  if(current_time >= next_checkpoint)
+	  {
+	    /* Save current progress */
+	    session_save(list_search_space, params, options);
+	    next_checkpoint=current_time+5*60;
+	  }
         }
       }
 #endif
@@ -732,7 +740,7 @@ static void test_files(alloc_data_t *list_search_space, struct ph_param *params)
 }
 #endif
 
-int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned int carve_free_space_only)
+int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   int ind_stop=0;
   const unsigned int blocksize_is_known=params->blocksize;
@@ -873,7 +881,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     {
       ind_stop=photorec_aux(params, options, list_search_space);
     }
-    session_save(list_search_space, params, options, carve_free_space_only);
+    session_save(list_search_space, params, options);
 
     if(ind_stop==3)
     { /* no more space */
@@ -913,7 +921,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     }
     else if(ind_stop==1)
     {
-      if(session_save(list_search_space, params, options, carve_free_space_only) < 0)
+      if(session_save(list_search_space, params, options) < 0)
       {
 	/* Failed to save the session! */
 #ifdef HAVE_NCURSES

@@ -44,6 +44,7 @@ struct ph_param
   char *cmd_run;
   disk_t *disk;
   partition_t *partition;
+  unsigned int carve_free_space_only;
   unsigned int blocksize;
   unsigned int pass;
   photorec_status_t status;

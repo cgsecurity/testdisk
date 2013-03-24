@@ -122,6 +122,7 @@ int main( int argc, char **argv )
   params.recup_dir=NULL;
   params.cmd_device=NULL;
   params.cmd_run=NULL;
+  params.carve_free_space_only=0;
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION

@@ -67,7 +67,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   if(!f_session)
   {
     log_info("Can't open photorec.ses file: %s\n",strerror(errno));
-    session_save(NULL, NULL, NULL, 0);
+    session_save(NULL, NULL, NULL);
     return -1;
   }
   if(fstat(fileno(f_session), &stat_rec)<0)
@@ -158,7 +158,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   }
 }
 
-int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options, const unsigned int carve_free_space_only)
+int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options)
 {
   FILE *f_session;
   f_session=fopen(SESSION_FILENAME,"wb");
@@ -248,7 +248,7 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
     if(options->lowmem>0)
       fprintf(f_session, "lowmem,");
     /* Save options - End */
-    if(carve_free_space_only>0)
+    if(params->carve_free_space_only>0)
       fprintf(f_session,"freespace,");
     else
       fprintf(f_session,"wholespace,");

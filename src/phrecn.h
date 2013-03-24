@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned int carve_free_space_only);
+int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 void interface_file_select(file_enable_t *files_enable, char**current_cmd);
 void interface_options_photorec(struct ph_options *options, char**current_cmd);
 
