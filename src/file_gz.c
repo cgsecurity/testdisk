@@ -71,7 +71,6 @@ static void register_header_check_gz(file_stat_t *file_stat)
 
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
   unsigned int off=10;
   const unsigned int flags=buffer[3];
   /* gzip file format:
@@ -117,6 +116,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   {
     static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,
       'S', 'c', 'h', 'e', 'm', 'a', 't', 'i', 'c'};
+    static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
     const unsigned char *buffer_compr=buffer+off;
     unsigned char buffer_uncompr[512];
     const unsigned int comprLen=(buffer_size<512?buffer_size:512)-off;
