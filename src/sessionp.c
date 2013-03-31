@@ -180,8 +180,11 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
     {
       log_trace("session_save\n");
     }
-    fprintf(f_session,"#%u\n%s %s,%u,blocksize,%u,fileopt,",
-	(unsigned int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order, params->blocksize);
+    fprintf(f_session,"#%u\n%s %s,%u",
+	(unsigned int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order);
+    if(params->blocksize>0)
+      fprintf(f_session,"blocksize,%u,", params->blocksize);
+    fprintf(f_session,"fileopt,");
     for(i=0;files_enable[i].file_hint!=NULL;i++)
     {
       if(files_enable[i].enable==0)
