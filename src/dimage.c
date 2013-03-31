@@ -137,6 +137,27 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   wprintw(window,"%s\n",disk->description_short(disk));
   wmove(window,6,0);
   aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
+  wmove(window,10,0);
+  waddstr(window, "Disk images are mainly used ");
+  wmove(window,11,0);
+  waddstr(window, "- for forensics purpose");
+  wmove(window,12,0);
+  waddstr(window, "- or to deal with media with bad sectors");
+#ifdef WIN32
+  wmove(window,14,0);
+  waddstr(window, "To use TestDisk or PhotoRec with this disk image, go in command line and run");
+  wmove(window,15,0);
+  waddstr(window, "   testdisk_win.exe image.dd");
+  wmove(window,16,0);
+  waddstr(window, "or photorec_win.exe image.dd");
+#else
+  wmove(window,14,0);
+  waddstr(window, "To use TestDisk or PhotoRec with this disk image, start a Terminal and run");
+  wmove(window,15,0);
+  waddstr(window, "   testdisk image.dd");
+  wmove(window,16,0);
+  waddstr(window, "or photorec image.dd");
+#endif
   wmove(window,22,0);
   wattrset(window, A_REVERSE);
   waddstr(window,"  Stop  ");
