@@ -212,7 +212,9 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   disk_t *disk=params->disk;
   const partition_t *partition=params->partition;
   const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
+  log_info("fat_unformat_aux: no_of_cluster=%lu\n", no_of_cluster);
 
+  aff_copy(stdscr);
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=cluster_size;
   buffer_start=(unsigned char *)MALLOC(READ_SIZE);
@@ -249,21 +251,23 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	current_file=dir_list;
 	while(current_file!=NULL)
 	{
-	  if(current_file->st_ino<2 ||
+	  if(current_file->st_ino==1 ||
 	      current_file->st_ino >= no_of_cluster+2)
 	    current_file=NULL;
 	  else if(LINUX_S_ISDIR(current_file->st_mode)!=0)
 	  {
-	    if(strcmp(current_file->name,".")==0)
+	    if(strcmp(current_file->name,"..")==0)
+	    {
+	      if(current_file!=dir_list->next)
+		current_file=NULL;
+	    }
+	    else if(current_file->st_ino==0)
+	      current_file=NULL;
+	    else if(strcmp(current_file->name,".")==0)
 	    {
 	      if(current_file==dir_list)
 		dir_inode=current_file->st_ino;
 	      else
-		current_file=NULL;
-	    }
-	    else if(strcmp(current_file->name,"..")==0)
-	    {
-	      if(current_file!=dir_list->next)
 		current_file=NULL;
 	    }
 	    else
@@ -286,7 +290,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	  {
 	    const uint64_t file_start=start_data + (uint64_t)(current_file->st_ino - 2) * cluster_size;
 	    const uint64_t file_end=file_start+(current_file->st_size+cluster_size-1)/cluster_size*cluster_size - 1;
-	    if(file_end < partition->part_offset + partition->part_size)
+	    if(file_end < partition->part_offset + partition->part_size && current_file->st_ino>0)
 	    {
 	      if(fat_copy_file(disk, partition, cluster_size, start_data, params->recup_dir, params->dir_num, dir_inode, current_file)==0)
 	      {
