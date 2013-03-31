@@ -236,6 +236,7 @@ extern const file_hint_t file_hint_rw2;
 extern const file_hint_t file_hint_rx2;
 extern const file_hint_t file_hint_save;
 extern const file_hint_t file_hint_ses;
+extern const file_hint_t file_hint_shn;
 extern const file_hint_t file_hint_sib;
 extern const file_hint_t file_hint_sig;
 extern const file_hint_t file_hint_sit;
@@ -500,6 +501,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_rx2  },
   { .enable=0, .file_hint=&file_hint_save  },
   { .enable=0, .file_hint=&file_hint_ses  },
+  { .enable=0, .file_hint=&file_hint_shn  },
   { .enable=0, .file_hint=&file_hint_sib  },
   { .enable=0, .file_hint=&file_hint_sit  },
   { .enable=0, .file_hint=&file_hint_skd  },
