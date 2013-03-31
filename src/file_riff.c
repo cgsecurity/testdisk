@@ -268,6 +268,12 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     /* MIDI Instruments Definition File */
     else if(memcmp(&buffer[8],"IDF LIST",8)==0)
       file_recovery_new->extension="idf";
+    /* Autogen http://www.fsdeveloper.com/wiki/index.php?title=AGN_%28FSX%29 */
+    else if(memcmp(&buffer[8],"AGNX",4)==0)
+      file_recovery_new->extension="agn";
+    /* http://www.fsdeveloper.com/wiki/index.php?title=MDL_file_format_%28FSX%29 */
+    else if(memcmp(&buffer[8],"MDLX",4)==0)
+      file_recovery_new->extension="mdl";
     else
       file_recovery_new->extension="avi";
     return 1;
