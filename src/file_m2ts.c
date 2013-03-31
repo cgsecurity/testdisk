@@ -54,6 +54,7 @@ const file_hint_t file_hint_ts= {
 };
 
 static const unsigned char hdmv_header[4] = { 'H','D','M','V'};
+static const unsigned char hdpr_header[4] = { 'H','D','P','R'};
 static const unsigned char tshv_header[4] = { 'T','S','H','V'};
 static const unsigned char sdvs_header[4] = { 'S','D','V','S'};
 
@@ -82,18 +83,22 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   if(i<buffer_size)
     return 0;
   reset_file_recovery(file_recovery_new);
-  if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 &&
-      memcmp(&buffer[0xe8], hdmv_header, sizeof(hdmv_header))==0)
+  if( memcmp(&buffer[0xd7], &buffer[0xe8], 4)==0)
   {
+    if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 ||
+	memcmp(&buffer[0xd7], hdpr_header, sizeof(hdpr_header))==0)
+    {
 #ifdef DJGPP
-    file_recovery_new->extension="m2t";
+      file_recovery_new->extension="m2t";
 #else
-    file_recovery_new->extension=file_hint_m2ts.extension;
+      file_recovery_new->extension=file_hint_m2ts.extension;
 #endif
+    }
+    else if( memcmp(&buffer[0xd7], sdvs_header, sizeof(sdvs_header))==0)
+      file_recovery_new->extension="tod";
+    else
+      file_recovery_new->extension="ts";
   }
-  else if( memcmp(&buffer[0xd7], sdvs_header, sizeof(sdvs_header))==0 &&
-      memcmp(&buffer[0xe8], sdvs_header, sizeof(sdvs_header))==0)
-    file_recovery_new->extension="tod";
   else
     file_recovery_new->extension="ts";
   file_recovery_new->min_filesize=192;
@@ -147,6 +152,7 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_m2ts(file_stat_t *file_stat)
 {
   register_header_check(0xd7, hdmv_header, sizeof(hdmv_header), &header_check_m2ts, file_stat);
+  register_header_check(0xd7, hdpr_header, sizeof(hdpr_header), &header_check_m2ts, file_stat);
   register_header_check(0xd7, sdvs_header, sizeof(sdvs_header), &header_check_m2ts, file_stat);
   register_header_check(0x18b, tshv_header, sizeof(tshv_header), &header_check_m2t,  file_stat);
 }
