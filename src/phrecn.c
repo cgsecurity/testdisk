@@ -202,6 +202,8 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   unsigned int buffer_size;
   const unsigned int blocksize=params->blocksize; 
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
+  uint64_t offset_before_back=0;
+  unsigned int back=0;
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
   memset(&file_recovery, 0, sizeof(file_recovery));
@@ -421,11 +423,18 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
     else if(file_recovered==0)
     {
       get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
+      if(offset > offset_before_back)
+	back=0;
     }
     else if(file_recovered>0)
     {
       /* try to recover the previous file, otherwise stay at the current location */
-      get_prev_file_header(list_search_space, &current_search_space, &offset);
+      offset_before_back=offset;
+      if(back < 10 &&
+	  get_prev_file_header(list_search_space, &current_search_space, &offset)==0)
+	back++;
+      else
+	back=0;
     }
     if(current_search_space==list_search_space)
     {
