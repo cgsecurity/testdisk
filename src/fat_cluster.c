@@ -65,7 +65,9 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
 	(unsigned long)(skip_offset/disk_car->sector_size),
 	(unsigned long)skip_offset);
   }
-  for(offset=skip_offset;(offset<partition->part_size)&&!ind_stop&&(nbr_subdir<10);offset+=disk_car->sector_size)
+  for(offset=skip_offset;
+      offset<partition->part_size && !ind_stop && nbr_subdir<10;
+      offset+=disk_car->sector_size)
   {
 #ifdef HAVE_NCURSES
     if(interface>0 && ((offset&(1024*disk_car->sector_size-1))==0))
