@@ -240,6 +240,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
           new_free_space->start=groupnr;
           new_free_space->end=groupnr;
           new_free_space->file_stat=NULL;
+	  new_free_space->data=1;
           if(td_list_add_sorted_uniq(&new_free_space->list, &list_search_space->list, spacerange_cmp))
 	    free(new_free_space);
         }
@@ -262,6 +263,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
           new_free_space->start=inodenr;
           new_free_space->end=inodenr;
           new_free_space->file_stat=NULL;
+	  new_free_space->data=1;
           if(td_list_add_sorted_uniq(&new_free_space->list, &list_search_space->list, spacerange_cmp))
 	    free(new_free_space);
         }

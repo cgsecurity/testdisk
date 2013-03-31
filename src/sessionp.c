@@ -148,6 +148,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
       new_free_space->start=start;
       new_free_space->end=end;
       new_free_space->file_stat=NULL;
+      new_free_space->data=1;
       td_list_add_tail(&new_free_space->list, &list_free_space->list);
 #ifdef DEBUG
       log_trace(">%lu-%lu<\n", start, end);

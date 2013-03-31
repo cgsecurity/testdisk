@@ -108,6 +108,7 @@ static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *li
       new_free_space->start=file_recovery->location.start;
       new_free_space->end=current_search_space->end;
       new_free_space->file_stat=NULL;
+      new_free_space->data=1;
       current_search_space->end=file_recovery->location.start-1;
       td_list_add(&new_free_space->list, search_walker);
     }
@@ -257,6 +258,7 @@ static void update_search_space_aux(alloc_data_t *list_search_space, const uint6
       new_free_space->start=start;
       new_free_space->end=current_search_space->end;
       new_free_space->file_stat=NULL;
+      new_free_space->data=1;
       current_search_space->end=start-1;
       td_list_add(&new_free_space->list,search_walker);
       if(offset!=NULL && new_current_search_space!=NULL &&
@@ -281,6 +283,7 @@ void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, 
   if(new_sp->end > disk_car->disk_real_size-1)
     new_sp->end = disk_car->disk_real_size-1;
   new_sp->file_stat=NULL;
+  new_sp->data=1;
   new_sp->list.prev=&new_sp->list;
   new_sp->list.next=&new_sp->list;
   td_list_add_tail(&new_sp->list, &list_search_space->list);
@@ -548,10 +551,14 @@ void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, c
   struct td_list_head *search_walker_next = NULL;
   td_list_for_each_safe(search_walker,search_walker_next,&list_search_space->list)
   {
+    uint64_t old_start;
     alloc_data_t *current_search_space;
     current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    old_start=current_search_space->start;
     current_search_space->start=(current_search_space->start-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize;
-    if(current_search_space->start>current_search_space->end)
+    if(current_search_space->start!=old_start)
+      current_search_space->file_stat=NULL;
+    if(current_search_space->start>=current_search_space->end)
     {
       td_list_del(search_walker);
       free(current_search_space);
@@ -882,6 +889,7 @@ static alloc_data_t *file_error_aux(alloc_data_t *space, alloc_data_t *file, con
 	  memcpy(new_element, element, sizeof(*new_element));
 	  new_element->start+=file_size_on_disk - size;
 	  new_element->file_stat=NULL;
+	  new_element->data=1;
 	  td_list_add(&new_element->list, &element->list);
 	  element->end=new_element->start - 1;
 	  return new_element;
@@ -944,7 +952,8 @@ static void set_search_start_aux(alloc_data_t **new_current_search_space, alloc_
     }
   }
   /* not found */
-  *new_current_search_space=list_search_space;
+  search_walker=list_search_space->list.next;
+  *new_current_search_space=td_list_entry(search_walker, alloc_data_t, list);
 }
 
 uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space)
