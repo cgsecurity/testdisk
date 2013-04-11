@@ -697,7 +697,8 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
       return 0;
   }
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=NULL;
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
   /* Incredimail has .imm extension but this extension isn't frequent */
   file_recovery_new->extension="mbox";
   return 1;
@@ -1153,7 +1154,11 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "<!DOCTYPE HTML",	14, &header_check_html, file_stat);
   register_header_check(0, "BEGIN:VCALENDAR",	15, &header_check_ics, file_stat);
   register_header_check(0, "From ",		 5, &header_check_mbox, file_stat);
+  register_header_check(0, "Message-ID: ",	12, &header_check_mbox, file_stat);
   register_header_check(0, "MIME-Version:",	13, &header_check_mbox, file_stat);
+  register_header_check(0, "Received: from ",	15, &header_check_mbox, file_stat);
+  register_header_check(0, "Reply-To: ",	10, &header_check_mbox, file_stat);
+  register_header_check(0, "Return-path: ",	13, &header_check_mbox, file_stat);
   register_header_check(0, "Return-Path: ",	13, &header_check_mbox, file_stat);
   register_header_check(0, "package ",		 8, &header_check_perlm, file_stat);
   register_header_check(0, "package\t", 	 8, &header_check_perlm, file_stat);
