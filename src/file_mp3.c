@@ -457,8 +457,17 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
 
 static void register_header_check_mp3(file_stat_t *file_stat)
 {
-  static const unsigned char id3_header[3]= {'I','D','3'};
-  static const unsigned char mp3_header[1]= {0xFF};
-  register_header_check(0, id3_header,sizeof(id3_header), &header_check_id3, file_stat);
-  register_header_check(0, mp3_header,sizeof(mp3_header), &header_check_mp3, file_stat);
+  static const unsigned char mpeg1_L3_header1[2]= {0xFF, 0xFA};
+  static const unsigned char mpeg1_L3_header2[2]= {0xFF, 0xFB};
+  static const unsigned char mpeg2_L3_header1[2]= {0xFF, 0xF2};
+  static const unsigned char mpeg2_L3_header2[2]= {0xFF, 0xF3};
+  static const unsigned char mpeg25_L3_header1[2]={0xFF, 0xE2};
+  static const unsigned char mpeg25_L3_header2[2]={0xFF, 0xE3};
+  register_header_check(0, "ID3", 3, &header_check_id3, file_stat);
+  register_header_check(0, mpeg1_L3_header1, sizeof(mpeg1_L3_header1), &header_check_mp3, file_stat);
+  register_header_check(0, mpeg1_L3_header2, sizeof(mpeg1_L3_header2), &header_check_mp3, file_stat);
+  register_header_check(0, mpeg2_L3_header1, sizeof(mpeg2_L3_header1), &header_check_mp3, file_stat);
+  register_header_check(0, mpeg2_L3_header2, sizeof(mpeg2_L3_header2), &header_check_mp3, file_stat);
+  register_header_check(0, mpeg25_L3_header1, sizeof(mpeg25_L3_header1), &header_check_mp3, file_stat);
+  register_header_check(0, mpeg25_L3_header2, sizeof(mpeg25_L3_header2), &header_check_mp3, file_stat);
 }
