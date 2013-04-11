@@ -941,6 +941,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
   if(l<10)
     return 0;
+  {
+    unsigned int line_nbr=0;
+    unsigned int i;
+    for(i=0; i<512 && i<l; i++)
+    {
+      if(buffer[i]=='\n')
+	line_nbr++;
+    }
+    /* A text file must contains several lines */
+    if(line_nbr==0)
+      return 0;
+  }
   if(strncasecmp((const char *)buffer, "rem ", 4)==0)
   {
     reset_file_recovery(file_recovery_new);
