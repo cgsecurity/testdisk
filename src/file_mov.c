@@ -214,13 +214,11 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
-      else if(memcmp(&buffer[i+8], "jp2", 3)==0)
+      else if(memcmp(&buffer[i+8], "jp2 ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="jp2";
-	file_recovery_new->data_check=data_check_mov;
-	file_recovery_new->file_check=&file_check_size;
-	file_recovery_new->calculated_file_size=i+atom_size;
+	/* jP + ftyp "jp2 " + jp2h + jp2c (atom_size=0) => no data check */
 	return 1;
       }
       else if(memcmp(&buffer[i+8], "qt  ", 4)==0)
