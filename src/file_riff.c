@@ -47,9 +47,6 @@ const file_hint_t file_hint_riff= {
   .register_header_check=&register_header_check_riff
 };
 
-static const unsigned char riff_header[4]= {'R','I','F','F'};
-static const unsigned char rifx_header[4]= {'R','I','F','X'};
-
 typedef struct {
   uint32_t dwFourCC;
   uint32_t dwSize;
@@ -211,80 +208,83 @@ static void file_check_size_rifx(file_recovery_t *file_recovery)
 
 static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,riff_header,sizeof(riff_header))==0)
+  if(!( buffer[8]>='A' && buffer[8]<='Z' &&
+	buffer[9]>='A' && buffer[9]<='Z' &&
+	buffer[10]>='A' && buffer[10]<='Z' &&
+	((buffer[11]>='A' && buffer[11]<='Z') || buffer[11]==' ' ||
+	 (buffer[11]>='0' && buffer[11]<='9'))))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
+  if(memcmp(&buffer[8],"NUND",4)==0)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
-    if(memcmp(&buffer[8],"NUND",4)==0)
-    {
-      /* Cubase Project File */
-      file_recovery_new->extension="cpr";
-      file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
-	(((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
-	(uint64_t)buffer[7] + 12;
-      return 1;
-    }
-    /* Windows Animated Cursor */
-    else if(memcmp(&buffer[8],"ACON",4)==0)
-    {
-      file_recovery_new->extension="ani";
-      return 1;
-    }
-    file_recovery_new->calculated_file_size+=8;
-    if(memcmp(&buffer[8],"AVI ",4)==0)
-    {
-      const riff_list_header list_movi={
-	.dwList=be32(0x4c495354),	/* LIST */
-	.dwSize=le32(4),
-	.dwFourCC=be32(0x6d6f7669)	/* movi */
-      };
-      file_recovery_new->extension="avi";
-      /* Is it a raw avi stream with Data Binary chunks ? */
-      if(file_recovery_new->calculated_file_size + 4 < buffer_size &&
-	memcmp(&buffer[file_recovery_new->calculated_file_size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
-	  buffer[file_recovery_new->calculated_file_size+2]=='d' &&
-	  buffer[file_recovery_new->calculated_file_size+3]=='b')
-      {
-	file_recovery_new->data_check=&data_check_avi_stream;
-      }
-      else
-      {
-	file_recovery_new->data_check=&data_check_avi;
-	file_recovery_new->file_check=&file_check_avi;
-      }
-      return 1;
-    }
-    if(memcmp(&buffer[8],"CDDA",4)==0)
-      file_recovery_new->extension="cda";
-    else if(memcmp(&buffer[8],"CDR",3)==0 || memcmp(&buffer[8],"cdr6",4)==0)
-      file_recovery_new->extension="cdr";
-    else if(memcmp(&buffer[8],"RMP3",4)==0 || memcmp(&buffer[8],"WAVE",4)==0)
-      file_recovery_new->extension="wav";
-    /* MIDI sound file */
-    else if(memcmp(&buffer[8],"RMID",4)==0)
-      file_recovery_new->extension="mid";
-    /* MIDI Instruments Definition File */
-    else if(memcmp(&buffer[8],"IDF LIST",8)==0)
-      file_recovery_new->extension="idf";
-    /* Autogen http://www.fsdeveloper.com/wiki/index.php?title=AGN_%28FSX%29 */
-    else if(memcmp(&buffer[8],"AGNX",4)==0)
-      file_recovery_new->extension="agn";
-    /* http://www.fsdeveloper.com/wiki/index.php?title=MDL_file_format_%28FSX%29 */
-    else if(memcmp(&buffer[8],"MDLX",4)==0)
-      file_recovery_new->extension="mdl";
-    else
-      file_recovery_new->extension="avi";
+    /* Cubase Project File */
+    file_recovery_new->extension="cpr";
+    file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
+      (((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
+      (uint64_t)buffer[7] + 12;
     return 1;
   }
-  return 0;
+  /* Windows Animated Cursor */
+  else if(memcmp(&buffer[8],"ACON",4)==0)
+  {
+    file_recovery_new->extension="ani";
+    return 1;
+  }
+  file_recovery_new->calculated_file_size+=8;
+  if(memcmp(&buffer[8],"AVI ",4)==0)
+  {
+    const riff_list_header list_movi={
+      .dwList=be32(0x4c495354),	/* LIST */
+      .dwSize=le32(4),
+      .dwFourCC=be32(0x6d6f7669)	/* movi */
+    };
+    file_recovery_new->extension="avi";
+    /* Is it a raw avi stream with Data Binary chunks ? */
+    if(file_recovery_new->calculated_file_size + 4 < buffer_size &&
+	memcmp(&buffer[file_recovery_new->calculated_file_size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
+	buffer[file_recovery_new->calculated_file_size+2]=='d' &&
+	buffer[file_recovery_new->calculated_file_size+3]=='b')
+    {
+      file_recovery_new->data_check=&data_check_avi_stream;
+    }
+    else
+    {
+      file_recovery_new->data_check=&data_check_avi;
+      file_recovery_new->file_check=&file_check_avi;
+    }
+    return 1;
+  }
+  if(memcmp(&buffer[8],"CDDA",4)==0)
+    file_recovery_new->extension="cda";
+  else if(memcmp(&buffer[8],"CDR",3)==0 || memcmp(&buffer[8],"cdr6",4)==0)
+    file_recovery_new->extension="cdr";
+  else if(memcmp(&buffer[8],"RMP3",4)==0 || memcmp(&buffer[8],"WAVE",4)==0)
+    file_recovery_new->extension="wav";
+  /* MIDI sound file */
+  else if(memcmp(&buffer[8],"RMID",4)==0)
+    file_recovery_new->extension="mid";
+  /* MIDI Instruments Definition File */
+  else if(memcmp(&buffer[8],"IDF LIST",8)==0)
+    file_recovery_new->extension="idf";
+  /* Autogen http://www.fsdeveloper.com/wiki/index.php?title=AGN_%28FSX%29 */
+  else if(memcmp(&buffer[8],"AGNX",4)==0)
+    file_recovery_new->extension="agn";
+  /* http://www.fsdeveloper.com/wiki/index.php?title=MDL_file_format_%28FSX%29 */
+  else if(memcmp(&buffer[8],"MDLX",4)==0)
+    file_recovery_new->extension="mdl";
+  /* RFC3625  The QCP File Format and Media Types for Speech Data */
+  else if(memcmp(&buffer[8],"QLCM",4)==0)
+    file_recovery_new->extension="qcp";
+  else
+    file_recovery_new->extension="avi";
+  return 1;
 }
 
 static int header_check_rifx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,rifx_header,sizeof(rifx_header))!=0)
-    return 0;
   if(memcmp(&buffer[8],"Egg!",4)==0)
   {
     /* After Effects */
@@ -299,8 +299,6 @@ static int header_check_rifx(const unsigned char *buffer, const unsigned int buf
 
 static void register_header_check_riff(file_stat_t *file_stat)
 {
-  register_header_check(0, riff_header,sizeof(riff_header), &header_check_riff, file_stat);
-  register_header_check(0, rifx_header,sizeof(rifx_header), &header_check_rifx, file_stat);
+  register_header_check(0, "RIFF", 4, &header_check_riff, file_stat);
+  register_header_check(0, "RIFX", 4, &header_check_rifx, file_stat);
 }
-
-
