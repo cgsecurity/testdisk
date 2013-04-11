@@ -96,6 +96,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 #endif
       return 0;
     }
+    file_recovery_new->time=le32(pe_hdr->TimeDateStamp);
 #ifdef DEBUG_EXE
     {
       const struct pe_image_optional_hdr32 *pe_image_optional32=(const struct pe_image_optional_hdr32 *)
