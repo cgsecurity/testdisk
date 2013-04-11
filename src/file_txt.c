@@ -920,12 +920,47 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   {
     return 0;
   }
-  /* Don't search text in the beginning of JPG or inside pdf */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      ((file_recovery->file_stat->file_hint==&file_hint_jpg && file_recovery->file_size < file_recovery->min_filesize) ||
-       file_recovery->file_stat->file_hint==&file_hint_pdf))
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
   {
-    return 0;
+    if(file_recovery->file_stat->file_hint == &file_hint_doc)
+    {
+      if(strstr(file_recovery->filename,".doc")==NULL)
+	return 0;
+    }
+    else if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
+    file_recovery->file_stat->file_hint == &file_hint_txt)
+    {
+      if(strstr(file_recovery->filename,".html")==NULL)
+	return 0;
+    }
+    else if(file_recovery->file_stat->file_hint == &file_hint_jpg)
+    {
+      /* Don't search text at the beginning of JPG */
+      if(file_recovery->file_size < file_recovery->min_filesize)
+	return 0;
+      /* Text should not be found in JPEG */
+      if(td_memmem(buffer, buffer_size_test, "8BIM", 4)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "adobe", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "exif:", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<rdf:", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<?xpacket", 9)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<dict>", 6)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "[camera info]", 13)!=NULL)
+	return 0;
+    }
+    else if(file_recovery->file_stat->file_hint == &file_hint_zip)
+    {
+      const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
+      /* .sh3d may contain text */
+      if(strstr(file_recovery->filename, ".sh3d")!=NULL)
+	return 0;
+      /* Return if still in a zip */
+      if(td_memmem(buffer, buffer_size_test, zip_header, 4)!=NULL)
+	return 0;
+    }
+    else
+      return 0;
   }
   if(buffer_lower_size<buffer_size_test+16)
   {
@@ -1084,75 +1119,44 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     }
     if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
     {
-      const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
-      if(file_recovery->file_stat->file_hint==&file_hint_txt &&
-	  strcmp(ext,"html")==0)
-      {
-	return 0;
-      }
-
-      /* Special case: doc, texte files
-Unix: \n (0xA)
-Dos: \r\n (0xD 0xA)
-Doc: \r (0xD)
-*/
-      if(file_recovery->file_stat->file_hint==&file_hint_doc &&
-	  strstr(file_recovery->filename,".doc")!=NULL)
+      if(file_recovery->file_stat->file_hint == &file_hint_doc)
       {
 	unsigned int i;
 	unsigned int txt_nl=0;
+	/* file_recovery->filename is .doc */
 	if(ind>0.20)
 	  return 0;
-	for(i=0;i<l-1;i++)
+	/* Unix: \n (0xA)
+	 * Dos: \r\n (0xD 0xA)
+	 * Doc: \r (0xD) */
+	for(i=0; i<l-1; i++)
+	{
 	  if(buffer_lower[i]=='\r' && buffer_lower[i+1]!='\n')
-	  {
 	    return 0;
-	  }
-	for(i=0;i<l && i<512;i++)
+	}
+	for(i=0; i<l && i<512; i++)
 	  if(buffer_lower[i]=='\n')
 	    txt_nl++;
-	if(txt_nl==0)
+	if(txt_nl<=1)
 	  return 0;
-	/* log_trace(">%s<\ndoc => %s\n",buffer_lower,ext); */
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->data_check=&data_check_txt;
-	file_recovery_new->file_check=&file_check_size;
-	file_recovery_new->extension=ext;
-	return 1;
       }
-      buffer_lower[511]='\0';
-      /* Special case: two consecutive HTML files */
-      if((strcmp(ext,"html")==0 &&
-	    strstr(buffer_lower, "<html")!=NULL &&
-	    strstr(file_recovery->filename,".html")!=NULL) ||
-	  /* Text should not be found in JPEG */
-	  (file_recovery->file_stat->file_hint==&file_hint_jpg &&
-	   td_memmem(buffer, buffer_size_test, "8BIM", 4)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "adobe", 5)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "exif:", 5)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "<rdf:", 5)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "<?xpacket", 9)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "<dict>", 6)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)==NULL &&
-	   td_memmem(buffer, buffer_size_test, "[camera info]", 13)==NULL) ||
-	  /* Text should not be found in zip because of compression except .sh3d */
-	  (file_recovery->file_stat->file_hint==&file_hint_zip &&
-	   td_memmem(buffer, buffer_size_test, zip_header, 4)==NULL &&
-	   strstr(file_recovery->filename, ".sh3d")==NULL))
+      else if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
+	  file_recovery->file_stat->file_hint == &file_hint_txt)
       {
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->data_check=&data_check_txt;
-	file_recovery_new->file_check=&file_check_size;
-	file_recovery_new->extension=ext;
-	return 1;
+	/* file_recovery->filename is a .html */
+	buffer_lower[511]='\0';
+	if(strstr(buffer_lower, "<html")==NULL)
+	  return 0;
+	/* Special case: two consecutive HTML files */
       }
-      return 0;
     }
-    /*    log_trace("ext=%s\n",ext); */
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=ext;
-    file_recovery_new->data_check=&data_check_txt;
+    if(strcmp(ext, "html")==0)
+      file_recovery_new->data_check=&data_check_html;
+    else
+      file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension=ext;
     return 1;
   }
 }
