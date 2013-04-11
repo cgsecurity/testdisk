@@ -443,16 +443,13 @@ static int data_check_html(const unsigned char *buffer, const unsigned int buffe
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
-  char *buffer_lower=(char *)MALLOC(buffer_size+16);
-  i=UTF2Lat((unsigned char*)buffer_lower, &buffer[buffer_size/2], buffer_size/2);
+  i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
   if(i<buffer_size/2)
   {
     if(i>=10)
       file_recovery->calculated_file_size=file_recovery->file_size+i;
-    free(buffer_lower);
     return 2;
   }
-  free(buffer_lower);
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return 1;
 }
