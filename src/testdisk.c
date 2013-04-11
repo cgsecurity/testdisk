@@ -412,7 +412,20 @@ int main( int argc, char **argv )
     log_info("\n");
   }
   log_info("\n");
-  use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
+#ifdef SUDO_BIN
+  if(list_disk==NULL)
+  {
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
+#else
+#ifdef HAVE_GETEUID
+    if(geteuid()!=0)
+      use_sudo=2;
+#endif
+#endif
+  }
+#endif
+  if(use_sudo==0)
+    use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
@@ -455,17 +468,21 @@ int main( int argc, char **argv )
   {
     printf("TestDisk: Log file corrupted!\n");
   }
-  else
-  {
-    printf("TestDisk exited normally.\n");
-  }
   if(write_used!=0)
   {
     printf("You have to reboot for the change to take effect.\n");
   }
 #ifdef SUDO_BIN
   if(use_sudo>0)
+  {
+    printf("\n");
+    if(use_sudo>1)
+      printf("No disk found.\n");
+    printf("TestDisk will try to restart itself using the sudo command to get\n");
+    printf("root (superuser) privileges.\n");
+    printf("\n");
     run_sudo(argc, argv);
+  }
 #endif
   return 0;
 }

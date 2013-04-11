@@ -348,11 +348,23 @@ int main( int argc, char **argv )
   log_info("\n");
   reset_list_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
-  use_sudo=do_curses_photorec(&params, &options, list_disk);
+#ifdef SUDO_BIN
+  if(list_disk==NULL)
+  {
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
+#else
+#ifdef HAVE_GETEUID
+    if(geteuid()!=0)
+      use_sudo=2;
+#endif
+#endif
+  }
+#endif
+  if(use_sudo==0)
+    use_sudo=do_curses_photorec(&params, &options, list_disk);
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
-  delete_list_disk(list_disk);
   log_info("PhotoRec exited normally.\n");
   if(log_close()!=0)
   {
@@ -362,14 +374,19 @@ int main( int argc, char **argv )
   {
     printf("PhotoRec syntax error: %s\n", params.cmd_run);
   }
-  else
-  {
-    printf("PhotoRec exited normally.\n");
-  }
 #ifdef SUDO_BIN
   if(use_sudo>0)
+  {
+    printf("\n");
+    if(use_sudo>1)
+      printf("No disk found.\n");
+    printf("PhotoRec will try to restart itself using the sudo command to get\n");
+    printf("root (superuser) privileges.\n");
+    printf("\n");
     run_sudo(argc, argv);
+  }
 #endif
+  delete_list_disk(list_disk);
   free(params.recup_dir);
 #ifdef ENABLE_DFXML
   xml_clear_command_line();

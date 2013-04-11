@@ -50,6 +50,7 @@ void run_sudo(int argc, char **argv)
   argv2[i+1]=NULL;
   printf("sudo may ask your user password, it doesn't ask for the root password.\n");
   printf("Usually there is no echo or '*' displayed when you type your password.\n");
+  printf("\n");
   fflush(stdout);
   if(execv(argv2[0], argv2)<0)
   {
