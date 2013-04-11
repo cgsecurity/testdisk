@@ -534,15 +534,17 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
 
 static int header_check_perlm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  char *buffer_lower=(char *)MALLOC(2048);
-  const unsigned int buffer_size_test=(buffer_size < 2048-16 ? buffer_size : 2048-16);
-  UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
+  unsigned int i;
+  const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
+  for(i=0; i<128 && buffer[i]!=';' && buffer[i]!='\n'; i++);
+  if(buffer[i]!=';')
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  if(strstr(buffer_lower, "class")!=NULL ||
-      strstr(buffer_lower, "private static")!=NULL ||
-      strstr(buffer_lower, "public interface")!=NULL)
+  if( td_memmem(buffer, buffer_size_test, "class", 5)!=NULL ||
+      td_memmem(buffer, buffer_size_test, "private static", 14)!=NULL ||
+      td_memmem(buffer, buffer_size_test, "public interface", 16)!=NULL)
   {
     /* source code in java */
 #ifdef DJGPP
@@ -556,7 +558,6 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
     /* perl module */
     file_recovery_new->extension="pm";
   }
-  free(buffer_lower);
   return 1;
 }
 
