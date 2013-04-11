@@ -1201,9 +1201,12 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
     register_header_check(0, header->string, header->len, &header_check_fasttxt, file_stat);
     header++;
   }
-  register_header_check(4, "SC V10", 		6, &header_check_dc, file_stat);
+  register_header_check(4, "SC V10", 		6,  &header_check_dc, file_stat);
   register_header_check(0, "DatasetHeader Begin", 19, &header_check_ers, file_stat);
+//  register_header_check(0, "\n<!DOCTYPE html",	15, &header_check_html, file_stat);
+  register_header_check(0, "<!DOCTYPE html",	14, &header_check_html, file_stat);
   register_header_check(0, "<!DOCTYPE HTML",	14, &header_check_html, file_stat);
+//  register_header_check(0, "<html",		 5, &header_check_html, file_stat);
   register_header_check(0, "BEGIN:VCALENDAR",	15, &header_check_ics, file_stat);
   register_header_check(0, "From ",		 5, &header_check_mbox, file_stat);
   register_header_check(0, "Message-ID: ",	12, &header_check_mbox, file_stat);
