@@ -378,26 +378,64 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
   return(p-buffer);
 }
 
+static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
+{
+  const unsigned char *p=buffer; 	/* pointers to actual position in source buffer */
+  unsigned int i=0;
+  while(i<buf_len && *p!='\0')
+  {
+    /* Reject some invalid UTF-8 sequences */
+    if(*p==0xc0 || *p==0xc1 || *p==0xf7 || *p>=0xfd)
+      return i;
+    if((*p & 0xf0)==0xe0 && i+3 <= buf_len && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
+    { /* UTF8 l=3 */
+      const unsigned int car=(((*p)&0x1f)<<12) | (((*(p+1))&0x3f)<<6) | ((*(p+2))&0x3f);
+      if(filtre(car)==0)
+	return i;
+      p+=3;
+      i+=3;
+    }
+    else if((*p & 0xe0)==0xc0 && i+2 <= buf_len && (*(p+1) & 0xc0)==0x80)
+    { /* UTF8 l=2 */
+      const unsigned int car=(((*p)&0x1f)<<6) | ((*(p+1))&0x3f);
+      if(filtre(car)==0)
+	return i;
+      p+=2;
+      i+=2;
+    }
+    else
+    { /* Ascii UCS */
+      if(filtre(*p)==0)
+	return i;
+      p++;
+      i++;
+    }
+  }
+  return i;
+}
+
 static int data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  const char sign_html_end[]	= "</html>";
   unsigned int i;
-  char *buffer_lower=(char *)MALLOC(buffer_size+16);
-  i=UTF2Lat((unsigned char*)buffer_lower, &buffer[buffer_size/2], buffer_size/2);
+  unsigned int j;
+  i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
+  for(j=(buffer_size/2>sizeof(sign_html_end)?buffer_size/2-sizeof(sign_html_end):0);
+      j+sizeof(sign_html_end)-1 < buffer_size;
+      j++)
+  {
+    if(buffer[j]=='<' && strncasecmp((const char *)&buffer[j], sign_html_end, sizeof(sign_html_end)-1)==0)
+    {
+      file_recovery->calculated_file_size+=j-buffer_size/2+sizeof(sign_html_end)-1;
+      return 2;
+    }
+  }
   if(i<buffer_size/2)
   {
-    const char sign_html_end[]	= "</html>";
-    const char *pos;
-    pos=strstr(buffer_lower,sign_html_end);
-    if(pos!=NULL && i<((pos-buffer_lower)+sizeof(sign_html_end))-1+10)
-    {
-      file_recovery->calculated_file_size+=(pos-buffer_lower)+sizeof(sign_html_end)-1;
-    }
-    else if(i>=10)
+    if(i>=10)
       file_recovery->calculated_file_size=file_recovery->file_size+i;
-    free(buffer_lower);
     return 2;
   }
-  free(buffer_lower);
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return 1;
 }
