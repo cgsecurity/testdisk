@@ -84,6 +84,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->calculated_file_size=le64(asf_file_prop->file_size);
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->time=td_ntfs2utc(le64(asf_file_prop->file_date));
       return 1;
     }
     if( le64(asf_file_prop->object_size)==0 ||
