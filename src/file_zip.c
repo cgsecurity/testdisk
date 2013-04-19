@@ -85,7 +85,8 @@ struct zip_file_entry {
   uint16_t unused1:2;               /** Unused */
 
   uint16_t compression;             /** Compression method */
-  uint32_t last_mod;                /** Last moditication file time */
+  uint16_t last_mod_time;           /** Last moditication file time */
+  uint16_t last_mod_date;           /** Last moditication file date */
   uint32_t crc32;                   /** CRC32 */
   uint32_t compressed_size;         /** Compressed size */
   uint32_t uncompressed_size;       /** Uncompressed size */
@@ -165,6 +166,12 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       le32(file.uncompressed_size),
       le32(file.crc32));
 #endif
+  {
+    /* Use the more recent file to set the time/date of the recovered archive */
+    const time_t tmp=date_dos2unix(le16(file.last_mod_time), le16(file.last_mod_date));
+    if(fr->time < tmp)
+      fr->time=tmp;
+  }
   len = le16(file.filename_length);
   if (len)
   {
