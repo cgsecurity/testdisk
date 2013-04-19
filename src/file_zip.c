@@ -246,10 +246,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	}
 	else if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
 	  msoffice=1;
+	/* Zipped Keyhole Markup Language (KML) used by Google Earth */
+	else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
+	  *ext="kmz";
 	else if(len==4 && memcmp(filename, "Home", 4)==0)
 	  sh3d=1;
-	else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
-	  *ext="kmz";	/* Zipped Keyhole Markup Language (KML) used by Google Earth */
       }
       else if(file_nbr==1 && sh3d==1)
       {
@@ -270,7 +271,10 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     }
     if(*ext==NULL)
     {
-      if(len==20 && strcasecmp(filename, "META-INF/MANIFEST.MF")==0)
+	/* iWork */
+      if(len==23 && memcmp(filename, "QuickLook/Thumbnail.jpg", 23)==0)
+	*ext="pages";
+      else if(len==20 && strcasecmp(filename, "META-INF/MANIFEST.MF")==0)
 	*ext="jar";
       else if(len==15 && strcasecmp(filename, "chrome.manifest")==0)
 	*ext="xpi";
