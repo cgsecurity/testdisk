@@ -63,7 +63,7 @@ struct asf_file_prop_s {
 static int header_check_asf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct asf_header_obj_s *asf_header_obj=(const struct asf_header_obj_s *)buffer;
-  const struct asf_file_prop_s  *asf_file_prop=(const struct asf_file_prop_s*)(buffer+le64(asf_header_obj->object_size));
+  const struct asf_file_prop_s  *asf_file_prop=(const struct asf_file_prop_s*)(asf_header_obj+1);
   unsigned int i;
   if(le64(asf_header_obj->object_size)<30 ||
       le64(asf_header_obj->object_size)>buffer_size)
