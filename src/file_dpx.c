@@ -26,13 +26,15 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
 
 static void register_header_check_dpx(file_stat_t *file_stat);
-static int header_check_dpx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_dpx= {
   .extension="dpx",
@@ -43,10 +45,6 @@ const file_hint_t file_hint_dpx= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_dpx
 };
-
-static const unsigned char sdpx_header[4]= {'S', 'D', 'P', 'X'};
-static const unsigned char xpds_header[4]= {'X', 'P', 'D', 'S'};
-static const unsigned char ver10[8]= 	   {'V', '1', '.', '0', 0x00, 0x00, 0x00, 0x00};
 
 /* Header information from http://www.cineon.com/ff_draft.php */
 struct header_dpx
@@ -68,25 +66,35 @@ struct header_dpx
   char 		Reserved[104];    /* reserved field TBD (need to pad) */
 } __attribute__ ((__packed__));
 
-static void register_header_check_dpx(file_stat_t *file_stat)
-{
-  register_header_check(0, sdpx_header,sizeof(sdpx_header), &header_check_dpx, file_stat);
-  register_header_check(0, xpds_header,sizeof(xpds_header), &header_check_dpx, file_stat);
-}
-
 static int header_check_dpx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  static const unsigned char ver10[8]= 	   {'V', '1', '.', '0', 0x00, 0x00, 0x00, 0x00};
   const struct header_dpx *dpx=(const struct header_dpx *)buffer;
-  if((memcmp(buffer,sdpx_header,sizeof(sdpx_header))==0 ||
-      memcmp(buffer,xpds_header,sizeof(xpds_header))==0) &&
-      memcmp(dpx->vers, ver10, sizeof(ver10))==0)
+  if(memcmp(dpx->vers, ver10, sizeof(ver10))==0)
   {
+    struct tm tm_time;
+    memset(&tm_time, 0, sizeof(tm_time));
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_dpx.extension;
     file_recovery_new->calculated_file_size=be32(dpx->file_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+    tm_time.tm_sec=(dpx->create_time[17]-'0')*10+(dpx->create_time[18]-'0');      /* seconds 0-59 */
+    tm_time.tm_min=(dpx->create_time[14]-'0')*10+(dpx->create_time[15]-'0');      /* minutes 0-59 */
+    tm_time.tm_hour=(dpx->create_time[11]-'0')*10+(dpx->create_time[12]-'0');      /* hours   0-23*/
+    tm_time.tm_mday=(dpx->create_time[8]-'0')*10+(dpx->create_time[9]-'0');	/* day of the month 1-31 */
+    tm_time.tm_mon=(dpx->create_time[5]-'0')*10+(dpx->create_time[6]-'0')-1;	/* month 0-11 */
+    tm_time.tm_year=(dpx->create_time[0]-'0')*1000+(dpx->create_time[1]-'0')*100+
+      (dpx->create_time[2]-'0')*10+(dpx->create_time[3]-'0')-1900;        	/* year */
+    tm_time.tm_isdst = -1;		/* unknown daylight saving time */
+    file_recovery_new->time=mktime(&tm_time);
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_dpx(file_stat_t *file_stat)
+{
+  register_header_check(0, "SDPX", 4, &header_check_dpx, file_stat);
+  register_header_check(0, "XPDS", 4, &header_check_dpx, file_stat);
 }
