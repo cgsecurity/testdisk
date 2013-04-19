@@ -33,7 +33,6 @@
 #define TS_TAPE         1       /* dump tape header */
 
 static void register_header_check_dump(file_stat_t *file_stat);
-static int header_check_dump(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_dump= {
   .extension="dump",
@@ -125,29 +124,25 @@ struct	dump_struct
 #define TS_CLRI 	6	/* map of inodes deleted since last dump */
 #define TS_END  	5	/* end of volume marker */
 
-static const unsigned char dump_header_le_old_fs[4]  = { 0x6b, 0xea, 0x00, 0x00};
-static const unsigned char dump_header_le_new_fs[4]  = { 0x6c, 0xea, 0x00, 0x00};
-
-static void register_header_check_dump(file_stat_t *file_stat)
-{
-  register_header_check(0x18, dump_header_le_old_fs,sizeof(dump_header_le_old_fs), &header_check_dump, file_stat);
-  register_header_check(0x18, dump_header_le_new_fs,sizeof(dump_header_le_new_fs), &header_check_dump, file_stat);
-}
-
 static int header_check_dump(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct dump_struct *dump=(const struct dump_struct*)buffer;
-  if((memcmp(buffer+0x18,dump_header_le_old_fs,sizeof(dump_header_le_old_fs))==0 ||
-	memcmp(buffer+0x18,dump_header_le_new_fs,sizeof(dump_header_le_new_fs))==0) &&
-      le32(dump->c_type)==TS_TAPE)
-  {
-    reset_file_recovery(file_recovery_new);
+  if(le32(dump->c_type)!=TS_TAPE)
+    return 0;
+  reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
-    file_recovery_new->extension="dmp";
+  file_recovery_new->extension="dmp";
 #else
-    file_recovery_new->extension=file_hint_dump.extension;
+  file_recovery_new->extension=file_hint_dump.extension;
 #endif
-    return 1;
-  }
-  return 0;
+  file_recovery_new->time=le32(dump->c_old_date);
+  return 1;
+}
+
+static void register_header_check_dump(file_stat_t *file_stat)
+{
+  static const unsigned char dump_header_le_old_fs[4]  = { 0x6b, 0xea, 0x00, 0x00};
+  static const unsigned char dump_header_le_new_fs[4]  = { 0x6c, 0xea, 0x00, 0x00};
+  register_header_check(0x18, dump_header_le_old_fs,sizeof(dump_header_le_old_fs), &header_check_dump, file_stat);
+  register_header_check(0x18, dump_header_le_new_fs,sizeof(dump_header_le_new_fs), &header_check_dump, file_stat);
 }
