@@ -33,7 +33,6 @@
 #include "log.h"
 
 static void register_header_check_cow(file_stat_t *file_stat);
-static int header_check_cow(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_cow= {
   .extension="cow",
@@ -61,7 +60,7 @@ typedef struct {
     uint8_t l2_bits;
     uint32_t crypt_method;
     uint64_t l1_table_offset;
-} QCowHeader_t;
+} __attribute__ ((__packed__)) QCowHeader_t;
 
 typedef struct QCowHeader {
     uint32_t magic;
@@ -79,47 +78,42 @@ typedef struct QCowHeader {
     uint64_t snapshots_offset;
 } QCowHeader2_t;
 
-static void register_header_check_cow(file_stat_t *file_stat)
+static int header_check_qcow1(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  register_header_check(0, cow_header,sizeof(cow_header), &header_check_cow, file_stat);
-  register_header_check(0, cow_header2,sizeof(cow_header2), &header_check_cow, file_stat);
+  const QCowHeader_t *header=(const QCowHeader_t*)buffer;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_cow.extension;
+  file_recovery_new->time=be32(header->mtime);
+  return 1;
 }
 
-static int header_check_cow(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_qcow2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, cow_header, sizeof(cow_header))==0)
-  {
-    const QCowHeader_t *header=(const QCowHeader_t*)buffer;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_cow.extension;
-    file_recovery_new->calculated_file_size=be64(header->size);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  if(memcmp(buffer, cow_header2, sizeof(cow_header2))==0)
-  {
 #ifdef DEBUG_COW
-    const QCowHeader2_t *header=(const QCowHeader2_t*)buffer;
+  const QCowHeader2_t *header=(const QCowHeader2_t*)buffer;
 #endif
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_cow.extension;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_cow.extension;
 #ifdef DEBUG_COW
-    log_info("magic %lu\n", 			be32(header->magic));
-    log_info("version %lu\n",     		be32(header->version));
-    log_info("backing_file_offset %llu\n",     	be64(header->backing_file_offset));
-    log_info("backing_file_size %lu\n",     	be32(header->backing_file_size));
-    log_info("cluster_bits %lu\n",     		be32(header->cluster_bits));
-    log_info("size %llu\n",     		be64(header->size)); /* in bytes */
-    log_info("crypt_method %lu\n",     		be32(header->crypt_method));
-    log_info("l1_size %lu\n",     		be32(header->l1_size)); /* XXX: save number of clusters instead ? */
-    log_info("l1_table_offset %llu\n",     	be64(header->l1_table_offset));
-    log_info("refcount_table_offset %llu\n",    be64(header->refcount_table_offset));
-    log_info("refcount_table_clusters %lu\n",   be32(header->refcount_table_clusters));
-    log_info("nb_snapshots %lu\n",     		be32(header->nb_snapshots));
-    log_info("snapshots_offset %llu\n",     	be64(header->snapshots_offset));
+  log_info("magic %lu\n", 			be32(header->magic));
+  log_info("version %lu\n",     		be32(header->version));
+  log_info("backing_file_offset %llu\n",     	be64(header->backing_file_offset));
+  log_info("backing_file_size %lu\n",     	be32(header->backing_file_size));
+  log_info("cluster_bits %lu\n",     		be32(header->cluster_bits));
+  log_info("size %llu\n",     		be64(header->size)); /* in bytes */
+  log_info("crypt_method %lu\n",     		be32(header->crypt_method));
+  log_info("l1_size %lu\n",     		be32(header->l1_size)); /* XXX: save number of clusters instead ? */
+  log_info("l1_table_offset %llu\n",     	be64(header->l1_table_offset));
+  log_info("refcount_table_offset %llu\n",    be64(header->refcount_table_offset));
+  log_info("refcount_table_clusters %lu\n",   be32(header->refcount_table_clusters));
+  log_info("nb_snapshots %lu\n",     		be32(header->nb_snapshots));
+  log_info("snapshots_offset %llu\n",     	be64(header->snapshots_offset));
 #endif
-    return 1;
-  }
-  return 0;
+  return 1;
+}
+
+static void register_header_check_cow(file_stat_t *file_stat)
+{
+  register_header_check(0, cow_header,sizeof(cow_header), &header_check_qcow1, file_stat);
+  register_header_check(0, cow_header2,sizeof(cow_header2), &header_check_qcow2, file_stat);
 }
