@@ -166,20 +166,6 @@ struct ufile {
 	char		 padding[4];	/* Unused: padding to 64 bit. */
 };
 
-/**
- * td_ntfs2utc - Convert an NTFS time to Unix time
- * @time:  An NTFS time in 100ns units since 1601
- *
- * NTFS stores times as the number of 100ns intervals since January 1st 1601 at
- * 00:00 UTC.  This system will not suffer from Y2K problems until ~57000AD.
- *
- * Return:  n  A Unix time (number of seconds since 1970)
- */
-static time_t td_ntfs2utc (s64 ntfstime)
-{
-  return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
-}
-
 static const char *UNKNOWN   = "unknown";
 static struct options opts;
 

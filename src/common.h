@@ -432,6 +432,7 @@ void set_part_name_chomp(partition_t *partition, const unsigned char *src, const
 char* strip_dup(char* str);
 int date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 void set_secwest(void);
+time_t td_ntfs2utc (int64_t ntfstime);
 #ifndef BSD_MAXPARTITIONS
 #define	BSD_MAXPARTITIONS	8
 #endif

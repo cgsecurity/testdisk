@@ -83,7 +83,6 @@
 #define PATH_SEP      '/'
 #define NTFS_DT_DIR               4
 #define NTFS_DT_REG             8
-#define NTFS_TIME_OFFSET ((s64)(369 * 365 + 89) * 24 * 3600 * 10000000)
 #ifndef FILE_first_user
 #define FILE_first_user 16
 #endif
@@ -102,7 +101,6 @@ extern struct ntfs_device_operations ntfs_device_testdisk_io_ops;
 
 extern int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
                 void *dirent, ntfs_filldir_t filldir);
-static time_t td_ntfs2utc (s64 ntfstime);
 static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type);
@@ -131,20 +129,6 @@ static int index_get_size(ntfs_inode *inode)
 	iroot = (INDEX_ROOT*)((u8*)attr90 + le16_to_cpu(attr90->value_offset));
 
 	return iroot->index_block_size;
-}
-
-/**
- * td_ntfs2utc - Convert an NTFS time to Unix time
- * @time:  An NTFS time in 100ns units since 1601
- *
- * NTFS stores times as the number of 100ns intervals since January 1st 1601 at
- * 00:00 UTC.  This system will not suffer from Y2K problems until ~57000AD.
- *
- * Return:  n  A Unix time (number of seconds since 1970)
- */
-static time_t td_ntfs2utc (s64 ntfstime)
-{
-  return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
 }
 
 #ifdef HAVE_ICONV

@@ -262,3 +262,17 @@ void set_secwest(void)
 #endif
 }
 
+/**
+ * td_ntfs2utc - Convert an NTFS time to Unix time
+ * @time:  An NTFS time in 100ns units since 1601
+ *
+ * NTFS stores times as the number of 100ns intervals since January 1st 1601 at
+ * 00:00 UTC.  This system will not suffer from Y2K problems until ~57000AD.
+ *
+ * Return:  n  A Unix time (number of seconds since 1970)
+ */
+#define NTFS_TIME_OFFSET ((int64_t)(369 * 365 + 89) * 24 * 3600 * 10000000)
+time_t td_ntfs2utc (int64_t ntfstime)
+{
+  return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
+}
