@@ -138,6 +138,9 @@ static int header_check_arj(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_arj.extension;
+    file_recovery_new->time=le32(arj->ctime);
+    if(file_recovery_new->time < le32(arj->mtime))
+      file_recovery_new->time=le32(arj->mtime);
     if((arj->flags&0x040)!=0)
     {
       file_recovery_new->calculated_file_size=le32(arj->size);
