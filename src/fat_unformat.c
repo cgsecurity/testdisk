@@ -214,7 +214,9 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
   log_info("fat_unformat_aux: no_of_cluster=%lu\n", no_of_cluster);
 
+#ifdef HAVE_NCURSES
   aff_copy(stdscr);
+#endif
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=cluster_size;
   buffer_start=(unsigned char *)MALLOC(READ_SIZE);
