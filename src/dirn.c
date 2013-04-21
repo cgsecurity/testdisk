@@ -49,7 +49,7 @@ extern const char *monstr[];
 
 static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
 static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_bad, unsigned int *copy_ok);
+static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
 
 #define INTER_DIR (LINES-25+15)
 
@@ -108,7 +108,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
     int offset=0;
     int pos_num=0;
     file_data_t *pos=dir_list;
-    int old_LINES=LINES;
+    const int old_LINES=LINES;
     unsigned int status=FILE_STATUS_MARKED;
     aff_copy(window);
     wmove(window,3,0);
@@ -411,7 +411,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		  unsigned int copy_ok=0;
 		  if(LINUX_S_ISDIR(pos->st_mode)!=0)
 		  {
-		    copy_dir(window, disk, partition, dir_data, pos, &copy_bad, &copy_ok);
+		    copy_dir(window, disk, partition, dir_data, pos, &copy_ok, &copy_bad);
 		  }
 		  else if(LINUX_S_ISREG(pos->st_mode)!=0)
 		  {
@@ -455,7 +455,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		      strcat(dir_data->current_directory,tmp->name);
 		    if(LINUX_S_ISDIR(tmp->st_mode)!=0)
 		    {
-		      copy_dir(window, disk, partition, dir_data, tmp, &copy_bad, &copy_bad);
+		      copy_dir(window, disk, partition, dir_data, tmp, &copy_ok, &copy_bad);
 		    }
 		    else if(LINUX_S_ISREG(tmp->st_mode)!=0)
 		    {
@@ -568,7 +568,7 @@ Returns
 0: all files has been copied
 */
 #define MAX_DIR_NBR 256
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_bad, unsigned int *copy_ok)
+static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
@@ -603,7 +603,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
 	    new_inode_ok=0;
 	if(new_inode_ok>0)
 	{
-	  copy_dir(window, disk, partition, dir_data, current_file, copy_bad, copy_ok);
+	  copy_dir(window, disk, partition, dir_data, current_file, copy_ok, copy_bad);
 	}
       }
       else if(LINUX_S_ISREG(current_file->st_mode)!=0)
