@@ -46,9 +46,6 @@ const file_hint_t file_hint_cow= {
 
 /* QEMU, open source processor emulator, can be downloaded from http://www.qemu.org/ */
 
-static const unsigned char cow_header[8]=  {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x1};
-static const unsigned char cow_header2[8]= {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x2};
-
 typedef struct {
     uint32_t magic;
     uint32_t version;
@@ -114,6 +111,8 @@ static int header_check_qcow2(const unsigned char *buffer, const unsigned int bu
 
 static void register_header_check_cow(file_stat_t *file_stat)
 {
+  static const unsigned char cow_header[8]=  {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x1};
+  static const unsigned char cow_header2[8]= {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x2};
   register_header_check(0, cow_header,sizeof(cow_header), &header_check_qcow1, file_stat);
   register_header_check(0, cow_header2,sizeof(cow_header2), &header_check_qcow2, file_stat);
 }
