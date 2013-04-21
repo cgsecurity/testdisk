@@ -44,7 +44,7 @@ void run_sudo(int argc, char **argv)
   int i;
   char **argv2;
   argv2 = (char **)MALLOC(sizeof(char *) * (argc + 2));
-  argv2[0]=SUDO_BIN;
+  argv2[0]=strdup(SUDO_BIN);
   for (i=0; i <  argc; i++)
     argv2[i+1] = argv[i];
   argv2[i+1]=NULL;
@@ -58,6 +58,7 @@ void run_sudo(int argc, char **argv)
     printf("Press Enter key to quit.\n");
     getchar();
   }
+  free(argv2[0]);
   free(argv2);
 }
 #endif
