@@ -35,7 +35,7 @@ static void register_header_check_sit(file_stat_t *file_stat);
 static int header_check_sit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sit= {
-  .extension="SIT",
+  .extension="sit",
   .description="Mikron image",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
@@ -44,20 +44,16 @@ const file_hint_t file_hint_sit= {
   .register_header_check=&register_header_check_sit
 };
 
-static const unsigned char sit_header[14]  = { '7','1','0','0',' ','3','.','3','D',' ','7','1','0','0'};
-
-static void register_header_check_sit(file_stat_t *file_stat)
-{
-  register_header_check(0, sit_header,sizeof(sit_header), &header_check_sit, file_stat);
-}
 
 static int header_check_sit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,sit_header,sizeof(sit_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_sit.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_sit.extension;
+  return 1;
+}
+
+static void register_header_check_sit(file_stat_t *file_stat)
+{
+  static const unsigned char sit_header[14]  = { '7','1','0','0',' ','3','.','3','D',' ','7','1','0','0'};
+  register_header_check(0, sit_header,sizeof(sit_header), &header_check_sit, file_stat);
 }
