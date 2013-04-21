@@ -1222,6 +1222,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "solid ",		 6, &header_check_stl, file_stat);
   register_header_check(0, "<?xml version=",	14, &header_check_xml, file_stat);
   register_header_check(0, header_xml_utf8, sizeof(header_xml_utf8), &header_check_xml, file_stat);
+  /* TinyTag */
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
 }
