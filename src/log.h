@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 int log_set_levels(const unsigned int levels);
-FILE *log_open(const char*default_filename, const int mode);
-FILE *log_open_default(const char*default_filename, const int mode);
+FILE *log_open(const char*default_filename, const int mode, int *errsv);
+FILE *log_open_default(const char*default_filename, const int mode, int *errsv);
 int log_flush(void);
 int log_close(void);
 int log_redirect(unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));

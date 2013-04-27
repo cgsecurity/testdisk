@@ -165,9 +165,10 @@ int main(int argc, char **argv)
   int i;
   unsigned int check=0;
   FILE *log_handle=NULL;
+  int log_errno=0;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
-  log_handle=log_open("fidentify.log", TD_LOG_CREATE);
+  log_handle=log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
   if(log_handle!=NULL)
   {
     time_t my_time;

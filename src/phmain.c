@@ -109,6 +109,7 @@ int main( int argc, char **argv )
   list_disk_t *element_disk;
   const char *logfile="photorec.log";
   FILE *log_handle=NULL;
+  int log_errno=0;
   struct ph_options options={
     .paranoid=1,
     .keep_corrupted_file=0,
@@ -253,7 +254,7 @@ int main( int argc, char **argv )
   xml_set_command_line(argc, argv);
 #endif
   if(create_log!=TD_LOG_NONE)
-    log_handle=log_open(logfile, create_log);
+    log_handle=log_open(logfile, create_log, &log_errno);
 #ifdef HAVE_SETLOCALE
   if(run_setlocale>0)
   {
@@ -268,7 +269,7 @@ int main( int argc, char **argv )
   }
 #endif
   if(create_log!=TD_LOG_NONE && log_handle==NULL)
-    log_handle=log_open_default(logfile, create_log);
+    log_handle=log_open_default(logfile, create_log, &log_errno);
 #ifdef HAVE_NCURSES
   /* ncurses need locale for correct unicode support */
   if(start_ncurses("PhotoRec", argv[0]))
@@ -280,9 +281,9 @@ int main( int argc, char **argv )
     const char*filename=logfile;
     while(create_log!=TD_LOG_NONE && log_handle==NULL)
     {
-      filename=ask_log_location(filename);
+      filename=ask_log_location(filename, log_errno);
       if(filename!=NULL)
-	log_handle=log_open(filename, create_log);
+	log_handle=log_open(filename, create_log, &log_errno);
       else
 	create_log=TD_LOG_NONE;
     }

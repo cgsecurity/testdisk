@@ -42,6 +42,7 @@
 #ifdef HAVE_SYS_CYGWIN_H
 #include <sys/cygwin.h>
 #endif
+#include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "log.h"
@@ -59,9 +60,10 @@ int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
-FILE *log_open(const char*default_filename, const int mode)
+FILE *log_open(const char*default_filename, const int mode, int *errsv)
 {
   log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
+  *errsv=errno;
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(log_handle!=NULL && mode!=TD_LOG_CREATE)
   {
@@ -70,6 +72,7 @@ FILE *log_open(const char*default_filename, const int mode)
     {
       fclose(log_handle);
       log_handle=fopen(default_filename,"w");
+      *errsv=errno;
     }
   }
 #endif
@@ -77,7 +80,7 @@ FILE *log_open(const char*default_filename, const int mode)
 }
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-FILE *log_open_default(const char*default_filename, const int mode)
+FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
 {
   char*filename;
   char *path;
@@ -87,10 +90,10 @@ FILE *log_open_default(const char*default_filename, const int mode)
   if (path == NULL)
     path = getenv("HOMEPATH");
   if(path == NULL)
-    return log_open(default_filename, mode);
+    return log_open(default_filename, mode, errsv);
   /* Check to avoid buffer overflow may not be 100% bullet proof */
   if(strlen(path)+strlen(default_filename)+2 > 4096)
-    return log_open(default_filename, mode);
+    return log_open(default_filename, mode, errsv);
   filename=(char*)MALLOC(4096);
 #ifdef __CYGWIN__
 /* FIXME */
@@ -100,23 +103,23 @@ FILE *log_open_default(const char*default_filename, const int mode)
 #endif
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_open(filename, mode);
+  log_open(filename, mode, errsv);
   free(filename);
   return log_handle;
 }
 #else
-FILE *log_open_default(const char*default_filename, const int mode)
+FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
 {
   char*filename;
   char *path;
   path = getenv("HOME");
   if(path == NULL)
-    return log_open(default_filename, mode);
+    return log_open(default_filename, mode, errsv);
   filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
   strcpy(filename, path);
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_open(default_filename, mode);
+  log_open(default_filename, mode, errsv);
   free(filename);
   return log_handle;
 }

@@ -63,7 +63,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
 int interface_partition_type_ncurses(disk_t *disk_car);
 int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
-char *ask_log_location(const char*filename);
+char *ask_log_location(const char*filename, const int errsv);
 int get_string(WINDOW *window, char *str, const int len, const char *def);
 uint64_t ask_int_ncurses(const char *string);
 const char *ask_string_ncurses(const char *string);

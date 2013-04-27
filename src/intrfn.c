@@ -1245,14 +1245,14 @@ int end_ncurses(void)
   return 0;
 }
 
-char *ask_log_location(const char*filename)
+char *ask_log_location(const char*filename, const int errsv)
 {
   static char response[128];
   aff_copy(stdscr);
   if(filename!=NULL)
   {
     wmove(stdscr,6,0);
-    wprintw(stdscr,"Cannot open %s: %s\n",filename, strerror(errno));
+    wprintw(stdscr,"Cannot open %s: %s\n",filename, strerror(errsv));
   }
   wmove(stdscr,8,0);
   wprintw(stdscr,"Please enter the full log filename or press ");
