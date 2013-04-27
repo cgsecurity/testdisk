@@ -342,8 +342,13 @@ int filesort(const struct td_list_head *a, const struct td_list_head *b)
   if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, ".")==0)
     return -1;
   if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, "..")==0 &&
-      !strcmp(file_b->name, ".")==0)
+      strcmp(file_b->name, ".")!=0)
     return -1;
+  if((file_b->st_mode&LINUX_S_IFDIR) && strcmp(file_b->name, ".")==0)
+    return 1;
+  if((file_b->st_mode&LINUX_S_IFDIR) && strcmp(file_b->name, "..")==0 &&
+      strcmp(file_a->name, ".")!=0)
+    return 1;
   /* Files and directories are sorted by name */
   return strcmp(file_a->name, file_b->name);
 }
