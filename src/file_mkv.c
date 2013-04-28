@@ -34,6 +34,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
+#include "memmem.h"
 #ifdef DEBUG_MKV
 #include "log.h"
 #endif
@@ -53,26 +54,10 @@ const file_hint_t file_hint_mkv= {
 
 static const unsigned char *EBML_find(const unsigned char *buffer, const unsigned int buffer_size, const unsigned char *EBML_Header, const unsigned int EBML_size)
 {
-  const unsigned char *p = buffer;
-  unsigned int p_size = buffer_size;
-  int found = 0;
-  do
-  {
-    p = (const unsigned char *)memchr(p, EBML_Header[0], p_size);
-    if (p == NULL)
-      return NULL;
-    p_size-=(p-buffer);
-    if (memcmp(p, EBML_Header, EBML_size) == 0)
-      found = 1;
-    else
-      p++;
-  } while(found == 0);
-  if (p_size-EBML_size > 0)
-  {
-    p+=EBML_size;
-    return p;
-  }
-  return NULL;
+  const unsigned char *tmp=(const unsigned char *)td_memmem(buffer, buffer_size, EBML_Header, EBML_size);
+  if(tmp==NULL)
+    return NULL;
+  return tmp+EBML_size;
 }
 
 static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size, uint64_t *uint64)
@@ -117,7 +102,7 @@ static int EBML_read_string(const unsigned char *p, const unsigned int p_size, c
     strlength <<= 8;
     strlength += p[i];
   }
-  if(p_size < bytes + strlength)
+  if(strlength + bytes > p_size)
     return -1;
   *string = (char *)MALLOC(strlength+1);
   memcpy(*string, p+bytes, strlength);
@@ -152,6 +137,8 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
 	  buffer_size-sizeof(EBML_header), &header_data_size)) < 0)
       return 0;
     header_data_offset = sizeof(EBML_header) + len;
+    if(header_data_offset >= buffer_size)
+      return 0;
     segment_offset = header_data_offset + header_data_size;
 #ifdef DEBUG_MKV
     log_info("header_data_offset %llu\n", (long long unsigned) header_data_offset);
