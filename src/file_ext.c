@@ -63,13 +63,6 @@ static void file_rename_ext(const char *old_filename)
   file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
-static int data_check_ext(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  /* Save only one block */
-  file_recovery->calculated_file_size=buffer_size/2;
-  return 2;
-}
-
 static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ext2_super_block *sb=(const struct ext2_super_block *)buffer;
@@ -92,10 +85,18 @@ static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int 
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ext2_sb.extension;
-  file_recovery_new->data_check=&data_check_ext;
+  file_recovery_new->file_size=EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size);
+  file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_ext;
   return 1;
+}
+
+static int data_check_extdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  /* Save only one block */
+  file_recovery->calculated_file_size=buffer_size/2;
+  return 2;
 }
 
 static void file_rename_extdir(const char *old_filename)
@@ -122,7 +123,7 @@ static int header_check_ext2_dir(const unsigned char *buffer, const unsigned int
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ext2_sb.extension;
-  file_recovery_new->data_check=&data_check_ext;
+  file_recovery_new->data_check=&data_check_extdir;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_extdir;
   return 1;
