@@ -72,6 +72,7 @@
 #include "intrf.h"
 #include "ntfs.h"
 #include "list.h"
+#include "list_sort.h"
 #include "dir.h"
 #include "ntfs_dir.h"
 #include "ntfs_utl.h"
@@ -321,6 +322,7 @@ static int ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *
     log_critical("ntfs_readdir BUG not MFT_RECORD_IS_DIRECTORY\n");
   /* Finished with the inode; release it. */
   ntfs_inode_close(inode);
+  td_list_sort(&dir_list->list, filesort);
   return 0;
 }
 
