@@ -156,6 +156,7 @@ file_C			= filegen.c \
 			  file_logic.c \
 			  file_lso.c \
 			  file_lxo.c \
+			  file_lzh.c \
 			  file_lzo.c \
 			  file_m2ts.c \
 			  file_mat.c \
