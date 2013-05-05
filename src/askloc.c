@@ -48,6 +48,7 @@
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
+#include <stdarg.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
