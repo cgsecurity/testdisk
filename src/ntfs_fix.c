@@ -171,13 +171,16 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     if(res1==0)
     {
-      file_data_t *dir_list;
-      dir_list=dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode);
-      if(dir_list!=NULL)
+      static file_info_t dir_list = {
+	.list = TD_LIST_HEAD_INIT(dir_list.list),
+	.name = NULL
+      };
+      dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode, &dir_list);
+      if(!td_list_empty(&dir_list.list))
       {
 	log_info("NTFS listing using MFT:\n");
-	dir_aff_log(&dir_data, dir_list);
-	if(delete_list_file(dir_list)>2)
+	dir_aff_log(&dir_data, &dir_list);
+	if(delete_list_file(&dir_list)>2)
 	  res1++;
       }
       dir_data.close(&dir_data);
@@ -188,13 +191,16 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     res2=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
     if(res2==0)
     {
-      file_data_t *dir_list;
-      dir_list=dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode);
-      if(dir_list!=NULL)
+      static file_info_t dir_list = {
+	.list = TD_LIST_HEAD_INIT(dir_list.list),
+	.name = NULL
+      };
+      dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode, &dir_list);
+      if(!td_list_empty(&dir_list.list))
       {
 	log_info("NTFS listing using MFT mirror:\n");
-	dir_aff_log(&dir_data, dir_list);
-	if(delete_list_file(dir_list)>2)
+	dir_aff_log(&dir_data, &dir_list);
+	if(delete_list_file(&dir_list)>2)
 	  res2++;
       }
       dir_data.close(&dir_data);

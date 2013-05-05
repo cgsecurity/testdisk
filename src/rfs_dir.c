@@ -60,13 +60,12 @@
 #include "reiserfs/reiserfs.h"
 
 struct rfs_dir_struct {
-	file_data_t *dir_list;
-	file_data_t *current_file;
+	file_info_t *dir_list;
 	reiserfs_fs_t *current_fs;
 	dal_t *dal;
 	int flags;
 };
-static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster);
+static int reiser_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
 static void dir_partition_reiser_close(dir_data_t *dir_data);
 
 #ifdef HAVE_STRUCT_DAL_OPS_DEV
@@ -419,17 +418,16 @@ blk_t dal_len(dal_t *dal) {
 	return 0;
 }
 
-static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster)
+static int reiser_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list)
 {
   struct rfs_dir_struct *ls=(struct rfs_dir_struct*)dir_data->private_dir_data;
   reiserfs_dir_t *dir;
   reiserfs_dir_entry_t entry;
-  ls->dir_list=NULL;
-  ls->current_file=NULL;
+  ls->dir_list=dir_list;
   if (!(dir = reiserfs_dir_open(ls->current_fs, dir_data->current_directory))) {
     screen_buffer_add("Couldn't open dir\n");
     log_error("Couldn't open dir\n");
-    return NULL;
+    return -1;
   }
   while (reiserfs_dir_read(dir, &entry))
   {
@@ -441,14 +439,12 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
     if((entity=reiserfs_object_create(ls->current_fs,name,1)))
     {
       unsigned int thislen;
-      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+      file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
       thislen=(MAX_NAME_LEN(DEFAULT_BLOCK_SIZE)<DIR_NAME_LEN?MAX_NAME_LEN(DEFAULT_BLOCK_SIZE):DIR_NAME_LEN);
       memcpy(new_file->name,entry.de_name,thislen);
       new_file->name[thislen-1]='\0';
 
       new_file->status=0;
-      new_file->prev=ls->current_file;
-      new_file->next=NULL;
       new_file->st_ino=entity->stat.st_ino;
       new_file->st_mode=entity->stat.st_mode;
 //      new_file->st_nlink=entity->stat.st_nlink;
@@ -460,15 +456,11 @@ static file_data_t *reiser_dir(disk_t *disk_car, const partition_t *partition, d
       new_file->td_mtime=entity->stat.st_mtime;
       new_file->td_ctime=entity->stat.st_ctime;
       reiserfs_object_free(entity);
-      if(ls->current_file)
-	ls->current_file->next=new_file;
-      else
-	ls->dir_list=new_file;
-      ls->current_file=new_file;
+      td_list_add_tail(&new_file->list, &dir_list->list);
     }
   }
   reiserfs_dir_close(dir);
-  return ls->dir_list;
+  return 0;
 }
 
 static void dir_partition_reiser_close(dir_data_t *dir_data)
@@ -479,7 +471,7 @@ static void dir_partition_reiser_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   reiserfs_file_t *in;
   FILE *f_out;
@@ -593,7 +585,6 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
   {
     struct rfs_dir_struct *ls=(struct rfs_dir_struct *)MALLOC(sizeof(*ls));
     ls->dir_list=NULL;
-    ls->current_file=NULL;
     ls->current_fs=fs;
     ls->dal=dal;
     ls->flags = 0; /*DIRENT_FLAG_INCLUDE_EMPTY; */

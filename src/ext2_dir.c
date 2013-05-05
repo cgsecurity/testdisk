@@ -67,7 +67,7 @@ static errcode_t my_flush(io_channel channel);
 
 static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data);
 static void dir_partition_ext2_close(dir_data_t *dir_data);
-static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
+static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 
 static struct struct_io_manager my_struct_manager = {
         .magic = EXT2_ET_MAGIC_IO_MANAGER,
@@ -83,7 +83,7 @@ static struct struct_io_manager my_struct_manager = {
 	.set_option= NULL
 #endif
 };
-static file_data_t *ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster);
+static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
 
 static io_channel *shared_ioch=NULL;
 /*
@@ -204,7 +204,7 @@ static int list_dir_proc2(ext2_ino_t dir,
   struct ext2_inode	inode;
   ext2_ino_t		ino;
   struct ext2_dir_struct *ls = (struct ext2_dir_struct *) privateinfo;
-  file_data_t *new_file;
+  file_info_t *new_file;
   if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
     return 0;
   ino = dirent->inode;
@@ -219,15 +219,12 @@ static int list_dir_proc2(ext2_ino_t dir,
   } else {
     memset(&inode, 0, sizeof(struct ext2_inode));
   }
-  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-  new_file->prev=ls->current_file;
-  new_file->next=NULL;
+  new_file=(file_info_t *)MALLOC(sizeof(*new_file));
   {
     unsigned int thislen;
     thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
       (dirent->name_len & 0xFF) : EXT2_NAME_LEN;
-    if(thislen>=DIR_NAME_LEN)
-      thislen=DIR_NAME_LEN-1;
+    new_file->name=(char *)MALLOC(thislen+1);
     memcpy(new_file->name, dirent->name, thislen);
     new_file->name[thislen] = '\0';
   }
@@ -247,25 +244,21 @@ static int list_dir_proc2(ext2_ino_t dir,
   new_file->td_atime=inode.i_atime;
   new_file->td_mtime=inode.i_mtime;
   new_file->td_ctime=inode.i_ctime;
-  if(ls->current_file!=NULL)
-    ls->current_file->next=new_file;
-  else
-    ls->dir_list=new_file;
-  ls->current_file=new_file;
+  td_list_add_tail(&new_file->list, &ls->dir_list->list);
   return 0;
 }
 
-static file_data_t *ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster)
+static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list)
 {
   errcode_t       retval;
   struct ext2_dir_struct *ls=(struct ext2_dir_struct*)dir_data->private_dir_data;
-  ls->dir_list=NULL;
-  ls->current_file=NULL;
+  ls->dir_list=dir_list;
   if((retval=ext2fs_dir_iterate2(ls->current_fs, cluster, ls->flags, 0, list_dir_proc2, ls))!=0)
   {
     log_error("ext2fs_dir_iterate failed with error %ld.\n",(long)retval);
+    return -1;
   }
-  return ls->dir_list;
+  return 0;
 }
 
 static void dir_partition_ext2_close(dir_data_t *dir_data)
@@ -276,7 +269,7 @@ static void dir_partition_ext2_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   int error=0;
   FILE *f_out;
@@ -350,7 +343,6 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   io_channel ioch;
   my_data_t *my_data;
   ls->dir_list=NULL;
-  ls->current_file=NULL;
   /*  ls->flags = DIRENT_FLAG_INCLUDE_EMPTY; */
   ls->flags = DIRENT_FLAG_INCLUDE_REMOVED;
   ls->dir_data=dir_data;

@@ -47,9 +47,7 @@
 
 extern const char *monstr[];
 
-static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char **current_cmd);
-static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_data_t*dir_list, const unsigned long int inode, const unsigned int depth);
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
+static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
 
 #define INTER_DIR (LINES-25+15)
 
@@ -93,7 +91,7 @@ static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned
   wrefresh(window);
 }
 
-static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_data_t*dir_list, const unsigned long int inode, const unsigned int depth)
+static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, file_info_t*dir_list, const unsigned long int inode, const unsigned int depth)
 {
   /* Return value
    * -1: quit
@@ -107,7 +105,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
   {
     int offset=0;
     int pos_num=0;
-    file_data_t *pos=dir_list;
+    struct td_list_head *pos=dir_list->list.next;
     const int old_LINES=LINES;
     unsigned int status=FILE_STATUS_MARKED;
     aff_copy(window);
@@ -119,15 +117,20 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
     {
       int i;
       int car;
-      const file_data_t *current_file;
-      for(i=0,current_file=dir_list;(current_file!=NULL) && (i<offset);current_file=current_file->next,i++);
-      for(i=offset;(current_file!=NULL) &&((i-offset)<INTER_DIR);i++,current_file=current_file->next)
+      struct td_list_head *file_walker = NULL;
+      for(i=0, file_walker=dir_list->list.next;
+	  file_walker!=&dir_list->list && i<offset;
+	  file_walker=file_walker->next,i++);
+      for(i=offset;
+	  file_walker!=&dir_list->list && (i-offset)<INTER_DIR;
+	  file_walker=file_walker->next,i++)
       {
+	const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
 	char str[11];
 	char		datestr[80];
 	wmove(window, 6+i-offset, 0);
 	wclrtoeol(window);	/* before addstr for BSD compatibility */
-	if(current_file==pos)
+	if(&current_file->list==pos)
 	{
 	  wattrset(window, A_REVERSE);
 	  waddstr(window, ">");
@@ -159,7 +162,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	if(((current_file->status&FILE_STATUS_DELETED)!=0 ||
 	      (current_file->status&FILE_STATUS_MARKED)!=0) && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
-	if(current_file==pos)
+	if(&current_file->list==pos)
 	  wattroff(window, A_REVERSE);
       }
       wmove(window, 6-1, 51);
@@ -171,9 +174,9 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
       wclrtoeol(window);
       wmove(window, 6+INTER_DIR, 51);
       wclrtoeol(window);
-      if(current_file!=NULL)
+      if(file_walker->next!=&dir_list->list)
 	wprintw(window, "Next");
-      if(dir_list==NULL)
+      if(td_list_empty(&dir_list->list))
       {
 	wmove(window,6,0);
 	wprintw(window,"No file found, filesystem may be damaged.");
@@ -290,13 +293,13 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  wrefresh(window);
 	  break;
       }
-      if(dir_list!=NULL)
+      if(!td_list_empty(&dir_list->list))
       {
 	switch(car)
 	{
 	  case KEY_UP:
 	  case '8':
-	    if(pos->prev!=NULL)
+	    if(pos->prev!=&dir_list->list)
 	    {
 	      pos=pos->prev;
 	      pos_num--;
@@ -304,17 +307,21 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	    break;
 	  case KEY_DOWN:
 	  case '2':
-	    if(pos->next!=NULL)
+	    if(pos->next!=&dir_list->list)
 	    {
 	      pos=pos->next;
 	      pos_num++;
 	    }
 	    break;
 	  case ':':
-	    if(!(pos->name[0]=='.' && pos->name[1]=='\0') &&
-		!(pos->name[0]=='.' && pos->name[1]=='.' && pos->name[2]=='\0'))
-	      pos->status^=FILE_STATUS_MARKED;
-	    if(pos->next!=NULL)
+	    {
+	      file_info_t *selected_file;
+	      selected_file=td_list_entry(pos, file_info_t, list);
+	      if(!(selected_file->name[0]=='.' && selected_file->name[1]=='\0') &&
+		  !(selected_file->name[0]=='.' && selected_file->name[1]=='.' && selected_file->name[2]=='\0'))
+		selected_file->status^=FILE_STATUS_MARKED;
+	    }
+	    if(pos->next!=&dir_list->list)
 	    {
 	      pos=pos->next;
 	      pos_num++;
@@ -322,9 +329,10 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	    break;
 	  case 'a':
 	    {
-	      file_data_t *tmp;
-	      for(tmp=dir_list; tmp!=NULL; tmp=tmp->next)
+	      struct td_list_head *tmpw= NULL;
+	      td_list_for_each(tmpw, &dir_list->list)
 	      {
+		file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
 		if((tmp->name[0]=='.' && tmp->name[1]=='\0') ||
 		    (tmp->name[0]=='.' && tmp->name[1]=='.' && tmp->name[2]=='\0'))
 		{
@@ -351,32 +359,35 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 #ifdef PADENTER
 	  case PADENTER:
 #endif
-	    if((pos!=NULL) && (LINUX_S_ISDIR(pos->st_mode)!=0))
 	    {
-	      unsigned long int new_inode=pos->st_ino;
-	      if((new_inode!=inode) &&(strcmp(pos->name,".")!=0))
+	      file_info_t *tmp=td_list_entry(pos, file_info_t, list);
+	      if(pos!=&dir_list->list && (LINUX_S_ISDIR(tmp->st_mode)!=0))
 	      {
-		if(strcmp(pos->name,"..")==0)
-		  return 1;
-		if(strlen(dir_data->current_directory)+1+strlen(pos->name)+1<=sizeof(dir_data->current_directory))
+		unsigned long int new_inode=tmp->st_ino;
+		if((new_inode!=inode) &&(strcmp(tmp->name,".")!=0))
 		{
-		  if(strcmp(dir_data->current_directory,"/"))
-		    strcat(dir_data->current_directory,"/");
-		  strcat(dir_data->current_directory,pos->name);
-		  return (long int)new_inode;
+		  if(strcmp(tmp->name,"..")==0)
+		    return 1;
+		  if(strlen(dir_data->current_directory)+1+strlen(tmp->name)+1<=sizeof(dir_data->current_directory))
+		  {
+		    if(strcmp(dir_data->current_directory,"/"))
+		      strcat(dir_data->current_directory,"/");
+		    strcat(dir_data->current_directory,tmp->name);
+		    return (long int)new_inode;
+		  }
 		}
 	      }
 	    }
 	    break;
 	  case KEY_PPAGE:
-	    for(i=0;(i<INTER_DIR-1)&&(pos->prev!=NULL);i++)
+	    for(i=0; i<INTER_DIR-1 && pos->prev!=&dir_list->list; i++)
 	    {
 	      pos=pos->prev;
 	      pos_num--;
 	    }
 	    break;
 	  case KEY_NPAGE:
-	    for(i=0;(i<INTER_DIR-1)&&(pos->next!=NULL);i++)
+	    for(i=0; i<INTER_DIR-1 && pos->next!=&dir_list->list; i++)
 	    {
 	      pos=pos->next;
 	      pos_num++;
@@ -386,17 +397,19 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	    if(dir_data->copy_file!=NULL)
 	    {
 	      const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-	      if(strcmp(pos->name,"..")!=0 &&
-		  current_directory_namelength+1+strlen(pos->name)<sizeof(dir_data->current_directory)-1)
+	      file_info_t *tmp=td_list_entry(pos, file_info_t, list);
+	      if(pos!=&dir_list->list &&
+		  strcmp(tmp->name,"..")!=0 &&
+		  current_directory_namelength+1+strlen(tmp->name)<sizeof(dir_data->current_directory)-1)
 	      {
 		if(strcmp(dir_data->current_directory,"/"))
 		  strcat(dir_data->current_directory,"/");
-		if(strcmp(pos->name,".")!=0)
-		  strcat(dir_data->current_directory,pos->name);
+		if(strcmp(tmp->name,".")!=0)
+		  strcat(dir_data->current_directory,tmp->name);
 		if(dir_data->local_dir==NULL || ask_destination>0)
 		{
 		  char *local_dir=dir_data->local_dir;
-		  if(LINUX_S_ISDIR(pos->st_mode)!=0)
+		  if(LINUX_S_ISDIR(tmp->st_mode)!=0)
 		    dir_data->local_dir=ask_location("Please select a destination where %s and any files below will be copied.",
 			dir_data->current_directory, local_dir);
 		  else
@@ -409,13 +422,14 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		{
 		  unsigned int copy_bad=0;
 		  unsigned int copy_ok=0;
-		  if(LINUX_S_ISDIR(pos->st_mode)!=0)
+		  if(LINUX_S_ISDIR(tmp->st_mode)!=0)
 		  {
-		    copy_dir(window, disk, partition, dir_data, pos, &copy_ok, &copy_bad);
+		    copy_dir(window, disk, partition, dir_data, tmp, &copy_ok, &copy_bad);
 		  }
-		  else if(LINUX_S_ISREG(pos->st_mode)!=0)
+		  else if(LINUX_S_ISREG(tmp->st_mode)!=0)
 		  {
-		    if(dir_data->copy_file(disk, partition, dir_data, pos)==0)
+		    copy_progress(window, copy_ok, copy_bad);
+		    if(dir_data->copy_file(disk, partition, dir_data, tmp)==0)
 		      copy_ok++;
 		    else
 		      copy_bad++;
@@ -438,12 +452,13 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      }
 	      if(dir_data->local_dir!=NULL)
 	      {
-		file_data_t *tmp;
 		unsigned int copy_bad=0;
 		unsigned int copy_ok=0;
 		const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-		for(tmp=dir_list; tmp!=NULL; tmp=tmp->next)
+		struct td_list_head *tmpw= NULL;
+		td_list_for_each(tmpw, &dir_list->list)
 		{
+		  file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
 		  if((tmp->status&FILE_STATUS_MARKED)!=0 &&
 		      current_directory_namelength + 1 + strlen(tmp->name) <
 		      sizeof(dir_data->current_directory)-1)
@@ -477,14 +492,18 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      const char *needle=ask_string_ncurses("Filename to find ? ");
 	      if(needle!=NULL && needle[0]!='\0')
 	      {
-		file_data_t *pos_org=pos;
+		file_info_t *tmp;
+		struct td_list_head *pos_org=pos;
 		const int pos_num_org=pos_num;
-		while(strcmp(pos->name, needle)!=0 && pos->next!=NULL)
+		tmp=td_list_entry(pos, file_info_t, list);
+		while(pos->next!=&dir_list->list &&
+		  strcmp(tmp->name, needle)!=0)
 		{
 		  pos=pos->next;
+		  tmp=td_list_entry(pos, file_info_t, list);
 		  pos_num++;
 		}
-		if(strcmp(pos->name, needle)!=0)
+		if(pos==&dir_list->list)
 		{
 		  pos=pos_org;
 		  pos_num=pos_num_org;
@@ -518,22 +537,25 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
   {
     const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
     long int new_inode=-1;	/* Quit */
-    file_data_t *dir_list;
+    file_info_t dir_list = {
+      .list = TD_LIST_HEAD_INIT(dir_list.list),
+      .name = NULL
+    };
     /* Not perfect for FAT32 root cluster */
     inode_known[depth]=inode;
-    dir_list=dir_data->get_dir(disk, partition, dir_data, inode);
-    dir_aff_log(dir_data, dir_list);
+    dir_data->get_dir(disk, partition, dir_data, inode, &dir_list);
+    dir_aff_log(dir_data, &dir_list);
     if(*current_cmd!=NULL)
     {
       /* TODO: handle copy_files */
       dir_data->current_directory[current_directory_namelength]='\0';
-      delete_list_file(dir_list);
+      delete_list_file(&dir_list);
       return -1;	/* Quit */
     }
-    new_inode=dir_aff_ncurses(disk, partition, dir_data,dir_list,inode,depth);
+    new_inode=dir_aff_ncurses(disk, partition, dir_data, &dir_list, inode, depth);
     if(new_inode==-1 || new_inode==1) /* -1:Quit or 1:Back */
     {
-      delete_list_file(dir_list);
+      delete_list_file(&dir_list);
       return new_inode;
     }
     if(new_inode>=2)
@@ -550,7 +572,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
     }
     /* restore current_directory name */
     dir_data->current_directory[current_directory_namelength]='\0';
-    delete_list_file(dir_list);
+    delete_list_file(&dir_list);
   }
 }
 
@@ -568,21 +590,26 @@ Returns
 0: all files has been copied
 */
 #define MAX_DIR_NBR 256
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
+static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
-  file_data_t *dir_list;
+  static file_info_t dir_list = {
+    .list = TD_LIST_HEAD_INIT(dir_list.list),
+    .name = NULL
+  };
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-  file_data_t *current_file;
   char *dir_name;
+  struct td_list_head *file_walker = NULL;
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
     return;
   inode_known[dir_nbr++]=dir->st_ino;
   dir_name=mkdir_local(dir_data->local_dir, dir_data->current_directory);
-  dir_list=dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->st_ino);
-  for(current_file=dir_list;current_file!=NULL;current_file=current_file->next)
+  dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->st_ino, &dir_list);
+  td_list_for_each(file_walker, &dir_list.list)
   {
+    file_info_t *current_file;
+    current_file=td_list_entry(file_walker, file_info_t, list);
     dir_data->current_directory[current_directory_namelength]='\0';
     if(current_directory_namelength+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
     {
@@ -617,7 +644,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
     }
   }
   dir_data->current_directory[current_directory_namelength]='\0';
-  delete_list_file(dir_list);
+  delete_list_file(&dir_list);
   set_date(dir_name, dir->td_atime, dir->td_mtime);
   free(dir_name);
   dir_nbr--;

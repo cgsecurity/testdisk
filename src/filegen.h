@@ -113,9 +113,9 @@ typedef struct
 
 typedef struct
 {
+  file_check_t file_checks[256];
   struct td_list_head list;
   unsigned int offset;
-  file_check_t file_checks[256];
 } file_check_list_t;
 
 #define NL_BARENL       (1 << 0)

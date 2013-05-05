@@ -71,6 +71,7 @@
 #include "common.h"
 #include "intrf.h"
 #include "ntfs.h"
+#include "list.h"
 #include "dir.h"
 #include "ntfs_dir.h"
 #include "ntfs_utl.h"
@@ -104,8 +105,8 @@ extern int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
 static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type);
-static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster);
-static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
+static int ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
+static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_ntfs_close(dir_data_t *dir_data);
 
 /**
@@ -194,17 +195,16 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
   {
     ntfs_inode *ni;
     ntfs_attr_search_ctx *ctx_si = NULL;
-    file_data_t *new_file=NULL;
+    file_info_t *new_file=NULL;
 
     result = -1;				/* Everything else is bad */
 
     ni = ntfs_inode_open(ls->vol, mref);
     if (!ni)
       goto release;
-    new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+    new_file=(file_info_t*)MALLOC(sizeof(*new_file));
     new_file->status=0;
-    new_file->prev=ls->current_file;
-    new_file->next=NULL;
+    td_list_add_tail(&new_file->list, &ls->dir_list->list);
     new_file->st_ino=MREF(mref);
     new_file->st_uid=0;
     new_file->st_gid=0;
@@ -232,16 +232,10 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
       ntfs_attr_search_ctx *ctx = NULL;
       if (dt_type == NTFS_DT_DIR)
       {
-	snprintf(new_file->name, sizeof(new_file->name), "%s", filename);
+	new_file->name=strdup(filename);
 	new_file->st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
 	new_file->st_size=0;
-	new_file->prev=ls->current_file;
-	new_file->next=NULL;
-	if(ls->current_file!=NULL)
-	  ls->current_file->next=new_file;
-	else
-	  ls->dir_list=new_file;
-	ls->current_file=new_file;
+	td_list_add_tail(&new_file->list, &ls->dir_list->list);
 	first=0;
       }
       ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
@@ -255,8 +249,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	  continue;
 	if(first==0)
 	{
-	  const file_data_t *old_file=new_file;
-	  new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+	  const file_info_t *old_file=new_file;
+	  new_file=(file_info_t *)MALLOC(sizeof(*new_file));
 	  memcpy(new_file, old_file, sizeof(*new_file));
 	}
 	new_file->st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
@@ -265,30 +259,24 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 	{
 	  char *stream_name=NULL;
 	  new_file->status=FILE_STATUS_ADS;
+	  new_file->name = (char *)MALLOC(MAX_PATH);
 	  if (ntfs_ucstombs((ntfschar *) ((char *) rec + le16_to_cpu(rec->name_offset)),
 		rec->name_length, &stream_name, 0) < 0)
 	  {
 	    log_error("ERROR: Cannot translate name into current locale.\n");
-	    snprintf(new_file->name, sizeof(new_file->name), "%s:???", filename);
+	    snprintf(new_file->name, MAX_PATH, "%s:???", filename);
 	  }
 	  else
 	  {
-	    snprintf(new_file->name, sizeof(new_file->name), "%s:%s", filename, stream_name);
+	    snprintf(new_file->name, MAX_PATH, "%s:%s", filename, stream_name);
 	  }
 	  free(stream_name);
 	}
 	else
 	{
-	  snprintf(new_file->name,sizeof(new_file->name), "%s", filename);
+	  new_file->name=strdup(filename);
 	}
-	new_file->prev=ls->current_file;
-	new_file->next=NULL;
-	if(ls->current_file!=NULL)
-	  ls->current_file->next=new_file;
-	else
-	  ls->dir_list=new_file;
-	ls->current_file=new_file;
-
+	td_list_add_tail(&new_file->list, &ls->dir_list->list);
 	first=0;
       }
       ntfs_attr_put_search_ctx(ctx);
@@ -305,18 +293,17 @@ free:
   return result;
 }
 
-static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster)
+static int ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list)
 {
   ntfs_inode *inode;
   s64 pos;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
-  ls->dir_list=NULL;
-  ls->current_file=NULL;
+  ls->dir_list=dir_list;
 
   inode = ntfs_inode_open (ls->vol, cluster);
   if (!inode) {
     log_error("ntfs_dir: ntfs_inode_open failed\n");
-    return NULL;
+    return -1;
   }
 
   /*
@@ -334,12 +321,12 @@ static file_data_t *ntfs_dir(disk_t *disk_car, const partition_t *partition, dir
     log_critical("ntfs_readdir BUG not MFT_RECORD_IS_DIRECTORY\n");
   /* Finished with the inode; release it. */
   ntfs_inode_close(inode);
-  return ls->dir_list;
+  return 0;
 }
 
 enum { bufsize = 4096 };
 
-static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   const unsigned long int first_inode=file->st_ino;
   ntfs_inode *inode;
@@ -519,7 +506,6 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
   {
     struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)MALLOC(sizeof(*ls));
     ls->dir_list=NULL;
-    ls->current_file=NULL;
     ls->vol=vol;
     ls->my_data=my_data;
     ls->dir_data=dir_data;

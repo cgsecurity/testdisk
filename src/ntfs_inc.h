@@ -21,8 +21,7 @@
  */
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 struct ntfs_dir_struct {
-	file_data_t *dir_list;
-	file_data_t *current_file;
+	file_info_t *dir_list;
 	ntfs_volume *vol;
 	my_data_t *my_data;
 	dir_data_t *dir_data;

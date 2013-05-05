@@ -542,7 +542,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	    offset=pos_num-INTER_DIR+1;
         } while(quit==ASK_LOCATION_WAITKEY && old_LINES==LINES);
       } while(quit==ASK_LOCATION_UPDATE || old_LINES!=LINES);
-      delete_list_file_info(&dir_list.list);
+      delete_list_file(&dir_list);
     }
     else
     {

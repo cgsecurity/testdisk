@@ -131,7 +131,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk->sector_size, UP_UNK);
 }
 
-static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_data_t *file)
+static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;
@@ -241,36 +241,43 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
-      file_data_t *dir_list;
-      dir_list=dir_fat_aux(buffer,read_size,0,0);
-      if(dir_list!=NULL)
+      static file_info_t dir_list = {
+	.list = TD_LIST_HEAD_INIT(dir_list.list),
+	.name = NULL
+      };
+      dir_fat_aux(buffer,read_size,0,0, &dir_list);
+      if(!td_list_empty(&dir_list.list))
       {
+	struct td_list_head *file_walker = NULL;
 	unsigned int dir_inode=0;
-	const file_data_t *current_file;
+	unsigned int nbr;
+	int stop=0;
 	log_info("Sector %llu\n", (long long unsigned)offset/disk->sector_size);
-	dir_aff_log(NULL, dir_list);
+	dir_aff_log(NULL, &dir_list);
 	del_search_space(list_search_space, offset, offset + cluster_size -1);
-	current_file=dir_list;
-	while(current_file!=NULL)
+	for(file_walker=dir_list.list.next, nbr=0;
+	    stop==0 && file_walker!=&dir_list.list;
+	    file_walker=file_walker->next, nbr++)
 	{
+	  const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
 	  if(current_file->st_ino==1 ||
 	      current_file->st_ino >= no_of_cluster+2)
-	    current_file=NULL;
+	    stop=1;
 	  else if(LINUX_S_ISDIR(current_file->st_mode)!=0)
 	  {
 	    if(strcmp(current_file->name,"..")==0)
 	    {
-	      if(current_file!=dir_list->next)
-		current_file=NULL;
+	      if(nbr!=1)
+		stop=1;
 	    }
 	    else if(current_file->st_ino==0)
-	      current_file=NULL;
+	      stop=1;
 	    else if(strcmp(current_file->name,".")==0)
 	    {
-	      if(current_file==dir_list)
+	      if(nbr==0)
 		dir_inode=current_file->st_ino;
 	      else
-		current_file=NULL;
+		stop=1;
 	    }
 	    else
 	    {
@@ -301,12 +308,10 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	      }
 	    }
 	    else
-	      current_file=NULL;
+	      stop=1;
 	  }
-	  if(current_file!=NULL)
-	    current_file=current_file->next;
 	}
-	delete_list_file(dir_list);
+	delete_list_file(&dir_list);
       }
     }
     buffer+=cluster_size;

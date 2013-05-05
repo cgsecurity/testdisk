@@ -55,10 +55,10 @@ struct fat_dir_struct
 };
 
 
-static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header);
-static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster);
+static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header, file_info_t *dir_list);
+static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list);
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
-static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
+static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_fat_close(dir_data_t *dir_data);
 
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
@@ -69,13 +69,11 @@ static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 	}
 }
 
-file_data_t *dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param)
+int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param, file_info_t *dir_list)
 {
   const struct msdos_dir_entry *de=(const struct msdos_dir_entry*)buffer;
   wchar_t unicode[1000];
   unsigned char long_slots;
-  file_data_t *dir_list=NULL;
-  file_data_t *current_file=NULL;
   unsigned int status;
   unsigned int inode;
   int utf8=1;
@@ -106,7 +104,7 @@ ParseLongDeleted:
     while (1)
     {
       if((const void*)de>=(const void*)(buffer+size))
-	goto EODir;
+	return 0;
       ds = (const struct msdos_dir_slot *) de;
       if(de->name[0] != (int8_t) DELETED_FLAG)
 	goto GetNew;
@@ -186,7 +184,7 @@ ParseLong:
 	}
 	de++;
 	if((const void*)de>=(const void*)(buffer+size))
-	  goto EODir;
+	  return 0;
 	if (slot == 0)
 	  break;
 	ds = (const struct msdos_dir_slot *) de;
@@ -245,8 +243,8 @@ RecEnd:
      {
       status=FILE_STATUS_DELETED;
       if((de->attr&ATTR_DIR)==ATTR_DIR &&
-	((dir_list==NULL && unicode[1]=='\0') ||
-	 (dir_list!=NULL && dir_list->next==NULL && unicode[1]=='.' && unicode[2]=='\0')))
+	((td_list_empty(&dir_list->list) && unicode[1]=='\0') ||
+	 (!td_list_empty(&dir_list->list) && dir_list->list.next==dir_list->list.prev && unicode[1]=='.' && unicode[2]=='\0')))
 	unicode[0]='.';	/* "." and ".." are the first two entries */
       else
 	unicode[0]='_';
@@ -256,12 +254,13 @@ RecEnd:
       !(de->attr & ATTR_VOLUME))
   {
     if(unicode[0]==0)
-      return dir_list;
+      return 0;
     if((int8_t) unicode[0] != (int8_t) DELETED_FLAG)
     {
       unsigned int i,o;
-      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
-      for(i=0,o=0; unicode[i]!=0 && o<sizeof(new_file->name)-1; i++)
+      file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
+      new_file->name=(char*)MALLOC(DIR_NAME_LEN);
+      for(i=0,o=0; unicode[i]!=0 && o<DIR_NAME_LEN-1; i++)
       {
 	if(utf8 && unicode[i]>0x7f)
 	{
@@ -290,22 +289,15 @@ RecEnd:
 //      new_file->st_blksize=cluster_size;
       new_file->td_atime=new_file->td_ctime=new_file->td_mtime=date_dos2unix(le16(de->time),le16(de->date));
       new_file->status=status;
-      new_file->prev=current_file;
-      new_file->next=NULL;
       /* log_debug("fat: new file %s de=%p size=%u\n",new_file->name,de,le32(de->size)); */
-      if(current_file!=NULL)
-        current_file->next=new_file;
-      else
-        dir_list=new_file;
-      current_file=new_file;
+      td_list_add_tail(&new_file->list, &dir_list->list);
     }
   }
   de++;
   if((const void *)de<(const void *)(buffer+size-1) &&
       de->name[0] != (int8_t) 0)
     goto GetNew;
-EODir:
-  return dir_list;
+  return 0;
 }
 
 enum {FAT_FOLLOW_CLUSTER, FAT_NEXT_FREE_CLUSTER, FAT_NEXT_CLUSTER};
@@ -321,7 +313,7 @@ static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
 }
 
 #define NBR_CLUSTER_MAX 30
-static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster)
+static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list)
 {
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
   const struct fat_boot_sector*fat_header=ls->boot_sector;
@@ -329,26 +321,25 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
   if(fat_header->sectors_per_cluster<1)
   {
     log_error("FAT: Can't list files, bad cluster size.\n");
-    return NULL;
+    return -1;
   }
   if(fat_sector_size(fat_header)==0)
   {
     log_error("FAT: Can't list files, bad sector size.\n");
-    return NULL;
+    return -1;
   }
   if(cluster==0)
   {
     if(partition->upart_type!=UP_FAT32)
-      return fat1x_rootdir(disk_car, partition, dir_data, fat_header);
+      return fat1x_rootdir(disk_car, partition, dir_data, fat_header, dir_list);
     if(le32(fat_header->root_cluster)<2)
     {
       log_error("FAT32: Can't list files, bad root cluster.\n");
-      return NULL;
+      return -1;
     }
     cluster=le32(fat_header->root_cluster);
   }
   {
-    file_data_t *dir_list=NULL;
     const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
     unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*NBR_CLUSTER_MAX);
     unsigned int nbr_cluster;
@@ -415,23 +406,23 @@ static file_data_t *fat_dir(disk_t *disk_car, const partition_t *partition, dir_
       }
     }
     if(nbr_cluster>0)
-      dir_list=dir_fat_aux(buffer_dir, cluster_size*nbr_cluster, cluster_size, dir_data->param);
+      dir_fat_aux(buffer_dir, cluster_size*nbr_cluster, cluster_size, dir_data->param, dir_list);
     free(buffer_dir);
-    return dir_list;
+    return 0;
   }
 }
 
-static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header)
+static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header, file_info_t *dir_list)
 {
   const unsigned int root_size=(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size*disk_car->sector_size;
   if(root_size==0)
-    return NULL;
+    return -1;
   if(dir_data->verbose>1)
   {
     log_trace("fat1x_rootdir root_size=%u sectors\n",root_size/disk_car->sector_size);
   }
   {
-    file_data_t *res=NULL;
+    int res;
     uint64_t start;
     unsigned char *buffer_dir;
     buffer_dir=(unsigned char*)MALLOC(root_size);
@@ -441,7 +432,7 @@ static file_data_t *fat1x_rootdir(disk_t *disk_car, const partition_t *partition
       log_error("FAT 1x: Can't read root directory.\n");
       /* Don't return yet, it may have been a partial read */
     }
-    res=dir_fat_aux(buffer_dir, root_size, fat_header->sectors_per_cluster * fat_sector_size(fat_header), dir_data->param);
+    res=dir_fat_aux(buffer_dir, root_size, fat_header->sectors_per_cluster * fat_sector_size(fat_header), dir_data->param, dir_list);
     free(buffer_dir);
     return res;
   }
@@ -486,7 +477,7 @@ static void dir_partition_fat_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;

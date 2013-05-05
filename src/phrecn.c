@@ -311,14 +311,17 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 
             if(file_recovery.file_stat->file_hint==&file_hint_dir && options->verbose > 0)
             { /* FAT directory found, list the file */
-              file_data_t *dir_list;
-              dir_list=dir_fat_aux(buffer,read_size,0,0);
-              if(dir_list!=NULL)
+	      static file_info_t dir_list = {
+		.list = TD_LIST_HEAD_INIT(dir_list.list),
+		.name = NULL
+	      };
+	      dir_fat_aux(buffer,read_size,0,0, &dir_list);
+	      if(!td_list_empty(&dir_list.list))
               {
 		log_info("Sector %lu\n",
 		    (unsigned long)(file_recovery.location.start/params->disk->sector_size));
-		dir_aff_log(NULL, dir_list);
-                delete_list_file(dir_list);
+		dir_aff_log(NULL, &dir_list);
+                delete_list_file(&dir_list);
               }
             }
           }

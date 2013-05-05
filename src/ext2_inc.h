@@ -21,8 +21,7 @@
  */
 #if defined(HAVE_LIBEXT2FS)
 struct ext2_dir_struct {
-	file_data_t *dir_list;
-	file_data_t *current_file;
+	file_info_t *dir_list;
 	ext2_filsys current_fs;
 	int flags;
 	dir_data_t *dir_data;

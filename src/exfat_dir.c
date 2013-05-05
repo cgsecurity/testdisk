@@ -61,9 +61,9 @@ struct exfat_dir_struct
 };
 
 
-static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster);
+static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list);
 static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
-static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
+static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_exfat_close(dir_data_t *dir_data);
 
 static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
@@ -81,7 +81,7 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 #define ATTR_ARCH    32 /* archived */
 #define EXFAT_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
 
-static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param)
+static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list)
 {
   /*
    * 0x83 Volume label
@@ -95,8 +95,7 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
    * 0xE2 Windows CE ACL
    *
    */
-  file_data_t *dir_list=NULL;
-  file_data_t *current_file=NULL;
+  file_info_t *current_file=NULL;
   unsigned int offset=0;
   unsigned int sec_count=0;
   for(offset=0; offset<size; offset+=0x20)
@@ -107,8 +106,9 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
     if((buffer[offset]&0x7f)==0x05)
     { /* File directory entry */
       const struct exfat_file_entry *entry=(const struct exfat_file_entry *)&buffer[offset];
-      file_data_t *new_file=(file_data_t *)MALLOC(sizeof(*new_file));
+      file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
       sec_count=entry->sec_count;
+      new_file->name=(char *)MALLOC(512);
       new_file->name[0]=0;
       new_file->st_ino=0;
       new_file->st_mode = EXFAT_MKMODE(entry->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
@@ -119,14 +119,8 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
       new_file->td_ctime=date_dos2unix(le16(entry->ctime),le16(entry->cdate));
       new_file->td_mtime=date_dos2unix(le16(entry->mtime),le16(entry->mdate));
       new_file->status=((entry->type&0x80)==0x80?0:FILE_STATUS_DELETED);
-      new_file->prev=current_file;
-      new_file->next=NULL;
-      /* log_debug("exfat: new file %s de=%p size=%u\n",new_file->name,de,le32(de->size)); */
-      if(current_file!=NULL)
-        current_file->next=new_file;
-      else
-        dir_list=new_file;
       current_file=new_file;
+      td_list_add_tail(&new_file->list, &dir_list->list);
     }
     else if(sec_count>0 && current_file!=NULL)
     {
@@ -153,7 +147,7 @@ static file_data_t *dir_exfat_aux(const unsigned char*buffer, const unsigned int
       sec_count--;
     }
   }
-  return dir_list;
+  return 0;
 }
 
 enum {exFAT_FOLLOW_CLUSTER, exFAT_NEXT_FREE_CLUSTER, exFAT_NEXT_CLUSTER};
@@ -164,12 +158,11 @@ static int is_EOC(const unsigned int cluster)
 }
 
 #define NBR_CLUSTER_MAX 30
-static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster)
+static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list)
 {
   const struct exfat_dir_struct *ls=(const struct exfat_dir_struct*)dir_data->private_dir_data;
   const struct exfat_super_block*exfat_header=ls->boot_sector;
   const unsigned int cluster_shift=exfat_header->block_per_clus_bits + exfat_header->blocksize_bits;
-  file_data_t *dir_list=NULL;
   unsigned int cluster;
   unsigned char *buffer_dir=(unsigned char *)MALLOC(NBR_CLUSTER_MAX << cluster_shift);
   unsigned int nbr_cluster;
@@ -229,9 +222,9 @@ static file_data_t *exfat_dir(disk_t *disk, const partition_t *partition, dir_da
     }
   }
   if(nbr_cluster>0)
-    dir_list=dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data->param);
+    dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data->param, dir_list);
   free(buffer_dir);
-  return dir_list;
+  return 0;
 }
 
 int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const int verbose)
@@ -286,7 +279,7 @@ static void dir_partition_exfat_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file)
+static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;

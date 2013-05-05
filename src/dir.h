@@ -39,44 +39,6 @@ extern "C" {
 #define CAPA_LIST_ADS		2
 
 typedef struct dir_data dir_data_t;
-typedef struct file_data file_data_t;
-
-struct dir_data
-{
-  void *display;
-  char current_directory[DIR_NAME_LEN];
-  unsigned long int current_inode;
-  int verbose;
-  unsigned int param;
-  unsigned int capabilities;
-  file_data_t *(*get_dir)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_inode);
-  int (*copy_file)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_data_t *file);
-  void (*close)(dir_data_t *dir_data);
-  char *local_dir;
-  void *private_dir_data;
-};
-
-#define	FILE_STATUS_DELETED	1
-#define	FILE_STATUS_MARKED	2
-#define	FILE_STATUS_ADS		4
-
-/* TODO: migrate file_data to file_info */
-struct file_data
-{
-  file_data_t *prev;
-  file_data_t *next;
-  char	name[DIR_NAME_LEN];
-  uint32_t st_ino;
-  uint32_t st_mode;
-  uint32_t st_uid;
-  uint32_t st_gid;
-  uint64_t st_size;
-  time_t	td_atime;	/* time of last access */
-  time_t	td_mtime;   /* time of last modification */
-  time_t	td_ctime;   /* time of last status change */
-  unsigned int status;
-};
-
 typedef struct 
 {
   struct td_list_head list;
@@ -92,10 +54,28 @@ typedef struct
   unsigned int status;
 } file_info_t;
 
-int dir_aff_log(const dir_data_t *dir_data, const file_data_t*dir_list);
+struct dir_data
+{
+  void *display;
+  char current_directory[DIR_NAME_LEN];
+  unsigned long int current_inode;
+  int verbose;
+  unsigned int param;
+  unsigned int capabilities;
+  int(*get_dir)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_inode, file_info_t*list);
+  int (*copy_file)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+  void (*close)(dir_data_t *dir_data);
+  char *local_dir;
+  void *private_dir_data;
+};
+
+#define	FILE_STATUS_DELETED	1
+#define	FILE_STATUS_MARKED	2
+#define	FILE_STATUS_ADS		4
+
+int dir_aff_log(const dir_data_t *dir_data, const file_info_t*dir_list);
 int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
-unsigned int delete_list_file(file_data_t *file_list);
-void delete_list_file_info(struct td_list_head *list);
+unsigned int delete_list_file(file_info_t *list);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);
 void mode_string (const unsigned int mode, char *str);
 int set_mode(const char *pathname, unsigned int mode);
