@@ -81,9 +81,6 @@ char *get_default_location(void)
 #ifdef HAVE_NCURSES
 extern const char *monstr[];
 
-#define INTER_DIR (LINES-25+16)
-#define Y_DIR	  8
-
 #ifdef __MINGW32__
 #define SPATH_SEP "\\"
 #define PATH_SEP '\\'
@@ -292,41 +289,48 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       struct td_list_head *current_file=dir_list.list.next;
       int offset=0;
       int pos_num=0;
-      int old_LINES=LINES;
+      int old_LINES=0;
+      int old_COLS=0;
       do
       {
 	int dst_directory_ok=0;
+	int line_directory;
+	int line_base;
 	if(old_LINES!=LINES)
 	{ /* Screen size has changed, reset to initial values */
 	  current_file=dir_list.list.next;
 	  offset=0;
 	  pos_num=0;
 	  old_LINES=LINES;
+	  old_COLS=COLS;
 	}
         aff_copy_short(window);
-        wmove(window,4,0);
+	line_directory=aff_txt(2, window, msg, src_dir);
+        wmove(window, line_directory, 0);
         wprintw(window,"Keys: ");
-
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
 	waddstr(window, "Arrow");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	wprintw(window," keys to select another directory");
-	wmove(window, 5, 6);
+        wmove(window, ++line_directory, 6);
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
 	waddstr(window, "C");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	wprintw(window, " when the destination is correct");
-	wmove(window, 6, 6);
+        wmove(window, ++line_directory, 6);
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
 	waddstr(window, "Q");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to quit");
+	line_directory++;
+	line_base=line_directory+1;
+	line_base+=(strlen("Directory ")+strlen(dst_directory))/old_COLS;
 	{
           struct td_list_head *file_walker = NULL;
           int i=0;
@@ -337,7 +341,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
             {
               file_info_t *file_info;
               file_info=td_list_entry(file_walker, file_info_t, list);
-              wmove(window, Y_DIR - 1 + i - offset, 0);
+              wmove(window, line_base - 1 + i - offset, 0);
               wclrtoeol(window);	/* before addstr for BSD compatibility */
               if(file_walker==current_file)
 	      {
@@ -352,16 +356,15 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		dir_aff_entry(window,file_info);
 	      }
             }
-            if(offset+INTER_DIR<=i)
+            if(old_LINES-2 <= line_base - 1+i-offset)
               break;
           }
-	  wmove(window, Y_DIR + INTER_DIR, 4);
+	  wmove(window,  old_LINES-1, 4);
 	  wclrtoeol(window);
 	  if(file_walker!=&dir_list.list && file_walker->next!=&dir_list.list)
 	    wprintw(window, "Next");
         }
-	aff_txt(2, window, msg, src_dir);
-	wmove(window,7,0);
+	wmove(window, line_directory, 0);
 	wclrtoeol(window);	/* before addstr for BSD compatibility */
 	if(strcmp(dst_directory,".")==0)
 	{
@@ -395,7 +398,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
         wrefresh(window);
         do
         {
-	  int command=wgetch(window);
+	  const int command=wgetch(window);
           quit=ASK_LOCATION_WAITKEY;
 #if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
 	  if(command==KEY_MOUSE)
@@ -405,16 +408,16 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	    {	/* When the user clicks left mouse button */
 	      if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
 	      {
-		if(event.y >= Y_DIR && event.y < Y_DIR + INTER_DIR)
+		if(event.y => line_base - 1 && event.y < old_LINES)
 		{
 		  const int pos_num_old=pos_num;
 		  /* Disk selection */
-		  while(pos_num > event.y - (Y_DIR - offset) && current_file->prev!=&dir_list.list)
+		  while(pos_num > event.y - (line_base - offset) && current_file->prev!=&dir_list.list)
 		  {
 		    current_file=current_file->prev;
 		    pos_num--;
 		  }
-		  while(pos_num < event.y - (Y_DIR - offset) && current_file->next!=&dir_list.list)
+		  while(pos_num < event.y - (line_base - offset) && current_file->next!=&dir_list.list)
 		  {
 		    current_file=current_file->next;
 		    pos_num++;
@@ -473,7 +476,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
             case KEY_PPAGE:
               {
                 int i;
-                for(i=0; i<INTER_DIR-1 && current_file->prev!=&dir_list.list; i++)
+                for(i=0; i<old_LINES-line_base - 1-3 && current_file->prev!=&dir_list.list; i++)
                 {
                   current_file=current_file->prev;
                   pos_num--;
@@ -484,7 +487,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
             case KEY_NPAGE:
               {
                 int i;
-                for(i=0; i<INTER_DIR-1 && current_file->next!=&dir_list.list; i++)
+                for(i=0; i<old_LINES-line_base - 1-3 && current_file->next!=&dir_list.list; i++)
                 {
                   current_file=current_file->next;
                   pos_num++;
@@ -538,8 +541,8 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
           }
 	  if(pos_num<offset)
 	    offset=pos_num;
-	  if(pos_num>=offset+INTER_DIR)
-	    offset=pos_num-INTER_DIR+1;
+	  if(offset+old_LINES <= pos_num+line_base+1)
+	    offset=pos_num + line_base + 2 - old_LINES;
         } while(quit==ASK_LOCATION_WAITKEY && old_LINES==LINES);
       } while(quit==ASK_LOCATION_UPDATE || old_LINES!=LINES);
       delete_list_file(&dir_list);
