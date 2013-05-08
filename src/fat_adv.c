@@ -326,7 +326,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 #endif
     unsigned char *buffer;
     int ind_stop=0;
-    static file_info_t rootdir_list= {
+    file_info_t rootdir_list= {
       .list = TD_LIST_HEAD_INIT(rootdir_list.list),
       .name = NULL
     };
@@ -373,7 +373,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               (buffer[1*0x20+0xB]!=ATTR_EXT && (buffer[1*0x20+0xB]&ATTR_DIR)!=0) && (cluster==0)
               && (buffer[0x40]!=0)) /* First-level directory */
           {
-	    static file_info_t dir_list = {
+	    file_info_t dir_list = {
 	      .list = TD_LIST_HEAD_INIT(dir_list.list),
 	      .name = NULL
 	    };
@@ -504,7 +504,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               }
             }
             {
-	      static file_info_t dir_list = {
+	      file_info_t dir_list = {
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };
@@ -821,7 +821,7 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
 {
   unsigned char *buffer_dir;
   unsigned int root_dir_size;
-  static file_info_t dir_list = {
+  file_info_t dir_list = {
     .list = TD_LIST_HEAD_INIT(dir_list.list),
     .name = NULL
   };

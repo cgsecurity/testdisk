@@ -175,7 +175,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
   do
   {
     DIR* dir;
-    static file_info_t dir_list = {
+    file_info_t dir_list = {
       .list = TD_LIST_HEAD_INIT(dir_list.list),
       .name = NULL
     };

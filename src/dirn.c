@@ -594,7 +594,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
-  static file_info_t dir_list = {
+  file_info_t dir_list = {
     .list = TD_LIST_HEAD_INIT(dir_list.list),
     .name = NULL
   };

@@ -311,7 +311,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 
             if(file_recovery.file_stat->file_hint==&file_hint_dir && options->verbose > 0)
             { /* FAT directory found, list the file */
-	      static file_info_t dir_list = {
+	      file_info_t dir_list = {
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };

@@ -272,7 +272,7 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-  static file_info_t dir_list = {
+  file_info_t dir_list = {
     .list = TD_LIST_HEAD_INIT(dir_list.list),
     .name = NULL
   };

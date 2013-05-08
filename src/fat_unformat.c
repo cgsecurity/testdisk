@@ -241,7 +241,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	memcmp(buffer,         ".          ", 8+3)==0 &&
 	memcmp(&buffer[0x20], "..         ", 8+3)==0)
     {
-      static file_info_t dir_list = {
+      file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
 	.name = NULL
       };

@@ -171,7 +171,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     if(res1==0)
     {
-      static file_info_t dir_list = {
+      file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
 	.name = NULL
       };
@@ -191,7 +191,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     res2=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
     if(res2==0)
     {
-      static file_info_t dir_list = {
+      file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
 	.name = NULL
       };
