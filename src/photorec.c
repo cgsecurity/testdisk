@@ -35,6 +35,12 @@
 #include <string.h>
 #endif
 #include <errno.h>
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
@@ -980,4 +986,40 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
   return offset;
 }
 
+void params_reset(struct ph_param *params, const struct ph_options *options)
+{
+  params->file_nbr=0;
+  params->status=STATUS_FIND_OFFSET;
+  params->real_start_time=time(NULL);
+  params->dir_num=1;
+  params->file_stats=init_file_stats(options->list_file_format);
+  params->offset=-1;
+  if(params->blocksize==0)
+    params->blocksize=params->disk->sector_size;
+}
 
+const char *status_to_name(const photorec_status_t status)
+{
+  switch(status)
+  {
+    case STATUS_UNFORMAT:
+      return "STATUS_UNFORMAT";
+    case STATUS_FIND_OFFSET:
+      return "STATUS_FIND_OFFSET";
+    case STATUS_EXT2_ON:
+      return "STATUS_EXT2_ON";
+    case STATUS_EXT2_ON_BF:			
+      return "STATUS_EXT2_ON_BF";
+    case STATUS_EXT2_OFF:
+      return "STATUS_EXT2_OFF";
+    case STATUS_EXT2_OFF_BF:
+      return "STATUS_EXT2_OFF_BF";
+    case STATUS_EXT2_ON_SAVE_EVERYTHING:
+      return "STATUS_EXT2_ON_SAVE_EVERYTHING";
+    case STATUS_EXT2_OFF_SAVE_EVERYTHING:
+      return "STATUS_EXT2_OFF_SAVE_EVERYTHING";
+    case STATUS_QUIT :
+    default:
+      return "STATUS_QUIT";
+  }
+}

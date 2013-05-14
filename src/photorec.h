@@ -77,6 +77,8 @@ void info_list_search_space(const alloc_data_t *list_search_space, const alloc_d
 void free_search_space(alloc_data_t *list_search_space);
 void set_filename(file_recovery_t *file_recovery, struct ph_param *params);
 uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space);
+void params_reset(struct ph_param *params, const struct ph_options *options);
+const char *status_to_name(const photorec_status_t status);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

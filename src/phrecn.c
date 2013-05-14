@@ -756,12 +756,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 {
   int ind_stop=0;
   const unsigned int blocksize_is_known=params->blocksize;
-  params->file_nbr=0;
-  params->status=STATUS_FIND_OFFSET;
-  params->real_start_time=time(NULL);
-  params->dir_num=1;
-  params->file_stats=init_file_stats(options->list_file_format);
-  params->offset=-1;
+  params_reset(params, options);
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     while(params->cmd_run[0]==',')
@@ -819,8 +814,6 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   screen_buffer_reset();
   log_info("\nAnalyse\n");
   log_partition(params->disk, params->partition);
-  if(params->blocksize==0)
-    params->blocksize=params->disk->sector_size;
 
   /* make the first recup_dir */
   params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
@@ -833,20 +826,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   
   for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
   {
-    unsigned int old_file_nbr=params->file_nbr;
+    const unsigned int old_file_nbr=params->file_nbr;
     log_info("Pass %u (blocksize=%u) ", params->pass, params->blocksize);
-    switch(params->status)
-    {
-      case STATUS_UNFORMAT:			log_info("STATUS_UNFORMAT\n");	break;
-      case STATUS_FIND_OFFSET:			log_info("STATUS_FIND_OFFSET\n");	break;
-      case STATUS_EXT2_ON:			log_info("STATUS_EXT2_ON\n");	break;
-      case STATUS_EXT2_ON_BF:			log_info("STATUS_EXT2_ON_BF\n");	break;
-      case STATUS_EXT2_OFF:			log_info("STATUS_EXT2_OFF\n");	break;
-      case STATUS_EXT2_OFF_BF:			log_info("STATUS_EXT2_OFF_BF\n");	break;
-      case STATUS_EXT2_ON_SAVE_EVERYTHING:	log_info("STATUS_EXT2_ON_SAVE_EVERYTHING\n");	break;
-      case STATUS_EXT2_OFF_SAVE_EVERYTHING:	log_info("STATUS_EXT2_OFF_SAVE_EVERYTHING\n");	break;
-      case STATUS_QUIT :			log_info("STATUS_QUIT\n");			break;
-    }
+    log_info("%s\n", status_to_name(params->status));
+
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr, 4, 0);
@@ -968,19 +951,13 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
 	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
 	  else
-	  {
 	    params->status=STATUS_QUIT;
-	    unlink("photorec.ses");
-	  }
 	  break;
 	case STATUS_EXT2_ON_BF:
 	  if(options->keep_corrupted_file>0)
 	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
 	  else
-	  {
 	    params->status=STATUS_QUIT;
-	    unlink("photorec.ses");
-	  }
 	  break;
 	case STATUS_EXT2_OFF:
 	  if(options->paranoid>1)
@@ -988,25 +965,20 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
 	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
 	  else
-	  {
 	    params->status=STATUS_QUIT;
-	    unlink("photorec.ses");
-	  }
 	  break;
 	case STATUS_EXT2_OFF_BF:
 	  if(options->keep_corrupted_file>0)
 	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
 	  else
-	  {
 	    params->status=STATUS_QUIT;
-	    unlink("photorec.ses");
-	  }
 	  break;
 	default:
 	  params->status=STATUS_QUIT;
-	  unlink("photorec.ses");
 	  break;
       }
+      if(params->status==STATUS_QUIT)
+	unlink("photorec.ses");
     }
     {
       const time_t current_time=time(NULL);
