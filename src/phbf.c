@@ -74,8 +74,10 @@
 extern file_check_list_t file_check_list;
 extern uint64_t free_list_allocation_end;
 
-static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase);
-static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag);
+typedef enum { BF_OK=0, BF_STOP=1, BF_EACCES=2, BF_ENOSPC=3, BF_FRAG_FOUND=4, BF_EOF=5, BF_ENOENT=6, BF_ERANGE=7} bf_status_t;
+
+static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase);
+static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag);
 
 #ifdef DEBUG_BF
 static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
@@ -144,7 +146,7 @@ static struct td_list_head *next_file(struct td_list_head *search_walker, alloc_
   return search_walker;
 }
 
-int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   struct td_list_head *search_walker = NULL;
   struct td_list_head *p= NULL;
@@ -152,7 +154,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
   const unsigned int blocksize=params->blocksize;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   unsigned int buffer_size;
-  int ind_stop=0;
+  pstatus_t ind_stop=PSTATUS_OK;
   int pass2=params->pass;
   int phase;
   buffer_size=blocksize+READ_SIZE;
@@ -161,7 +163,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
   {
     const unsigned int file_nbr_phase_old=params->file_nbr;
     for(search_walker=list_search_space->list.prev, p=search_walker->prev;
-	search_walker!=&list_search_space->list && ind_stop==0;
+	search_walker!=&list_search_space->list && ind_stop==PSTATUS_OK;
 	p=search_walker->prev)
     {
       alloc_data_t *current_search_space;
@@ -243,7 +245,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
 	    if(!(file_recovery.handle=fopen(file_recovery.filename,"w+b")))
 	    { 
 	      log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
-	      ind_stop=2;
+	      ind_stop=PSTATUS_EACCES;
 	    }
 	  }
 	}
@@ -254,7 +256,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
 	    if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	    { 
 	      log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
-	      ind_stop=3;
+	      ind_stop=PSTATUS_ENOSPC;
 	    }
 	  }
 	  if(file_recovery.file_stat!=NULL)
@@ -350,9 +352,7 @@ int photorec_bf(struct ph_param *params, const struct ph_options *options, alloc
   return ind_stop;
 }
 
-enum { BF_FILE_FOUND=0, BF_USER_STOP=1, BF_ERR_STOP=2, BF_FRAG_FOUND=3, BF_EOF=4, BF_NO_FILE=5, BF_TOO_FAR=6};
-
-static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, const int phase, const uint64_t file_offset, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer)
+static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, const int phase, const uint64_t file_offset, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer)
 {
   const unsigned int blocksize=params->blocksize;
   { /* Add remaining data blocs */
@@ -389,7 +389,7 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
 	      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
-	      return BF_ERR_STOP;
+	      return BF_ENOSPC;
 	    }
 	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
@@ -416,7 +416,7 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
 	      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	      fclose(file_recovery->handle);
 	      file_recovery->handle=NULL;
-	      return BF_ERR_STOP;
+	      return BF_ENOSPC;
 	    }
 	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
@@ -457,7 +457,7 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
     log_info("photorec_bf_aux, call file_finish\n");
 #endif
     file_finish(file_recovery, params, list_search_space, current_search_space, offset);
-    return BF_FILE_FOUND;
+    return BF_OK;
   }
   /* FIXME +4096 => +blocksize*/
   /* 21/11/2009: 2 blocksize */
@@ -473,10 +473,10 @@ static int photorec_bf_pad(struct ph_param *params, file_recovery_t *file_recove
 #endif
     return BF_FRAG_FOUND;
   }
-  return BF_NO_FILE;
+  return BF_ENOENT;
 }
 
-static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
+static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
 {
   const unsigned int blocksize=params->blocksize;
   const uint64_t original_offset_error=file_recovery->offset_error;
@@ -507,7 +507,7 @@ static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_
   for(i=0; i<blocs_to_skip; i++)
   {
     unsigned int j,k;
-    int res;
+    bf_status_t res;
     *current_search_space=start_search_space;
     *offset=start_search_space->start;
     file_recovery->checkpoint_status=0;
@@ -547,7 +547,7 @@ static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_
 	log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
 	fclose(file_recovery->handle);
 	file_recovery->handle=NULL;
-	return BF_ERR_STOP;
+	return BF_ENOSPC;
       }
       list_append_block(&file_recovery->location, *offset, blocksize, 1);
       file_recovery->file_size+=blocksize;
@@ -563,18 +563,27 @@ static int photorec_bf_frag_fast(struct ph_param *params, file_recovery_t *file_
     if(res==BF_FRAG_FOUND)
     {
       if(frag>5)
-	return BF_NO_FILE;
+	return BF_ENOENT;
       res=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1);
     }
-    if(res==BF_FILE_FOUND || res==BF_USER_STOP || res==BF_ERR_STOP)
-      return res;
-    if(res==BF_EOF || res==BF_TOO_FAR)
-      return BF_NO_FILE;
+    switch(res)
+    {
+      case BF_OK:
+      case BF_STOP:
+      case BF_EACCES:
+      case BF_ENOSPC:
+	return res;
+      case BF_EOF:
+      case BF_ERANGE:
+	return BF_ENOENT;
+      default:
+	break;
+    }
   }
-  return BF_NO_FILE;
+  return BF_ENOENT;
 }
 
-static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
+static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag)
 {
   uint64_t file_offset;
   const uint64_t original_offset_error=file_recovery->offset_error;
@@ -585,10 +594,10 @@ static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recov
       file_recovery->offset_error / blocksize > file_recovery->offset_ok / blocksize &&
       file_recovery->offset_ok > 0)
   {
-    int res=photorec_bf_frag_fast(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag);
-//    if(res==BF_TOO_FAR)
+    const bf_status_t res=photorec_bf_frag_fast(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag);
+//    if(res==BF_ERANGE)
 //      res=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag);
-    if(res!=BF_NO_FILE)
+    if(res!=BF_ENOENT)
       return res;
   }
 #endif
@@ -672,6 +681,7 @@ static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recov
 	  );
 	  blocs_to_skip++,testbf++)
       {
+	bf_status_t res;
 	memcpy(file_recovery, &file_recovery_backup, sizeof(file_recovery_backup));
 	*current_search_space=extractblock_search_space;
 	*offset=extrablock_offset;
@@ -688,18 +698,18 @@ static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recov
 	  current_time=time(NULL);
 	  if(current_time>previous_time)
 	  {
-	    int ind_stop=0;
+	    pstatus_t ind_stop=PSTATUS_OK;
 	    previous_time=current_time;
 #ifdef HAVE_NCURSES
 	    ind_stop=photorec_progressbar(stdscr, testbf, params,
 		file_recovery->location.start, current_time);
 #endif
-	    if(ind_stop!=0)
+	    if(ind_stop!=PSTATUS_OK)
 	    {
 	      file_recovery->flags=0;
 	      file_finish(file_recovery, params, list_search_space, current_search_space, offset);
 	      log_info("photorec_bf_aux, user choose to stop\n");
-	      return BF_USER_STOP;
+	      return BF_STOP;
 	    }
 	  }
 	}
@@ -723,46 +733,52 @@ static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recov
 	  {
 	    get_next_sector(list_search_space, current_search_space, offset, blocksize);
 	    if(*current_search_space==list_search_space)
-	      return BF_NO_FILE;
+	      return BF_ENOENT;
 	  }
 	}
 
-	switch(photorec_bf_pad(params, file_recovery, list_search_space, phase, file_offset, current_search_space, offset, buffer, block_buffer))
+	res=photorec_bf_pad(params, file_recovery, list_search_space, phase, file_offset, current_search_space, offset, buffer, block_buffer);
+	switch(res)
 	{
-	  case BF_FILE_FOUND:
-	    return BF_FILE_FOUND;
-	  case BF_ERR_STOP:
-	    return BF_ERR_STOP;
+	  case BF_OK:
+	  case BF_STOP:
+	  case BF_ENOSPC:
+	  case BF_EACCES:
+	    return res;
 	  case BF_FRAG_FOUND:
 	    if(frag>5)
-	      return BF_NO_FILE;
+	      return BF_ENOENT;
 	    switch(photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1))
 	    {
-	      case BF_FILE_FOUND:
-		return BF_FILE_FOUND;
-	      case BF_USER_STOP:
-		return BF_USER_STOP;
-	      case BF_ERR_STOP:
-		return BF_ERR_STOP;
-	      case BF_TOO_FAR:
-		return BF_NO_FILE;
-	      case BF_NO_FILE:
+	      case BF_OK:
+		return BF_OK;
+	      case BF_STOP:
+		return BF_STOP;
+	      case BF_ENOSPC:
+		return BF_ENOSPC;
+	      case BF_EACCES:
+		return BF_EACCES;
+	      case BF_ERANGE:
+		return BF_ENOENT;
+	      case BF_ENOENT:
 #if 0
 		/* TODO: Continue to iterate blocs_to_skip */
 		if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
-		  return BF_NO_FILE;
+		  return BF_ENOENT;
 		break;
 #else
-		return BF_NO_FILE;
+		return BF_ENOENT;
 #endif
 	    }
 	    break;
 	  case BF_EOF:
-	    return BF_NO_FILE;
+	    return BF_ENOENT;
+	  default:
+	    break;
 	}
       }
       if(file_recovery->offset_error > 0 && file_recovery->offset_error < file_offset)
-	return BF_TOO_FAR;
+	return BF_ERANGE;
     }
 #ifdef DEBUG_BF
     log_info("blocs_to_skip=%u offset_error=0x%llx file_offset=0x%llx\n",
@@ -770,15 +786,15 @@ static int photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recov
 	(long long unsigned)file_recovery->offset_error, (long long unsigned)file_offset);
 #endif
   }
-  return BF_NO_FILE;
+  return BF_ENOENT;
 }
 
-static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase)
+static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase)
 {
   uint64_t offset;
   unsigned char *buffer;
   unsigned char *block_buffer;
-  int ind_stop;
+  bf_status_t ind_stop;
   alloc_data_t *current_search_space;
   const unsigned int blocksize=params->blocksize;
   //Init. of the brute force
@@ -786,7 +802,7 @@ static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recove
   if(file_recovery->handle==NULL)
   {
     log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
-    return BF_ERR_STOP;
+    return PSTATUS_EACCES;
   }
   buffer=(unsigned char *) MALLOC(2*blocksize);
   block_buffer=&buffer[blocksize];
@@ -815,7 +831,7 @@ static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recove
       fclose(file_recovery->handle);
       file_recovery->handle=NULL;
       free(buffer);
-      return BF_ERR_STOP;
+      return PSTATUS_ENOSPC;
     }
     list_append_block(&file_recovery->location, offset, blocksize, 1);
     get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
@@ -831,12 +847,17 @@ static int photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recove
   /* Cleanup */
   file_finish(file_recovery, params, list_search_space, &current_search_space, &offset);
   free(buffer);
-  if(ind_stop==BF_TOO_FAR)
+  switch(ind_stop)
   {
-//    return photorec_bf_aux(params, file_recovery, list_search_space, start_search_space, phase);
-    return BF_FILE_FOUND;
+    case BF_STOP:
+    	return PSTATUS_STOP;
+    case BF_EACCES:
+	return PSTATUS_EACCES;
+    case BF_ENOSPC:
+	return PSTATUS_ENOSPC;
+//    case BF_ERANGE:
+//      return photorec_bf_aux(params, file_recovery, list_search_space, start_search_space, phase);
+    default:
+	return PSTATUS_OK;
   }
-  if(ind_stop==BF_NO_FILE)
-    return BF_FILE_FOUND;
-  return ind_stop;
 }

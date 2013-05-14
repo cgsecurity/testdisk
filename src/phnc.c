@@ -96,7 +96,7 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   free(new_file_stats);
 }
 
-int photorec_progressbar(WINDOW *window, const unsigned int pass, const struct ph_param *params, const uint64_t offset, const time_t current_time)
+pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const struct ph_param *params, const uint64_t offset, const time_t current_time)
 {
   const partition_t *partition=params->partition;
   const unsigned int sector_size=params->disk->sector_size;
@@ -138,6 +138,6 @@ int photorec_progressbar(WINDOW *window, const unsigned int pass, const struct p
   }
   photorec_info(window, params->file_stats);
   wrefresh(window);
-  return check_enter_key_or_s(window);
+  return(check_enter_key_or_s(window)==0?PSTATUS_OK:PSTATUS_STOP);
 }
 #endif

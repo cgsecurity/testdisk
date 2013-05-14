@@ -189,7 +189,7 @@ static inline alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t off
  * >0: params->offset is set
  */
 
-static int photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+static pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   uint64_t offset;
   unsigned char *buffer_start;
@@ -198,7 +198,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
   time_t start_time;
   time_t previous_time;
   time_t next_checkpoint;
-  int ind_stop=0;
+  pstatus_t ind_stop=PSTATUS_OK;
   unsigned int buffer_size;
   const unsigned int blocksize=params->blocksize; 
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
@@ -340,7 +340,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
           if(!file_recovery.handle)
           { 
             log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
-            ind_stop=2;
+            ind_stop=PSTATUS_EACCES;
 	    params->offset=offset;
           }
         }
@@ -379,12 +379,12 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 	    else
 	    {
 	      /* Warn the user */
-	      ind_stop=3;
+	      ind_stop=PSTATUS_ENOSPC;
 	      params->offset=file_recovery.location.start;
 	    }
 	  }
 	}
-	if(ind_stop==0)
+	if(ind_stop==PSTATUS_OK)
 	{
 	  current_search_space=file_add_data(current_search_space, offset, 1);
 	  if(file_recovery.data_check!=NULL)
@@ -418,7 +418,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 	  forget(list_search_space,current_search_space);
       }
     }
-    if(ind_stop>0)
+    if(ind_stop!=PSTATUS_OK)
     {
       log_info("PhotoRec has been stopped\n");
       current_search_space=list_search_space;
@@ -479,7 +479,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 #endif
       }
 #ifdef HAVE_NCURSES
-      if(ind_stop==0)
+      if(ind_stop==PSTATUS_OK)
       {
         time_t current_time;
         current_time=time(NULL);
@@ -510,7 +510,7 @@ static int photorec_aux(struct ph_param *params, const struct ph_options *option
 }
 
 #ifdef HAVE_NCURSES
-static void recovery_finished(disk_t *disk, const partition_t *partition, const unsigned int file_nbr, const char *recup_dir, const int ind_stop)
+static void recovery_finished(disk_t *disk, const partition_t *partition, const unsigned int file_nbr, const char *recup_dir, const pstatus_t ind_stop)
 {
   aff_copy(stdscr);
   wmove(stdscr,4,0);
@@ -525,7 +525,7 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
   wclrtoeol(stdscr);
   switch(ind_stop)
   {
-    case 0:
+    case PSTATUS_OK:
       wprintw(stdscr,"Recovery completed.");
       if(file_nbr > 0)
       {
@@ -535,13 +535,13 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
 	wprintw(stdscr, "http://www.cgsecurity.org/wiki/Donation");
       }
       break;
-    case 1:
+    case PSTATUS_STOP:
       wprintw(stdscr,"Recovery aborted by the user.");
       break;
-    case 2:
+    case PSTATUS_EACCES:
       wprintw(stdscr,"Cannot create file in current directory.");
       break;
-    case 3:
+    case PSTATUS_ENOSPC:
       wprintw(stdscr,"Cannot write file, no space left.");
       break;
   }
@@ -754,7 +754,7 @@ static void test_files(alloc_data_t *list_search_space, struct ph_param *params)
 
 int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
-  int ind_stop=0;
+  pstatus_t ind_stop=PSTATUS_OK;
   const unsigned int blocksize_is_known=params->blocksize;
   params_reset(params, options);
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
@@ -853,7 +853,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       uint64_t start_offset=0;
       if(blocksize_is_known>0)
       {
-	ind_stop=0;
+	ind_stop=PSTATUS_OK;
 	if(!td_list_empty(&list_search_space->list))
 	  start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
       }
@@ -878,7 +878,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     }
     session_save(list_search_space, params, options);
 
-    if(ind_stop==3)
+    if(ind_stop==PSTATUS_ENOSPC)
     { /* no more space */
 #ifdef HAVE_NCURSES
       char *dst;
@@ -909,12 +909,12 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       params->status=STATUS_QUIT;
 #endif
     }
-    else if(ind_stop==2)
+    else if(ind_stop==PSTATUS_EACCES)
     {
       if(interface_cannot_create_file()!=0)
 	params->status=STATUS_QUIT;
     }
-    else if(ind_stop==1)
+    else if(ind_stop==PSTATUS_STOP)
     {
       if(session_save(list_search_space, params, options) < 0)
       {
@@ -933,7 +933,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       }
     }
 
-    if(ind_stop==0)
+    if(ind_stop==PSTATUS_OK)
     {
       params->offset=-1;
       switch(params->status)

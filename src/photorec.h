@@ -27,6 +27,9 @@ extern "C" {
 
 enum photorec_status { STATUS_FIND_OFFSET, STATUS_UNFORMAT, STATUS_EXT2_ON, STATUS_EXT2_ON_BF, STATUS_EXT2_OFF, STATUS_EXT2_OFF_BF, STATUS_EXT2_ON_SAVE_EVERYTHING, STATUS_EXT2_OFF_SAVE_EVERYTHING, STATUS_QUIT };
 typedef enum photorec_status photorec_status_t;
+
+typedef enum { PSTATUS_OK=0, PSTATUS_STOP=1, PSTATUS_EACCES=2, PSTATUS_ENOSPC=3} pstatus_t;
+
 struct ph_options
 {
   int paranoid;

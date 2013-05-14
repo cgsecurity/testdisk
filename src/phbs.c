@@ -87,7 +87,7 @@ static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
   dst->location.list.next=&dst->location.list;
 }
 
-int photorec_find_blocksize(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   uint64_t offset=0;
   unsigned char *buffer_start;
@@ -233,5 +233,5 @@ int photorec_find_blocksize(struct ph_param *params, const struct ph_options *op
     }
   } /* end while(current_search_space!=list_search_space) */
   free(buffer_start);
-  return 0;
+  return PSTATUS_OK;
 }

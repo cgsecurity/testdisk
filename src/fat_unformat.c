@@ -196,9 +196,9 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   return 0;
 }
 
-static int fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_data, alloc_data_t *list_search_space)
+static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_data, alloc_data_t *list_search_space)
 {
-  int ind_stop=0;
+  pstatus_t ind_stop=PSTATUS_OK;
   uint64_t offset;
   uint64_t offset_end;
   unsigned char *buffer_start;
@@ -227,7 +227,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
   if(current_search_space==list_search_space)
   {
     free(buffer_start);
-    return 0;
+    return PSTATUS_OK;
   }
   offset_end=current_search_space->end;
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
@@ -368,7 +368,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
 	    log_info("PhotoRec has been stopped\n");
 	    params->offset=offset;
 	    offset = offset_end;
-	    ind_stop=1;
+	    ind_stop=PSTATUS_STOP;
 	  }
 	}
       }
@@ -389,7 +389,7 @@ static int fat_unformat_aux(struct ph_param *params, const struct ph_options *op
  * 1: Stop by user request
  *    params->offset is set
  */
-int fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+pstatus_t fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   unsigned int sectors_per_cluster=0;
   uint64_t start_data=0;
@@ -397,12 +397,12 @@ int fat_unformat(struct ph_param *params, const struct ph_options *options, allo
   if(pfind_sectors_per_cluster(params->disk, params->partition, options->verbose, &sectors_per_cluster, &start_data, list_search_space)==0)
   {
     display_message("Can't find FAT cluster size\n");
-    return 0;
+    return PSTATUS_OK;
   }
   if(start_data <= params->partition->part_offset)
   {
     display_message("FAT filesystem was beginning before the actual partition.");
-    return 0;
+    return PSTATUS_OK;
   }
   start_data *= params->disk->sector_size;
   del_search_space(list_search_space, params->partition->part_offset, start_data - 1);
@@ -418,4 +418,3 @@ int fat_unformat(struct ph_param *params, const struct ph_options *options, allo
   /* start_data is relative to the disk */
   return fat_unformat_aux(params, options, start_data, list_search_space);
 }
-

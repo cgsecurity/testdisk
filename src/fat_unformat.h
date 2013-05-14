@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-int fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
+pstatus_t fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 
 #ifdef __cplusplus
 } /* closing brace for extern "c" */
