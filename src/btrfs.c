@@ -42,7 +42,7 @@ static int test_btrfs(const struct btrfs_super_block *sb, partition_t *partition
 static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition)
 {
   partition->blocksize=le32(sb->dev_item.sector_size);
-  set_part_name(partition, sb->label, sizeof(partition->partname));
+  set_part_name(partition, sb->label, sizeof(sb->label));
   snprintf(partition->info, sizeof(partition->info), "btrfs blocksize=%u", partition->blocksize);
   if(le64(sb->bytenr)!=partition->part_offset + BTRFS_SUPER_INFO_OFFSET)
   {

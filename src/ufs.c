@@ -191,13 +191,13 @@ static int set_ufs_info(const struct ufs_super_block *sb, partition_t *partition
     case UP_UFS:
     case UP_UFS_LE:
     default:
-      set_part_name(partition,(const char*)sb->fs_u11.fs_u1.fs_fsmnt,sizeof(partition->fsname));
+      set_part_name(partition,(const char*)sb->fs_u11.fs_u1.fs_fsmnt,sizeof(sb->fs_u11.fs_u1.fs_fsmnt));
       snprintf(partition->info, sizeof(partition->info),
 	  "UFS1 blocksize=%u", partition->blocksize);
       break;
     case UP_UFS2:
     case UP_UFS2_LE:
-      set_part_name(partition,(const char*)sb->fs_u11.fs_u2.fs_fsmnt,sizeof(partition->fsname));
+      set_part_name(partition,(const char*)sb->fs_u11.fs_u2.fs_fsmnt,sizeof(sb->fs_u11.fs_u2.fs_fsmnt));
       snprintf(partition->info, sizeof(partition->info),
 	  "UFS2 blocksize=%u", partition->blocksize);
       break;

@@ -188,18 +188,18 @@ static unsigned int up2power_aux(const unsigned int number)
 void set_part_name(partition_t *partition,const char *src,const int max_size)
 {
   int i;
-  for(i=0;(i<max_size) && (src[i]!=(char)0);i++)
+  for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
-  partition->fsname[i--]='\0';
+  partition->fsname[i]='\0';
 }
 
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size)
 {
   int i;
-  for(i=0;(i<max_size) && (src[i]!=(char)0);i++)
+  for(i=0; i<sizeof(partition->fsname) && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
-  partition->fsname[i--]='\0';
-  for(;(i>=0) && (src[i]==' ');i--);
+  partition->fsname[i]='\0';
+  for(i--; i>=0 && src[i]==' '; i--);
   partition->fsname[i+1]='\0';
 }
 
