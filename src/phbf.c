@@ -738,6 +738,24 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
 	}
 
 	res=photorec_bf_pad(params, file_recovery, list_search_space, phase, file_offset, current_search_space, offset, buffer, block_buffer);
+	if(res==BF_FRAG_FOUND)
+	{
+	  if(frag>5)
+	    return BF_ENOENT;
+	  res=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1);
+	  if(res==BF_ERANGE)
+	    return BF_ENOENT;
+	  if(res==BF_ENOENT)
+	  {
+#if 0
+	    /* TODO: Continue to iterate blocs_to_skip */
+	    if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
+	      return BF_ENOENT;
+#else
+	    return BF_ENOENT;
+#endif
+	  }
+	}
 	switch(res)
 	{
 	  case BF_OK:
@@ -745,32 +763,6 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
 	  case BF_ENOSPC:
 	  case BF_EACCES:
 	    return res;
-	  case BF_FRAG_FOUND:
-	    if(frag>5)
-	      return BF_ENOENT;
-	    switch(photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1))
-	    {
-	      case BF_OK:
-		return BF_OK;
-	      case BF_STOP:
-		return BF_STOP;
-	      case BF_ENOSPC:
-		return BF_ENOSPC;
-	      case BF_EACCES:
-		return BF_EACCES;
-	      case BF_ERANGE:
-		return BF_ENOENT;
-	      case BF_ENOENT:
-#if 0
-		/* TODO: Continue to iterate blocs_to_skip */
-		if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
-		  return BF_ENOENT;
-		break;
-#else
-		return BF_ENOENT;
-#endif
-	    }
-	    break;
 	  case BF_EOF:
 	    return BF_ENOENT;
 	  default:
