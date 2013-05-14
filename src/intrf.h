@@ -65,6 +65,7 @@ void screen_buffer_reset(void);
 int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf, 1, 2)));
 void screen_buffer_to_log(void);
 void screen_buffer_to_stdout(void);
+int get_partition_status(const partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

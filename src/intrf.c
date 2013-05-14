@@ -130,6 +130,23 @@ void screen_buffer_to_log(void)
     log_info("%s\n",intr_buffer_screen[i]);
 }
 
+int get_partition_status(const partition_t *partition)
+{
+  /* Don't marked as D(eleted) an entry that is not a partition */
+  if(partition->order==NO_ORDER && partition->status==STATUS_DELETED)
+    return ' ';
+  switch(partition->status)
+  {
+    case STATUS_PRIM:           return 'P';
+    case STATUS_PRIM_BOOT:      return '*';
+    case STATUS_EXT:            return 'E';
+    case STATUS_EXT_IN_EXT:     return 'X';
+    case STATUS_LOG:            return 'L';
+    case STATUS_DELETED:        return 'D';
+    default:			return ' ';
+  }
+}
+
 const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition)
 {
   char status=' ';
@@ -145,28 +162,14 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   msg[sizeof(msg)-1]=0;
   if((newline&AFF_PART_ORDER)==AFF_PART_ORDER)
   {
-    if((partition->status!=STATUS_EXT_IN_EXT) && (partition->order!=NO_ORDER))
+    if(partition->status!=STATUS_EXT_IN_EXT && partition->order!=NO_ORDER)
       pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%2u ", partition->order);
     else
       pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"   ");
   }
   if((newline&AFF_PART_STATUS)==AFF_PART_STATUS)
   {
-    switch(partition->status)
-    {
-      case STATUS_PRIM:           status='P'; break;
-      case STATUS_PRIM_BOOT:      status='*'; break;
-      case STATUS_EXT:            status='E'; break;
-      case STATUS_EXT_IN_EXT:     status='X'; break;
-      case STATUS_LOG:            status='L'; break;
-      case STATUS_DELETED:        status='D'; break;
-      default:			  status=' '; break;
-    }
-    /* Don't marked as D(eleted) an entry that is not a partition */
-    if((newline&AFF_PART_ORDER)==AFF_PART_ORDER &&
-      partition->order==NO_ORDER &&
-      partition->status==STATUS_DELETED)
-      status=' ';
+    status=get_partition_status(partition);
   }
   pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%c", status);
   if(arch->get_partition_typename(partition)!=NULL)
