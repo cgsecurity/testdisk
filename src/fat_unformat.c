@@ -339,28 +339,29 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
         current_time=time(NULL);
         if(current_time>previous_time)
         {
-	  const time_t elapsed_time=current_time - params->real_start_time;
           previous_time=current_time;
 	  wmove(stdscr,9,0);
 	  wclrtoeol(stdscr);
-	  log_info("Reading sector %10llu/%llu, %u files found\n",
-	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
-	      (unsigned long long)(partition->part_size/disk->sector_size), params->file_nbr);
 	  wprintw(stdscr,"Reading sector %10llu/%llu, %u files found\n",
 	      (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
 	      (unsigned long long)(partition->part_size/disk->sector_size), params->file_nbr);
 	  wmove(stdscr,10,0);
 	  wclrtoeol(stdscr);
-	  wprintw(stdscr,"Elapsed time %uh%02um%02us",
-	      (unsigned)(elapsed_time/60/60),
-	      (unsigned)(elapsed_time/60%60),
-	      (unsigned)(elapsed_time%60));
-	  if(offset-partition->part_offset!=0)
+	  if(current_time > params->real_start_time)
 	  {
-	    wprintw(stdscr," - Estimated time to completion %uh%02um%02u\n",
-		(unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
-		(unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
-		(unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
+	    const time_t elapsed_time=current_time - params->real_start_time;
+	    wprintw(stdscr,"Elapsed time %uh%02um%02us",
+		(unsigned)(elapsed_time/60/60),
+		(unsigned)((elapsed_time/60)%60),
+		(unsigned)(elapsed_time%60));
+	    if(offset > partition->part_offset)
+	    {
+	      const time_t eta=(partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset);
+	      wprintw(stdscr," - Estimated time to completion %uh%02um%02u\n",
+		  (unsigned)(eta/3600),
+		  (unsigned)((eta/60)%60),
+		  (unsigned)(eta%60));
+	    }
 	  }
 	  wrefresh(stdscr);
 	  if(check_enter_key_or_s(stdscr))

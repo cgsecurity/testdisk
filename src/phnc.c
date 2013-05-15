@@ -130,10 +130,11 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
 	(unsigned)(elapsed_time%60));
     if(offset > partition->part_offset && params->status!=STATUS_EXT2_ON_BF && params->status!=STATUS_EXT2_OFF_BF)
     {
+      const time_t eta=(partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset);
       wprintw(window," - Estimated time to completion %uh%02um%02u\n",
-	  (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/3600),
-	  (unsigned)(((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset)/60)%60),
-	  (unsigned)((partition->part_offset+partition->part_size-1-offset)*elapsed_time/(offset-partition->part_offset))%60);
+	  (unsigned)(eta/3600),
+	  (unsigned)((eta/60)%60),
+	  (unsigned)(eta%60));
     }
   }
   photorec_info(window, params->file_stats);
