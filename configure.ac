@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[6.14-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="December 2012"
+TESTDISKDATE="May 2013"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -804,6 +804,10 @@ then
   AC_CHECK_TOOLS(MOC,[moc-qt4 moc],)
   if test x$MOC = x ; then
 	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
+  fi 
+  AC_CHECK_TOOLS(RCC,[rcc-qt4 rcc],)
+  if test x$RCC = x ; then
+	AC_MSG_WARN(Could not find a rcc-qt4 or rcc tool in your PATH.)
   fi 
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
