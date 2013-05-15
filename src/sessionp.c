@@ -162,6 +162,8 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
 int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options)
 {
   FILE *f_session;
+  if(params->status==STATUS_QUIT)
+    return 0;
   f_session=fopen(SESSION_FILENAME,"wb");
   if(!f_session)
   {
@@ -286,7 +288,7 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
       case STATUS_QUIT:
         break;
     }
-    if(params->status!=STATUS_QUIT && params->offset!=-1)
+    if(params->status!=STATUS_FIND_OFFSET && params->offset!=-1)
       fprintf(f_session, "%llu,",
 	  (long long unsigned)(params->offset/params->disk->sector_size));
     fprintf(f_session,"inter\n");
