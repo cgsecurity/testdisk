@@ -303,13 +303,16 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
-#ifdef HAVE_NCURSES
   if(params->cmd_device==NULL)
   {
     char *saved_device=NULL;
     char *saved_cmd=NULL;
     session_load(&saved_device, &saved_cmd,&list_search_space);
-    if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list) && ask_confirmation("Continue previous session ? (Y/N)")!=0)
+    if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list)
+#ifdef HAVE_NCURSES
+	&& ask_confirmation("Continue previous session ? (Y/N)")!=0
+#endif
+      )
     {
       /* yes */
       params->cmd_run=saved_cmd;
@@ -322,7 +325,6 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
       free_list_search_space(&list_search_space);
     }
   }
-#endif
   if(params->cmd_device!=NULL && params->cmd_run!=NULL)
     return photorec_disk_selection_cli(params, options, list_disk, &list_search_space);
 #ifdef HAVE_NCURSES

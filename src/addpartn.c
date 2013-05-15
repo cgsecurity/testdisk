@@ -24,6 +24,7 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_NCURSES
 #include <stdio.h>
 #include "types.h"
 #include "common.h"
@@ -59,3 +60,4 @@ list_part_t *add_partition_ncurses(disk_t *disk, list_part_t *list_part)
     return add_partition_xbox_ncurses(disk, list_part);
   return list_part;
 }
+#endif

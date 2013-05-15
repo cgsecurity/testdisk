@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
  
+#ifdef HAVE_NCURSES
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -33,9 +34,7 @@
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#endif
 #include "log.h"
 #include "hdaccess.h"
 #include "autoset.h"
@@ -186,3 +185,4 @@ int change_geometry_ncurses(disk_t *disk_car)
   }
   return 0;
 }
+#endif
