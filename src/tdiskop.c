@@ -45,6 +45,7 @@
 #include "tdelete.h"
 #include "tdiskop.h"
 #include "geometry.h"
+#include "geometryn.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_none;
@@ -76,7 +77,7 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
     else if(strncmp(*current_cmd,"geometry,",9)==0)
     {
       (*current_cmd)+=9;
-      change_geometry(disk_car, current_cmd);
+      change_geometry_cli(disk_car, current_cmd);
     }
     else if(strncmp(*current_cmd,"advanced",8)==0)
     {
@@ -172,7 +173,7 @@ static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const
 	break;
       case 'g':
       case 'G':
-	change_geometry(disk, current_cmd);
+	change_geometry_ncurses(disk);
 	break;
       case 'o':
       case 'O':

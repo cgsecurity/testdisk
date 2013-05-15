@@ -1,8 +1,8 @@
 /*
 
-    File: geometry.h
+    File: geometryn.h
 
-    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2013 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,9 +23,7 @@
 extern "C" {
 #endif
 
-void set_cylinders_from_size_up(disk_t *disk);
-int change_sector_size(disk_t *disk, const int cyl_modified, const unsigned int sector_size);
-int change_geometry_cli(disk_t *disk, char **current_cmd);
+int change_geometry_ncurses(disk_t *disk);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

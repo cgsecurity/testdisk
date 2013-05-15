@@ -50,6 +50,7 @@
 #include "ppartsel.h"
 #include "askloc.h"
 #include "geometry.h"
+#include "geometryn.h"
 #include "addpart.h"
 #include "intrfn.h"
 #include "poptions.h"
@@ -207,7 +208,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       else if(strncmp(params->cmd_run,"geometry,",9)==0)
       {
 	params->cmd_run+=9;
-	change_geometry(params->disk, &params->cmd_run);
+	change_geometry_cli(params->disk, &params->cmd_run);
       }
       else if(strncmp(params->cmd_run,"inter",5)==0)
       {	/* Start interactive mode */
@@ -440,7 +441,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	case 'g':
 	case 'G':
 	  if(options->expert!=0)
-	    if(change_geometry(params->disk, &params->cmd_run))
+	    if(change_geometry_ncurses(params->disk))
 	      done=1;
 	  break;
       case 'a':
