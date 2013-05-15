@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-void change_part_type(const disk_t *disk_car,partition_t *partition, char **current_cmd);
+void change_part_type_ncurses(const disk_t *disk, partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

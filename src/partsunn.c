@@ -88,7 +88,7 @@ list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list_part, 
 	  break;
 	case 'T':
 	case 't':
-	  change_part_type(disk_car, new_partition, current_cmd);
+	  change_part_type_ncurses(disk_car, new_partition);
 	  position=3;
 	  break;
 	case key_ESC:

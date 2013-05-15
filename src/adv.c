@@ -573,7 +573,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  break;
 	case 't':
 	case 'T':
-	  change_part_type(disk_car,current_element->part, current_cmd);
+	  change_part_type_ncurses(disk_car, current_element->part);
 	  rewrite=1;
 	  break;
       }

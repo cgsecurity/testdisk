@@ -354,7 +354,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	if(list_part!=NULL)
 	{
 	  rewrite=1;
-	  change_part_type(disk_car, pos->part, current_cmd);
+	  change_part_type_ncurses(disk_car, pos->part);
 	}
 	break;
       case 'p':

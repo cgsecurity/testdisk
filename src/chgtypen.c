@@ -43,8 +43,6 @@
 #include "guid_cmp.h"
 #include "guid_cpy.h"
 #include "partgpt.h"
-#include "hdaccess.h"
-#include "autoset.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -58,7 +56,7 @@ struct part_name_struct
   const char *name;
 };
 
-static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partition)
+static void change_part_type_int_ncurses(const disk_t *disk_car, partition_t *partition)
 {
   partition_t *new_partition;
   char response[100];
@@ -122,7 +120,7 @@ static void change_part_type_ncurses(const disk_t *disk_car,partition_t *partiti
 #define	INTER_CHGTYPE_X 0
 #define	INTER_CHGTYPE_Y 23
 
-static void change_part_type_ncurses2(const disk_t *disk_car, partition_t *partition)
+static void change_part_type_list_ncurses(const disk_t *disk_car, partition_t *partition)
 {
   partition_t *new_partition;
   unsigned int intr_nbr_line=0;
@@ -361,13 +359,8 @@ static void gpt_change_part_type(const disk_t *disk_car, partition_t *partition)
   }
 }
 
-void change_part_type(const disk_t *disk_car,partition_t *partition, char **current_cmd)
+void change_part_type_ncurses(const disk_t *disk_car, partition_t *partition)
 {
-  if(*current_cmd!=NULL)
-  {
-    change_part_type_cli(disk_car, partition, current_cmd);
-    return;
-  }
   if(partition->arch==NULL)
   {
     log_error("change_part_type arch==NULL\n");
@@ -379,7 +372,7 @@ void change_part_type(const disk_t *disk_car,partition_t *partition, char **curr
     log_info("Change partition type:\n");
     log_partition(disk_car,partition);
     partition->arch=&arch_none;
-    change_part_type_ncurses2(disk_car, partition);
+    change_part_type_list_ncurses(disk_car, partition);
     log_info("Change partition type:\n");
     log_partition(disk_car,partition);
     partition->arch=&arch_gpt;
@@ -391,9 +384,9 @@ void change_part_type(const disk_t *disk_car,partition_t *partition, char **curr
     return;
   }
   if(partition->arch==&arch_i386 || partition->arch==&arch_sun)
-    change_part_type_ncurses(disk_car, partition);
+    change_part_type_int_ncurses(disk_car, partition);
   else
-    change_part_type_ncurses2(disk_car, partition);
+    change_part_type_list_ncurses(disk_car, partition);
   log_info("Change partition type:\n");
   log_partition(disk_car,partition);
 }
