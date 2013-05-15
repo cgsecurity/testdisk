@@ -1,8 +1,8 @@
 /*
 
-    File: phrecn.h
+    File: poptions.h
 
-    Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2013 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,11 +23,8 @@
 extern "C" {
 #endif
 
-int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
-void interface_file_select(file_enable_t *files_enable, char**current_cmd);
-#ifdef HAVE_NCURSES
-void interface_options_photorec_ncurses(struct ph_options *options);
-#endif
+void interface_options_photorec_cli(struct ph_options *options, char**current_cmd);
+void interface_options_photorec_log(const struct ph_options *options);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

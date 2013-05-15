@@ -52,6 +52,7 @@
 #include "geometry.h"
 #include "addpart.h"
 #include "intrfn.h"
+#include "poptions.h"
 
 extern const arch_fnct_t arch_none;
 
@@ -189,7 +190,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       else if(strncmp(params->cmd_run,"options",7)==0)
       {
 	params->cmd_run+=7;
-	interface_options_photorec(options, &params->cmd_run);
+	interface_options_photorec_cli(options, &params->cmd_run);
       }
       else if(strncmp(params->cmd_run,"fileopt",7)==0)
       {
@@ -427,7 +428,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	case 'o':
 	case 'O':
 	  {
-	    interface_options_photorec(options, &params->cmd_run);
+	    interface_options_photorec_ncurses(options);
 	    menu=1;
 	  }
 	  break;

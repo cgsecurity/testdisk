@@ -77,6 +77,7 @@
 #include "phbs.h"
 #include "file_found.h"
 #include "dfxml.h"
+#include "poptions.h"
 
 /* #define DEBUG */
 /* #define DEBUG_BF */
@@ -1051,7 +1052,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 }
 
 #ifdef HAVE_NCURSES
-static void interface_options_photorec_ncurses(struct ph_options *options)
+void interface_options_photorec_ncurses(struct ph_options *options)
 {
   unsigned int menu = 5;
   struct MenuItem menuOptions[]=
@@ -1117,84 +1118,9 @@ static void interface_options_photorec_ncurses(struct ph_options *options)
 	return;
     }
   }
-}
-#endif
-
-void interface_options_photorec(struct ph_options *options, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-  {
-    int keep_asking=1;
-    do
-    {
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      /* paranoid, longer option first */
-      if(strncmp(*current_cmd,"paranoid_no",11)==0)
-      {
-	(*current_cmd)+=11;
-	options->paranoid=0;
-      }
-      else if(strncmp(*current_cmd,"paranoid_bf",11)==0)
-      {
-	(*current_cmd)+=11;
-	options->paranoid=2;
-      }
-      else if(strncmp(*current_cmd,"paranoid",8)==0)
-      {
-	(*current_cmd)+=8;
-	options->paranoid=1;
-      }
-      /* keep_corrupted_file */
-      else if(strncmp(*current_cmd,"keep_corrupted_file_no",22)==0)
-      {
-	(*current_cmd)+=22;
-	options->keep_corrupted_file=0;
-      }
-      else if(strncmp(*current_cmd,"keep_corrupted_file",19)==0)
-      {
-	(*current_cmd)+=19;
-	options->keep_corrupted_file=1;
-      }
-      /* mode_ext2 */
-      else if(strncmp(*current_cmd,"mode_ext2",9)==0)
-      {
-	(*current_cmd)+=9;
-	options->mode_ext2=1;
-      }
-      /* expert */
-      else if(strncmp(*current_cmd,"expert",6)==0)
-      {
-	(*current_cmd)+=6;
-	options->expert=1;
-      }
-      /* lowmem */
-      else if(strncmp(*current_cmd,"lowmem",6)==0)
-      {
-	(*current_cmd)+=6;
-	options->lowmem=1;
-      }
-      else
-	keep_asking=0;
-    } while(keep_asking>0);
-  }
-  else
-  {
-#ifdef HAVE_NCURSES
-    interface_options_photorec_ncurses(options);
-#endif
-  }
-  /* write new options to log file */
-  log_info("New options :\n Paranoid : %s\n", options->paranoid?"Yes":"No");
-  log_info(" Brute force : %s\n", ((options->paranoid)>1?"Yes":"No"));
-  log_info(" Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n",
-      options->keep_corrupted_file?"Yes":"No",
-      options->mode_ext2?"Yes":"No",
-      options->expert?"Yes":"No",
-      options->lowmem?"Yes":"No");
+  interface_options_photorec_log(options);
 }
 
-#ifdef HAVE_NCURSES
 #define INTER_FSELECT_X	0
 #define INTER_FSELECT_Y	(LINES-2)
 #define INTER_FSELECT	(LINES-10)
