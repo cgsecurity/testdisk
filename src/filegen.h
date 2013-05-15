@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _TESTDISK_FILEGEN_H
+#define _TESTDISK_FILEGEN_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -141,4 +143,5 @@ void file_rename_unicode(const char *old_filename, const void *buffer, const int
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif
