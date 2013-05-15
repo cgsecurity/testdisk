@@ -83,6 +83,7 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
 void params_reset(struct ph_param *params, const struct ph_options *options);
 const char *status_to_name(const photorec_status_t status);
 void status_inc(struct ph_param *params, const struct ph_options *options);
+list_part_t *init_list_part(disk_t *disk, const struct ph_options *options);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

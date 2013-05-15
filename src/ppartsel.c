@@ -99,26 +99,10 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   };
 #endif
   params->blocksize=0;
-  list_part=params->disk->arch->read_part(params->disk,options->verbose,0);
-  {
-    int insert_error=0;
-    partition_t *partition_wd;
-    partition_wd=new_whole_disk(params->disk);
-    list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
-    if(insert_error>0)
-    {
-      free(partition_wd);
-    }
-  }
+  list_part=init_list_part(params->disk, options);
   if(list_part==NULL)
     return;
-  {
-    list_part_t *element;
-    for(element=list_part;element!=NULL;element=element->next)
-    {
-      log_partition(params->disk,element->part);
-    }
-  }
+  log_all_partitions(params->disk, list_part);
   if(list_part->next!=NULL)
   {
     current_element_num=1;

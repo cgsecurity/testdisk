@@ -1070,4 +1070,17 @@ void status_inc(struct ph_param *params, const struct ph_options *options)
   }
 }
 
-
+list_part_t *init_list_part(disk_t *disk, const struct ph_options *options)
+{
+  int insert_error=0;
+  list_part_t *list_part;
+  partition_t *partition_wd;
+  list_part=disk->arch->read_part(disk, (options!=NULL?options->verbose:0), 0);
+  partition_wd=new_whole_disk(disk);
+  list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
+  if(insert_error>0)
+  {
+    free(partition_wd);
+  }
+  return list_part;
+}
