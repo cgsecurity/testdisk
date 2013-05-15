@@ -51,7 +51,7 @@
 #include "askloc.h"
 #include "geometry.h"
 #include "geometryn.h"
-#include "addpart.h"
+#include "addpartn.h"
 #include "intrfn.h"
 #include "poptions.h"
 
@@ -432,7 +432,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       case 'A':
 	if(params->disk->arch != &arch_none)
 	{
-	  list_part=add_partition(params->disk, list_part, &params->cmd_run);
+	  list_part=add_partition_ncurses(params->disk, list_part);
 	  current_element=list_part;
 	  current_element_num=0;
 	}

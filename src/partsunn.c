@@ -40,7 +40,7 @@
 
 extern const arch_fnct_t arch_sun;
 
-list_part_t *add_partition_sun_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_sun_ncurses(disk_t *disk_car, list_part_t *list_part)
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_sun);

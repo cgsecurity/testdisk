@@ -1,9 +1,8 @@
-
 /*
 
-    File: partmacn.h
+    File: addpartn.h
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2013 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,13 +19,5 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-void write_part_mac_warning_ncurses(void);
-list_part_t *add_partition_mac_ncurses(disk_t *disk, list_part_t *list_part);
-
-#ifdef __cplusplus
-} /* closing brace for extern "C" */
-#endif
+list_part_t *add_partition_ncurses(disk_t *disk, list_part_t *list_part);

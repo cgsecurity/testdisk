@@ -52,7 +52,7 @@
 
 extern const arch_fnct_t arch_gpt;
 
-list_part_t *add_partition_gpt_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_gpt_ncurses(disk_t *disk_car, list_part_t *list_part)
 {
   int position=0;
   int done = FALSE;

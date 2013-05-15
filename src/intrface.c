@@ -31,9 +31,6 @@
 #include "common.h"
 #include "lang.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
-#include "intrfn.h"
-#endif
 #include "godmode.h"
 #include "fnctdsk.h"
 #include "chgtypen.h"
@@ -44,6 +41,10 @@
 #include "tload.h"
 #include "intrface.h"
 #include "addpart.h"
+#ifdef HAVE_NCURSES
+#include "intrfn.h"
+#include "addpartn.h"
+#endif
 
 #define INTER_DISK_X	0
 #define INTER_DISK_Y	7
@@ -342,7 +343,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       case 'A':
 	if(disk_car->arch != &arch_none)
 	{
-	  list_part=add_partition(disk_car,list_part, current_cmd);
+	  list_part=add_partition_ncurses(disk_car, list_part);
 	  rewrite=1;
 	  offset=0;
 	  pos_num=0;

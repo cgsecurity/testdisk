@@ -41,7 +41,7 @@
 
 extern const arch_fnct_t arch_i386;
 
-list_part_t *add_partition_i386_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_i386_ncurses(disk_t *disk_car, list_part_t *list_part)
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_i386);

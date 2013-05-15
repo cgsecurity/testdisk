@@ -1,8 +1,8 @@
 /*
 
-    File: addpart.c
+    File: addpartn.c
 
-    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2013 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,7 +32,12 @@
 #include "partmac.h"
 #include "partsun.h"
 #include "partxbox.h"
-#include "addpart.h"
+#include "parti386n.h"
+#include "partgptn.h"
+#include "partmacn.h"
+#include "partsunn.h"
+#include "partxboxn.h"
+#include "addpartn.h"
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
@@ -40,19 +45,17 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 
-list_part_t *add_partition_cli(disk_t *disk, list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_ncurses(disk_t *disk, list_part_t *list_part)
 {
-  if(*current_cmd==NULL)
-    return list_part;
   if(disk->arch==&arch_gpt)
-    return add_partition_gpt_cli(disk, list_part, current_cmd);
+    return add_partition_gpt_ncurses(disk, list_part);
   else if(disk->arch==&arch_i386)
-    return add_partition_i386_cli(disk, list_part, current_cmd);
+    return add_partition_i386_ncurses(disk, list_part);
   else if(disk->arch==&arch_mac)
-    return add_partition_mac_cli(disk, list_part, current_cmd);
+    return add_partition_mac_ncurses(disk, list_part);
   else if(disk->arch==&arch_sun)
-    return add_partition_sun_cli(disk, list_part, current_cmd);
+    return add_partition_sun_ncurses(disk, list_part);
   else if(disk->arch==&arch_xbox)
-    return add_partition_xbox_cli(disk, list_part, current_cmd);
+    return add_partition_xbox_ncurses(disk, list_part);
   return list_part;
 }

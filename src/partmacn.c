@@ -65,7 +65,7 @@ void write_part_mac_warning_ncurses(void)
 #endif
 }
 
-list_part_t *add_partition_mac_ncurses(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_mac_ncurses(disk_t *disk_car, list_part_t *list_part)
 {
   int position=0;
   int done = FALSE;

@@ -58,7 +58,7 @@
 #include "tntfs.h"
 #include "thfs.h"
 #include "askloc.h"
-#include "addpart.h"
+#include "addpartn.h"
 #include "io_redir.h"
 
 extern const arch_fnct_t arch_gpt;
@@ -385,15 +385,17 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       case 'Q':
 	part_free_list(list_part);
 	return;
+#ifdef HAVE_NCURSES
       case 'a':
       case 'A':
 	if(disk_car->arch!=&arch_none)
 	{
-	  list_part=add_partition(disk_car, list_part, current_cmd);
+	  list_part=add_partition_ncurses(disk_car, list_part);
 	  current_element=list_part;
 	  rewrite=1;
 	}
 	break;
+#endif
     }
 #ifdef HAVE_NCURSES
     if(current_element!=NULL)
