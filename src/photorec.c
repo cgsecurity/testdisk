@@ -1023,3 +1023,51 @@ const char *status_to_name(const photorec_status_t status)
       return "STATUS_QUIT";
   }
 }
+
+void status_inc(struct ph_param *params, const struct ph_options *options)
+{
+  params->offset=-1;
+  switch(params->status)
+  {
+    case STATUS_UNFORMAT:
+      params->status=STATUS_FIND_OFFSET;
+      break;
+    case STATUS_FIND_OFFSET:
+      params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
+      params->file_nbr=0;
+      break;
+    case STATUS_EXT2_ON:
+      if(options->paranoid>1)
+	params->status=STATUS_EXT2_ON_BF;
+      else if(options->paranoid==1 && options->keep_corrupted_file>0)
+	params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
+      else
+	params->status=STATUS_QUIT;
+      break;
+    case STATUS_EXT2_ON_BF:
+      if(options->keep_corrupted_file>0)
+	params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
+      else
+	params->status=STATUS_QUIT;
+      break;
+    case STATUS_EXT2_OFF:
+      if(options->paranoid>1)
+	params->status=STATUS_EXT2_OFF_BF;
+      else if(options->paranoid==1 && options->keep_corrupted_file>0)
+	params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+      else
+	params->status=STATUS_QUIT;
+      break;
+    case STATUS_EXT2_OFF_BF:
+      if(options->keep_corrupted_file>0)
+	params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
+      else
+	params->status=STATUS_QUIT;
+      break;
+    default:
+      params->status=STATUS_QUIT;
+      break;
+  }
+}
+
+

@@ -844,142 +844,103 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     wattroff(stdscr, A_REVERSE);
     wrefresh(stdscr);
 #endif
-    if(params->status==STATUS_UNFORMAT)
+    switch(params->status)
     {
-      ind_stop=fat_unformat(params, options, list_search_space);
-      params->blocksize=blocksize_is_known;
-    }
-    else if(params->status==STATUS_FIND_OFFSET)
-    {
-      uint64_t start_offset=0;
-      if(blocksize_is_known>0)
-      {
-	ind_stop=PSTATUS_OK;
-	if(!td_list_empty(&list_search_space->list))
-	  start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
-      }
-      else
-      {
-	ind_stop=photorec_find_blocksize(params, options, list_search_space);
-	params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
-      }
+      case STATUS_UNFORMAT:
+	ind_stop=fat_unformat(params, options, list_search_space);
+	params->blocksize=blocksize_is_known;
+	break;
+      case STATUS_FIND_OFFSET:
+	{
+	  uint64_t start_offset=0;
+	  if(blocksize_is_known>0)
+	  {
+	    ind_stop=PSTATUS_OK;
+	    if(!td_list_empty(&list_search_space->list))
+	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
+	  }
+	  else
+	  {
+	    ind_stop=photorec_find_blocksize(params, options, list_search_space);
+	    params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
+	  }
 #ifdef HAVE_NCURSES
-      if(options->expert>0)
-	params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
+	  if(options->expert>0)
+	    params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
 #endif
-      update_blocksize(params->blocksize, list_search_space, start_offset);
-    }
-    else if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
-    {
-      ind_stop=photorec_bf(params, options, list_search_space);
-    }
-    else
-    {
-      ind_stop=photorec_aux(params, options, list_search_space);
+	  update_blocksize(params->blocksize, list_search_space, start_offset);
+	}
+	break;
+      case STATUS_EXT2_ON_BF:
+      case STATUS_EXT2_OFF_BF:
+	ind_stop=photorec_bf(params, options, list_search_space);
+	break;
+      default:
+	ind_stop=photorec_aux(params, options, list_search_space);
+	break;
     }
     session_save(list_search_space, params, options);
 
-    if(ind_stop==PSTATUS_ENOSPC)
-    { /* no more space */
+    switch(ind_stop)
+    {
+      case PSTATUS_ENOSPC:
+	{ /* no more space */
 #ifdef HAVE_NCURSES
-      char *dst;
-      char *res;
-      dst=strdup(params->recup_dir);
-      if(dst!=NULL)
-      {
-	res=strrchr(dst, '/');
-	if(res!=NULL)
-	  *res='\0';
-      }
-      res=ask_location("Warning: no free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
-      free(dst);
-      if(res==NULL)
-        params->status=STATUS_QUIT;
-      else
-      {
-        free(params->recup_dir);
-        params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-        strcpy(params->recup_dir,res);
-        strcat(params->recup_dir,"/");
-        strcat(params->recup_dir,DEFAULT_RECUP_DIR);
-        free(res);
-        /* Create the directory */
-        params->dir_num=photorec_mkdir(params->recup_dir,params->dir_num);
-      }
+	  char *dst;
+	  char *res;
+	  dst=strdup(params->recup_dir);
+	  if(dst!=NULL)
+	  {
+	    res=strrchr(dst, '/');
+	    if(res!=NULL)
+	      *res='\0';
+	  }
+	  res=ask_location("Warning: no free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
+	  free(dst);
+	  if(res==NULL)
+	    params->status=STATUS_QUIT;
+	  else
+	  {
+	    free(params->recup_dir);
+	    params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	    strcpy(params->recup_dir,res);
+	    strcat(params->recup_dir,"/");
+	    strcat(params->recup_dir,DEFAULT_RECUP_DIR);
+	    free(res);
+	    /* Create the directory */
+	    params->dir_num=photorec_mkdir(params->recup_dir,params->dir_num);
+	  }
 #else
-      params->status=STATUS_QUIT;
+	  params->status=STATUS_QUIT;
 #endif
-    }
-    else if(ind_stop==PSTATUS_EACCES)
-    {
-      if(interface_cannot_create_file()!=0)
-	params->status=STATUS_QUIT;
-    }
-    else if(ind_stop==PSTATUS_STOP)
-    {
-      if(session_save(list_search_space, params, options) < 0)
-      {
-	/* Failed to save the session! */
+	}
+	break;
+      case PSTATUS_EACCES:
+	if(interface_cannot_create_file()!=0)
+	  params->status=STATUS_QUIT;
+	break;
+      case PSTATUS_STOP:
+	if(session_save(list_search_space, params, options) < 0)
+	{
+	  /* Failed to save the session! */
 #ifdef HAVE_NCURSES
-	if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
-	  params->status=STATUS_QUIT;
+	  if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
+	    params->status=STATUS_QUIT;
 #endif
-      }
-      else
-      {
+	}
+	else
+	{
 #ifdef HAVE_NCURSES
-	if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
-	  params->status=STATUS_QUIT;
+	  if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
+	    params->status=STATUS_QUIT;
 #endif
-      }
-    }
-
-    if(ind_stop==PSTATUS_OK)
-    {
-      params->offset=-1;
-      switch(params->status)
-      {
-	case STATUS_UNFORMAT:
-	  params->status=STATUS_FIND_OFFSET;
-	  break;
-	case STATUS_FIND_OFFSET:
-	  params->status=(options->mode_ext2>0?STATUS_EXT2_ON:STATUS_EXT2_OFF);
-	  params->file_nbr=0;
-	  break;
-	case STATUS_EXT2_ON:
-	  if(options->paranoid>1)
-	    params->status=STATUS_EXT2_ON_BF;
-	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
-	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
-	  else
-	    params->status=STATUS_QUIT;
-	  break;
-	case STATUS_EXT2_ON_BF:
-	  if(options->keep_corrupted_file>0)
-	    params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
-	  else
-	    params->status=STATUS_QUIT;
-	  break;
-	case STATUS_EXT2_OFF:
-	  if(options->paranoid>1)
-	    params->status=STATUS_EXT2_OFF_BF;
-	  else if(options->paranoid==1 && options->keep_corrupted_file>0)
-	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
-	  else
-	    params->status=STATUS_QUIT;
-	  break;
-	case STATUS_EXT2_OFF_BF:
-	  if(options->keep_corrupted_file>0)
-	    params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
-	  else
-	    params->status=STATUS_QUIT;
-	  break;
-	default:
-	  params->status=STATUS_QUIT;
-	  break;
-      }
-      if(params->status==STATUS_QUIT)
-	unlink("photorec.ses");
+	}
+	break;
+      case PSTATUS_OK:
+	status_inc(params, options);
+	if(params->status==STATUS_QUIT)
+	  unlink("photorec.ses");
+	break;
     }
     {
       const time_t current_time=time(NULL);
