@@ -22,7 +22,7 @@ BEGIN
       VALUE "Comments",		"Signature based file recovery utility"
       VALUE "FileVersion",	"6.14"
       VALUE "ProductVersion",	"6.14"
-      VALUE "LegalCopyright",	"Copyright (C) 2012"
+      VALUE "LegalCopyright",	"Copyright (C) 2013"
     END
   END 
   BLOCK "VarFileInfo"

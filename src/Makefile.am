@@ -4,6 +4,7 @@
 if USEICON
 ICON_TESTDISK=icon_tst.rc ../ico/testdisk.ico
 ICON_PHOTOREC=icon_ph.rc ../ico/photorec.ico
+ICON_QPHOTOREC=icon_qph.rc ../ico/photorec.ico
 endif
 
 if USEQT
@@ -301,7 +302,7 @@ photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(
 
 photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
+qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp
 
