@@ -52,7 +52,8 @@
 #include "hidden.h"
 #include "hiddenn.h"
 #include "nodisk.h"
-#include "chgtypen.h"
+#include "chgarch.h"
+#include "chgarchn.h"
 
 #ifdef HAVE_NCURSES
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -94,8 +95,14 @@ static int photorec_disk_selection_cli(struct ph_param *params, struct ph_option
   }
   autodetect_arch(disk, &arch_none);
   params->disk=disk;
-  if(interface_partition_type(disk, options->verbose, &params->cmd_run)==0)
+  if(change_arch_type_cli(disk, options->verbose, &params->cmd_run)==0
+#ifdef HAVE_NCURSES
+      || change_arch_type_ncurses(disk, options->verbose)==0
+#endif
+    )
+  {
     menu_photorec(params, options, list_search_space);
+  }
   return 0;
 }
 
@@ -272,7 +279,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	  params->disk=disk;
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      (options->expert == 0 ||
-	       interface_partition_type(disk, options->verbose, &params->cmd_run)==0))
+	       change_arch_type_ncurses(disk, options->verbose)==0))
 	    menu_photorec(params, options, list_search_space);
 	}
 	break;

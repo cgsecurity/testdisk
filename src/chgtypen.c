@@ -23,6 +23,7 @@
 #include <config.h>
 #endif
 
+#ifdef HAVE_NCURSES
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -47,12 +48,10 @@
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const struct systypes_gtp gpt_sys_types[];
 
-#ifdef HAVE_NCURSES
 struct part_name_struct
 {
   unsigned int index;
@@ -399,45 +398,3 @@ void change_part_type(const disk_t *disk_car,partition_t *partition, char **curr
   log_partition(disk_car,partition);
 }
 #endif
-
-int interface_partition_type(disk_t *disk_car, const int verbose, char**current_cmd)
-{
-  const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_none, &arch_sun, &arch_mac, NULL};
-  int ask_user=1;
-  if(*current_cmd!=NULL)
-  {
-    int keep_asking;
-    do
-    {
-      int i;
-      ask_user=0;
-      keep_asking=0;
-      while(*current_cmd[0]==',')
-        (*current_cmd)++;
-      for(i=0;arch_list[i]!=NULL;i++)
-        if(strncmp(*current_cmd, arch_list[i]->part_name_option, strlen(arch_list[i]->part_name_option))==0)
-        {
-          (*current_cmd)+=strlen(arch_list[i]->part_name_option);
-          disk_car->arch=arch_list[i];
-	  autoset_unit(disk_car);
-          keep_asking=1;
-        }
-      if(strncmp(*current_cmd, "ask_type", 8)==0)
-      {
-	(*current_cmd)+=8;
-	ask_user=1;
-      }
-    } while(keep_asking>0);
-  }
-  if(ask_user>0)
-  {
-#ifdef HAVE_NCURSES
-    if(interface_partition_type_ncurses(disk_car))
-      return 1;
-#endif
-  }
-  log_info("%s\n",disk_car->description_short(disk_car));
-  log_info("Partition table type: %s\n",disk_car->arch->part_name);
-  hd_update_geometry(disk_car, verbose);
-  return 0;
-}

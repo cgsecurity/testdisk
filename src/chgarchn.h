@@ -1,8 +1,8 @@
 /*
 
-    File: chgtype.h
+    File: chgarchn.h
 
-    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2007-2013 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,11 +19,12 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void change_part_type(const disk_t *disk_car,partition_t *partition, char **current_cmd);
+int change_arch_type_ncurses(disk_t *disk_car, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

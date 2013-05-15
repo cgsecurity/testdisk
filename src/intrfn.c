@@ -66,13 +66,6 @@
 #include "hdaccess.h"
 #include "autoset.h"
 
-extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_gpt;
-extern const arch_fnct_t arch_humax;
-extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_none;
-extern const arch_fnct_t arch_sun;
-extern const arch_fnct_t arch_xbox;
 extern char intr_buffer_screen[MAX_LINES][BUFFER_LINE_LENGTH+1];
 extern int intr_nbr_line;
 
@@ -1297,93 +1290,6 @@ int check_enter_key_or_s(WINDOW *window)
     case 'F':
       return 2;
   }
-  return 0;
-}
-
-int interface_partition_type_ncurses(disk_t *disk_car)
-{
-  /* arch_list must match the order from menuOptions */
-  const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_humax, &arch_mac, &arch_none, &arch_sun, &arch_xbox, NULL};
-  unsigned int menu;
-  for(menu=0;arch_list[menu]!=NULL && disk_car->arch!=arch_list[menu];menu++);
-  if(arch_list[menu]==NULL)
-  {
-    menu=0;
-    disk_car->arch=arch_list[menu];
-  }
-  /* ncurses interface */
-  {
-    int car;
-    int real_key;
-    struct MenuItem menuOptions[]=
-    {
-      { 'I', arch_i386.part_name, "Intel/PC partition" },
-      { 'G', arch_gpt.part_name, "EFI GPT partition map (Mac i386, some x86_64...)" },
-      { 'H', arch_humax.part_name, "Humax partition table" },
-      { 'M', arch_mac.part_name, "Apple partition map" },
-      { 'N', arch_none.part_name, "Non partitioned media" },
-      { 'S', arch_sun.part_name, "Sun Solaris partition"},
-      { 'X', arch_xbox.part_name, "XBox partition"},
-      { 'Q', "Return", "Return to disk selection"},
-      { 0, NULL, NULL }
-    };
-    aff_copy(stdscr);
-    wmove(stdscr,5,0);
-    wprintw(stdscr,"%s\n",disk_car->description_short(disk_car));
-    wmove(stdscr,INTER_PARTITION_Y-1,0);
-    wprintw(stdscr,"Please select the partition table type, press Enter when done.");
-    if(disk_car->arch_autodetected!=NULL)
-    {
-      wmove(stdscr,19,0);
-      wprintw(stdscr, "Hint: ");
-      if(has_colors())
-	wbkgdset(stdscr,' ' | COLOR_PAIR(2));
-      wprintw(stdscr, "%s", disk_car->arch_autodetected->part_name);
-      if(has_colors())
-	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-      wprintw(stdscr, " partition table type has been detected.");
-    }
-    wmove(stdscr,20,0);
-    wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
-    wmove(stdscr,21,0);
-    wprintw(stdscr,"rare for a drive to be 'Non-partitioned'.");
-    car=wmenuSelect_ext(stdscr, 23, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGHMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
-    switch(car)
-    {
-      case 'i':
-      case 'I':
-        disk_car->arch=&arch_i386;
-        break;
-      case 'g':
-      case 'G':
-        disk_car->arch=&arch_gpt;
-        break;
-      case 'h':
-      case 'H':
-        disk_car->arch=&arch_humax;
-        break;
-      case 'm':
-      case 'M':
-        disk_car->arch=&arch_mac;
-        break;
-      case 'n':
-      case 'N':
-        disk_car->arch=&arch_none;
-        break;
-      case 's':
-      case 'S':
-        disk_car->arch=&arch_sun;
-        break;
-      case 'x':
-      case 'X':
-        disk_car->arch=&arch_xbox;
-        break;
-      case 'q':
-      case 'Q':
-        return 1;
-    }
-  }
-  autoset_unit(disk_car);
   return 0;
 }
 

@@ -46,7 +46,8 @@
 #include "hidden.h"
 #include "hiddenn.h"
 #include "nodisk.h"
-#include "chgtypen.h"
+#include "chgarch.h"
+#include "chgarchn.h"
 #include "autoset.h"
 
 #ifdef HAVE_NCURSES
@@ -84,7 +85,6 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   {
     const char *options;
     int i;
-#ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
     wprintw(stdscr,"  TestDisk is free software, and");
@@ -92,7 +92,6 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
     wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
     wmove(stdscr,7,0);
     wprintw(stdscr,"Select a media (use Arrow keys, then press Enter):");
-#endif
     for(i=0,element_disk=list_disk;
 	element_disk!=NULL && i<offset+NBR_DISK_MAX;
 	i++, element_disk=element_disk->next)
@@ -195,7 +194,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	  if(interface_check_disk_capacity(disk)==0 &&
               interface_check_disk_access(disk, current_cmd)==0 &&
 	      (hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
-	      interface_partition_type(disk, verbose, current_cmd)==0)
+	      change_arch_type_ncurses(disk, verbose)==0)
 	  {
 	    if(menu_disk(disk, verbose, dump_ind, saveheader, current_cmd))
 	      return 0;
@@ -246,7 +245,11 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
       autoset_unit(disk);
       if(interface_check_disk_capacity(disk)==0 &&
           interface_check_disk_access(disk, current_cmd)==0 &&
-          interface_partition_type(disk, verbose, current_cmd)==0)
+          (change_arch_type_cli(disk, verbose, current_cmd)==0
+#ifdef HAVE_NCURSES
+	   || change_arch_type_ncurses(disk, verbose)==0
+#endif
+	  ))
       {
 	menu_disk(disk, verbose, dump_ind, saveheader, current_cmd);
       }

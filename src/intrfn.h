@@ -61,7 +61,6 @@ int wmenuSimple(WINDOW *window, const struct MenuItem *menuItems, const unsigned
 int menu_to_command(const unsigned int yinfo, const unsigned int y, const unsigned int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int y_real, const unsigned int x_real);
 int start_ncurses(const char *prog_name, const char *real_prog_name);
 int end_ncurses(void);
-int interface_partition_type_ncurses(disk_t *disk_car);
 int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap) __attribute__((format(printf, 3, 0)));
 char *ask_log_location(const char*filename, const int errsv);
 int get_string(WINDOW *window, char *str, const int len, const char *def);
