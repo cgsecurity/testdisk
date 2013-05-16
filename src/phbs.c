@@ -28,9 +28,6 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>	/* unlink, ftruncate */
-#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -40,38 +37,18 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#include <ctype.h>      /* tolower */
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
 #ifdef HAVE_NCURSES
 #include "intrfn.h"
 #endif
-#include <errno.h>
-#ifdef HAVE_WINDEF_H
-#include <windef.h>
-#endif
-#ifdef HAVE_WINBASE_H
-#include <stdarg.h>
-#include <winbase.h>
-#endif
-#include "dir.h"
-#include "fat_dir.h"
 #include "list.h"
-#include "lang.h"
 #include "filegen.h"
 #include "photorec.h"
-#include "sessionp.h"
-#include "phrecn.h"
 #include "log.h"
-#include "log_part.h"
 #include "file_tar.h"
-#include "phcfg.h"
-#include "pblocksize.h"
-#include "askloc.h"
-#include "fat_unformat.h"
 #include "pnext.h"
-#include "phbf.h"
 #include "phnc.h"
 #include "phbs.h"
 #include "file_found.h"
