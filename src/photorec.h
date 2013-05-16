@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
+#ifndef _TESTDISK_PHOTOREC_H
+#define _TESTDISK_PHOTOREC_H
 #define MAX_FILES_PER_DIR	500
 #define DEFAULT_RECUP_DIR "recup_dir"
 #ifdef __cplusplus
@@ -87,4 +90,4 @@ list_part_t *init_list_part(disk_t *disk, const struct ph_options *options);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
-
+#endif
