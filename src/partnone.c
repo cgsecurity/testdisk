@@ -49,6 +49,7 @@
 #include "fatx.h"
 #include "iso9660.h"
 #include "iso.h"
+#include "gfs2.h"
 #include "hfs.h"
 #include "hfsp.h"
 #include "hpfs.h"
@@ -67,6 +68,7 @@
 #include "xfs.h"
 #include "vmfs.h"
 #include "wbfs.h"
+#include "zfs.h"
 #include "log.h"
 
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
@@ -365,6 +367,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_FREEBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
       break;
+    case UP_GFS2:
+      ret=check_gfs2(disk_car, partition);
+      break;
     case UP_HFS:
       ret=check_HFS(disk_car,partition,verbose);
       break;
@@ -431,6 +436,8 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_UFS:
     case UP_UFS2:
+    case UP_UFS_LE:
+    case UP_UFS2_LE:
       ret=check_ufs(disk_car,partition,verbose);
       break;
     case UP_VMFS:
@@ -445,13 +452,10 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_XFS4:
       ret=check_xfs(disk_car,partition,verbose);
       break;
-    case UP_UNK:
+    case UP_ZFS:
+      ret=check_ZFS(disk_car, partition);
       break;
-    default:
-      if(verbose>0)
-      {
-        log_info("check_part_none %u type %02X: no test\n",partition->order,partition->upart_type);
-      }
+    case UP_UNK:
       break;
   }
   return ret;
