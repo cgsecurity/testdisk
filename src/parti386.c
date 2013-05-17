@@ -1341,7 +1341,6 @@ static int is_part_known_i386(const partition_t *partition)
 
 static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, const int verbose)
 {
-  unsigned int nbr_prim=0, nbr_log_block=0;
   unsigned int vista_partition=0;
   list_part_t *element;
   list_part_t *new_list_part=NULL;
@@ -1378,7 +1377,9 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
   {
     /* log_block_size must be 0 or 1 for a valid partition table */
     unsigned int log_block_size=0;
+    unsigned int nbr_log_block=0;
     unsigned int biggest_log_block_size=0;
+    unsigned int nbr_prim=0;
     list_part_t *end_log_block=NULL;
     list_part_t *end_biggest_log_block=NULL;
     /* Verify */
