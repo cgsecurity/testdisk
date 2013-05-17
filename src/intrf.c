@@ -101,19 +101,6 @@ int screen_buffer_add(const char *_format, ...)
   return 0;
 }
 
-void screen_buffer_to_stdout(void)
-{
-  int i;
-  if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
-    intr_nbr_line++;
-  /* to log file and stdout */
-  for(i=0;i<intr_nbr_line && i<MAX_LINES;i++)
-  {
-    printf("%s\n",intr_buffer_screen[i]);
-    log_info("%s\n",intr_buffer_screen[i]);
-  }
-}
-
 void screen_buffer_reset(void)
 {
   intr_nbr_line=0;
