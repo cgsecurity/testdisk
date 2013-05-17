@@ -200,12 +200,10 @@ list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int v
   log_info("interface_load\n");
   td_list_for_each(backup_walker,&backup_list->list)
   {
-    list_part_t *element;
     backup_disk_t *backup;
     backup=td_list_entry(backup_walker, backup_disk_t, list);
     log_info("%s %s",backup->description,ctime(&backup->my_time));
-    for(element=backup->list_part;element!=NULL;element=element->next)
-      log_partition(disk_car,element->part);
+    log_all_partitions(disk_car, backup->list_part);
   }
 #ifdef HAVE_NCURSES
   backup_current=interface_load_ncurses(disk_car, backup_list);
