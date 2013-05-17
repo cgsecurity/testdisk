@@ -52,11 +52,11 @@ struct SHeader
 
 static void file_check_axx(file_recovery_t *fr)
 {
-  struct SHeader header;
-  unsigned int len;
   uint64_t	offset=0x10;
   while(1)
   {
+    struct SHeader header;
+    unsigned int len;
     if(fseek(fr->handle, offset, SEEK_SET) < 0)
       return ;
     if (fread(&header, sizeof(header), 1, fr->handle)!=1)
