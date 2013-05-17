@@ -65,10 +65,6 @@ int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd)
       {
 	(*current_cmd)+=strlen(arch_list[i]->part_name_option);
 	disk->arch=arch_list[i];
-	autoset_unit(disk);
-	hd_update_geometry(disk, verbose);
-	log_info("%s\n",disk->description_short(disk));
-	log_info("Partition table type: %s\n", disk->arch->part_name);
 	keep_asking=1;
       }
     if(strncmp(*current_cmd, "ask_type", 8)==0)
@@ -77,5 +73,9 @@ int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd)
       return 1;
     }
   } while(keep_asking>0);
+  autoset_unit(disk);
+  hd_update_geometry(disk, verbose);
+  log_info("%s\n",disk->description_short(disk));
+  log_info("Partition table type: %s\n", disk->arch->part_name);
   return 0;
 }

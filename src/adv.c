@@ -40,6 +40,7 @@
 #include "intrf.h"
 #include "intrfn.h"
 #include "fnctdsk.h"
+#include "chgtype.h"
 #include "chgtypen.h"
 #include "dirpart.h"
 #include "fat.h"
@@ -200,10 +201,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   log_info("\nInterface Advanced\n");
   list_part=disk_car->arch->read_part(disk_car,verbose,0);
   current_element=list_part;
-  for(element=list_part;element!=NULL;element=element->next)
-  {
-    log_partition(disk_car,element->part);
-  }
+  log_all_partitions(disk_car, list_part);
   while(1)
   {
     const char *options;
@@ -575,7 +573,10 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  break;
 	case 't':
 	case 'T':
-	  change_part_type_ncurses(disk_car, current_element->part);
+	  if(*current_cmd!=NULL)
+	    change_part_type_cli(disk_car, current_element->part, current_cmd);
+	  else
+	    change_part_type_ncurses(disk_car, current_element->part);
 	  rewrite=1;
 	  break;
       }
