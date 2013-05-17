@@ -151,7 +151,9 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
   Ymax=read_SB(&data, &offset_bit, nbit);
   if(Xmin!=0 || Ymin!=0 || Xmax<=0 || Ymax<=0)
     return 0;
+#if 0
   data=&buffer[8+(5+4*nbit+8-1)/8];
+#endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_swf.extension;
   file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
