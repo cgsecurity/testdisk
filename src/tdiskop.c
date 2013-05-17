@@ -58,8 +58,6 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
   int align=1;
   int ask_part_order=0;
   unsigned int expert=0;
-  char options[16];
-  strcpy(options, "AGOPTQ");
   while(1)
   {
     while(*current_cmd[0]==',')
@@ -111,11 +109,9 @@ static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const
 {
   int align=1;
   int ask_part_order=0;
-  int command;
-  int real_key;
   unsigned int expert=0;
   char options[16];
-  static struct MenuItem menuMain[]=
+  static const struct MenuItem menuMain[]=
   {
 	{'A',"Analyse","Analyse current partition structure and search for lost partitions"},
 	{'T',"Advanced","Filesystem Utils"},
@@ -135,6 +131,8 @@ static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const
     strcat(options,"D");
   while(1)
   {
+    int real_key;
+    int command;
     aff_copy(stdscr);
     wmove(stdscr,5,0);
     wprintw(stdscr, "%s\n", disk->description_short(disk));
