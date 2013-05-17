@@ -375,7 +375,6 @@ unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part
 {
   const unsigned int head_list[]={8,16,32,64,128,240,255,0};
   unsigned int best_score;
-  unsigned int score;
   unsigned int i;
   unsigned int heads_per_cylinder=disk_car->geom.heads_per_cylinder;
   disk_t *new_disk_car=(disk_t *)MALLOC(sizeof(*new_disk_car));
@@ -383,6 +382,7 @@ unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part
   best_score=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
   for(i=0; head_list[i]!=0; i++)
   {
+    unsigned int score;
     new_disk_car->geom.heads_per_cylinder=head_list[i];
     score=get_geometry_from_list_part_aux(new_disk_car, list_part, verbose);
     if(score >= best_score)
