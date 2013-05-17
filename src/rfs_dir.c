@@ -519,7 +519,6 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
   {
     /* require progsreiserfs-file-read.patch */
     char buf[4096];
-    uint64_t offset=0;
     while(file_size > 0)
     {
       int read_size=(file_size < sizeof(buf) ? file_size : sizeof(buf));
@@ -534,7 +533,6 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
 	error = -5;
       }
       file_size -= read_size;
-      offset += read_size;
     }
   }
 #endif
