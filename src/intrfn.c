@@ -266,6 +266,7 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
   return y;
 }
 
+#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
 int menu_to_command(const unsigned int yinfo, const unsigned int y_org, const unsigned int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int y_real, const unsigned int x_real)
 {
   unsigned int y=y_org;
@@ -329,6 +330,7 @@ int menu_to_command(const unsigned int yinfo, const unsigned int y_org, const un
   log_info("menu_to_command not found\n");
   return 0;
 }
+#endif
 
 /* This function takes a list of menu items, lets the user choose one *
  * and returns the value keyboard shortcut of the selected menu item  */
@@ -516,12 +518,12 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y_org, const int 
 
 int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, const unsigned int menuDefault)
 {
-    unsigned int i, j, itemLength = 0;
+    unsigned int i, itemLength = 0;
     char available[MENU_MAX_ITEMS];
 
     for(i = 0; menuItems[i].key; i++)
     {
-      j = strlen(menuItems[i].name);
+      const unsigned int j = strlen(menuItems[i].name);
       if( j > itemLength ) itemLength = j;
       available[i] = menuItems[i].key;
     }
@@ -1009,45 +1011,6 @@ int ask_confirmation(const char*_format, ...)
   touchwin(stdscr);
 #endif
   return res;
-}
-
-int ask_confirmation_with_default(const int key_default, const char*_format, ...)
-{
-  va_list ap;
-  int res;
-  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
-  aff_copy(window);
-  va_start(ap,_format);
-  vaff_txt(4, window, _format, ap);
-  va_end(ap);
-  curs_set(1);
-  wrefresh(window);
-  do
-  {
-    res=wgetch(window);
-    switch(res)
-    {
-#ifdef PADENTER
-      case PADENTER:
-#endif
-      case KEY_ENTER:
-      case '\n':
-      case '\r':
-	res=key_default;
-	break;
-      default:
-      res=toupper(res);
-      break;
-    }
-  } while(res!=c_NO && res!=c_YES);
-  curs_set(0);
-  wprintw(window,"%c\n",res);
-  delwin(window);
-  (void) clearok(stdscr, TRUE);
-#ifdef HAVE_TOUCHWIN
-  touchwin(stdscr);
-#endif
-  return (res==c_YES);
 }
 
 void not_implemented(const char *msg)
