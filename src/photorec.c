@@ -486,31 +486,6 @@ int sorfile_stat_ts(const void *p1, const void *p2)
   return 0;
 }
 
-void write_stats_stdout(const file_stat_t *file_stats)
-{
-  int i;
-  unsigned int file_nbr=0;
-  for(i=0;file_stats[i].file_hint!=NULL;i++)
-  {
-    if(file_stats[i].recovered+file_stats[i].not_recovered>0)
-    {
-      file_nbr+=file_stats[i].recovered;
-      printf("%s: %u/%u recovered\n",
-          (file_stats[i].file_hint->extension!=NULL?
-           file_stats[i].file_hint->extension:""),
-          file_stats[i].recovered, file_stats[i].recovered+file_stats[i].not_recovered);
-    }
-  }
-  if(file_nbr>1)
-  {
-    printf("Total: %u files found\n\n",file_nbr);
-  }
-  else
-  {
-    printf("Total: %u file found\n\n",file_nbr);
-  }
-}
-
 partition_t *new_whole_disk(const disk_t *disk_car)
 {
   partition_t *fake_partition;
