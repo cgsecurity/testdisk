@@ -205,9 +205,9 @@ int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partit
 
 static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find)
 {
-  int attr_type;
   while(1)
   {
+    int attr_type;
     /* Resident attributes attr_len>=24(0x18), non resident is bigger */
     unsigned int attr_len;
     if(attr_record+0x18>=end)
