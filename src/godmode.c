@@ -947,11 +947,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
 {
   partition_t *table[4];
-  partition_t *table2[4];
   int nbr_prim=0;
   int i,pos=0;
   int res;
-  int car;
   int quit=0;
   list_part_t *element;
   /* Initialisation */
@@ -972,6 +970,8 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
   /* */
   do
   {
+    partition_t *table2[4];
+    int car;
     unsigned int order;
     /* sort table into table2 */
     int part=0;
