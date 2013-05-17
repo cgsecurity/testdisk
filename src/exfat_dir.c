@@ -62,10 +62,10 @@ struct exfat_dir_struct
 
 
 static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list);
-static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
 static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_exfat_close(dir_data_t *dir_data);
 
+#if 0
 static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 {
 	while (len--) {
@@ -73,6 +73,7 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 		src += 2;
 	}
 }
+#endif
 
 #define ATTR_RO      1  /* read-only */
 #define ATTR_HIDDEN  2  /* hidden */
