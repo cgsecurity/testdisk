@@ -165,11 +165,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
     }
     if(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p')
     {
-      unsigned int search_size=buffer_size-i;
       if(atom_size < 20 || (atom_size&3)!=0 || atom_size>256)
 	return 0;
-      if(search_size > atom_size)
-	search_size=atom_size;
       if(memcmp(&buffer[i+8], "isom", 4)==0 ||
 	  memcmp(&buffer[i+8], "mp41", 4)==0 ||
 	  memcmp(&buffer[i+8], "mp42", 4)==0 ||
