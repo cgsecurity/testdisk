@@ -171,7 +171,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 {
   const struct ntfs_boot_sector *org_ntfs_header=(const struct ntfs_boot_sector *)orgboot;
   const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector *)newboot;
-  struct MenuItem menuSaveBoot[]=
+  const struct MenuItem menuSaveBoot[]=
   {
     { 'D', "Dump", "Dump sector" },
     { 'L', "List", "List directories and files" },
@@ -180,9 +180,9 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     { 0, NULL, NULL }
   };
   const char *options="DLQ";
-  int command;
   while(1)
   {
+    int command;
     aff_copy(stdscr);
     wmove(stdscr,4,0);
     wprintw(stdscr,"%s",disk_car->description(disk_car));
