@@ -292,13 +292,13 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
   }
 
   {
-    FILE_NAME_ATTR* filename_attr;
     long long inode_num;
     int ok;
     inode_num = MREF(name->parent_mref);
     name->parent_name = NULL;
     do
     {
+      FILE_NAME_ATTR* filename_attr;
       ok=0;
       if (ntfs_attr_pread(mft_data, vol->mft_record_size * inode_num, vol->mft_record_size, rec) < 1)
       {
@@ -614,12 +614,7 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
  */
 static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 {
-	runlist_element *rl = NULL;
 	struct td_list_head *pos;
-	struct data *data;
-	long long i, j;
-	long long start, end;
-	int clusters_inuse, clusters_free;
 	int percent = 0;
 
 	if (!file || !vol)
@@ -634,6 +629,11 @@ static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 	}
 
 	td_list_for_each(pos, &file->data) {
+		runlist_element *rl = NULL;
+		long long i;
+		long long start, end;
+	  	int clusters_inuse, clusters_free;
+		struct data *data;
 		data  = td_list_entry(pos, struct data, list);
 		clusters_inuse = 0;
 		clusters_free  = 0;
@@ -672,6 +672,7 @@ static int calc_percentage(struct ufile *file, ntfs_volume *vol)
 		}
 
 		for (i = 0; rl[i].length > 0; i++) {
+			long long j;
 			if (rl[i].lcn == LCN_RL_NOT_MAPPED) {
 				log_debug("Missing segment at end, %lld clusters\n",
 						(long long)rl[i].length);
