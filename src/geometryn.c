@@ -46,15 +46,15 @@
 int change_geometry_ncurses(disk_t *disk_car)
 {
   int done = 0;
-  char def[128];
-  char response[128];
-  long int tmp_val=0;
-  int command;
   int default_option=4;
   int cyl_modified=0;
   int geo_modified=0;
   while (done==0)
   {
+    char def[128];
+    char response[128];
+    long int tmp_val=0;
+    int command;
     static struct MenuItem menuGeometry[]=
     {
       { 'c', "Cylinders", "Change cylinder geometry" },
