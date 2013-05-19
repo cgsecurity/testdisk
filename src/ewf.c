@@ -76,7 +76,7 @@ extern const arch_fnct_t arch_none;
 
 static const char *fewf_description(disk_t *disk);
 static const char *fewf_description_short(disk_t *disk);
-static int fewf_clean(disk_t *disk);
+static void fewf_clean(disk_t *disk);
 static void *fewf_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int fewf_nopwrite(disk_t *disk, const void *buffer, const unsigned int count, const uint64_t offset);
@@ -366,7 +366,7 @@ static const char *fewf_description_short(disk_t *disk)
   return disk->description_short_txt;
 }
 
-static int fewf_clean(disk_t *disk)
+static void fewf_clean(disk_t *disk)
 {
   if(disk->data!=NULL)
   {
@@ -390,7 +390,7 @@ static int fewf_clean(disk_t *disk)
     free(disk->data);
     disk->data=NULL;
   }
-  return 0;
+  generic_clean(disk);
 }
 
 static int fewf_sync(disk_t *disk)

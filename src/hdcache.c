@@ -66,8 +66,8 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
 static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
 static void *cache_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int count, const uint64_t offset);
-static int cache_sync(disk_t *clean);
-static int cache_clean(disk_t *clean);
+static int cache_sync(disk_t *disk);
+static void cache_clean(disk_t *disk);
 static const char *cache_description(disk_t *disk_car);
 static const char *cache_description_short(disk_t *disk_car);
 
@@ -241,7 +241,7 @@ static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int
   return data->disk_car->pwrite(data->disk_car, buffer, count, offset);
 }
 
-static int cache_clean(disk_t *disk_car)
+static void cache_clean(disk_t *disk_car)
 {
   if(disk_car->data)
   {
@@ -259,11 +259,10 @@ static int cache_clean(disk_t *disk_car)
       struct cache_buffer_struct *cache=&data->cache[i];
       free(cache->buffer);
     }
-    free(data->disk_car);
     free(disk_car->data);
     disk_car->data=NULL;
   }
-  return 0;
+  free(disk_car);
 }
 
 static int cache_sync(disk_t *disk_car)
