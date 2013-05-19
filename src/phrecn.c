@@ -503,15 +503,15 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  /* Failed to save the session! */
 #ifdef HAVE_NCURSES
 	  if(ask_confirmation("PhotoRec has been unable to save its session status. Answer Y to really Quit, N to resume the recovery")!=0)
-	    params->status=STATUS_QUIT;
 #endif
+	    params->status=STATUS_QUIT;
 	}
 	else
 	{
 #ifdef HAVE_NCURSES
 	  if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
-	    params->status=STATUS_QUIT;
 #endif
+	    params->status=STATUS_QUIT;
 	}
 	break;
       case PSTATUS_OK:
