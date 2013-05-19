@@ -545,7 +545,7 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
 }
 #endif
 
-int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
 #ifdef HAVE_LIBREISERFS
   dal_t *dal;
@@ -564,7 +564,7 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
   {
     log_error("Couldn't open device\n");
     free(my_data);
-    return -1;
+    return DIR_PART_EIO;
   }
   /* log_debug("file_open ok\n"); */
 
@@ -577,7 +577,7 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
       log_error("Couldn't open reiser filesystem %s\n",dal_error(dal));
       /* file_close call free(my_data) */
       file_close(dal);
-      return -1;
+      return DIR_PART_EIO;
     }
   /* log_debug("reiserfs_fs_open_fast ok\n"); */
   {
@@ -597,9 +597,9 @@ int dir_partition_reiser_init(disk_t *disk_car, const partition_t *partition, di
     dir_data->local_dir=NULL;
     dir_data->private_dir_data=ls;
   }
-  return 0;
+  return DIR_PART_OK;
 #else
-  return -2;
+  return DIR_PART_ENOSYS;
 #endif
 }
 

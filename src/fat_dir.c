@@ -439,7 +439,7 @@ static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const d
 }
 
 
-int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
   static unsigned char *buffer;
   static struct fat_dir_struct *ls;
@@ -448,7 +448,7 @@ int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_d
   {
     log_error("Can't read FAT boot sector.\n");
     free(buffer);
-    return -1;
+    return DIR_PART_EIO;
   }
   set_secwest();
   ls=(struct fat_dir_struct *)MALLOC(sizeof(*ls));
@@ -467,7 +467,7 @@ int dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_d
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
   dir_data->get_dir=fat_dir;
-  return 0;
+  return DIR_PART_OK;
 }
 
 static void dir_partition_fat_close(dir_data_t *dir_data)

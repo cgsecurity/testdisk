@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
+dir_partition_t dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 const char*td_ext2fs_version(void);
 
 #ifdef __cplusplus

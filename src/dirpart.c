@@ -50,58 +50,58 @@
 #include "log.h"
 #include "log_part.h"
 
-int dir_partition(disk_t *disk_car, const partition_t *partition, const int verbose, char **current_cmd)
+static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *partition, const int verbose, dir_data_t *dir_data)
+{
+  dir_partition_t res=DIR_PART_ENOSYS;
+  if(is_part_fat(partition))
+    res=dir_partition_fat_init(disk, partition, dir_data, verbose);
+  else if(is_part_ntfs(partition))
+  {
+    res=dir_partition_ntfs_init(disk, partition, dir_data, verbose);
+    if(res!=DIR_PART_OK)
+      res=dir_partition_exfat_init(disk, partition, dir_data, verbose);
+  }
+  else if(is_part_linux(partition))
+  {
+    res=dir_partition_ext2_init(disk, partition, dir_data, verbose);
+    if(res!=DIR_PART_OK)
+      res=dir_partition_reiser_init(disk, partition, dir_data, verbose);
+  }
+  if(res==DIR_PART_OK)
+    return DIR_PART_OK;
+  switch(partition->upart_type)
+  {
+    case UP_FAT12:
+    case UP_FAT16:
+    case UP_FAT32:
+      return dir_partition_fat_init(disk, partition, dir_data, verbose);
+    case UP_EXT4:
+    case UP_EXT3:
+    case UP_EXT2:
+      return dir_partition_ext2_init(disk, partition, dir_data, verbose);
+    case UP_RFS:
+    case UP_RFS2:
+    case UP_RFS3:
+      return dir_partition_reiser_init(disk, partition, dir_data, verbose);
+    case UP_NTFS:
+      return dir_partition_ntfs_init(disk, partition, dir_data, verbose);
+    case UP_EXFAT:
+      return dir_partition_exfat_init(disk, partition, dir_data, verbose);
+    default:
+      return DIR_PART_ENOSYS;
+  }
+}
+
+dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const int verbose, char **current_cmd)
 {
   dir_data_t dir_data;
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
-  int res=-3;
+  dir_partition_t res;
   fflush(stderr);
   dir_data.local_dir=NULL;
-  if(is_part_fat(partition))
-    res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
-  else if(is_part_ntfs(partition))
-  {
-    res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
-    if(res!=0)
-      res=dir_partition_exfat_init(disk_car, partition, &dir_data, verbose);
-  }
-  else if(is_part_linux(partition))
-  {
-    res=dir_partition_ext2_init(disk_car,partition,&dir_data,verbose);
-    if(res!=0)
-      res=dir_partition_reiser_init(disk_car,partition,&dir_data,verbose);
-  }
-  if(res!=0)
-  {
-    switch(partition->upart_type)
-    {
-      case UP_FAT12:
-      case UP_FAT16:
-      case UP_FAT32:
-	res=dir_partition_fat_init(disk_car,partition,&dir_data,verbose);
-	break;
-      case UP_EXT4:
-      case UP_EXT3:
-      case UP_EXT2:
-	res=dir_partition_ext2_init(disk_car,partition,&dir_data,verbose);
-	break;
-      case UP_RFS:
-      case UP_RFS2:
-      case UP_RFS3:
-	res=dir_partition_reiser_init(disk_car,partition,&dir_data,verbose);
-	break;
-      case UP_NTFS:
-	res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
-	break;
-      case UP_EXFAT:
-	res=dir_partition_exfat_init(disk_car, partition, &dir_data, verbose);
-	break;
-      default:
-	return res;
-    }
-  }
+  res=dir_partition_init(disk, partition, verbose, &dir_data);
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;
@@ -112,14 +112,14 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
   log_info("\n");
   switch(res)
   {
-    case -2:
+    case DIR_PART_ENOSYS:
       screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
-      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
 #endif
-      log_partition(disk_car,partition);
+      log_partition(disk,partition);
       screen_buffer_add("Support for this filesystem hasn't been enable during compilation.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
@@ -129,14 +129,14 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #endif
       }
       break;
-    case -1:
+    case DIR_PART_EIO:
       screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
       wmove(window,4,0);
-      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
 #endif
-      log_partition(disk_car,partition);
+      log_partition(disk,partition);
       screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
@@ -146,7 +146,7 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 #endif
       }
       break;
-    default:
+    case DIR_PART_OK:
       {
 	int recursive=0;
 	if(*current_cmd!=NULL)
@@ -172,18 +172,18 @@ int dir_partition(disk_t *disk_car, const partition_t *partition, const int verb
 	  } while(do_continue==1);
 	}
 	if(recursive>0)
-	  dir_whole_partition_log(disk_car,partition,&dir_data,dir_data.current_inode);
+	  dir_whole_partition_log(disk,partition,&dir_data,dir_data.current_inode);
 	else
 	{
 #ifdef HAVE_NCURSES
-	  dir_partition_aff(disk_car, partition, &dir_data, dir_data.current_inode, current_cmd);
+	  dir_partition_aff(disk, partition, &dir_data, dir_data.current_inode, current_cmd);
 #else
 	  {
 	    file_info_t dir_list = {
 	      .list = TD_LIST_HEAD_INIT(dir_list.list),
 	      .name = NULL
 	    };
-	    dir_data.get_dir(disk_car, partition, &dir_data, dir_data.current_inode, &dir_list);
+	    dir_data.get_dir(disk, partition, &dir_data, dir_data.current_inode, &dir_list);
 	    dir_aff_log(&dir_data, &dir_list);
 	    delete_list_file(&dir_list);
 	  }

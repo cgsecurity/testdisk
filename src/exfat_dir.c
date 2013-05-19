@@ -228,7 +228,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   return 0;
 }
 
-int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
   static struct exfat_dir_struct *ls;
   struct exfat_super_block *exfat_header;
@@ -239,14 +239,14 @@ int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_dat
   {
     log_error("Can't read exFAT boot sector.\n");
     free(exfat_header);
-    return -1;
+    return DIR_PART_EIO;
   }
   if(le16(exfat_header->signature)!=0xAA55 ||
       memcmp(exfat_header->oem_id, "EXFAT   ", sizeof(exfat_header->oem_id))!=0)
   {
     log_error("Not an exFAT boot sector.\n");
     free(exfat_header);
-    return -1;
+    return DIR_PART_EIO;
   }
   ls=(struct exfat_dir_struct *)MALLOC(sizeof(*ls));
   ls->boot_sector=exfat_header;
@@ -266,7 +266,7 @@ int dir_partition_exfat_init(disk_t *disk, const partition_t *partition, dir_dat
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
   dir_data->get_dir=exfat_dir;
-  return 0;
+  return DIR_PART_OK;
 }
 
 static void dir_partition_exfat_close(dir_data_t *dir_data)

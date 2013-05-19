@@ -458,7 +458,7 @@ static void dir_partition_ntfs_close(dir_data_t *dir_data)
 }
 #endif
 
-int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
   struct ntfs_device *dev;
@@ -500,7 +500,7 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
   if (!vol) {
     free(my_data);
     ntfs_device_free(dev);
-    return -1;
+    return DIR_PART_EIO;
   }
   if (vol->flags & VOLUME_IS_DIRTY) {
     log_warning("NTFS Volume is dirty.\n");
@@ -528,9 +528,9 @@ int dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_
     dir_data->local_dir=NULL;
     dir_data->private_dir_data=ls;
   }
-  return 0;
+  return DIR_PART_OK;
 #else
-  return -2;
+  return DIR_PART_ENOSYS;
 #endif
 }
 

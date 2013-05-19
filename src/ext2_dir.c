@@ -336,7 +336,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
 }
 #endif
 
-int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
 {
 #if defined(HAVE_LIBEXT2FS)
   struct ext2_dir_struct *ls=(struct ext2_dir_struct *)MALLOC(sizeof(*ls));
@@ -356,7 +356,7 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   {
 //    free(my_data);
     free(ls);
-    return -1;
+    return DIR_PART_EIO;
   }
   strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
   dir_data->current_inode=EXT2_ROOT_INO;
@@ -368,9 +368,9 @@ int dir_partition_ext2_init(disk_t *disk_car, const partition_t *partition, dir_
   dir_data->close=&dir_partition_ext2_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
-  return 0;
+  return DIR_PART_OK;
 #else
-  return -2;
+  return DIR_PART_ENOSYS;
 #endif
 }
 

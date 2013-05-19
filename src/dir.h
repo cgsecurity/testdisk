@@ -38,6 +38,7 @@ extern "C" {
 #define CAPA_LIST_DELETED	1
 #define CAPA_LIST_ADS		2
 
+typedef enum { DIR_PART_ENOSYS=-2, DIR_PART_EIO=-1, DIR_PART_OK=0} dir_partition_t;
 typedef struct dir_data dir_data_t;
 typedef struct 
 {
