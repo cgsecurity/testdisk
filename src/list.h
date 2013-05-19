@@ -229,10 +229,10 @@ static inline void td_list_splice_init(struct td_list_head *list,
  * @member:	the name of the td_list_struct within the struct.
  */
 #define td_list_entry(ptr, type, member) \
-	((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+	((type *)((char *)(ptr)-(unsigned long long)(&((type *)0)->member)))
 
 #define td_list_entry_const(ptr, type, member) \
-	((type *)((const char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+	((type *)((const char *)(ptr)-(unsigned long long)(&((type *)0)->member)))
 
 /**
  * __td_list_for_each	-	iterate over a list
