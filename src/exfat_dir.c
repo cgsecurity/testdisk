@@ -151,7 +151,7 @@ static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, co
   return 0;
 }
 
-enum {exFAT_FOLLOW_CLUSTER, exFAT_NEXT_FREE_CLUSTER, exFAT_NEXT_CLUSTER};
+typedef enum {exFAT_FOLLOW_CLUSTER, exFAT_NEXT_FREE_CLUSTER, exFAT_NEXT_CLUSTER} exfat_method_t;
 
 static int is_EOC(const unsigned int cluster)
 {
@@ -169,7 +169,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   unsigned int nbr_cluster;
   unsigned int clus_blocknr;
   unsigned int total_clusters;
-  unsigned int exfat_meth=exFAT_FOLLOW_CLUSTER;
+  exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
   int stop=0;
   if(first_cluster<2)
     cluster=le32(exfat_header->rootdir_clusnr);
@@ -290,7 +290,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
   unsigned char *buffer_file=(unsigned char *)MALLOC(1<<cluster_shift);
   unsigned int cluster;
   uint64_t file_size=file->st_size;
-  unsigned int exfat_meth=exFAT_FOLLOW_CLUSTER;
+  exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
   uint64_t start_exfat1,clus_blocknr;
   unsigned long int total_clusters;
   f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
