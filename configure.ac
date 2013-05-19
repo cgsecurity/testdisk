@@ -736,8 +736,8 @@ else
 fi
 
 
-#-Wconversion -Wunreachable-code -Wmissing-noreturn"
-for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2
+#-Wconversion -Wmissing-noreturn -ffunction-sections -Wl,--gc-sections -Wl,--print-gc-sections
+for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wunreachable-code
 do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
