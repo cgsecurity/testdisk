@@ -195,11 +195,7 @@ int delete_list_disk(list_disk_t *list_disk)
   {
     list_disk_t *element_disk_next=element_disk->next;
     write_used|=element_disk->disk->write_used;
-    if(element_disk->disk->clean!=NULL)
-      element_disk->disk->clean(element_disk->disk);
-    free(element_disk->disk->device);
-    free(element_disk->disk->model);
-    free(element_disk->disk);
+    element_disk->disk->clean(element_disk->disk);
     free(element_disk);
     element_disk=element_disk_next;
   }

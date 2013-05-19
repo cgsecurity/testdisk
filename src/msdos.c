@@ -60,7 +60,7 @@ static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, con
 static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int disk_sync(disk_t *disk_car);
-static int disk_clean(disk_t *disk_car);
+static void disk_clean(disk_t *disk_car);
 
 static int cmd_dos_segment = 0;
 static int cmd_dos_selector = 0;
@@ -542,7 +542,7 @@ static int disk_sync(disk_t *disk_car)
   return -1;
 }
 
-static int disk_clean(disk_t *disk_car)
+static void disk_clean(disk_t *disk_car)
 {
   /*
   if(disk_car->data!=NULL)
@@ -550,7 +550,7 @@ static int disk_clean(disk_t *disk_car)
     struct info_disk_struct *data=disk_car->data;
   }
   */
-  return generic_clean(disk_car);
+  generic_clean(disk_car);
 }
 
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc)

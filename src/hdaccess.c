@@ -149,7 +149,7 @@ struct info_file_struct
 };
 
 static void autoset_geometry(disk_t * disk_car, const unsigned char *buffer, const int verbose);
-static int file_clean(disk_t *disk_car);
+static void file_clean(disk_t *disk);
 static int file_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
 static void *file_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int file_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
@@ -159,15 +159,23 @@ static int file_sync(disk_t *disk_car);
 static uint64_t compute_device_size(const int hd_h, const char *device, const int verbose, const unsigned int sector_size);
 #endif
 
-int generic_clean(disk_t *disk_car)
+void generic_clean(disk_t *disk)
 {
-  free(disk_car->data);
-  disk_car->data=NULL;
-  free(disk_car->rbuffer);
-  free(disk_car->wbuffer);
-  disk_car->rbuffer=NULL;
-  disk_car->wbuffer=NULL;
-  return 0;
+  free(disk->device);
+  free(disk->model);
+  free(disk->serial_no);
+  free(disk->fw_rev);
+  free(disk->data);
+  free(disk->rbuffer);
+  free(disk->wbuffer);
+  disk->device=NULL;
+  disk->model=NULL;
+  disk->serial_no=NULL;
+  disk->fw_rev=NULL;
+  disk->data=NULL;
+  disk->rbuffer=NULL;
+  disk->wbuffer=NULL;
+  free(disk);
 }
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -190,11 +198,7 @@ list_disk_t *insert_new_disk_nodup(list_disk_t *list_disk, disk_t *disk_car, con
     {
       if(verbose>1)
         log_verbose("%s is available but reject it to avoid duplicate disk.\n", device_name);
-      if(disk_car->clean!=NULL)
-        disk_car->clean(disk_car);
-      free(disk_car->device);
-      free(disk_car->model);
-      free(disk_car);
+      disk_car->clean(disk_car);
       return list_disk;
     }
     return insert_new_disk(list_disk,disk_car);
@@ -1092,17 +1096,17 @@ static const char *file_description_short(disk_t *disk_car)
   return disk_car->description_short_txt;
 }
 
-static int file_clean(disk_t *disk_car)
+static void file_clean(disk_t *disk)
 {
-  if(disk_car->data!=NULL)
+  if(disk->data!=NULL)
   {
-    struct info_file_struct *data=(struct info_file_struct *)disk_car->data;
+    struct info_file_struct *data=(struct info_file_struct *)disk->data;
     /*
 #ifdef BLKRRPART
     if (ioctl(data->handle, BLKRRPART, NULL)) {
-      log_error("%s BLKRRPART failed\n",disk_car->description(disk_car));
+      log_error("%s BLKRRPART failed\n",disk->description(disk));
     } else {
-      log_debug("%s BLKRRPART ok\n",disk_car->description(disk_car));
+      log_debug("%s BLKRRPART ok\n",disk->description(disk));
     }
 #endif
     */
@@ -1114,8 +1118,9 @@ static int file_clean(disk_t *disk_car)
     }
 #endif
     close(data->handle);
+    data->handle=NULL;
   }
-  return generic_clean(disk_car);
+  generic_clean(disk);
 }
 
 static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)

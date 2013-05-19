@@ -59,7 +59,7 @@ static unsigned int file_win32_compute_sector_size(HANDLE handle);
 static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
-static int file_win32_clean(disk_t *disk_car);
+static void file_win32_clean(disk_t *disk_car);
 static void *file_win32_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
@@ -338,11 +338,7 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, int 
     if(disk_car->disk_real_size!=0)
       return disk_car;
     log_warning("Warning: can't get size for %s\n",device);
-    free(data);
-    free(disk_car->device);
-    free(disk_car->model);
-    free(disk_car);
-    CloseHandle(handle);
+    file_win32_clean(disk_car);
   }
   return NULL;
 }
@@ -401,14 +397,14 @@ static const char *file_win32_description_short(disk_t *disk_car)
   return disk_car->description_short_txt;
 }
 
-static int file_win32_clean(disk_t *disk_car)
+static void file_win32_clean(disk_t *disk)
 {
-  if(disk_car->data!=NULL)
+  if(disk->data!=NULL)
   {
-    struct info_file_win32_struct *data=(struct info_file_win32_struct *)disk_car->data;
+    struct info_file_win32_struct *data=(struct info_file_win32_struct *)disk->data;
     CloseHandle(data->handle);
   }
-  return generic_clean(disk_car);
+  generic_clean(disk);
 }
 
 static unsigned int file_win32_compute_sector_size(HANDLE handle)
