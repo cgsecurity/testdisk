@@ -38,21 +38,69 @@
 #include <QLayoutItem>
 #include <QLabel>
 #include <QLayout>
+#include <QTableView>
+#include <QHeaderView>
+#include <QStandardItemModel>
+#include <QStandardItem>
+#include <QSortFilterProxyModel>
+#include <QGroupBox>
+#include <QRadioButton>
+#include <QFileDialog>
+#include <QComboBox>
+#include <QTimer>
+#include <QMessageBox>
 #include "types.h"
 #include "common.h"
 #include "hdcache.h"
 #include "hdaccess.h"
 #include "fnctdsk.h"
 #include "filegen.h"
-#include "photorec.h"
-#include "qphotorec.h"
+#include "sessionp.h"
 #include "intrf.h"
+#include "partauto.h"
+#include "phcfg.h"
+#include "log.h"
+#include "log_part.h"
+#include "qphotorec.h"
+
+extern const arch_fnct_t arch_none;
+extern file_enable_t list_file_enable[];
 
 QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
 {
   const int verbose=1;
   const int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   list_disk_t *element_disk;
+
+  list_disk=NULL;
+  selected_disk=NULL;
+  list_part=NULL;
+  selected_partition=NULL;
+
+  params=(struct ph_param *)MALLOC(sizeof(*params));
+  params->recup_dir=NULL;
+  params->cmd_device=NULL;
+  params->cmd_run=NULL;
+  params->carve_free_space_only=1;
+  params->disk=NULL;
+  params->partition=NULL;
+
+  options=(struct ph_options *)MALLOC(sizeof(*options));
+  options->paranoid=1;
+  options->keep_corrupted_file=0;
+  options->mode_ext2=0;
+  options->expert=0;
+  options->lowmem=0;
+  options->verbose=0;
+  options->list_file_format=list_file_enable;
+  reset_list_file_enable(options->list_file_format);
+
+  stop_the_recovery=false;
+
+  setWindowIcon( QPixmap( ":res/photorec_64x64.png" ) );
+  this->setWindowTitle(tr("QPhotoRec"));
+  QVBoxLayout *mainLayout = new QVBoxLayout();
+  this->setLayout(mainLayout);
 
   list_disk=hd_parse(NULL, verbose, testdisk_mode);
 
@@ -61,152 +109,373 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
     element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
   if(list_disk==NULL)
-    no_disk();
-  else
-    disk_sel();
+  {
+    no_disk_warning();
+  }
+  setupUI();
 }
 
-void QPhotorec::partition_selection(disk_t *disk)
+QPhotorec::~QPhotorec()
 {
-  list_part_t *list_part;
-  list_part_t *element;
-  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
-  QLabel *t_disk = new QLabel(disk->description_short(disk));
-  QPushButton *button_proceed = new QPushButton("&Proceed");
-  QPushButton *button_quit= new QPushButton("&Quit");
+//  session_save(list_search_space, params, options);
+  part_free_list(list_part);
+  delete_list_disk(list_disk);
+  free(options);
+  free(params);
+}
 
-  QWidget *B_widget = new QWidget(this);
-  QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
-  B_layout->addWidget(button_proceed);
-  B_layout->addWidget(button_quit);
-  B_widget->setLayout(B_layout);
-
-  PartListWidget= new QListWidget();
-  list_part=disk->arch->read_part(disk, 0, 0);
+void QPhotorec::setExistingDirectory()
+{
+  QString directory = QFileDialog::getExistingDirectory(this,
+      "getExistingDirectory()",
+      directoryLabel->text(),
+      QFileDialog::ShowDirsOnly);
+  if (!directory.isEmpty())
   {
-    int insert_error=0;
-    partition_t *partition_wd;
-    partition_wd=new_whole_disk(disk);
-    list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
-    if(insert_error>0)
+    directoryLabel->setText(directory);
+    buttons_updateUI();
+  }
+}
+
+void QPhotorec::partition_selected()
+{
+  if(PartListWidget->selectedItems().count()<=0)
+    return;
+  list_part_t *tmp;
+  const QString& s = PartListWidget->selectedItems()[0]->text();
+  if(s.compare("")==0)
+  {
+    const QString& s2 = PartListWidget->selectedItems()[2]->text();
+    for(tmp=list_part; tmp!=NULL; tmp=tmp->next)
     {
-      free(partition_wd);
+      partition_t *part=tmp->part;
+      if(part->order==NO_ORDER && s2.compare(arch_none.get_partition_typename(part))==0)
+      {
+	selected_partition=part;
+	buttons_updateUI();
+	return ;
+      }
+    }
+    return ;
+  }
+  for(tmp=list_part; tmp!=NULL; tmp=tmp->next)
+  {
+    partition_t *part=tmp->part;
+    if(QString::number(part->order).compare(s)==0)
+    {
+      selected_partition=part;
+      buttons_updateUI();
+      return ;
     }
   }
-  if(list_part==NULL)
-    return;
-  for(element=list_part; element!=NULL; element=element->next)
-  {
-    const char *msg;
-    msg=aff_part_aux(AFF_PART_ORDER|AFF_PART_STATUS, disk, element->part);
-    PartListWidget->addItem(msg);
-  }
-
-  clearWidgets();
-  QLayout *mainLayout = this->layout();
-//  this->setWindowTitle(tr("QPhotoRec: partition selection"));
-  
-  mainLayout->addWidget(t_copy);
-  mainLayout->addWidget(t_disk);
-  mainLayout->addWidget(PartListWidget);
-  mainLayout->addWidget(B_widget);
-
-  this->setLayout(mainLayout);
-  
-  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
-//  connect( button_proceed, SIGNAL(clicked()), this, SLOT(partition_selected()));
-//  connect( PartListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(partition_selected()));
 }
 
-void QPhotorec::disk_selected()
+void QPhotorec::PartListWidget_updateUI()
 {
-  if(HDDlistWidget->selectedItems().count()==1)
+  list_part_t *element;
+  PartListWidget->setRowCount(0);
+  PartListWidget->setSortingEnabled(false);
+  for(element=list_part; element!=NULL; element=element->next)
   {
-    list_disk_t *element_disk;
-    const QString& s = HDDlistWidget->selectedItems()[0]->text();
-    for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+    const partition_t *partition=element->part;
+    if(partition->status!=STATUS_EXT_IN_EXT)
     {
-      disk_t *disk=element_disk->disk;
-      if(QString(disk->description_short(disk)).compare(s)==0)
+      const arch_fnct_t *arch=partition->arch;
+      const int currentRow = PartListWidget->rowCount();
+      PartListWidget->setRowCount(currentRow + 1);
+      if(partition->order==NO_ORDER)
       {
-	return partition_selection(disk);
+	QTableWidgetItem *item = new QTableWidgetItem();
+	item->setData(0, "");
+	PartListWidget->setItem(currentRow, 0, item);
+      }
+      else
+      {
+	QTableWidgetItem *item = new QTableWidgetItem();
+	item->setData(0, partition->order);
+	PartListWidget->setItem(currentRow, 0, item);
+      }
+      {
+	QTableWidgetItem *item=new QTableWidgetItem(QString(get_partition_status(partition)));
+	item->setTextAlignment(Qt::AlignHCenter| Qt::AlignVCenter);
+	PartListWidget->setItem(currentRow, 1, item);
+      }
+      if(arch->get_partition_typename(partition)!=NULL)
+	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem(QString(arch->get_partition_typename(partition))));
+      else if(arch->get_part_type)
+	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem("Sys=" + QString::number(arch->get_part_type(partition))));
+      else
+	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem("Unknown"));
+      if(partition->upart_type>0)
+      {
+	QTableWidgetItem *item=new QTableWidgetItem(QString(arch_none.get_partition_typename(partition)));
+	item->setToolTip(QString(partition->info));
+	PartListWidget->setItem(currentRow, 3, item);
+      }
+      else
+      {
+	PartListWidget->setItem(currentRow, 3, new QTableWidgetItem(""));
+      }
+      {
+	char sizeinfo[32];
+	QTableWidgetItem *item;
+	size_to_unit(partition->part_size, &sizeinfo[0]);
+	item=new QTableWidgetItem(QString(sizeinfo));
+	item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+	PartListWidget->setItem(currentRow, 4, item);
+      }
+      {
+	QString partname="";
+	if(partition->partname[0]!='\0')
+	{
+	  partname.sprintf("[%s]", partition->partname);
+	}
+	if(partition->fsname[0]!='\0')
+	{
+	  QString fsname;
+	  fsname.sprintf(" [%s]", partition->fsname);
+	  partname.append(fsname);
+	}
+	PartListWidget->setItem(currentRow, 5, new QTableWidgetItem(partname));
       }
     }
   }
+  PartListWidget->setSortingEnabled(true);
+  PartListWidget->sortByColumn(0, Qt::AscendingOrder);
+  PartListWidget->resizeColumnsToContents();
 }
 
-void QPhotorec::no_disk()
+void QPhotorec::disk_changed(int index)
 {
-  this->setWindowTitle(tr("QPhotoRec"));
-  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
-  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
-  QLabel *t_no_disk = new QLabel("No harddisk found\n");
+  int i;
+  list_disk_t *element_disk;
+  for(element_disk=list_disk, i=0;
+      element_disk!=NULL;
+      element_disk=element_disk->next, i++)
+  {
+    if(i==index)
+    {
+      selected_disk=element_disk->disk;
+      selected_partition=NULL;
+      autodetect_arch(selected_disk, &arch_none);
+      log_info("%s\n", selected_disk->description_short(selected_disk));
+      part_free_list(list_part);
+      list_part=init_list_part(selected_disk, NULL);
+      log_all_partitions(selected_disk, list_part);
+      PartListWidget_updateUI();
+      return;
+    }
+  }
+}
+
+QWidget *QPhotorec::copyright(QWidget * qwparent)
+{
+  QWidget *C_widget = new QWidget(qwparent);
+  QLabel *t_logo=new QLabel(C_widget);
+  QPixmap pixmap_img = QPixmap(":res/photorec_64x64.png");
+  t_logo->setPixmap(pixmap_img);
+
+  QSizePolicy c_sizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+  t_logo->setSizePolicy(c_sizePolicy);
+
+  QLabel *t_copy=new QLabel(C_widget);
+
+  t_copy->setText( "PhotoRec " + QString(VERSION) + ", Data Recovery Utility, " + QString(TESTDISKDATE) + "<br>\nCopyright (C) Christophe GRENIER &lt;<a href=\"mailto:grenier@cgsecurity.org\">grenier@cgsecurity.org</a>&gt;<br>\n<a href=\"http://www.cgsecurity.org/\">http://www.cgsecurity.org</a>");
+  t_copy->setTextFormat(Qt::RichText);
+  t_copy->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  t_copy->setOpenExternalLinks(true);
+
+  QHBoxLayout *C_layout = new QHBoxLayout(C_widget);
+  C_layout->addStretch(1);
+  C_layout->addWidget(t_logo);
+  C_layout->addWidget(t_copy);
+  C_layout->addStretch(1);
+  C_widget->setLayout(C_layout);
+  return C_widget;
+}
+
+/* TODO replace by a warning */
+int QPhotorec::no_disk_warning()
+{
+  const char *msg;
+  msg="No harddisk found";
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-  t_no_disk->setText("No harddisk found\n"
-      "You need to be administrator to use this program.\n"
-      "Under Win9x, use the DOS version instead.\n"
-      "Under Vista or later, select this program, right-click and choose \"Run as administrator\".\n");
+  msg="No harddisk found\n"
+    "You need to be administrator to use this program.\n"
+    "Under Win9x, use the DOS version instead.\n"
+    "Under Vista or later, select this program, right-click and choose \"Run as administrator\".";
 #elif defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
-    t_no_disk->setText("No harddisk found\n"
-	"You need to be root to use PhotoRec.");
+    msg="No harddisk found\n"
+      "You need to be root to use PhotoRec.";
   }
 #endif
 #endif
-  QPushButton *button_quit= new QPushButton("&Quit");
-
-  QVBoxLayout *mainLayout = new QVBoxLayout();
-  mainLayout->addWidget(t_copy);
-  mainLayout->addWidget(t_free_soft);
-  mainLayout->addWidget(t_no_disk);
-  mainLayout->addWidget(button_quit);
-  this->setLayout(mainLayout);
-  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+  return QMessageBox::warning(this,"No Disk!", msg, QMessageBox::Ok);
 }
 
+void QPhotorec::buttons_updateUI()
+{
+  if(selected_disk==NULL || selected_partition==NULL)
+  {
+    button_search->setEnabled(false);
+    return ;
+  }
+  if(selected_partition->upart_type==UP_EXT2 || selected_partition->upart_type==UP_EXT3 || selected_partition->upart_type==UP_EXT4)
+    qextRadioButton->setChecked(true);
+  else
+    qfatRadioButton->setChecked(true);
+  switch(selected_partition->upart_type)
+  {
+    case UP_EXFAT:
+    case UP_FAT12:
+    case UP_FAT16:
+    case UP_FAT32:
+#if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
+    case UP_NTFS:
+#endif
+#ifdef HAVE_LIBEXT2FS
+    case UP_EXT2:
+    case UP_EXT3:
+    case UP_EXT4:
+#endif
+      qfreeRadioButton->setEnabled(true);
+      qfreeRadioButton->setChecked(true);
+      break;
+    default:
+      qwholeRadioButton->setChecked(true);
+      qfreeRadioButton->setEnabled(false);
+      break;
+  }
+  button_search->setEnabled(!directoryLabel->text().isEmpty());
+}
 
-void QPhotorec::disk_sel()
+void QPhotorec::setupUI()
 {
   list_disk_t *element_disk;
-  this->setWindowTitle(tr("QPhotoRec"));
-  QLabel *t_copy = new QLabel("PhotoRec 6.14-WIP, Data Recovery Utility, May 2012\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org");
+  QWidget *t_copy = copyright(this);
   QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
-  QLabel *t_select = new QLabel("Please select a media");
+  QLabel *t_select = new QLabel("Please select a media to recover from");
 
-  HDDlistWidget = new QListWidget();
+  HDDlistWidget = new QComboBox();
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
     disk_t *disk=element_disk->disk;
-    HDDlistWidget->addItem(disk->description_short(disk));
+    HDDlistWidget->addItem(
+	QIcon::fromTheme("drive-harddisk", QIcon(":res/gnome/drive-harddisk.png")),
+	disk->description_short(disk));
   }
   HDDlistWidget->setToolTip("Disk capacity must be correctly detected for a successful recovery.\n"
       "If a disk listed above has incorrect size, check HD jumper settings, BIOS\n"
       "detection, and install the latest OS patches and disk drivers."
   );
 
-  QPushButton *button_proceed = new QPushButton("&Proceed");
-  QPushButton *button_quit= new QPushButton("&Quit");
+  QStringList oLabel;
+  oLabel.append("");
+  oLabel.append("Flags");
+  oLabel.append("Type");
+  oLabel.append("File System");
+  oLabel.append("Size");
+  oLabel.append("Label");
+
+  PartListWidget= new QTableWidget();
+  PartListWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  PartListWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+  PartListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  PartListWidget->verticalHeader()->hide();
+  PartListWidget->setShowGrid(false);
+  PartListWidget->setColumnCount( 6 );
+  PartListWidget->setHorizontalHeaderLabels( oLabel );
+  PartListWidget_updateUI();
+
+  QGroupBox *groupBox1;
+  QGroupBox *groupBox2;
+
+  groupBox1 = new QGroupBox("File System type");
+  qextRadioButton = new QRadioButton("ext2/ext3/ext4 filesystem");
+  qfatRadioButton = new QRadioButton("FAT/NTFS/HFS+/ReiserFS/...");
+  qfatRadioButton->setChecked(true);
+
+  groupBox2 = new QGroupBox();
+  qfreeRadioButton = new QRadioButton("Free: Scan for file from unallocated space only");
+  qwholeRadioButton = new QRadioButton("Whole: Extract files from whole partition");
+  qfreeRadioButton->setEnabled(false);
+  qwholeRadioButton->setChecked(true);
+
+
+  QVBoxLayout *groupBox1Layout = new QVBoxLayout;
+  QVBoxLayout *groupBox2Layout = new QVBoxLayout;
+
+  groupBox1Layout->addWidget(qextRadioButton);
+  groupBox1Layout->addWidget(qfatRadioButton);
+  groupBox1->setLayout(groupBox1Layout);
+
+  groupBox2Layout->addWidget(qfreeRadioButton);
+  groupBox2Layout->addWidget(qwholeRadioButton);
+  groupBox2->setLayout(groupBox2Layout);
+
+  QWidget *groupBox= new QWidget();
+  QHBoxLayout *groupBoxLayout = new QHBoxLayout;
+  groupBoxLayout->addWidget(groupBox1);
+  groupBoxLayout->addWidget(groupBox2);
+  groupBox->setLayout(groupBoxLayout);
+
+
+  QLabel *dstWidget= new QLabel("Please select a destination to save the recovered files.");
+  directoryLabel=new QLineEdit("");
+  QPushButton *dst_button = new QPushButton(
+      QIcon::fromTheme("folder", QIcon(":res/gnome/folder.png")),
+      "&Browse");
+
+  QWidget *dst_widget= new QWidget(this);
+  QWidget *dst_widget2= new QWidget(this);
+
+  QHBoxLayout *dst_widgetLayout2 = new QHBoxLayout;
+  dst_widgetLayout2->addWidget(directoryLabel);
+  dst_widgetLayout2->addWidget(dst_button);
+  dst_widget2->setLayout(dst_widgetLayout2);
+
+  QVBoxLayout *dst_widgetLayout = new QVBoxLayout;
+  dst_widgetLayout->addWidget(dstWidget);
+  dst_widgetLayout->addWidget(dst_widget2);
+  dst_widget->setLayout(dst_widgetLayout);
+  
+
+  button_search = new QPushButton(QIcon::fromTheme("go-next", QIcon(":res/gnome/go-next.png")), "&Search");
+  button_search->setEnabled(false);
+  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
 
   QWidget *B_widget = new QWidget(this);
   QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
-  B_layout->addWidget(button_proceed);
+  B_layout->addWidget(button_search);
   B_layout->addWidget(button_quit);
   B_widget->setLayout(B_layout);
 
+  clearWidgets();
+//  QLayout *mainLayout = this->layout();
+  delete this->layout();
   QVBoxLayout *mainLayout = new QVBoxLayout();
   mainLayout->addWidget(t_copy);
   mainLayout->addWidget(t_free_soft);
   mainLayout->addWidget(t_select);
   mainLayout->addWidget(HDDlistWidget);
+  mainLayout->addWidget(PartListWidget);
+  mainLayout->addWidget(groupBox);
+  mainLayout->addWidget(dst_widget);
   mainLayout->addWidget(B_widget);
   this->setLayout(mainLayout);
 
-  connect( button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
-  connect( button_proceed, SIGNAL(clicked()), this, SLOT(disk_selected()));
-  connect( HDDlistWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(disk_selected()));
+  buttons_updateUI();
+
+  connect(button_search, SIGNAL(clicked()), this, SLOT(qphotorec_search()) );
+  connect(button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
+  connect(HDDlistWidget, SIGNAL(activated(int)),this,SLOT(disk_changed(int)));
+  connect(PartListWidget, SIGNAL(itemSelectionChanged()), this, SLOT(partition_selected()));
+  connect(dst_button, SIGNAL(clicked()), this, SLOT(setExistingDirectory()));
+  connect(directoryLabel, SIGNAL(editingFinished()), this, SLOT(buttons_updateUI()));
 }
 
 void QPhotorec::clearWidgets()
@@ -217,6 +486,288 @@ void QPhotorec::clearWidgets()
     layoutwidget = this->layout()->takeAt(0);
     if(layoutwidget==NULL)
       return ;
+    layoutwidget->widget()->hide();
     layoutwidget->widget()->deleteLater();
   }
+}
+
+void QPhotorec::photorec_info(const file_stat_t *file_stats)
+{
+  unsigned int i;
+  unsigned int nbr;
+  unsigned int others=0;
+  if(file_stats==NULL)
+    return ;
+  file_stat_t *new_file_stats;
+  filestatsWidget->setRowCount(0);
+  for(i=0;file_stats[i].file_hint!=NULL;i++);
+  nbr=i;
+  if(nbr==0)
+    return ;
+  new_file_stats=(file_stat_t*)MALLOC(nbr*sizeof(file_stat_t));
+  memcpy(new_file_stats, file_stats, nbr*sizeof(file_stat_t));
+  qsort(new_file_stats, nbr, sizeof(file_stat_t), sorfile_stat_ts);
+  for(i=0; i<10 && i<nbr && new_file_stats[i].recovered>0; i++)
+  {
+    QTableWidgetItem *item;
+    filestatsWidget->setRowCount(i+1);
+    if(new_file_stats[i].file_hint->extension!=NULL)
+    {
+      item = new QTableWidgetItem(new_file_stats[i].file_hint->extension);
+      filestatsWidget->setItem(i, 0, item);
+    }
+    item = new QTableWidgetItem();
+    item->setData(0, new_file_stats[i].recovered);
+    filestatsWidget->setItem(i, 1, item);
+  }
+  for(; i<nbr && new_file_stats[i].recovered>0; i++)
+    others+=new_file_stats[i].recovered;
+  if(others>0)
+  {
+    QTableWidgetItem *item;
+    filestatsWidget->setRowCount(11);
+    item = new QTableWidgetItem("others");
+    filestatsWidget->setItem(10, 0, item);
+    item = new QTableWidgetItem();
+    item->setData(0, others);
+    filestatsWidget->setItem(10, 1, item);
+  }
+  free(new_file_stats);
+}
+
+void QPhotorec::qphotorec_search_updateUI()
+{
+  const partition_t *partition=params->partition;
+  const unsigned int sector_size=params->disk->sector_size;
+  QString tmp;
+  if(params->status==STATUS_QUIT)
+  {
+    tmp.sprintf("Recovery completed");
+  }
+  else if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
+  {
+    tmp.sprintf("Bruteforce %10lu sectors remaining (test %u)",
+        (unsigned long)((params->offset-partition->part_offset)/sector_size),
+	params->pass);
+  }
+  else
+  {
+    tmp.sprintf("Pass %u - Reading sector %10llu/%llu",
+	params->pass,
+	(unsigned long long)((params->offset-partition->part_offset)/sector_size),
+	(unsigned long long)(partition->part_size/sector_size));
+  }
+  progress_info->setText(tmp);
+
+  if(params->status==STATUS_FIND_OFFSET)
+    tmp.sprintf("%u/10 headers found", params->file_nbr);
+  else
+    tmp.sprintf("%u files found", params->file_nbr);
+  progress_filefound->setText(tmp);
+
+  if(params->status==STATUS_QUIT)
+  {
+    progress_bar->setMinimum(0);
+    progress_bar->setMaximum(100);
+    progress_bar->setValue(100);
+  }
+  else if(params->status==STATUS_FIND_OFFSET)
+  {
+    progress_bar->setMinimum(0);
+    progress_bar->setMaximum(10);
+    progress_bar->setValue(params->file_nbr);
+  }
+  else
+  {
+    progress_bar->setMinimum(0);
+    progress_bar->setMaximum(100);
+    progress_bar->setValue((params->offset-partition->part_offset)*100/ partition->part_size);
+  }
+  photorec_info(params->file_stats);
+}
+
+void QPhotorec::qphotorec_search_setupUI()
+{
+  clearWidgets();
+  delete this->layout();
+  QVBoxLayout *mainLayout = new QVBoxLayout();
+  QWidget *t_copy = copyright(this);
+
+  QSizePolicy c_sizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+  QLabel *disk_img=new QLabel();
+  QPixmap *disk_pixmap = new QPixmap(":res/gnome/drive-harddisk.png");
+  disk_img->setPixmap(*disk_pixmap);
+  disk_img->setSizePolicy(c_sizePolicy);
+
+  QLabel *disk_txt=new QLabel();
+  disk_txt->setText(selected_disk->description_short(selected_disk));
+
+  QWidget *diskWidget = new QWidget();
+  QHBoxLayout *diskWidgetLayout = new QHBoxLayout(diskWidget);
+  diskWidgetLayout->addWidget(disk_img);
+  diskWidgetLayout->addWidget(disk_txt);
+  diskWidget->setLayout(diskWidgetLayout);
+
+  QLabel *folder_img=new QLabel();
+  QPixmap *folder_pixmap = new QPixmap(":res/gnome/folder.png");
+  folder_img->setPixmap(*folder_pixmap);
+  folder_img->setSizePolicy(c_sizePolicy);
+
+  QLabel *folder_txt=new QLabel();
+  folder_txt->setText("Destination: " + directoryLabel->text());
+
+  QWidget *folderWidget = new QWidget();
+  QHBoxLayout *folderWidgetLayout = new QHBoxLayout(folderWidget);
+  folderWidgetLayout->addWidget(folder_img);
+  folderWidgetLayout->addWidget(folder_txt);
+  folderWidget->setLayout(folderWidgetLayout);
+
+
+  progress_info=new QLabel();
+  progress_filefound=new QLabel();
+  progress_bar=new QProgressBar();
+
+  QWidget *progressWidget = new QWidget();
+  QHBoxLayout *progressWidgetLayout = new QHBoxLayout(progressWidget);
+  progressWidgetLayout->addWidget(progress_info);
+  progressWidgetLayout->addWidget(progress_bar);
+  progressWidgetLayout->addWidget(progress_filefound);
+  progressWidget->setLayout(progressWidgetLayout);
+
+  QWidget *progressWidget2 = new QWidget();
+  QHBoxLayout *progressWidgetLayout2 = new QHBoxLayout(progressWidget2);
+// TODO
+//  progressWidgetLayout2->addWidget(progress_elapsed);
+//  progressWidgetLayout2->addWidget(progress_eta);
+  progressWidget2->setLayout(progressWidgetLayout2);
+
+  QStringList oLabel;
+  oLabel.append("File familly");
+  oLabel.append("Number of file recovered");
+
+  filestatsWidget=new QTableWidget();
+  filestatsWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  filestatsWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+  filestatsWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+  filestatsWidget->verticalHeader()->hide();
+  filestatsWidget->setColumnCount( 2 );
+  filestatsWidget->setHorizontalHeaderLabels( oLabel );
+  filestatsWidget->resizeColumnsToContents();
+
+  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
+  mainLayout->addWidget(t_copy);
+  mainLayout->addWidget(diskWidget);
+  mainLayout->addWidget(folderWidget);
+  mainLayout->addWidget(progressWidget);
+  mainLayout->addWidget(progressWidget2);
+  mainLayout->addWidget(filestatsWidget);
+  mainLayout->addWidget(button_quit);
+  this->setLayout(mainLayout);
+
+  connect( button_quit, SIGNAL(clicked()), this, SLOT(stop_and_quit()) );
+  connect(this, SIGNAL(finished()), qApp, SLOT(quit()));
+
+  timer = new QTimer(this);
+  timer->setInterval(500);
+  connect(timer, SIGNAL(timeout()), this, SLOT(qphotorec_search_updateUI()));
+}
+
+void QPhotorec::stop_and_quit()
+{
+  stop_the_recovery=true;
+  emit finished();
+}
+
+int QPhotorec::photorec(alloc_data_t *list_search_space)
+{
+  pstatus_t ind_stop=PSTATUS_OK;
+  const unsigned int blocksize_is_known=params->blocksize;
+  params_reset(params, options);
+  /* make the first recup_dir */
+  params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
+  for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
+  {
+    timer->start();
+    switch(params->status)
+    {
+      case STATUS_UNFORMAT:
+	/* FIXME */
+	break;
+      case STATUS_FIND_OFFSET:
+	{
+	  uint64_t start_offset=0;
+	  if(blocksize_is_known>0)
+	  {
+	    ind_stop=PSTATUS_OK;
+	    if(!td_list_empty(&list_search_space->list))
+	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
+	  }
+	  else
+	  {
+	    ind_stop=photorec_find_blocksize(list_search_space);
+	    params->blocksize=find_blocksize(list_search_space, params->disk->sector_size, &start_offset);
+	  }
+	  update_blocksize(params->blocksize, list_search_space, start_offset);
+	}
+	break;  
+      case STATUS_EXT2_ON_BF:
+      case STATUS_EXT2_OFF_BF:
+	/* FIXME */
+	break;
+      default:
+	ind_stop=photorec_aux(list_search_space);
+	break;
+    }
+    timer->stop();
+    qphotorec_search_updateUI();
+    session_save(list_search_space, params, options);
+    switch(ind_stop)
+    {
+      case PSTATUS_OK:
+	status_inc(params, options);
+	if(params->status==STATUS_QUIT)
+	  unlink("photorec.ses");
+	break;
+      case PSTATUS_STOP:
+	params->status=STATUS_QUIT;
+	break;
+    }
+    update_stats(params->file_stats, list_search_space);
+    qphotorec_search_updateUI();
+  }
+  free_search_space(list_search_space);
+  free_header_check();
+  free(params->file_stats);
+  params->file_stats=NULL;
+  return 0;
+}
+
+void QPhotorec::qphotorec_search()
+{
+  if(selected_disk==NULL || selected_partition==NULL)
+    return;
+  static alloc_data_t list_search_space={
+    .list = TD_LIST_HEAD_INIT(list_search_space.list)
+  };
+
+  QByteArray byteArray = (directoryLabel->text() + "/" + DEFAULT_RECUP_DIR).toUtf8();
+  params->recup_dir=strdup(byteArray.constData());
+  params->carve_free_space_only=qfreeRadioButton->isChecked();
+  params->disk=selected_disk;
+  params->partition=selected_partition;
+  log_partition(selected_disk, selected_partition);
+
+  options->mode_ext2=qextRadioButton->isChecked();
+
+  qphotorec_search_setupUI();
+  if(td_list_empty(&list_search_space.list))
+  {
+    init_search_space(&list_search_space, params->disk, params->partition);
+  }
+  if(params->carve_free_space_only>0)
+  {
+    params->blocksize=remove_used_space(params->disk, params->partition, &list_search_space);
+  }
+  photorec(&list_search_space);
 }

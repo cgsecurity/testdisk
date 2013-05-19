@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/res">
+<file>photorec_64x64.png</file>
+<file>gnome/application-exit.png</file>
+<file>gnome/drive-harddisk.png</file>
+<file>gnome/folder.png</file>
+<file>gnome/go-next.png</file>
+<file>gnome/go-previous.png</file>
+</qresource>
+</RCC>

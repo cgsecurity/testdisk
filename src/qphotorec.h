@@ -16,9 +16,17 @@
 #endif
 #include <QWidget>
 #include <QListWidget>
+#include <QComboBox>
+#include <QTableWidget>
 #include <QPushButton>
+#include <QLabel>
+#include <QLineEdit>
+#include <QRadioButton>
+#include <QProgressBar>
 #include "types.h"
 #include "common.h"
+#include "filegen.h"
+#include "photorec.h"
 
 class QPhotorec: public QWidget
 {
@@ -26,16 +34,54 @@ class QPhotorec: public QWidget
 
         public:
                 QPhotorec(QWidget *parent = 0);
-                void disk_sel();
-                void no_disk();
-		void partition_selection(disk_t *disk);
+		~QPhotorec();
         private slots:
-		void disk_selected();
-        private:
-                QListWidget *HDDlistWidget;
-                QListWidget *PartListWidget;
-                QPushButton *btn;
-		list_disk_t *list_disk;
+		/* Setup recovery UI */
+	  	void disk_changed(int index);
+		void partition_selected();
+		void setExistingDirectory();
+		void qphotorec_search();
+		void buttons_updateUI();
+		/* Recovery UI */
+		void qphotorec_search_updateUI();
+		void stop_and_quit();
+	protected:
+                void setupUI();
 		void clearWidgets();
+                int no_disk_warning();
+		QWidget *copyright(QWidget * qwparent = 0);
+		QTableWidgetItem *offset_to_item(const disk_t *disk, const uint64_t offset);
+		void PartListWidget_updateUI();
+		int photorec(alloc_data_t *list_search_space);
+		pstatus_t photorec_find_blocksize(alloc_data_t *list_search_space);
+		pstatus_t photorec_aux(alloc_data_t *list_search_space);
+		void qphotorec_search_setupUI();
+		void photorec_info(const file_stat_t *file_stats);
+	signals:
+		void finished();
+        private:
+		/* */
+		list_disk_t		*list_disk;
+		disk_t      		*selected_disk;
+		list_part_t 		*list_part;
+		partition_t 		*selected_partition;
+		struct ph_param 	*params;
+		struct ph_options 	*options;
+		bool			stop_the_recovery;
+		/* Setup recovery UI */
+                QComboBox 		*HDDlistWidget;
+                QTableWidget 		*PartListWidget;
+		QLineEdit 		*directoryLabel;
+		QPushButton 		*button_search;
+		QRadioButton 		*qextRadioButton;
+		QRadioButton 		*qfatRadioButton;
+		QRadioButton 		*qfreeRadioButton;
+		QRadioButton 		*qwholeRadioButton;
+		/* Recovery UI */
+		QLabel 			*progress_info;
+		QLabel 			*progress_filefound;
+		QProgressBar 		*progress_bar;
+		QTimer 			*timer;
+                QTableWidget 		*filestatsWidget;
 };
 #endif
