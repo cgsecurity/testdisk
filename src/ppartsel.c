@@ -57,7 +57,7 @@
 
 extern const arch_fnct_t arch_none;
 
-enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE };
+typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 
 static int spacerange_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
@@ -83,7 +83,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   unsigned int current_element_num;
   unsigned int user_blocksize=0;
   int done=0;
-  int mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
+  init_mode_t mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
 #ifdef HAVE_NCURSES
   int command;
   unsigned int offset=0;
