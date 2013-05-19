@@ -25,6 +25,9 @@
 #endif
 
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -36,6 +39,13 @@
 #endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_WINDEF_H
+#include <windef.h>
+#endif
+#ifdef HAVE_WINBASE_H
+#include <stdarg.h>
+#include <winbase.h>
 #endif
 #include "types.h"
 #include "common.h"
@@ -63,6 +73,39 @@
 extern const file_hint_t file_hint_tar;
 extern const file_hint_t file_hint_dir;
 extern file_check_list_t file_check_list;
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+/* Live antivirus protection may open file as soon as they are created by *
+ * PhotoRec. PhotoRec will not be able to overwrite a file as long as the *
+ * antivirus is scanning it, so let's wait a little bit if the creation   *
+ * failed. */
+
+#ifndef HAVE_SLEEP
+#define sleep(x) Sleep((x)*1000)
+#endif
+
+static FILE *fopen_with_retry(const char *path, const char *mode)
+{
+  FILE *handle;
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+#ifdef __MINGW32__
+  Sleep(1000);
+#else
+  sleep(1);
+#endif
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+#ifdef __MINGW32__
+  Sleep(2000);
+#else
+  sleep(2);
+#endif
+  if((handle=fopen(path, mode))!=NULL)
+    return handle;
+  return NULL;
+}
+#endif
 
 pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {

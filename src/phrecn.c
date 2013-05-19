@@ -88,31 +88,6 @@ extern file_check_list_t file_check_list;
 
 static int interface_cannot_create_file(void);
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-/* Live antivirus protection may open file as soon as they are created by *
- * PhotoRec. PhotoRec will not be able to overwrite a file as long as the *
- * antivirus is scanning it, so let's wait a little bit if the creation   *
- * failed. */
-
-#ifndef HAVE_SLEEP
-#define sleep(x) Sleep((x)*1000)
-#endif
-
-static FILE *fopen_with_retry(const char *path, const char *mode)
-{
-  FILE *handle;
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-  sleep(1);
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-  sleep(2);
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-  return NULL;
-}
-#endif
-
 #ifdef HAVE_NCURSES
 static void recovery_finished(disk_t *disk, const partition_t *partition, const unsigned int file_nbr, const char *recup_dir, const pstatus_t ind_stop)
 {
