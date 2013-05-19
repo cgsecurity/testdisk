@@ -300,7 +300,7 @@ RecEnd:
   return 0;
 }
 
-enum {FAT_FOLLOW_CLUSTER, FAT_NEXT_FREE_CLUSTER, FAT_NEXT_CLUSTER};
+typedef enum {FAT_FOLLOW_CLUSTER, FAT_NEXT_FREE_CLUSTER, FAT_NEXT_CLUSTER} fat_method_t;
 
 static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
 {
@@ -346,7 +346,7 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
     int stop=0;
     uint64_t start_fat1,start_data,part_size;
     unsigned long int no_of_cluster,fat_length;
-    unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
+    fat_method_t fat_meth=FAT_FOLLOW_CLUSTER;
     memset(buffer_dir,0,cluster_size*NBR_CLUSTER_MAX);
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
     part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
@@ -488,7 +488,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   unsigned char *buffer_file=(unsigned char *)MALLOC(block_size);
   unsigned int cluster;
   unsigned int file_size=file->st_size;
-  unsigned int fat_meth=FAT_FOLLOW_CLUSTER;
+  fat_method_t fat_meth=FAT_FOLLOW_CLUSTER;
   uint64_t start_fat1,start_data,part_size;
   unsigned long int no_of_cluster,fat_length;
   f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
