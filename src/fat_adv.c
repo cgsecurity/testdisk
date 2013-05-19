@@ -2307,8 +2307,8 @@ int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose
   return 0;
 }
 
-enum fat_status_type { FAT_UNREADABLE=0, FAT_CORRUPTED=1, FAT_OK=2 };
-enum fat_ask_repair { FAT_REPAIR_ASK=0, FAT_REPAIR_YES=1, FAT_REPAIR_NO=2 };
+typedef enum { FAT_UNREADABLE=0, FAT_CORRUPTED=1, FAT_OK=2 } fat_status_t;
+typedef enum { FAT_REPAIR_ASK=0, FAT_REPAIR_YES=1, FAT_REPAIR_NO=2 } fat_repair_t;
 
 int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd)
 {
@@ -2351,8 +2351,8 @@ int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose
       return 1;
     {
       const unsigned int buffer_size=(partition->upart_type==UP_FAT12?2*disk_car->sector_size:disk_car->sector_size);
-      unsigned int fat_status[2];
-      unsigned int allow_write[2];
+      fat_status_t fat_status[2];
+      fat_repair_t allow_write[2];
       unsigned int fat_history[2][3];
       unsigned int old_offset_s=1234;
       unsigned int fat_mismatch=0;
