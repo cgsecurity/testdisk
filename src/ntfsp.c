@@ -62,11 +62,13 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
   dir_data_t dir_data;
   switch(dir_partition_ntfs_init(disk_car,partition,&dir_data,0))
   {
-    case -2:
-    case -1:
+    case DIR_PART_ENOSYS:
+    case DIR_PART_EIO:
 	log_partition(disk_car,partition);
 	log_error("Can't open filesystem. Filesystem seems damaged.\n");
       return 0;
+    case DIR_PART_OK:
+      break;
   }
   {
     struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data.private_dir_data;
@@ -76,6 +78,8 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     unsigned long int lcn;
     unsigned long int no_of_cluster;
     unsigned int cluster_size;	/* size in bytes */
+    /* Which bit of $Bitmap is in the buffer */
+    long long int bmplcn = - (SIZEOF_BUFFER << 3);
     log_trace("ntfs_remove_used_space\n");
     buffer=(unsigned char *)MALLOC(SIZEOF_BUFFER);
     {
@@ -98,7 +102,6 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
     }
     for(lcn=0;lcn<no_of_cluster;lcn++)
     {
-      static long long int bmplcn = - (SIZEOF_BUFFER << 3);	/* Which bit of $Bitmap is in the buffer */
       int byte, bit;
       if ((bmplcn < 0) || (lcn < (unsigned)bmplcn) || (lcn >= ((unsigned)bmplcn + (SIZEOF_BUFFER << 3))))
       {

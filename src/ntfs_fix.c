@@ -159,7 +159,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     /* Use MFT */
     io_redir_add_redir(disk_car, mftmirr_pos, mftmirr_size_bytes, 0, buffer_mft);
     res1=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
-    if(res1==-2)
+    if(res1==DIR_PART_ENOSYS)
     {
 	display_message("Can't determine which MFT is correct, ntfslib is missing.\n");
 	log_error("Can't determine which MFT is correct, ntfslib is missing.\n");
@@ -169,7 +169,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	io_redir_del_redir(disk_car,mftmirr_pos);
 	return 0;
     }
-    if(res1==0)
+    if(res1==DIR_PART_OK)
     {
       file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
@@ -189,7 +189,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     /* Use MFT mirror */
     io_redir_add_redir(disk_car, mft_pos, mftmirr_size_bytes, 0, buffer_mftmirr);
     res2=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
-    if(res2==0)
+    if(res2==DIR_PART_OK)
     {
       file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
@@ -207,7 +207,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     io_redir_del_redir(disk_car,mft_pos);
     /* */
-    if(res1>res2 && res1>0)
+    if(res1>res2 && res1>DIR_PART_OK)
     {
       /* Use MFT */
 #ifdef HAVE_NCURSES
@@ -217,7 +217,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 #endif
 	log_info("Don't fix MFT mirror.\n");
     }
-    else if(res1<res2 && res2>0)
+    else if(res1<res2 && res2>DIR_PART_OK)
     {
       /* Use MFT mirror */
 #ifdef HAVE_NCURSES
@@ -229,13 +229,13 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     else
     { /* res1==res2 */
-      if(res1>0 && res2>0)
+      if(res1>DIR_PART_OK && res2>DIR_PART_OK)
 	log_error("Both MFT seems ok but they don't match, use chkdsk.\n");
       else
 	log_error("MFT and MFT mirror are bad. Failed to repair them.\n");
       if(expert==0)
       {
-	if(res1>0 && res2>0)
+	if(res1>DIR_PART_OK && res2>DIR_PART_OK)
 	  display_message("Both MFT seems ok but they don't match, use chkdsk.\n");
 	else
 	  display_message("MFT and MFT mirror are bad. Failed to repair them.\n");
