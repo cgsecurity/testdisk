@@ -127,7 +127,7 @@ QPhotorec::~QPhotorec()
 void QPhotorec::setExistingDirectory()
 {
   QString directory = QFileDialog::getExistingDirectory(this,
-      "getExistingDirectory()",
+      "Please select a destination to save the recovered files.",
       directoryLabel->text(),
       QFileDialog::ShowDirsOnly);
   if (!directory.isEmpty())
