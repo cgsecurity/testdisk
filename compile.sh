@@ -38,7 +38,13 @@ case "$crosscompile_target" in
 	VER_NTFSPROGS="2.0.0"
 	VER_E2FSPROGS=1.41.8
   ;;
-  *-cygwin|*-mingw32)
+  *-cygwin)
+	VER_LIBNTFS3G=
+	VER_NTFSPROGS="2.0.0"
+	VER_E2FSPROGS=1.42.2
+	export PKG_CONFIG_SYSROOT_DIR=/usr/i386-pc-cygwin/
+  ;;
+  *-mingw32)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
 	VER_E2FSPROGS=1.42.2
@@ -314,7 +320,7 @@ then
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv
                 ;;
           i386-pc-cygwin)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-qt
                 ;;
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
