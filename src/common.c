@@ -223,7 +223,7 @@ char* strip_dup(char* str)
 
 int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 {
-  static int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
+  static const int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
   /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
 
   int month,year,secs;

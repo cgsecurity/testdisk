@@ -55,7 +55,7 @@ list_part_t *add_partition_sun_ncurses(disk_t *disk_car, list_part_t *list_part)
     int done = FALSE;
     while (done==FALSE) {
       int command;
-      static struct MenuItem menuGeometry[]=
+      static const struct MenuItem menuGeometry[]=
       {
 	{ 'c', "Cylinders", 	"Change starting cylinder" },
 	{ 'C', "Cylinders", 	"Change ending cylinder" },

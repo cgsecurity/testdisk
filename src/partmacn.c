@@ -75,7 +75,7 @@ list_part_t *add_partition_mac_ncurses(disk_t *disk_car, list_part_t *list_part)
   while (done==FALSE)
   {
     int command;
-    static struct MenuItem menuGeometry[]=
+    static const struct MenuItem menuGeometry[]=
     {
       { 's', "Sector", 	"Change starting sector" },
       { 'S', "Sector", 	"Change ending sector" },

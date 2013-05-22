@@ -591,7 +591,7 @@ void dump(WINDOW *window, const void *nom_dump,unsigned int lng)
   int done=0;
   unsigned int menu=2;   /* default : quit */
   const char *options="PNQ";
-  struct MenuItem menuDump[]=
+  const struct MenuItem menuDump[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },
@@ -700,7 +700,7 @@ void dump2(WINDOW *window, const void *dump_1, const void *dump_2, const unsigne
   int done=0;
   unsigned int menu=2;   /* default : quit */
   const char *options="PNQ";
-  struct MenuItem menuDump[]=
+  const struct MenuItem menuDump[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },
@@ -863,7 +863,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
   int current_line=0;
   int done=0;
   char options[20];
-  struct MenuItem menuDefault[]=
+  const struct MenuItem menuDefault[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },
@@ -1317,7 +1317,7 @@ int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap)
 void display_message(const char*msg)
 {
   int pipo=0;
-  static struct MenuItem menuGeometry[]=
+  static const struct MenuItem menuGeometry[]=
   {
     { 'Q', "Ok", "" },
     { 0, NULL, NULL }

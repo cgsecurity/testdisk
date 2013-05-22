@@ -55,7 +55,7 @@ int change_geometry_ncurses(disk_t *disk_car)
     char response[128];
     long int tmp_val=0;
     int command;
-    static struct MenuItem menuGeometry[]=
+    static const struct MenuItem menuGeometry[]=
     {
       { 'c', "Cylinders", "Change cylinder geometry" },
       { 'h', "Heads", "Change head geometry" },

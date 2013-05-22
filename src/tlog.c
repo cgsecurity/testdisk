@@ -37,7 +37,7 @@
 int ask_testdisk_log_creation(void)
 {
   unsigned int menu=0;
-  static struct MenuItem menuLogCreation[]=
+  static const struct MenuItem menuLogCreation[]=
   {
     {'C',"Create","Create a new log file"},
     {'A',"Append","Append information to log file"},

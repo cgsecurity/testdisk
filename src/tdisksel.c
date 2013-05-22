@@ -65,7 +65,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   int use_sudo=0;
   const list_disk_t *element_disk;
   const list_disk_t *current_disk;
-  static struct MenuItem menuMain[]=
+  static const struct MenuItem menuMain[]=
   {
     { 'P', "Previous", ""},
     { 'N', "Next", "" },

@@ -246,7 +246,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	unsigned int menu=2;
 	int real_key;
 	int command;
-	static struct MenuItem menuMFT[]=
+	static const struct MenuItem menuMFT[]=
 	{
 	  {'B',"MFT",		"Fix MFT using MFT mirror"},
 	  {'M',"MFT Mirror",	"Fix MFT mirror using MFT"},

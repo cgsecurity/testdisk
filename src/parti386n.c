@@ -125,7 +125,7 @@ list_part_t *add_partition_i386_ncurses(disk_t *disk_car, list_part_t *list_part
     while (done==0)
     {
       int command;
-      static struct MenuItem menuGeometry[]=
+      static const struct MenuItem menuGeometry[]=
       {
 	{ 'c', "Cylinder", 	"Change starting cylinder" },
 	{ 'h', "Head", 		"Change starting head" },
