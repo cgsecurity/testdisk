@@ -69,7 +69,7 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
 #define INTER_BAD_PART	10
 #endif
 static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int verbose);
-static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr);
+static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_nbr);
 /* Optimization */
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd);
@@ -364,20 +364,19 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
 }
 #endif
 
-static unsigned int tab_insert(uint64_t *tab, const uint64_t offset, unsigned int tab_nbr)
+static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_nbr)
 {
-  if(tab_nbr<MAX_SEARCH_LOCATION-1)
+  if(*tab_nbr<MAX_SEARCH_LOCATION-1)
   {
     unsigned int i,j;
-    for(i=0;i<tab_nbr && tab[i]<offset;i++);
-    if(i<tab_nbr && tab[i]==offset)
-      return tab_nbr;
-    tab_nbr++;
-    for(j=tab_nbr;j>i;j--)
+    for(i=0;i<*tab_nbr && tab[i]<offset;i++);
+    if(i<*tab_nbr && tab[i]==offset)
+      return;
+    (*tab_nbr)++;
+    for(j=*tab_nbr;j>i;j--)
       tab[j]=tab[j-1];
     tab[i]=offset;
   }
-  return tab_nbr;
 }
 
 /*
@@ -441,7 +440,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     const list_part_t *element;
     for(element=list_part_org;element!=NULL;element=element->next)
     {
-      try_offset_nbr=tab_insert(try_offset,element->part->part_offset,try_offset_nbr);
+      hint_insert(try_offset, element->part->part_offset, &try_offset_nbr);
     }
   }
 
@@ -467,35 +466,35 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     min_location=disk_car->sector_size;
     location_boundary=disk_car->sector_size;
     /* sometimes users choose Intel instead of GPT */
-    try_offset_nbr=tab_insert(try_offset, 2*disk_car->sector_size+16384, try_offset_nbr);
+    hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
     /* sometimes users don't choose Vista by mistake */
-    try_offset_nbr=tab_insert(try_offset, 2048*512, try_offset_nbr);
+    hint_insert(try_offset, 2048*512, &try_offset_nbr);
     /* try to deal with incorrect geometry */
     /* 0/1/1 */
-    try_offset_nbr=tab_insert(try_offset, 32 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 63 * disk_car->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 32 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 63 * disk_car->sector_size, &try_offset_nbr);
     /* 1/[01]/1 CHS x  16 63 */
-    try_offset_nbr=tab_insert(try_offset, 16 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 17 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 16 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 17 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 16 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 17 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 16 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 17 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
     /* 1/[01]/1 CHS x 240 63 */
-    try_offset_nbr=tab_insert(try_offset, 240 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 241 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 240 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 241 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 240 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 241 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 240 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 241 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
     /* 1/[01]/1 CHS x 255 63 */
-    try_offset_nbr=tab_insert(try_offset, 255 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 256 * 63 * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 255 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
-    try_offset_nbr=tab_insert(try_offset, 256 * disk_car->geom.sectors_per_head * disk_car->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 255 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 256 * 63 * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 255 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
+    hint_insert(try_offset, 256 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
   }
   else if(disk_car->arch==&arch_mac)
   {
     min_location=4096;
     location_boundary=4096;
     /* sometime users choose Mac instead of GPT for i386 Mac */
-    try_offset_nbr=tab_insert(try_offset,2*disk_car->sector_size+16384,try_offset_nbr);
+    hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
   }
   else if(disk_car->arch==&arch_sun)
   {
@@ -802,7 +801,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                 for(help_factor=0;help_factor<=MD_MAX_CHUNK_SIZE/MD_RESERVED_BYTES+3 && ind_stop==0;help_factor++)
                 {
                   uint64_t offset=(uint64_t)MD_NEW_SIZE_SECTORS((partition->part_size/disk_factor+help_factor*MD_RESERVED_BYTES-1)/MD_RESERVED_BYTES*MD_RESERVED_BYTES/512)*512;
-                  try_offset_raid_nbr=tab_insert(try_offset_raid,partition->part_offset+offset,try_offset_raid_nbr);
+                  hint_insert(try_offset_raid, partition->part_offset+offset, &try_offset_raid_nbr);
                 }
               }
               /* TODO: Detect Linux md 1.0 software raid */
@@ -821,12 +820,12 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               {
                 uint64_t next_part_offset=partition->part_offset+partition->part_size-1+1;
                 uint64_t head_size=disk_car->geom.sectors_per_head * disk_car->sector_size;
-                try_offset_nbr=tab_insert(try_offset,next_part_offset,try_offset_nbr);
-                try_offset_nbr=tab_insert(try_offset,next_part_offset+head_size,try_offset_nbr);
+                hint_insert(try_offset, next_part_offset, &try_offset_nbr);
+                hint_insert(try_offset, next_part_offset+head_size, &try_offset_nbr);
                 if(next_part_offset%head_size!=0)
                 {
-                  try_offset_nbr=tab_insert(try_offset,(next_part_offset+head_size-1)/head_size*head_size,try_offset_nbr);
-                  try_offset_nbr=tab_insert(try_offset,(next_part_offset+head_size-1)/head_size*head_size+head_size,try_offset_nbr);
+                  hint_insert(try_offset, (next_part_offset+head_size-1)/head_size*head_size, &try_offset_nbr);
+                  hint_insert(try_offset, (next_part_offset+head_size-1)/head_size*head_size+head_size, &try_offset_nbr);
                 }
               }
               if((fast_mode==0) && (partition->part_offset+partition->part_size-disk_car->sector_size > search_location))
