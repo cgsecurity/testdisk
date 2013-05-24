@@ -64,7 +64,6 @@ struct cache_struct
 
 static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset, const unsigned int read_ahead);
 static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
-static void *cache_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset);
 static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int count, const uint64_t offset);
 static int cache_sync(disk_t *disk);
 static void cache_clean(disk_t *disk);
@@ -97,16 +96,6 @@ static void *cache_get_data_p(disk_t *disk, const unsigned int count, const uint
       return cache->buffer + offset - cache->cache_offset;
     }
   }
-  return NULL;
-}
-
-static void* cache_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset)
-{
-  void*data=cache_get_data_p(disk, count, offset);
-  if(data!=NULL)
-    return data;
-  if(cache_pread(disk, buffer, count, offset) == count)
-    return buffer;
   return NULL;
 }
 
@@ -304,7 +293,6 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   new_disk_car->disk_real_size=disk_car->disk_real_size;
   new_disk_car->write_used=0;
   new_disk_car->data=data;
-  new_disk_car->pread_fast=cache_pread_fast;
   new_disk_car->pread=cache_pread;
   new_disk_car->pwrite=cache_pwrite;
   new_disk_car->sync=cache_sync;

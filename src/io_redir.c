@@ -55,7 +55,6 @@ struct info_io_redir
   list_redir_t *list_redir;
 };
 
-static void *io_redir_pread_fast(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
 static int io_redir_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
 static int io_redir_clean(disk_t *clean);
 
@@ -79,7 +78,6 @@ int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsign
     disk_car->data=data;
     disk_car->description=old_disk_car->description;
     disk_car->pwrite=old_disk_car->pwrite;
-    disk_car->pread_fast=io_redir_pread_fast;
     disk_car->pread=io_redir_pread;
     disk_car->clean=io_redir_clean;
   }
@@ -217,13 +215,6 @@ static int io_redir_pread(disk_t *disk_car, void *buffer, const unsigned int cou
     buffer=(unsigned char*)buffer+read_size;
   }
   return count;
-}
-
-static void *io_redir_pread_fast(disk_t *disk, void *buffer, const unsigned int count, const uint64_t offset)
-{
-  if(io_redir_pread(disk, buffer, count, offset)==count)
-    return buffer;
-  return NULL;
 }
 
 static int io_redir_clean(disk_t *disk_car)

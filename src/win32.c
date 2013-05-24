@@ -60,7 +60,6 @@ static uint64_t filewin32_getfilesize(HANDLE handle, const char *device);
 static const char *file_win32_description(disk_t *disk_car);
 static const char *file_win32_description_short(disk_t *disk_car);
 static void file_win32_clean(disk_t *disk_car);
-static void *file_win32_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
 static int file_win32_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count,  const uint64_t offset);
@@ -324,7 +323,6 @@ disk_t *file_test_availability_win32(const char *device, const int verbose, int 
     disk_car->data=data;
     disk_car->description=file_win32_description;
     disk_car->description_short=file_win32_description_short;
-    disk_car->pread_fast=file_win32_pread_fast;
     disk_car->pread=file_win32_pread;
     disk_car->pwrite=((data->mode&FILE_WRITE_DATA)==FILE_WRITE_DATA?file_win32_pwrite:file_win32_nopwrite);
     disk_car->sync=file_win32_sync;
@@ -494,13 +492,6 @@ static int file_win32_pread_aux(disk_t *disk_car, void *buf, const unsigned int 
 static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pread(&file_win32_pread_aux, disk_car, buf, count, offset);
-}
-
-static void *file_win32_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
-{
-  if(file_win32_pread(disk, buf, count, offset)==offset)
-    return buf;
-  return NULL;
 }
 
 static int file_win32_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)

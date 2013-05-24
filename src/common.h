@@ -362,7 +362,6 @@ struct param_disk_struct
   char *fw_rev;
   const char *(*description)(disk_t *disk);
   const char *(*description_short)(disk_t *disk);
-  void *(*pread_fast)(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
   int (*pread)(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
   int (*pwrite)(disk_t *disk, const void *buf, const unsigned int count, const uint64_t offset);
   int (*sync)(disk_t *disk);

@@ -55,7 +55,6 @@ static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
 static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description_short(disk_t *disk_car);
-static void *disk_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset);
 static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_nopwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset);
@@ -380,7 +379,6 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const int testdi
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     disk_car->description=disk_description;
     disk_car->description_short=disk_description_short;
-    disk_car->pread_fast=disk_pread_fast;
     disk_car->pread=disk_pread;
     disk_car->pwrite=((testdisk_mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR?disk_pwrite:disk_nopwrite);
     disk_car->sync=disk_sync;
@@ -494,13 +492,6 @@ static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count,
 static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   return align_pread(&disk_pread_aux, disk_car, buf, count, offset);
-}
-
-static void *disk_pread_fast(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
-{
-  if(disk_pread(disk, buf, count, offset)==offset)
-    return buf;
-  return NULL;
 }
 
 static int disk_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset)

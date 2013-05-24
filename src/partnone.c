@@ -267,10 +267,9 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
       /* sparse superblock feature: The groups chosen are 0, 1 and powers of 3, 5 and 7. */
       /* Checking group 3 */
       const uint64_t hd_offset=3*(EXT2_MIN_BLOCK_SIZE<<s_log_block_size)*8*(EXT2_MIN_BLOCK_SIZE<<s_log_block_size)+(s_log_block_size==0?2*DEFAULT_SECTOR_SIZE:0);
-      void *data=disk->pread_fast(disk, buffer_disk, 1024, hd_offset);
-      if(data!=NULL)
+      if(disk->pread(disk, buffer_disk, 1024, hd_offset)==1024)
       {
-	const struct ext2_super_block *sb=(const struct ext2_super_block*)data;
+	const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
 	partition->part_offset = hd_offset;
 	if(le16(sb->s_block_group_nr)>0 &&
 	    le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
