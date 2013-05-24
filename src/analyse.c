@@ -125,10 +125,7 @@ int search_FAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
     /* FAT32 recovery using backup sector */
     if(le16(fat_header->marker)==0xAA55 &&
 	recover_FAT(disk, fat_header, partition, verbose, dump_ind, 1)==0)
-    {
-      strncpy(partition->info,"FAT found using backup sector!",sizeof(partition->info));
       return 1;
-    }
   }
   return 0;
 }

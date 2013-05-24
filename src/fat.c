@@ -220,7 +220,10 @@ static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_head
       }
       break;
     case UP_FAT32:
-      snprintf(partition->info, sizeof(partition->info), "FAT32, blocksize=%u", partition->blocksize);
+      if(partition->sb_offset==0)
+	snprintf(partition->info, sizeof(partition->info), "FAT32, blocksize=%u", partition->blocksize);
+      else
+	snprintf(partition->info, sizeof(partition->info), "FAT32 found using backup sector, blocksize=%u", partition->blocksize);
       fat32_set_part_name(disk_car,partition,fat_header);
       break;
     default:
