@@ -88,7 +88,7 @@ static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *parti
     case UP_EXFAT:
       return dir_partition_exfat_init(disk, partition, dir_data, verbose);
     default:
-      return DIR_PART_ENOSYS;
+      return res;
   }
 }
 
