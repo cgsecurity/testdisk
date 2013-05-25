@@ -61,7 +61,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   int taille;
   struct stat stat_rec;
   unsigned int buffer_size;
-  time_t my_time;
+//  time_t my_time;
   char *info=NULL;
   f_session=fopen(SESSION_FILENAME,"rb");
   if(!f_session)
@@ -86,7 +86,7 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
   }
   pos++;
   /* load time */
-  my_time=strtol(pos,&pos,10);
+  strtol(pos,&pos,10); 	// my_time=strtol(pos,&pos,10);
   if(pos==NULL)
   {
     free(buffer);

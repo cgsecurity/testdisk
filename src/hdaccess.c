@@ -1117,7 +1117,7 @@ static void file_clean(disk_t *disk)
     }
 #endif
     close(data->handle);
-    data->handle=NULL;
+    data->handle=0;
   }
   generic_clean(disk);
 }

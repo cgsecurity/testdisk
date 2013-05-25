@@ -53,11 +53,14 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
   dir_data_t dir_data;
   switch(dir_partition_ext2_init(disk, partition, &dir_data, 0))
   {
-    case -2:
-    case -1:
+    case DIR_PART_ENOSYS:
+      return 0;
+    case DIR_PART_EIO:
       log_partition(disk, partition);
       log_error("Can't open filesystem. Filesystem seems damaged.\n");
       return 0;
+    case DIR_PART_OK:
+      break;
   }
   {
     const unsigned int sizeof_buffer=512;

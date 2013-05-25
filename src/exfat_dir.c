@@ -167,7 +167,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   unsigned int cluster;
   unsigned char *buffer_dir=(unsigned char *)MALLOC(NBR_CLUSTER_MAX << cluster_shift);
   unsigned int nbr_cluster;
-  unsigned int clus_blocknr;
+//  unsigned int clus_blocknr;
   unsigned int total_clusters;
   exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
   int stop=0;
@@ -176,7 +176,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   else
     cluster=first_cluster;
   memset(buffer_dir, 0, NBR_CLUSTER_MAX<<cluster_shift);
-  clus_blocknr=le32(exfat_header->clus_blocknr);
+//  clus_blocknr=le32(exfat_header->clus_blocknr);
   total_clusters=le32(exfat_header->total_clusters);
   nbr_cluster=0;
   while(!is_EOC(cluster) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)

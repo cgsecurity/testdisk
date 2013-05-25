@@ -133,7 +133,7 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
       /* Level 2 */
     case 2:
       {
-	const struct lzh_level2 *hdr=(const struct lzh_level2 *)buffer;
+//	const struct lzh_level2 *hdr=(const struct lzh_level2 *)buffer;
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_lzh.extension;
 	return 1;
