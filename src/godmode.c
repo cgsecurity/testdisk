@@ -52,6 +52,7 @@
 #define RW 0
 #define MAX_SEARCH_LOCATION 1024
 extern const arch_fnct_t arch_gpt;
+extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
@@ -404,6 +405,21 @@ static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_
    - MinPartOffset: 0x800
    - Geometry: don't care
 */
+static uint64_t get_min_location(const disk_t *disk)
+{
+  if(disk->arch==&arch_gpt)
+    return 2*disk->sector_size+16384;
+  else if(disk->arch==&arch_i386 || disk->arch==&arch_humax)
+    return disk->sector_size;
+  else if(disk->arch==&arch_mac)
+    return 4096;
+  else if(disk->arch==&arch_sun)
+    return disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
+  else if(disk->arch==&arch_xbox)
+    return 0x800;
+  /* arch_none */
+  return 0;
+}
 
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd)
 {
@@ -412,7 +428,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   /* TODO use circular buffer for try_offset and try_offset_raid */
   uint64_t try_offset[MAX_SEARCH_LOCATION];
   uint64_t try_offset_raid[MAX_SEARCH_LOCATION];
-  uint64_t min_location;
+  const uint64_t min_location=get_min_location(disk_car);
   uint64_t search_location;
   unsigned int try_offset_nbr=0;
   unsigned int try_offset_raid_nbr=0;
@@ -453,13 +469,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   screen_buffer_reset();
   log_info("\nsearch_part()\n");
   log_info("%s\n",disk_car->description(disk_car));
-  if(disk_car->arch==&arch_gpt)
+  if(disk_car->arch==&arch_i386)
   {
-    min_location=2*disk_car->sector_size+16384;
-  }
-  else if(disk_car->arch==&arch_i386)
-  {
-    min_location=disk_car->sector_size;
     /* sometimes users choose Intel instead of GPT */
     hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
     /* sometimes users don't choose Vista by mistake */
@@ -486,21 +497,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   }
   else if(disk_car->arch==&arch_mac)
   {
-    min_location=4096;
     /* sometime users choose Mac instead of GPT for i386 Mac */
     hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
-  }
-  else if(disk_car->arch==&arch_sun)
-  {
-    min_location=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
-  }
-  else if(disk_car->arch==&arch_xbox)
-  {
-    min_location=0x800;
-  }
-  else
-  { /* arch_none */
-    min_location=0;
   }
   search_location=min_location;
   /* Not every sector will be examined */
