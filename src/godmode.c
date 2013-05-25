@@ -73,7 +73,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, 
 static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_nbr);
 /* Optimization */
 static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd);
+static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd);
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
@@ -137,8 +137,7 @@ static void align_structure(list_part_t *list_part, const disk_t *disk, const un
     const unsigned int location_boundary=get_location_boundary(disk);
     for(element=list_part; element!=NULL; element=element->next)
     {
-      uint64_t partition_end;
-      partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
+      const uint64_t partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
       element->part->part_size=partition_end-element->part->part_offset+1;
     }
   }
@@ -471,7 +470,7 @@ static uint64_t get_min_location(const disk_t *disk)
   return 0;
 }
 
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, const int interface, char **current_cmd)
+static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd)
 {
   unsigned char *buffer_disk;
   unsigned char *buffer_disk0;
@@ -508,13 +507,10 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   }
 
 #ifdef HAVE_NCURSES
-  if(interface!=0)
-  {
-    wmove(stdscr,22,0);
-    wattrset(stdscr, A_REVERSE);
-    waddstr(stdscr,"  Stop  ");
-    wattroff(stdscr, A_REVERSE);
-  }
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   screen_buffer_reset();
   log_info("\nsearch_part()\n");
@@ -529,7 +525,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
-    if(old_cylinder!=start.cylinder && interface!=0 &&
+    if(old_cylinder!=start.cylinder &&
 	(disk_car->geom.heads_per_cylinder>1 || (start.cylinder & 0x7FFF)==0))
     {
       old_cylinder=start.cylinder;
@@ -746,12 +742,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         if(res<0)
         {
 #ifdef HAVE_NCURSES
-          if(interface!=0)
-          {
-            wmove(stdscr,ANALYSE_Y+1,ANALYSE_X);
-            wclrtoeol(stdscr);
-            wprintw(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
-          }
+	  wmove(stdscr,ANALYSE_Y+1,ANALYSE_X);
+	  wclrtoeol(stdscr);
+	  wprintw(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
 #endif
 	  /* Stop reading after the end of the disk */
 	  if(search_location >= disk_car->disk_real_size)
@@ -762,26 +755,24 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           partition->status=STATUS_DELETED;
           log_partition(disk_car,partition);
           aff_part_buffer(AFF_PART_BASE, disk_car,partition);
-          if(interface)
-          {
 #ifdef HAVE_NCURSES
-	    screen_buffer_to_interface();
+	  screen_buffer_to_interface();
 #endif
-          }
           if(disk_car->arch->is_part_known(partition)!=0 &&
               partition->part_size>1 &&
               partition->part_offset>=min_location)
           {
             uint64_t pos_fin;
             pos_fin=partition->part_offset+partition->part_size-1;
-            if(partition->upart_type!=UP_MD && partition->upart_type!=UP_MD1)
+            if(partition->upart_type!=UP_MD && partition->upart_type!=UP_MD1 &&
+	      ind_stop==0)
             { /* Detect Linux md 0.9 software raid */
               unsigned int disk_factor;
-              unsigned int help_factor;
-              for(disk_factor=6;disk_factor>=1 && ind_stop==0;disk_factor--)
+              for(disk_factor=6; disk_factor>=1;disk_factor--)
               { /* disk_factor=1, detect Raid 0/1 */
                 /* disk_factor>1, detect Raid 5 */
-                for(help_factor=0;help_factor<=MD_MAX_CHUNK_SIZE/MD_RESERVED_BYTES+3 && ind_stop==0;help_factor++)
+		unsigned int help_factor;
+                for(help_factor=0; help_factor<=MD_MAX_CHUNK_SIZE/MD_RESERVED_BYTES+3; help_factor++)
                 {
                   const uint64_t offset=(uint64_t)MD_NEW_SIZE_SECTORS((partition->part_size/disk_factor+help_factor*MD_RESERVED_BYTES-1)/MD_RESERVED_BYTES*MD_RESERVED_BYTES/512)*512;
                   hint_insert(try_offset_raid, partition->part_offset+offset, &try_offset_raid_nbr);
@@ -913,7 +904,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   {
     interface_part_bad_log(disk_car,list_part_bad);
 #ifdef HAVE_NCURSES
-    if(interface!=0 && *current_cmd==NULL)
+    if(*current_cmd==NULL)
       interface_part_bad_ncurses(disk_car,list_part_bad);
 #endif
   }
@@ -1286,7 +1277,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     wmove(stdscr,5,0);
 #endif
     res_interface_write=0;
-    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, 1, current_cmd);
+    list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, current_cmd);
     if(list_part!=NULL && (disk_car->arch==&arch_i386 || disk_car->arch==&arch_sun))
     { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
       unsigned int heads_per_cylinder;
