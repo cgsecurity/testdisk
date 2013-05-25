@@ -77,7 +77,7 @@ int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partiti
 
 int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
-  if(disk->pread(disk, buffer, 0x400, partition->part_offset)!= DEFAULT_SECTOR_SIZE)
+  if(disk->pread(disk, buffer, 0x400, partition->part_offset)!= 0x400)
     return -1;
   {
     const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)buffer;
