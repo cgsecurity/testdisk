@@ -618,7 +618,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             if((disk_car->arch==&arch_i386 &&
                   ((start.sector==7 && (start.head<=2 || fast_mode>1)) ||
                    search_location%(2048*512)==(7-1)*512)) ||
-                (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(7-1)*512)))
+		(disk_car->arch!=&arch_i386 && (search_location%location_boundary==(7-1)*512)) ||
+		(disk_car->arch==&arch_none && search_location==(7-1)*512))
               res=search_FAT_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
             test_nbr++;
           }
@@ -672,19 +673,17 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               CHS_t start_ext2;
               offset2CHS_inline(disk_car,search_location-hd_offset,&start_ext2);
               if((disk_car->arch==&arch_i386 && start_ext2.sector==1 &&  (start_ext2.head<=2 || fast_mode>1)) ||
-                  (disk_car->arch!=&arch_i386 && search_location%location_boundary==0))
-              {
+		  (disk_car->arch==&arch_i386 && (search_location-hd_offset)%(2048*512)==0) ||
+		  (disk_car->arch!=&arch_i386 && (search_location-hd_offset)%location_boundary==0))
+	      {
 		if(disk_car->pread(disk_car, buffer_disk, 1024, search_location)==1024)
-                {
-                  const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
-                  if(le16(sb->s_block_group_nr)>0)
-                  {
-		    if(le16(sb->s_magic)==EXT2_SUPER_MAGIC &&
-			recover_EXT2(disk_car, sb, partition, verbose, dump_ind)==0)
-                      res=1;
-                  }
-                }
-              }
+		{
+		  const struct ext2_super_block *sb=(const struct ext2_super_block*)buffer_disk;
+		  if(le16(sb->s_magic)==EXT2_SUPER_MAGIC && le16(sb->s_block_group_nr)>0 &&
+		      recover_EXT2(disk_car, sb, partition, verbose, dump_ind)==0)
+		    res=1;
+		}
+	      }
             }
           }
           test_nbr++;
