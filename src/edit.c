@@ -64,7 +64,7 @@ static void interface_editor_ncurses(disk_t *disk)
   wprintw(stdscr,"%s", disk->description_short(disk));
   while (done==0)
   {
-    static struct MenuItem menuEditor[]=
+    static const struct MenuItem menuEditor[]=
     {
       { 'C', "Change location", "" },
       { 'D', "Dump", "Dump sector" },
