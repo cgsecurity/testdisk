@@ -470,6 +470,49 @@ static uint64_t get_min_location(const disk_t *disk)
   return 0;
 }
 
+static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, const int verbose, const int dump_ind, const uint64_t min_location, const uint64_t search_location_max)
+{
+  unsigned char *buffer_disk;
+  const list_part_t *element;
+  partition_t *partition;
+  buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
+  partition=partition_new(disk_car->arch);
+  for(element=list_part;element!=NULL;element=element->next)
+  {
+    if(element->part->upart_type==UP_NTFS && element->part->sb_offset!=0)
+    {
+      unsigned int i;
+      for(i=32;i>0;i--)
+      {
+	partition->part_size=(uint64_t)0;
+	partition->part_offset=element->part->part_offset - i * disk_car->sector_size;
+	if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset)==DEFAULT_SECTOR_SIZE)
+	{
+	  if(recover_NTFS(disk_car, (const struct ntfs_boot_sector*)buffer_disk, partition, verbose, dump_ind, 0)==0)
+	  {
+	    partition->status=STATUS_DELETED;
+	    if(disk_car->arch->is_part_known(partition)!=0 && partition->part_size>1 &&
+		partition->part_offset >= min_location &&
+		partition->part_offset+partition->part_size-1 <= search_location_max)
+	    {
+	      int insert_error=0;
+	      partition_t *new_partition=partition_new(NULL);
+	      dup_partition_t(new_partition,partition);
+	      list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+	      if(insert_error>0)
+		free(new_partition);
+	    }
+	    partition_reset(partition, disk_car->arch);
+	  }
+	}
+      }
+    }
+  }
+  free(partition);
+  free(buffer_disk);
+}
+
+typedef enum { INDSTOP_CONTINUE=0, INDSTOP_STOP=1, INDSTOP_SKIP=2, INDSTOP_QUIT=3 } indstop_t;
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd)
 {
   unsigned char *buffer_disk;
@@ -485,7 +528,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   unsigned int old_cylinder=0;
 #endif
   const unsigned int location_boundary=get_location_boundary(disk_car);
-  int ind_stop=0;
+  indstop_t ind_stop=INDSTOP_CONTINUE;
   list_part_t *list_part=NULL;
   list_part_t *list_part_bad=NULL;
   partition_t *partition;
@@ -520,7 +563,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   /* Not every sector will be examined */
   search_location_init(disk_car, location_boundary, fast_mode);
   /* Scan the disk */
-  while(ind_stop==0 && search_location < search_location_max)
+  while(ind_stop!=INDSTOP_QUIT && search_location < search_location_max)
   {
     CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
@@ -535,7 +578,15 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	  start.cylinder, disk_car->geom.cylinders-1,
 	  (unsigned int)((uint64_t)start.cylinder*100/disk_car->geom.cylinders));
       wrefresh(stdscr);
-      ind_stop|=check_enter_key_or_s(stdscr);
+      switch(check_enter_key_or_s(stdscr))
+      {
+	case 1:
+	  ind_stop=INDSTOP_STOP;
+	  break;
+	case 2:
+	  ind_stop=INDSTOP_SKIP;
+	  break;
+      }
     }
 #endif
     {
@@ -765,7 +816,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
             uint64_t pos_fin;
             pos_fin=partition->part_offset+partition->part_size-1;
             if(partition->upart_type!=UP_MD && partition->upart_type!=UP_MD1 &&
-	      ind_stop==0)
+	      ind_stop==INDSTOP_CONTINUE)
             { /* Detect Linux md 0.9 software raid */
               unsigned int disk_factor;
               for(disk_factor=6; disk_factor>=1;disk_factor--)
@@ -841,11 +892,18 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       }
       while(sector_inc==0);
     }
-    if(ind_stop==2)
+    if(ind_stop==INDSTOP_SKIP)
     {
-      ind_stop=0;
+      ind_stop=INDSTOP_CONTINUE;
       if(try_offset_nbr>0 && search_location < try_offset[0])
 	search_location=try_offset[0];
+    }
+    else if(ind_stop==INDSTOP_STOP)
+    {
+      if(try_offset_nbr>0 && search_location < try_offset[0])
+	search_location=try_offset[0];
+      else
+	ind_stop=INDSTOP_QUIT;
     }
     else
     { /* Optimized "search_location+=disk_car->sector_size;" */
@@ -863,42 +921,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   /* Search for NTFS partition near the supposed partition beginning
      given by the NTFS backup boot sector */
   if(fast_mode>0)
-  {
-    const list_part_t *element;
-    for(element=list_part;element!=NULL;element=element->next)
-    {
-      if(element->part->upart_type==UP_NTFS && element->part->sb_offset!=0)
-      {
-        unsigned int i;
-        for(i=32;i>0;i--)
-        {
-          partition->part_size=(uint64_t)0;
-          partition->part_offset=element->part->part_offset - i * disk_car->sector_size;
-	  if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset)==DEFAULT_SECTOR_SIZE)
-          {
-            if(recover_NTFS(disk_car, (const struct ntfs_boot_sector*)buffer_disk, partition, verbose, dump_ind, 0)==0)
-            {
-              partition->status=STATUS_DELETED;
-              if(disk_car->arch->is_part_known(partition)!=0 && partition->part_size>1 &&
-                  partition->part_offset >= min_location &&
-                  partition->part_offset+partition->part_size-1 <= search_location_max)
-              {
-                int insert_error=0;
-                partition_t *new_partition=partition_new(NULL);
-                dup_partition_t(new_partition,partition);
-                list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
-                if(insert_error>0)
-                  free(new_partition);
-              }
-              partition_reset(partition, disk_car->arch);
-            }
-          }
-        }
-      }
-    }
-  }
+    search_NTFS_from_backup(disk_car, list_part, verbose, dump_ind, min_location, search_location_max);
   free(partition);
-  if(ind_stop>0)
+  if(ind_stop!=INDSTOP_CONTINUE)
     log_info("Search for partition aborted\n");
   if(list_part_bad!=NULL)
   {
