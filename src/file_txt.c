@@ -821,7 +821,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 {
   static char *buffer_lower=NULL;
   static unsigned int buffer_lower_size=0;
-  unsigned int l=0;
+  unsigned int l;
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   {
     unsigned int i;
@@ -882,7 +882,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(buffer[0]=='#' && buffer[1]=='!')
   {
-    unsigned int ll=l-2;
+    unsigned int ll=512-2;
     const unsigned char *haystack=(const unsigned char *)buffer+2;
     const unsigned char *res;
     res=(const unsigned char *)memchr(haystack,'\n',ll);
