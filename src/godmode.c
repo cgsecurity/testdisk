@@ -377,6 +377,56 @@ static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_
   }
 }
 
+static void search_add_hints(const disk_t *disk, uint64_t *try_offset, unsigned int *try_offset_nbr)
+{
+  if(disk->arch==&arch_i386)
+  {
+    /* sometimes users choose Intel instead of GPT */
+    hint_insert(try_offset, 2*disk->sector_size+16384, try_offset_nbr);
+    /* sometimes users don't choose Vista by mistake */
+    hint_insert(try_offset, 2048*512, try_offset_nbr);
+    /* try to deal with incorrect geometry */
+    /* 0/1/1 */
+    hint_insert(try_offset, 32 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 63 * disk->sector_size, try_offset_nbr);
+    /* 1/[01]/1 CHS x  16 63 */
+    hint_insert(try_offset, 16 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 17 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 16 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 17 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    /* 1/[01]/1 CHS x 240 63 */
+    hint_insert(try_offset, 240 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 241 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 240 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 241 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    /* 1/[01]/1 CHS x 255 63 */
+    hint_insert(try_offset, 255 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 256 * 63 * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 255 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, 256 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    /* Hints for NTFS backup */
+    if(disk->geom.cylinders>1)
+    {
+      CHS_t start;
+      start.cylinder=disk->geom.cylinders-1;
+      start.head=disk->geom.heads_per_cylinder-1;
+      start.sector=disk->geom.sectors_per_head;
+      hint_insert(try_offset, CHS2offset_inline(disk, &start), try_offset_nbr);
+      if(disk->geom.cylinders>2)
+      {
+	start.cylinder--;
+	hint_insert(try_offset, CHS2offset_inline(disk, &start), try_offset_nbr);
+      }
+    }
+    hint_insert(try_offset, (disk->disk_size-512)/(2048*512)*(2048*512)+(2048-1)*512, try_offset_nbr);
+  }
+  else if(disk->arch==&arch_mac)
+  {
+    /* sometime users choose Mac instead of GPT for i386 Mac */
+    hint_insert(try_offset, 2*disk->sector_size+16384, try_offset_nbr);
+  }
+}
+
 /*
    Intel
    - Display CHS
@@ -469,44 +519,14 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   screen_buffer_reset();
   log_info("\nsearch_part()\n");
   log_info("%s\n",disk_car->description(disk_car));
-  if(disk_car->arch==&arch_i386)
-  {
-    /* sometimes users choose Intel instead of GPT */
-    hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
-    /* sometimes users don't choose Vista by mistake */
-    hint_insert(try_offset, 2048*512, &try_offset_nbr);
-    /* try to deal with incorrect geometry */
-    /* 0/1/1 */
-    hint_insert(try_offset, 32 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 63 * disk_car->sector_size, &try_offset_nbr);
-    /* 1/[01]/1 CHS x  16 63 */
-    hint_insert(try_offset, 16 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 17 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 16 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 17 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-    /* 1/[01]/1 CHS x 240 63 */
-    hint_insert(try_offset, 240 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 241 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 240 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 241 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-    /* 1/[01]/1 CHS x 255 63 */
-    hint_insert(try_offset, 255 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 256 * 63 * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 255 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-    hint_insert(try_offset, 256 * disk_car->geom.sectors_per_head * disk_car->sector_size, &try_offset_nbr);
-  }
-  else if(disk_car->arch==&arch_mac)
-  {
-    /* sometime users choose Mac instead of GPT for i386 Mac */
-    hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
-  }
   search_location=min_location;
+  search_add_hints(disk_car, try_offset, &try_offset_nbr);
   /* Not every sector will be examined */
   search_location_init(disk_car, location_boundary, fast_mode);
   /* Scan the disk */
   while(ind_stop==0 && search_location < search_location_max)
   {
-    static CHS_t start;
+    CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
     if(old_cylinder!=start.cylinder && interface!=0 &&
