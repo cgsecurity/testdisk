@@ -610,19 +610,14 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
           test_nbr++;
         }
         if(res<=0 && test_nbr==1)
-        {
-          if(fast_mode==0)
-            test_nbr=6;
-          else
-          {
-            if((disk_car->arch==&arch_i386 &&
-                  ((start.sector==7 && (start.head<=2 || fast_mode>1)) ||
-                   search_location%(2048*512)==(7-1)*512)) ||
-		(disk_car->arch!=&arch_i386 && (search_location%location_boundary==(7-1)*512)) ||
-		(disk_car->arch==&arch_none && search_location==(7-1)*512))
-              res=search_FAT_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
-            test_nbr++;
-          }
+	{
+	  if((disk_car->arch==&arch_i386 &&
+		((start.sector==7 && (start.head<=2 || fast_mode>1)) ||
+		 search_location%(2048*512)==(7-1)*512)) ||
+	      (disk_car->arch!=&arch_i386 && (search_location%location_boundary==(7-1)*512)) ||
+	      (disk_car->arch==&arch_none && search_location==(7-1)*512))
+	    res=search_FAT_backup(buffer_disk,disk_car,partition,verbose,dump_ind);
+	  test_nbr++;
         }
         if(res<=0 && test_nbr==2)
 	{
