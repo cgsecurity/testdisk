@@ -90,6 +90,15 @@ static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS)
 }
 /* Optimization end */
 
+static unsigned int get_location_boundary(const disk_t *disk)
+{
+  if(disk->arch==&arch_mac)
+    return 4096;
+  else if(disk->arch==&arch_sun)
+    return disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
+  return disk->sector_size;
+}
+
 static unsigned int align_structure_aux(const uint64_t offset, const disk_t *disk)
 {
   unsigned int tmp;
@@ -124,19 +133,7 @@ static void align_structure(list_part_t *list_part, const disk_t *disk, const un
   }
   {
     list_part_t *element;
-    unsigned int location_boundary;
-    if(disk->arch==&arch_mac)
-    {
-      location_boundary=4096;
-    }
-    else if(disk->arch==&arch_sun)
-    {
-      location_boundary=disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
-    }
-    else
-    {	/* arch_none, arch_xbox, arch_gpt */
-      location_boundary=disk->sector_size;
-    }
+    const unsigned int location_boundary=get_location_boundary(disk);
     for(element=list_part; element!=NULL; element=element->next)
     {
       uint64_t partition_end;
@@ -422,7 +419,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 #ifdef HAVE_NCURSES
   unsigned int old_cylinder=0;
 #endif
-  unsigned int location_boundary;
+  const unsigned int location_boundary=get_location_boundary(disk_car);
   int ind_stop=0;
   list_part_t *list_part=NULL;
   list_part_t *list_part_bad=NULL;
@@ -459,12 +456,10 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   if(disk_car->arch==&arch_gpt)
   {
     min_location=2*disk_car->sector_size+16384;
-    location_boundary=disk_car->sector_size;
   }
   else if(disk_car->arch==&arch_i386)
   {
     min_location=disk_car->sector_size;
-    location_boundary=disk_car->sector_size;
     /* sometimes users choose Intel instead of GPT */
     hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
     /* sometimes users don't choose Vista by mistake */
@@ -492,24 +487,20 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   else if(disk_car->arch==&arch_mac)
   {
     min_location=4096;
-    location_boundary=4096;
     /* sometime users choose Mac instead of GPT for i386 Mac */
     hint_insert(try_offset, 2*disk_car->sector_size+16384, &try_offset_nbr);
   }
   else if(disk_car->arch==&arch_sun)
   {
     min_location=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
-    location_boundary=disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
   }
   else if(disk_car->arch==&arch_xbox)
   {
     min_location=0x800;
-    location_boundary=disk_car->sector_size;
   }
   else
   { /* arch_none */
     min_location=0;
-    location_boundary=disk_car->sector_size;
   }
   search_location=min_location;
   /* Not every sector will be examined */
