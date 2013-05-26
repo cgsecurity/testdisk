@@ -80,7 +80,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
   uint32_t *fat;
   unsigned long int i;
   unsigned int freesect_count=0;  
-  struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
+  const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   const uint64_t doc_file_size_org=file_recovery->file_size;
   file_recovery->file_size=0;
   /*reads first sector including OLE header */
@@ -674,10 +674,10 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
       return ;
     for(i=0; i<numEntries; i++)
     {
-      unsigned int entry = pos + 8 + 8 * i;
-      unsigned int tag=get32u(dataPt, entry);
-      unsigned int offset=get32u(dataPt, entry + 4);
-      unsigned int valStart = pos + 4 + offset;
+      const unsigned int entry = pos + 8 + 8 * i;
+      const unsigned int tag=get32u(dataPt, entry);
+      const unsigned int offset=get32u(dataPt, entry + 4);
+      const unsigned int valStart = pos + 4 + offset;
       unsigned int type;
       if(valStart >= dirLen)
 	return ;
@@ -821,7 +821,7 @@ static void file_rename_doc(const char *old_filename)
   FILE *file;
   unsigned char buffer_header[512];
   uint32_t *fat;
-  struct OLE_HDR *header=(struct OLE_HDR*)&buffer_header;
+  const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   time_t file_time=0;
   unsigned int fat_entries;
   if(strstr(old_filename, ".sdd")!=NULL)
@@ -898,7 +898,7 @@ static void file_rename_doc(const char *old_filename)
 #endif
       {
 	unsigned int sid;
-	struct OLE_DIR *dir_entry=dir_entries;
+	const struct OLE_DIR *dir_entry=dir_entries;
 	if(i==0)
 	{
 	  ministream_block=le32(dir_entry->start_block);

@@ -1086,13 +1086,13 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
 {
   unsigned char *orgboot;
   unsigned char *newboot;
-  struct fat_boot_sector *org_fat_header;
+  const struct fat_boot_sector *org_fat_header;
   struct fat_boot_sector *fat_header;
   int error=0;
   unsigned long int part_size=0;
   orgboot=(unsigned char *)MALLOC(3*disk_car->sector_size);
   newboot=(unsigned char *)MALLOC(3*disk_car->sector_size);
-  org_fat_header=(struct fat_boot_sector *)orgboot;
+  org_fat_header=(const struct fat_boot_sector *)orgboot;
   fat_header=(struct fat_boot_sector *)newboot;
   if((unsigned)disk_car->pread(disk_car, orgboot, 3 * disk_car->sector_size, partition->part_offset) != 3 * disk_car->sector_size)
   {
@@ -1606,7 +1606,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
       offset+=disk_car->sector_size)
   {
 #ifdef HAVE_NCURSES
-    unsigned long int percent=offset*100/max_offset;
+    const unsigned long int percent=offset*100/max_offset;
     if(interface && (percent!=old_percent))
     {
       wmove(stdscr,8,30);
@@ -1620,8 +1620,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
     if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
     {
       unsigned long int fat_offset=0;
-      unsigned int fat_type;
-      fat_type=fat_find_fat_start(buffer,p_fat12,p_fat16,p_fat32,&fat_offset,disk_car->sector_size);
+      const unsigned int fat_type=fat_find_fat_start(buffer,p_fat12,p_fat16,p_fat32,&fat_offset,disk_car->sector_size);
       if(fat_type!=0 && fat_offset<=(offset/disk_car->sector_size))
       {
 	unsigned int j;

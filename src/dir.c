@@ -164,8 +164,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
     char str[11];
     if(current_file->td_mtime)
     {
-      struct tm		*tm_p;
-      tm_p = localtime(&current_file->td_mtime);
+      const struct tm *tm_p = localtime(&current_file->td_mtime);
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
 	  1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -213,18 +212,16 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
   }
   td_list_for_each(tmp, &list->list)
   {
-    file_info_t *current_file;
     char		datestr[80];
     char str[11];
-    current_file=td_list_entry(tmp, file_info_t, list);
+    const file_info_t *current_file=td_list_entry(tmp, file_info_t, list);
     if((current_file->status&FILE_STATUS_DELETED)!=0)
       log_info("X");
     else
       log_info(" ");
     if(current_file->td_mtime)
     {
-      struct tm		*tm_p;
-      tm_p = localtime(&current_file->td_mtime);
+      const struct tm *tm_p = localtime(&current_file->td_mtime);
 
       snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	  tm_p->tm_mday, monstr[tm_p->tm_mon],
@@ -578,7 +575,7 @@ static unsigned int filename_convert(char *dst, const char*src, const unsigned i
 
 char *gen_local_filename(const char *filename)
 {
-  int l=strlen(filename);
+  const int l=strlen(filename);
   char *dst=(char *)MALLOC(l+1);
   filename_convert(dst, filename, l);
 #if defined(DJGPP) || defined(__CYGWIN__) || defined(__MINGW32__)

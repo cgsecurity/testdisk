@@ -253,10 +253,9 @@ static unsigned int ReadUnicodeStr(const char *buffer, unsigned int pos, const u
   return pos;
 }
 
-static int PEVersion_aux(const char*buffer, const unsigned int length, const char *old_filename, const char *needle, const unsigned int needle_len, const int force_ext)
+static int PEVersion_aux(const char*buffer, const unsigned int end, const char *old_filename, const char *needle, const unsigned int needle_len, const int force_ext)
 {
   unsigned int pos=0;
-  unsigned int end=length;
   while(1)
   {
     const struct PE_index *PE_index;

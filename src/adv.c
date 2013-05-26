@@ -355,8 +355,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	}
 	else if(isdigit(*current_cmd[0]))
 	{
-	  unsigned int order;
-	  order= atoi(*current_cmd);
+	  const unsigned int order= atoi(*current_cmd);
 	  while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	    (*current_cmd)++;
 	  for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);

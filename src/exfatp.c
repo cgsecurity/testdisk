@@ -48,7 +48,7 @@ static struct exfat_alloc_bitmap_entry *exfat_get_bitmap(unsigned char*buffer, c
 unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space)
 {
   struct exfat_super_block *exfat_header;
-  struct exfat_alloc_bitmap_entry *bitmap;
+  const struct exfat_alloc_bitmap_entry *bitmap;
   unsigned int cluster_shift;
   /* Load boot sector */
   exfat_header=(struct exfat_super_block *)MALLOC(0x200);
@@ -90,8 +90,7 @@ unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition,
     buffer=(unsigned char *)MALLOC(1<<cluster_shift);
     for(i=2; i<le32(exfat_header->total_clusters)+2; i++)
     {
-      unsigned int offset_o;
-      offset_o=(i-2)%(8<<cluster_shift);
+      const unsigned int offset_o=(i-2)%(8<<cluster_shift);
       if(offset_o==0)
       {
 	exfat_read_cluster(disk, partition, exfat_header, buffer, cluster_bitmap);

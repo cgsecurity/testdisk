@@ -88,9 +88,8 @@ static int data_check_blend4le(const unsigned char *buffer, const unsigned int b
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int len;
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
@@ -112,9 +111,8 @@ static int data_check_blend8le(const unsigned char *buffer, const unsigned int b
 {
   while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int len;
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
@@ -136,9 +134,8 @@ static int data_check_blend4be(const unsigned char *buffer, const unsigned int b
 {
   while(file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int len;
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
@@ -160,9 +157,8 @@ static int data_check_blend8be(const unsigned char *buffer, const unsigned int b
 {
   while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int len;
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 

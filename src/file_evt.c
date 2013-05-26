@@ -72,14 +72,14 @@ static int data_check_evt(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if((buffer[i+4]=='L' && buffer[i+5]=='f' && buffer[i+6]=='L' && buffer[i+7]=='e') ||
 	(buffer[i+4]==0x11 && buffer[i+5]==0x11 && buffer[i+6]==0x11 && buffer[i+7]==0x11) ||
 	(buffer[i+4]==0x22 && buffer[i+5]==0x22 && buffer[i+6]==0x22 && buffer[i+7]==0x22) ||
 	(buffer[i+4]==0x33 && buffer[i+5]==0x33 && buffer[i+6]==0x33 && buffer[i+7]==0x33) ||
 	(buffer[i+4]==0x44 && buffer[i+5]==0x44 && buffer[i+6]==0x44 && buffer[i+7]==0x44))
     {
-      unsigned int length=(buffer[i+0] + (buffer[i+1]<<8) + (buffer[i+2]<<16) + (buffer[i+3]<<24));
+      const unsigned int length=(buffer[i+0] + (buffer[i+1]<<8) + (buffer[i+2]<<16) + (buffer[i+3]<<24));
       if(length<8)
       {
 	return 2;

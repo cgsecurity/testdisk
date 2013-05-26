@@ -63,8 +63,7 @@ static void disk_image_backward(int disk_dst, disk_t *disk, const uint64_t src_o
   unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
   for(src_offset=src_offset_end-disk->sector_size; src_offset > src_offset_start; src_offset-=disk->sector_size, dst_offset-=disk->sector_size)
   {
-    ssize_t pread_res;
-    pread_res=disk->pread(disk, buffer, disk->sector_size, src_offset);
+    const ssize_t pread_res=disk->pread(disk, buffer, disk->sector_size, src_offset);
     if((unsigned)pread_res != disk->sector_size)
     {
       free(buffer);

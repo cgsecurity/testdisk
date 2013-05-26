@@ -63,7 +63,7 @@ int change_arch_type_ncurses(disk_t *disk, const int verbose)
   {
     int car;
     int real_key;
-    struct MenuItem menuOptions[]=
+    const struct MenuItem menuOptions[]=
     {
       { 'I', arch_i386.part_name, "Intel/PC partition" },
       { 'G', arch_gpt.part_name, "EFI GPT partition map (Mac i386, some x86_64...)" },

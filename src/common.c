@@ -241,11 +241,8 @@ int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 
 void set_secwest(void)
 {
-  struct  tm *tmptr;
-  time_t t;
-
-  t = time(NULL);
-  tmptr = localtime(&t);
+  const time_t t = time(NULL);
+  const struct  tm *tmptr = localtime(&t);
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
   secwest = -1 * tmptr->tm_gmtoff;
 #elif defined (DJGPP) || defined(__ANDROID__)

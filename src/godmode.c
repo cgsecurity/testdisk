@@ -813,8 +813,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               partition->part_size>1 &&
               partition->part_offset>=min_location)
           {
-            uint64_t pos_fin;
-            pos_fin=partition->part_offset+partition->part_size-1;
+            const uint64_t pos_fin=partition->part_offset+partition->part_size-1;
             if(partition->upart_type!=UP_MD && partition->upart_type!=UP_MD1 &&
 	      ind_stop==INDSTOP_CONTINUE)
             { /* Detect Linux md 0.9 software raid */
@@ -843,8 +842,8 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                   free(new_partition);
               }
               {
-                uint64_t next_part_offset=partition->part_offset+partition->part_size-1+1;
-                uint64_t head_size=disk_car->geom.sectors_per_head * disk_car->sector_size;
+                const uint64_t next_part_offset=partition->part_offset+partition->part_size-1+1;
+                const uint64_t head_size=disk_car->geom.sectors_per_head * disk_car->sector_size;
                 hint_insert(try_offset, next_part_offset, &try_offset_nbr);
                 hint_insert(try_offset, next_part_offset+head_size, &try_offset_nbr);
                 if(next_part_offset%head_size!=0)
@@ -1305,8 +1304,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, current_cmd);
     if(list_part!=NULL && (disk_car->arch==&arch_i386 || disk_car->arch==&arch_sun))
     { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
-      unsigned int heads_per_cylinder;
-      heads_per_cylinder=get_geometry_from_list_part(disk_car, list_part, verbose);
+      const unsigned int heads_per_cylinder=get_geometry_from_list_part(disk_car, list_part, verbose);
       if(disk_car->geom.heads_per_cylinder!=heads_per_cylinder)
       {
 	log_warning("Warning: the current number of heads per cylinder is %u but the correct value may be %u.\n",

@@ -101,8 +101,7 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
   for(hd_offset=0;hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;hd_offset=next_sb(hd_offset))
   {
 #ifdef HAVE_NCURSES
-    unsigned long int percent;
-    percent=hd_offset*100/partition->part_size;
+    const unsigned long int percent=hd_offset*100/partition->part_size;
     if(interface>0 && percent!=old_percent)
     {
       wmove(stdscr,9,0);

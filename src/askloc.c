@@ -217,8 +217,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       while(1)
       {
         char current_file[4096];
-	struct dirent *dir_entrie;
-        dir_entrie=readdir(dir);
+	const struct dirent *dir_entrie=readdir(dir);
         if(dir_entrie==NULL)
 	  break;
 	/* hide filename beginning by '.' except '.' and '..' */

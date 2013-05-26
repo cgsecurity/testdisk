@@ -156,7 +156,7 @@ static errcode_t my_set_blksize(io_channel channel, int blksize)
 static errcode_t my_read_blk(io_channel channel, unsigned long block, int count, void *buf)
 {
   ssize_t size;
-  my_data_t *my_data=(my_data_t*)channel->private_data;
+  const my_data_t *my_data=(const my_data_t*)channel->private_data;
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 
   size = (count < 0) ? -count : count * channel->block_size;
@@ -178,7 +178,7 @@ static errcode_t my_write_blk(io_channel channel, unsigned long block, int count
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 #if 1
   {
-    my_data_t *my_data=(my_data_t*)channel;
+    const my_data_t *my_data=(const my_data_t*)channel;
     if(my_data->disk_car->pwrite(my_data->disk_car, buf, count * channel->block_size, my_data->partition->part_offset + (uint64_t)block * channel->block_size) != count * channel->block_size)
       return 1;
     return 0;
@@ -203,7 +203,7 @@ static int list_dir_proc2(ext2_ino_t dir,
 {
   struct ext2_inode	inode;
   ext2_ino_t		ino;
-  struct ext2_dir_struct *ls = (struct ext2_dir_struct *) privateinfo;
+  const struct ext2_dir_struct *ls = (const struct ext2_dir_struct *) privateinfo;
   file_info_t *new_file;
   if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
     return 0;
@@ -221,8 +221,7 @@ static int list_dir_proc2(ext2_ino_t dir,
   }
   new_file=(file_info_t *)MALLOC(sizeof(*new_file));
   {
-    unsigned int thislen;
-    thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
+    const unsigned int thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
       (dirent->name_len & 0xFF) : EXT2_NAME_LEN;
     new_file->name=(char *)MALLOC(thislen+1);
     memcpy(new_file->name, dirent->name, thislen);
@@ -273,7 +272,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
 {
   int error=0;
   FILE *f_out;
-  struct ext2_dir_struct *ls = (struct ext2_dir_struct *)dir_data->private_dir_data;
+  const struct ext2_dir_struct *ls = (const struct ext2_dir_struct *)dir_data->private_dir_data;
   char *new_file;
   f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
   if(!f_out)

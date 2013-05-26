@@ -67,7 +67,7 @@ static int data_check_caf(const unsigned char *buffer, const unsigned int buffer
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const struct chunk_struct *chunk=(const struct chunk_struct*)&buffer[i];
-    int64_t chunk_size=be64(chunk->size);
+    const int64_t chunk_size=be64(chunk->size);
 #ifdef DEBUG_CAF
     log_trace("file_caf.c: %s chunk %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu (0x%llx)\n",
 	file_recovery->filename,

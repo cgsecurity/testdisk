@@ -68,7 +68,7 @@ static int data_check_addressbook(const unsigned char *buffer, const unsigned in
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
 #ifdef DEBUG_AB
     log_debug("data_check_addressbook i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
         i, buffer_size,
@@ -78,7 +78,7 @@ static int data_check_addressbook(const unsigned char *buffer, const unsigned in
 #endif
     if(buffer[i+0]=='L' && buffer[i+1]=='J' && buffer[i+3]==0x00)
     {
-      unsigned int length=(buffer[i+4]<<24)+(buffer[i+5]<<16)+(buffer[i+6]<<8)+buffer[i+7];
+      const unsigned int length=(buffer[i+4]<<24)+(buffer[i+5]<<16)+(buffer[i+6]<<8)+buffer[i+7];
       if(length<8)
       {
         return 2;

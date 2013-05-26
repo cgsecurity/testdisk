@@ -219,8 +219,7 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
       le32(hdr->nBytes) >= 88 &&
       le16(hdr->sReserved)==0)
   {
-    unsigned int atom_size;
-    atom_size=buffer[4]+(buffer[5]<<8)+(buffer[6]<<16)+(buffer[7]<<24);
+    const unsigned int atom_size=buffer[4]+(buffer[5]<<8)+(buffer[6]<<16)+(buffer[7]<<24);
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_emf.extension;
     file_recovery_new->data_check=data_check_emf;
@@ -236,12 +235,9 @@ static int data_check_emf(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int atom_size;
-    unsigned int itype;
-    unsigned int i;
-    i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    itype=buffer[i]+(buffer[i+1]<<8)+(buffer[i+2]<<16)+(buffer[i+3]<<24);
-    atom_size=buffer[i+4]+(buffer[i+5]<<8)+(buffer[i+6]<<16)+(buffer[i+7]<<24);
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int itype=buffer[i]+(buffer[i+1]<<8)+(buffer[i+2]<<16)+(buffer[i+3]<<24);
+    const unsigned int atom_size=buffer[i+4]+(buffer[i+5]<<8)+(buffer[i+6]<<16)+(buffer[i+7]<<24);
 #ifdef DEBUG_EMF
     log_trace("0x%llx ", (long long unsigned)file_recovery->calculated_file_size);
     switch(itype)

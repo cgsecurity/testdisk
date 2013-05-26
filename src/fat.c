@@ -392,8 +392,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk_car,const partition_t *partitio
 
   for(prev_cluster=2;prev_cluster<=no_of_cluster+1;prev_cluster++)
   {
-    unsigned int offset_o;
-    offset_o=prev_cluster%(disk_car->sector_size/4);
+    const unsigned int offset_o=prev_cluster%(disk_car->sector_size/4);
     if((offset_o==0)||(prev_cluster==2))
     {
       if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)

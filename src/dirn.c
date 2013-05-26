@@ -143,8 +143,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
 	if(current_file->td_mtime!=0)
 	{
-	  struct tm		*tm_p;
-	  tm_p = localtime(&current_file->td_mtime);
+	  const struct tm *tm_p = localtime(&current_file->td_mtime);
 	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
 	      tm_p->tm_mday, monstr[tm_p->tm_mon],
 	      1900 + tm_p->tm_year, tm_p->tm_hour,
@@ -363,7 +362,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      file_info_t *tmp=td_list_entry(pos, file_info_t, list);
 	      if(pos!=&dir_list->list && (LINUX_S_ISDIR(tmp->st_mode)!=0))
 	      {
-		unsigned long int new_inode=tmp->st_ino;
+		const unsigned long int new_inode=tmp->st_ino;
 		if((new_inode!=inode) &&(strcmp(tmp->name,".")!=0))
 		{
 		  if(strcmp(tmp->name,"..")==0)
@@ -608,7 +607,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
   dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->st_ino, &dir_list);
   td_list_for_each(file_walker, &dir_list.list)
   {
-    file_info_t *current_file;
+    const file_info_t *current_file;
     current_file=td_list_entry(file_walker, file_info_t, list);
     dir_data->current_directory[current_directory_namelength]='\0';
     if(current_directory_namelength+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)

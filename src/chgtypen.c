@@ -112,7 +112,7 @@ static void change_part_type_int_ncurses(const disk_t *disk_car, partition_t *pa
   wclrtoeol(stdscr);
   wprintw(stdscr,"New partition type [current %02x] ? ",partition->arch->get_part_type(partition));
   if (get_string(stdscr, response, sizeof(response), NULL) > 0) {
-    int tmp_val = strtol(response, NULL, 16);
+    const int tmp_val = strtol(response, NULL, 16);
     partition->arch->set_part_type(partition,tmp_val);
   }
 }
