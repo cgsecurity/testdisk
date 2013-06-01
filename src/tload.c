@@ -63,7 +63,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
   unsigned int menu=3;   /* default : quit */
   struct td_list_head *backup_current=backup_list->list.next;
   struct td_list_head *backup_walker=NULL;
-  struct MenuItem menuLoadBackup[]=
+  const struct MenuItem menuLoadBackup[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

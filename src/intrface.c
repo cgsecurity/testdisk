@@ -79,7 +79,7 @@ void interface_list(disk_t *disk, const int verbose, const int saveheader, const
 
 static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
-  list_part_t *pos=list_part;
+  const list_part_t *pos=list_part;
   while(*current_cmd[0]==',')
     (*current_cmd)++;
   if(strncmp(*current_cmd,"list",4)==0)
@@ -87,7 +87,7 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
     (*current_cmd)+=4;
     if(pos!=NULL)
     {
-      partition_t *partition=pos->part;
+      const partition_t *partition=pos->part;
       if(partition->sb_offset==0 || partition->sb_size==0)
         dir_partition(disk_car,partition,verbose, current_cmd);
       else
@@ -362,7 +362,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       case 'P':
 	if(list_part!=NULL)
         {
-          partition_t *partition=pos->part;
+          const partition_t *partition=pos->part;
           if(partition->sb_offset==0 || partition->sb_size==0)
             dir_partition(disk_car,partition,verbose, current_cmd);
           else

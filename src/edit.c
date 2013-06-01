@@ -227,7 +227,7 @@ static int dump_editor(const unsigned char *nom_dump,const unsigned int lng, con
   unsigned int pos;
   int done=0;
   unsigned int menu;
-  struct MenuItem menuDump[]=
+  const struct MenuItem menuDump[]=
   {
 	{ 'P', "Previous",""},
 	{ 'N', "Next","" },

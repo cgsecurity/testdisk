@@ -81,7 +81,7 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
   const char *options="";
   int rescan=1;
 #ifdef HAVE_NCURSES
-  struct MenuItem menu_hfsp[]=
+  const struct MenuItem menu_hfsp[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

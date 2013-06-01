@@ -124,8 +124,7 @@ static FILE *open_signature_file(void)
 #endif
 #ifndef DJGPP
   {
-    char *home;
-    home = getenv("HOME");
+    const char *home = getenv("HOME");
     if (home != NULL)
     {
       FILE*handle;

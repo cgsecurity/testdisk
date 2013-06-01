@@ -73,9 +73,8 @@ int ask_testdisk_log_creation(void)
   wprintw(stdscr,"Use arrow keys to select, then press Enter key:");
   while(1)
   {
-    int command;
-    command = wmenuSelect_ext(stdscr, 23, 17, 0, menuLogCreation, 8,
-        "CAQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
+    const int command = wmenuSelect_ext(stdscr, 23, 17, 0, menuLogCreation, 8,
+	"CAQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
     switch(command)
     {
       case 'C':

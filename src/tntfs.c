@@ -78,7 +78,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
   unsigned char *buffer_backup_bs;
   const char *options="";
 #ifdef HAVE_NCURSES
-  struct MenuItem menu_ntfs[]=
+  const struct MenuItem menu_ntfs[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

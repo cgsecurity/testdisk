@@ -53,7 +53,7 @@ static int data_check_psp(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 10 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(memcmp(&buffer[i], "~BK\0", 4) != 0)
       return 2;
     /* chunk: header, id, total_length */
@@ -65,10 +65,9 @@ static int data_check_psp(const unsigned char *buffer, const unsigned int buffer
 
 static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  unsigned int ver_major;
+  const unsigned int ver_major=buffer[0x20]+(buffer[0x21]<<8);
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_psp.extension;
-  ver_major=buffer[0x20]+(buffer[0x21]<<8);
   if(ver_major>=4)
   {
     file_recovery_new->calculated_file_size=0x24;

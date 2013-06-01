@@ -109,7 +109,7 @@ static int data_check_mng(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     /* chunk: length, type, data, crc */
     file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
     file_recovery->calculated_file_size+=12;
@@ -124,7 +124,7 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     /* chunk: length, type, data, crc */
     file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
     file_recovery->calculated_file_size+=12;

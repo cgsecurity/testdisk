@@ -43,7 +43,7 @@ int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_
   const list_part_t *parts;
   const partition_t *old_part=NULL;
 #ifdef HAVE_NCURSES
-  struct MenuItem menuSuperblock[]=
+  const struct MenuItem menuSuperblock[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

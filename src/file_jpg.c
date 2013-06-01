@@ -983,13 +983,12 @@ static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline,
 	if(stop==1
 	    && is_line_cut(output_scanline, output_width, output_components, frame, y))
 	{
-	  uint64_t offset_rel1,offset_rel2;
+	  const uint64_t offset_rel1=offsets[result_y / 8];
+	  const uint64_t offset_rel2=offsets[result_y / 8 + 1];
 #ifdef DEBUG_JPEG
 	  log_info("x %4u, y %4u: %6u, result=%u, output_scanline_max=%u\n",
 	      result_x, result_y, result_max, result, output_scanline_max);
 #endif
-	  offset_rel1=offsets[result_y / 8];
-	  offset_rel2=offsets[result_y / 8 + 1];
 	  if(offset_rel1 < offset_rel2)
 	    return jpg_xy_to_offset(handle, result_x, result_y,
 //		offset_rel1, offset_rel2, offset, blocksize);
@@ -1111,8 +1110,7 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
 #if 1
     if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
     {
-      uint64_t offset_error;
-      offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, jpeg_session.blocksize, file_recovery->checkpoint_offset);
+      const uint64_t offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, jpeg_session.blocksize, file_recovery->checkpoint_offset);
       if(offset_error !=0 && file_recovery->offset_error > offset_error)
 	file_recovery->offset_error=offset_error;
 #ifdef DEBUG_JPEG

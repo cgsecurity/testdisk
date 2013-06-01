@@ -79,7 +79,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   unsigned char *buffer_bs;
   const char *options="DR";
 #ifdef HAVE_NCURSES
-  struct MenuItem menu_fat1x[]=
+  const struct MenuItem menu_fat1x[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

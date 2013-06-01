@@ -42,7 +42,7 @@ static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, pa
 
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
-  const struct ufs_super_block*sb;
+  const struct ufs_super_block *sb;
   unsigned char *buffer;
   buffer=(unsigned char*)MALLOC(UFS_SUPERBLOCK_SIZE);
   sb=(const struct ufs_super_block*)buffer;

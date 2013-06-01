@@ -63,7 +63,7 @@ static int data_check_ts_192(const unsigned char *buffer, const unsigned int buf
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i+4]!=0x47)	/* TS_SYNC_BYTE */
       return 2;
     file_recovery->calculated_file_size+=192;
@@ -118,7 +118,7 @@ static int data_check_ts_188(const unsigned char *buffer, const unsigned int buf
 {
   while(file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i]!=0x47)	/* TS_SYNC_BYTE */
       return 2;
     file_recovery->calculated_file_size+=188;

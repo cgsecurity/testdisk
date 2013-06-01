@@ -228,7 +228,7 @@ static int data_check_id3(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i]==0)
     { /* Padding is present */
       file_recovery->calculated_file_size++;
@@ -253,7 +253,6 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int MMT_size;
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
 #ifdef DEBUG_MP3
     log_info("data_check_mp3 start i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
@@ -339,16 +338,15 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
     {
       return 1;
     }
-    else if((MMT_size=search_MMT(buffer,i,buffer_size))!=0)
+    else
     {
+      const unsigned int MMT_size=search_MMT(buffer,i,buffer_size);
+      if(MMT_size==0)
+	return 2;
       /*
 	 log_info("MusicMatch Tag found at offset 0x%x with size 0x%x \n", file_recovery->calculated_file_size, MMT_size);
-       */
+	 */
       file_recovery->calculated_file_size+=MMT_size;
-    }
-    else 
-    {
-      return 2;
     }
   }
   return 1;

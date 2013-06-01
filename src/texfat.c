@@ -80,7 +80,7 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, c
   const char *options="";
   int rescan=1;
 #ifdef HAVE_NCURSES
-  struct MenuItem menu_exFAT[]=
+  const struct MenuItem menu_exFAT[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

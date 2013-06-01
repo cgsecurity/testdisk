@@ -160,7 +160,9 @@ static int wgetch_nodelay(WINDOW *window)
 
 static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int current)
 {
-  unsigned int i, lmargin = x, ymargin = y;
+  unsigned int i;
+  const unsigned int lmargin = x;
+  const unsigned int ymargin = y;
   unsigned int lenNameMax=0;
   for( i = 0; menuItems[i].key!=0; i++ )
     if(strchr(available, menuItems[i].key)!=NULL )
@@ -271,7 +273,9 @@ int menu_to_command(const unsigned int yinfo, const unsigned int y_org, const un
 {
   unsigned int y=y_org;
   unsigned int x=x_org;
-  unsigned int i, lmargin = x, ymargin = y;
+  unsigned int i;
+  const unsigned int lmargin = x;
+  const unsigned int ymargin = y;
   unsigned int lenNameMax=0;
   for( i = 0; menuItems[i].key!=0; i++ )
     if(strchr(available, menuItems[i].key)!=NULL )
@@ -341,10 +345,8 @@ int wmenuSelect(WINDOW *window, const int yinfo, const int y, const int x, const
   return wmenuSelect_ext(window, yinfo, y, x, menuItems, itemLength, available, menuType, &current, NULL);
 }
 
-int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y_org, const int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key)
+int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y, const int x, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, unsigned int *current, int *real_key)
 {
-  unsigned int y=y_org;
-  unsigned int x=x_org;
   unsigned int i;
   unsigned int ylast = y;
   int key = 0;
@@ -1043,8 +1045,7 @@ static char *filename_to_directory(const char *filename)
   char buf[2048];
   char *res;
 #ifdef HAVE_READLINK
-  int len;
-  len=readlink(filename,buf,sizeof(buf)-1);
+  const int len=readlink(filename,buf,sizeof(buf)-1);
   if(len>=0)
     buf[len]='\0';
   else
@@ -1260,7 +1261,7 @@ void screen_buffer_to_interface(void)
 {
   {
     int i;
-    int pos=intr_nbr_line-DUMP_MAX_LINES<0?0:intr_nbr_line-DUMP_MAX_LINES;
+    const int pos=intr_nbr_line-DUMP_MAX_LINES<0?0:intr_nbr_line-DUMP_MAX_LINES;
     if(intr_nbr_line<MAX_LINES && intr_buffer_screen[intr_nbr_line][0]!='\0')
       intr_nbr_line++;
     /* curses interface */
@@ -1316,7 +1317,6 @@ int vaff_txt(int line, WINDOW *window, const char *_format, va_list ap)
 
 void display_message(const char*msg)
 {
-  int pipo=0;
   static const struct MenuItem menuGeometry[]=
   {
     { 'Q', "Ok", "" },
@@ -1326,7 +1326,7 @@ void display_message(const char*msg)
   log_info("%s",msg);
   aff_copy(window);
   mvwaddstr(window,5,0,msg);
-  wmenuSimple(window,menuGeometry, pipo);
+  wmenuSimple(window,menuGeometry, 0);
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN
@@ -1337,13 +1337,12 @@ void display_message(const char*msg)
 uint64_t ask_int_ncurses(const char *string)
 {
   WINDOW *local_win;
-  int startx, starty, width, height;
+  const int height = 3;
+  const int width = 40;
+  const int starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  const int startx = (COLS - width) / 2;		/* of the window		*/
   uint64_t min_size=0;
   char response[128];
-  height = 3;
-  width = 40;
-  starty = (LINES - height) / 2;	/* Calculating for a center placement */
-  startx = (COLS - width) / 2;		/* of the window		*/
 
   local_win = newwin(height, width, starty, startx);
   keypad(local_win, TRUE); 		/* Need it to get arrow key */
@@ -1366,12 +1365,11 @@ uint64_t ask_int_ncurses(const char *string)
 const char *ask_string_ncurses(const char *string)
 {
   WINDOW *local_win;
-  int startx, starty, width, height;
+  const int height = 3;
+  const int width = 60;
+  const int starty = (LINES - height) / 2;	/* Calculating for a center placement */
+  const int startx = (COLS - width) / 2;		/* of the window		*/
   static char response[128];
-  height = 3;
-  width = 60;
-  starty = (LINES - height) / 2;	/* Calculating for a center placement */
-  startx = (COLS - width) / 2;		/* of the window		*/
 
   local_win = newwin(height, width, starty, startx);
   keypad(local_win, TRUE); 		/* Need it to get arrow key */

@@ -41,7 +41,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
 {
   list_part_t *parts;
 #ifdef HAVE_NCURSES
-  struct MenuItem menuWrite[]=
+  const struct MenuItem menuWrite[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

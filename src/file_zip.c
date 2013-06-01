@@ -336,7 +336,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
        Typically used in OOO documents
        Search ZIP_DATA_DESCRIPTOR */
     static const unsigned char zip_data_desc_header[4]= {0x50, 0x4B, 0x07, 0x08};
-    int64_t pos = file_get_pos(fr->handle, zip_data_desc_header, 4);
+    const int64_t pos = file_get_pos(fr->handle, zip_data_desc_header, 4);
 #ifdef DEBUG_ZIP
     log_trace("Searched footer, got length %lli\n", (long long int)pos);
 #endif
@@ -435,7 +435,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 
   if (dir.end_size > 0)
   {
-    uint64_t len = le64(dir.end_size);
+    const uint64_t len = le64(dir.end_size);
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -475,7 +475,7 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
 
   if (dir.comment_length)
   {
-    uint16_t len = le16(dir.comment_length);
+    const uint16_t len = le16(dir.comment_length);
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP

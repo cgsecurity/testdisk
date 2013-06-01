@@ -279,8 +279,8 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   while(offset < file_recovery->file_size)
   {
     int i;
-    int bsize;
-    if((bsize=fread(buffer, 1, 4096, file_recovery->handle))<=0)
+    const int bsize=fread(buffer, 1, 4096, file_recovery->handle);
+    if(bsize<=0)
     {
       free(buffer);
       return ;

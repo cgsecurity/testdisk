@@ -937,7 +937,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 {
   const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)newboot;
 #ifdef HAVE_NCURSES
-  struct MenuItem menuSaveBoot[]=
+  const struct MenuItem menuSaveBoot[]=
   {
     { 'D', "Dump", "Dump sector" },
     { 'L', "List", "List directories and files" },
@@ -1816,7 +1816,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
 {
   unsigned int i;
   unsigned long int fat2_location=*reserved+*fat_length;
-  struct MenuItem menuSelectFAT[]=
+  const struct MenuItem menuSelectFAT[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

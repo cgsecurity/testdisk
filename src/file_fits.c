@@ -166,7 +166,7 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
 #endif
   file_recovery_new->min_filesize=2880;
   {
-    uint64_t tmp=fits_info(buffer, buffer_size, file_recovery_new, &i);
+    const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery_new, &i);
     if(tmp==0)
       return 1;
     if(naxis_size_max < tmp && tmp > 1)

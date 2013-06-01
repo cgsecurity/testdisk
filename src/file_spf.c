@@ -82,8 +82,7 @@ static void file_check_spf(file_recovery_t *file_recovery)
   while(1)
   {
     int i;
-    int taille;
-    taille=fread(buffer,1,READ_SIZE,file_recovery->handle);
+    const int taille=fread(buffer,1,READ_SIZE,file_recovery->handle);
     if(taille<512)
     {
       file_recovery->file_size=0;

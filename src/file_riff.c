@@ -176,7 +176,7 @@ static int data_check_avi(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
     if(memcmp(&buffer[i], "RIFF", 4)==0 && memcmp(&buffer[i+8], "AVIX", 4)==0)
       file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
@@ -191,7 +191,7 @@ int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
     if(buffer[i+2]!='d' || buffer[i+3]!='b')	/* Video Data Binary ?*/
       return 2;

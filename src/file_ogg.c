@@ -82,12 +82,10 @@ static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(memcmp(&buffer[i],ogg_header,sizeof(ogg_header))==0)
     {
-      unsigned int number_page_segments;
-      unsigned int header_size;
+      const unsigned int number_page_segments=buffer[i+26];
+      const unsigned int header_size = number_page_segments + 27;
       unsigned int page_size;
       unsigned int j;
-      number_page_segments=buffer[i+26];
-      header_size = number_page_segments + 27;
       page_size=header_size;
       for(j=0;j<number_page_segments;j++)
         page_size+=buffer[i+27+j];

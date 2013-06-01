@@ -85,10 +85,10 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     return 0;
 
   /*
-     4,5,6,7: mtime
-8: xfl/extra flags
-9: OS	3 - Unix, 7 - Macintosh, 11 - NTFS filesystem (NT)
-*/
+   * 4,5,6,7: mtime
+   * 8: xfl/extra flags
+   * 9: OS	3 - Unix, 7 - Macintosh, 11 - NTFS filesystem (NT)
+   */
   if((flags&GZ_FEXTRA)!=0)
   {
     off+=2;

@@ -510,8 +510,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
     run_again=0;
     td_list_for_each(search_walker, &list_search_space->list)
     {
-      alloc_data_t *tmp;
-      tmp=td_list_entry(search_walker, alloc_data_t, list);
+      const alloc_data_t *tmp=td_list_entry(search_walker, alloc_data_t, list);
       if(tmp->file_stat!=NULL)
       {
 	if(tmp->start%blocksize!=*offset && blocksize>default_blocksize)

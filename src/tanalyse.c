@@ -43,7 +43,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
   list_part_t *list_part;
   int command;
 #ifdef HAVE_NCURSES
-  struct MenuItem menuAnalyse[]=
+  const struct MenuItem menuAnalyse[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

@@ -66,7 +66,7 @@ int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partiti
   if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
       return -1;
   {
-    const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
+    const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector*)buffer;
     /* NTFS recovery using backup sector */
     if(le16(ntfs_header->marker)==0xAA55 &&
 	recover_NTFS(disk, ntfs_header, partition, verbose, dump_ind, 1)==0)
@@ -141,7 +141,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)buffer;
   const struct luks_phdr *luks=(const struct luks_phdr *)buffer;
   const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
-  const struct ntfs_boot_sector*ntfs_header=(const struct ntfs_boot_sector*)buffer;
+  const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector*)buffer;
   const struct wbfs_head *wbfs=(const struct wbfs_head *)buffer;
   const struct xfs_sb *xfs=(const struct xfs_sb *)buffer;
   const union swap_header *swap_header=(const union swap_header *)buffer;
@@ -216,7 +216,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
 int search_type_1(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const struct disklabel *bsd_header=(const struct disklabel *)(buffer+0x200);
-  const struct disk_super_block*beos_block=(const struct disk_super_block*)(buffer+0x200);
+  const struct disk_super_block *beos_block=(const struct disk_super_block*)(buffer+0x200);
   const struct cramfs_super *cramfs=(const struct cramfs_super *)(buffer+0x200);
   const struct lvm2_label_header *lvm2=(const struct lvm2_label_header *)(buffer+0x200);
   const struct sysv4_super_block *sysv4=(const struct sysv4_super_block *)(buffer+0x200);

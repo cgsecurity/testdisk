@@ -417,9 +417,8 @@ static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
 static int data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const char sign_html_end[]	= "</html>";
-  unsigned int i;
+  const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
   unsigned int j;
-  i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
   for(j=(buffer_size/2>sizeof(sign_html_end)?buffer_size/2-sizeof(sign_html_end):0);
       j+sizeof(sign_html_end)-1 < buffer_size;
       j++)
@@ -442,8 +441,7 @@ static int data_check_html(const unsigned char *buffer, const unsigned int buffe
 
 static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  unsigned int i;
-  i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
+  const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
   if(i<buffer_size/2)
   {
     if(i>=10)

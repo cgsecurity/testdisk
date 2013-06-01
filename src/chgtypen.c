@@ -64,7 +64,7 @@ static void change_part_type_int_ncurses(const disk_t *disk_car, partition_t *pa
   int i;
   unsigned int last[3], done = 0, next = 0;
   struct part_name_struct part_name[0x100];
-  struct MenuItem menuType[]=
+  const struct MenuItem menuType[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

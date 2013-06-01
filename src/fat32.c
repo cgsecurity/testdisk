@@ -83,7 +83,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   unsigned char *buffer_backup_bs;
   const char *options="DRC";
 #ifdef HAVE_NCURSES
-  struct MenuItem menu_fat32[]=
+  const struct MenuItem menu_fat32[]=
   {
     { 'P', "Previous",""},
     { 'N', "Next","" },

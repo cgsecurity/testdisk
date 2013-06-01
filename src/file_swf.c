@@ -48,7 +48,7 @@ const file_hint_t file_hint_swf= {
 static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigned int nbit)
 {
   int res=0;
-  unsigned int sign=((**data) >>(7 - (*offset_bit)))&1;
+  const unsigned int sign=((**data) >>(7 - (*offset_bit)))&1;
   while(nbit>1)
   {
     (*offset_bit)++;
