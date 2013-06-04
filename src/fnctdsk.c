@@ -117,10 +117,7 @@ list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car)
       {
 	if(strcmp(cur->disk->device,disk_car->device)==0)
 	{
-	  if(disk_car->clean!=NULL)
-	    disk_car->clean(disk_car);
-	  free(disk_car->device);
-	  free(disk_car);
+	  disk_car->clean(disk_car);
 	  return list_disk;
 	}
       }
