@@ -52,7 +52,10 @@ int main(int argc, char *argv[])
   FILE *log_handle;
   log_handle=log_open("qphotorec.log", TD_LOG_CREATE, &log_errno);
 #ifdef HAVE_DUP2
-  dup2(fileno(log_handle),2);
+  if(log_handle)
+  {
+    dup2(fileno(log_handle),2);
+  }
 #endif
   my_time=time(NULL);
   log_info("\n\n%s",ctime(&my_time));
