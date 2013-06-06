@@ -137,6 +137,21 @@ void QPhotorec::setExistingDirectory()
   }
 }
 
+void QPhotorec::newSourceFile()
+{
+  const int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
+  QString filename = QFileDialog::getOpenFileName(this,
+      "Please select a raw file",
+      "",
+      "Raw Files (*.dd *.raw *.img)");
+  if(!filename.isEmpty())
+  {
+    QByteArray filenameArray= (filename).toUtf8();
+    list_disk=insert_new_disk(list_disk, file_test_availability(filenameArray.constData(), options->verbose, testdisk_mode));
+    HDDlistWidget_updateUI();
+  }
+}
+
 void QPhotorec::partition_selected()
 {
   if(PartListWidget->selectedItems().count()<=0)
@@ -266,6 +281,10 @@ void QPhotorec::disk_changed(int index)
       return;
     }
   }
+  if(i==index)
+  {
+    newSourceFile();
+  }
 }
 
 QWidget *QPhotorec::copyright(QWidget * qwparent)
@@ -353,14 +372,10 @@ void QPhotorec::buttons_updateUI()
   button_search->setEnabled(!directoryLabel->text().isEmpty());
 }
 
-void QPhotorec::setupUI()
+void QPhotorec::HDDlistWidget_updateUI()
 {
   list_disk_t *element_disk;
-  QWidget *t_copy = copyright(this);
-  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
-  QLabel *t_select = new QLabel("Please select a media to recover from");
-
-  HDDlistWidget = new QComboBox();
+  HDDlistWidget->clear();
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
     disk_t *disk=element_disk->disk;
@@ -368,6 +383,18 @@ void QPhotorec::setupUI()
 	QIcon::fromTheme("drive-harddisk", QIcon(":res/gnome/drive-harddisk.png")),
 	disk->description_short(disk));
   }
+  HDDlistWidget->addItem(
+      QIcon::fromTheme("application-x-cd-image", QIcon(":res/gnome/application-x-cd-image.png")),
+      "Add a raw disk image...");
+}
+
+void QPhotorec::setupUI()
+{
+  QWidget *t_copy = copyright(this);
+  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
+  QLabel *t_select = new QLabel("Please select a media to recover from");
+
+  HDDlistWidget = new QComboBox();
   HDDlistWidget->setToolTip("Disk capacity must be correctly detected for a successful recovery.\n"
       "If a disk listed above has incorrect size, check HD jumper settings, BIOS\n"
       "detection, and install the latest OS patches and disk drivers."
@@ -468,6 +495,7 @@ void QPhotorec::setupUI()
   mainLayout->addWidget(B_widget);
   this->setLayout(mainLayout);
 
+  HDDlistWidget_updateUI();
   buttons_updateUI();
 
   connect(button_search, SIGNAL(clicked()), this, SLOT(qphotorec_search()) );

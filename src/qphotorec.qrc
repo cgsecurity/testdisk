@@ -6,5 +6,6 @@
 <file>gnome/folder.png</file>
 <file>gnome/go-next.png</file>
 <file>gnome/go-previous.png</file>
+<file>gnome/application-x-cd-image.png</file>
 </qresource>
 </RCC>

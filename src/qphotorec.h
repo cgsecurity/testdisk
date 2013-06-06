@@ -41,6 +41,7 @@ class QPhotorec: public QWidget
 	  	void disk_changed(int index);
 		void partition_selected();
 		void setExistingDirectory();
+		void newSourceFile();
 		void qphotorec_search();
 		void buttons_updateUI();
 		/* Recovery UI */
@@ -53,6 +54,7 @@ class QPhotorec: public QWidget
 		QWidget *copyright(QWidget * qwparent = 0);
 		QTableWidgetItem *offset_to_item(const disk_t *disk, const uint64_t offset);
 		void PartListWidget_updateUI();
+		void HDDlistWidget_updateUI();
 		int photorec(alloc_data_t *list_search_space);
 		pstatus_t photorec_find_blocksize(alloc_data_t *list_search_space);
 		pstatus_t photorec_aux(alloc_data_t *list_search_space);

@@ -16,6 +16,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	src/gnome/folder.png \
 	src/gnome/go-next.png \
 	src/gnome/go-previous.png \
+	src/gnome/application-x-cd-image.png \
 	win/readme.txt win/photorec_win.exe.manifest win/qphotorec_win.exe.manifest \
 	win/testdisk_win.exe.manifest \
 	Android.mk jni/Android.mk
