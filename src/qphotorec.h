@@ -82,6 +82,7 @@ class QPhotorec: public QWidget
 		QRadioButton 		*qfreeRadioButton;
 		QRadioButton 		*qwholeRadioButton;
 		/* Recovery UI */
+		QLabel			*folder_txt;
 		QLabel 			*progress_info;
 		QLabel 			*progress_filefound;
 		QProgressBar 		*progress_bar;

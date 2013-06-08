@@ -49,6 +49,7 @@
 #include <QComboBox>
 #include <QTimer>
 #include <QMessageBox>
+#include <QTextDocument>
 #include "types.h"
 #include "common.h"
 #include "hdcache.h"
@@ -578,6 +579,9 @@ void QPhotorec::qphotorec_search_updateUI()
   const partition_t *partition=params->partition;
   const unsigned int sector_size=params->disk->sector_size;
   QString tmp;
+  folder_txt->setText("Destination: <a href=\"file://" + Qt::escape(directoryLabel->text()) + "/" +
+      DEFAULT_RECUP_DIR + "." + QString::number(params->dir_num) + "\">" +
+      Qt::escape(directoryLabel->text()) + "</a>");
   if(params->status==STATUS_QUIT)
   {
     tmp.sprintf("Recovery completed");
@@ -652,8 +656,10 @@ void QPhotorec::qphotorec_search_setupUI()
   folder_img->setPixmap(*folder_pixmap);
   folder_img->setSizePolicy(c_sizePolicy);
 
-  QLabel *folder_txt=new QLabel();
-  folder_txt->setText("Destination: " + directoryLabel->text());
+  folder_txt=new QLabel();
+  folder_txt->setTextFormat(Qt::RichText);
+  folder_txt->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  folder_txt->setOpenExternalLinks(true);
 
   QWidget *folderWidget = new QWidget();
   QHBoxLayout *folderWidgetLayout = new QHBoxLayout(folderWidget);
