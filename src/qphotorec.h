@@ -60,6 +60,7 @@ class QPhotorec: public QWidget
 		pstatus_t photorec_aux(alloc_data_t *list_search_space);
 		void qphotorec_search_setupUI();
 		void photorec_info(const file_stat_t *file_stats);
+		void select_disk(disk_t *disk);
 	signals:
 		void finished();
         private:

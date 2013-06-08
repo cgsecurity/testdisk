@@ -148,7 +148,10 @@ void QPhotorec::newSourceFile()
   {
     QByteArray filenameArray= (filename).toUtf8();
     list_disk=insert_new_disk(list_disk, file_test_availability(filenameArray.constData(), options->verbose, testdisk_mode));
+    if(list_disk!=NULL)
+      select_disk(list_disk->disk);
     HDDlistWidget_updateUI();
+    PartListWidget_updateUI();
   }
 }
 
@@ -260,6 +263,19 @@ void QPhotorec::PartListWidget_updateUI()
   PartListWidget->resizeColumnsToContents();
 }
 
+void QPhotorec::select_disk(disk_t *disk)
+{
+  if(disk==NULL)
+    return ;
+  selected_disk=disk;
+  selected_partition=NULL;
+  autodetect_arch(selected_disk, &arch_none);
+  log_info("%s\n", selected_disk->description_short(selected_disk));
+  part_free_list(list_part);
+  list_part=init_list_part(selected_disk, NULL);
+  log_all_partitions(selected_disk, list_part);
+}
+
 void QPhotorec::disk_changed(int index)
 {
   int i;
@@ -270,13 +286,7 @@ void QPhotorec::disk_changed(int index)
   {
     if(i==index)
     {
-      selected_disk=element_disk->disk;
-      selected_partition=NULL;
-      autodetect_arch(selected_disk, &arch_none);
-      log_info("%s\n", selected_disk->description_short(selected_disk));
-      part_free_list(list_part);
-      list_part=init_list_part(selected_disk, NULL);
-      log_all_partitions(selected_disk, list_part);
+      select_disk(element_disk->disk);
       PartListWidget_updateUI();
       return;
     }
