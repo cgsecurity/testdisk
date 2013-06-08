@@ -26,6 +26,7 @@
 
 #include <QApplication>
 #include <stdio.h>
+#include <stdlib.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -34,6 +35,9 @@
 #endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
 #endif
 #include "qphotorec.h"
 #include "log.h"
@@ -44,12 +48,37 @@
 #include "file_jpg.h"
 #include "ntfs_dir.h"
 
+#ifdef Q_WS_X11
+static void run_photorec(int argc, char **argv)
+{
+  int i;
+  char **argv2;
+  argv2 = (char **)MALLOC(sizeof(char *) * (argc + 2));
+  argv2[0]=strdup("photorec");
+  for (i=0; i <  argc; i++)
+    argv2[i+1] = argv[i];
+  argv2[i+1]=NULL;
+  printf("DISPLAY variable not set. Switching to PhotoRec in text mode.\n");
+  fflush(stdout);
+  if(execv(argv2[0], argv2)<0)
+  {
+    printf("photorec failed: %s\n", strerror(errno));
+  }
+  free(argv2[0]);
+  free(argv2);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
-  QApplication a(argc, argv);
   int log_errno=0;
   time_t my_time;
   FILE *log_handle;
+#ifdef Q_WS_X11
+  if(getenv("DISPLAY")==NULL)
+    run_photorec(argc, argv);
+#endif
+  QApplication a(argc, argv);
   log_handle=log_open("qphotorec.log", TD_LOG_CREATE, &log_errno);
 #ifdef HAVE_DUP2
   if(log_handle)
