@@ -149,6 +149,8 @@ static const txt_header_t fasttxt_headers[] = {
   { "-- phpMyAdmin SQL Dump",				22, "sql"},
   { "--\n-- PostgreSQL database cluster dump",		38, "sql"},
   { "--\r\n-- PostgreSQL database cluster dump",	39, "sql"},
+  /* PTGui,  panoramic stitching software */
+  { "# ptGui project file",				20, "pts"},
   /* Quantum GIS  */
   { "<!DOCTYPE qgis ",					15, "qgs"},
   /* Real Media  */
