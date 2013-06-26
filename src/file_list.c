@@ -209,6 +209,7 @@ extern const file_hint_t file_hint_pnm;
 extern const file_hint_t file_hint_prc;
 extern const file_hint_t file_hint_prt;
 extern const file_hint_t file_hint_ps;
+extern const file_hint_t file_hint_psb;
 extern const file_hint_t file_hint_psd;
 extern const file_hint_t file_hint_psf;
 extern const file_hint_t file_hint_psp;
@@ -478,6 +479,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_prc  },
   { .enable=0, .file_hint=&file_hint_prt  },
   { .enable=0, .file_hint=&file_hint_ps   },
+  { .enable=0, .file_hint=&file_hint_psb  },
   { .enable=0, .file_hint=&file_hint_psd  },
   { .enable=0, .file_hint=&file_hint_psf  },
   { .enable=0, .file_hint=&file_hint_psp  },
