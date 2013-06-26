@@ -112,6 +112,7 @@ file_C			= filegen.c \
 			  file_fcp.c \
 			  file_fcs.c \
 			  file_fdb.c \
+			  file_fds.c \
 			  file_fh10.c \
 			  file_fh5.c \
 			  file_filevault.c \
