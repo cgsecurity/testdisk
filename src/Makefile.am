@@ -184,6 +184,7 @@ file_C			= filegen.c \
 			  file_myo.c \
 			  file_mysql.c \
 			  file_nds.c \
+			  file_nes.c \
 			  file_njx.c \
 			  file_nk2.c \
 			  file_nsf.c \
