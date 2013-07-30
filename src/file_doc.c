@@ -665,10 +665,12 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
     unsigned int i;
     if(pos+8 > dirLen)
       return ;
-//    size=get32u(dataPt, pos);
     numEntries=get32u(dataPt, pos+4);
 #ifdef DEBUG_OLE
-    log_info("Property Info %u - %u at 0x%x\n", numEntries, size, pos);
+    {
+      unsigned int size=get32u(dataPt, pos);
+      log_info("Property Info %u - %u at 0x%x\n", numEntries, size, pos);
+    }
 #endif
     if(pos + 8 + 8 * numEntries > dirLen)
       return ;
