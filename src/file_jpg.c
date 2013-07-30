@@ -356,7 +356,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->time=jpg_time;
 	if(mpo > 0)
 	{
-	  file_recovery_new->extension="mpo";
+	  file_recovery_new->extension="jpg";
 	  file_recovery_new->file_check=&file_check_mpo;
 	}
 	else
