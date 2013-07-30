@@ -60,9 +60,9 @@ struct lnk_header_s {
   char     guid[16]; 		/* 4h GUID of shortcut files */
   uint32_t flags; 		/* 14h  */
   uint32_t file_attributes; 	/* 18h  */
-  uint64_t time_1; 		/* 1Ch */
-  uint64_t time_2; 		/* 24h */
-  uint64_t time_3; 		/* 2Ch */
+  uint64_t ctime; 		/* 1Ch */
+  uint64_t atime; 		/* 24h */
+  uint64_t mtime; 		/* 2Ch */
   uint32_t file_length; 	/* 34h */
   uint32_t icon_number; 	/* 38h */
   uint32_t showWnd_value; 	/* 3Ch */
@@ -231,6 +231,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->calculated_file_size=i;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
+//    file_recovery_new->time=td_ntfs2utc(le64(lnk_head->ctime));
     return 1;
   }
   return 0;
