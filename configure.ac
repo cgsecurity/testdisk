@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([testdisk],[6.14-WIP],[grenier@cgsecurity.org])
+AC_INIT([testdisk],[6.14],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="May 2013"
+TESTDISKDATE="July 2013"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
