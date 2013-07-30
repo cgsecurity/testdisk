@@ -105,6 +105,10 @@ static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition
 {
   if(memcmp(sb->s_magic,"JFS1",4)!=0)
     return 1;
+  /* Blocksize must be a multiple of 512 */
+  if(le32(sb->s_bsize)<512 ||
+      ((le32(sb->s_bsize)-1) & le32(sb->s_bsize))!=0)
+    return 1;
   if(dump_ind!=0)
   {
     log_info("\nJFS magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
