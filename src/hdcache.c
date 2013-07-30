@@ -70,35 +70,6 @@ static void cache_clean(disk_t *disk);
 static const char *cache_description(disk_t *disk_car);
 static const char *cache_description_short(disk_t *disk_car);
 
-static void *cache_get_data_p(disk_t *disk, const unsigned int count, const uint64_t offset)
-{
-  struct cache_struct *data=(struct cache_struct *)disk->data;
-  unsigned int i;
-  unsigned int cache_buffer_nbr;
-  for(i=0, cache_buffer_nbr=data->cache_buffer_nbr;
-      i<CACHE_BUFFER_NBR;
-      i++, cache_buffer_nbr=(cache_buffer_nbr+CACHE_BUFFER_NBR-1)%CACHE_BUFFER_NBR)
-  {
-    const struct cache_buffer_struct *cache=&data->cache[cache_buffer_nbr];
-    if(cache->buffer!=NULL && cache->cache_size>0 &&
-	cache->cache_offset <= offset &&
-	offset + count < cache->cache_offset + cache->cache_size &&
-	offset + count >= offset)
-    {
-#ifdef DEBUG_CACHE
-      log_info("cache_get_data_p(buffer, count=%u, offset=%llu)\n",
-	  count, (long long unsigned)offset);
-      log_info("cache use %5u count=%u, coffset=%llu, cstatus=%d\n",
-	      cache_buffer_nbr, cache->cache_size, (long long unsigned)cache->cache_offset,
-	      cache->cache_status);
-	  data->nbr_fnct_sect+=count;
-#endif
-      return cache->buffer + offset - cache->cache_offset;
-    }
-  }
-  return NULL;
-}
-
 static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset)
 {
   const struct cache_struct *data=(const struct cache_struct *)disk_car->data;
