@@ -82,6 +82,30 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 #define ATTR_ARCH    32 /* archived */
 #define EXFAT_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
 
+static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *partition, const int offset, const unsigned int cluster)
+{
+  unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
+  unsigned int next_cluster;
+  const uint32_t *p32=(const uint32_t*)buffer;
+  const unsigned long int offset_s=cluster/(disk_car->sector_size/4);
+  const unsigned long int offset_o=cluster%(disk_car->sector_size/4);
+  if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
+	partition->part_offset + offset + (uint64_t)offset_s * disk_car->sector_size) != disk_car->sector_size)
+  {
+    log_error("exfat_get_next_cluster read error\n");
+    free(buffer);
+    return 0;
+  }
+  /* FAT32 used 28 bits, the 4 high bits are reserved
+   * 0x00000000: free cluster
+   * 0x0FFFFFF7: bad cluster
+   * 0x0FFFFFF8+: EOC End of cluster
+   * */
+  next_cluster=le32(p32[offset_o])&0xFFFFFFF;
+  free(buffer);
+  return next_cluster;
+}
+
 static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list)
 {
   /*
@@ -167,17 +191,15 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   unsigned int cluster;
   unsigned char *buffer_dir=(unsigned char *)MALLOC(NBR_CLUSTER_MAX << cluster_shift);
   unsigned int nbr_cluster;
-//  unsigned int clus_blocknr;
-  unsigned int total_clusters;
+  const unsigned int total_clusters=le32(exfat_header->total_clusters);
   exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
   int stop=0;
+  const uint64_t start_exfat1=le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
   if(first_cluster<2)
     cluster=le32(exfat_header->rootdir_clusnr);
   else
     cluster=first_cluster;
   memset(buffer_dir, 0, NBR_CLUSTER_MAX<<cluster_shift);
-//  clus_blocknr=le32(exfat_header->clus_blocknr);
-  total_clusters=le32(exfat_header->total_clusters);
   nbr_cluster=0;
   while(!is_EOC(cluster) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)
   {
@@ -190,8 +212,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
     {
       if(exfat_meth==exFAT_FOLLOW_CLUSTER)
       {
-//	const unsigned int next_cluster=get_next_cluster(disk, partition, partition->upart_type, start_exfat1, cluster);
-	const unsigned int next_cluster=0;
+	const unsigned int next_cluster=exfat_get_next_cluster(disk, partition, start_exfat1, cluster);
 	if((next_cluster>=2 && next_cluster<=total_clusters) ||
 	    is_EOC(next_cluster))
 	  cluster=next_cluster;
@@ -216,7 +237,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
       {	/* Deleted directories are composed of "free" clusters */
 #if 0
 	while(++cluster<total_clusters &&
-	    get_next_cluster(disk, partition, partition->upart_type, start_exfat1, cluster)!=0);
+	    exfat_get_next_cluster(disk, partition, start_exfat1, cluster)!=0);
 #endif
       }
       nbr_cluster++;
@@ -333,7 +354,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     {
       if(exfat_meth==exFAT_FOLLOW_CLUSTER)
       {
-	const unsigned int next_cluster=get_next_cluster(disk, partition, UP_FAT32, start_exfat1, cluster);
+	const unsigned int next_cluster=exfat_get_next_cluster(disk, partition, start_exfat1, cluster);
 	if(next_cluster>=2 && next_cluster<=total_clusters)
 	  cluster=next_cluster;
 	else if(cluster==file->st_ino && next_cluster==0)
@@ -346,7 +367,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
       else if(exfat_meth==exFAT_NEXT_FREE_CLUSTER)
       {	/* Deleted file are composed of "free" clusters */
 	while(++cluster<total_clusters &&
-	    get_next_cluster(disk, partition, partition->upart_type, start_exfat1, cluster)!=0);
+	    exfat_get_next_cluster(disk, partition, start_exfat1, cluster)!=0);
       }
     }
   }
