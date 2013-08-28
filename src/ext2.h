@@ -148,8 +148,58 @@ struct ext2_super_block {
 	 */
 	uint8_t	s_prealloc_blocks;	/* Nr of blocks to try to preallocate*/
 	uint8_t	s_prealloc_dir_blocks;	/* Nr to preallocate for dirs */
-	uint16_t	s_padding1;
-	uint32_t	s_reserved[204];	/* Padding to the end of the block */
+	uint16_t	s_reserved_gdt_blocks;	/* Per group table for online growth */
+	/*
+	 * Journaling support valid if EXT2_FEATURE_COMPAT_HAS_JOURNAL set.
+	 */
+	uint8_t		s_journal_uuid[16];	/* uuid of journal superblock */
+	uint32_t	s_journal_inum;		/* inode number of journal file */
+	uint32_t	s_journal_dev;		/* device number of journal file */
+	uint32_t	s_last_orphan;		/* start of list of inodes to delete */
+	uint32_t	s_hash_seed[4];		/* HTREE hash seed */
+	uint8_t		s_def_hash_version;	/* Default hash version to use */
+	uint8_t		s_jnl_backup_type; 	/* Default type of journal backup */
+	uint16_t	s_desc_size;		/* Group desc. size: INCOMPAT_64BIT */
+	uint32_t	s_default_mount_opts;
+	uint32_t	s_first_meta_bg;	/* First metablock group */
+	uint32_t	s_mkfs_time;		/* When the filesystem was created */
+	uint32_t	s_jnl_blocks[17]; 	/* Backup of the journal inode */
+	uint32_t	s_blocks_count_hi;	/* Blocks count high 32bits */
+	uint32_t	s_r_blocks_count_hi;	/* Reserved blocks count high 32 bits*/
+	uint32_t	s_free_blocks_hi; 	/* Free blocks count */
+	uint16_t	s_min_extra_isize;	/* All inodes have at least # bytes */
+	uint16_t	s_want_extra_isize; 	/* New inodes should reserve # bytes */
+	uint32_t	s_flags;		/* Miscellaneous flags */
+	uint16_t   	s_raid_stride;		/* RAID stride */
+	uint16_t   	s_mmp_update_interval;  /* # seconds to wait in MMP checking */
+	uint64_t   	s_mmp_block;            /* Block for multi-mount protection */
+	uint32_t   	s_raid_stripe_width;    /* blocks on all data disks (N*stride)*/
+	uint8_t		s_log_groups_per_flex;	/* FLEX_BG group size */
+	uint8_t    	s_reserved_char_pad;
+	uint16_t	s_reserved_pad;		/* Padding to next 32bits */
+	uint64_t	s_kbytes_written;	/* nr of lifetime kilobytes written */
+	uint32_t	s_snapshot_inum;	/* Inode number of active snapshot */
+	uint32_t	s_snapshot_id;		/* sequential ID of active snapshot */
+	uint64_t	s_snapshot_r_blocks_count; /* reserved blocks for active
+					      snapshot's future use */
+	uint32_t	s_snapshot_list;	/* inode number of the head of the on-disk snapshot list */
+	uint32_t	s_error_count;		/* number of fs errors */
+	uint32_t	s_first_error_time;	/* first time an error happened */
+	uint32_t	s_first_error_ino;	/* inode involved in first error */
+	uint64_t	s_first_error_block;	/* block involved of first error */
+	uint8_t		s_first_error_func[32];	/* function where the error happened */
+	uint32_t	s_first_error_line;	/* line number where error happened */
+	uint32_t	s_last_error_time;	/* most recent time of an error */
+	uint32_t	s_last_error_ino;	/* inode involved in last error */
+	uint32_t	s_last_error_line;	/* line number where error happened */
+	uint64_t	s_last_error_block;	/* block involved of last error */
+	uint8_t		s_last_error_func[32];	/* function where the error happened */
+	uint8_t		s_mount_opts[64];
+	uint32_t	s_usr_quota_inum;	/* inode number of user quota file */
+	uint32_t	s_grp_quota_inum;	/* inode number of group quota file */
+	uint32_t	s_overhead_blocks;	/* overhead blocks/clusters in fs */
+	uint32_t   	s_reserved[108];        /* Padding to the end of the block */
+	uint32_t	s_checksum;		/* crc32c(superblock) */
 };
 int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_EXT2(disk_t *disk_car, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);

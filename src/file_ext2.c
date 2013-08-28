@@ -30,6 +30,7 @@
 #include "types.h"
 #include "common.h"
 #include "ext2.h"
+#include "ext2_common.h"
 #include "filegen.h"
 
 static void register_header_check_ext2_fs(file_stat_t *file_stat);
@@ -55,22 +56,7 @@ static void register_header_check_ext2_fs(file_stat_t *file_stat)
 static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer[0x400];
-  if(le16(sb->s_magic)!=EXT2_SUPER_MAGIC)
-    return 0;
-  if (le32(sb->s_free_blocks_count) >= le32(sb->s_blocks_count))
-    return 0;
-  if (le32(sb->s_free_inodes_count) >= le32(sb->s_inodes_count))
-    return 0;
-  if (le16(sb->s_errors)!=0 &&
-      (le16(sb->s_errors) != EXT2_ERRORS_CONTINUE) &&
-      (le16(sb->s_errors) != EXT2_ERRORS_RO) &&
-      (le16(sb->s_errors) != EXT2_ERRORS_PANIC))
-    return 0;
-  if ((le16(sb->s_state) & ~(EXT2_VALID_FS | EXT2_ERROR_FS))!=0)
-    return 0;
-  if (le32(sb->s_blocks_count) == 0) /* reject empty filesystem */
-    return 0;
-  if(le32(sb->s_log_block_size)>2)  /* block size max = 4096, can be 8192 on alpha */
+  if(test_EXT2(sb, NULL)!=0)
     return 0;
   if(le16(sb->s_block_group_nr)!=0)
     return 0;
