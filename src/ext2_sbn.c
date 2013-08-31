@@ -37,24 +37,21 @@
 #include "ext2.h"
 #include "ext2_sbn.h"
 
-static const  uint64_t group_size[3]={
-    (EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0),
-    (EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1),
-    (EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2),
-  };
+// blocksize=1024, 2048, 4096, 65536
+// blocks per blocksgroup=8*blocksize
+static const  uint64_t group_size[4]={
+  (EXT2_MIN_BLOCK_SIZE<<0)*8*(EXT2_MIN_BLOCK_SIZE<<0),
+  (EXT2_MIN_BLOCK_SIZE<<1)*8*(EXT2_MIN_BLOCK_SIZE<<1),
+  (EXT2_MIN_BLOCK_SIZE<<2)*8*(EXT2_MIN_BLOCK_SIZE<<2),
+  (uint64_t)(EXT2_MIN_BLOCK_SIZE<<6)*8*(EXT2_MIN_BLOCK_SIZE<<6),
+};
 static const  uint64_t factors[3]={3,5,7};
 
 static uint64_t next_sb(const uint64_t hd_offset_old)
 {
   uint64_t hd_offset=0;
   int j;
-  if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<0)
-    hd_offset=EXT2_MIN_BLOCK_SIZE<<0;
-  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<1)
-    hd_offset=EXT2_MIN_BLOCK_SIZE<<1;
-  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<2)
-    hd_offset=EXT2_MIN_BLOCK_SIZE<<2;
-  for(j=0; j<3; j++)
+  for(j=0; j<4; j++)
   {
     int i;
     const uint64_t offset=(j==0?2*512:0);
@@ -67,6 +64,14 @@ static uint64_t next_sb(const uint64_t hd_offset_old)
 	hd_offset=val* group_size[j] + offset;
     }
   }
+  if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<0 && hd_offset < EXT2_MIN_BLOCK_SIZE<<0)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<0;
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<1 && hd_offset < EXT2_MIN_BLOCK_SIZE<<1)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<1;
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<2 && hd_offset < EXT2_MIN_BLOCK_SIZE<<2)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<2;
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<6 && hd_offset < EXT2_MIN_BLOCK_SIZE<<6)
+    hd_offset=EXT2_MIN_BLOCK_SIZE<<6;
   return hd_offset;
 }
 
@@ -98,7 +103,9 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
     wattroff(stdscr, A_REVERSE);
   }
 #endif
-  for(hd_offset=0;hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;hd_offset=next_sb(hd_offset))
+  for(hd_offset=0;
+      hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;
+      hd_offset=next_sb(hd_offset))
   {
 #ifdef HAVE_NCURSES
     const unsigned long int percent=hd_offset*100/partition->part_size;
@@ -106,8 +113,10 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Search ext2/ext3/ext4 superblock %10lu/%lu %lu%%", (long unsigned)(hd_offset/disk_car->sector_size),
-	  (long unsigned)(partition->part_size/disk_car->sector_size),percent);
+      wprintw(stdscr, "Search ext2/ext3/ext4 superblock %10lu/%lu %lu%%",
+	  (long unsigned)(hd_offset/disk_car->sector_size),
+	  (long unsigned)(partition->part_size/disk_car->sector_size),
+	  percent);
       wrefresh(stdscr);
       ind_stop|=check_enter_key_or_s(stdscr);
       old_percent=percent;

@@ -67,8 +67,17 @@ int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
     return 5;
   if(td_ext2fs_blocks_count(sb) == 0) /* reject empty filesystem */
     return 6;
-  if(le32(sb->s_log_block_size)>2)  /* block size max = 4096, can be 8192 on alpha */
-    return 7;
+  switch(le32(sb->s_log_block_size))
+  {
+    case 0:
+    case 1:
+    case 2: /* block size = 4096 (default) */
+    case 3: /* can be 8192 on alpha */
+    case 6: /* 64 KiB */
+      break;
+    default:
+      return 7;
+  }
   if(le32(sb->s_blocks_per_group)==0)
     return 8;
   if(partition==NULL)
