@@ -1325,6 +1325,8 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	  const char *ifbytecount=NULL;
 	  if(nbytes - (i+0x0A) < tiff_size)
 	    tiff_size=nbytes - (i+0x0A);
+	  if(file_recovery->time==0)
+	    file_recovery->time=get_date_from_tiff_header(tiff, tiff_size);
 	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
 	  if(thumb_data!=NULL)
 	  {
