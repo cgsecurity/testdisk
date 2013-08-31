@@ -46,9 +46,8 @@
 /* #include "guid_cmp.h" */
 extern const arch_fnct_t arch_i386;
 
-static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose);
-static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header, const int my_type, const int verbose);
-static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find);
+static void set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, partition_t *partition);
+static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header);
 
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header)
 { return (ntfs_header->sector_size[1]<<8)+ntfs_header->sector_size[0]; }
@@ -67,7 +66,7 @@ int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const i
     free(buffer);
     return 1;
   }
-  set_NTFS_info(disk_car, (struct ntfs_boot_sector*)buffer, partition, verbose);
+  set_NTFS_info(disk_car, (struct ntfs_boot_sector*)buffer, partition);
   free(buffer);
   return 0;
 }
@@ -106,11 +105,11 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
   partition->part_size=part_size;
   partition->part_type_i386=P_NTFS;
   partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
-  set_NTFS_info(disk_car, ntfs_header, partition, verbose);
+  set_NTFS_info(disk_car, ntfs_header, partition);
   return 0;
 }
 
-static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose)
+static void set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, partition_t *partition)
 {
   partition->fsname[0]='\0';
   partition->blocksize=ntfs_header->sectors_per_cluster*ntfs_sector_size(ntfs_header);
@@ -118,7 +117,7 @@ static int set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_he
     snprintf(partition->info, sizeof(partition->info), "NTFS, blocksize=%u", partition->blocksize);
   else
     snprintf(partition->info, sizeof(partition->info), "NTFS found using backup sector, blocksize=%u", partition->blocksize);
-  return ntfs_read_MFT(disk_car, partition, ntfs_header, 0x60, verbose);
+  ntfs_get_volume_name(disk_car, partition, ntfs_header);
 }
 
 int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind)
@@ -185,231 +184,134 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
   return 0;
 }
 
-/* */
-int ntfs_get_attr(const char *mft_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find)
+const ntfs_attribheader *ntfs_getattributeheaders(const ntfs_recordheader* record)
 {
-  const char *attr_record;
-  /* Only check for magic DWORD here, fixup should have happened before */
-  if(memcmp(mft_record,"FILE",4)) return 2;	/* NTFS_RECORD_TYPES == magic_FILE ?*/
-  if(NTFS_GETU16(mft_record + 0x14)%8!=0)
-    return 2;
-  if(NTFS_GETU16(mft_record + 0x14)<42)		/* sizeof(MFT_RECORD)>=42 */
-    return 2;
-  /*	screen_buffer_add("FILE\n"); */
-  /*	screen_buffer_add("seq nbr %lu ",NTFS_GETU16(mft_record+0x10)); */
-  /*	screen_buffer_add("main MFT record %lu ",NTFS_GETU64(mft_record+0x20)); */
-  /* location of first attribute */
-  attr_record= mft_record + NTFS_GETU16(mft_record + 0x14);
-  return ntfs_get_attr_aux(attr_record, my_type, partition, end, verbose, file_name_to_find);
+  const char* location = (const char*)record;
+  if(le32(record->magic)!=NTFS_Magic ||
+      le16(record->attrs_offset)%8!=0 ||
+      le16(record->attrs_offset)<42)
+    return NULL;
+  location += le16(record->attrs_offset);
+  return (const ntfs_attribheader *)location;
 }
 
-static int ntfs_get_attr_aux(const char *attr_record, const int my_type, partition_t *partition, const char *end, const int verbose, const char*file_name_to_find)
+static const ntfs_attribheader* ntfs_searchattribute(const ntfs_attribheader* attrib, uint32_t attrType, const char* end, int skip)
 {
-  while(1)
+  if(attrib==NULL)
+    return NULL;
+  /* Now we should be at attributes */
+  while((const char *)attrib + sizeof(ntfs_attribheader) < end &&
+      le32(attrib->type)!= -1)
   {
-    int attr_type;
-    /* Resident attributes attr_len>=24(0x18), non resident is bigger */
-    unsigned int attr_len;
-    if(attr_record+0x18>=end)
+    const unsigned int attr_len=le32(attrib->cbAttribute);
+    if(attr_len%8!=0 || attr_len<0x18 || attr_len>0x10000000 ||
+      (const char *)attrib + attr_len >= end)
+      return NULL;
+    if(!skip)
     {
-      if(verbose>1)
-      {
-        log_error("ntfs_get_attr attr_record+0x18>=end\n");
-      }
-      return 2;
-    }
-    attr_type=NTFS_GETU32(attr_record);
-    if(attr_type==-1) /* attribute list end with type -1 */
-      return 0;
-    attr_len=NTFS_GETU16(attr_record+4);
-    if((attr_len%8!=0)||(attr_len<0x18))
-    {
-      if(verbose>1)
-      {
-        log_error("ntfs_get_attr attr_type=%x attr_len=%u (attr_len%%8!0)||(attr_len<0x18)\n",attr_type,attr_len);
-      }
-      return 2;
-    }
-    if(verbose>1)
-    {
-      log_info("attr_type=%x %s\n",attr_type,(NTFS_GETU8(attr_record+8)==0?"resident":"non resident"));
-      dump_log(attr_record,attr_len);
-    }
-    if(NTFS_GETU8(attr_record+8)==0)	/* attribute is resident */
-    {
-      unsigned int attr_value_length=NTFS_GETU16(attr_record+0x10);
-      unsigned int attr_value_offset=NTFS_GETU16(attr_record+0x14);
-      const char *attr_td_list_entry=attr_record+attr_value_offset;
-      if(attr_value_offset%8!=0)
-      {
-#ifdef NTFS_DEBUG
-        log_debug("ntfs_get_attr attr_value_offset=%u (%%8!=0)\n",attr_value_offset);
-#endif
-        return 2;
-      }
-      if(attr_td_list_entry+26>=end)
-      {
-#ifdef NTFS_DEBUG
-        log_debug("ntfs_get_attr attr_td_list_entry+26=%p, end=%p\n",attr_td_list_entry+26,end);
-#endif
-        return 2;
-      }
-      /* We found the attribute type. Is the name correct, too? */
-      if((attr_value_offset+attr_value_length>attr_len) || (attr_td_list_entry+attr_len >= end))
-      {
-#ifdef NTFS_DEBUG
-        // log_debug("ntfs_get_attr \n");
-#endif
-        return 2;
-      }
-      if((attr_type==my_type)&&(attr_value_offset!=0))
-      {
-        switch(attr_type)
-        {
-          case 0x30:	/* AT_FILE_NAME */
-            {
-              const char *file_name_attr=attr_td_list_entry;
-              unsigned int file_name_length;
-              const char *name_it;
-              if(file_name_attr+0x42>=end)
-                return 2;
-              file_name_length=NTFS_GETU8(file_name_attr+0x40);	/* size in unicode char */
-              if(file_name_attr+0x42+2*file_name_length>=end)
-                return 2;
-              {
-                char file_name[256+1];	/* used size is file_name_length+1 */
-                unsigned int i;
-                /*		screen_buffer_add("MFT record nbr %lu ",NTFS_GETU64(file_name_attr)); */
-                for(name_it=file_name_attr+0x42,i=0;i<file_name_length; name_it+=2,i++)
-                  file_name[i]=*name_it;
-                file_name[i]='\0';
-                if(verbose>1)
-                {
-                  log_verbose("file_name=%s\n",file_name);
-                }
-                if(file_name_to_find!=NULL)
-                {
-                  if(attr_type==my_type)
-                  {
-                    if(strcmp(file_name_to_find,file_name)==0)
-                      return 1;
-                    else
-                      return 2;
-                  }
-                } else
-                  screen_buffer_add("%s\n",file_name);
-              }
-            }
-            break;
-          case 0x60:	/* AT_VOLUME_NAME */
-            {
-              unsigned int volume_name_length=attr_value_length;
-              const char *name_it;
-              char *dest=partition->fsname;
-              volume_name_length/=2;	/* Unicode */
-              if(volume_name_length>sizeof(partition->fsname)-1)
-                volume_name_length=sizeof(partition->fsname)-1;
-              for(name_it=attr_td_list_entry;(volume_name_length>0) && (*name_it!='\0') && (name_it[1]=='\0'); name_it+=2,volume_name_length--)
-                *dest++=*name_it;
-              *dest='\0'; /* 27 january 2003: Correct a bug found by Andreas du Plessis-Denz */
-            }
-            return 1;
-          case 0x90:	/* AT_INDEX_ROOT */
-            return NTFS_GETU32(attr_td_list_entry+8);	/* index_block_size */
-        }
-      }
+      if(attrib->type == attrType)
+	return attrib;
     }
     else
-    {	/* attribute is not resident */
-      if(attr_type==my_type)
-      {
-        switch(attr_type)
-        {
-          case 0x80:	/* AT_DATA */
-	    {
-	      /* buf must be unsigned! */
-	      const unsigned char *buf;
-	      uint8_t b;                   	/* Current byte offset in buf. */
-	      uint16_t mapping_pairs_offset;
-	      const unsigned char*attr_end;     /* End of attribute. */
-	      long lcn;
-	      int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
-	      mapping_pairs_offset=NTFS_GETU16(attr_record+32);
-	      buf=(const unsigned char*)attr_record + mapping_pairs_offset;
-	      attr_end = (const unsigned char*)attr_record + attr_len;
-	      lcn = 0;
-	      /* return first element of the run_list */
-	      b = *buf & 0xf;
-	      if (b){
-		if (buf + b > attr_end)
-		{
-		  log_error("Attribut AT_DATA: bad size\n");
-		  return 0;
-		}
-		for (deltaxcn = (int8_t)buf[b--]; b; b--)
-		  deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
-		/* Assume a negative length to indicate data corruption */
-		if (deltaxcn < 0)
-		  log_error("Invalid length in mapping pairs array.\n");
-	      } else { /* The length entry is compulsory. */
-		log_error("Missing length entry in mapping pairs array.\n");
-	      }
-	      if (deltaxcn >= 0)
-	      {
-		if (!(*buf & 0xf0))
-		{
-		  log_info("LCN_HOLE\n");
-		}
-		else
-		{
-		  /* Get the lcn change which really can be negative. */
-		  uint8_t b2 = *buf & 0xf;
-		  b = b2 + ((*buf >> 4) & 0xf);
-		  if (buf + b > attr_end)
-		  {
-		    log_error("Attribut AT_DATA: bad size\n");
-		    return 0;
-		  }
-		  for (deltaxcn = (int8_t)buf[b--]; b > b2; b--)
-		    deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
-		  /* Change the current lcn to it's new value. */
-		  lcn += deltaxcn;
-		  /* Check lcn is not below -1. */
-		  if (lcn < -1) {
-		    log_error("Invalid LCN < -1 in mapping pairs array.");
-		    return 0;
-		  }
-		  if(verbose>1)
-		  {
-		    log_verbose("LCN %ld\n",lcn);
-		  }
-		  if(attr_type==my_type)
-		    return lcn;
-		}
-	      }
-	    }
-            break;
-        }
-      }
+      skip = 0;
+    attrib=(const ntfs_attribheader*)((const char*)attrib + attr_len);
+  }
+  return NULL;
+}
+
+const ntfs_attribheader* ntfs_findattribute(const ntfs_recordheader* record, uint32_t attrType, const char* end)
+{
+  const ntfs_attribheader *attrib = ntfs_getattributeheaders(record);
+  return ntfs_searchattribute(attrib, attrType, end, 0);
+}
+
+const ntfs_attribheader* ntfs_nextattribute(const ntfs_attribheader* attrib, uint32_t attrType, const char* end)
+{
+  return ntfs_searchattribute(attrib, attrType, end, 1);
+}
+
+const char* ntfs_getattributedata(const ntfs_attribresident* attrib, const char* end)
+{
+  const char* data = ((const char*)attrib) + le16(attrib->offAttribData);
+  if(le16(attrib->offAttribData)+le32(attrib->cbAttribData) > le32(attrib->header.cbAttribute) ||
+      data > end)
+    return NULL;
+  return data;
+}
+
+long int ntfs_get_first_rl_element(const ntfs_attribnonresident *attrnr, const char* end)
+{
+  /* return first element of the run_list */
+  /* buf must be unsigned! */
+  const unsigned char *buf;
+  uint8_t b;                   	/* Current byte offset in buf. */
+  const unsigned char*attr_end;     /* End of attribute. */
+  long lcn=0;
+  int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
+  buf=(const unsigned char*)attrnr + le16(attrnr->offDataRuns);
+  attr_end = (const unsigned char*)attrnr + le32(attrnr->header.cbAttribute);
+  if((const char *)attr_end > end)
+    return 0;
+  b = *buf & 0xf;
+  if(b==0)
+  {
+    log_error("Missing length entry in mapping pairs array.\n");
+    return 0;
+  }
+  if (buf + b > attr_end)
+  {
+    log_error("Attribut AT_DATA: bad size\n");
+    return 0;
+  }
+  for (deltaxcn = (int8_t)buf[b--]; b; b--)
+    deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
+  /* Assume a negative length to indicate data corruption */
+  if (deltaxcn < 0)
+  {
+    log_error("Invalid length in mapping pairs array.\n");
+    return 0;
+  }
+  if (!(*buf & 0xf0))
+  {
+    log_info("LCN_HOLE\n");
+    return 0;
+  }
+  {
+    /* Get the lcn change which really can be negative. */
+    const uint8_t b2 = *buf & 0xf;
+    b = b2 + ((*buf >> 4) & 0xf);
+    if (buf + b > attr_end)
+    {
+      log_error("Attribut AT_DATA: bad size\n");
+      return 0;
     }
-    attr_record+=attr_len;
+    for (deltaxcn = (int8_t)buf[b--]; b > b2; b--)
+      deltaxcn = (deltaxcn << 8) + (uint8_t)buf[b];
+    /* Change the current lcn to it's new value. */
+    lcn += deltaxcn;
+    /* Check lcn is not below -1. */
+    if (lcn < -1) {
+      log_error("Invalid LCN < -1 in mapping pairs array.");
+      return 0;
+    }
+    return lcn;
   }
 }
 
-static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header, const int my_type, const int verbose)
+static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header)
 {
   unsigned char *buffer;
-  char *attr;
   uint64_t mft_pos;
   unsigned int mft_record_size;
   unsigned int mft_size;
-  mft_pos=partition->part_offset+(uint64_t)(le16(ntfs_header->reserved)+le64(ntfs_header->mft_lcn)*ntfs_header->sectors_per_cluster)*ntfs_sector_size(ntfs_header);
   if(ntfs_header->clusters_per_mft_record>0)
     mft_record_size=ntfs_header->sectors_per_cluster*ntfs_header->clusters_per_mft_record;
   else
     mft_record_size=1<<(-ntfs_header->clusters_per_mft_record);
-  /* Only need the first 4 MFT record */
-  mft_size=4*mft_record_size*ntfs_sector_size(ntfs_header);
+  mft_size=mft_record_size*ntfs_sector_size(ntfs_header);
+  mft_pos=partition->part_offset+(uint64_t)(le16(ntfs_header->reserved)+le64(ntfs_header->mft_lcn)*ntfs_header->sectors_per_cluster)*ntfs_sector_size(ntfs_header);
+  /* Record 3 = $Volume */
+  mft_pos+=3*mft_size;
 #ifdef NTFS_DEBUG
   log_debug("NTFS cluster size = %u\n",ntfs_header->sectors_per_cluster);
   log_debug("NTFS MFT cluster = %lu\n",le64(ntfs_header->mft_lcn));
@@ -419,28 +321,34 @@ static int ntfs_read_MFT(disk_t *disk_car, partition_t *partition, const struct 
   if(mft_size==0)
   {
     log_error("Invalid MFT record size or NTFS sector size\n");
-    return 1;
+    return;
   }
   buffer=(unsigned char *)MALLOC(mft_size);
   if((unsigned)disk_car->pread(disk_car, buffer, mft_size, mft_pos) != mft_size)
   {
     log_error("NTFS: Can't read MFT\n");
     free(buffer);
-    return 1;
+    return;
   }
-  attr=(char*)buffer;
-  while(attr+0x30<=(char*)(buffer+mft_size))
   {
-    int res=ntfs_get_attr(attr, my_type, partition, (char*)buffer+mft_size, verbose, NULL);
-    if((res>0)|| (NTFS_GETU32(attr + 0x1C)<0x30))
+    const ntfs_attribresident *attrib=(const ntfs_attribresident *)ntfs_findattribute((const ntfs_recordheader*)buffer, 0x60, (char*)buffer+mft_size);
+    if(attrib && attrib->header.bNonResident==0)	/* attribute is resident */
     {
-      free(buffer);
-      return res;
+      char *dest=partition->fsname;
+      const char *name_it;
+      unsigned int volume_name_length=le32(attrib->cbAttribData);
+      volume_name_length/=2;	/* Unicode */
+      if(volume_name_length>sizeof(partition->fsname)-1)
+	volume_name_length=sizeof(partition->fsname)-1;
+      for(name_it=ntfs_getattributedata(attrib, (char*)(buffer+mft_size));
+	  volume_name_length>0 && *name_it!='\0' && name_it[1]=='\0';
+	  name_it+=2,volume_name_length--)
+	*dest++=*name_it;
+      *dest='\0'; /* 27 january 2003: Correct a bug found by Andreas du Plessis-Denz */
     }
-    attr+= NTFS_GETU32(attr + 0x1C);
   }
   free(buffer);
-  return 0;
+  return;
 }
 
 int is_part_ntfs(const partition_t *partition)

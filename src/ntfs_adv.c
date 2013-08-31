@@ -361,28 +361,37 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
 static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_t mft_sector, const int verbose, unsigned int *sectors_per_cluster, uint64_t *mft_lcn, uint64_t *mftmirr_lcn, unsigned int *mft_record_size)
 {
   char buffer[8*DEFAULT_SECTOR_SIZE];
-  const char *attr=buffer;
+  const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)buffer;
+  const ntfs_attribnonresident *attr80;
   if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition->part_offset + (uint64_t)mft_sector * disk_car->sector_size) != sizeof(buffer))
   {
     display_message("NTFS: Can't read mft_sector\n");
     return 1;
   }
-  *mft_lcn=ntfs_get_attr(attr, 0x80, partition, buffer+sizeof(buffer), verbose, NULL);
-  *mft_record_size=NTFS_GETU32(attr + 0x1C);
+  *mft_record_size=le32(record->bytes_allocated);
   if(*mft_record_size==0)
   {
     if(verbose>0)
       log_warning("read_mft_info failed: mft_record_size=0\n");
     return 2;
   }
-  attr+= NTFS_GETU32(attr + 0x1C);
-  if(attr < buffer || attr > buffer+sizeof(buffer))
+  attr80=(const ntfs_attribnonresident *)ntfs_findattribute(record, 0x80, buffer+sizeof(buffer));
+  if(attr80 && attr80->header.bNonResident)
+  {
+    *mft_lcn=ntfs_get_first_rl_element(attr80, buffer+sizeof(buffer));
+  }
+  record=(const struct ntfs_mft_record *)(buffer + (*mft_record_size));
+  if((const char *)record< buffer || (const char *)record> buffer+sizeof(buffer))
   {
     if(verbose<0)
       log_warning("read_mft_info failed: bad record.\n");
     return 2;
   }
-  *mftmirr_lcn=ntfs_get_attr(attr, 0x80, partition,buffer+sizeof(buffer), verbose, NULL);
+  attr80=(const ntfs_attribnonresident *)ntfs_findattribute(record, 0x80, buffer+sizeof(buffer));
+  if(attr80 && attr80->header.bNonResident)
+  {
+    *mftmirr_lcn=ntfs_get_first_rl_element(attr80, buffer+sizeof(buffer));
+  }
   /* Try to divide by the biggest number first */
   if(*mft_lcn<*mftmirr_lcn)
   {
@@ -475,19 +484,35 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   }
 #endif
   /* try to find MFT Backup first */
-  for(sector=(partition->part_size/disk_car->sector_size/2-20>0?partition->part_size/disk_car->sector_size/2-20:1);(sector<partition->part_size/disk_car->sector_size)&&(sector<=partition->part_size/disk_car->sector_size/2+20)&&(ind_stop==0);sector++)
+  for(sector=(partition->part_size/disk_car->sector_size/2-20>0?partition->part_size/disk_car->sector_size/2-20:1);
+      sector<partition->part_size/disk_car->sector_size && 
+      sector<=partition->part_size/disk_car->sector_size/2+20 &&
+      ind_stop==0;
+      sector++)
   {
-    if(disk_car->pread(disk_car, &buffer, 2 * DEFAULT_SECTOR_SIZE, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 2 * DEFAULT_SECTOR_SIZE)
+    if(disk_car->pread(disk_car, &buffer, 0x400, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 0x400)
     {
-      if(memcmp(buffer,"FILE",4)==0 && (NTFS_GETU16(buffer+ 0x14)%8==0) && (NTFS_GETU16(buffer+ 0x14)>=42)
-	  &&(NTFS_GETU16(buffer+22)==1))	/* MFT_RECORD_IN_USE */
+      const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)&buffer;
+      if(memcmp(buffer,"FILE",4)==0 &&
+	  le16(record->attrs_offset)%8==0 &&
+	  le16(record->attrs_offset)>=42 &&
+	  le16(record->flags)==1)	/* MFT_RECORD_IN_USE */
       {
-	int res;
-	res=ntfs_get_attr(buffer, 0x30, partition, buffer+2*DEFAULT_SECTOR_SIZE, verbose, "$MFT");
+	const ntfs_attribheader *attr30;
+	int res=0;
+	attr30=ntfs_findattribute(record, 0x30, buffer+0x400);
+	if(attr30 && attr30->bNonResident==0)
+	{
+	  const TD_FILE_NAME_ATTR *file_name_attr=(const TD_FILE_NAME_ATTR *)ntfs_getattributedata((const ntfs_attribresident *)attr30, buffer+0x400);
+	  if(file_name_attr->file_name_length==4 &&
+	      (const char*)&file_name_attr->file_name[0]+8 <= buffer+0x400 &&
+	      memcmp(file_name_attr->file_name,"$\0M\0F\0T\0", 8)==0)
+	    res=1;
+	}
 	if(res==1)
 	{
 	  int tmp;
-	  log_info("mft at %lu, seq=%u, main=%u res=%d\n",(long unsigned)sector,NTFS_GETU8(buffer+0x10),(unsigned int)NTFS_GETU32(buffer+0x20),res);
+	  log_info("mft at %lu\n",(long unsigned)sector);
 	  tmp=read_mft_info(disk_car, partition, sector, verbose, &sectors_per_cluster, &mft_lcn, &mftmirr_lcn, &mft_record_size);
 	  if(tmp==0)
 	  {
@@ -532,16 +557,29 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
       }
     }
 #endif
-    if(disk_car->pread(disk_car, &buffer, 2 * DEFAULT_SECTOR_SIZE, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 2 * DEFAULT_SECTOR_SIZE)
+    if(disk_car->pread(disk_car, &buffer, 0x400, partition->part_offset + sector * (uint64_t)disk_car->sector_size) == 0x400)
     {
-      if(memcmp(buffer,"FILE",4)==0 && (NTFS_GETU16(buffer+ 0x14)%8==0) && (NTFS_GETU16(buffer+ 0x14)>=42))
+      const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)&buffer;
+      if(memcmp(buffer,"FILE",4)==0 &&
+	  le16(record->attrs_offset)%8==0 &&
+	  le16(record->attrs_offset)>=42 &&
+	  le16(record->flags)==1)	/* MFT_RECORD_IN_USE */
       {
-	int res;
-	res=ntfs_get_attr(buffer, 0x30, partition, buffer+2*DEFAULT_SECTOR_SIZE, verbose, "$MFT");
+	const ntfs_attribheader *attr30;
+	int res=0;
+	attr30=ntfs_findattribute(record, 0x30, buffer+0x400);
+	if(attr30 && attr30->bNonResident==0)
+	{
+	  const TD_FILE_NAME_ATTR *file_name_attr=(const TD_FILE_NAME_ATTR *)ntfs_getattributedata((const ntfs_attribresident *)attr30, buffer+0x400);
+	  if(file_name_attr->file_name_length==4 &&
+	      (const char*)&file_name_attr->file_name[0]+8 <= buffer+0x400 &&
+	      memcmp(file_name_attr->file_name,"$\0M\0F\0T\0", 8)==0)
+	    res=1;
+	}
 	if(res==1)
 	{
 	  int tmp;
-	  log_info("mft at %lu, seq=%u, main=%u res=%d\n",(long unsigned)sector,NTFS_GETU8(buffer+0x10),(unsigned int)NTFS_GETU32(buffer+0x20),res);
+	  log_info("mft at %lu\n", (long unsigned)sector);
 	  tmp=read_mft_info(disk_car, partition, sector, verbose, &sectors_per_cluster, &mft_lcn, &mftmirr_lcn, &mft_record_size);
 	  if(tmp==0)
 	  {
@@ -617,6 +655,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   /* TODO read_mft_info(partition,sector,*sectors_per_cluster,*mft_lcn,*mftmirr_lcn,*mft_record_size); */
   if(sectors_per_cluster>0 && mft_record_size>0)
   {
+    // 0x90 AT_INDEX_ROOT
+    const ntfs_attribheader *attr90;
     unsigned int index_block_size=4096;
     log_info("ntfs_find_mft: sectors_per_cluster %u\n",sectors_per_cluster);
     log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
@@ -628,8 +668,14 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
       display_message("NTFS Can't read \"root directory\" in MFT\n");
       return 1;
     }
-    index_block_size=ntfs_get_attr(buffer, 0x90, partition, buffer+mft_record_size, verbose, NULL);
-    if(index_block_size%512!=0)
+    attr90=ntfs_findattribute((const ntfs_recordheader*)buffer, 0x90, buffer+mft_record_size);
+    if(attr90 && attr90->bNonResident==0)
+    {
+      const TD_INDEX_ROOT *index_root=(const TD_INDEX_ROOT *)ntfs_getattributedata((const ntfs_attribresident *)attr90, buffer+mft_record_size);
+      if(index_root)
+	index_block_size=le32(index_root->index_block_size);
+    }
+    if(index_block_size%512!=0 || index_block_size==0)
       index_block_size=4096;
     log_info("ntfs_find_mft: index_block_size    %u\n",index_block_size);
     create_ntfs_boot_sector(disk_car,partition, interface, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size,current_cmd);
