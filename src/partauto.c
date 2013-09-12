@@ -117,6 +117,11 @@ void autodetect_arch(disk_t *disk, const arch_fnct_t *arch)
     disk->arch=&arch_mac;
 #endif
 #else
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    if(disk->device[0]=='\\' && disk->device[1]=='\\' && disk->device[2]=='.' && disk->device[3]=='\\' && disk->device[5]==':')
+      disk->arch=&arch_none;
+    else
+#endif
     /* PC/Intel partition table is limited to 2 TB, 2^32 512-bytes sectors */
     if(disk->disk_size < ((uint64_t)1<<(32+9)))
       disk->arch=&arch_i386;
