@@ -59,6 +59,7 @@ static int align_pwrite(int (*fnct_pread)(disk_t *disk_car, void *buf, const uns
        (((size_t)(buf) & (disk_car->sector_size-1))!=0))
     )
   {
+    int tmp;
     if(disk_car->wbuffer==NULL)
       disk_car->wbuffer_size=128*512;
     while(disk_car->wbuffer_size < count_new)
@@ -75,7 +76,8 @@ static int align_pwrite(int (*fnct_pread)(disk_t *disk_car, void *buf, const uns
       memset(disk_car->wbuffer,0, disk_car->wbuffer_size);
     }
     memcpy((char*)disk_car->wbuffer+(offset_new%disk_car->sector_size),buf,count);
-    return fnct_pwrite(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
+    tmp=fnct_pwrite(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size);
+    return (tmp < (signed)count ? tmp : (signed)count);
   }
   return fnct_pwrite(disk_car, buf, count, offset_new);
 }
