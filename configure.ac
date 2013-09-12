@@ -469,7 +469,9 @@ AC_CHECK_MEMBERS([dal_t.error],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([dal_t.entity],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([dal_t.name],,,[#include <dal/dal.h>])
 AC_CHECK_MEMBERS([struct dal_ops.dev],,,[#include <dal/dal.h>])
-AC_CHECK_MEMBERS([struct struct_io_manager.set_option],,,[
+AC_CHECK_MEMBERS([struct struct_io_manager.set_option,
+struct struct_io_manager.read_blk64,
+struct struct_io_manager.write_blk64],,,[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif

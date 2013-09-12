@@ -36,28 +36,28 @@ case "$crosscompile_target" in
   *-msdosdjgpp)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
-	VER_E2FSPROGS=1.41.8
+	VER_E2FSPROGS=1.42.8
   ;;
   *-cygwin)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
-	VER_E2FSPROGS=1.42.2
+	VER_E2FSPROGS=1.42.8
 	export PKG_CONFIG_SYSROOT_DIR=/usr/i386-pc-cygwin/
   ;;
   *-mingw32)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
-	VER_E2FSPROGS=1.42.2
+	VER_E2FSPROGS=
   ;;
   i686-apple-darwin9|powerpc-apple-darwin)
 	VER_LIBNTFS3G="2011.3.28-RC"
 	VER_NTFSPROGS=
-	VER_E2FSPROGS=1.41.8
+	VER_E2FSPROGS=1.42.8
   ;;
   *)
 	VER_LIBNTFS3G="2011.3.28-RC"
 	VER_NTFSPROGS=
-	VER_E2FSPROGS=1.42.2
+	VER_E2FSPROGS=1.42.8
   ;;
 esac
 prefix=/usr/$crosscompile_target

@@ -64,6 +64,8 @@ static errcode_t my_set_blksize(io_channel channel, int blksize);
 static errcode_t my_read_blk(io_channel channel, unsigned long block, int count, void *buf);
 static errcode_t my_write_blk(io_channel channel, unsigned long block, int count, const void *buf);
 static errcode_t my_flush(io_channel channel);
+static errcode_t my_read_blk64(io_channel channel, unsigned long long block, int count, void *buf);
+static errcode_t my_write_blk64(io_channel channel, unsigned long long block, int count, const void *buf);
 
 static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data);
 static void dir_partition_ext2_close(dir_data_t *dir_data);
@@ -80,7 +82,13 @@ static struct struct_io_manager my_struct_manager = {
         .flush = my_flush,
 	.write_byte= NULL,
 #ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_SET_OPTION
-	.set_option= NULL
+	.set_option= NULL,
+#endif
+#ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_READ_BLK64
+	.read_blk64=my_read_blk64,
+#endif
+#ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_WRITE_BLK64
+	.write_blk64=my_write_blk64,
 #endif
 };
 static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
@@ -153,7 +161,7 @@ static errcode_t my_set_blksize(io_channel channel, int blksize)
   return 0;
 }
 
-static errcode_t my_read_blk(io_channel channel, unsigned long block, int count, void *buf)
+static errcode_t my_read_blk64(io_channel channel, unsigned long long block, int count, void *buf)
 {
   ssize_t size;
   const my_data_t *my_data=(const my_data_t*)channel->private_data;
@@ -173,7 +181,12 @@ static errcode_t my_read_blk(io_channel channel, unsigned long block, int count,
   return 0;
 }
 
-static errcode_t my_write_blk(io_channel channel, unsigned long block, int count, const void *buf)
+static errcode_t my_read_blk(io_channel channel, unsigned long block, int count, void *buf)
+{
+  return my_read_blk64(channel, block, count, buf);
+}
+
+static errcode_t my_write_blk64(io_channel channel, unsigned long long block, int count, const void *buf)
 {
   EXT2_CHECK_MAGIC(channel, EXT2_ET_MAGIC_IO_CHANNEL);
 #if 1
@@ -186,6 +199,11 @@ static errcode_t my_write_blk(io_channel channel, unsigned long block, int count
 #else
   return 1;
 #endif
+}
+
+static errcode_t my_write_blk(io_channel channel, unsigned long block, int count, const void *buf)
+{
+  return my_write_blk64(channel, block, count, buf);
 }
 
 static errcode_t my_flush(io_channel channel)
