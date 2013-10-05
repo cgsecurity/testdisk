@@ -93,15 +93,30 @@ void interface_options(int *dump_ind, int *align, unsigned int *expert, char**cu
 	(*current_cmd)+=4;
 	*dump_ind=1;
       }
+      else if(strncmp(*current_cmd,"nodump",6)==0)
+      {
+	(*current_cmd)+=6;
+	*dump_ind=0;
+      }
       else if(strncmp(*current_cmd,"align",5)==0)
       {
 	(*current_cmd)+=5;
 	*align=1;
       }
+      else if(strncmp(*current_cmd,"noalign",7)==0)
+      {
+	(*current_cmd)+=7;
+	*align=0;
+      }
       else if(strncmp(*current_cmd,"expert",6)==0)
       {
 	(*current_cmd)+=6;
 	*expert=1;
+      }
+      else if(strncmp(*current_cmd,"noexpert",8)==0)
+      {
+	(*current_cmd)+=6;
+	*expert=0;
       }
       else
 	keep_asking=0;
