@@ -36,12 +36,12 @@ case "$crosscompile_target" in
   *-msdosdjgpp)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
-	VER_E2FSPROGS=1.42.8
+	VER_E2FSPROGS="1.42.8"
   ;;
   *-cygwin)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
-	VER_E2FSPROGS=1.42.8
+	VER_E2FSPROGS="1.42.8"
 	export PKG_CONFIG_SYSROOT_DIR=/usr/i386-pc-cygwin/
   ;;
   *-mingw32)
@@ -52,12 +52,12 @@ case "$crosscompile_target" in
   i686-apple-darwin9|powerpc-apple-darwin)
 	VER_LIBNTFS3G="2011.3.28-RC"
 	VER_NTFSPROGS=
-	VER_E2FSPROGS=1.42.8
+	VER_E2FSPROGS="1.42.8"
   ;;
   *)
 	VER_LIBNTFS3G="2011.3.28-RC"
 	VER_NTFSPROGS=
-	VER_E2FSPROGS=1.42.8
+	VER_E2FSPROGS="1.42.8"
   ;;
 esac
 prefix=/usr/$crosscompile_target
@@ -311,13 +311,13 @@ then
 # libewf should work under MacOSX but it hasn't been tested
 # use  --with-ncurses-lib=$prefix/usr/lib to get binaries that don't need libncurses
 # but users may be unable to navigate...
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt
                 ;;
 	  i686-apple-darwin9)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt
                 ;;
           i586-pc-msdosdjgpp)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv --disable-qt
                 ;;
           i386-pc-cygwin)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-qt
@@ -329,7 +329,10 @@ then
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok --enable-qt
                 ;;
 	  arm-marvell-linux-gnu)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs --disable-qt
+                ;;
+	  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ntfs --disable-qt
                 ;;
           *)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT

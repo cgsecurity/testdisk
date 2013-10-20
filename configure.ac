@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.0-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="August 2013"
+TESTDISKDATE="October 2013"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -210,7 +210,7 @@ AC_ARG_ENABLE([qt],
        no)  use_qt=false ;;
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-qt]) ;;
      esac],
-     [use_qt=false])
+     [use_qt=true])
 
 AC_ARG_ENABLE([ncmouse],
     AS_HELP_STRING(--enable-ncmouse,enable use of mouse in ncurses(default is NO)),
@@ -541,6 +541,10 @@ if test -z "${use_ncurses}"; then
       AC_DEFINE([ENABLE_MOUSE],1,[Define to 1 if the ncurses mouse interface is enabled])
     fi
   fi
+  ac_save_LIBS="$LIBS"
+  LIBS="$LIBS $photorec_LDADD"
+  AC_CHECK_FUNCS([assume_default_colors])
+  LIBS="$ac_save_LIBS"
 else
   AC_MSG_WARN(Use of ncurses library disabled)
 fi
@@ -802,14 +806,16 @@ AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
 if test "$use_qt" = "true";
 then
-  PKG_CHECK_MODULES(QTGUI,  QtGui  >= 4.0.1)
+  PKG_CHECK_MODULES(QTGUI, [QtGui  >= 4.0.1],,use_qt=false)
   AC_CHECK_TOOLS(MOC,[moc-qt4 moc],)
   if test x$MOC = x ; then
 	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
+	use_qt=false
   fi 
   AC_CHECK_TOOLS(RCC,[rcc-qt4 rcc],)
   if test x$RCC = x ; then
 	AC_MSG_WARN(Could not find a rcc-qt4 or rcc tool in your PATH.)
+	use_qt=false
   fi 
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
