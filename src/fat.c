@@ -475,17 +475,6 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       log_error("check_FAT: Bad number %u of FAT\n", fat_header->fats);
       return 1;
   }
-  if(fat_header->media!=0xF0 && fat_header->media<0xF8)
-  {	/* Legal values are 0xF0, 0xF8-0xFF */
-    screen_buffer_add("check_FAT: Bad media descriptor (0x%2x!=0xf8)\n",fat_header->media);
-    log_error("check_FAT: Bad media descriptor (0x%2x!=0xf8)\n",fat_header->media);
-    return 1;
-  }
-  if(fat_header->media!=0xF8)
-  { /* the only value I have ever seen is 0xF8 */
-    screen_buffer_add("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
-    log_warning("check_FAT: Unusual media descriptor (0x%2x!=0xf8)\n",fat_header->media);
-  }
   if(fat_sector_size(fat_header)!=disk_car->sector_size)
   {
     screen_buffer_add("check_FAT: number of bytes per sector mismatches %u (FAT) != %u (HD)\n",
@@ -504,6 +493,12 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
   if(verbose>1)
   {
     log_info("number of cluster = %lu\n",no_of_cluster);
+  }
+  if(fat_header->media!=0xF0 && fat_header->media<0xF8)
+  {	/* Legal values are 0xF0, 0xF8-0xFF */
+    screen_buffer_add("check_FAT: Bad media descriptor (0x%02x!=0xf8)\n",fat_header->media);
+    log_error("check_FAT: Bad media descriptor (0x%02x!=0xf8)\n",fat_header->media);
+    return 1;
   }
   if(no_of_cluster<4085)
   {
@@ -544,6 +539,11 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
       screen_buffer_add("Should be marked as FAT12\n");
       log_warning("Should be marked as FAT12\n");
     }
+    if(fat_header->media!=0xF0)
+    {
+      screen_buffer_add("check_FAT: Unusual media descriptor (0x%02x!=0xf0)\n", fat_header->media);
+      log_warning("check_FAT: Unusual media descriptor (0x%02x!=0xf0)\n", fat_header->media);
+    }
   }
   else if(no_of_cluster<65525)
   {
@@ -578,6 +578,11 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     {
       screen_buffer_add("Should be marked as FAT16\n");
       log_warning("Should be marked as FAT16\n");
+    }
+    if(fat_header->media!=0xF8)
+    { /* the only value I have ever seen is 0xF8 */
+      screen_buffer_add("check_FAT: Unusual media descriptor (0x%02x!=0xf8)\n", fat_header->media);
+      log_warning("check_FAT: Unusual media descriptor (0x%02x!=0xf8)\n", fat_header->media);
     }
   }
   else
@@ -619,6 +624,16 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     {
       screen_buffer_add("Should be marked as FAT32\n");
       log_warning("Should be marked as FAT32\n");
+    }
+    if(fat_header->media!=0xF8)
+    { /* the only value I have ever seen is 0xF8 */
+      screen_buffer_add("check_FAT: Unusual media descriptor (0x%02x!=0xf8)\n", fat_header->media);
+      log_warning("check_FAT: Unusual media descriptor (0x%02x!=0xf8)\n", fat_header->media);
+    }
+    if(fat_header->BS_DrvNum!=0 && (fat_header->BS_DrvNum<0x80 || fat_header->BS_DrvNum>0x87))
+    {
+      screen_buffer_add("Warning: Unusual drive number (0x%02x!=0x80)\n", fat_header->BS_DrvNum);
+      log_warning("Warning: Unusual drive number (0x%02x!=0x80)\n", fat_header->BS_DrvNum);
     }
   }
   if(partition->part_size>0)

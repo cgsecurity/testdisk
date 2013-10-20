@@ -1108,7 +1108,6 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   fat_header->sector_size[0]=disk_car->sector_size & 0xFF;
   fat_header->sector_size[1]=disk_car->sector_size >>8;
   fat_header->fats=fats;
-  fat_header->media=0xF8;
   fat_header->secs_track=le16(disk_car->geom.sectors_per_head);
   fat_header->heads=le16(disk_car->geom.heads_per_cylinder);
   fat_header->marker=le16(0xAA55);
@@ -1167,6 +1166,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   switch(upart_type)
   {
     case UP_FAT12:
+      fat_header->media=0xF0;				/* Floppy */
       if((fat_length==0) || (dir_entries==0))
 	error=1;
       if((newboot[36]<0x80)||(newboot[36]>0x88))
@@ -1183,6 +1183,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
 	newboot[FAT1X_PART_NAME]='\0';
       break;
     case UP_FAT16:
+      fat_header->media=0xF8;				/* Hard Disk*/
       if((fat_length==0) || (dir_entries==0))
 	error=1;
       if((newboot[36]<0x80)||(newboot[36]>0x88))
@@ -1199,6 +1200,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
 	newboot[FAT1X_PART_NAME]='\0';
       break;
     case UP_FAT32:
+      fat_header->media=0xF8;				/* Hard Disk*/
       if((fat_length==0) || (root_cluster==0))
 	error=1;
       fat_header->fat_length=le16(0);
