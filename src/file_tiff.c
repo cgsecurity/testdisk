@@ -39,8 +39,9 @@
 #include "file_tiff.h"
 #include "log.h"
 
+extern const file_hint_t file_hint_raf;
+
 static void register_header_check_tiff(file_stat_t *file_stat);
-static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
 static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
 
@@ -53,9 +54,6 @@ const file_hint_t file_hint_tiff= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_tiff
 };
-
-static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
-static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
 
 static unsigned int type2size(const unsigned int type)
 {
@@ -144,6 +142,10 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
   const uint32_t *tiff_next_diroff;
   const TIFFDirEntry *ifd;
   unsigned int j;
+  if(tiff_size < sizeof(TIFFHeader))
+    return NULL;
+  if(tiff_size < be32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
+    return NULL;
   /* Bound checking */
   if((const char*)ifd0 < (const char*)tiff ||
       (const char*)(ifd0+1) > (const char*)tiff + tiff_size)
@@ -201,6 +203,10 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
   const uint32_t *tiff_next_diroff;
   const TIFFDirEntry *ifd;
   unsigned int j;
+  if(tiff_size < sizeof(TIFFHeader))
+    return NULL;
+  if(tiff_size < le32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
+    return NULL;
   /* Bound checking */
   if((const char*)ifd0 < (const char*)tiff ||
       (const char*)(ifd0+1) > (const char*)tiff + tiff_size)
@@ -254,20 +260,10 @@ static const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const un
 
 const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error)
 {
-  if(tiff_size < sizeof(TIFFHeader))
-    return NULL;
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
-  {
-    if(tiff_size < be32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
-      return NULL;
     return find_tag_from_tiff_header_be(tiff, tiff_size, tag, potential_error);
-  }
   else if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
-  {
-    if(tiff_size < le32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
-      return NULL;
     return find_tag_from_tiff_header_le(tiff, tiff_size, tag, potential_error);
-  }
   return NULL;
 }
 
@@ -299,52 +295,70 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
   return mktime(&tm_time);
 }
 
-static void register_header_check_tiff(file_stat_t *file_stat)
+static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff, file_stat);
-  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff, file_stat);
+  const char *potential_error=NULL;
+  const char *tag_make;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_tiff.extension;
+  tag_make=find_tag_from_tiff_header_be((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
+  if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+  {
+    if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
+	strcmp(tag_make, "PENTAX             ")==0)
+      file_recovery_new->extension="pef";
+    else if(strcmp(tag_make, "NIKON CORPORATION")==0)
+      file_recovery_new->extension="nef";
+    else if(strcmp(tag_make, "Kodak")==0)
+      file_recovery_new->extension="dcr";
+  }
+  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->file_check=&file_check_tiff;
+  return 1;
 }
 
-static int header_check_tiff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,tiff_header_be,sizeof(tiff_header_be))==0 ||
-      memcmp(buffer,tiff_header_le,sizeof(tiff_header_le))==0)
+  const char raf_fp[15]={0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00,  0x01, 0x00, 0x00, 0xf0, 0x0d, 0x00, 0x01};
+  const char *potential_error=NULL;
+  /* Avoid a false positiv with some RAF files */
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+    file_recovery->file_stat->file_hint==&file_hint_raf &&
+    memcmp(buffer, raf_fp, 15)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_tiff.extension;
+  /* Canon RAW */
+  if(buffer[8]=='C' && buffer[9]=='R' && buffer[10]==2)
+    file_recovery_new->extension="cr2";
+  else if(find_tag_from_tiff_header_le((const TIFFHeader *)buffer, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
   {
-    const char *potential_error=NULL;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_tiff.extension;
-    /* Canon RAW */
-    if(buffer[8]=='C' && buffer[9]=='R' && buffer[10]==2)
-      file_recovery_new->extension="cr2";
-    else if(find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
-    {
-      /* Adobe Digital Negative */
-      file_recovery_new->extension="dng";
-    }
-    else
-    {
-      const char *tag_make;
-      tag_make=find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
-      if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
-      {
-	if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
-	    strcmp(tag_make, "PENTAX             ")==0)
-	  file_recovery_new->extension="pef";
-	else if(strcmp(tag_make, "NIKON CORPORATION")==0)
-	  file_recovery_new->extension="nef";
-	else if(strcmp(tag_make, "Kodak")==0)
-	  file_recovery_new->extension="dcr";
-	else if(strcmp(tag_make, "SONY")==0)
-	  file_recovery_new->extension="sr2";
-	else if(strncmp(tag_make, "SONY ",5)==0)
-	  file_recovery_new->extension="arw";
-      }
-    }
-    file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
-    file_recovery_new->file_check=&file_check_tiff;
-    return 1;
+    /* Adobe Digital Negative */
+    file_recovery_new->extension="dng";
   }
-  return 0;
+  else
+  {
+    const char *tag_make;
+    tag_make=find_tag_from_tiff_header_le((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
+    if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+    {
+      if(strcmp(tag_make, "SONY")==0)
+	file_recovery_new->extension="sr2";
+      else if(strncmp(tag_make, "SONY ",5)==0)
+	file_recovery_new->extension="arw";
+    }
+  }
+  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->file_check=&file_check_tiff;
+  return 1;
+}
+
+static void register_header_check_tiff(file_stat_t *file_stat)
+{
+  static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
+  static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
+  register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff_be_new, file_stat);
+  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le_new, file_stat);
 }
 
 static unsigned int tiff_le_read(const void *val, const unsigned int type)
