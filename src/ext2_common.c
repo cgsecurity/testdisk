@@ -73,6 +73,8 @@ int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
     case 1:
     case 2: /* block size = 4096 (default) */
     case 3: /* can be 8192 on alpha */
+    case 4: /* non standard blocksize */
+    case 5: /* non standard blocksize */
     case 6: /* 64 KiB */
       break;
     default:
