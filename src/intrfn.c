@@ -1133,19 +1133,22 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
     free(terminfo);
   }
 #endif
+  /* Should solve a problem with users who redefined the colors */
+  if(has_colors())
+  {
+    start_color();
+#ifdef HAVE_ASSUME_DEFAULT_COLORS
+    assume_default_colors(COLOR_WHITE,COLOR_BLACK);
+#endif
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+  }
   noecho();
 #ifndef DJGPP
   nonl(); /*don't use for Dos version but enter will work with it... dilema */
 #endif
   /*  intrflush(stdscr, FALSE); */
   cbreak();
-  /* Should solve a problem with users who redefined the colors */
-  if(has_colors())
-  {
-    start_color();
-    init_pair(1, COLOR_RED, COLOR_BLACK);
-    init_pair(2, COLOR_GREEN, COLOR_BLACK);
-  }
   curs_set(0);
   {
     int quit=0;
