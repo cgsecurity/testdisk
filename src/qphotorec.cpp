@@ -113,6 +113,8 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   {
     no_disk_warning();
   }
+  else
+    select_disk(list_disk->disk);
   setupUI();
 }
 
@@ -147,12 +149,15 @@ void QPhotorec::newSourceFile()
       "Raw Files (*.dd *.raw *.img)");
   if(!filename.isEmpty())
   {
+    disk_t *new_disk=NULL;
     QByteArray filenameArray= (filename).toUtf8();
-    list_disk=insert_new_disk(list_disk, file_test_availability(filenameArray.constData(), options->verbose, testdisk_mode));
-    if(list_disk!=NULL)
-      select_disk(list_disk->disk);
-    HDDlistWidget_updateUI();
-    PartListWidget_updateUI();
+    list_disk=insert_new_disk_aux(list_disk, file_test_availability(filenameArray.constData(), options->verbose, testdisk_mode), &new_disk);
+    if(new_disk!=NULL)
+    {
+      select_disk(new_disk);
+      HDDlistWidget_updateUI();
+      PartListWidget_updateUI();
+    }
   }
 }
 
@@ -242,6 +247,9 @@ void QPhotorec::PartListWidget_updateUI()
 	item=new QTableWidgetItem(QString(sizeinfo));
 	item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	PartListWidget->setItem(currentRow, 4, item);
+	/* Select the partition if it's already known */
+	if(selected_partition == partition)
+	  PartListWidget->setCurrentItem(item);
       }
       {
 	QString partname="";
@@ -274,6 +282,15 @@ void QPhotorec::select_disk(disk_t *disk)
   log_info("%s\n", selected_disk->description_short(selected_disk));
   part_free_list(list_part);
   list_part=init_list_part(selected_disk, NULL);
+  /* If only whole disk is listed, select it */
+  /* If there is the whole disk and only one partition, select the partition */
+  if(list_part!=NULL)
+  {
+    if(list_part->next==NULL)
+      selected_partition=list_part->part;
+    else if(list_part->next->next==NULL)
+      selected_partition=list_part->next->part;
+  }
   log_all_partitions(selected_disk, list_part);
 }
 
@@ -386,13 +403,18 @@ void QPhotorec::buttons_updateUI()
 void QPhotorec::HDDlistWidget_updateUI()
 {
   list_disk_t *element_disk;
+  int i;
   HDDlistWidget->clear();
-  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+  for(element_disk=list_disk, i=0;
+      element_disk!=NULL;
+      element_disk=element_disk->next, i++)
   {
     disk_t *disk=element_disk->disk;
     HDDlistWidget->addItem(
 	QIcon::fromTheme("drive-harddisk", QIcon(":res/gnome/drive-harddisk.png")),
 	disk->description_short(disk));
+    if(disk==selected_disk)
+      HDDlistWidget->setCurrentIndex(i);
   }
   HDDlistWidget->addItem(
       QIcon::fromTheme("application-x-cd-image", QIcon(":res/gnome/application-x-cd-image.png")),

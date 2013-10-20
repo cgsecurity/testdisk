@@ -102,37 +102,42 @@ void dup_partition_t(partition_t *dst, const partition_t *src)
 #endif
 }
 
-list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car)
+list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **the_disk)
 {
-  if(disk_car==NULL)
+  list_disk_t *tmp;
+  list_disk_t *prev=NULL;
+  list_disk_t *new_disk;
+  if(disk==NULL)
     return list_disk;
+  /* Add it at the end if it doesn't already exist */
+  for(tmp=list_disk;tmp!=NULL;tmp=tmp->next)
   {
-    list_disk_t *cur;
-    list_disk_t *prev=NULL;
-    list_disk_t *new_disk;
-    /* Add it at the end if it doesn't already exist */
-    for(cur=list_disk;cur!=NULL;cur=cur->next)
+    if(tmp->disk->device!=NULL && disk->device!=NULL &&
+	strcmp(tmp->disk->device, disk->device)==0)
     {
-      if(cur->disk->device!=NULL && disk_car->device!=NULL)
-      {
-	if(strcmp(cur->disk->device,disk_car->device)==0)
-	{
-	  disk_car->clean(disk_car);
-	  return list_disk;
-	}
-      }
-      prev=cur;
+      disk->clean(disk);
+      if(the_disk!=NULL)
+	*the_disk=tmp->disk;
+      return list_disk;
     }
-    new_disk=(list_disk_t *)MALLOC(sizeof(*new_disk));
-    new_disk->disk=disk_car;
-    if(prev!=NULL)
-    {
-      prev->next=new_disk;
-    }
-    new_disk->prev=prev;
-    new_disk->next=NULL;
-    return (list_disk!=NULL?list_disk:new_disk);
+    prev=tmp;
   }
+  new_disk=(list_disk_t *)MALLOC(sizeof(*new_disk));
+  new_disk->disk=disk;
+  if(prev!=NULL)
+  {
+    prev->next=new_disk;
+  }
+  new_disk->prev=prev;
+  new_disk->next=NULL;
+  if(the_disk!=NULL)
+    *the_disk=disk;
+  return (list_disk!=NULL?list_disk:new_disk);
+}
+
+list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk)
+{
+  return insert_new_disk_aux(list_disk, disk, NULL);
 }
 
 list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error)

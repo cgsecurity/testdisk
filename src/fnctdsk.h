@@ -30,6 +30,7 @@ unsigned int offset2head(const disk_t *disk_car, const uint64_t offset);
 unsigned int offset2cylinder(const disk_t *disk_car, const uint64_t offset);
 void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
+list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **the_disk);
 list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car);
 list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error);
 list_part_t *sort_partition_list(list_part_t *list_part);
