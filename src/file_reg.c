@@ -73,15 +73,17 @@ struct rgdb_block
 static int header_check_reg_9x(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct creg_file_header*header=(const struct creg_file_header*)buffer;
-  const struct rgdb_block*block=(const struct rgdb_block*)buffer+le32(header->rgdb_offset);
   if(le32(header->rgdb_offset)+4 > buffer_size)
     return 0;
-  if(memcmp(block,"RGDB",4)!=0)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->min_filesize=0x1000;
-  file_recovery_new->extension=file_hint_reg.extension;
-  return 1;
+  {
+    const struct rgdb_block*block=(const struct rgdb_block*)(buffer+le32(header->rgdb_offset));
+    if(memcmp(block,"RGDB",4)!=0)
+      return 0;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->min_filesize=0x1000;
+    file_recovery_new->extension=file_hint_reg.extension;
+    return 1;
+  }
 }
 
 struct regf_file_header
