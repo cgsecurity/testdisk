@@ -47,7 +47,6 @@
 #include "geometry.h"
 #include "geometryn.h"
 
-extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_none;
 #define INTER_DISK_X	0
 #define INTER_DISK_Y	8
