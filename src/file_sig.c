@@ -242,6 +242,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  if(*pos=='\0')
 	  {
 	    free(extension);
+	    free(tmp);
 	    return pos;
 	  }
 	  else if(*pos=='\\')
@@ -250,6 +251,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	    if(*pos=='\0')
 	    {
 	      free(extension);
+	    free(tmp);
 	      return pos;
 	    }
 	    else if(*pos=='b')
@@ -274,6 +276,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  if(*pos!='\'')
 	  {
 	    free(extension);
+	    free(tmp);
 	    return pos;
 	  }
 	  pos++;
@@ -301,6 +304,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	      if(*pos=='\0')
 	      {
 		free(extension);
+		free(tmp);
 		return pos;
 	      }
 	      else if(*pos=='b')
@@ -322,6 +326,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	  if(*pos!='"')
 	  {
 	    free(extension);
+	    free(tmp);
 	    return pos;
 	  }
 	  pos++;
@@ -354,6 +359,7 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	else
 	{
 	  free(extension);
+	  free(tmp);
 	  return pos;
 	}
       }
@@ -398,6 +404,7 @@ static void register_header_check_sig(file_stat_t *file_stat)
   if(fread(buffer,1,buffer_size,handle)!=buffer_size)
   {
     fclose(handle);
+    free(buffer);
     return;
   }
   fclose(handle);
