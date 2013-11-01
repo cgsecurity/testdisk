@@ -307,7 +307,7 @@ void xml_log_file_recovered(const file_recovery_t *file_recovery)
   uint64_t file_size=0;
   if(xml_handle==NULL)
     return;
-  if(file_recovery->filename==NULL)
+  if(file_recovery==NULL || file_recovery->filename[0]=='\0')
     return;
   xml_push("fileobject", "");
   xml_out2s("filename", relative_name(file_recovery->filename));
@@ -366,7 +366,7 @@ void xml_log_file_recovered2(const alloc_data_t *space, const file_recovery_t *f
 {
   if(xml_handle==NULL)
     return;
-  if(file_recovery->filename==NULL)
+  if(file_recovery==NULL || file_recovery->filename[0]=='\0')
     return;
   xml_push("fileobject", "");
   xml_out2s("filename", relative_name(file_recovery->filename));
