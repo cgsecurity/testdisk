@@ -64,13 +64,13 @@ static uint64_t next_sb(const uint64_t hd_offset_old)
 	hd_offset=val* group_size[j] + offset;
     }
   }
-  if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<0 && hd_offset < EXT2_MIN_BLOCK_SIZE<<0)
+  if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<0 && EXT2_MIN_BLOCK_SIZE<<0 < hd_offset)
     hd_offset=EXT2_MIN_BLOCK_SIZE<<0;
-  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<1 && hd_offset < EXT2_MIN_BLOCK_SIZE<<1)
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<1 && EXT2_MIN_BLOCK_SIZE<<1 < hd_offset)
     hd_offset=EXT2_MIN_BLOCK_SIZE<<1;
-  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<2 && hd_offset < EXT2_MIN_BLOCK_SIZE<<2)
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<2 && EXT2_MIN_BLOCK_SIZE<<2 < hd_offset)
     hd_offset=EXT2_MIN_BLOCK_SIZE<<2;
-  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<6 && hd_offset < EXT2_MIN_BLOCK_SIZE<<6)
+  else if(hd_offset_old < EXT2_MIN_BLOCK_SIZE<<6 && EXT2_MIN_BLOCK_SIZE<<6 < hd_offset)
     hd_offset=EXT2_MIN_BLOCK_SIZE<<6;
   return hd_offset;
 }
