@@ -196,7 +196,7 @@ void set_part_name(partition_t *partition,const char *src,const int max_size)
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size)
 {
   int i;
-  for(i=0; i<sizeof(partition->fsname) && i<max_size && src[i]!='\0'; i++)
+  for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   partition->fsname[i]='\0';
   for(i--; i>=0 && src[i]==' '; i--);
