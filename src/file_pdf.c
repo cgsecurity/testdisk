@@ -92,6 +92,11 @@ static void file_rename_pdf(const char *old_filename)
     return;
   }
   offset=ftell(handle);
+  if(offset < 0)
+  {
+    fclose(handle);
+    return;
+  }
   offset=file_rsearch(handle, offset, pattern, sizeof(pattern));
   if(offset==0)
   {
