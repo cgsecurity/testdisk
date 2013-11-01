@@ -260,6 +260,21 @@ int main( int argc, char **argv )
     /* Scan for available device only if no device or image has been supplied in parameter */
     if(list_disk==NULL)
       list_disk=hd_parse(list_disk, verbose, testdisk_mode);
+    if(list_disk==NULL)
+    {
+      printf("No disk detected.\n");
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
+#else
+#ifdef HAVE_GETEUID
+      if(geteuid()!=0)
+      {
+	printf("You need to be root to use TestDisk.\n");
+      }
+#endif
+#endif
+      return 1;
+    }
+
     /* Activate the cache */
     for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
       element_disk->disk=new_diskcache(element_disk->disk,testdisk_mode);
