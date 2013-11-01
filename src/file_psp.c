@@ -28,6 +28,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 static void register_header_check_psp(file_stat_t *file_stat);
@@ -48,17 +49,24 @@ static void register_header_check_psp(file_stat_t *file_stat)
   register_header_check(0, "Paint Shop Pro Image File\n\032\0\0\0\0\0",  32,  &header_check_psp, file_stat);
 }
 
+struct psp_chunk {
+  char header[4];
+  uint16_t id;
+  uint32_t size;
+} __attribute__ ((__packed__));
+
 static int data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 10 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const struct psp_chunk *chunk=(const struct psp_chunk *)&buffer[i];
     if(memcmp(&buffer[i], "~BK\0", 4) != 0)
       return 2;
     /* chunk: header, id, total_length */
     file_recovery->calculated_file_size+=10;
-    file_recovery->calculated_file_size+=(buffer[i+6])+(buffer[i+7]<<8)+(buffer[i+8]<<16)+(buffer[i+9]<<24);
+    file_recovery->calculated_file_size+=le32(chunk->size);
   }
   return 1;
 }
