@@ -35,12 +35,12 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 extern const file_hint_t file_hint_doc;
 
 static void register_header_check_png(file_stat_t *file_stat);
-static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
@@ -54,53 +54,48 @@ const file_hint_t file_hint_png= {
   .register_header_check=&register_header_check_png
 };
 
-static const unsigned char png_header[8]= { 0x89, 'P', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
-static const unsigned char mng_header[8]= { 0x8a, 'M', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
-static const unsigned char jng_header[8]= { 0x8b, 'J', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
-
-static void register_header_check_png(file_stat_t *file_stat)
+struct png_chunk
 {
-  register_header_check(0, png_header,sizeof(png_header), &header_check_png, file_stat);
-  register_header_check(0, mng_header,sizeof(mng_header), &header_check_png, file_stat);
-  register_header_check(0, jng_header,sizeof(jng_header), &header_check_png, file_stat);
+  uint32_t length;
+  uint32_t type;
+  char data[0];
+  /* data is followed by uint32_t crc; */
+} __attribute__ ((__packed__));
+
+static int header_check_jng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="jng";
+  file_recovery_new->calculated_file_size=8;
+  file_recovery_new->data_check=&data_check_png;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+static int header_check_mng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="mng";
+  file_recovery_new->calculated_file_size=8;
+  file_recovery_new->data_check=&data_check_mng;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,jng_header,sizeof(jng_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="jng";
-    file_recovery_new->calculated_file_size=8;
-    file_recovery_new->data_check=&data_check_png;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  if(memcmp(buffer,mng_header,sizeof(mng_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="mng";
-    file_recovery_new->calculated_file_size=8;
-    file_recovery_new->data_check=&data_check_mng;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
   /* SolidWorks files contains a png */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc &&
       (strcmp(file_recovery->extension,"sld")==0 ||
        strcmp(file_recovery->extension,"sldprt")==0))
     return 0;
-  if(memcmp(buffer,png_header,sizeof(png_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_png.extension;
-    file_recovery_new->calculated_file_size=8;
-    file_recovery_new->data_check=&data_check_png;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_png.extension;
+  file_recovery_new->calculated_file_size=8;
+  file_recovery_new->data_check=&data_check_png;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -110,9 +105,8 @@ static int data_check_mng(const unsigned char *buffer, const unsigned int buffer
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    /* chunk: length, type, data, crc */
-    file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
-    file_recovery->calculated_file_size+=12;
+    const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
+    file_recovery->calculated_file_size+=12 + be32(chunk->length);
     if(memcmp(&buffer[i+4], mng_footer, sizeof(mng_footer))==0)
       return 2;
   }
@@ -125,9 +119,8 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    /* chunk: length, type, data, crc */
-    file_recovery->calculated_file_size+=(buffer[i]<<24)+(buffer[i+1]<<16)+(buffer[i+2]<<8)+buffer[i+3];
-    file_recovery->calculated_file_size+=12;
+    const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
+    file_recovery->calculated_file_size+=12 + be32(chunk->length);
     if(memcmp(&buffer[i+4], "IEND", 4)==0)
       return 2;
 // PNG chunk code
@@ -144,3 +137,12 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
   return 1;
 }
 
+static void register_header_check_png(file_stat_t *file_stat)
+{
+  static const unsigned char png_header[8]= { 0x89, 'P', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
+  static const unsigned char mng_header[8]= { 0x8a, 'M', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
+  static const unsigned char jng_header[8]= { 0x8b, 'J', 'N','G', 0x0d, 0x0a, 0x1a, 0x0a};
+  register_header_check(0, png_header,sizeof(png_header), &header_check_png, file_stat);
+  register_header_check(0, mng_header,sizeof(mng_header), &header_check_mng, file_stat);
+  register_header_check(0, jng_header,sizeof(jng_header), &header_check_jng, file_stat);
+}
