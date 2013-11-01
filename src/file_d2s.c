@@ -27,11 +27,10 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 static void register_header_check_d2s(file_stat_t *file_stat);
-static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_rename_d2s(const char *old_filename);
 
 const file_hint_t file_hint_d2s= {
   .extension="d2s",
@@ -43,29 +42,13 @@ const file_hint_t file_hint_d2s= {
   .register_header_check=&register_header_check_d2s
 };
 
-static const unsigned char d2s_header[8]= {
-  0x55, 0xaa, 0x55, 0xaa, 0x60, 0x00, 0x00, 0x00
-};
-
-static void register_header_check_d2s(file_stat_t *file_stat)
-{
-  register_header_check(0, d2s_header,sizeof(d2s_header), &header_check_d2s, file_stat);
-}
-
-static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,d2s_header,sizeof(d2s_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_d2s.extension;
-    file_recovery_new->calculated_file_size=(buffer[8]<<0)+(buffer[9]<<8)+(buffer[10]<<16)+(buffer[11]<<24);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->file_rename=&file_rename_d2s;
-    return 1;
-  }
-  return 0;
-}
+struct d2s_header {
+  char magic[8];
+  uint32_t size;
+  uint32_t unk1;
+  uint32_t unk2;
+  char name[0];
+} __attribute__ ((__packed__));
 
 static void file_rename_d2s(const char *old_filename)
 {
@@ -77,4 +60,24 @@ static void file_rename_d2s(const char *old_filename)
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
   file_rename(old_filename, buffer, buffer_size, 0x14, NULL, 1);
+}
+
+static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct d2s_header *d2s=(const struct d2s_header*)buffer;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_d2s.extension;
+  file_recovery_new->calculated_file_size=le32(d2s->size);
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->file_rename=&file_rename_d2s;
+  return 1;
+}
+
+static void register_header_check_d2s(file_stat_t *file_stat)
+{
+  static const unsigned char d2s_header[8]= {
+    0x55, 0xaa, 0x55, 0xaa, 0x60, 0x00, 0x00, 0x00
+  };
+  register_header_check(0, d2s_header,sizeof(d2s_header), &header_check_d2s, file_stat);
 }
