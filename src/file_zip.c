@@ -216,11 +216,13 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	    log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n",
 	    compressed_size);
 #endif
+	    free(filename);
 	    return -1;
 	  }
 	  if (fseek(fr->handle, -compressed_size, SEEK_CUR) < 0)
 	  {
-	    log_info("fseek failed CGR\n");
+	    log_info("fseek failed\n");
+	    free(filename);
 	    return -1;
 	  }
 	  if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
