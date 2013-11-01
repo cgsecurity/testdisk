@@ -56,7 +56,7 @@ void run_sudo(int argc, char **argv)
   {
     printf("%s failed: %s\n", SUDO_BIN, strerror(errno));
     printf("Press Enter key to quit.\n");
-    getchar();
+    (void)getchar();
   }
   free(argv2[0]);
   free(argv2);

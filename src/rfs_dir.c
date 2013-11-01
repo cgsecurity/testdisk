@@ -539,7 +539,7 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
   reiserfs_file_close(in);
   fclose(f_out);
   set_date(new_file, file->td_atime, file->td_mtime);
-  set_mode(new_file, file->st_mode);
+  (void)set_mode(new_file, file->st_mode);
   free(new_file);
   return error;
 }

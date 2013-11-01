@@ -1499,7 +1499,7 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
        By a bug in the Linux buffer cache, we will see the old
        contents of /dev/hda when the change was made to /dev/hda3.
        In order to avoid this, discard all blocks on /dev/hda. */
-    ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
+    (void)ioctl(hd_h, BLKFLSBUF);	/* ignore errors */
 #endif
     disk_get_model(hd_h, disk_car, verbose);
     disk_get_hpa_dco(hd_h, disk_car);

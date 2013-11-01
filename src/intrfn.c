@@ -1078,7 +1078,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
     log_critical("initscr() has failed. Exiting\n");
     printf("initscr() has failed. Exiting\n");
     printf("Press Enter key to quit.\n");
-    getchar();
+    (void)getchar();
     return 1;
   }
 #else
@@ -1126,7 +1126,7 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
 #endif
       printf("Extract all files and subdirectories before running the program.\n");
       printf("Press Enter key to quit.\n");
-      getchar();
+      (void)getchar();
       free(terminfo);
       return 1;
     }
