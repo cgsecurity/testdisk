@@ -73,7 +73,10 @@ static int file_identify(const char *filename, const unsigned int check)
   buffer=buffer_olddata + blocksize;
   file=fopen(filename, "rb");
   if(file==NULL)
+  {
+    free(buffer_start);
     return -1;
+  }
   if(fread(buffer, 1, READ_SIZE, file)<=0)
   {
     fclose(file);
