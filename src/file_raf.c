@@ -28,11 +28,11 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 
 static void register_header_check_raf(file_stat_t *file_stat);
-static int header_check_raf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_raf= {
   .extension="raf",
@@ -44,24 +44,51 @@ const file_hint_t file_hint_raf= {
   .register_header_check=&register_header_check_raf
 };
 
-static const unsigned char raf_header[16]= {
-  'F','U','J','I','F','I','L','M',
-  'C','C','D','-','R','A','W',' '
-};
-
-static void register_header_check_raf(file_stat_t *file_stat)
+/* Documentation source: http://libopenraw.freedesktop.org/wiki/Fuji_RAF/ */
+struct header_raf
 {
-  register_header_check(0, raf_header,sizeof(raf_header), &header_check_raf, file_stat);
-}
+  char magic[16];
+  char unk1[4];		/* 0201 */
+  char unk2[8];		/* FF393103 */
+  char model[32];	/* ie. FinePix E900 */
+  char dir_version[4];	/* 0100 or 0159 */
+  char unk3[20];
+  uint32_t jpg_offset;
+  uint32_t jpg_size;
+  uint32_t cfa_header_offset;
+  uint32_t cfa_header_size;
+  uint32_t cfa_offset;
+  uint32_t cfa_size;
+} __attribute__ ((__packed__));
 
 static int header_check_raf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* Fuji */
-  if(memcmp(buffer, raf_header, sizeof(raf_header))==0)
+  uint64_t tmp;
+  const struct header_raf *raf=(const struct header_raf *)buffer;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_raf.extension;
+  file_recovery_new->calculated_file_size=(uint64_t)be32(raf->jpg_offset)+be32(raf->jpg_size);
+  tmp=(uint64_t)be32(raf->cfa_offset)+be32(raf->cfa_size);
+  if(file_recovery_new->calculated_file_size < tmp)
+    file_recovery_new->calculated_file_size=tmp;
+  tmp=(uint64_t)be32(raf->cfa_header_offset)+be32(raf->cfa_header_size);
+  if(file_recovery_new->calculated_file_size < tmp)
+    file_recovery_new->calculated_file_size=tmp;
+  if(raf->dir_version[0]=='0' && raf->dir_version[0]=='1')
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_raf.extension;
-    return 1;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->file_check=&file_check_size;
   }
-  return 0;
+  else
+  {
+    /* The size is bigger than calculated_file_size */
+    file_recovery_new->file_check=&file_check_size_lax;
+  }
+  return 1;
+}
+
+static void register_header_check_raf(file_stat_t *file_stat)
+{
+  register_header_check(0, "FUJIFILMCCD-RAW ", 16, &header_check_raf, file_stat);
 }
