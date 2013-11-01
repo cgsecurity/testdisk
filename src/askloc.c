@@ -210,7 +210,14 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       dir=opendir(dst_directory);
     }
     if(dir==NULL)
+    {
+      delwin(window);
+      (void) clearok(stdscr, TRUE);
+#ifdef HAVE_TOUCHWIN
+      touchwin(stdscr);
+#endif
       return NULL;
+    }
     {
       file_info_t *file_info;
       file_info=(file_info_t*)MALLOC(sizeof(*file_info));
