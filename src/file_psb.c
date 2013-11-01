@@ -52,6 +52,17 @@ const file_hint_t file_hint_psb= {
 
 static const unsigned char psb_header[6]={'8', 'B', 'P', 'S', 0x00, 0x02};
 static uint64_t psb_image_data_size_max=0;
+struct psb_file_header
+{
+  char signature[4];
+  uint16_t version;	/* must be 2 */
+  char reserved[6];	/* must be 0 */
+  uint16_t channels;	/* between 1 and 56 */
+  uint32_t height;	/* max of 300,000 */
+  uint32_t width;	/* max of 300,000 */
+  uint16_t depth;	/* 1, 8, 16 or 32 */
+  uint16_t color_mode;	/* Bitmap = 0; Grayscale = 1; Indexed = 2; RGB = 3; CMYK = 4; Multichannel = 7; Duotone = 8; Lab = 9 */
+} __attribute__ ((__packed__));
 
 static void register_header_check_psb(file_stat_t *file_stat)
 {
@@ -126,10 +137,8 @@ static int psb_skip_image_resources(const unsigned char *buffer, const unsigned 
 
 static int psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  psb_image_data_size_max=(buffer[buffer_size/2+12]<<8 | buffer[buffer_size/2+13]) *
-    (buffer[buffer_size/2+14]<<24 | buffer[buffer_size/2+15] <<16 | buffer[buffer_size/2+16]<<8 | buffer[buffer_size/2+17]) *
-    (buffer[buffer_size/2+18]<<24 | buffer[buffer_size/2+19] <<16 | buffer[buffer_size/2+20]<<8 | buffer[buffer_size/2+21]) *
-    buffer[buffer_size/2+23] / 8;
+  const struct psb_file_header *psb=(const struct psb_file_header *)&buffer[buffer_size/2];
+  psb_image_data_size_max=(uint64_t)le16(psb->channels) * le32(psb->height) * le32(psb->width) * le16(psb->depth) / 8;
 #ifdef DEBUG_PSD
   log_info("psb_image_data_size_max %lu\n", (long unsigned)psb_image_data_size_max);
 #endif
