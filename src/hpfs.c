@@ -31,6 +31,7 @@
 #include "types.h"
 #include "common.h"
 #include "fat.h"
+#include "fat_common.h"
 #include "hpfs.h"
 #include "fnctdsk.h"
 #include "intrf.h"
@@ -57,7 +58,7 @@ static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *hpfs_header,
       }
       if(dump_ind!=0)
         dump_log(buffer, DEFAULT_SECTOR_SIZE);
-      partition->part_size=(uint64_t)(sectors(hpfs_header)>0?sectors(hpfs_header):le32(hpfs_header->total_sect)) *
+      partition->part_size=(uint64_t)(fat_sectors(hpfs_header)>0?fat_sectors(hpfs_header):le32(hpfs_header->total_sect)) *
         fat_sector_size(hpfs_header);
       partition->upart_type=UP_HPFS;
       return 0;

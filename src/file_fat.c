@@ -36,6 +36,7 @@
 #include "log.h"
 #include "memmem.h"
 #include "fat.h"
+#include "fat_common.h"
 
 static void register_header_check_fat(file_stat_t *file_stat);
 static int header_check_fat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -89,7 +90,7 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   if(fat_header->media!=0xF0 && fat_header->media<0xF8)
     return 0;
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
-  part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
+  part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
   no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
@@ -114,7 +115,7 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   else
   {
     /* FAT32 */
-    if(sectors(fat_header)!=0)
+    if(fat_sectors(fat_header)!=0)
       return 0;
     if(get_dir_entries(fat_header)!=0)
       return 0;
@@ -127,7 +128,7 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_fat.extension;
   file_recovery_new->calculated_file_size=(uint64_t)
-    (sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect)) *
+    (fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect)) *
     fat_sector_size(fat_header);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;

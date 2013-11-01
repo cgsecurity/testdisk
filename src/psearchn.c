@@ -233,7 +233,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };
-	      dir_fat_aux(buffer,read_size,0,0, &dir_list);
+	      dir_fat_aux(buffer, read_size, 0, &dir_list);
 	      if(!td_list_empty(&dir_list.list))
               {
 		log_info("Sector %lu\n",

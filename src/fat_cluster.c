@@ -37,6 +37,8 @@
 #include "intrfn.h"
 #include "log.h"
 #include "fat_cluster.h"
+#include "fat.h"
+#include "fat_common.h"
 
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
@@ -81,10 +83,9 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
 #endif
     if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset + offset) == disk_car->sector_size)
     {
-      if(memcmp(&buffer[0],".          ",8+3)==0 && memcmp(&buffer[0x20],"..         ",8+3)==0)
+      if(buffer[0]=='.' && is_fat_directory(buffer))
       {
-	unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
-	  (buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
+	const unsigned long int cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)buffer);
 	log_info("sector %lu, cluster %lu\n",
 	    (unsigned long)(offset/disk_car->sector_size), cluster);
 	sector_cluster[nbr_subdir].cluster=cluster;

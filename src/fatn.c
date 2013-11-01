@@ -32,6 +32,7 @@
 #include "intrfn.h"
 #include "fat.h"
 #include "fatn.h"
+#include "fat_common.h"
 
 int dump_fat_info_ncurses(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
 {
@@ -52,8 +53,8 @@ int dump_fat_info_ncurses(const struct fat_boot_sector*fh1, const upart_type_t u
   }
   wprintw(stdscr,"cluster_size %u\n", fh1->sectors_per_cluster);
   wprintw(stdscr,"reserved     %u\n", le16(fh1->reserved));
-  if(sectors(fh1)!=0)
-    wprintw(stdscr,"sectors      %u\n", sectors(fh1));
+  if(fat_sectors(fh1)!=0)
+    wprintw(stdscr,"sectors      %u\n", fat_sectors(fh1));
   if(le32(fh1->total_sect)!=0)
     wprintw(stdscr,"total_sect   %u\n", (unsigned int)le32(fh1->total_sect));
   if(upart_type==UP_FAT32)
@@ -99,8 +100,8 @@ int dump_2fat_info_ncurses(const struct fat_boot_sector*fh1, const struct fat_bo
   }
   wprintw(stdscr,"cluster_size %u %u\n", fh1->sectors_per_cluster, fh2->sectors_per_cluster);
   wprintw(stdscr,"reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
-  if(sectors(fh1)!=0 || sectors(fh2)!=0)
-    wprintw(stdscr,"sectors      %u %u\n", sectors(fh1), sectors(fh2));
+  if(fat_sectors(fh1)!=0 || fat_sectors(fh2)!=0)
+    wprintw(stdscr,"sectors      %u %u\n", fat_sectors(fh1), fat_sectors(fh2));
   if(le32(fh1->total_sect)!=0 || le32(fh2->total_sect)!=0)
     wprintw(stdscr,"total_sect   %u %u\n", (unsigned int)le32(fh1->total_sect), (unsigned int)le32(fh2->total_sect));
   if(upart_type==UP_FAT32)

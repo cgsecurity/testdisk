@@ -43,6 +43,8 @@
 #include "intrf.h"
 #include "log.h"
 #include "log_part.h"
+#include "fat_common.h"
+
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
@@ -81,7 +83,7 @@ static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upa
   log_info("reserved     %u\n", le16(fh1->reserved));
   log_info("fats         %u\n", fh1->fats);
   log_info("dir_entries  %u\n", get_dir_entries(fh1));
-  log_info("sectors      %u\n", sectors(fh1));
+  log_info("sectors      %u\n", fat_sectors(fh1));
   log_info("media        %02X\n", fh1->media);
   log_info("fat_length   %u\n", le16(fh1->fat_length));
   log_info("secs_track   %u\n", le16(fh1->secs_track));
@@ -129,7 +131,7 @@ int log_fat2_info(const struct fat_boot_sector*fh1, const struct fat_boot_sector
   log_info("reserved     %u %u\n", le16(fh1->reserved),le16(fh2->reserved));
   log_info("fats         %u %u\n", fh1->fats,fh2->fats);
   log_info("dir_entries  %u %u\n", get_dir_entries(fh1),get_dir_entries(fh2));
-  log_info("sectors      %u %u\n", sectors(fh1),sectors(fh2));
+  log_info("sectors      %u %u\n", fat_sectors(fh1),fat_sectors(fh2));
   log_info("media        %02X %02X\n", fh1->media,fh2->media);
   log_info("fat_length   %u %u\n", le16(fh1->fat_length),le16(fh2->fat_length));
   log_info("secs_track   %u %u\n", le16(fh1->secs_track),le16(fh2->secs_track));
@@ -484,7 +486,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     return 1;
   }
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
-  part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
+  part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_fat2=start_fat1+(fat_header->fats>1?fat_length:0);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
@@ -509,7 +511,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
           offset2head(disk_car,partition->part_offset),
           offset2sector(disk_car,partition->part_offset));
     }
-    if(sectors(fat_header)==0)
+    if(fat_sectors(fat_header)==0)
     {
       screen_buffer_add(msg_CHKFAT_SIZE);
       log_error(msg_CHKFAT_SIZE);
@@ -594,7 +596,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
           offset2head(disk_car,partition->part_offset),
           offset2sector(disk_car,partition->part_offset));
     }
-    if(sectors(fat_header)!=0)
+    if(fat_sectors(fat_header)!=0)
     {
       screen_buffer_add(msg_CHKFAT_SIZE);
       log_error(msg_CHKFAT_SIZE);
@@ -743,15 +745,6 @@ int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int
   return 0;
 }
 
-unsigned int fat_sector_size(const struct fat_boot_sector *fat_header)
-{ return (fat_header->sector_size[1]<<8)+fat_header->sector_size[0]; }
-
-unsigned int get_dir_entries(const struct fat_boot_sector *fat_header)
-{ return (fat_header->dir_entries[1]<<8)+fat_header->dir_entries[0]; }
-
-unsigned int sectors(const struct fat_boot_sector *fat_header)
-{ return (fat_header->sectors[1]<<8)+fat_header->sectors[0]; }
-
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
   return (boot_fat32[sector_size+0x1E8+3]<<24)+(boot_fat32[sector_size+0x1E8+2]<<16)+(boot_fat32[sector_size+0x1E8+1]<<8)+boot_fat32[sector_size+0x1E8];
@@ -766,7 +759,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
 {
   if(test_FAT(disk_car, fat_header, partition, verbose, dump_ind))
     return 1;
-  partition->part_size=(uint64_t)(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect)) *
+  partition->part_size=(uint64_t)(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect)) *
     fat_sector_size(fat_header);
   /* test_FAT has set partition->upart_type */
   partition->sborg_offset=0;
@@ -794,7 +787,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
             offset2head(disk_car,partition->part_offset),
             offset2sector(disk_car,partition->part_offset));
       }
-      if(sectors(fat_header)!=0)
+      if(fat_sectors(fat_header)!=0)
         partition->part_type_i386=P_16FAT;
       else if(offset2cylinder(disk_car,partition->part_offset+partition->part_size-1)<=1024)
         partition->part_type_i386=P_16FATBD;

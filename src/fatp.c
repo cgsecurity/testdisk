@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "fatp.h"
 #include "fat.h"
+#include "fat_common.h"
 #include "log.h"
 
 static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size);
@@ -200,7 +201,7 @@ unsigned int fat_remove_used_space(disk_t *disk_car, const partition_t *partitio
       return 0;
     }
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
-    part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
+    part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+sector_size-1)/sector_size;
     no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;

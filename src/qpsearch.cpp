@@ -229,7 +229,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };
-	      dir_fat_aux(buffer,read_size,0,0, &dir_list);
+	      dir_fat_aux(buffer, read_size, 0, &dir_list);
 	      if(!td_list_empty(&dir_list.list))
               {
 		log_info("Sector %lu\n",

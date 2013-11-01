@@ -88,7 +88,7 @@ struct msdos_dir_entry {
         uint16_t        date;		/* 18 */
         uint16_t        start;		/* 1A */
 	uint32_t	size;		/* 1C file size (in bytes) */
-};
+} __attribute__ ((__packed__));
 
 /* Up to 13 characters of the name */
 struct msdos_dir_slot {
@@ -114,9 +114,6 @@ int is_part_fat(const partition_t *partition);
 int is_part_fat12(const partition_t *partition);
 int is_part_fat16(const partition_t *partition);
 int is_part_fat32(const partition_t *partition);
-unsigned int get_dir_entries(const struct fat_boot_sector *fat_header);
-unsigned int fat_sector_size(const struct fat_boot_sector *fat_header);
-unsigned int sectors(const struct fat_boot_sector *fat_header);
 unsigned int fat32_get_prev_cluster(disk_t *disk,const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
 int fat32_free_info(disk_t *disk,const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int*free_count);
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
@@ -151,7 +148,6 @@ int test_FAT(disk_t *disk, const struct fat_boot_sector *fat_header, partition_t
 int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind);
 int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose);
 int check_VFAT_volume_name(const char *name, const unsigned int max_size);
-
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

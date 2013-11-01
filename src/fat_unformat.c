@@ -41,6 +41,7 @@
 #include "intrf.h"
 #include "intrfn.h"
 #include "dir.h"
+#include "fat.h"
 #include "fat_dir.h"
 #include "list.h"
 #include "filegen.h"
@@ -51,6 +52,7 @@
 #include "fat_unformat.h"
 #include "pnext.h"
 #include "setdate.h"
+#include "fat_common.h"
 
 #define READ_SIZE 4*1024*1024
 static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
@@ -79,12 +81,9 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   while(current_search_space!=list_search_space && nbr_subdir<10)
   {
     const uint64_t old_offset=offset;
-    if(buffer[0]=='.' &&
-	memcmp(buffer,         ".          ", 8+3)==0 &&
-	memcmp(&buffer[0x20], "..         ", 8+3)==0)
+    if(buffer[0]=='.' && is_fat_directory(buffer))
     {
-      const unsigned long int cluster=(buffer[0*0x20+0x15]<<24) + (buffer[0*0x20+0x14]<<16) +
-	(buffer[0*0x20+0x1B]<<8) + buffer[0*0x20+0x1A];
+      const unsigned long int cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)buffer);
       log_info("sector %lu, cluster %lu\n",
 	  (unsigned long)(offset/disk->sector_size), cluster);
       sector_cluster[nbr_subdir].cluster=cluster;
@@ -237,15 +236,13 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
   disk->pread(disk, buffer, READ_SIZE, offset);
   for(;offset < offset_end; offset+=cluster_size)
   {
-    if(buffer[0]=='.' &&
-	memcmp(buffer,         ".          ", 8+3)==0 &&
-	memcmp(&buffer[0x20], "..         ", 8+3)==0)
+    if(buffer[0]=='.' && is_fat_directory(buffer))
     {
       file_info_t dir_list = {
 	.list = TD_LIST_HEAD_INIT(dir_list.list),
 	.name = NULL
       };
-      dir_fat_aux(buffer,read_size,0,0, &dir_list);
+      dir_fat_aux(buffer, read_size, 0, &dir_list);
       if(!td_list_empty(&dir_list.list))
       {
 	struct td_list_head *file_walker = NULL;

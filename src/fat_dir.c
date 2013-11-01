@@ -41,6 +41,7 @@
 #include "types.h"
 #include "common.h"
 #include "fat.h"
+#include "fat_common.h"
 #include "lang.h"
 #include "intrf.h"
 #include "dir.h"
@@ -69,7 +70,7 @@ static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 	}
 }
 
-int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int cluster_size, const unsigned int param, file_info_t *dir_list)
+int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list)
 {
   const struct msdos_dir_entry *de=(const struct msdos_dir_entry*)buffer;
   wchar_t unicode[1000];
@@ -349,7 +350,7 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
     fat_method_t fat_meth=FAT_FOLLOW_CLUSTER;
     memset(buffer_dir,0,cluster_size*NBR_CLUSTER_MAX);
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
-    part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
+    part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
     no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
@@ -406,7 +407,7 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
       }
     }
     if(nbr_cluster>0)
-      dir_fat_aux(buffer_dir, cluster_size*nbr_cluster, cluster_size, dir_data->param, dir_list);
+      dir_fat_aux(buffer_dir, cluster_size*nbr_cluster, dir_data->param, dir_list);
     free(buffer_dir);
     return 0;
   }
@@ -432,7 +433,7 @@ static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const d
       log_error("FAT 1x: Can't read root directory.\n");
       /* Don't return yet, it may have been a partial read */
     }
-    res=dir_fat_aux(buffer_dir, root_size, fat_header->sectors_per_cluster * fat_sector_size(fat_header), dir_data->param, dir_list);
+    res=dir_fat_aux(buffer_dir, root_size, dir_data->param, dir_list);
     free(buffer_dir);
     return res;
   }
@@ -501,7 +502,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   }
   cluster = file->st_ino;
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
-  part_size=(sectors(fat_header)>0?sectors(fat_header):le32(fat_header->total_sect));
+  part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
   no_of_cluster=(part_size-start_data)/sectors_per_cluster;

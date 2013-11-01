@@ -36,6 +36,7 @@
 #include "fat.h"
 #include "dir.h"
 #include "fat_dir.h"
+#include "fat_common.h"
 
 static void register_header_check_dir(file_stat_t *file_stat);
 static int header_check_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -61,9 +62,9 @@ static void file_rename_fatdir(const char *old_filename)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  if(buffer_size<10)
+  if(buffer_size<32)
     return;
-  cluster=(buffer[0x15]<<24)|(buffer[0x14]<<16)|(buffer[0x1B]<<8)|buffer[0x1A];
+  cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)&buffer[0]);
   sprintf(buffer_cluster, "cluster_%u", cluster);
   file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
@@ -78,7 +79,7 @@ static int data_check_fatdir(const unsigned char *buffer, const unsigned int buf
 static int header_check_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct msdos_dir_entry *de=(const struct msdos_dir_entry*)buffer;
-  if(memcmp(&buffer[0x20],"..         ",8+3)!=0)
+  if(!is_fat_directory(buffer))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dir.extension;
