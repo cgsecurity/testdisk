@@ -71,7 +71,7 @@ static void list_space_used(const file_recovery_t *file_recovery, const unsigned
   struct td_list_head *tmp;
   uint64_t file_size=0;
   uint64_t file_size_on_disk=0;
-  if(file_recovery->filename==NULL)
+  if(file_recovery->filename[0]=='\0')
     return;
   log_info("%s\t",file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
@@ -617,7 +617,8 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
       params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
     }
     if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
-	params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING)
+	params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING &&
+	file_recovery->file_stat!=NULL)
       file_recovery->file_stat->recovered++;
   }
 }
@@ -822,7 +823,7 @@ static alloc_data_t *file_truncate_aux(alloc_data_t *space, alloc_data_t *file, 
 static alloc_data_t *file_truncate(alloc_data_t *space, file_recovery_t *file, const unsigned int sector_size, const unsigned int blocksize)
 {
   alloc_data_t *datanext;
-  if(file->filename!=NULL)
+  if(file->filename[0]!='\0')
     log_info("%s\t", file->filename);
   else
     log_info("?\t");

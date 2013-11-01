@@ -364,7 +364,8 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
       uint64_t file_size_backup;
       nbr=0;
       offset_error_tmp=file_recovery->offset_error;
-      fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+      if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
+	return BF_ENOENT;
 #if 1
       if(file_recovery->data_check!=NULL)
       {

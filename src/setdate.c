@@ -38,23 +38,21 @@
  *
  * Give a file a particular date and time.
  *
- * Return:  1  Success, set the file's date and time
- *	    0  Error, failed to change the file's date and time
+ * Return:  0  Success, set the file's date and time
+ *	    -1  Error, failed to change the file's date and time
  */
 int set_date(const char *pathname, time_t actime, time_t modtime)
 {
 #ifdef HAVE_UTIME
   struct utimbuf ut;
   if (!pathname)
-    return 0;
+    return -1;
   ut.actime  = actime;
   ut.modtime = modtime;
   if (utime(pathname, &ut)) {
     log_error("ERROR: Couldn't set the file's date and time for %s\n", pathname);
-    return 0;
+    return -1;
   }
-  return 1;
-#else
-  return 0;
 #endif
+  return 0;
 }

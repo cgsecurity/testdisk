@@ -145,6 +145,7 @@ backup_disk_t *partition_load(const disk_t *disk_car, const int verbose)
       if(pos!=NULL)
       {
         strncpy(new_backup->description,++pos,sizeof(new_backup->description));
+	new_backup->description[sizeof(new_backup->description)-1]='\0';
       }
     }
     else if(new_backup!=NULL)

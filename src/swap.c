@@ -160,7 +160,7 @@ int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partit
 	for(j=7;j>=0;j--)
 	  if((swap_header->magic8k.reserved[i]&(1<<j))!=(char)0)
 	    break;
-	partition->part_size=(uint64_t)((8*i+j+1)*PAGE_8K);
+	partition->part_size=(uint64_t)(8*i+j+1)*PAGE_8K;
       }
       break;
     case UP_LINSWAP2_8K:

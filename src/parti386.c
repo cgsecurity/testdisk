@@ -540,7 +540,6 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	    log_dos_entry(p);
 	  if(is_extended(p->sys_ind))
 	  {
-	    partition_next_ext=new_partition;
 	    i386_entry2partition(disk_car, partition_main_ext->part_offset, new_partition, p, STATUS_EXT_IN_EXT,order,verbose,saveheader);
 	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    if(new_partition->errcode!=BAD_NOERR)
@@ -598,6 +597,8 @@ static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, 
 	  list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
 	  if(insert_error>0)
 	    free(new_partition);
+	  else if(is_extended(p->sys_ind))
+	    partition_next_ext=new_partition;
 	}
       }
       partition_ext=partition_next_ext;
