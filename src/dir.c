@@ -401,8 +401,8 @@ static mode_t mode_xlate(unsigned int lmode)
  *
  * Give a file a particular mode.
  *
- * Return:  1  Success, set the file's mode
- *	    0  Error, failed to change the file's mode
+ * Return:  0  Success, set the file's mode
+ *	    -1  Error, failed to change the file's mode
  */
 int set_mode(const char *pathname, unsigned int mode)
 {

@@ -346,7 +346,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     }
     fclose(f_out);
     set_date(new_file, file->td_atime, file->td_mtime);
-    set_mode(new_file, file->st_mode);
+    (void)set_mode(new_file, file->st_mode);
   }
   free(new_file);
   return error;
