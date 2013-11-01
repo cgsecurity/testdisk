@@ -884,6 +884,7 @@ static void file_rename_doc(const char *old_filename)
       {
 	free(fat);
 	fclose(file);
+	free(title);
 	return ;
       }
       dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
@@ -892,6 +893,7 @@ static void file_rename_doc(const char *old_filename)
 	free(fat);
 	free(dir_entries);
 	fclose(file);
+	free(title);
 	return ;
       }
 
