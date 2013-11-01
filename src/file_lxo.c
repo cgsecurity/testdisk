@@ -28,6 +28,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 
 static void register_header_check_lxo(file_stat_t *file_stat);
@@ -42,19 +43,21 @@ const file_hint_t file_hint_lxo= {
   .register_header_check=&register_header_check_lxo
 };
 
-static const unsigned char lxo_header[4]=  {
-  'F' , 'O' , 'R' , 'M' 
-};
+struct lxo_header
+{
+  char magic[4];
+  uint32_t size;
+  char type[3];
+} __attribute__ ((__packed__));
 
 static int header_check_lxo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], lxo_header, sizeof(lxo_header))!=0)
-    return 0;
+  const struct lxo_header *header=(const struct lxo_header *)buffer;
   if(buffer[8]=='L' && buffer[9]=='X' && buffer[10]=='O')
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_lxo.extension;
-    file_recovery_new->calculated_file_size=(buffer[4]<<24)+(buffer[5]<<16)+(buffer[6]<<8)+buffer[7]+8;
+    file_recovery_new->calculated_file_size=be32(header->size)+8;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->data_check=&data_check_size;
     return 1;
@@ -63,7 +66,7 @@ static int header_check_lxo(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="lwo";
-    file_recovery_new->calculated_file_size=(buffer[4]<<24)+(buffer[5]<<16)+(buffer[6]<<8)+buffer[7]+8;
+    file_recovery_new->calculated_file_size=be32(header->size)+8;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->data_check=&data_check_size;
     return 1;
@@ -73,5 +76,8 @@ static int header_check_lxo(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_lxo(file_stat_t *file_stat)
 {
+  static const unsigned char lxo_header[4]=  {
+    'F' , 'O' , 'R' , 'M' 
+  };
   register_header_check(0, lxo_header, sizeof(lxo_header), &header_check_lxo, file_stat);
 }
