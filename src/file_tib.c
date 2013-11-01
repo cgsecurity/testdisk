@@ -76,7 +76,7 @@ static void file_check_tib(file_recovery_t *file_recovery)
   int64_t file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
   if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-      fread(buffer, 1, 512, file_recovery->handle) <= 0)
+      fread(buffer, 1, 512, file_recovery->handle) != 512)
   {
     free(buffer);
     file_recovery->file_size=0;
@@ -92,7 +92,7 @@ static void file_check_tib(file_recovery_t *file_recovery)
   {
     unsigned int i;
     if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-	fread(buffer, 1, 512, file_recovery->handle) <= 0)
+	fread(buffer, 1, 512, file_recovery->handle) != 512)
     {
       free(buffer);
       file_recovery->file_size=0;
