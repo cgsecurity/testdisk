@@ -169,7 +169,10 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
   WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
   aff_copy_short(window);
   if(dst_org != NULL)
+  {
     strncpy(dst_directory, dst_org, sizeof(dst_directory));
+    dst_directory[sizeof(dst_directory)-1]='\0';
+  }
   else
     td_getcwd(dst_directory, sizeof(dst_directory));
   do

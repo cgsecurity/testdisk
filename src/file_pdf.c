@@ -77,7 +77,7 @@ static void file_rename_pdf(const char *old_filename)
 {
   char title[512];
   const unsigned char pattern[6]={ '/', 'T', 'i', 't', 'l', 'e' };
-  uint64_t offset;
+  off_t offset;
   FILE *handle;
   unsigned char*buffer;
   unsigned int i;
@@ -91,7 +91,11 @@ static void file_rename_pdf(const char *old_filename)
     fclose(handle);
     return;
   }
+#ifdef HAVE_FTELLO
+  offset=ftello(handle);
+#else
   offset=ftell(handle);
+#endif
   if(offset < 0)
   {
     fclose(handle);
@@ -104,7 +108,11 @@ static void file_rename_pdf(const char *old_filename)
     return;
   }
   offset+=sizeof(pattern);
+#ifdef HAVE_FSEEKO
+  if(fseeko(handle, offset, SEEK_SET)<0)
+#else
   if(fseek(handle, offset, SEEK_SET)<0)
+#endif
   {
     fclose(handle);
     return ;

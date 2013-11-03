@@ -102,9 +102,9 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       {
 	const time_t current_time=time(NULL);
 	if(current_time==previous_time)
-	  diff_offset>>=1;
-	else
 	  diff_offset<<=1;
+	else
+	  diff_offset>>=1;
 	if(diff_offset < disk->sector_size)
 	  diff_offset=disk->sector_size;
 	next_offset=offset+diff_offset;
@@ -145,7 +145,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 #ifdef __MINGW32__
   mkdir(new_file);
 #else
-  mkdir(new_file, 0775);
+  (void)mkdir(new_file, 0775);
 #endif
 #endif
   snprintf(new_file, 1024, "%s.%u/inode_%u/%s", recup_dir, dir_num, inode_num,

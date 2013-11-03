@@ -61,9 +61,9 @@ static int file_identify(const char *filename, const unsigned int check)
   unsigned char *buffer_start;
   unsigned char *buffer_olddata;
   unsigned char *buffer;
-  unsigned int blocksize=65536;
+  const unsigned int blocksize=65536;
+  const unsigned int read_size=65536;
   unsigned int buffer_size;
-  const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery;
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
@@ -114,7 +114,11 @@ static int file_identify(const char *filename, const unsigned int check)
       {
 	file_recovery_new.handle=file;
 	fseek(file_recovery_new.handle, 0, SEEK_END);
+#ifdef HAVE_FTELLO
+	file_recovery_new.file_size=ftello(file_recovery_new.handle);
+#else
 	file_recovery_new.file_size=ftell(file_recovery_new.handle);
+#endif
 	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
 	(file_recovery_new.file_check)(&file_recovery_new);
 	printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
@@ -140,13 +144,13 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
     return;
   while((entry=readdir(dir))!=NULL)
   {
-    char current_file[4096];
-    strcpy(current_file, current_dir);
-    strcat(current_file, "/");
-    strcat(current_file, entry->d_name);
     if(strcmp(entry->d_name,".")!=0 && strcmp(entry->d_name,"..")!=0)
     {
       struct stat buf_stat;
+      char *current_file=(char *)MALLOC(strlen(current_dir)+1+strlen(entry->d_name)+1);
+      strcpy(current_file, current_dir);
+      strcat(current_file, "/");
+      strcat(current_file, entry->d_name);
 #ifdef HAVE_LSTAT
       if(lstat(current_file, &buf_stat)==0)
 #else
@@ -158,6 +162,7 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
 	  else if(S_ISREG(buf_stat.st_mode))
 	    file_identify(current_file, check);
 	}
+      free(current_file);
     }
   }
   closedir(dir);

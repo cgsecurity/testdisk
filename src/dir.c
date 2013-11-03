@@ -642,7 +642,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
       unsigned int l;
       l=filename_convert(dst_org, src_org, n);
       dst=dst_org+l;
-      mkdir(localdir, 0775);
+      (void)mkdir(localdir, 0775);
     }
 #endif
   }
@@ -721,7 +721,7 @@ FILE *fopen_local(char **localfilename, const char *localroot, const char *filen
 	unsigned int l;
 	l=filename_convert(dst_org, src_org, n);
 	dst=dst_org+l;
-	mkdir(*localfilename, 0775);
+	(void)mkdir(*localfilename, 0775);
       }
 #endif
     }

@@ -219,7 +219,11 @@ static void file_check_mpo(file_recovery_t *fr)
   do
   {
     offset+=2+size;
-    fseek(fr->handle, offset, SEEK_SET);
+    if(fseek(fr->handle, offset, SEEK_SET) < 0)
+    {
+      fr->file_size=0;
+      return ;
+    }
     nbytes=fread(&buffer, 1, sizeof(buffer), fr->handle);
 //    log_info("file_check_mpo offset=%llu => nbytes=%d, buffer=%02x %02x\n",
 //    (long long unsigned)offset, nbytes, buffer[0], buffer[1]);
@@ -707,8 +711,11 @@ static inline void jpeg_session_suspend(struct jpeg_session_struct *jpeg_session
 
 static void jpeg_session_start(struct jpeg_session_struct *jpeg_session)
 {
-  fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET);
-  jpeg_create_decompress(&jpeg_session->cinfo);
+  if(fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
+  {
+    log_critical("jpeg_session_start: fseek failed.\n");
+  }
+  jpeg_create_decompress(&jpeg_session->cinfo); 
   jpeg_testdisk_src(&jpeg_session->cinfo, jpeg_session->handle, jpeg_session->offset, jpeg_session->blocksize);
   (void) jpeg_read_header(&jpeg_session->cinfo, TRUE);
   jpeg_session->cinfo.two_pass_quantize = FALSE;
@@ -1416,7 +1423,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 #ifdef DEBUG_JPEG
 		j_old=j;
 #endif
-		j+=2+(buffer[j+2]<<8)+buffer[j+3];
+		j+=2U+(buffer[j+2]<<8)+buffer[j+3];
 	      }
 	      if(thumb_sos_found>0 && extract_thumb>0
 		  && offset < nbytes && buffer[offset]==0xff)
