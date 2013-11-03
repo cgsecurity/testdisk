@@ -43,7 +43,7 @@
 #include "parthumax.h"
 
 static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const int saveheader);
-static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
+static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
 static list_part_t *init_part_order_humax(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_humax(const disk_t *disk_car, partition_t *partition);
 static int test_structure_humax(list_part_t *list_part);
@@ -144,7 +144,7 @@ static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const i
   return new_list_part;
 }
 
-static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   /* TODO: Implement it */
   if(ro==0)

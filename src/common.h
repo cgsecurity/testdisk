@@ -331,7 +331,7 @@ struct arch_fnct_struct
   const char *part_name_option;
   const char *msg_part_type;
   list_part_t *(*read_part)(disk_t *disk, const int verbose,const int saveheader);
-  int (*write_part)(disk_t *disk, const list_part_t *list_part, const int ro, const int verbose, const int align);
+  int (*write_part)(disk_t *disk, const list_part_t *list_part, const int ro, const int verbose);
   list_part_t *(*init_part_order)(const disk_t *disk, list_part_t *list_part);
   /* geometry must be initialized to 0,0,0 in get_geometry_from_mbr()*/
   int (*get_geometry_from_mbr)(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);

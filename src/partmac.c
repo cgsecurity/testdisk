@@ -49,7 +49,7 @@
 
 static int check_part_mac(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
 static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int saveheader);
-static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
+static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
 static list_part_t *init_part_order_mac(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_mac(const disk_t *disk_car, partition_t *partition);
 static int set_part_type_mac(partition_t *partition, unsigned int part_type_mac);
@@ -196,7 +196,7 @@ static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int
   return new_list_part;
 }
 
-static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+static int write_part_mac(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   /* TODO: Implement it */
   if(ro==0)

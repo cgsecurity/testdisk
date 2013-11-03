@@ -188,12 +188,12 @@ static int write_part_gpt_i386(disk_t *disk_car, const list_part_t *list_part)
     if(insert_error>0)
       free(new_partition);
   }
-  arch_i386.write_part(disk_car, list_part_i386, 0, 0, 0);
+  arch_i386.write_part(disk_car, list_part_i386, 0, 0);
   part_free_list(list_part_i386);
   return 0;
 }
 
-int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   struct gpt_hdr *gpt;
   struct gpt_ent* gpt_entries;

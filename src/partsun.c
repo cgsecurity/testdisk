@@ -52,7 +52,7 @@
 static int check_part_sun(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader);
-static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose, const int align);
+static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
 static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_sun(const disk_t *disk_car, partition_t *partition);
 static int test_structure_sun(list_part_t *list_part);
@@ -171,7 +171,7 @@ static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int
   return new_list_part;
 }
 
-static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose, const int align)
+static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   /* TODO: Implement it */
   if(ro==0)

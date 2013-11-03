@@ -463,7 +463,7 @@ static uint64_t get_min_location(const disk_t *disk)
   else if(disk->arch==&arch_mac)
     return 4096;
   else if(disk->arch==&arch_sun)
-    return disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
+    return (uint64_t)disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
   else if(disk->arch==&arch_xbox)
     return 0x800;
   /* arch_none */
@@ -1139,7 +1139,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, cons
       if(deb->part->part_offset%(1024*1024)==0)
 	tmp=1024*1024;
       else
-	tmp=disk->geom.sectors_per_head * disk->sector_size;
+	tmp=(uint64_t)disk->geom.sectors_per_head * disk->sector_size;
       if(tmp < part_extended_offset)
 	part_extended_offset=tmp;
     }
@@ -1404,7 +1404,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 		)
 	      {
 		log_info("write!\n");
-		if(disk_car->arch->write_part(disk_car,list_part,RW,verbose,align))
+		if(disk_car->arch->write_part(disk_car, list_part, RW, verbose))
 		{
 		  display_message(msg_PART_WR_ERR);
 		}
@@ -1423,7 +1423,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	    if(disk_car->arch->write_part!=NULL)
 	    {
 	      log_info("simulate write!\n");
-	      disk_car->arch->write_part(disk_car,list_part,RO,verbose,align);
+	      disk_car->arch->write_part(disk_car, list_part, RO, verbose);
 	    }
 	    break;
 	  case 'S':
