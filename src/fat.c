@@ -747,12 +747,14 @@ int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int
 
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
-  return (boot_fat32[sector_size+0x1E8+3]<<24)+(boot_fat32[sector_size+0x1E8+2]<<16)+(boot_fat32[sector_size+0x1E8+1]<<8)+boot_fat32[sector_size+0x1E8];
+  const struct fat_fsinfo *fsinfo=(const struct fat_fsinfo *)&boot_fat32[sector_size];
+  return le32(fsinfo->freecnt);
 }
 
 unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size)
 {
-  return (boot_fat32[sector_size+0x1EC+3]<<24)+(boot_fat32[sector_size+0x1EC+2]<<16)+(boot_fat32[sector_size+0x1EC+1]<<8)+boot_fat32[sector_size+0x1EC];
+  const struct fat_fsinfo *fsinfo=(const struct fat_fsinfo *)&boot_fat32[sector_size];
+  return le32(fsinfo->nextfree);
 }
 
 int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup)

@@ -75,6 +75,16 @@ struct fat_boot_sector {
 	uint16_t	marker;
 } __attribute__ ((__packed__));
 
+struct fat_fsinfo {
+  uint32_t leadsig;		/* 0x41615252 */
+  uint8_t reserved1[480];
+  uint32_t strucsig;		/* 0x61417272 */
+  uint32_t freecnt;     	/* free clusters 0xfffffffff if unknown */
+  uint32_t nextfree;		/* next free cluster */
+  uint8_t reserved3[12];
+  uint32_t magic3;		/* 0xAA550000 */
+} __attribute__ ((__packed__));
+
 struct msdos_dir_entry {
 	int8_t	name[8],ext[3];		/* 00 name and extension */
 	uint8_t	attr;			/* 0B attribute bits */
