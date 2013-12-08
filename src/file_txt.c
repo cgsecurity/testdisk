@@ -174,6 +174,8 @@ static const txt_header_t fasttxt_headers[] = {
   { "ISO-10303-21;",					13, "stp"},
   /* URL / Internet Shortcut */
   { "[InternetShortcut]",				18, "url"},
+  /* Veeam Backup Metadata */
+  { "<BackupMeta Id=\"",				16, "vbm"},
   /* Windows Play List*/
   {"<?wpl version=\"1.0\"?>",				21, "wpl"},
   /* Windows URL / Internet Shortcut */
