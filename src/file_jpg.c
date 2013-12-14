@@ -292,6 +292,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       {
 	return 0;
       }
+      if(file_recovery_new->file_check==&file_check_mpo)
+	return 0;
     }
     /* Don't extract jpg inside AVI */
     if( file_recovery->file_stat->file_hint==&file_hint_riff &&
