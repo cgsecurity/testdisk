@@ -32,7 +32,7 @@
 
 static void register_header_check_dv(file_stat_t *file_stat);
 static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_dv= {
   .extension="dv",
@@ -67,7 +67,7 @@ static int header_check_dv(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
-static int data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
@@ -77,8 +77,8 @@ static int data_check_dv(const unsigned char *buffer, const unsigned int buffer_
 	buffer[i+5]==0x78 && buffer[i+6]==0x78 && buffer[i+7]==0x78)
       file_recovery->calculated_file_size+=120000;
     else
-      return 2;
+      return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 

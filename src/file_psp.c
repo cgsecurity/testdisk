@@ -55,7 +55,7 @@ struct psp_chunk {
   uint32_t size;
 } __attribute__ ((__packed__));
 
-static int data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 10 < file_recovery->file_size + buffer_size/2)
@@ -63,12 +63,12 @@ static int data_check_psp(const unsigned char *buffer, const unsigned int buffer
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const struct psp_chunk *chunk=(const struct psp_chunk *)&buffer[i];
     if(memcmp(&buffer[i], "~BK\0", 4) != 0)
-      return 2;
+      return DC_STOP;
     /* chunk: header, id, total_length */
     file_recovery->calculated_file_size+=10;
     file_recovery->calculated_file_size+=le32(chunk->size);
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

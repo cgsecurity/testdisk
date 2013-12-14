@@ -78,11 +78,11 @@ static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int 
   return 1;
 }
 
-static int data_check_extdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_extdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /* Save only one block */
   file_recovery->calculated_file_size=buffer_size/2;
-  return 2;
+  return DC_STOP;
 }
 
 static void file_rename_extdir(const char *old_filename)

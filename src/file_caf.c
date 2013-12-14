@@ -60,7 +60,7 @@ struct chunk_struct
   int64_t  size;
 } __attribute__ ((__packed__));
 
-static int data_check_caf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_caf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
@@ -80,7 +80,7 @@ static int data_check_caf(const unsigned char *buffer, const unsigned int buffer
     if(buffer[i]==0)
     {
       file_recovery->calculated_file_size--;
-      return 2;
+      return DC_STOP;
     }
     if(chunk_size >= 0)
     {
@@ -90,14 +90,14 @@ static int data_check_caf(const unsigned char *buffer, const unsigned int buffer
     {
       file_recovery->data_check=NULL;
       file_recovery->file_check=NULL;
-      return 2;
+      return DC_STOP;
     }
   }
 #ifdef DEBUG_CAF
   log_trace("file_caf.c: new calculated_file_size %llu\n",
       (long long unsigned)file_recovery->calculated_file_size);
 #endif
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_caf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

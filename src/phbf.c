@@ -261,14 +261,14 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	  }
 	  if(file_recovery.file_stat!=NULL)
 	  {
-	    int res=1;
+	    data_check_t res=DC_CONTINUE;
 	    //	  log_info("add sector %llu\n", (long long unsigned)(offset/512));
 	    list_append_block(&file_recovery.location, offset, blocksize,1);
 	    if(file_recovery.data_check!=NULL)
 	      res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
 	    file_recovery.file_size+=blocksize;
 	    file_recovery.file_size_on_disk+=blocksize;
-	    if(res==2)
+	    if(res==DC_STOP || res==DC_ERROR)
 	    { /* EOF found */
 	      need_to_check_file=1;
 	    }
@@ -381,7 +381,7 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 	      (*current_search_space)->file_stat->file_hint==NULL)
 	  {
 	    params->disk->pread(params->disk, block_buffer, blocksize, *offset);
-	    if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=1)
+	    if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=DC_CONTINUE)
 	    {
 	      stop=1;
 	    }
@@ -539,7 +539,7 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
     for(k=original_offset_ok/blocksize+1; k<original_offset_error/blocksize; k++)
     {
       params->disk->pread(params->disk, block_buffer, blocksize, *offset);
-      if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=1)
+      if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=DC_CONTINUE)
       {
 	/* TODO handle this problem */
       }

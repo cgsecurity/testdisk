@@ -59,7 +59,7 @@ static void register_header_check_vault(file_stat_t *file_stat)
  * 03200bf0  2d 34 36 33 33 2d 61 33  34 66 2d 34 61 66 64 36  |-4633-a34f-4afd6|
  * 03200c00  30 64 61 62 64 64 37 00                           |0dabdd7.|
  * */
-static int data_check_vault(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_vault(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size>8)
   {
@@ -69,12 +69,12 @@ static int data_check_vault(const unsigned char *buffer, const unsigned int buff
       if(buffer[i]=='-' && buffer[i+5]=='-' && buffer[i+10]=='-' && buffer[i+15]=='-' && buffer[i+28]=='\0')
       {
 	file_recovery->calculated_file_size=file_recovery->file_size+i+28+1-(buffer_size/2);
-	return 2;
+	return DC_STOP;
       }
     }
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_vault(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

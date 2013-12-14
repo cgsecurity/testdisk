@@ -120,7 +120,7 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
   return naxis_size;
 }
 
-static int data_check_fits(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_fits(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
@@ -141,7 +141,7 @@ static int data_check_fits(const unsigned char *buffer, const unsigned int buffe
       {
 	file_recovery->data_check=NULL;
 	file_recovery->file_check=NULL;
-	return 1;
+	return DC_CONTINUE;
       }
       file_recovery->calculated_file_size+=(i-i_org+2880-1)/2880*2880+(tmp+2880-1)/2880*2880;
     }
@@ -149,9 +149,9 @@ static int data_check_fits(const unsigned char *buffer, const unsigned int buffe
   if(file_recovery->file_size>=file_recovery->calculated_file_size)
   {
     file_recovery->file_size=file_recovery->calculated_file_size;
-    return 2;
+    return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_fits(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

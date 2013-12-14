@@ -42,14 +42,14 @@ const file_hint_t file_hint_mpg= {
   .register_header_check=&register_header_check_mpg
 };
 
-static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const unsigned char padding_iso_end[8]=     {0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x01, 0xB9};
   /* search padding + end code */
   if(buffer_size>=8 && memcmp(&buffer[buffer_size/2-4], padding_iso_end, sizeof(padding_iso_end))==0)
   {
     file_recovery->calculated_file_size=file_recovery->file_size+4;
-    return 2;
+    return DC_STOP;
   }
   /* search video sequence end followed by iso end code*/
   if(buffer_size>=14)
@@ -61,13 +61,13 @@ static int data_check_mpg(const unsigned char *buffer, const unsigned int buffer
       if(buffer[i]==0x00 && memcmp(&buffer[i], sequence_end_iso_end, sizeof(sequence_end_iso_end))==0)
       {
 	file_recovery->calculated_file_size=file_recovery->file_size+i+sizeof(sequence_end_iso_end)-buffer_size/2;
-	return 2;
+	return DC_STOP;
       }
     }
   }
   /* some files don't end by iso end code, so continue... */
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

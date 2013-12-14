@@ -58,17 +58,57 @@ static const unsigned char hdpr_header[4] = { 'H','D','P','R'};
 static const unsigned char tshv_header[4] = { 'T','S','H','V'};
 static const unsigned char sdvs_header[4] = { 'S','D','V','S'};
 
-static int data_check_ts_192(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_ts_192(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i+4]!=0x47)	/* TS_SYNC_BYTE */
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=192;
   }
-  return 1;
+  return DC_CONTINUE;
+}
+
+static void file_rename_ts_188(const char *old_filename)
+{
+  FILE *file;
+  unsigned char buffer[188];
+  char buffer_pid[32];
+  unsigned int pid;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  if(fseek(file, 0, SEEK_SET) < 0 ||
+      fread(&buffer, sizeof(buffer), 1, file) != 1)
+  {
+    fclose(file);
+    return ;
+  }
+  fclose(file);
+  pid=((buffer[1]<<8)|buffer[2])&0x1fff;
+  sprintf(buffer_pid, "pid_%u", pid);
+  file_rename(old_filename, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
+}
+
+static void file_rename_ts_192(const char *old_filename)
+{
+  FILE *file;
+  unsigned char buffer[192];
+  char buffer_pid[32];
+  unsigned int pid;
+  if((file=fopen(old_filename, "rb"))==NULL)
+    return;
+  if(fseek(file, 0, SEEK_SET) < 0 ||
+      fread(&buffer, sizeof(buffer), 1, file) != 1)
+  {
+    fclose(file);
+    return ;
+  }
+  fclose(file);
+  pid=((buffer[5]<<8)|buffer[6])&0x1fff;
+  sprintf(buffer_pid, "pid_%u", pid);
+  file_rename(old_filename, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
 }
 
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -111,19 +151,20 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   {
     file_recovery_new->file_check=&file_check_size_lax;
   }
+  file_recovery_new->file_rename=&file_rename_ts_192;
   return 1;
 }
 
-static int data_check_ts_188(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_ts_188(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(buffer[i]!=0x47)	/* TS_SYNC_BYTE */
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=188;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -146,6 +187,7 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->data_check=&data_check_ts_188;
   file_recovery_new->file_check=&file_check_size_lax;
+  file_recovery_new->file_rename=&file_rename_ts_188;
   return 1;
 }
 

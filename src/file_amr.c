@@ -56,7 +56,7 @@ static void register_header_check_amr(file_stat_t *file_stat)
 }
 
 #if 0
-static int data_check_amr(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_amr(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 2 < file_recovery->file_size + buffer_size/2)
@@ -74,7 +74,7 @@ static int data_check_amr(const unsigned char *buffer, const unsigned int buffer
       case 0x70: file_recovery->calculated_file_size+=32; break;
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 #endif
 static int header_check_amr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

@@ -150,15 +150,17 @@ void free_header_check(void)
       {
 #ifdef DEBUG_HEADER_CHECK
 	unsigned int j;
+	const unsigned char *data;
 #endif
 	file_check_t *current_check;
 	current_check=td_list_entry(tmp, file_check_t, list);
 #ifdef DEBUG_HEADER_CHECK
+	data=(const char *)current_check->value;
 	log_info("[%u]=%02x length=%u offset=%u", pos->offset, i, current_check->length, current_check->offset);
 	if(current_check->file_stat!=NULL && current_check->file_stat->file_hint!=NULL)
 	  log_info(" %s", current_check->file_stat->file_hint->description);
 	for(j=0; j<current_check->length; j++)
-	  log_info(" %02x", current_check->value[j]);
+	  log_info(" %02x", data[j]);
 	log_info("\n");
 #endif
 	td_list_del(tmp);
@@ -271,14 +273,14 @@ void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*f
 }
 #endif
 
-int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size>=file_recovery->calculated_file_size)
   {
     file_recovery->file_size=file_recovery->calculated_file_size;
-    return 2;
+    return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 void file_check_size(file_recovery_t *file_recovery)

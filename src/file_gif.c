@@ -33,8 +33,8 @@
 static void register_header_check_gif(file_stat_t *file_stat);
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_gif(file_recovery_t *file_recovery);
-static int data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static int data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_gif= {
   .extension="gif",
@@ -85,7 +85,7 @@ static void file_check_gif(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, gif_footer, sizeof(gif_footer), 0);
 }
 
-static int data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 20 < file_recovery->file_size + buffer_size/2)
@@ -118,16 +118,16 @@ static int data_check_gif(const unsigned char *buffer, const unsigned int buffer
       case 0x3b:
 	/* Trailer */
 	file_recovery->calculated_file_size++;
-	return 2;
+	return DC_STOP;
       default:
-	return 0;
+	return DC_ERROR;
     }
   }
   file_recovery->data_check=&data_check_gif;
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 2 < file_recovery->file_size + buffer_size/2)
@@ -140,5 +140,5 @@ static int data_check_gif2(const unsigned char *buffer, const unsigned int buffe
     }
   }
   file_recovery->data_check=&data_check_gif2;
-  return 1;
+  return DC_CONTINUE;
 }

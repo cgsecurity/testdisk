@@ -48,7 +48,7 @@ static const unsigned char par2_header[8]=  {
   'P' , 'A' , 'R' , '2' , 0x00, 'P' , 'K' , 'T' 
 };
 
-static int data_check_par2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_par2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
@@ -56,12 +56,12 @@ static int data_check_par2(const unsigned char *buffer, const unsigned int buffe
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const uint64_t length=le64((*(const uint64_t *)(&buffer[i+8])));
     if(memcmp(&buffer[i], &par2_header, sizeof(par2_header))!=0)
-      return 2;
+      return DC_STOP;
     if(length % 4 !=0 || length < 16)
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=length;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_rename_par2(const char *old_filename)

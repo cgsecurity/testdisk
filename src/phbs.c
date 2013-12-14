@@ -141,12 +141,12 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
     /* Check for data EOF */
     if(file_recovery.file_stat!=NULL)
     {
-      int res=1;
+      data_check_t res=DC_CONTINUE;
       if(file_recovery.data_check!=NULL)
 	res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
       file_recovery.file_size+=blocksize;
       file_recovery.file_size_on_disk+=blocksize;
-      if(res==2)
+      if(res==DC_STOP || res==DC_ERROR)
       {
 	/* EOF found */
 	reset_file_recovery(&file_recovery);

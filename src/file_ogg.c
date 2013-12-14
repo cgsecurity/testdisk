@@ -32,7 +32,7 @@
 #include "log.h"
 
 static void register_header_check_ogg(file_stat_t *file_stat);
-static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_ogg= {
   .extension="ogg",
@@ -74,7 +74,7 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
 }
 
 /* http://www.ietf.org/rfc/rfc3533.txt */
-static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 27 +255 < file_recovery->file_size + buffer_size/2)
@@ -91,7 +91,7 @@ static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer
         page_size+=buffer[i+27+j];
       if(page_size<27)
       {
-        return 2;
+        return DC_STOP;
       }
       /* By definition, page_size<=27+255+255*255=65307 */
       file_recovery->calculated_file_size+=page_size;
@@ -101,10 +101,10 @@ static int data_check_ogg(const unsigned char *buffer, const unsigned int buffer
     }
     else
     {
-      return 2;
+      return DC_STOP;
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void register_header_check_ogg(file_stat_t *file_stat)

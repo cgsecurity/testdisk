@@ -33,7 +33,7 @@
 
 static void register_header_check_dxf(file_stat_t *file_stat);
 static int header_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_dxf(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_dxf= {
@@ -79,7 +79,7 @@ static int header_check_dxf(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static int data_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
   for(i=(buffer_size/2)-3;i+3<buffer_size;i++)
@@ -87,11 +87,11 @@ static int data_check_dxf(const unsigned char *buffer, const unsigned int buffer
     if(buffer[i]=='\n' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
     {
       file_recovery->calculated_file_size=file_recovery->file_size+i+4-(buffer_size/2);
-      return 2;
+      return DC_STOP;
     }
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_check_dxf(file_recovery_t *file_recovery)

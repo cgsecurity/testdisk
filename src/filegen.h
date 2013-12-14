@@ -35,6 +35,7 @@ extern "C" {
 #define PHOTOREC_MAX_SIZE_16 (((uint64_t)1<<15)-1)
 #define PHOTOREC_MAX_SIZE_32 (((uint64_t)1<<31)-1)
 
+typedef enum { DC_SCAN=0, DC_CONTINUE=1, DC_STOP=2, DC_ERROR=3} data_check_t;
 typedef struct file_hint_struct file_hint_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
@@ -77,10 +78,8 @@ struct file_recovery_struct
   uint64_t offset_error;
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
-  int (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-  /* data_check returns 0: bad, 1: EOF not found, 2: EOF
-     It can modify file_recovery->calculated_file_size, not must not modify file_recovery->file_size
-  */
+  data_check_t (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+  /* It can modify file_recovery->calculated_file_size, not must not modify file_recovery->file_size */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(const char *old_filename);
   uint64_t checkpoint_offset;
@@ -130,7 +129,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
 void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
-int data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 void file_check_size_lax(file_recovery_t *file_recovery);
 void file_check_size(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);

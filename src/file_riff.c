@@ -34,7 +34,7 @@
 #include "log.h"
 #endif
 
-int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void register_header_check_riff(file_stat_t *file_stat);
 
 const file_hint_t file_hint_riff= {
@@ -171,7 +171,7 @@ static void file_check_avi(file_recovery_t *fr)
   }
 }
 
-static int data_check_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
@@ -181,12 +181,12 @@ static int data_check_avi(const unsigned char *buffer, const unsigned int buffer
     if(memcmp(&buffer[i], "RIFF", 4)==0 && memcmp(&buffer[i+8], "AVIX", 4)==0)
       file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
     else
-      return 2;
+      return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
@@ -194,10 +194,10 @@ int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
     if(buffer[i+2]!='d' || buffer[i+3]!='b')	/* Video Data Binary ?*/
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_check_size_rifx(file_recovery_t *file_recovery)

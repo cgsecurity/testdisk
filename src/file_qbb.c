@@ -33,7 +33,7 @@
 
 static void register_header_check_qbb(file_stat_t *file_stat);
 static int header_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_qbb(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_qbb= {
@@ -91,13 +91,13 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static int data_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size > file_recovery->calculated_file_size+512)
   {
-    return 2;
+    return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_check_qbb(file_recovery_t *file_recovery)

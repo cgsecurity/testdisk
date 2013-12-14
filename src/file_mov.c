@@ -34,7 +34,7 @@
 
 static void register_header_check_mov(file_stat_t *file_stat);
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_mov= {
   .extension="mov",
@@ -243,10 +243,10 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static int data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+      file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
@@ -254,12 +254,14 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
     if(atom_size==1)
     {
       const struct atom64_struct *atom64=(const struct atom64_struct*)&buffer[i];
+      if(file_recovery->calculated_file_size + 16 > file_recovery->file_size + buffer_size/2)
+	return DC_CONTINUE;
       atom_size=be64(atom64->size);
       if(atom_size<16)
-	return 2;
+	return DC_STOP;
     }
     else if(atom_size<8)
-      return 2;
+      return DC_STOP;
 #ifdef DEBUG_MOV
     log_trace("file_mov.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
 	file_recovery->filename,
@@ -268,13 +270,22 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
         (long long unsigned)atom_size,
         (long long unsigned)file_recovery->calculated_file_size);
 #endif
-    if( (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
+    if(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t')
+    {
+      file_recovery->calculated_file_size+=atom_size;
+#if 0
+      if(i+8 == buffer_size)
+      {
+	return -((file_recovery->calculated_file_size-1) / (buffer_size/2));
+      }
+#endif
+    }
+    else if( (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
 	(buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
 	(buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
 	(buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
 	(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
 	(buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
-	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t') ||
 	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
 	(buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
 	(buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
@@ -293,13 +304,13 @@ static int data_check_mov(const unsigned char *buffer, const unsigned int buffer
         log_warning("file_mov.c: unknown atom 0x%02x%02x%02x%02x at %llu\n",
             buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
             (long long unsigned)file_recovery->calculated_file_size);
-      return 2;
+      return DC_STOP;
     }
   }
 #ifdef DEBUG_MOV
   log_trace("file_mov.c: new calculated_file_size %llu\n",
       (long long unsigned)file_recovery->calculated_file_size);
 #endif
-  return 1;
+  return DC_CONTINUE;
 }
 

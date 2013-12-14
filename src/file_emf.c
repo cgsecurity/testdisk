@@ -33,7 +33,7 @@
 
 static void register_header_check_emf(file_stat_t *file_stat);
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_emf= {
   .extension="emf",
@@ -230,7 +230,7 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static int data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
@@ -367,11 +367,11 @@ static int data_check_emf(const unsigned char *buffer, const unsigned int buffer
     log_trace(" (%08x) \t%08x\n", itype, atom_size);
 #endif
       if(atom_size<8 || atom_size%4!=0 || atom_size>1024*1024)
-	return 0;
+	return DC_ERROR;
       file_recovery->calculated_file_size+=(uint64_t)atom_size;
       if(itype==EMR_EOF)
-	return 2;
+	return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 

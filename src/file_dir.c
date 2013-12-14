@@ -69,11 +69,11 @@ static void file_rename_fatdir(const char *old_filename)
   file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
-static int data_check_fatdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_fatdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /* Save only one cluster */
   file_recovery->calculated_file_size=buffer_size/2;
-  return 2;
+  return DC_STOP;
 }
 
 static int header_check_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

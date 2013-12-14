@@ -35,8 +35,8 @@
 extern const file_hint_t file_hint_mkv;
 
 static void register_header_check_mp3(file_stat_t *file_stat);
-static int data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
 static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i, const unsigned int buffer_size);
 
@@ -223,7 +223,7 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static int data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
@@ -240,10 +240,10 @@ static int data_check_id3(const unsigned char *buffer, const unsigned int buffer
       return data_check_mp3(buffer, buffer_size, file_recovery);
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
 #ifdef DEBUG_MP3
   log_info("data_check_mp3  file_size=%llu, calculated_file_size=%llu\n",
@@ -277,7 +277,7 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
       log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
       */
       if(sample_rate==0 || bit_rate==0 || mpeg_layer==MPEG_L1)
-	return 2;
+	return DC_STOP;
       if(mpeg_layer==MPEG_L3)
       {
 	if(mpeg_version==MPEG_V1)
@@ -290,7 +290,7 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
       else
 	frameLengthInBytes = (12000 * bit_rate / sample_rate + padding)*4;
       if(frameLengthInBytes<3)
-	return 2;
+	return DC_STOP;
       file_recovery->calculated_file_size+=frameLengthInBytes;
     }
     else if(buffer[i]=='L' && buffer[i+1]=='Y' && buffer[i+2]=='R' && buffer[i+3]=='I' && buffer[i+4]=='C' && buffer[i+5]=='S' && buffer[i+6]=='B' && buffer[i+7]=='E' && buffer[i+8]=='G' && buffer[i+9]=='I' && buffer[i+10]=='N')
@@ -308,7 +308,7 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
       unsigned int pos_lyrics=0;
       /* FIXME */
       if(file_recovery->calculated_file_size + 5100 >= file_recovery->file_size + buffer_size/2)
-	return 1;
+	return DC_CONTINUE;
       if((pos_lyrics=pos_in_mem(&buffer[i], 4096, (const unsigned char*)"LYRICS200", 9)) != 0)
       {
 	file_recovery->calculated_file_size+=pos_lyrics;
@@ -322,7 +322,7 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
 	/*
 	   log_warning("End of Lyrics not found \n");
 	 */
-	return 2;
+	return DC_STOP;
       }
     }
     else if(buffer[i]=='A' && buffer[i+1]=='P' && buffer[i+2]=='E' && buffer[i+3]=='T' && buffer[i+4]=='A' && buffer[i+5]=='G' && buffer[i+6]=='E' && buffer[i+7]=='X')
@@ -336,20 +336,20 @@ static int data_check_mp3(const unsigned char *buffer, const unsigned int buffer
     }
     else if(file_recovery->calculated_file_size > file_recovery->file_size)
     {
-      return 1;
+      return DC_CONTINUE;
     }
     else
     {
       const unsigned int MMT_size=search_MMT(buffer,i,buffer_size);
       if(MMT_size==0)
-	return 2;
+	return DC_STOP;
       /*
 	 log_info("MusicMatch Tag found at offset 0x%x with size 0x%x \n", file_recovery->calculated_file_size, MMT_size);
 	 */
       file_recovery->calculated_file_size+=MMT_size;
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size)

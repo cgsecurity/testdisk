@@ -53,12 +53,12 @@ extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_riff;
-extern int data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+extern data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_jpg(file_recovery_t *file_recovery);
-int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
@@ -1564,7 +1564,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
 }
 
-static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
 #if 0
   unsigned int old_marker=0;
@@ -1582,7 +1582,7 @@ static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffe
     log_info("%s data_check_jpg2 0xffd8 at 0x%llx\n", file_recovery->filename, 
 	(long long unsigned)file_recovery->calculated_file_size);
 #endif
-    return 2;
+    return DC_STOP;
   }
   while(file_recovery->calculated_file_size + buffer_size/2  > file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
@@ -1594,7 +1594,7 @@ static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffe
       {
 	/* JPEG_EOI */
 	file_recovery->calculated_file_size++;
-	return 2;
+	return DC_STOP;
       }
       else if(buffer[i] >= 0xd0 && buffer[i] <= 0xd7)
       {
@@ -1607,7 +1607,7 @@ static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffe
 	  log_info("Rejected due to JPEG_RST marker\n");
 #endif
 	  file_recovery->calculated_file_size++;
-	  return 2;
+	  return DC_STOP;
 	}
 	/* TODO: store old_marker in file_recovery */
 	old_marker=buffer[i];
@@ -1620,21 +1620,21 @@ static int data_check_jpg2(const unsigned char *buffer, const unsigned int buffe
 	    (long long unsigned)file_recovery->calculated_file_size);
 #endif
 	file_recovery->offset_error=file_recovery->calculated_file_size;
-	return 2;
+	return DC_STOP;
       }
     }
     file_recovery->calculated_file_size++;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer[buffer_size/2]==0xff && buffer[buffer_size/2]==0xd8 && 
       file_recovery->calculated_file_size != file_recovery->file_size)
   {
     log_info("data_check_jpg ffd8\n");
-    return 2;
+    return DC_STOP;
   }
   /* Skip the SOI */
   if(file_recovery->calculated_file_size==0)
@@ -1658,7 +1658,7 @@ int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, 
       if(buffer[i+1]==0xc4)	/* DHT */
       {
 	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
-	  return 2;
+	  return DC_STOP;
       }
       if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
@@ -1672,10 +1672,10 @@ int data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, 
       log_info("data_check_jpg %02x at %llu\n", buffer[i],
 	  (long long unsigned)file_recovery->calculated_file_size);
 #endif
-      return 2;
+      return DC_STOP;
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 const char*td_jpeg_version(void)

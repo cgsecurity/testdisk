@@ -41,8 +41,8 @@
 extern const file_hint_t file_hint_doc;
 
 static void register_header_check_png(file_stat_t *file_stat);
-static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_png= {
   .extension="png",
@@ -98,7 +98,7 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-static int data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   static const unsigned char mng_footer[4]= {'M','E','N','D'};
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
@@ -108,12 +108,12 @@ static int data_check_mng(const unsigned char *buffer, const unsigned int buffer
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
     file_recovery->calculated_file_size+=12 + be32(chunk->length);
     if(memcmp(&buffer[i+4], mng_footer, sizeof(mng_footer))==0)
-      return 2;
+      return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
@@ -122,7 +122,7 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
     file_recovery->calculated_file_size+=12 + be32(chunk->length);
     if(memcmp(&buffer[i+4], "IEND", 4)==0)
-      return 2;
+      return DC_STOP;
 // PNG chunk code
 // IDAT IHDR PLTE bKGD cHRM fRAc gAMA gIFg gIFt gIFx hIST iCCP
 // iTXt oFFs pCAL pHYs sBIT sCAL sPLT sRGB sTER tEXt tRNS zTXt
@@ -131,10 +131,10 @@ static int data_check_png(const unsigned char *buffer, const unsigned int buffer
 	  (isupper(buffer[i+6]) || islower(buffer[i+6])) &&
 	  (isupper(buffer[i+7]) || islower(buffer[i+7]))))
     {
-      return 2;
+      return DC_STOP;
     }
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void register_header_check_png(file_stat_t *file_stat)

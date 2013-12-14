@@ -114,7 +114,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
     }
 
     /* Minimal size is type+flags */
-    if (le16(h.size) < 1+2)
+    if (le16(h.size) < 1U + 2U)
     {
 #ifdef DEBUG_ACE
       log_trace("file_ace: Invalid block size %u\n", le16(h.size));
@@ -128,12 +128,11 @@ static void file_check_ace(file_recovery_t *file_recovery)
       /* Header hardly ever bigger than a filename */
 #define BUF_SIZE 4096
       unsigned char buffer[BUF_SIZE];
-      int len=le16(h.size);
+      unsigned int len=le16(h.size);
       uint32_t crc32=0xFFFFFFFF;
-
       while (len>0)
       {
-        const int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
+        const unsigned int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
         const int bytes = fread(buffer, 1, count, file_recovery->handle);
 
         if (bytes != count)
@@ -146,7 +145,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
           return ;
         }
         crc32=get_crc32(buffer, count, crc32);
-        len -= count;
+	len -= count;
       }
       if (le16(h.crc16) != (crc32&0xFFFF))
       {
@@ -159,7 +158,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
       }
     }
     /* Add its header size */
-    file_recovery->file_size += 2 + 2 + le16(h.size);	/* +2: CRC16, +2: size */
+    file_recovery->file_size += 2U + 2 + le16(h.size);	/* +2: CRC16, +2: size */
     /* If addsize flag, add complementary size */
     if (le16(h.flags)&1)
     {

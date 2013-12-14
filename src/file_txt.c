@@ -418,7 +418,7 @@ static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
   return i;
 }
 
-static int data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const char sign_html_end[]	= "</html>";
   const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
@@ -430,33 +430,33 @@ static int data_check_html(const unsigned char *buffer, const unsigned int buffe
     if(buffer[j]=='<' && strncasecmp((const char *)&buffer[j], sign_html_end, sizeof(sign_html_end)-1)==0)
     {
       file_recovery->calculated_file_size+=j-buffer_size/2+sizeof(sign_html_end)-1;
-      return 2;
+      return DC_STOP;
     }
   }
   if(i<buffer_size/2)
   {
     if(i>=10)
       file_recovery->calculated_file_size=file_recovery->file_size+i;
-    return 2;
+    return DC_STOP;
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
   if(i<buffer_size/2)
   {
     if(i>=10)
       file_recovery->calculated_file_size=file_recovery->file_size+i;
-    return 2;
+    return DC_STOP;
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int data_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
   for(i=buffer_size/2; i<buffer_size; i++)
@@ -465,10 +465,10 @@ static int data_check_ttd(const unsigned char *buffer, const unsigned int buffer
     if((car>='A' && car<='F') || (car >='0' && car <='9') || car==' ' || car=='\n')
       continue;
     file_recovery->calculated_file_size=file_recovery->file_size + i - buffer_size/2;
-    return 2;
+    return DC_STOP;
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

@@ -57,7 +57,7 @@ static void register_header_check_tib(file_stat_t *file_stat)
   register_header_check(0, tib2_header,sizeof(tib2_header), &header_check_tib, file_stat);
 }
 
-static int data_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 512 <= file_recovery->file_size + buffer_size/2)
@@ -65,9 +65,9 @@ static int data_check_tib2(const unsigned char *buffer, const unsigned int buffe
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     file_recovery->calculated_file_size+=512;
     if(memcmp(&buffer[i + 512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
-      return 2;
+      return DC_STOP;
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_check_tib(file_recovery_t *file_recovery)

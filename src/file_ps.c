@@ -34,7 +34,7 @@
 
 static void register_header_check_ps(file_stat_t *file_stat);
 static int header_check_ps(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_ps= {
   .extension="ps",
@@ -87,7 +87,7 @@ static int header_check_ps(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
-static int data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size>8)
   {
@@ -97,10 +97,10 @@ static int data_check_ps(const unsigned char *buffer, const unsigned int buffer_
       if(buffer[i]=='%' && buffer[i+1]=='%' && buffer[i+2]=='E' && buffer[i+3]=='O' && buffer[i+4]=='F')
       {
 	file_recovery->calculated_file_size=file_recovery->file_size+i+5-(buffer_size/2);
-	return 2;
+	return DC_STOP;
       }
     }
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return 1;
+  return DC_CONTINUE;
 }

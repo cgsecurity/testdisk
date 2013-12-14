@@ -45,7 +45,7 @@ const file_hint_t file_hint_bac= {
   .register_header_check=&register_header_check_bac
 };
 
-static int data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
@@ -62,7 +62,7 @@ static int data_check_bac(const unsigned char *buffer, const unsigned int buffer
     {
       log_error("file_bac.c: invalid block at %llu\n",
 	  (long long unsigned)file_recovery->calculated_file_size);
-      return 2;
+      return DC_STOP;
     }
     file_recovery->calculated_file_size+=(uint64_t)block_size;
   }
@@ -70,7 +70,7 @@ static int data_check_bac(const unsigned char *buffer, const unsigned int buffer
   log_trace("file_bac.c: new calculated_file_size %llu\n",
       (long long unsigned)file_recovery->calculated_file_size);
 #endif
-  return 1;
+  return DC_CONTINUE;
 }
 
 static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

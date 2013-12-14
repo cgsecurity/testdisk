@@ -37,7 +37,7 @@
 
 static void register_header_check_psb(file_stat_t *file_stat);
 static int header_check_psb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_psb(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_psb= {
@@ -91,13 +91,13 @@ static uint64_t get_be64(const void *buffer, const unsigned int offset)
   return be64(*val);
 }
 
-static int psb_skip_image_data(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t psb_skip_image_data(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   file_recovery->file_check=NULL;
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int psb_skip_layer_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t psb_skip_layer_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
@@ -108,15 +108,15 @@ static int psb_skip_layer_info(const unsigned char *buffer, const unsigned int b
     log_info("Image data at 0x%lx\n", (long unsigned)(l + file_recovery->calculated_file_size));
 #endif
     if(l<4)
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=l;
     file_recovery->data_check=&psb_skip_image_data;
     return psb_skip_image_data(buffer, buffer_size, file_recovery);
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int psb_skip_image_resources(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t psb_skip_image_resources(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
@@ -127,15 +127,15 @@ static int psb_skip_image_resources(const unsigned char *buffer, const unsigned 
     log_info("Layer info at 0x%lx\n", (long unsigned)(l + file_recovery->calculated_file_size));
 #endif
     if(l<4)
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=l;
     file_recovery->data_check=&psb_skip_layer_info;
     return psb_skip_layer_info(buffer, buffer_size, file_recovery);
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
-static int psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const struct psb_file_header *psb=(const struct psb_file_header *)&buffer[buffer_size/2];
   psb_image_data_size_max=(uint64_t)le16(psb->channels) * le32(psb->height) * le32(psb->width) * le16(psb->depth) / 8;
@@ -151,12 +151,12 @@ static int psb_skip_color_mode(const unsigned char *buffer, const unsigned int b
     log_info("Color mode at 0x%lx\n", (long unsigned)(l + file_recovery->calculated_file_size));
 #endif
     if(l<4)
-      return 2;
+      return DC_STOP;
     file_recovery->calculated_file_size+=l;
     file_recovery->data_check=&psb_skip_image_resources;
     return psb_skip_image_resources(buffer, buffer_size, file_recovery);
   }
-  return 1;
+  return DC_CONTINUE;
 }
 
 static void file_check_psb(file_recovery_t *file_recovery)

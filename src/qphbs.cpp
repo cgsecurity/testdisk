@@ -139,12 +139,12 @@ pstatus_t QPhotorec::photorec_find_blocksize(alloc_data_t *list_search_space)
     /* Check for data EOF */
     if(file_recovery.file_stat!=NULL)
     {
-      int res=1;
+      data_check_t res=DC_CONTINUE;
       if(file_recovery.data_check!=NULL)
 	res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
       file_recovery.file_size+=blocksize;
       file_recovery.file_size_on_disk+=blocksize;
-      if(res==2)
+      if(res==DC_STOP || res==DC_ERROR)
       {
 	/* EOF found */
 	reset_file_recovery(&file_recovery);
@@ -163,13 +163,14 @@ pstatus_t QPhotorec::photorec_find_blocksize(alloc_data_t *list_search_space)
     else
     {
       get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-      params->offset=offset;
     }
     if(current_search_space==list_search_space)
     {
       /* End of disk found => EOF */
       reset_file_recovery(&file_recovery);
     }
+    else
+      params->offset=offset;
     buffer_olddata+=blocksize;
     buffer+=blocksize;
     if( old_offset+blocksize!=offset ||

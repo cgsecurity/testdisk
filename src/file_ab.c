@@ -25,12 +25,11 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 #include "log.h"
 
 static void register_header_check_ab(file_stat_t *file_stat);
-static int header_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static int data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_addressbook= {
   .extension="ab",
@@ -42,11 +41,34 @@ const file_hint_t file_hint_addressbook= {
   .register_header_check=&register_header_check_ab
 };
 
-static const unsigned char ab_header[2]={ 'L', 'J' };
-
-static void register_header_check_ab(file_stat_t *file_stat)
+static data_check_t data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  register_header_check(0, ab_header,sizeof(ab_header), &header_check_addressbook, file_stat);
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+#ifdef DEBUG_AB
+    log_debug("data_check_addressbook i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
+        i, buffer_size,
+        (long unsigned)file_recovery->calculated_file_size,
+        (long unsigned)file_recovery->file_size);
+    dump_log(buffer+i,8);
+#endif
+    if(buffer[i+0]=='L' && buffer[i+1]=='J' && buffer[i+3]==0x00)
+    {
+      const unsigned int length=((const unsigned int)buffer[i+4]<<24)+(buffer[i+5]<<16)+(buffer[i+6]<<8)+buffer[i+7];
+      if(length<8)
+      {
+        return DC_STOP;
+      }
+      file_recovery->calculated_file_size+=length;
+    }
+    else
+    {
+      return DC_STOP;
+    }
+  }
+  return DC_CONTINUE;
 }
 
 static int header_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -63,32 +85,8 @@ static int header_check_addressbook(const unsigned char *buffer, const unsigned 
   return 0;
 }
 
-static int data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static void register_header_check_ab(file_stat_t *file_stat)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-#ifdef DEBUG_AB
-    log_debug("data_check_addressbook i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
-        i, buffer_size,
-        (long unsigned)file_recovery->calculated_file_size,
-        (long unsigned)file_recovery->file_size);
-    dump_log(buffer+i,8);
-#endif
-    if(buffer[i+0]=='L' && buffer[i+1]=='J' && buffer[i+3]==0x00)
-    {
-      const unsigned int length=(buffer[i+4]<<24)+(buffer[i+5]<<16)+(buffer[i+6]<<8)+buffer[i+7];
-      if(length<8)
-      {
-        return 2;
-      }
-      file_recovery->calculated_file_size+=length;
-    }
-    else
-    {
-      return 2;
-    }
-  }
-  return 1;
+  static const unsigned char ab_header[2]={ 'L', 'J' };
+  register_header_check(0, ab_header,sizeof(ab_header), &header_check_addressbook, file_stat);
 }
