@@ -618,7 +618,9 @@ void QPhotorec::qphotorec_search_updateUI()
   {
     tmp.sprintf("Pass %u - Reading sector %10llu/%llu",
 	params->pass,
-	(unsigned long long)((params->offset-partition->part_offset)/sector_size),
+	(unsigned long long)(params->offset>partition->part_offset && params->offset < partition->part_size ?
+	  ((params->offset-partition->part_offset)/sector_size):
+	  0),
 	(unsigned long long)(partition->part_size/sector_size));
   }
   progress_info->setText(tmp);
