@@ -96,7 +96,7 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
   params->disk->pread(params->disk, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
-    uint64_t old_offset=offset;
+    const uint64_t old_offset=offset;
     {
       file_recovery_t file_recovery_new;
       if(file_recovery.file_stat!=NULL &&
