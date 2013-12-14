@@ -266,7 +266,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
     }
     if(file_recovery.file_stat!=NULL)
     {
-      int res=1;
+      int res=DC_CONTINUE;
     /* try to skip ext2/ext3 indirect block */
       if((params->status==STATUS_EXT2_ON || params->status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
           file_recovery.file_size_on_disk>=12*blocksize &&
@@ -292,7 +292,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	    if(errno==EFBIG)
 	    {
 	      /* File is too big for the destination filesystem */
-	      res=2;
+	      res=DC_STOP;
 	    }
 	    else
 	    {
@@ -309,26 +309,26 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	    res=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
 	  file_recovery.file_size+=blocksize;
 	  file_recovery.file_size_on_disk+=blocksize;
-	  if(res==2)
+	  if(res==DC_STOP)
 	  {
 	    if(options->verbose > 1)
 	      log_trace("EOF found\n");
 	  }
 	}
       }
-      if(res!=2 && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
+      if(res!=DC_STOP && res!=DC_ERROR && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
       {
-	res=2;
+	res=DC_STOP;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res!=2 &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
+      if(res!=DC_STOP && res!=DC_ERROR &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
       {
-      	res=2;
+	res=DC_STOP;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res==2)
+      if(res==DC_STOP || res==DC_ERROR)
       {
 	file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
 	reset_file_recovery(&file_recovery);
