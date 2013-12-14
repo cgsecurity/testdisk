@@ -46,6 +46,7 @@
 #include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
+#include "fat_common.h"
 #include "fatx.h"
 #include "iso9660.h"
 #include "iso.h"
