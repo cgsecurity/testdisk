@@ -543,7 +543,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     struct td_list_head *search_walker = NULL;
     td_list_for_each(search_walker, &list_search_space->list)
     {
-      alloc_data_t *current_search_space;
+      const alloc_data_t *current_search_space;
       current_search_space=td_list_entry(search_walker, alloc_data_t, list);
       data_size += current_search_space->end - current_search_space->start + 1;
     }
@@ -733,7 +733,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     if(enable_status==0)
       wprintw(stdscr," for default selection, ");
     else
-      wprintw(stdscr," to disable all file famillies, ");
+      wprintw(stdscr," to disable all file families, ");
     if(has_colors())
       wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
     wprintw(stdscr,"b");
