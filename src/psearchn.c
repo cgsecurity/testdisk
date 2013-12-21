@@ -150,6 +150,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   {
     int file_recovered=0;
     uint64_t old_offset=offset;
+    int res=DC_SCAN;
 #ifdef DEBUG
     log_debug("sector %llu\n",
         (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size));
@@ -188,6 +189,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	{
 	  struct td_list_head *tmp;
 	  const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+	  file_recovery_new.location.start=offset;
 	  td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
 	  {
 	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
@@ -203,17 +205,15 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	}
         if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
         {
-	  current_search_space=file_found(current_search_space, offset, file_recovery_new.file_stat);
-	  file_recovery_new.loc=current_search_space;
 	  file_recovery_new.location.start=offset;
-          if(options->verbose > 1)
-            log_trace("A known header has been found, recovery of the previous file is finished\n");
+	  if(file_recovery.file_stat!=NULL)
 	  {
-	    file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
+	    if(options->verbose > 1)
+	      log_trace("A known header has been found, recovery of the previous file is finished\n");
+	    file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
+	    if(options->lowmem > 0)
+	      forget(list_search_space,current_search_space);
 	  }
-          reset_file_recovery(&file_recovery);
-          if(options->lowmem > 0)
-            forget(list_search_space,current_search_space);
           if(file_recovered==0)
           {
 	    file_recovery_cpy(&file_recovery, &file_recovery_new);
@@ -266,13 +266,13 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
     }
     if(file_recovery.file_stat!=NULL)
     {
-      int res=DC_CONTINUE;
     /* try to skip ext2/ext3 indirect block */
       if((params->status==STATUS_EXT2_ON || params->status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
           file_recovery.file_size_on_disk>=12*blocksize &&
           ind_block(buffer,blocksize)!=0)
       {
-	current_search_space=file_add_data(current_search_space, offset, 0);
+	file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 0);
+	res=DC_CONTINUE;
         file_recovery.file_size_on_disk+=blocksize;
         if(options->verbose > 1)
         {
@@ -304,9 +304,11 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	}
 	if(ind_stop==PSTATUS_OK)
 	{
-	  current_search_space=file_add_data(current_search_space, offset, 1);
+	  file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 1);
 	  if(file_recovery.data_check!=NULL)
 	    res=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
+	  else
+	    res=DC_CONTINUE;
 	  file_recovery.file_size+=blocksize;
 	  file_recovery.file_size_on_disk+=blocksize;
 	  if(res==DC_STOP)
@@ -322,16 +324,15 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res!=DC_STOP && res!=DC_ERROR &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
+      if(res!=DC_STOP && res!=DC_ERROR && file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
       {
-	res=DC_STOP;
+      	res=DC_STOP;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
       if(res==DC_STOP || res==DC_ERROR)
       {
-	file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
-	reset_file_recovery(&file_recovery);
+	file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
 	if(options->lowmem > 0)
 	  forget(list_search_space,current_search_space);
       }
@@ -343,9 +344,12 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
     }
     else if(file_recovered==0)
     {
-      get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
-      if(offset > offset_before_back)
-	back=0;
+      if(res==DC_SCAN)
+      {
+	get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
+	if(offset > offset_before_back)
+	  back=0;
+      }
     }
     else if(file_recovered>0)
     {
@@ -364,8 +368,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      file_recovered=file_finish2(&file_recovery, params, options, list_search_space, &current_search_space, &offset);
-      reset_file_recovery(&file_recovery);
+      file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }
@@ -398,8 +401,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       }
       if(ind_stop==PSTATUS_OK)
       {
-        time_t current_time;
-        current_time=time(NULL);
+        const time_t current_time=time(NULL);
         if(current_time>previous_time)
         {
           previous_time=current_time;

@@ -66,7 +66,6 @@ struct file_recovery_struct
 {
   char filename[2048];
   alloc_list_t location;
-  alloc_data_t *loc;
   file_stat_t *file_stat;
   FILE *handle;
   time_t time;
@@ -79,7 +78,7 @@ struct file_recovery_struct
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
   data_check_t (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-  /* It can modify file_recovery->calculated_file_size, not must not modify file_recovery->file_size */
+  /* data_check modifies file_recovery->calculated_file_size but not must alter file_recovery->file_size */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(const char *old_filename);
   uint64_t checkpoint_offset;

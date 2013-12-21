@@ -79,31 +79,6 @@ typedef enum { BF_OK=0, BF_STOP=1, BF_EACCES=2, BF_ENOSPC=3, BF_FRAG_FOUND=4, BF
 static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase);
 static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag);
 
-#ifdef DEBUG_BF
-static void list_space_used(const file_recovery_t *file_recovery, const unsigned int sector_size)
-{
-  struct td_list_head *tmp;
-  uint64_t file_size=0;
-  if(file_recovery->filename==NULL)
-    return;
-  log_info("%s\t",file_recovery->filename);
-  td_list_for_each(tmp, &file_recovery->location.list)
-  {
-    const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
-    if(element->data>0)
-    {
-      log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
-      file_size+=(element->end-element->start+1);
-    }
-    else
-    {
-      log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
-    }
-  }
-  log_info("\n");
-}
-#endif
-
 static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
@@ -428,7 +403,7 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
       }
 #ifdef DEBUG_BF
       log_trace("BF ");
-      list_space_used(file_recovery, 512);
+      file_block_log(file_recovery, 512);
 #endif
       file_size_backup=file_recovery->file_size;
       file_recovery->flags=1;
@@ -470,7 +445,7 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 	(unsigned long long)file_offset,
 	(unsigned long long)file_recovery->offset_error,
 	blocksize);
-    list_space_used(file_recovery, 512);
+    file_block_log(file_recovery, 512);
 #endif
     return BF_FRAG_FOUND;
   }
@@ -648,7 +623,7 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
     log_info("photorec_bf_aux %s split file at %llu\n",
 	file_recovery->filename,
 	(long long unsigned)file_offset);
-    //      list_space_used(file_recovery, 512);
+    //      file_block_log(file_recovery, 512);
 #endif
     /* Get the last block added to the file */
     extrablock_offset=0;
@@ -833,7 +808,7 @@ static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_
   file_recovery->offset_error=file_recovery->file_size;
 #ifdef DEBUG_BF
   log_trace("BF Amorce ");
-  list_space_used(file_recovery, 512);
+  file_block_log(file_recovery, 512);
   log_trace("\n");
 #endif
   ind_stop=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, &current_search_space, &offset, buffer, block_buffer, 0);

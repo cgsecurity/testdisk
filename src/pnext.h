@@ -71,3 +71,22 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
   else
     get_next_header(list_search_space, current_search_space, offset);
 }
+
+static inline void get_prev_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
+{
+  if((*current_search_space) != list_search_space)
+    *current_search_space=td_list_entry((*current_search_space)->list.prev, alloc_data_t, list);
+  *offset=(*current_search_space)->end + 1 - blocksize;
+}
+
+static inline void get_prev_sector(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
+{
+  if((*current_search_space) == list_search_space)
+  {
+    return ;
+  }
+  if((*offset) >= (*current_search_space)->start + blocksize)
+    *offset-=blocksize;
+  else
+    get_prev_header(list_search_space, current_search_space, offset, blocksize);
+}

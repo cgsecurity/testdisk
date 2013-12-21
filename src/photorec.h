@@ -66,7 +66,7 @@ struct ph_param
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
-int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
+int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);
@@ -86,6 +86,9 @@ void params_reset(struct ph_param *params, const struct ph_options *options);
 const char *status_to_name(const photorec_status_t status);
 void status_inc(struct ph_param *params, const struct ph_options *options);
 list_part_t *init_list_part(disk_t *disk, const struct ph_options *options);
+void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size);
+void file_block_free(alloc_list_t *list_allocation);
+void file_block_append(file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize, const unsigned int data);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
