@@ -81,6 +81,7 @@ extern const file_hint_t file_hint_dar;
 extern const file_hint_t file_hint_dat;
 extern const file_hint_t file_hint_dbf;
 extern const file_hint_t file_hint_dbn;
+extern const file_hint_t file_hint_dcm;
 extern const file_hint_t file_hint_ddf;
 extern const file_hint_t file_hint_dex;
 extern const file_hint_t file_hint_dim;
@@ -353,6 +354,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_dat  },
   { .enable=0, .file_hint=&file_hint_dbf  },
   { .enable=0, .file_hint=&file_hint_dbn  },
+  { .enable=0, .file_hint=&file_hint_dcm  },
   { .enable=0, .file_hint=&file_hint_ddf  },
   { .enable=0, .file_hint=&file_hint_dex  },
   { .enable=0, .file_hint=&file_hint_dim  },
