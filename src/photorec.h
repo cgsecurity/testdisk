@@ -66,7 +66,7 @@ struct ph_param
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
-int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
+int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
 void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);

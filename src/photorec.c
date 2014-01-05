@@ -622,7 +622,7 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
   if(file_recovery->file_stat==NULL)
     return 0;
   if(file_recovery->handle)
-    file_finish_aux(file_recovery, params, 1);
+    file_finish_aux(file_recovery, params, 2);
   if(file_recovery->file_size==0)
   {
     list_truncate(&file_recovery->location,file_recovery->file_size);
@@ -661,12 +661,12 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
     0: file not recovered
     1: file recovered
  */
-int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
+int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
 {
   if(file_recovery->file_stat==NULL)
     return 0;
   if(file_recovery->handle)
-    file_finish_aux(file_recovery, params, options->paranoid);
+    file_finish_aux(file_recovery, params, paranoid);
   if(file_recovery->file_size==0)
   {
     file_block_truncate_zero(file_recovery, list_search_space);

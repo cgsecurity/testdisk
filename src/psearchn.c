@@ -210,7 +210,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  {
 	    if(options->verbose > 1)
 	      log_trace("A known header has been found, recovery of the previous file is finished\n");
-	    file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
+	    file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
 	    if(options->lowmem > 0)
 	      forget(list_search_space,current_search_space);
 	  }
@@ -330,7 +330,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       }
       if(res==DC_STOP || res==DC_ERROR)
       {
-	file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
+	file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
 	if(options->lowmem > 0)
 	  forget(list_search_space,current_search_space);
       }
@@ -366,7 +366,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
+      file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }
