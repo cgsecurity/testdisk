@@ -571,7 +571,6 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
 	(long long unsigned) file_recovery->file_size,
 	(long long unsigned) file_recovery->min_filesize);
     file_recovery->file_size=0;
-    file_recovery->file_size_on_disk=0;
   }
   if(file_recovery->file_size==0)
   {

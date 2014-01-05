@@ -143,7 +143,6 @@ pstatus_t QPhotorec::photorec_find_blocksize(alloc_data_t *list_search_space)
       if(file_recovery.data_check!=NULL)
 	res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
       file_recovery.file_size+=blocksize;
-      file_recovery.file_size_on_disk+=blocksize;
       if(res==DC_STOP || res==DC_ERROR)
       {
 	/* EOF found */

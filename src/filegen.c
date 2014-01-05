@@ -304,7 +304,6 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->file_stat=NULL;
   file_recovery->handle=NULL;
   file_recovery->file_size=0;
-  file_recovery->file_size_on_disk=0;
   file_recovery->location.list.prev=&file_recovery->location.list;
   file_recovery->location.list.next=&file_recovery->location.list;
   file_recovery->location.start=0;

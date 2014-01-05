@@ -264,12 +264,11 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
     {
     /* try to skip ext2/ext3 indirect block */
       if((params->status==STATUS_EXT2_ON || params->status==STATUS_EXT2_ON_SAVE_EVERYTHING) &&
-          file_recovery.file_size_on_disk>=12*blocksize &&
+          file_recovery.file_size >= 12*blocksize &&
           ind_block(buffer,blocksize)!=0)
       {
 	file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 0);
 	res=DC_CONTINUE;
-        file_recovery.file_size_on_disk+=blocksize;
         if(options->verbose > 1)
         {
           log_verbose("Skipping sector %10lu/%lu\n",
@@ -306,7 +305,6 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	  else
 	    res=DC_CONTINUE;
 	  file_recovery.file_size+=blocksize;
-	  file_recovery.file_size_on_disk+=blocksize;
 	  if(res==DC_STOP)
 	  {
 	    if(options->verbose > 1)

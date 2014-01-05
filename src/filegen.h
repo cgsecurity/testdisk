@@ -70,7 +70,6 @@ struct file_recovery_struct
   FILE *handle;
   time_t time;
   uint64_t file_size;
-  uint64_t file_size_on_disk;
   const char *extension;
   uint64_t min_filesize;
   uint64_t offset_ok;

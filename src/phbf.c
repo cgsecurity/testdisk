@@ -257,7 +257,6 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	    if(file_recovery.data_check!=NULL)
 	      res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
 	    file_recovery.file_size+=blocksize;
-	    file_recovery.file_size_on_disk+=blocksize;
 	    if(res==DC_STOP || res==DC_ERROR)
 	    { /* EOF found */
 	      need_to_check_file=1;
@@ -372,7 +371,6 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 	    }
 	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
-	    file_recovery->file_size_on_disk+=blocksize;
 	    nbr++;
 	    memcpy(buffer, block_buffer, blocksize);
 	  }
@@ -493,7 +491,6 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
     file_recovery->checkpoint_offset=original_offset_ok/blocksize*blocksize;
     file_recovery->calculated_file_size=0;
     file_recovery->file_size=0;
-    file_recovery->file_size_on_disk=0;
     for(file_recovery->file_size = 0;
 	file_recovery->file_size <= original_offset_ok/blocksize*blocksize;
 	)
@@ -506,7 +503,6 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
 	memcpy(buffer, block_buffer, blocksize);
       }
       file_recovery->file_size+=blocksize;
-      file_recovery->file_size_on_disk+=blocksize;
       get_next_sector(list_search_space, current_search_space, offset, blocksize);
     }
     list_truncate(&file_recovery->location, file_recovery->file_size);
@@ -530,7 +526,6 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
       }
       list_append_block(&file_recovery->location, *offset, blocksize, 1);
       file_recovery->file_size+=blocksize;
-      file_recovery->file_size_on_disk+=blocksize;
       memcpy(buffer, block_buffer, blocksize);
       get_next_sector(list_search_space, current_search_space, offset, blocksize);
     }
@@ -618,7 +613,6 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
     }
     list_truncate(&file_recovery->location, file_offset);
     file_recovery->file_size=file_offset;
-    file_recovery->file_size_on_disk=file_recovery->file_size;
     /* Set extractblock_search_space & extrablock_offset to the begining of the potential extra block */
     /* FIXME */
 #ifdef DEBUG_BF
@@ -807,7 +801,6 @@ static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_
     list_append_block(&file_recovery->location, offset, blocksize, 1);
     get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
   }
-  file_recovery->file_size_on_disk=file_recovery->file_size;
   file_recovery->offset_error=file_recovery->file_size;
 #ifdef DEBUG_BF
   log_trace("BF Amorce ");
