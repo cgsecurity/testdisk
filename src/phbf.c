@@ -106,19 +106,34 @@ static inline void list_append_block(alloc_list_t *list, const uint64_t offset, 
   }
 }
 
-static struct td_list_head *next_file(struct td_list_head *search_walker, alloc_data_t *list_search_space)
+static struct td_list_head *next_file(struct td_list_head *search_walker, const alloc_data_t *list_search_space)
 {
   struct td_list_head *tmp_walker;
   for(tmp_walker=search_walker->next;
       tmp_walker!=&list_search_space->list;
       tmp_walker=tmp_walker->next)
   {
-    alloc_data_t *tmp;
-    tmp=td_list_entry(tmp_walker, alloc_data_t, list);
+    const alloc_data_t *tmp;
+    tmp=td_list_entry_const(tmp_walker, const alloc_data_t, list);
     if(tmp->file_stat!=NULL && tmp->file_stat->file_hint!=NULL)
       return tmp_walker;
   }
   return search_walker;
+}
+
+static uint64_t get_offset_next_file(const struct td_list_head *search_walker, const alloc_data_t *list_search_space)
+{
+  const struct td_list_head *tmp_walker;
+  for(tmp_walker=search_walker->next;
+      tmp_walker!=&list_search_space->list;
+      tmp_walker=tmp_walker->next)
+  {
+    const alloc_data_t *tmp;
+    tmp=td_list_entry_const(tmp_walker, const alloc_data_t, list);
+    if(tmp->file_stat!=NULL && tmp->file_stat->file_hint!=NULL)
+      return tmp->start;
+  }
+  return 0;
 }
 
 pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
@@ -279,20 +294,8 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
       } while(need_to_check_file==0);
       if(need_to_check_file==1)
       {
-	uint64_t offset_next_file=0;
-	struct td_list_head *tmp_walker;
+	const uint64_t offset_next_file=get_offset_next_file(search_walker, list_search_space);
 	const unsigned int file_nbr_old=params->file_nbr;
-	/* find the offset of the next file */
-	for(tmp_walker=search_walker;
-	    tmp_walker!=&list_search_space->list && offset_next_file==0;
-	    tmp_walker=tmp_walker->next)
-	{
-	  alloc_data_t *tmp;
-	  tmp=td_list_entry(tmp_walker, alloc_data_t, list);
-	  if(tmp->file_stat!=NULL && tmp->file_stat->file_hint!=NULL)
-	    offset_next_file=tmp->start;
-	}
-
 	file_recovery.flags=1;
 	if(file_finish(&file_recovery, params, list_search_space, &current_search_space, &offset)<0)
 	{ /* BF */
