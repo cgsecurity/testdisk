@@ -62,8 +62,8 @@
 static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
-void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
-void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize,  const uint64_t file_size);
+static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
+static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize);
 
 void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size)
 {
@@ -673,7 +673,7 @@ int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const 
     reset_file_recovery(file_recovery);
     return 0;
   }
-  file_block_truncate(file_recovery, list_search_space, params->blocksize, file_recovery->file_size);
+  file_block_truncate(file_recovery, list_search_space, params->blocksize);
   file_block_log(file_recovery, params->disk->sector_size);
 #ifdef ENABLE_DFXML
   xml_log_file_recovered(file_recovery);
@@ -1054,7 +1054,7 @@ static void file_block_truncate_zero_aux(const uint64_t start, const uint64_t en
   }
 }
 
-void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space)
+static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;
@@ -1074,7 +1074,7 @@ void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t
   }
 }
 
-void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize,  const uint64_t file_size)
+static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;
@@ -1082,7 +1082,7 @@ void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *lis
   td_list_for_each_safe(tmp, next, &file_recovery->location.list)
   {
     alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
-    if(size>=file_size)
+    if(size >= file_recovery->file_size)
     {
       file_block_truncate_aux(element->start, element->end, list_search_space);
       td_list_del(tmp);
@@ -1090,12 +1090,12 @@ void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *lis
     }
     else if(element->data>0)
     {
-      if(size + element->end - element->start + 1 > file_size)
+      if(size + element->end - element->start + 1 > file_recovery->file_size)
       {
-	const uint64_t diff=(file_size - size + blocksize - 1) / blocksize * blocksize;
+	const uint64_t diff=(file_recovery->file_size - size + blocksize - 1) / blocksize * blocksize;
 	file_block_truncate_aux(element->start + diff, element->end, list_search_space);
 	element->end-=element->end - element->start + 1 - diff;
-	size=file_size;
+	size=file_recovery->file_size;
       }
       else
 	size+=(element->end-element->start+1);
