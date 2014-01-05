@@ -239,17 +239,13 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	    }
 	  }
 	}
-	if(need_to_check_file==0 && file_recovery.handle!=NULL)
+	if(need_to_check_file==0 && file_recovery.handle!=NULL && file_recovery.file_stat!=NULL)
 	{
-	  if(file_recovery.handle!=NULL)
-	  {
-	    if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
-	    { 
-	      log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
-	      ind_stop=PSTATUS_ENOSPC;
-	    }
+	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
+	  { 
+	    log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
+	    ind_stop=PSTATUS_ENOSPC;
 	  }
-	  if(file_recovery.file_stat!=NULL)
 	  {
 	    data_check_t res=DC_CONTINUE;
 	    //	  log_info("add sector %llu\n", (long long unsigned)(offset/512));
@@ -262,7 +258,7 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	      need_to_check_file=1;
 	    }
 	  }
-	  if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
+	  if(file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
 	  {
 	    log_verbose("File should not be bigger than %llu, stop adding data\n",
 		(long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
