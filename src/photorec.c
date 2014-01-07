@@ -529,6 +529,13 @@ void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, c
       free(current_search_space);
     }
   }
+  /* Align end of last range */
+  search_walker=list_search_space->list.prev;
+  {
+    alloc_data_t *current_search_space;
+    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    current_search_space->end=(current_search_space->end+1-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize-1;
+  }
 }
 
 uint64_t free_list_allocation_end=0;
