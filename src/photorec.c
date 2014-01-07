@@ -898,7 +898,7 @@ static int file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data
     alloc_data_t *tmp;
     tmp=td_list_entry(search_walker, alloc_data_t, list);
     if(tmp->start <= *offset &&
-	*offset + blocksize - 1 <= tmp->end)
+	*offset + blocksize <= tmp->end + 1)
     {
       if(tmp->start == *offset)
       {
@@ -913,7 +913,7 @@ static int file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data
 	free(tmp);
 	return 0;
       }
-      if(*offset + blocksize == tmp->end)
+      if(*offset + blocksize == tmp->end + 1)
       {
 	tmp->end-=blocksize;
 	*new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
@@ -1065,7 +1065,7 @@ static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc
     if(first)
     {
       file_block_truncate_zero_aux(element->start, element->end, list_search_space, file_recovery->file_stat);
-      first=1;
+      first=0;
     }
     else
       file_block_truncate_aux(element->start, element->end, list_search_space);
