@@ -1404,14 +1404,11 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
 #endif
     }
   }
-  if(try_readonly>0)
+  if(hd_h<0 && try_readonly>0)
   {
     testdisk_mode&=~TESTDISK_O_RDWR;
-    if(hd_h<0)
-    {
-      mode=O_RDONLY|O_EXCL|mode_basic;
-      hd_h = open(device, mode);
-    }
+    mode=O_RDONLY|O_EXCL|mode_basic;
+    hd_h = open(device, mode);
     if(hd_h<0 && (errno==EBUSY || errno==EINVAL))
     {
       mode=O_RDONLY|mode_basic;
