@@ -56,6 +56,7 @@
 #include "log.h"
 #include "parti386.h"
 #include "partgpt.h"
+#include "partxbox.h"
 
 #define TAB_PART 0x1BE
 static int is_extended(const unsigned int part_type);
@@ -889,7 +890,7 @@ static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned 
 {
   if(memcmp(buffer,buffer_org,DEFAULT_SECTOR_SIZE))
   {
-    int j;
+    unsigned int j;
     log_info("\nSectors are different.\n");
     log_info("buffer_org\n");
     for(j=0;j<4;j++)
@@ -1480,9 +1481,28 @@ static int erase_list_part_i386(disk_t *disk)
     memset(buffer,0,sizeof(buffer));
   }
   memset(buffer+TAB_PART,0,0x40);
+  /* Remove Mac signature */
+  if(buffer[0]==0x45 && buffer[1]==0x52)
+    buffer[0]=0;
+  /* Remove Sun signature */
+  if(buffer[0x1fc]==0xda && buffer[0x1fd]==0xbe)
+    buffer[0x1fc]=0;
   if(disk->pwrite(disk, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
   {
     return 1;
+  }
+  {
+    /* Erase XBOX signature if present */
+    struct xbox_partition *xboxlabel=(struct xbox_partition*)MALLOC(0x800);
+    if((unsigned)disk->pread(disk, xboxlabel, 0x800, 0) == 0x800)
+    {
+      if (memcmp(xboxlabel->magic,"BRFR",4)==0)
+      {
+	memset(xboxlabel->magic, 0, 4);
+	disk->pwrite(disk, xboxlabel, 0x800, 0);
+      }
+    }
+    free(xboxlabel);
   }
   {
     /* Erase EFI GPT signature if present */
