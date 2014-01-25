@@ -52,6 +52,7 @@ static int32_t secwest=0;
 
 static unsigned int up2power_aux(const unsigned int number);
 
+/* coverity[+alloc] */
 void *MALLOC(size_t size)
 {
   void *res;
@@ -244,7 +245,10 @@ void set_secwest(void)
   const time_t t = time(NULL);
   const struct  tm *tmptr = localtime(&t);
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
-  secwest = -1 * tmptr->tm_gmtoff;
+  if(tmptr)
+    secwest = -1 * tmptr->tm_gmtoff;
+  else
+    secwest = 0;
 #elif defined (DJGPP) || defined(__ANDROID__)
   secwest = 0;
 #else
@@ -254,7 +258,7 @@ void set_secwest(void)
   secwest = timezone;
 #endif
   /* account for daylight savings */
-  if (tmptr->tm_isdst)
+  if (tmptr && tmptr->tm_isdst)
     secwest -= 3600;
 #endif
 }

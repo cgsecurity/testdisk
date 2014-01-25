@@ -162,20 +162,22 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
     const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
     char		datestr[80];
     char str[11];
-    if(current_file->td_mtime)
     {
-      const struct tm *tm_p = localtime(&current_file->td_mtime);
-      snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	  tm_p->tm_mday, monstr[tm_p->tm_mon],
-	  1900 + tm_p->tm_year, tm_p->tm_hour,
-	  tm_p->tm_min);
-      /* FIXME: a check using current_file->name will be better */
-      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2014)
+      const struct tm *tm_p;
+      if(current_file->td_mtime && (tm_p = localtime(&current_file->td_mtime))!=NULL)
       {
-	test_date=1;
+	snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	    tm_p->tm_mday, monstr[tm_p->tm_mon],
+	    1900 + tm_p->tm_year, tm_p->tm_hour,
+	    tm_p->tm_min);
+	/* FIXME: a check using current_file->name will be better */
+	if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2014)
+	{
+	  test_date=1;
+	}
+      } else {
+	strncpy(datestr, "                 ",sizeof(datestr));
       }
-    } else {
-      strncpy(datestr, "                 ",sizeof(datestr));
     }
     mode_string(current_file->st_mode, str);
     if((current_file->status&FILE_STATUS_DELETED)!=0)
@@ -219,21 +221,22 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
       log_info("X");
     else
       log_info(" ");
-    if(current_file->td_mtime)
     {
-      const struct tm *tm_p = localtime(&current_file->td_mtime);
-
-      snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	  tm_p->tm_mday, monstr[tm_p->tm_mon],
-	  1900 + tm_p->tm_year, tm_p->tm_hour,
-	  tm_p->tm_min);
-      /* FIXME: a check using current_file->name will be better */
-      if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2012)
+      const struct tm *tm_p;
+      if(current_file->td_mtime && (tm_p = localtime(&current_file->td_mtime))!=NULL)
       {
-	test_date=1;
+	snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	    tm_p->tm_mday, monstr[tm_p->tm_mon],
+	    1900 + tm_p->tm_year, tm_p->tm_hour,
+	    tm_p->tm_min);
+	/* FIXME: a check using current_file->name will be better */
+	if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2014)
+	{
+	  test_date=1;
+	}
+      } else {
+	strncpy(datestr, "                 ",sizeof(datestr));
       }
-    } else {
-      strncpy(datestr, "                 ",sizeof(datestr));
     }
     mode_string(current_file->st_mode, str);
     log_info("%7lu ",(unsigned long int)current_file->st_ino);

@@ -406,10 +406,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #ifdef HAVE_NCURSES
           ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
 #endif
-	  if(file_recovery.file_stat!=NULL)
-	    params->offset=file_recovery.location.start;
-	  else
-	    params->offset=offset;
+	  params->offset=offset;
 	  if(current_time >= next_checkpoint)
 	  {
 	    /* Save current progress */

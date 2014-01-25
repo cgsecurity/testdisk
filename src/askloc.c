@@ -299,7 +299,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       int offset=0;
       int pos_num=0;
       int old_LINES=0;
-      int old_COLS=0;
+      int old_COLS=1;
       do
       {
 	int dst_directory_ok=0;
@@ -573,17 +573,18 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
 {
   char str[11];
-  char		datestr[80];
-  if(file_info->td_mtime!=0)
+  char datestr[80];
   {
-    const struct tm *tm_p= localtime(&file_info->td_mtime);
-    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-        tm_p->tm_mday, monstr[tm_p->tm_mon],
-        1900 + tm_p->tm_year, tm_p->tm_hour,
-        tm_p->tm_min);
-    /* May have to use %d instead of %e */
-  } else {
-    strncpy(datestr, "                 ",sizeof(datestr));
+    const struct tm *tm_p;
+    if(file_info->td_mtime!=0 && (tm_p= localtime(&file_info->td_mtime))!=NULL)
+    {
+      snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+	  tm_p->tm_mday, monstr[tm_p->tm_mon],
+	  1900 + tm_p->tm_year, tm_p->tm_hour,
+	  tm_p->tm_min);
+    } else {
+      strncpy(datestr, "                 ",sizeof(datestr));
+    }
   }
   mode_string(file_info->st_mode, str);
   wprintw(window, "%s %5u %5u ", 

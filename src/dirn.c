@@ -141,16 +141,18 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  wbkgdset(window,' ' | COLOR_PAIR(1));
 	else if((current_file->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
-	if(current_file->td_mtime!=0)
 	{
-	  const struct tm *tm_p = localtime(&current_file->td_mtime);
-	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	      tm_p->tm_mday, monstr[tm_p->tm_mon],
-	      1900 + tm_p->tm_year, tm_p->tm_hour,
-	      tm_p->tm_min);
-	  /* May have to use %d instead of %e */
-	} else {
-	  strncpy(datestr, "                 ",sizeof(datestr));
+	  const struct tm *tm_p;
+	  if(current_file->td_mtime!=0 && (tm_p = localtime(&current_file->td_mtime))!=NULL)
+	  {
+	    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
+		tm_p->tm_mday, monstr[tm_p->tm_mon],
+		1900 + tm_p->tm_year, tm_p->tm_hour,
+		tm_p->tm_min);
+	    /* May have to use %d instead of %e */
+	  } else {
+	    strncpy(datestr, "                 ",sizeof(datestr));
+	  }
 	}
 	mode_string(current_file->st_mode, str);
 	wprintw(window, "%s %5u %5u ", 
