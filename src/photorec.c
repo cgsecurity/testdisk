@@ -513,28 +513,53 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
 void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset)
 {
   struct td_list_head *search_walker = NULL;
-  struct td_list_head *search_walker_next = NULL;
-  td_list_for_each_safe(search_walker,search_walker_next,&list_search_space->list)
-  {
-    uint64_t old_start;
-    alloc_data_t *current_search_space;
-    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-    old_start=current_search_space->start;
-    current_search_space->start=(current_search_space->start-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize;
-    if(current_search_space->start!=old_start)
-      current_search_space->file_stat=NULL;
-    if(current_search_space->start>=current_search_space->end)
-    {
-      td_list_del(search_walker);
-      free(current_search_space);
-    }
-  }
-  /* Align end of last range */
+  struct td_list_head *search_walker_prev = NULL;
+  /* Align end of last range (round up) */
   search_walker=list_search_space->list.prev;
   {
     alloc_data_t *current_search_space;
     current_search_space=td_list_entry(search_walker, alloc_data_t, list);
     current_search_space->end=(current_search_space->end+1-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize-1;
+  }
+  /* Align start of each range */
+  td_list_for_each_prev_safe(search_walker,search_walker_prev,&list_search_space->list)
+  {
+    alloc_data_t *current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    const uint64_t aligned_start=(current_search_space->start-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize;
+    if(current_search_space->start!=aligned_start)
+    {
+      alloc_data_t *prev_search_space=td_list_entry(search_walker_prev, alloc_data_t, list);
+      if(prev_search_space->end + 1 == current_search_space->start)
+      {
+	/* merge with previous block */
+	prev_search_space->end = current_search_space->end;
+	td_list_del(search_walker);
+	free(current_search_space);
+      }
+      else
+      {
+	current_search_space->start=aligned_start;
+	current_search_space->file_stat=NULL;
+	if(current_search_space->start>=current_search_space->end)
+	{
+	  /* block too small - delete it */
+	  td_list_del(search_walker);
+	  free(current_search_space);
+	}
+      }
+    }
+  }
+  /* Align end of each range (truncate) */
+  td_list_for_each_prev_safe(search_walker, search_walker_prev, &list_search_space->list)
+  {
+    alloc_data_t *current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    current_search_space->end=(current_search_space->end+1-offset%blocksize)/blocksize*blocksize+offset%blocksize-1;
+    if(current_search_space->start>=current_search_space->end)
+    {
+      /* block too small - delete it */
+      td_list_del(search_walker);
+      free(current_search_space);
+    }
   }
 }
 
