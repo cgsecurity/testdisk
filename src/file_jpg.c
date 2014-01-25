@@ -215,7 +215,14 @@ static void file_check_mpo(file_recovery_t *fr)
   unsigned int size=0;
   size_t nbytes;
   const unsigned char *mpo;
-  uint64_t max_offset=0;
+  {
+    /* Check the first jpg */
+    const uint64_t fs=fr->file_size;
+    file_check_jpg(fr);
+    if(fr->file_size==0)
+      return ;
+    fr->file_size=fs;
+  }
   do
   {
     offset+=2+size;
@@ -250,10 +257,14 @@ static void file_check_mpo(file_recovery_t *fr)
   size-=8;
   mpo=buffer+8;
   if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
-    max_offset=check_mpo_le(mpo, offset, size);
+  {
+    const uint64_t max_offset=check_mpo_le(mpo, offset, size);
+    fr->file_size=(max_offset > fr->file_size ? 0 : max_offset);
+  }
   else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
     return ;
-  fr->file_size=( max_offset > fr->file_size ? 0: max_offset);
+  else
+    fr->file_size=0;
 }
 
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
