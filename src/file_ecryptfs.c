@@ -72,19 +72,17 @@ static void file_check_ecryptfs(file_recovery_t *file_recovery)
 static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ecrypfs_header *e=(const struct ecrypfs_header *)buffer;
-  if((be32(e->marker1) ^ be32(e->marker2)) == 0x3c81b7f5)
-  {
-    reset_file_recovery(file_recovery_new);
+  if((be32(e->marker1) ^ be32(e->marker2)) != 0x3c81b7f5)
+    return 0;
+  reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
-    file_recovery_new->extension="ecr";
+  file_recovery_new->extension="ecr";
 #else
-    file_recovery_new->extension=file_hint_ecryptfs.extension;
+  file_recovery_new->extension=file_hint_ecryptfs.extension;
 #endif
-    file_recovery_new->min_filesize=be64(e->unencrypted_file_size);
-    file_recovery_new->calculated_file_size=be64(e->unencrypted_file_size);
-    file_recovery_new->data_check=NULL;
-    file_recovery_new->file_check=&file_check_ecryptfs;
-    return 1;
-  }
-  return 0;
+  file_recovery_new->min_filesize=be64(e->unencrypted_file_size);
+  file_recovery_new->calculated_file_size=be64(e->unencrypted_file_size);
+  file_recovery_new->data_check=NULL;
+  file_recovery_new->file_check=&file_check_ecryptfs;
+  return 1;
 }
