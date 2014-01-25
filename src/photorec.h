@@ -71,7 +71,7 @@ void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset);
-void update_blocksize(unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
+void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
 void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space);
 void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition);
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space);

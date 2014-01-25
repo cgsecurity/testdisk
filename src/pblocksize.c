@@ -140,7 +140,6 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
       }
     } while(quit==0);
   }
-  log_info("blocksize=%u,offset=%u\n",blocksize,(unsigned int)*offset);
   return blocksize;
 }
 #endif
