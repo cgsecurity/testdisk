@@ -233,6 +233,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
+      file_recovery_new->file_rename=&file_rename_mov;
       file_recovery_new->data_check=data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
@@ -276,7 +277,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 #if 0
       if(i+8 == buffer_size)
       {
-	return -((file_recovery->calculated_file_size-1) / (buffer_size/2));
+	return -((atom_size + buffer_size/2 - 1)/ (buffer_size/2));
       }
 #endif
     }
@@ -313,4 +314,3 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 #endif
   return DC_CONTINUE;
 }
-
