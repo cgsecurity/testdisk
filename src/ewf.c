@@ -182,13 +182,17 @@ disk_t *fewf_init(const char *device, const int mode)
 	  LIBEWF_OPEN_READ_WRITE,
 	  NULL ) != 1 )
     {
-      log_error("libewf_handle_open(%s) failed\n", device);
+      log_error("libewf_handle_open(%s) in RW mode failed\n", device);
+      libewf_handle_free(
+	  &( data->handle ),
+	  NULL );
+      data->handle=NULL;
     }
 #else
     data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ_WRITE);
     if(data->handle==NULL)
     {
-      log_error("libewf_open(%s) failed\n", device);
+      log_error("libewf_open(%s) in RW mode failed\n", device);
     }
 #endif /* defined( HAVE_LIBEWF_V2_API ) */
   }
@@ -216,7 +220,7 @@ disk_t *fewf_init(const char *device, const int mode)
 	  LIBEWF_OPEN_READ,
 	  NULL ) != 1 )
     {
-      log_error("libewf_handle_open(%s) failed\n", device);
+      log_error("libewf_handle_open(%s) in RO mode failed\n", device);
 
       libewf_handle_free(
 	  &( data->handle ),
@@ -233,7 +237,7 @@ disk_t *fewf_init(const char *device, const int mode)
     data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
     if(data->handle==NULL)
     {
-      log_error("libewf_open(%s) failed\n", device);
+      log_error("libewf_open(%s) in RO mode failed\n", device);
 #if defined( HAVE_GLOB_H )
       globfree(&globbuf);
 #endif
