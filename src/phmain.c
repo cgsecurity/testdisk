@@ -97,11 +97,33 @@ static void sighup_hdlr(int sig)
 }
 #endif
 
+static void display_help(void)
+{
+  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+      "       photorec /version\n" \
+      "\n" \
+      "/log          : create a photorec.log file\n" \
+      "/debug        : add debug information\n" \
+      "\n" \
+      "PhotoRec searches various file formats (JPEG, Office...), it stores them\n" \
+      "in recup_dir directory.\n");
+}
+
+static void display_version(void)
+{
+  printf("\n");
+  printf("Version: %s\n", VERSION);
+  printf("Compiler: %s\n", get_compiler());
+  printf("Compilation date: %s\n", get_compilation_date());
+  printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s\n",
+      td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version());
+  printf("OS: %s\n" , get_os());
+}
+
 int main( int argc, char **argv )
 {
   int i;
   int use_sudo=0;
-  int help=0, version=0;
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -150,9 +172,12 @@ int main( int argc, char **argv )
     if((strcmp(argv[i],"/logname")==0) ||(strcmp(argv[i],"-logname")==0))
     {
       if(i+2>=argc)
-	help=1;
-      else
-	logfile=argv[++i];
+      {
+	display_help();
+	free(params.recup_dir);
+	return 1;
+      }
+      logfile=argv[++i];
     }
     else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
@@ -185,17 +210,28 @@ int main( int argc, char **argv )
     else if((strcmp(argv[i],"/help")==0) || (strcmp(argv[i],"-help")==0) || (strcmp(argv[i],"--help")==0) ||
       (strcmp(argv[i],"/h")==0) || (strcmp(argv[i],"-h")==0) ||
       (strcmp(argv[i],"/?")==0) || (strcmp(argv[i],"-?")==0))
-      help=1;
+    {
+      display_help();
+      free(params.recup_dir);
+      return 0;
+    }
     else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
       (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
-      version=1;
+    {
+      display_version();
+      free(params.recup_dir);
+      return 0;
+    }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
     else if(strcmp(argv[i],"/cmd")==0)
     {
       if(i+2>=argc)
-        help=1;
-      else
+      {
+	display_help();
+	free(params.recup_dir);
+	return 1;
+      }
       {
         disk_t *disk_car;
         params.cmd_device=argv[++i];
@@ -204,11 +240,11 @@ int main( int argc, char **argv )
         disk_car=file_test_availability(params.cmd_device, options.verbose, testdisk_mode);
         if(disk_car==NULL)
         {
-          printf("\nUnable to open file or device %s\n", params.cmd_device);
-          help=1;
+          printf("\nUnable to open file or device %s: %s\n", params.cmd_device, strerror(errno));
+	  free(params.recup_dir);
+	  return 1;
         }
-        else
-          list_disk=insert_new_disk(list_disk,disk_car);
+	list_disk=insert_new_disk(list_disk,disk_car);
       }
     }
     else
@@ -216,39 +252,12 @@ int main( int argc, char **argv )
       disk_t *disk_car=file_test_availability(argv[i], options.verbose, testdisk_mode);
       if(disk_car==NULL)
       {
-        printf("\nUnable to open file or device %s\n",argv[i]);
-        help=1;
+        printf("\nUnable to open file or device %s: %s\n", argv[i], strerror(errno));
+	free(params.recup_dir);
+	return 1;
       }
-      else
-        list_disk=insert_new_disk(list_disk,disk_car);
+      list_disk=insert_new_disk(list_disk,disk_car);
     }
-  }
-  if(version!=0)
-  {
-    printf("\n");
-    printf("Version: %s\n", VERSION);
-    printf("Compiler: %s\n", get_compiler());
-    printf("Compilation date: %s\n", get_compilation_date());
-    printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s\n",
-	td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version());
-    printf("OS: %s\n" , get_os());
-    free(params.recup_dir);
-    return 0;
-  }
-  if(help!=0)
-  {
-    printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
-	"       photorec /version\n" \
-        "\n" \
-        "/log          : create a photorec.log file\n" \
-        "/debug        : add debug information\n" \
-        "\n" \
-        "PhotoRec searches various file formats (JPEG, Office...), it stores them\n" \
-        "in recup_dir directory.\n" \
-        "\n" \
-        "If you have problems with PhotoRec or bug reports, please contact me.\n");
-    free(params.recup_dir);
-    return 0;
   }
 #ifdef ENABLE_DFXML
   xml_set_command_line(argc, argv);
@@ -305,7 +314,6 @@ int main( int argc, char **argv )
     for(i=1;i<argc;i++)
       log_info(" %s", argv[i]);
     log_info("\n\n");
-    log_flush();
   }
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
@@ -322,6 +330,7 @@ int main( int argc, char **argv )
   }
 #endif
 #endif
+  log_flush();
   screen_buffer_reset();
   /* Scan for available device only if no device or image has been supplied in parameter */
   if(list_disk==NULL)
@@ -332,21 +341,7 @@ int main( int argc, char **argv )
   {
     element_disk->disk=new_diskcache(element_disk->disk, testdisk_mode);
   }
-  /* save disk parameters to rapport */
-  log_info("Hard disk list\n");
-  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-  {
-    disk_t *disk=element_disk->disk;
-    log_info("%s, sector size=%u", disk->description(disk), disk->sector_size);
-    if(disk->model!=NULL)
-      log_info(" - %s", disk->model);
-    if(disk->serial_no!=NULL)
-      log_info(", S/N:%s", disk->serial_no);
-    if(disk->fw_rev!=NULL)
-      log_info(", FW:%s", disk->fw_rev);
-    log_info("\n");
-  }
-  log_info("\n");
+  log_disk_list(list_disk);
   reset_list_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
 #ifdef SUDO_BIN

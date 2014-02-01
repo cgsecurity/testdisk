@@ -44,6 +44,7 @@ int delete_list_disk(list_disk_t *list_disk);
 void size_to_unit(const uint64_t disk_size, char *buffer);
 int is_part_overlapping(const list_part_t *list_part);
 void dup_partition_t(partition_t *dest, const partition_t *src);
+void log_disk_list(list_disk_t *list_disk);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

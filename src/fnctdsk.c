@@ -406,3 +406,23 @@ void size_to_unit(const uint64_t disk_size, char *buffer)
   else
     sprintf(buffer,"%u TB / %u TiB", (unsigned)(disk_size/1000/1000/1000/1000), (unsigned)(disk_size/1024/1024/1024/1024));
 }
+
+void log_disk_list(list_disk_t *list_disk)
+{
+  list_disk_t *element_disk;
+  /* save disk parameters to rapport */
+  log_info("Hard disk list\n");
+  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+  {
+    disk_t *disk=element_disk->disk;
+    log_info("%s, sector size=%u", disk->description(disk), disk->sector_size);
+    if(disk->model!=NULL)
+      log_info(" - %s", disk->model);
+    if(disk->serial_no!=NULL)
+      log_info(", S/N:%s", disk->serial_no);
+    if(disk->fw_rev!=NULL)
+      log_info(", FW:%s", disk->fw_rev);
+    log_info("\n");
+  }
+  log_info("\n");
+}

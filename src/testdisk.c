@@ -197,25 +197,6 @@ static int display_disk_list(list_disk_t *list_disk, const int testdisk_mode,
   return 0;
 }
 
-static void log_disk_list(list_disk_t *list_disk)
-{
-  list_disk_t *element_disk;
-  /* save disk parameters to rapport */
-  log_info("Hard disk list\n");
-  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-  {
-    disk_t *disk=element_disk->disk;
-    log_info("%s, sector size=%u", disk->description(disk), disk->sector_size);
-    if(disk->model!=NULL)
-      log_info(" - %s", disk->model);
-    if(disk->serial_no!=NULL)
-      log_info(", S/N:%s", disk->serial_no);
-    if(disk->fw_rev!=NULL)
-      log_info(", FW:%s", disk->fw_rev);
-    log_info("\n");
-  }
-  log_info("\n");
-}
 
 int main( int argc, char **argv )
 {
@@ -269,6 +250,7 @@ int main( int argc, char **argv )
       if(i+2>=argc)
       {
 	display_help();
+	log_close();
 	return 1;
       }
       logfile=argv[++i];
