@@ -89,6 +89,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
     return ;
 #ifdef DEBUG_OLE
   log_info("file_check_doc %s\n", file_recovery->filename);
+  log_trace("sector size          %u\n",1<<le16(header->uSectorShift));
   log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
   log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
 #endif
@@ -109,11 +110,11 @@ static void file_check_doc(file_recovery_t *file_recovery)
       i>0 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
-  doc_file_size=512+(((le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
+  doc_file_size=((1+(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
   if(doc_file_size > doc_file_size_org)
   {
 #ifdef DEBUG_OLE
-    log_info("doc_file_size=512+((%u<<%u)/4-%u)<<%u\n",
+    log_info("doc_file_size=(1+(%u<<%u)/4-%u)<<%u\n",
 	le32(header->num_FAT_blocks), le16(header->uSectorShift),
 	freesect_count, le16(header->uSectorShift));
     log_info("doc_file_size %llu > doc_file_size_org %llu\n",
@@ -148,7 +149,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	free(fat);
 	return ;
       }
-      if(fseek(file_recovery->handle, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
+      if(fseek(file_recovery->handle, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 #ifdef DEBUG_OLE
 	log_info("fseek failed\n");
@@ -211,7 +212,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
   else
   {
     const uint32_t *fati=(const uint32_t *)(header+1);
-    const unsigned int fat_offset=(le32(fati[0]) << le16(header->uSectorShift))+512;
+    const unsigned int fat_offset=(1+le32(fati[0])) << le16(header->uSectorShift);
     fat=(const uint32_t *)&buffer[fat_offset];
     fat_entries=(le32(header->num_FAT_blocks) << le16(header->uSectorShift))/4;
     if(fat_offset>buffer_size)
@@ -228,7 +229,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
       block=le32(fat[block]), i++)
   {
-    const unsigned int offset_root_dir=512+(block<<le16(header->uSectorShift));
+    const unsigned int offset_root_dir=(1+block)<<le16(header->uSectorShift);
 #ifdef DEBUG_OLE
     log_info("Root Directory block=%u (0x%x)\n", block, block);
 #endif
@@ -370,110 +371,115 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,doc_header,sizeof(doc_header))==0)
-  {
-    const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
-    if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
-      return 0;
-    if(le16(header->uMiniSectorShift)!=6)
-      return 0;
-    /* max and qbb file have uSectorShift=12 */
-    if(le16(header->uSectorShift)!=9 && le16(header->uSectorShift)!=12)
-      return 0;
-    if(le16(header->uSectorShift)==9 && le32(header->csectDir)!=0)
-      return 0;
-    /* max file have csectDir=1
-     * qbb file have csectDir=4 */
-    if(le16(header->uSectorShift)==12 && le32(header->csectDir)==0)
-      return 0;
-    /*
-       num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
-       maximum file size is 512+(num_FAT_blocks*128)*512, about 1.6GB
+  const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
+  if(memcmp(buffer,doc_header,sizeof(doc_header))!=0)
+    return 0;
+  /* Check for Little Endian */
+  if(le16(header->uByteOrder)!=0xFFFE)
+    return 0;
+  if(le16(header->uDllVersion)!=3 && le16(header->uDllVersion)!=4)
+    return 0;
+  if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
+    return 0;
+  if(le16(header->uMiniSectorShift)!=6)
+    return 0;
+  if(le16(header->uDllVersion)==3 && le16(header->uSectorShift)!=9)
+    return 0;
+  /* max and qbb file have uSectorShift=12 */
+  if(le16(header->uDllVersion)==4 && le16(header->uSectorShift)!=12)
+    return 0;
+  if(le16(header->uDllVersion)==3 && le32(header->csectDir)!=0)
+    return 0;
+  /* max file have csectDir=1
+   * qbb file have csectDir=4 */
+  if(le16(header->uDllVersion)==4 && le32(header->csectDir)==0)
+    return 0;
+  /*
+     num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
+     maximum file size is 512+(num_FAT_blocks*128)*512, about 1.6GB
      */
-    if(le32(header->num_FAT_blocks)==0 ||
-	le32(header->num_extra_FAT_blocks)>50 ||
-	le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
-      return 0;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=&file_check_doc;
-    file_recovery_new->file_rename=&file_rename_doc;
-    file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
-    if(file_recovery_new->extension!=NULL)
+  if(le32(header->num_FAT_blocks)==0 ||
+      le32(header->num_extra_FAT_blocks)>50 ||
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=&file_check_doc;
+  file_recovery_new->file_rename=&file_rename_doc;
+  file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
+  if(file_recovery_new->extension!=NULL)
+  {
+    if(strcmp(file_recovery_new->extension,"sda")==0)
     {
-      if(strcmp(file_recovery_new->extension,"sda")==0)
-      {
-	if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
-	  file_recovery_new->extension="sdd";
-      }
-      else if(strcmp(file_recovery_new->extension,"wps")==0)
-      {
-	/* Distinguish between MS Works .wps and MS Publisher .pub */
-	if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-	  file_recovery_new->extension="pub";
-      }
-      return 1;
+      if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+	file_recovery_new->extension="sdd";
     }
-    if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
+    else if(strcmp(file_recovery_new->extension,"wps")==0)
     {
-      file_recovery_new->extension="doc";
+      /* Distinguish between MS Works .wps and MS Publisher .pub */
+      if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+	file_recovery_new->extension="pub";
     }
-    else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
-    {
-      file_recovery_new->extension="sda";
-    }
-    else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
-    {
-      file_recovery_new->extension="sdc";
-    }
-    else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
-    {
-      file_recovery_new->extension="sdd";
-    }
-    else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
-	td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
-	td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
-	td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
-    {
-      file_recovery_new->extension="xls";
-    }
-    else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
-    {
-      file_recovery_new->extension="ppt";
-    }
-    else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
-    {
-      file_recovery_new->extension="mdb";
-    }
-    else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
-    {
-      file_recovery_new->extension="vsd";
-    }
-    else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
-    {
-      file_recovery_new->extension="sdw";
-    }
-    else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
-    {	/* Flash Project File */
-      file_recovery_new->extension="fla";
-    }
-    else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-    { /* Publisher */
-      file_recovery_new->extension="pub";
-    }
-    else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
-	|| td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
-    { /* Microsoft Works .wdb */
-      file_recovery_new->extension="wdb";
-    }
-    else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
-    { /* MetaStock */
-      file_recovery_new->extension="mws";
-    }
-    else
-      file_recovery_new->extension=file_hint_doc.extension;
     return 1;
   }
-  return 0;
+  if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
+  {
+    file_recovery_new->extension="doc";
+  }
+  else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
+  {
+    file_recovery_new->extension="sda";
+  }
+  else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
+  {
+    file_recovery_new->extension="sdc";
+  }
+  else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+  {
+    file_recovery_new->extension="sdd";
+  }
+  else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
+      td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
+      td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
+      td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
+  {
+    file_recovery_new->extension="xls";
+  }
+  else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
+  {
+    file_recovery_new->extension="ppt";
+  }
+  else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
+  {
+    file_recovery_new->extension="mdb";
+  }
+  else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
+  {
+    file_recovery_new->extension="vsd";
+  }
+  else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
+  {
+    file_recovery_new->extension="sdw";
+  }
+  else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
+  {	/* Flash Project File */
+    file_recovery_new->extension="fla";
+  }
+  else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+  { /* Publisher */
+    file_recovery_new->extension="pub";
+  }
+  else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
+      || td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
+  { /* Microsoft Works .wdb */
+    file_recovery_new->extension="wdb";
+  }
+  else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
+  { /* MetaStock */
+    file_recovery_new->extension="mws";
+  }
+  else
+    file_recovery_new->extension=file_hint_doc.extension;
+  return 1;
 }
 
 static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
@@ -491,7 +497,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;
 	i++, block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)]))
     {
-      if(fseek(IN, 512+(block<<le16(header->uSectorShift)), SEEK_SET) < 0)
+      if(fseek(IN, (1+block)<<le16(header->uSectorShift), SEEK_SET) < 0)
       {
 	free(dif);
 	return NULL;
@@ -512,7 +518,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	j<le32(header->num_FAT_blocks);
 	j++, data+=(1<<le16(header->uSectorShift)))
     {
-      if(fseek(IN,512+(le32(dif[j])<<le16(header->uSectorShift)),SEEK_SET)<0)
+      if(fseek(IN, (1+le32(dif[j]))<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 	free(dif);
 	free(fat);
@@ -547,7 +553,7 @@ static void *OLE_read_stream(FILE *IN,
       free(dataPt);
       return NULL;
     }
-    if(fseek(IN, 512+(block<<uSectorShift), SEEK_SET)<0)
+    if(fseek(IN, (1+block)<<uSectorShift, SEEK_SET)<0)
     {
       free(dataPt);
       return NULL;
@@ -574,7 +580,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   block=le32(header->MiniFat_block);
   for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
   {
-    if(fseek(IN, ((uint64_t)block << le16(header->uSectorShift)) + 512, SEEK_SET) < 0)
+    if(fseek(IN, ((uint64_t)1+block) << le16(header->uSectorShift), SEEK_SET) < 0)
     {
       free(minifat);
       return NULL;
@@ -848,15 +854,6 @@ static void file_rename_doc(const char *old_filename)
     fclose(file);
     return ;
   }
-  if(le16(header->uSectorShift)==12)
-  {
-    fclose(file);
-    if(le32(header->csectDir)==1)
-      file_rename(old_filename, NULL, 0, 0, "max", 1);
-    else
-      file_rename(old_filename, NULL, 0, 0, "qbb", 1);
-    return ;
-  }
   if((fat=OLE_load_FAT(file, header))==NULL)
   {
     fclose(file);
@@ -880,7 +877,7 @@ static void file_rename_doc(const char *old_filename)
 	block=le32(fat[block]), i++)
     {
       struct OLE_DIR *dir_entries;
-      if(fseek(file, 512+(block<<le16(header->uSectorShift)), SEEK_SET)<0)
+      if(fseek(file, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 	free(fat);
 	fclose(file);
@@ -888,7 +885,7 @@ static void file_rename_doc(const char *old_filename)
 	return ;
       }
       dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
-      if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file)!=1)
+      if(fread(dir_entries, 1<<le16(header->uSectorShift), 1, file)!=1)
       {
 	free(fat);
 	free(dir_entries);
@@ -993,6 +990,10 @@ static void file_rename_doc(const char *old_filename)
 #endif
 		}
 		break;
+	      case 32:
+		if(memcmp(dir_entry->name, "m\0a\0n\0i\0f\0e\0s\0t\0.\0c\0a\0m\0x\0m\0l\0\0\0",32)==0)
+		  ext="camrec";
+		break;
 	      case 34:
 		if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
 		  ext="sdc";
@@ -1002,6 +1003,8 @@ static void file_rename_doc(const char *old_filename)
 		if((ext==NULL || strcmp(ext,"sdd")!=0) &&
 		    memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
 		  ext="sda";
+		else if(memcmp(dir_entry->name, "f\0i\0l\0e\0_\0C\0O\0M\0P\0A\0N\0Y\0_\0F\0I\0L\0E\0\0\0", 36)==0)
+		    ext="qbb";
 		break;
 	      case 38:
 		/* Quattro Pro spreadsheet */
