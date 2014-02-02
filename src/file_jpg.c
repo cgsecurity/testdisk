@@ -1586,15 +1586,6 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
     file_recovery->data_check=&data_check_jpg;
     return data_check_jpg(buffer, buffer_size, file_recovery);
   }
-  if(buffer[buffer_size/2]==0xff && buffer[buffer_size/2]==0xd8 && 
-      file_recovery->calculated_file_size != file_recovery->file_size)
-  {
-#ifdef DEBUG_JPEG
-    log_info("%s data_check_jpg2 0xffd8 at 0x%llx\n", file_recovery->filename, 
-	(long long unsigned)file_recovery->calculated_file_size);
-#endif
-    return DC_STOP;
-  }
   while(file_recovery->calculated_file_size + buffer_size/2  > file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
   {
@@ -1641,12 +1632,6 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 
 data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(buffer[buffer_size/2]==0xff && buffer[buffer_size/2]==0xd8 && 
-      file_recovery->calculated_file_size != file_recovery->file_size)
-  {
-    log_info("data_check_jpg ffd8\n");
-    return DC_STOP;
-  }
   /* Skip the SOI */
   if(file_recovery->calculated_file_size==0)
     file_recovery->calculated_file_size+=2;
