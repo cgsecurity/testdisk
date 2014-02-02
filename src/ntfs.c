@@ -246,7 +246,6 @@ long int ntfs_get_first_rl_element(const ntfs_attribnonresident *attrnr, const c
   const unsigned char *buf;
   uint8_t b;                   	/* Current byte offset in buf. */
   const unsigned char*attr_end;     /* End of attribute. */
-  long lcn=0;
   int64_t deltaxcn = (int64_t)-1;	/* Change in [vl]cn. */
   buf=(const unsigned char*)attrnr + le16(attrnr->offDataRuns);
   attr_end = (const unsigned char*)attrnr + le32(attrnr->header.cbAttribute);
@@ -279,6 +278,7 @@ long int ntfs_get_first_rl_element(const ntfs_attribnonresident *attrnr, const c
   {
     /* Get the lcn change which really can be negative. */
     const uint8_t b2 = *buf & 0xf;
+    long lcn=0;
     b = b2 + ((*buf >> 4) & 0xf);
     if (buf + b > attr_end)
     {
