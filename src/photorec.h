@@ -64,8 +64,8 @@ struct ph_param
 };
 
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
-int file_finish(file_recovery_t *file_recovery, struct ph_param *params, 
-    alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
+int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
+    alloc_data_t *list_search_space);
 int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
 void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
@@ -89,6 +89,7 @@ list_part_t *init_list_part(disk_t *disk, const struct ph_options *options);
 void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size);
 void file_block_free(alloc_list_t *list_allocation);
 void file_block_append(file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize, const unsigned int data);
+void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize,  alloc_data_t **new_current_search_space, uint64_t *offset, unsigned char *buffer);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

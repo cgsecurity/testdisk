@@ -2,7 +2,7 @@
 
     File: phbf.c
 
-    Copyright (C) 1998-2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2014 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ extern uint64_t free_list_allocation_end;
 
 typedef enum { BF_OK=0, BF_STOP=1, BF_EACCES=2, BF_ENOSPC=3, BF_FRAG_FOUND=4, BF_EOF=5, BF_ENOENT=6, BF_ERANGE=7} bf_status_t;
 
-static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase);
+static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, const int phase);
 static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag);
 
 static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
@@ -84,26 +84,6 @@ static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
   memcpy(dst, src, sizeof(*dst));
   dst->location.list.prev=&dst->location.list;
   dst->location.list.next=&dst->location.list;
-}
-
-static inline void list_append_block(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
-{
-  if(!td_list_empty(&list->list))
-  {
-    alloc_list_t *prev=td_list_entry(list->list.prev, alloc_list_t, list);
-    if(prev->end+1==offset && prev->data==data)
-    {
-      prev->end=offset+blocksize-1;
-      return ;
-    }
-  }
-  {
-    alloc_list_t *new_list=(alloc_list_t *)MALLOC(sizeof(*new_list));
-    new_list->start=offset;
-    new_list->end=offset+blocksize-1;
-    new_list->data=data;
-    td_list_add_tail(&new_list->list, &list->list);
-  }
 }
 
 static struct td_list_head *next_file(struct td_list_head *search_walker, const alloc_data_t *list_search_space)
@@ -163,6 +143,7 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
       int need_to_check_file;
       int go_backward=1;
       file_recovery_t file_recovery;
+//      memset(&file_recovery, 0, sizeof(file_recovery_t));
       reset_file_recovery(&file_recovery);
       file_recovery.blocksize=blocksize;
       current_search_space=td_list_entry(search_walker, alloc_data_t, list);
@@ -178,12 +159,13 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 
       do
       {
-	uint64_t old_offset=offset;
+	const uint64_t old_offset=offset;
 	need_to_check_file=0;
 	if(offset==current_search_space->start)
 	{
 	  const struct td_list_head *tmpl;
 	  file_recovery_t file_recovery_new;
+//	  memset(&file_recovery_new, 0, sizeof(file_recovery_t));
 	  file_recovery_new.blocksize=blocksize;
 	  file_recovery_new.file_stat=NULL;
 	  td_list_for_each(tmpl, &file_check_list.list)
@@ -249,7 +231,7 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	  {
 	    data_check_t res=DC_CONTINUE;
 	    //	  log_info("add sector %llu\n", (long long unsigned)(offset/512));
-	    list_append_block(&file_recovery.location, offset, blocksize,1);
+	    file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 1);
 	    if(file_recovery.data_check!=NULL)
 	      res=file_recovery.data_check(buffer_olddata, 2*blocksize, &file_recovery);
 	    file_recovery.file_size+=blocksize;
@@ -265,7 +247,8 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	    need_to_check_file=1;
 	  }
 	}
-	get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
+	else
+	  get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
 	if(current_search_space==list_search_space)
 	  need_to_check_file=1;
 	if(need_to_check_file==0)
@@ -289,18 +272,17 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
       } while(need_to_check_file==0);
       if(need_to_check_file==1)
       {
-	const uint64_t offset_next_file=get_offset_next_file(search_walker, list_search_space);
+	const uint64_t offset_next_file=get_offset_next_file(&current_search_space->list, list_search_space);
 	const unsigned int file_nbr_old=params->file_nbr;
 	file_recovery.flags=1;
-	if(file_finish(&file_recovery, params, list_search_space, &current_search_space, &offset)<0)
+	if(file_finish_bf(&file_recovery, params, list_search_space) < 0)
 	{ /* BF */
-	  current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-	  ind_stop=photorec_bf_aux(params, &file_recovery, list_search_space, current_search_space, phase);
+	  ind_stop=photorec_bf_aux(params, &file_recovery, list_search_space, phase);
 	  pass2++;
 	  if(file_nbr_old < params->file_nbr && free_list_allocation_end > offset_next_file)
 	    go_backward=0;
 #ifdef DEBUG_BF
-	  log_info("file_nbr_old %u, file_nbr=%u\n", file_nbr_old, *file_nbr);
+	  log_info("file_nbr_old %u, file_nbr=%u\n", file_nbr_old, params->file_nbr);
 	  log_info("free_list_allocation_end %llu, offset_next_file %llu\n",
 	      (long long unsigned)free_list_allocation_end,
 	      (long long unsigned)offset_next_file);
@@ -365,12 +347,13 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 	      file_recovery->handle=NULL;
 	      return BF_ENOSPC;
 	    }
-	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
+	    file_block_append(file_recovery, list_search_space, current_search_space, offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
 	    nbr++;
 	    memcpy(buffer, block_buffer, blocksize);
 	  }
-	  get_next_sector(list_search_space, current_search_space, offset, blocksize);
+	  else
+	    get_next_sector(list_search_space, current_search_space, offset, blocksize);
 	}
       }
       else
@@ -391,11 +374,12 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 	      file_recovery->handle=NULL;
 	      return BF_ENOSPC;
 	    }
-	    list_append_block(&file_recovery->location, *offset, blocksize, 1);
+	    file_block_append(file_recovery, list_search_space, current_search_space, offset, blocksize, 1);
 	    file_recovery->file_size+=blocksize;
 	    nbr++;
 	  }
-	  get_next_sector(list_search_space, current_search_space, offset, blocksize);
+	  else
+	    get_next_sector(list_search_space, current_search_space, offset, blocksize);
 	}
       }
 #ifdef DEBUG_BF
@@ -429,7 +413,7 @@ static bf_status_t photorec_bf_pad(struct ph_param *params, file_recovery_t *fil
 #ifdef DEBUG_BF
     log_info("photorec_bf_aux, call file_finish\n");
 #endif
-    file_finish(file_recovery, params, list_search_space, current_search_space, offset);
+    file_finish_bf(file_recovery, params, list_search_space);
     return BF_OK;
   }
   /* FIXME +4096 => +blocksize*/
@@ -486,22 +470,11 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
     file_recovery->checkpoint_status=0;
     file_recovery->checkpoint_offset=original_offset_ok/blocksize*blocksize;
     file_recovery->calculated_file_size=0;
-    file_recovery->file_size=0;
-    for(file_recovery->file_size = 0;
-	file_recovery->file_size <= original_offset_ok/blocksize*blocksize;
-	)
-    {
-      /* FIXME: Handle ext2/ext3 */
-      if(file_recovery->data_check!=NULL)
-      {
-	params->disk->pread(params->disk, block_buffer, blocksize, *offset);
-	file_recovery->data_check(buffer, 2*blocksize, file_recovery);
-	memcpy(buffer, block_buffer, blocksize);
-      }
-      file_recovery->file_size+=blocksize;
-      get_next_sector(list_search_space, current_search_space, offset, blocksize);
-    }
-    list_truncate(&file_recovery->location, file_recovery->file_size);
+
+    file_recovery->file_size=original_offset_ok/blocksize*blocksize;
+    file_block_truncate_and_move(file_recovery, list_search_space, blocksize,
+	current_search_space, offset, buffer);
+
     for(j=0; j<i; j++)
     {
       get_next_sector(list_search_space, current_search_space, offset, blocksize);
@@ -520,10 +493,9 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
 	file_recovery->handle=NULL;
 	return BF_ENOSPC;
       }
-      list_append_block(&file_recovery->location, *offset, blocksize, 1);
+      file_block_append(file_recovery, list_search_space, current_search_space, offset, blocksize, 1);
       file_recovery->file_size+=blocksize;
       memcpy(buffer, block_buffer, blocksize);
-      get_next_sector(list_search_space, current_search_space, offset, blocksize);
     }
     for(; j<blocs_to_skip; j++)
     {
@@ -589,26 +561,13 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
     uint64_t extrablock_offset;
     int blocs_to_skip;
     file_recovery_t file_recovery_backup;
+//    memset(&file_recovery_backup, 0, sizeof(file_recovery_t));
     file_recovery->checkpoint_status=0;
     file_recovery->checkpoint_offset = file_offset;
-    file_recovery->calculated_file_size=0;
-    if(file_recovery->data_check!=NULL)
-    {
-      *current_search_space=start_search_space;
-      *offset=start_search_space->start;
-      for(file_recovery->file_size = 0;
-	  file_recovery->file_size < file_offset;
-	  file_recovery->file_size += blocksize)
-      {
-	params->disk->pread(params->disk, block_buffer, blocksize, *offset);
-	/* FIXME: Handle ext2/ext3 */
-	file_recovery->data_check(buffer, 2*blocksize, file_recovery);
-	memcpy(buffer, block_buffer, blocksize);
-	get_next_sector(list_search_space, current_search_space, offset, blocksize);
-      }
-    }
-    list_truncate(&file_recovery->location, file_offset);
     file_recovery->file_size=file_offset;
+    file_block_truncate_and_move(file_recovery, list_search_space, blocksize,
+	current_search_space, offset, buffer);
+
     /* Set extractblock_search_space & extrablock_offset to the begining of the potential extra block */
     /* FIXME */
 #ifdef DEBUG_BF
@@ -639,108 +598,107 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
     log_info("extrablock_offset=%llu sectors\n", (long long unsigned)(extrablock_offset/512));
 #endif
     memcpy(&file_recovery_backup, file_recovery, sizeof(file_recovery_backup));
+    /* FIXME 16 100 250 */
+    for(blocs_to_skip=-2;
+	blocs_to_skip<5000 &&
+	(file_recovery->offset_error==0 ||
+	 (phase==0 && (file_recovery->offset_error >= file_offset || blocs_to_skip<16)) ||
+	 (phase==1 && (file_recovery->offset_error + blocksize >= file_offset || blocs_to_skip<100)) ||
+	 (phase==2 && blocs_to_skip<10)
+	);
+	blocs_to_skip++,testbf++)
     {
-      /* FIXME 16 100 250 */
-      for(blocs_to_skip=-2;
-	  blocs_to_skip<5000 &&
-	  (file_recovery->offset_error==0 ||
-	   (phase==0 && (file_recovery->offset_error >= file_offset || blocs_to_skip<16)) ||
-	   (phase==1 && (file_recovery->offset_error + blocksize >= file_offset || blocs_to_skip<100)) ||
-	   (phase==2 && blocs_to_skip<10)
-	  );
-	  blocs_to_skip++,testbf++)
-      {
-	bf_status_t res;
-	memcpy(file_recovery, &file_recovery_backup, sizeof(file_recovery_backup));
-	*current_search_space=extractblock_search_space;
-	*offset=extrablock_offset;
+      bf_status_t res;
+      memcpy(file_recovery, &file_recovery_backup, sizeof(file_recovery_backup));
+      *current_search_space=extractblock_search_space;
+      *offset=extrablock_offset;
 #ifdef DEBUG_BF
-	log_info("photorec_bf_aux %s split file at %llu, skip=%u\n",
-	    file_recovery->filename,
-	    (long long unsigned)file_offset, blocs_to_skip);
+      log_info("photorec_bf_aux %s split file at %llu, skip=%u\n",
+	  file_recovery->filename,
+	  (long long unsigned)file_offset, blocs_to_skip);
 #endif
-	file_recovery->offset_error=0;
-	list_truncate(&file_recovery->location,file_offset);
-	{
-	  static time_t previous_time=0;
-	  time_t current_time;
-	  current_time=time(NULL);
-	  if(current_time>previous_time)
-	  {
-	    pstatus_t ind_stop=PSTATUS_OK;
-	    previous_time=current_time;
-#ifdef HAVE_NCURSES
-	    ind_stop=photorec_progressbar(stdscr, testbf, params,
-		file_recovery->location.start, current_time);
-#endif
-	    if(ind_stop!=PSTATUS_OK)
-	    {
-	      file_recovery->flags=0;
-	      file_finish(file_recovery, params, list_search_space, current_search_space, offset);
-	      log_info("photorec_bf_aux, user choose to stop\n");
-	      return BF_STOP;
-	    }
-	  }
-	}
-	/* Skip extra blocs */
-#ifdef DEBUG_BF
-	log_debug("Skip %u extra blocs\n", blocs_to_skip);
-#endif
-	//	log_info("%s Skip %u extra blocs\n", file_recovery->filename, blocs_to_skip);
-	if(blocs_to_skip < 0)
-	{
-	  int i;
-	  for(i=0; i< 2+blocs_to_skip; i++)
-	  {
-	    get_next_header(list_search_space, current_search_space, offset);
-	  }
-	}
-	else
-	{
-	  int i;
-	  for(i=0; i<blocs_to_skip; i++)
-	  {
-	    get_next_sector(list_search_space, current_search_space, offset, blocksize);
-	    if(*current_search_space==list_search_space)
-	      return BF_ENOENT;
-	  }
-	}
 
-	res=photorec_bf_pad(params, file_recovery, list_search_space, phase, file_offset, current_search_space, offset, buffer, block_buffer);
-	if(res==BF_FRAG_FOUND)
+      file_block_truncate_and_move(file_recovery, list_search_space, blocksize,
+	  current_search_space, offset, buffer);
+      {
+	static time_t previous_time=0;
+	time_t current_time;
+	current_time=time(NULL);
+	if(current_time>previous_time)
 	{
-	  if(frag>5)
-	    return BF_ENOENT;
-	  res=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1);
-	  if(res==BF_ERANGE)
-	    return BF_ENOENT;
-	  if(res==BF_ENOENT)
-	  {
-#if 0
-	    /* TODO: Continue to iterate blocs_to_skip */
-	    if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
-	      return BF_ENOENT;
-#else
-	    return BF_ENOENT;
+	  pstatus_t ind_stop=PSTATUS_OK;
+	  previous_time=current_time;
+#ifdef HAVE_NCURSES
+	  ind_stop=photorec_progressbar(stdscr, testbf, params,
+	      file_recovery->location.start, current_time);
 #endif
+	  if(ind_stop!=PSTATUS_OK)
+	  {
+	    file_recovery->flags=0;
+	    file_finish_bf(file_recovery, params, list_search_space);
+	    log_info("photorec_bf_aux, user choose to stop\n");
+	    return BF_STOP;
 	  }
-	}
-	switch(res)
-	{
-	  case BF_OK:
-	  case BF_STOP:
-	  case BF_ENOSPC:
-	  case BF_EACCES:
-	    return res;
-	  case BF_EOF:
-	    return BF_ENOENT;
-	  default:
-	    break;
 	}
       }
-      if(file_recovery->offset_error > 0 && file_recovery->offset_error < file_offset)
-	return BF_ERANGE;
+      /* Skip extra blocs */
+#ifdef DEBUG_BF
+      log_debug("Skip %u extra blocs\n", blocs_to_skip);
+#endif
+      //	log_info("%s Skip %u extra blocs\n", file_recovery->filename, blocs_to_skip);
+      if(blocs_to_skip < 0)
+      {
+	int i;
+	for(i=0; i< 2+blocs_to_skip; i++)
+	{
+	  get_next_header(list_search_space, current_search_space, offset);
+	}
+      }
+      else
+      {
+	int i;
+	for(i=0; i<blocs_to_skip; i++)
+	{
+	  get_next_sector(list_search_space, current_search_space, offset, blocksize);
+	  if(*current_search_space==list_search_space)
+	    return BF_ENOENT;
+	}
+      }
+
+      res=photorec_bf_pad(params, file_recovery, list_search_space, phase, file_offset, current_search_space, offset, buffer, block_buffer);
+      if(res==BF_FRAG_FOUND)
+      {
+	if(frag>5)
+	  return BF_ENOENT;
+	res=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, current_search_space, offset, buffer, block_buffer, frag+1);
+	if(res==BF_ERANGE)
+	  return BF_ENOENT;
+	if(res==BF_ENOENT)
+	{
+#if 0
+	  /* TODO: Continue to iterate blocs_to_skip */
+	  if(file_recovery->offset_error/blocksize*blocksize >= (file_offset / blocksize * blocksize + 30 * blocksize))
+	    return BF_ENOENT;
+#else
+	  return BF_ENOENT;
+#endif
+	}
+      }
+      switch(res)
+      {
+	case BF_OK:
+	case BF_STOP:
+	case BF_ENOSPC:
+	case BF_EACCES:
+	  return res;
+	case BF_EOF:
+	  return BF_ENOENT;
+	default:
+	  break;
+      }
     }
+    if(file_recovery->offset_error > 0 && file_recovery->offset_error < file_offset)
+      return BF_ERANGE;
 #ifdef DEBUG_BF
     log_info("blocs_to_skip=%u offset_error=0x%llx file_offset=0x%llx\n",
 	blocs_to_skip,
@@ -750,63 +708,23 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
   return BF_ENOENT;
 }
 
-static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase)
+static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, const int phase)
 {
-  uint64_t offset;
+  bf_status_t ind_stop;
+  alloc_data_t *current_search_space=NULL;
+  uint64_t offset=0;
   unsigned char *buffer;
   unsigned char *block_buffer;
-  bf_status_t ind_stop;
-  alloc_data_t *current_search_space;
   const unsigned int blocksize=params->blocksize;
-  //Init. of the brute force
-  file_recovery->handle=fopen(file_recovery->filename, "w+b");
-  if(file_recovery->handle==NULL)
-  {
-    log_critical("Brute Force : Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
-    return PSTATUS_EACCES;
-  }
   buffer=(unsigned char *) MALLOC(2*blocksize);
   block_buffer=&buffer[blocksize];
-
-  current_search_space=start_search_space;
-  /* We have offset==start_search_space->start==file_recovery->location.start */
-  offset=start_search_space->start;
-
-#ifdef DEBUG_BF2
-  log_trace("photorec_bf_aux location.start=%llu, ok at %llu, bad at %llu\n",
-      (long long unsigned)(file_recovery->location.start/disk_car->sector_size),
-      (long long unsigned)file_recovery->offset_ok,
-      (long long unsigned)file_recovery->offset_error);
-#endif
-  file_recovery->blocksize=blocksize;
-  // Writing the file until the error location
-  for(file_recovery->file_size = 0;
-      file_recovery->file_size + blocksize -1 < file_recovery->offset_error;
-      file_recovery->file_size += blocksize)
-  {
-    params->disk->pread(params->disk, block_buffer, blocksize, offset);
-    /* FIXME: Handle ext2/ext3 */
-    if(fwrite(block_buffer, blocksize, 1, file_recovery->handle)<1)
-    {
-      log_critical("Cannot write to file %s: %s\n", file_recovery->filename, strerror(errno));
-      fclose(file_recovery->handle);
-      file_recovery->handle=NULL;
-      free(buffer);
-      return PSTATUS_ENOSPC;
-    }
-    list_append_block(&file_recovery->location, offset, blocksize, 1);
-    get_next_sector(list_search_space, &current_search_space, &offset, blocksize);
-  }
+  file_recovery->file_size=file_recovery->offset_error / blocksize * blocksize;
   file_recovery->offset_error=file_recovery->file_size;
-#ifdef DEBUG_BF
-  log_trace("BF Amorce ");
-  file_block_log(file_recovery, 512);
-  log_trace("\n");
-#endif
-  ind_stop=photorec_bf_frag(params, file_recovery, list_search_space, start_search_space, phase, &current_search_space, &offset, buffer, block_buffer, 0);
-  /* Cleanup */
-  file_finish(file_recovery, params, list_search_space, &current_search_space, &offset);
+  file_block_truncate_and_move(file_recovery, list_search_space, blocksize,
+      &current_search_space, &offset, buffer);
+  ind_stop=photorec_bf_frag(params, file_recovery, list_search_space, current_search_space, phase, &current_search_space, &offset, buffer, block_buffer, 0);
   free(buffer);
+  (void)file_finish2(file_recovery, params, 1, list_search_space);
   switch(ind_stop)
   {
     case BF_STOP:
@@ -815,8 +733,6 @@ static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_
 	return PSTATUS_EACCES;
     case BF_ENOSPC:
 	return PSTATUS_ENOSPC;
-//    case BF_ERANGE:
-//      return photorec_bf_aux(params, file_recovery, list_search_space, start_search_space, phase);
     default:
 	return PSTATUS_OK;
   }

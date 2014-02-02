@@ -296,7 +296,7 @@ file_C			= filegen.c \
 
 file_H			= ext2.h ext2_common.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
 
-photorec_C		= photorec.c phcfg.c addpart.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c poptions.c sessionp.c setdate.c dfxml.c list.c 
+photorec_C		= photorec.c phcfg.c addpart.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c poptions.c sessionp.c setdate.c dfxml.c
 
 photorec_H		= photorec.h phcfg.h addpart.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h poptions.h sessionp.h setdate.h dfxml.h
 

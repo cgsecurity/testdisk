@@ -59,9 +59,7 @@
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
 /* #define DEBUG_FREE */
 
-static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize);
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
-static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
 static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
 static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize);
 
@@ -80,68 +78,6 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
       log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
   }
   log_info("\n");
-}
-
-static void list_free_add(const file_recovery_t *file_recovery, alloc_data_t *list_search_space)
-{
-  struct td_list_head *search_walker = NULL;
-#ifdef DEBUG_FREE
-  log_trace("list_free_add %lu\n",(long unsigned)(file_recovery->location.start/512));
-#endif
-  td_list_for_each(search_walker, &list_search_space->list)
-  {
-    alloc_data_t *current_search_space;
-    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-    if(current_search_space->start < file_recovery->location.start && file_recovery->location.start < current_search_space->end)
-    {
-      alloc_data_t *new_free_space;
-      new_free_space=(alloc_data_t*)MALLOC(sizeof(*new_free_space));
-      new_free_space->start=file_recovery->location.start;
-      new_free_space->end=current_search_space->end;
-      new_free_space->file_stat=NULL;
-      new_free_space->data=1;
-      current_search_space->end=file_recovery->location.start-1;
-      td_list_add(&new_free_space->list, search_walker);
-    }
-    if(current_search_space->start==file_recovery->location.start)
-    {
-      current_search_space->file_stat=file_recovery->file_stat;
-      return ;
-    }
-  }
-}
-
-/*
- * new_current_search_space!=NULL
- * offset!=NULL
- */
-static void update_search_space(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
-{
-  struct td_list_head *search_walker = NULL;
-#ifdef DEBUG_UPDATE_SEARCH_SPACE
-  log_trace("update_search_space\n");
-  info_list_search_space(list_search_space, NULL, DEFAULT_SECTOR_SIZE, 0, 1);
-#endif
-
-  td_list_for_each(search_walker, &list_search_space->list)
-  {
-    struct td_list_head *tmp;
-    alloc_data_t *current_search_space;
-    current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-    if(current_search_space->start <= file_recovery->location.start &&
-        file_recovery->location.start <= current_search_space->end)
-    {
-      *offset=file_recovery->location.start;
-      *new_current_search_space=current_search_space;
-      td_list_for_each(tmp, &file_recovery->location.list)
-      {
-	const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
-        uint64_t end=(element->end-(element->start%blocksize)+blocksize-1+1)/blocksize*blocksize+(element->start%blocksize)-1;
-        update_search_space_aux(list_search_space, element->start, end, new_current_search_space, offset);
-      }
-      return ;
-    }
-  }
 }
 
 void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end)
@@ -607,6 +543,8 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   }
   if(file_recovery->file_size==0)
   {
+    if(paranoid==2)
+      return ;
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     /* File is zero-length; erase it */
@@ -640,8 +578,6 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     @param file_recovery - 
     @param struct ph_param *params
     @param alloc_data_t *list_search_space
-    @param alloc_data_t **current_search_space
-    @param *offset
 
     @returns:
    -1: file not recovered, file_size=0 offset_error!=0
@@ -649,8 +585,8 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     1: file recovered
  */
 
-int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
-    alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
+int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
+    alloc_data_t *list_search_space)
 {
   if(file_recovery->file_stat==NULL)
     return 0;
@@ -658,24 +594,17 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
     file_finish_aux(file_recovery, params, 2);
   if(file_recovery->file_size==0)
   {
-    list_truncate(&file_recovery->location,file_recovery->file_size);
-    /* File hasn't been sucessfully recovered, remember where it begins */
-    list_free_add(file_recovery, list_search_space);
-    if((*current_search_space)!=list_search_space &&
-	!((*current_search_space)->start <= *offset && *offset <= (*current_search_space)->end))
-      *current_search_space=td_list_entry((*current_search_space)->list.next, alloc_data_t, list);
-    file_block_free(&file_recovery->location);
     if(file_recovery->offset_error!=0)
       return -1;
+    file_block_truncate_zero(file_recovery, list_search_space);
     reset_file_recovery(file_recovery);
     return 0;
   }
-  list_truncate(&file_recovery->location,file_recovery->file_size);
+  file_block_truncate(file_recovery, list_search_space, params->blocksize);
   file_block_log(file_recovery, params->disk->sector_size);
 #ifdef ENABLE_DFXML
   xml_log_file_recovered(file_recovery);
 #endif
-  update_search_space(file_recovery, list_search_space, current_search_space, offset, params->blocksize);
   file_block_free(&file_recovery->location);
   reset_file_recovery(file_recovery);
   return 1;
@@ -686,8 +615,6 @@ int file_finish(file_recovery_t *file_recovery, struct ph_param *params,
     @param struct ph_param *params
     const struct ph_options *options
     @param alloc_data_t *list_search_space
-    @param alloc_data_t **current_search_space
-    @param *offset
 
     @returns:
    -1: file not recovered, file_size=0 offset_error!=0
@@ -970,6 +897,7 @@ static int file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data
       return 0;
     }
   }
+  log_critical("file_block_remove_from_sp(list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize) failed\n");
   return -1;
 }
 
@@ -1134,4 +1062,56 @@ static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data
 	size+=(element->end-element->start+1);
     }
   }
+}
+
+static uint64_t file_offset_end(const file_recovery_t *file_recovery)
+{
+  const struct td_list_head *tmp=file_recovery->location.list.prev;
+  const alloc_list_t *element=td_list_entry_const(tmp, const alloc_list_t, list);
+  return element->end;
+}
+
+static void file_block_move(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset)
+{
+  const uint64_t end=file_offset_end(file_recovery);
+  struct td_list_head *tmp;
+  td_list_for_each(tmp, &list_search_space->list)
+  {
+    alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
+    if(element->start > end)
+    {
+      *new_current_search_space=element;
+      *offset=element->start;
+      return;
+    }
+  }
+  *new_current_search_space=list_search_space;
+}
+
+void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize,  alloc_data_t **new_current_search_space, uint64_t *offset, unsigned char *buffer)
+{
+  file_block_truncate(file_recovery, list_search_space, blocksize);
+  file_block_move(file_recovery, list_search_space, new_current_search_space, offset);
+  if(file_recovery->offset_ok > file_recovery->file_size)
+    file_recovery->offset_ok=file_recovery->file_size;
+  if(file_recovery->offset_error > file_recovery->file_size)
+    file_recovery->offset_error=0;
+  file_recovery->calculated_file_size=0;
+  if(file_recovery->data_check!=NULL)
+  {
+    uint64_t i;
+    unsigned char *block_buffer;
+    block_buffer=&buffer[blocksize];
+    if(fseek(file_recovery->handle, 0, SEEK_SET) < 0)
+      return ;
+    for(i=0; i< file_recovery->file_size; i+= blocksize)
+    {
+      if(fread(block_buffer, blocksize, 1, file_recovery->handle) != 1)
+	return ;
+      file_recovery->data_check(buffer, 2*blocksize, file_recovery);
+      memcpy(buffer, block_buffer, blocksize);
+    }
+  }
+  else
+    fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
 }
