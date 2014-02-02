@@ -41,12 +41,20 @@ const file_hint_t file_hint_addressbook= {
   .register_header_check=&register_header_check_ab
 };
 
+struct ab_header
+{
+  char magic[4];
+  uint32_t size;
+} __attribute__ ((__packed__));
+
 static data_check_t data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const struct ab_header *ab=(const struct ab_header *)&buffer[i];
+    const unsigned int length=be32(ab->size);
 #ifdef DEBUG_AB
     log_debug("data_check_addressbook i=0x%x buffer_size=0x%x calculated_file_size=%lu file_size=%lu\n",
         i, buffer_size,
@@ -54,35 +62,27 @@ static data_check_t data_check_addressbook(const unsigned char *buffer, const un
         (long unsigned)file_recovery->file_size);
     dump_log(buffer+i,8);
 #endif
-    if(buffer[i+0]=='L' && buffer[i+1]=='J' && buffer[i+3]==0x00)
-    {
-      const unsigned int length=((const unsigned int)buffer[i+4]<<24)+(buffer[i+5]<<16)+(buffer[i+6]<<8)+buffer[i+7];
-      if(length<8)
-      {
-        return DC_STOP;
-      }
-      file_recovery->calculated_file_size+=length;
-    }
-    else
-    {
+    if(ab->magic[0]!='L' || ab->magic[1]!='J' || ab->magic[3]!=0x00 || length<8)
       return DC_STOP;
-    }
+    file_recovery->calculated_file_size+=length;
   }
   return DC_CONTINUE;
 }
 
 static int header_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(buffer[0]=='L' && buffer[1]=='J' && (buffer[2]==0x1a || buffer[2]==0x0a) && buffer[3]==0x00)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->calculated_file_size=(buffer[4]<<24)+(buffer[5]<<16)+(buffer[6]<<8)+buffer[7];
-    file_recovery_new->data_check=&data_check_addressbook;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension=file_hint_addressbook.extension;
-    return 1;
-  }
-  return 0;
+  const struct ab_header *ab=(const struct ab_header *)buffer;
+  const unsigned int length=be32(ab->size);
+  if(ab->magic[0]!='L' || ab->magic[1]!='J' || ab->magic[3]!=0x00 || length<8)
+    return 0;
+  if(ab->magic[2]!=0x1a && ab->magic[2]!=0x0a)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->calculated_file_size=length;
+  file_recovery_new->data_check=&data_check_addressbook;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension=file_hint_addressbook.extension;
+  return 1;
 }
 
 static void register_header_check_ab(file_stat_t *file_stat)
