@@ -48,7 +48,6 @@ static struct exfat_alloc_bitmap_entry *exfat_get_bitmap(unsigned char*buffer, c
 unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space)
 {
   struct exfat_super_block *exfat_header;
-  const struct exfat_alloc_bitmap_entry *bitmap;
   unsigned int cluster_shift;
   /* Load boot sector */
   exfat_header=(struct exfat_super_block *)MALLOC(0x200);
@@ -61,6 +60,7 @@ unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition,
   cluster_shift=exfat_header->block_per_clus_bits + exfat_header->blocksize_bits;
   /* Load bitmap information */
   {
+    const struct exfat_alloc_bitmap_entry *bitmap;
     const uint64_t start=partition->part_offset +
       exfat_cluster_to_offset(exfat_header, le32(exfat_header->rootdir_clusnr));
     unsigned char *buffer_rootdir=(unsigned char *)MALLOC(1<<cluster_shift);
