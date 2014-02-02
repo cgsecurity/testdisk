@@ -32,8 +32,6 @@
 #include "common.h"
 
 static void register_header_check_e01(file_stat_t *file_stat);
-static int header_check_e01(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_e01(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_e01= {
   .extension="e01",
@@ -44,16 +42,6 @@ const file_hint_t file_hint_e01= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_e01
 };
-
-static const unsigned char e01_header[9]=  {
-  'E' , 'V' , 'F' , 0x09, 0x0d, 0x0a, 0xff, 0x00,
-    0x01
-};
-
-static void register_header_check_e01(file_stat_t *file_stat)
-{
-  register_header_check(0, e01_header, sizeof(e01_header), &header_check_e01, file_stat);
-}
 
 struct ewf_file_header
 {
@@ -78,26 +66,9 @@ struct ewf_file_header
         uint16_t fields_end;
 } __attribute__ ((__packed__));
 
-static int header_check_e01(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, e01_header, sizeof(e01_header))==0)
-  {
-    const struct ewf_file_header *ewf=(const struct ewf_file_header *)buffer;
-    static char ext[4];
-    reset_file_recovery(file_recovery_new);
-    ext[0]='E'+le16(ewf->fields_segment)/100;
-    ext[1]='0'+(le16(ewf->fields_segment)%100)/10;
-    ext[2]='0'+(le16(ewf->fields_segment)%10);
-    ext[3]='\0';
-    file_recovery_new->extension=(const char*)&ext;
-    file_recovery_new->file_check=&file_check_e01;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_e01(file_recovery_t *file_recovery)
 {
+  const uint64_t tmp=file_recovery->file_size;
   const unsigned char sig_done[16]={
     'd', 'o', 'n', 'e', 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -109,6 +80,29 @@ static void file_check_e01(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, sig_next, sizeof(sig_next), 60);
   if(file_recovery->file_size!=0)
     return ;
-  file_recovery->file_size=file_recovery->file_size;
+  file_recovery->file_size=tmp;
   file_search_footer(file_recovery, sig_done, sizeof(sig_done), 60);
+}
+
+static int header_check_e01(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct ewf_file_header *ewf=(const struct ewf_file_header *)buffer;
+  static char ext[4];
+  reset_file_recovery(file_recovery_new);
+  ext[0]='E'+le16(ewf->fields_segment)/100;
+  ext[1]='0'+(le16(ewf->fields_segment)%100)/10;
+  ext[2]='0'+(le16(ewf->fields_segment)%10);
+  ext[3]='\0';
+  file_recovery_new->extension=(const char*)&ext;
+  file_recovery_new->file_check=&file_check_e01;
+  return 1;
+}
+
+static void register_header_check_e01(file_stat_t *file_stat)
+{
+  static const unsigned char e01_header[9]=  {
+    'E' , 'V' , 'F' , 0x09, 0x0d, 0x0a, 0xff, 0x00,
+    0x01
+  };
+  register_header_check(0, e01_header, sizeof(e01_header), &header_check_e01, file_stat);
 }
