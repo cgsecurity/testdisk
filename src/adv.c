@@ -59,6 +59,7 @@
 #include "tntfs.h"
 #include "thfs.h"
 #include "askloc.h"
+#include "addpart.h"
 #include "addpartn.h"
 #include "io_redir.h"
 
@@ -328,6 +329,11 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  (*current_cmd)+=4;
 	  command='t';
 	}
+	else if(strncmp(*current_cmd,"addpart",7)==0)
+	{
+	  (*current_cmd)+=7;
+	  command='a';
+	}
 	else if(strncmp(*current_cmd,"boot",4)==0)
 	{
 	  (*current_cmd)+=4;
@@ -387,7 +393,10 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       case 'A':
 	if(disk_car->arch!=&arch_none)
 	{
-	  list_part=add_partition_ncurses(disk_car, list_part);
+	  if(*current_cmd!=NULL)
+	    list_part=add_partition_cli(disk_car, list_part, current_cmd);
+	  else
+	    list_part=add_partition_ncurses(disk_car, list_part);
 	  current_element=list_part;
 	  rewrite=1;
 	}

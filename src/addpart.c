@@ -29,6 +29,7 @@
 #include "common.h"
 #include "parti386.h"
 #include "partgpt.h"
+#include "parthumax.h"
 #include "partmac.h"
 #include "partsun.h"
 #include "partxbox.h"
@@ -36,6 +37,7 @@
 
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
+extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
@@ -48,6 +50,8 @@ list_part_t *add_partition_cli(disk_t *disk, list_part_t *list_part, char **curr
     return add_partition_gpt_cli(disk, list_part, current_cmd);
   else if(disk->arch==&arch_i386)
     return add_partition_i386_cli(disk, list_part, current_cmd);
+  else if(disk->arch==&arch_humax)
+    return add_partition_humax_cli(disk, list_part, current_cmd);
   else if(disk->arch==&arch_mac)
     return add_partition_mac_cli(disk, list_part, current_cmd);
   else if(disk->arch==&arch_sun)
