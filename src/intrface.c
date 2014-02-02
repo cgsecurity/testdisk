@@ -107,7 +107,7 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
 
 #ifdef HAVE_NCURSES
 #define INTER_STRUCTURE	(LINES-12)
-static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
+static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_part, const int verbose)
 {
   int offset=0;
   int pos_num=0;
@@ -363,8 +363,9 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
 	if(list_part!=NULL)
         {
           const partition_t *partition=pos->part;
+	  char *current_cmd=NULL;
           if(partition->sb_offset==0 || partition->sb_size==0)
-            dir_partition(disk_car,partition,verbose, current_cmd);
+            dir_partition(disk_car,partition,verbose, &current_cmd);
           else
           {
             io_redir_add_redir(disk_car,
@@ -372,7 +373,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
                 partition->sb_size,
                 partition->part_offset+partition->sb_offset,
                 NULL);
-            dir_partition(disk_car,partition,verbose, current_cmd);
+            dir_partition(disk_car,partition,verbose, &current_cmd);
             io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
           }
 	  rewrite=1;
@@ -423,7 +424,7 @@ list_part_t *ask_structure(disk_t *disk_car,list_part_t *list_part, const int ve
   if(*current_cmd!=NULL)
     return ask_structure_cli(disk_car, list_part, verbose, current_cmd);
 #ifdef HAVE_NCURSES
-  return ask_structure_ncurses(disk_car, list_part, verbose, current_cmd);
+  return ask_structure_ncurses(disk_car, list_part, verbose);
 #else
   return list_part;
 #endif
