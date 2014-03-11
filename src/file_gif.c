@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "log.h"
 
 static void register_header_check_gif(file_stat_t *file_stat);
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -88,9 +89,13 @@ static void file_check_gif(file_recovery_t *file_recovery)
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 20 < file_recovery->file_size + buffer_size/2)
+      file_recovery->calculated_file_size + 2 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+#ifdef DEBUG_GIF
+    log_info("data_check_gif  calculated_file_size=0x%llx: 0x%02x\n",
+	(long long unsigned)file_recovery->calculated_file_size, buffer[i]);
+#endif
     switch(buffer[i])
     {
       case 0x21:
@@ -101,20 +106,24 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 	file_recovery->calculated_file_size+=2;
 	return data_check_gif2(buffer, buffer_size, file_recovery);
       case 0x2c:
+	if(file_recovery->calculated_file_size + 20 < file_recovery->file_size + buffer_size/2)
 	{
-	  unsigned int j=i;
-	  /* Image Descriptor */
-	  j+=10;
-	  if(((buffer[j+9]>>7)&0x1)>0)
+	  unsigned int j=10+1;
+	  /* 1	Image Descriptor id=0x2c
+	   * 4: NW corner
+	   * 4: width, heigth,
+	   * 1: is a local color table present ? */
+	  if(((buffer[i+9]>>7)&0x1)>0)
 	  {
 	    /* local color table */
-	    j+=3<<((buffer[j+9]&7)+1);
+	    j+=3<<((buffer[i+9]&7)+1);
 	  }
+	  file_recovery->calculated_file_size+=j;
+	  /* 1: Start of image - LZW minimum code size */
 	  /* Table Based Image Data */
-	  j++;	/* LZW Minimum Code Size  */
-	  file_recovery->calculated_file_size+=(j-i);
+	  return data_check_gif2(buffer, buffer_size, file_recovery);
 	}
-	return data_check_gif2(buffer, buffer_size, file_recovery);
+	return DC_CONTINUE;
       case 0x3b:
 	/* Trailer */
 	file_recovery->calculated_file_size++;
@@ -133,6 +142,10 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
       file_recovery->calculated_file_size + 2 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+#ifdef DEBUG_GIF
+    log_info("data_check_gif2 calculated_file_size=0x%llx\n",
+	(long long unsigned)file_recovery->calculated_file_size);
+#endif
     file_recovery->calculated_file_size+=buffer[i]+1;
     if(buffer[i]==0)
     {
