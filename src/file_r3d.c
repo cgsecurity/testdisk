@@ -2,7 +2,7 @@
 
     File: file_r3d.c
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2009,2014 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@
 #include <ctype.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
+#include "log.h"
 
 static void register_header_check_r3d(file_stat_t *file_stat);
 static int header_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -45,23 +47,69 @@ const file_hint_t file_hint_r3d= {
   .register_header_check=&register_header_check_r3d
 };
 
-static const unsigned char r3d_header[16]=  {
-  0x00, 0x00, 0x01, 'D' , 'R' , 'E' , 'D' , '1' ,
-  0x04, 0x03, 'R' , '1' , 0x00, 0x00, 0xbb, 0x80
-};
+static const unsigned char r3d_header1[4]=  { 'R' , 'E' , 'D' , '1' };
+static const unsigned char r3d_header2[4]=  { 'R' , 'E' , 'D' , '2' };
 
-static void register_header_check_r3d(file_stat_t *file_stat)
+struct atom_struct
 {
-  register_header_check(0, r3d_header, sizeof(r3d_header), &header_check_r3d, file_stat);
+  uint32_t size;
+  uint32_t type;
+} __attribute__ ((__packed__));
+
+static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
+    uint64_t atom_size=be32(atom->size);
+    if(atom_size<8)
+      return DC_STOP;
+#ifdef DEBUG_R3D
+    log_trace("file_r3d.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
+	file_recovery->filename,
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
+        (long long unsigned)atom_size,
+        (long long unsigned)file_recovery->calculated_file_size);
+#endif
+    if(buffer[i+4]=='R' && buffer[i+5]=='E' && buffer[i+6]=='O')
+    {
+      /* End of file */
+      file_recovery->calculated_file_size+=atom_size;
+      file_recovery->data_check=NULL;
+      return DC_CONTINUE;
+    }
+    if(buffer[i+4]!='R')
+    {
+      return DC_STOP;
+    }
+    /* REDV1 REDV RPAD RDVO RDVS RDAO RDAS REOB */
+    file_recovery->calculated_file_size+=atom_size;
+  }
+#ifdef DEBUG_R3D
+  log_trace("file_r3d.c: new calculated_file_size %llu\n",
+      (long long unsigned)file_recovery->calculated_file_size);
+#endif
+  return DC_CONTINUE;
 }
 
 static int header_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, r3d_header, sizeof(r3d_header))==0)
+  if(memcmp(&buffer[4], r3d_header1, sizeof(r3d_header1))==0 && buffer[0xa]=='R' && buffer[0xb]=='1')
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_r3d.extension;
     file_recovery_new->file_rename=&file_rename_r3d;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_r3d;
+    return 1;
+  }
+  if(memcmp(&buffer[4], r3d_header2, sizeof(r3d_header2))==0 && buffer[0xa]=='R' && buffer[0xb]=='2')
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_r3d.extension;
     return 1;
   }
   return 0;
@@ -85,4 +133,10 @@ static void file_rename_r3d(const char *old_filename)
       return ;
   }
   file_rename(old_filename, buffer, i, 0x43, NULL, 1);
+}
+
+static void register_header_check_r3d(file_stat_t *file_stat)
+{
+  register_header_check(4, r3d_header1, sizeof(r3d_header1), &header_check_r3d, file_stat);
+  register_header_check(4, r3d_header2, sizeof(r3d_header2), &header_check_r3d, file_stat);
 }
