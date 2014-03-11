@@ -33,6 +33,7 @@
 #include "log.h"
 
 extern const file_hint_t file_hint_mkv;
+extern const file_hint_t file_hint_tiff;
 
 static void register_header_check_mp3(file_stat_t *file_stat);
 static data_check_t data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
@@ -158,15 +159,21 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
 
 	http://www.dv.co.yu/mpgscript/mpeghdr.htm
   */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      (file_recovery->file_stat->file_hint==&file_hint_mp3 ||
-       file_recovery->file_stat->file_hint==&file_hint_mkv))
-    return 0;
   if(!(buffer[0]==0xFF &&
 	((buffer[1]&0xFE)==0xFA ||
 	 (buffer[1]&0xFE)==0xF2 ||
 	 (buffer[1]&0xFE)==0xE2)))
     return 0;
+  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
+  {
+    if(file_recovery->file_stat->file_hint==&file_hint_mp3 ||
+	file_recovery->file_stat->file_hint==&file_hint_mkv)
+      return 0;
+    /* RGV values from TIFF may be similar to the beginning of an mp3 */
+    if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
+	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
+      return 0;
+  }
   while(potential_frame_offset+1 < buffer_size &&
       potential_frame_offset+1 < 2048)
   {
