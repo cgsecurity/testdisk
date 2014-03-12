@@ -93,7 +93,7 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
 
 static data_check_t data_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(file_recovery->file_size > file_recovery->calculated_file_size+512)
+  if(file_recovery->file_size + buffer_size / 2 > file_recovery->calculated_file_size+512)
   {
     return DC_STOP;
   }

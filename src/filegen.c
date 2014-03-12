@@ -275,9 +275,8 @@ void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*f
 
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(file_recovery->file_size>=file_recovery->calculated_file_size)
+  if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
   {
-    file_recovery->file_size=file_recovery->calculated_file_size;
     return DC_STOP;
   }
   return DC_CONTINUE;

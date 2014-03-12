@@ -146,11 +146,8 @@ static data_check_t data_check_fits(const unsigned char *buffer, const unsigned 
       file_recovery->calculated_file_size+=(i-i_org+2880-1)/2880*2880+(tmp+2880-1)/2880*2880;
     }
   }
-  if(file_recovery->file_size>=file_recovery->calculated_file_size)
-  {
-    file_recovery->file_size=file_recovery->calculated_file_size;
+  if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
     return DC_STOP;
-  }
   return DC_CONTINUE;
 }
 
