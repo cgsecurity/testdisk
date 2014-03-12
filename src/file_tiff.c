@@ -401,17 +401,17 @@ static uint64_t parse_strip_le(FILE *handle, TIFFDirEntry *entry_strip_offsets, 
   uint32_t *sizep;
   uint64_t max_offset=0;
   if(le32(entry_strip_offsets->tdir_count) != le32(entry_strip_bytecounts->tdir_count))
-    return 0;
+    return -1;
   if(le32(entry_strip_offsets->tdir_count)==0 ||
       le16(entry_strip_offsets->tdir_type)!=4 ||
       le16(entry_strip_bytecounts->tdir_type)!=4)
-    return 0;
+    return -1;
   offsetp=(uint32_t *)MALLOC(nbr*sizeof(*offsetp));
   if(fseek(handle, le32(entry_strip_offsets->tdir_offset), SEEK_SET) < 0 ||
       fread(offsetp, sizeof(*offsetp), nbr, handle) != nbr)
   {
     free(offsetp);
-    return 0;
+    return -1;
   }
   sizep=(uint32_t *)MALLOC(nbr*sizeof(*sizep));
   if(fseek(handle, le32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
@@ -419,7 +419,7 @@ static uint64_t parse_strip_le(FILE *handle, TIFFDirEntry *entry_strip_offsets, 
   {
     free(offsetp);
     free(sizep);
-    return 0;
+    return -1;
   }
   for(i=0; i<nbr; i++)
   {
@@ -442,17 +442,17 @@ static uint64_t parse_strip_be(FILE *handle, TIFFDirEntry *entry_strip_offsets, 
   uint32_t *sizep;
   uint64_t max_offset=0;
   if(be32(entry_strip_offsets->tdir_count) != be32(entry_strip_bytecounts->tdir_count))
-    return 0;
+    return -1;
   if(be32(entry_strip_offsets->tdir_count)==0 ||
       be16(entry_strip_offsets->tdir_type)!=4 ||
       be16(entry_strip_bytecounts->tdir_type)!=4)
-    return 0;
+    return -1;
   offsetp=(uint32_t *)MALLOC(nbr*sizeof(*offsetp));
   if(fseek(handle, be32(entry_strip_offsets->tdir_offset), SEEK_SET) < 0 ||
       fread(offsetp, sizeof(*offsetp), nbr, handle) != nbr)
   {
     free(offsetp);
-    return 0;
+    return -1;
   }
   sizep=(uint32_t *)MALLOC(nbr*sizeof(*sizep));
   if(fseek(handle, be32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
@@ -460,7 +460,7 @@ static uint64_t parse_strip_be(FILE *handle, TIFFDirEntry *entry_strip_offsets, 
   {
     free(offsetp);
     free(sizep);
-    return 0;
+    return -1;
   }
   for(i=0; i<nbr; i++)
   {
@@ -495,12 +495,12 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
   uint64_t tile_bytecounts=0;
   const TIFFDirEntry *entry;
   if(tiff_diroff == 0)
-    return 0;
+    return -1;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
-    return 0;
+    return -1;
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
-    return 0;
+    return -1;
   if( memcmp(buffer, sign_nikon1, sizeof(sign_nikon1))==0 ||
       memcmp(buffer, sign_nikon2, sizeof(sign_nikon2))==0 ||
       memcmp(buffer, sign_pentax, sizeof(sign_pentax))==0 )
@@ -514,7 +514,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
   if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
-    return 0;
+    return -1;
   for(i=0;i<n;i++)
   {
     const uint64_t val=(uint64_t)le32(entry->tdir_count)*type2size(le16(entry->tdir_type));
@@ -533,7 +533,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
     {
       const uint64_t new_offset=le32(entry->tdir_offset)+val;
       if(new_offset==0)
-	return 0;
+	return -1;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -598,16 +598,16 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   log_info("header_check_tiff_le(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
 #endif
   if(depth>4)
-    return 0;
+    return -1;
   if(count>16)
-    return 0;
+    return -1;
   if(tiff_diroff == 0)
-    return 0;
+    return -1;
   if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
-    return 0;
+    return -1;
   data_read=fread(buffer, 1, sizeof(buffer), fr->handle);
   if(data_read<2)
-    return 0;
+    return -1;
   n=buffer[0]+(buffer[1]<<8);
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_le(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
@@ -616,7 +616,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
-    return 0;
+    return -1;
   for(i=0;i<n;i++)
   {
     const uint64_t val=(uint64_t)le32(entry->tdir_count)*type2size(le16(entry->tdir_type));
@@ -636,7 +636,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
     {
       const uint64_t new_offset=le32(entry->tdir_offset)+val;
       if(new_offset==0)
-	return 0;
+	return -1;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -659,8 +659,8 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	case TIFFTAG_KODAKIFD:
 	  {
 	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0, tag_make);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -678,8 +678,8 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 #endif
 	  {
 	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0, tag_make);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -688,8 +688,8 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	case EXIFTAG_MAKERNOTE:
 	  {
 	    const uint64_t new_offset=tiff_le_makernote(fr->handle, tmp);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -711,21 +711,21 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	    uint32_t *subifd_offsetp;
 	    if(fseek(fr->handle, le32(entry->tdir_offset), SEEK_SET) < 0)
 	    {
-	      return 0;
+	      return -1;
 	    }
 	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, fr->handle) != nbr)
 	    {
 	      free(subifd_offsetp);
-	      return 0;
+	      return -1;
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
 	      const uint64_t new_offset=header_check_tiff_le(fr, le32(subifd_offsetp[j]), depth+1, 0, tag_make);
-	      if(new_offset==0)
+	      if(new_offset==-1)
 	      {
 		free(subifd_offsetp);
-		return 0;
+		return -1;
 	      }
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
@@ -764,12 +764,16 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   if(entry_strip_offsets != NULL && entry_strip_bytecounts != NULL)
   {
     const uint64_t tmp=parse_strip_le(fr->handle, entry_strip_offsets, entry_strip_bytecounts);
+    if(tmp==-1)
+      return -1;
     if(max_offset < tmp)
       max_offset=tmp;
   }
   if(entry_tile_offsets != NULL && entry_tile_bytecounts != NULL)
   {
     const uint64_t tmp=parse_strip_le(fr->handle, entry_tile_offsets, entry_tile_bytecounts);
+    if(tmp==-1)
+      return -1;
     if(max_offset < tmp)
       max_offset=tmp;
   }
@@ -777,7 +781,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   if(le32(*tiff_next_diroff) > 0)
   {
     const uint64_t new_offset=header_check_tiff_le(fr, le32(*tiff_next_diroff), depth, count+1, tag_make);
-    if(max_offset < new_offset)
+    if(new_offset != -1 && max_offset < new_offset)
       max_offset=new_offset;
   }
   return max_offset;
@@ -805,12 +809,12 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
   uint64_t tile_bytecounts=0;
   const TIFFDirEntry *entry;
   if(tiff_diroff == 0)
-    return 0;
+    return -1;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
-    return 0;
+    return -1;
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
-    return 0;
+    return -1;
   if( memcmp(buffer, sign_nikon1, sizeof(sign_nikon1))==0 ||
       memcmp(buffer, sign_nikon2, sizeof(sign_nikon2))==0 ||
       memcmp(buffer, sign_pentax, sizeof(sign_pentax))==0 )
@@ -824,7 +828,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
   if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
-    return 0;
+    return -1;
   for(i=0;i<n;i++)
   {
     const uint64_t val=(uint64_t)be32(entry->tdir_count)*type2size(be16(entry->tdir_type));
@@ -843,7 +847,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
     {
       const uint64_t new_offset=be32(entry->tdir_offset)+val;
       if(new_offset==0)
-	return 0;
+	return -1;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -905,16 +909,16 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
   TIFFDirEntry *entry_tile_offsets=NULL;
   TIFFDirEntry *entry_tile_bytecounts=NULL;
   if(depth>4)
-    return 0;
+    return -1;
   if(count>16)
-    return 0;
+    return -1;
   if(tiff_diroff == 0)
-    return 0;
+    return -1;
   if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
-    return 0;
+    return -1;
   data_read=fread(buffer, 1, sizeof(buffer), fr->handle);
   if(data_read<2)
-    return 0;
+    return -1;
   n=(buffer[0]<<8)+buffer[1];
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_be(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
@@ -923,7 +927,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
   if(n > (unsigned)(data_read-2)/12)
     n=(data_read-2)/12;
   if(n==0)
-    return 0;
+    return -1;
   for(i=0;i<n;i++)
   {
     const uint64_t val=(uint64_t)be32(entry->tdir_count)*type2size(be16(entry->tdir_type));
@@ -942,7 +946,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
     {
       const uint64_t new_offset=be32(entry->tdir_offset)+val;
       if(new_offset==0)
-	return 0;
+	return -1;
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
@@ -965,8 +969,8 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	case TIFFTAG_KODAKIFD:
 	  {
 	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0, tag_make);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -984,8 +988,8 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 #endif
 	  {
 	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0, tag_make);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -994,8 +998,8 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	case EXIFTAG_MAKERNOTE:
 	  {
 	    const uint64_t new_offset=tiff_be_makernote(fr->handle, tmp);
-	    if(new_offset==0)
-	      return 0;
+	    if(new_offset==-1)
+	      return -1;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
@@ -1017,21 +1021,21 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	    uint32_t *subifd_offsetp;
 	    if(fseek(fr->handle, be32(entry->tdir_offset), SEEK_SET) < 0)
 	    {
-	      return 0;
+	      return -1;
 	    }
 	    subifd_offsetp=(uint32_t *)MALLOC(nbr*sizeof(*subifd_offsetp));
 	    if(fread(subifd_offsetp, sizeof(*subifd_offsetp), nbr, fr->handle) != nbr)
 	    {
 	      free(subifd_offsetp);
-	      return 0;
+	      return -1;
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
 	      const uint64_t new_offset=header_check_tiff_be(fr, be32(subifd_offsetp[j]), depth+1, 0, tag_make);
-	      if(new_offset==0)
+	      if(new_offset==-1)
 	      {
 		free(subifd_offsetp);
-		return 0;
+		return -1;
 	      }
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
@@ -1083,7 +1087,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
   if(be32(*tiff_next_diroff) > 0)
   {
     const uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth, count+1, tag_make);
-    if(max_offset < new_offset)
+    if(max_offset!=-1 && max_offset < new_offset)
       max_offset=new_offset;
   }
   return max_offset;
