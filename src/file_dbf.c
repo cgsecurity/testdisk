@@ -53,7 +53,7 @@ static void register_header_check_dbf(file_stat_t *file_stat)
 static int header_check_dbf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* 0x03 YY MM DD reserved=0 */
-  if(buffer[0]==0x3 && (buffer[1]>80 && buffer[1]<120) &&
+  if(buffer[0]==0x3 && ((buffer[1]>80 && buffer[1]<120) || buffer[1]<20) &&
       (buffer[2]>=1 && buffer[2]<=12) && (buffer[3]>=1 && buffer[3]<=31) &&
       buffer[12]==0 && buffer[13]==0 && buffer[14]==0 && buffer[15]==0 &&
       buffer[16]==0 && buffer[17]==0 && buffer[18]==0 && buffer[19]==0 &&
