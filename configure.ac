@@ -158,6 +158,14 @@ AC_ARG_WITH(giconv-includes,
     AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
+AC_ARG_WITH([zlib], 
+    AS_HELP_STRING(--without-zlib,disabled use of the zlib library),
+    [	use_zlib="y" ])
+
+AC_ARG_WITH([uuid], 
+    AS_HELP_STRING(--without-uuid,disabled use of the uuid library),
+    [	use_uuid="y" ])
+
 #AC_ARG_WITH([carvpath], 
 #    AS_HELP_STRING(--without-carvpath,disabled use of the carvpath library (default is NO)),
 #    [	use_carvpath="n" ])
@@ -678,16 +686,18 @@ fi
 AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h uuid.h])
 found_uuid_function=yes
 AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
-if test "${found_uuid_function}" = "no";
-then
-  found_uuid_function=yes
-  AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
-fi
+if test -z "${use_uuid}"; then
+  if test "${found_uuid_function}" = "no";
+  then
+    found_uuid_function=yes
+    AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
+  fi
 
-if test "${found_uuid_function}" = "no";
-then
-  found_uuid_function=yes
-  AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
+  if test "${found_uuid_function}" = "no";
+  then
+    found_uuid_function=yes
+    AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
+  fi
 fi
 
 if test "${found_uuid_function}" = "yes";
@@ -706,7 +716,9 @@ then
   fi
 fi
 
-AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
+if test -z "${use_zlib}"; then
+  AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
+fi
 #
 if test -z "${use_ewf}"; then
   AC_CHECK_LIB(ewf,libewf_check_file_signature,[
