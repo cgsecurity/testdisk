@@ -158,7 +158,7 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
   }
 #elif defined(DJGPP)
   return "DOS";
-#elif defined(HAVE_SYS_UTSNAME_H)
+#elif defined(HAVE_SYS_UTSNAME_H) && defined(HAVE_UNAME)
   {
     struct utsname Ver;
     if(uname(&Ver)==0)
