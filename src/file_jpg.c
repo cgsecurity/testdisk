@@ -1203,7 +1203,8 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
     src->file_size_max=file_recovery->file_size;
   }
   /* Image is very big, skip some tests */
-  if(jpeg_session.output_height * jpeg_session.row_stride > 500 * 1024 * 1024)
+  if((uint64_t)jpeg_session.output_height * jpeg_session.row_stride > 500 * 1024 * 1024 ||
+      jpeg_session.output_height<9)
     jpeg_session.flags=0;
   /* 0x100/2=0x80, medium value */
   if(jpeg_session.flags==0)
