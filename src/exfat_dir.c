@@ -96,12 +96,11 @@ static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *p
     free(buffer);
     return 0;
   }
-  /* FAT32 used 28 bits, the 4 high bits are reserved
-   * 0x00000000: free cluster
-   * 0x0FFFFFF7: bad cluster
-   * 0x0FFFFFF8+: EOC End of cluster
+  /* 0x00000000: free cluster
+   * 0xFFFFFFF7: bad cluster
+   * 0xFFFFFFFF: EOC End of cluster
    * */
-  next_cluster=le32(p32[offset_o])&0xFFFFFFF;
+  next_cluster=le32(p32[offset_o]);
   free(buffer);
   return next_cluster;
 }
@@ -276,6 +275,22 @@ dir_partition_t dir_partition_exfat_init(disk_t *disk, const partition_t *partit
   {
     log_error("dir_partition_exfat_init: iconv_open failed\n");
   }
+#endif
+#ifdef DEBUG_EXFAT
+  log_info("start_sector=%llu\n", (long long unsigned)le64(exfat_header->start_sector));
+  log_info("nr_sectors  =%llu\n", (long long unsigned)le64(exfat_header->nr_sectors));
+  log_info("fat_blocknr =%u\n",le32(exfat_header->fat_blocknr));
+  log_info("fat_block_counts=%u\n", le32(exfat_header->fat_block_counts));
+  log_info("clus_blocknr=%u\n",	le32(exfat_header->clus_blocknr));
+  log_info("total_clusters=%u\n",	le32(exfat_header->total_clusters));
+  log_info("rootdir_clusnr=%u\n",	le32(exfat_header->rootdir_clusnr));
+  log_info("serial_number=0x%08x\n", le32(exfat_header->serial_number));
+  log_info("state=0x%x\n",	le16(exfat_header->state));
+  log_info("blocksize_bits=%u\n",	exfat_header->blocksize_bits);
+  log_info("block_per_clus_bits=%u\n",	exfat_header->block_per_clus_bits);
+  log_info("number_of_fats=%u\n",		exfat_header->number_of_fats);
+  log_info("drive_select=0x%x\n",		exfat_header->drive_select);
+  log_info("allocated_percent=%u\n",	exfat_header->allocated_percent);
 #endif
   strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
   dir_data->current_inode=0;
