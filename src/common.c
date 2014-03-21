@@ -44,6 +44,7 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "log.h"
@@ -56,12 +57,7 @@ static unsigned int up2power_aux(const unsigned int number);
 void *MALLOC(size_t size)
 {
   void *res;
-  if(size<=0)
-  {
-    log_critical("Try to allocate 0 byte of memory\n");
-    log_close();
-    exit(EXIT_FAILURE);
-  }
+  assert(size>0);
   /* Warning, memory leak checker must be posix_memalign/memalign aware, otherwise  *
    * reports may look strange. Aligned memory is required if the buffer is *
    * used for read/write operation with a file opened with O_DIRECT        */

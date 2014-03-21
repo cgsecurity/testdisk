@@ -27,6 +27,7 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
@@ -537,6 +538,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       ((uint64_t) disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size) + 1 ) *
       ((uint64_t) disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size),
       disk_car->disk_real_size);
+  assert(disk_car->sector_size>0);
   partition=partition_new(disk_car->arch);
   buffer_disk=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);
   buffer_disk0=(unsigned char*)MALLOC(16*DEFAULT_SECTOR_SIZE);

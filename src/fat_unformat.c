@@ -53,6 +53,7 @@
 #include "pnext.h"
 #include "setdate.h"
 #include "fat_common.h"
+#include <assert.h>
 
 #define READ_SIZE 4*1024*1024
 static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
@@ -66,6 +67,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   alloc_data_t *current_search_space;
   unsigned char *buffer_start=(unsigned char *)MALLOC(READ_SIZE);
   unsigned char *buffer=buffer_start;
+  assert(disk->sector_size!=0);
   current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
   if(current_search_space!=list_search_space)
     offset=current_search_space->start;
