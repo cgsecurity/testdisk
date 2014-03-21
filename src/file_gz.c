@@ -32,6 +32,7 @@
 #include <zlib.h>
 #endif
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_gz(file_stat_t *file_stat);
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -46,6 +47,16 @@ const file_hint_t file_hint_gz= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_gz
 };
+
+struct gzip_header
+{
+  uint16_t id;
+  uint8_t  compression_method;
+  uint8_t  flags;
+  uint32_t mtime;
+  uint8_t  extra_flags;
+  uint8_t  os;
+} __attribute__ ((__packed__));
 
 static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
 /* flags:
@@ -73,6 +84,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 {
   unsigned int off=10;
   const unsigned int flags=buffer[3];
+  const struct gzip_header *gz=(const struct gzip_header *)buffer;
   /* gzip file format:
    * a 10-byte header, containing a magic number, a version number and a timestamp
    * optional extra headers, such as the original file name,
@@ -154,7 +166,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     buffer_uncompr[d_stream.total_out]='\0';
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=22;
-    file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
+    file_recovery_new->time=le32(gz->mtime);
     file_recovery_new->file_rename=&file_rename_gz;
     if(memcmp(buffer_uncompr, "PVP ", 4)==0)
     {
@@ -220,7 +232,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 #else
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=22;
-  file_recovery_new->time=buffer[4]|(buffer[5]<<8)|(buffer[6]<<16)|(buffer[7]<<24);
+  file_recovery_new->time=le32(gz->mtime);
   file_recovery_new->file_rename=&file_rename_gz;
 #endif
   file_recovery_new->extension=file_hint_gz.extension;
