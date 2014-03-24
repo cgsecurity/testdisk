@@ -47,13 +47,14 @@ int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct 
       partition->part_offset + exfat_cluster_to_offset(exfat_header, cluster));
 }
 
-static int set_EXFAT_info(partition_t *partition)
+static int set_EXFAT_info(partition_t *partition, const struct exfat_super_block*exfat_header)
 {
+  partition->blocksize=1<<(exfat_header->block_per_clus_bits + exfat_header->blocksize_bits);
   partition->fsname[0]='\0';
   if(partition->sb_offset==0)
-    strncpy(partition->info,"exFAT",sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "exFAT, blocksize=%u", partition->blocksize);
   else
-    strncpy(partition->info,"exFAT found using backup sector!",sizeof(partition->info));
+    snprintf(partition->info, sizeof(partition->info), "exFAT found using backup sector, blocksize=%u");
   return 0;
 }
 
@@ -70,7 +71,7 @@ int check_EXFAT(disk_t *disk, partition_t *partition)
     free(buffer);
     return 1;
   }
-  set_EXFAT_info(partition);
+  set_EXFAT_info(partition, (struct exfat_super_block*)buffer);
   free(buffer);
   return 0;
 }
@@ -100,6 +101,6 @@ int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_head
     partition->sb_offset=12 << exfat_header->blocksize_bits;
     partition->part_offset-=partition->sb_offset;
   }
-  set_EXFAT_info(partition);
+  set_EXFAT_info(partition, exfat_header);
   return 0;
 }
