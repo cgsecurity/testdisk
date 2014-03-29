@@ -311,7 +311,7 @@ then
 # libewf should work under MacOSX but it hasn't been tested
 # use  --with-ncurses-lib=$prefix/usr/lib to get binaries that don't need libncurses
 # but users may be unable to navigate...
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt --disable-assert
                 ;;
 	  i686-apple-darwin9)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt

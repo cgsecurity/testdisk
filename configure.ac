@@ -179,6 +179,15 @@ AC_ARG_WITH([uuid],
 #    AS_HELP_STRING(--with-carvpath-includes=DIR,location of the carvpath includes files),
 #    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
+AC_ARG_ENABLE([assert],
+    AS_HELP_STRING(--enable-assert, enable compilation of assert code (default is YES)),
+    [case "${enableval}" in
+       yes) use_assert=true ;;
+       no)  use_assert=false ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-assert]) ;;
+     esac],
+     [use_assert=true])
+
 AC_ARG_ENABLE([sudo],
     AS_HELP_STRING(--enable-sudo,enable use of sudo (default is NO)),
     [case "${enableval}" in
@@ -807,6 +816,11 @@ then
 	SUDO_BIN="$SUDO"
     fi
     AC_DEFINE_UNQUOTED([SUDO_BIN], "$SUDO_BIN", [Path to sudo for privileged operations])
+fi
+
+if test "$use_assert" = "false";
+then
+  AC_DEFINE(NDEBUG, 1, [Disable the assert error checking])
 fi
 
 #reiserfs_fs_open_fast may not been detected because of lack of -ldal
