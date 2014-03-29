@@ -792,6 +792,40 @@ int QPhotorec::photorec(alloc_data_t *list_search_space)
     session_save(list_search_space, params, options);
     switch(ind_stop)
     {
+      case PSTATUS_EACCES:
+	{
+	  int ret=QMessageBox::warning(this,"QPhotoRec: Failed to create file!", "Failed to create file! Please choose another destination", QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
+	  if(ret==QMessageBox::Cancel)
+	  {
+	    params->status=STATUS_QUIT;
+	  }
+	  else
+	  {
+	    setExistingDirectory();
+	    free(params->recup_dir);
+	    QByteArray byteArray = (directoryLabel->text() + "/" + DEFAULT_RECUP_DIR).toUtf8();
+	    params->recup_dir=strdup(byteArray.constData());
+	    params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
+	  }
+	}
+	break;
+      case PSTATUS_ENOSPC:
+	{
+	  int ret=QMessageBox::warning(this,"QPhotoRec: Not enough space!", "There is not enough space left! Please free disk space and/or choose another destination", QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
+	  if(ret==QMessageBox::Cancel)
+	  {
+	    params->status=STATUS_QUIT;
+	  }
+	  else
+	  {
+	    setExistingDirectory();
+	    free(params->recup_dir);
+	    QByteArray byteArray = (directoryLabel->text() + "/" + DEFAULT_RECUP_DIR).toUtf8();
+	    params->recup_dir=strdup(byteArray.constData());
+	    params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
+	  }
+	}
+break;
       case PSTATUS_OK:
 	status_inc(params, options);
 	if(params->status==STATUS_QUIT)
