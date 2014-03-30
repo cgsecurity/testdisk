@@ -275,6 +275,26 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
   return dir_num;
 }
 
+void get_prev_location(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
+{
+  int nbr;
+  alloc_data_t *file_space=*current_search_space;
+  uint64_t size=0;
+  /* Search backward the first fragment of a file not successfully recovered
+   * Limit the search to 10 fragments or 1GB */
+  for(nbr=0; nbr<10 && size < (uint64_t)1024*1024*1024; nbr++)
+  {
+    file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
+    if(file_space==list_search_space)
+      return;
+    size+=file_space->end - file_space->start + 1;
+    if(file_space->start < prev_location)
+      return ;
+    *current_search_space=file_space;
+    *offset=file_space->start;
+  }
+}
+
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
   int nbr;
