@@ -80,7 +80,7 @@ static int header_check_bac(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=0;
   if(file_recovery_new->blocksize >= 0x18/2)
   {
-    file_recovery_new->data_check=data_check_bac;
+    file_recovery_new->data_check=&data_check_bac;
     file_recovery_new->file_check=&file_check_size;
   }
   return 1;

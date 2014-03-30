@@ -52,7 +52,7 @@ static void register_header_check_dv(file_stat_t *file_stat)
 
 static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_dv)
+  if(file_recovery!=NULL && file_recovery->data_check==&data_check_dv)
     return 0;
   /* The header may be only 3 bytes */
   if(buffer[0]==0x1f && buffer[1]==0x07 && buffer[2]==0x00 && buffer[5]==0x78 && buffer[6]==0x78 && buffer[7]==0x78)
@@ -60,7 +60,7 @@ static int header_check_dv(const unsigned char *buffer, const unsigned int buffe
     /* NTSC */
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_dv.extension;
-    file_recovery_new->data_check=data_check_dv;
+    file_recovery_new->data_check=&data_check_dv;
     file_recovery_new->file_check=&file_check_size;
     return 1;
   }

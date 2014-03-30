@@ -166,8 +166,10 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     return 0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
   {
-    if(file_recovery->file_stat->file_hint==&file_hint_mp3 ||
-	file_recovery->file_stat->file_hint==&file_hint_mkv)
+    if(file_recovery->data_check==&data_check_mp3 &&
+	file_recovery->calculated_file_size == file_recovery->file_size)
+      return 0;
+    if(file_recovery->file_stat->file_hint==&file_hint_mkv)
       return 0;
     /* RGV values from TIFF may be similar to the beginning of an mp3 */
     if(file_recovery->file_stat->file_hint==&file_hint_tiff &&

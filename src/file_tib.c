@@ -121,7 +121,7 @@ static int header_check_tib(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_tib;
-    file_recovery_new->data_check=data_check_tib2;
+    file_recovery_new->data_check=&data_check_tib2;
     file_recovery_new->extension=file_hint_tib.extension;
     return 1;
   }

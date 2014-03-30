@@ -64,7 +64,7 @@ typedef struct {
 static void log_riff_list(const uint64_t offset, const unsigned int depth, const riff_list_header *list_header)
 {
   unsigned int i;
-  log_info("0x%08lx - 0x%08lx ", offset, offset + 8 + le32(list_header->dwSize) - 1);
+  log_info("0x%08lx - 0x%08lx ", offset, offset + 8 - 1 + le32(list_header->dwSize));
   for(i = 0; i < depth; i++)
     log_info(" ");
   log_info("%c%c%c%c %c%c%c%c 0x%x\n",
@@ -84,7 +84,7 @@ static void log_riff_chunk(const uint64_t offset, const unsigned int depth, cons
   unsigned int i;
   if(le32(list_header->dwSize)==0)
     return ;
-  log_info("0x%08lx - 0x%08lx ", offset, offset + 8 + le32(list_header->dwSize) - 1);
+  log_info("0x%08lx - 0x%08lx ", offset, offset + 8 - 1 + le32(list_header->dwSize));
   for(i = 0; i < depth; i++)
     log_info(" ");
   log_info("%c%c%c%c 0x%x\n",
@@ -119,7 +119,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
 #ifdef DEBUG_RIFF
       log_riff_list(file_size, depth, &list_header);
 #endif
-      check_riff_list(fr, depth+1, file_size + sizeof(list_header), file_size + 8 + le32(list_header.dwSize) - 1);
+      check_riff_list(fr, depth+1, file_size + sizeof(list_header), file_size + 8 - 1 + le32(list_header.dwSize));
     }
     else
     {
@@ -161,7 +161,7 @@ static void file_check_avi(file_recovery_t *fr)
       fr->offset_error=fr->file_size;
       return;
     }
-    check_riff_list(fr, 1, file_size + sizeof(list_header), file_size + 8 + le32(list_header.dwSize) - 1);
+    check_riff_list(fr, 1, file_size + sizeof(list_header), file_size + 8 - 1 + le32(list_header.dwSize));
     if(fr->offset_error > 0)
     {
       fr->file_size=0;

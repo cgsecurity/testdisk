@@ -222,7 +222,7 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
     const unsigned int atom_size=buffer[4]+(buffer[5]<<8)+(buffer[6]<<16)+(buffer[7]<<24);
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_emf.extension;
-    file_recovery_new->data_check=data_check_emf;
+    file_recovery_new->data_check=&data_check_emf;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->calculated_file_size=atom_size;
     return 1;

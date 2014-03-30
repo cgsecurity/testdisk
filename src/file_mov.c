@@ -101,8 +101,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   if(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p')
   {
   }
-  else if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_mov &&
+  else if(file_recovery!=NULL &&
+      file_recovery->data_check==&data_check_mov &&
       file_recovery->calculated_file_size == file_recovery->file_size)
   { /* PhotoRec is already trying to recover this mov file */
     return 0;
@@ -127,7 +127,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
-      file_recovery_new->data_check=data_check_mov;
+      file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
@@ -138,7 +138,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
-      file_recovery_new->data_check=data_check_mov;
+      file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
@@ -154,11 +154,11 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       if(i==0 && buffer[12]=='m' && buffer[13]=='v' && buffer[14]=='h' && buffer[15]=='d')
       {
 	file_recovery_new->calculated_file_size=atom_size;
-	file_recovery_new->data_check=data_check_size;
+	file_recovery_new->data_check=&data_check_size;
       }
       else
 	*/
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
@@ -176,7 +176,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mp4";
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
@@ -186,7 +186,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	reset_file_recovery(file_recovery_new);
 	/* acc ? */
 	file_recovery_new->extension="m4p";
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
@@ -196,7 +196,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	/* Video for 3G mobile phone (GSM) */
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3gp";
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
@@ -206,7 +206,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	/* Video for 3G mobile phone (CDMA) */
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3g2";
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
@@ -222,7 +222,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mov";
-	file_recovery_new->data_check=data_check_mov;
+	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->file_rename=&file_rename_mov;
 	file_recovery_new->calculated_file_size=i+atom_size;
@@ -234,7 +234,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
-      file_recovery_new->data_check=data_check_mov;
+      file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
       return 1;
