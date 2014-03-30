@@ -930,7 +930,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	return 0;
     }
     else if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
-    file_recovery->file_stat->file_hint == &file_hint_txt)
+	file_recovery->file_stat->file_hint == &file_hint_txt)
     {
       if(strstr(file_recovery->filename,".html")==NULL)
 	return 0;
@@ -949,16 +949,6 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	  td_memmem(buffer, buffer_size_test, "<dict>", 6)!=NULL ||
 	  td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)!=NULL ||
 	  td_memmem(buffer, buffer_size_test, "[camera info]", 13)!=NULL)
-	return 0;
-    }
-    else if(file_recovery->file_stat->file_hint == &file_hint_zip)
-    {
-      const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
-      /* .sh3d may contain text */
-      if(strstr(file_recovery->filename, ".sh3d")!=NULL)
-	return 0;
-      /* Return if still in a zip */
-      if(td_memmem(buffer, buffer_size_test, zip_header, 4)!=NULL)
 	return 0;
     }
     else
