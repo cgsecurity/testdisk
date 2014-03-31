@@ -67,7 +67,7 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
   }
   /* Ogg data, Theora video */
   if(memcmp(&buffer[28], sign_theora, sizeof(sign_theora))==0)
-    file_recovery_new->extension="ogm";
+    file_recovery_new->extension="ogv";
   else
     file_recovery_new->extension=file_hint_ogg.extension;
   return 1;
