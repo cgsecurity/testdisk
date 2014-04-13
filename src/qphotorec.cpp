@@ -180,6 +180,12 @@ void QPhotorec::partition_selected()
 	return ;
       }
     }
+    if(list_part!=NULL)
+    {
+      selected_partition=list_part->part;
+      buttons_updateUI();
+      return ;
+    }
     return ;
   }
   for(tmp=list_part; tmp!=NULL; tmp=tmp->next)
@@ -369,6 +375,8 @@ void QPhotorec::buttons_updateUI()
   if(selected_disk==NULL || selected_partition==NULL)
   {
     button_search->setEnabled(false);
+    qwholeRadioButton->setChecked(true);
+    qfreeRadioButton->setEnabled(false);
     return ;
   }
   if(selected_partition->upart_type==UP_EXT2 || selected_partition->upart_type==UP_EXT3 || selected_partition->upart_type==UP_EXT4)
