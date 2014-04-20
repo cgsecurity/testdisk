@@ -54,7 +54,7 @@ static int set_EXFAT_info(partition_t *partition, const struct exfat_super_block
   if(partition->sb_offset==0)
     snprintf(partition->info, sizeof(partition->info), "exFAT, blocksize=%u", partition->blocksize);
   else
-    snprintf(partition->info, sizeof(partition->info), "exFAT found using backup sector, blocksize=%u");
+    snprintf(partition->info, sizeof(partition->info), "exFAT found using backup sector, blocksize=%u", partition->blocksize);
   return 0;
 }
 
