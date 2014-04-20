@@ -2,10 +2,12 @@
 <qresource prefix="/res">
 <file>photorec_64x64.png</file>
 <file>gnome/application-exit.png</file>
+<file>gnome/application-x-cd-image.png</file>
 <file>gnome/drive-harddisk.png</file>
 <file>gnome/folder.png</file>
 <file>gnome/go-next.png</file>
 <file>gnome/go-previous.png</file>
-<file>gnome/application-x-cd-image.png</file>
+<file>gnome/help-about.png</file>
+<file>gnome/image-x-generic.png</file>
 </qresource>
 </RCC>

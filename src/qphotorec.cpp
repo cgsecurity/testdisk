@@ -1,3 +1,25 @@
+/*
+
+    File: qphotorec.cpp
+
+    Copyright (C) 2009-2014 Christophe GRENIER <grenier@cgsecurity.org>
+
+    This software is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -42,6 +64,7 @@
 #include <QHeaderView>
 #include <QStandardItemModel>
 #include <QStandardItem>
+#include <QDialogButtonBox>
 #include <QSortFilterProxyModel>
 #include <QGroupBox>
 #include <QRadioButton>
@@ -432,7 +455,7 @@ void QPhotorec::HDDlistWidget_updateUI()
 void QPhotorec::setupUI()
 {
   QWidget *t_copy = copyright(this);
-  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and\ncomes with ABSOLUTELY NO WARRANTY.");
+  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.");
   QLabel *t_select = new QLabel("Please select a media to recover from");
 
   HDDlistWidget = new QComboBox();
@@ -515,9 +538,13 @@ void QPhotorec::setupUI()
   button_search = new QPushButton(QIcon::fromTheme("go-next", QIcon(":res/gnome/go-next.png")), "&Search");
   button_search->setEnabled(false);
   QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
+  QPushButton *button_about= new QPushButton(QIcon::fromTheme("help-about", QIcon(":res/gnome/help-about.png")), "&About");
+  QPushButton *button_formats= new QPushButton(QIcon::fromTheme("image-x-generic.png", QIcon(":res/gnome/image-x-generic.png")),"&File Formats");
 
   QWidget *B_widget = new QWidget(this);
   QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
+  B_layout->addWidget(button_about);
+  B_layout->addWidget(button_formats);
   B_layout->addWidget(button_search);
   B_layout->addWidget(button_quit);
   B_widget->setLayout(B_layout);
@@ -539,6 +566,8 @@ void QPhotorec::setupUI()
   HDDlistWidget_updateUI();
   buttons_updateUI();
 
+  connect(button_about, SIGNAL(clicked()), this, SLOT(qphotorec_about()) );
+  connect(button_formats, SIGNAL(clicked()), this, SLOT(qphotorec_formats()) );
   connect(button_search, SIGNAL(clicked()), this, SLOT(qphotorec_search()) );
   connect(button_quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
   connect(HDDlistWidget, SIGNAL(activated(int)),this,SLOT(disk_changed(int)));
@@ -670,8 +699,8 @@ void QPhotorec::qphotorec_search_setupUI()
   QSizePolicy c_sizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
   QLabel *disk_img=new QLabel();
-  QPixmap *disk_pixmap = new QPixmap(":res/gnome/drive-harddisk.png");
-  disk_img->setPixmap(*disk_pixmap);
+  QPixmap disk_pixmap = QPixmap(":res/gnome/drive-harddisk.png");
+  disk_img->setPixmap(disk_pixmap);
   disk_img->setSizePolicy(c_sizePolicy);
 
   QLabel *disk_txt=new QLabel();
@@ -880,4 +909,91 @@ void QPhotorec::qphotorec_search()
     params->blocksize=remove_used_space(params->disk, params->partition, &list_search_space);
   }
   photorec(&list_search_space);
+  free(params->recup_dir);
+  params->recup_dir=NULL;
+}
+
+void QPhotorec::qphotorec_about()
+{
+  QPixmap pixmap_img = QPixmap(":res/photorec_64x64.png");
+  QMessageBox msg;
+  msg.setText("QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.\n\nQPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see <http://www.gnu.org/licenses/>.");
+  msg.setWindowTitle("QPhotoRec: About");
+  msg.addButton(QMessageBox::Close);
+  msg.setIconPixmap(pixmap_img);
+  msg.exec();
+}
+
+void QPhotorec::qphotorec_formats()
+{
+  file_enable_t *file_enable;
+  QStringList list;
+  formats=new QListWidget();
+  for(file_enable=list_file_enable;
+      file_enable->file_hint!=NULL;
+      file_enable++)
+  {
+    QListWidgetItem * item;
+    char descr[128];
+    sprintf(descr, "%-4s %s",
+	    (file_enable->file_hint->extension!=NULL?
+	     file_enable->file_hint->extension:""),
+	    file_enable->file_hint->description);
+    item = new QListWidgetItem(descr, formats);
+    if(file_enable->enable)
+      item->setCheckState (Qt::Checked);
+    else
+      item->setCheckState (Qt::Unchecked);
+  }
+
+  QDialog fenetre3;
+  fenetre3.setWindowTitle("QPhotoRec: File Formats");
+  QDialogButtonBox buttonBox(Qt::Horizontal);
+
+  QPushButton *bt_reset= new QPushButton("&Reset");
+  QPushButton *bt_restore= new QPushButton("Res&tore");
+
+  buttonBox.addButton(bt_reset, QDialogButtonBox::ResetRole);
+  buttonBox.addButton(bt_restore, QDialogButtonBox::ResetRole);
+  buttonBox.addButton(QDialogButtonBox::Ok);
+  QVBoxLayout vbox;
+  vbox.addWidget(formats);
+  vbox.addWidget(&buttonBox);
+  fenetre3.setLayout(&vbox);
+  connect(&buttonBox, SIGNAL(accepted()), &fenetre3, SLOT(accept()));
+  connect(bt_reset, SIGNAL(clicked()), this, SLOT(formats_reset()));
+  connect(bt_restore, SIGNAL(clicked()), this, SLOT(formats_restore()));
+  fenetre3.exec();
+  int i;
+  for (i = 0, file_enable=list_file_enable;
+      i < formats->count() && file_enable->file_hint!=NULL;
+      i++, file_enable++)
+  {
+    QListWidgetItem *item = formats->item(i);
+    file_enable->enable=(item->checkState()==Qt::Checked?1:0);
+  }
+}
+
+void QPhotorec::formats_reset()
+{
+  for (int i = 0; i < formats->count(); i++) {
+    QListWidgetItem *item = formats->item(i);
+    item->setCheckState (Qt::Unchecked);
+  }
+}
+
+void QPhotorec::formats_restore()
+{
+  file_enable_t *file_enable;
+  int i;
+  for (i = 0, file_enable=list_file_enable;
+      i < formats->count() && file_enable->file_hint!=NULL;
+      i++, file_enable++)
+  {
+    QListWidgetItem *item = formats->item(i);
+    if(file_enable->file_hint->enable_by_default)
+      item->setCheckState (Qt::Checked);
+    else
+      item->setCheckState (Qt::Unchecked);
+  }
 }

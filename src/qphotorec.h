@@ -42,11 +42,16 @@ class QPhotorec: public QWidget
 		void partition_selected();
 		void setExistingDirectory();
 		void newSourceFile();
+		void qphotorec_about();
+		void qphotorec_formats();
 		void qphotorec_search();
 		void buttons_updateUI();
 		/* Recovery UI */
 		void qphotorec_search_updateUI();
 		void stop_and_quit();
+		/* Formats */
+		void formats_reset();
+		void formats_restore();
 	protected:
                 void setupUI();
 		void clearWidgets();
@@ -88,5 +93,8 @@ class QPhotorec: public QWidget
 		QProgressBar 		*progress_bar;
 		QTimer 			*timer;
                 QTableWidget 		*filestatsWidget;
+		/* Formats */
+		QListWidget		*formats;
+
 };
 #endif
