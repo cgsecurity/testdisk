@@ -151,6 +151,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   zip_file_entry_t  file;
   zip64_extra_entry_t extra;
   uint64_t          len;
+  unsigned int krita=0;
   if (fread(&file, sizeof(file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -203,14 +204,12 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       {
 	msoffice=0;
 	sh3d=0;
-	if(len==8 && memcmp(filename, "mimetype", 8)==0 &&
-	    le16(file.extra_length)==0 &&
-	    le32(file.compressed_size)==le32(file.uncompressed_size) &&
-	    le32(file.compressed_size)<=128)
+	if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file.extra_length)==0)
 	{
-	  const int compressed_size=le32(file.uncompressed_size);
 	  unsigned char buffer[128];
-	  if( fread(buffer, compressed_size, 1, fr->handle)!=1)
+	  const unsigned int compressed_size=le32(file.compressed_size);
+	  const int to_read=(compressed_size < 128 ? compressed_size: 128);
+	  if( fread(buffer, to_read, 1, fr->handle)!=1)
 	  {
 #ifdef DEBUG_ZIP
 	    log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n",
@@ -219,13 +218,15 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	    free(filename);
 	    return -1;
 	  }
-	  if (fseek(fr->handle, -compressed_size, SEEK_CUR) < 0)
+	  if (fseek(fr->handle, -to_read, SEEK_CUR) < 0)
 	  {
 	    log_info("fseek failed\n");
 	    free(filename);
 	    return -1;
 	  }
-	  if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
+	  if(compressed_size==16      && memcmp(buffer,"image/openraster",16)==0)
+	    *ext="ora";
+	  else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
 	    *ext="sxc";
 	  else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.draw",28)==0)
 	    *ext="sxd";
@@ -241,6 +242,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	    *ext="ods";
 	  else if(compressed_size==47 && memcmp(buffer,"application/vnd.oasis.opendocument.presentation",47)==0)
 	    *ext="odp";
+	  else if(memcmp(buffer,"application/x-krita",19)==0)
+	  {
+	    *ext="kra";
+	    krita=19;
+	  }
 	  else
 	  { /* default to writer */
 	    *ext="sxw";
@@ -313,6 +319,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   {
     len = le64(extra.compressed_size);
   }
+  if(krita>0)
+    len=krita;
   if (len>0)
   {
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
@@ -784,8 +792,11 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->file_check=&file_check_zip;
     if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
     {
-      const unsigned int compressed_size=le32(file->uncompressed_size);
-      if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
+      const unsigned int compressed_size=le32(file->compressed_size);
+      /* Mypaint .ora */
+      if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
+	file_recovery_new->extension="ora";
+      else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
 	file_recovery_new->extension="sxc";
       else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
 	file_recovery_new->extension="sxd";
@@ -801,6 +812,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->extension="ods";
       else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
 	file_recovery_new->extension="odp";
+      else if(memcmp(&buffer[38],"application/x-krita",19)==0)
+	file_recovery_new->extension="kra";
       else
       { /* default to writer */
 	file_recovery_new->extension="sxw";
