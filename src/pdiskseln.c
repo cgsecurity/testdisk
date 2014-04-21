@@ -47,6 +47,7 @@
 #include "sessionp.h"
 #include "partauto.h"
 #include "log.h"
+#include "pdisksel.h"
 #include "pdiskseln.h"
 #include "ppartsel.h"
 #include "hidden.h"
@@ -64,47 +65,6 @@
 
 extern const arch_fnct_t arch_none;
 
-static int photorec_disk_selection_cli(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
-{
-  const list_disk_t *element_disk;
-  disk_t *disk=NULL;
-  for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
-  {
-    if(strcmp(element_disk->disk->device, params->cmd_device)==0)
-      disk=element_disk->disk;
-  }
-  if(disk==NULL)
-  {
-    log_critical("No disk found\n");
-#ifdef HAVE_NCURSES
-    return intrf_no_disk_ncurses("PhotoRec");
-#else
-    return 0;
-#endif
-  }
-  {
-    /* disk sector size is now known, fix the sector ranges */
-    struct td_list_head *search_walker = NULL;
-    td_list_for_each(search_walker, &list_search_space->list)
-    {
-      alloc_data_t *current_search_space;
-      current_search_space=td_list_entry(search_walker, alloc_data_t, list);
-      current_search_space->start=current_search_space->start*disk->sector_size;
-      current_search_space->end=current_search_space->end*disk->sector_size+disk->sector_size-1;
-    }
-  }
-  autodetect_arch(disk, &arch_none);
-  params->disk=disk;
-  if(change_arch_type_cli(disk, options->verbose, &params->cmd_run)==0
-#ifdef HAVE_NCURSES
-      || change_arch_type_ncurses(disk, options->verbose)==0
-#endif
-    )
-  {
-    menu_photorec(params, options, list_search_space);
-  }
-  return 0;
-}
 
 #ifdef HAVE_NCURSES
 static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
@@ -326,7 +286,31 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     }
   }
   if(params->cmd_device!=NULL && params->cmd_run!=NULL)
-    return photorec_disk_selection_cli(params, options, list_disk, &list_search_space);
+  {
+    params->disk=photorec_disk_selection_cli(params->cmd_device, list_disk, &list_search_space);
+#ifdef HAVE_NCURSES
+    if(params->disk==NULL)
+    {
+      log_critical("No disk found\n");
+      return intrf_no_disk_ncurses("PhotoRec");
+    }
+    if(change_arch_type_cli(params->disk, options->verbose, &params->cmd_run)==0 ||
+	change_arch_type_ncurses(params->disk, options->verbose)==0)
+    {
+      menu_photorec(params, options, &list_search_space);
+    }
+    return 0;
+#else
+    if(params->disk==NULL)
+    {
+      log_critical("No disk found\n");
+      return 0;
+    }
+    change_arch_type_cli(params->disk, options->verbose, &params->cmd_run);
+    menu_photorec(params, options, &list_search_space);
+    return 0;
+#endif
+  }
 #ifdef HAVE_NCURSES
   return photorec_disk_selection_ncurses(params, options, list_disk, &list_search_space);
 #else
