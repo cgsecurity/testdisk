@@ -300,8 +300,8 @@ photorec_C		= photorec.c phcfg.c addpart.c dir.c exfatp.c ext2grp.c ext2_dir.c e
 
 photorec_H		= photorec.h phcfg.h addpart.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h poptions.h sessionp.h setdate.h dfxml.h
 
-photorec_ncurses_C	= addpartn.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdisksel.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartsel.c psearchn.c
-photorec_ncurses_H	= addpartn.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdisksel.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartsel.h psearch.h psearchn.h
+photorec_ncurses_C	= addpartn.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartsel.c psearchn.c
+photorec_ncurses_H	= addpartn.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartsel.h psearch.h psearchn.h
 
 photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
 

@@ -1,6 +1,6 @@
 /*
 
-    File: pdisksel.c
+    File: pdiskseln.c
 
     Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
@@ -47,7 +47,7 @@
 #include "sessionp.h"
 #include "partauto.h"
 #include "log.h"
-#include "pdisksel.h"
+#include "pdiskseln.h"
 #include "ppartsel.h"
 #include "hidden.h"
 #include "hiddenn.h"

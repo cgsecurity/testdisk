@@ -1,6 +1,6 @@
 /*
 
-    File: pdisksel.h
+    File: pdiskseln.h
 
     Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
 

@@ -75,7 +75,7 @@
 #include "ext2_dir.h"
 #include "file_jpg.h"
 #include "ntfs_dir.h"
-#include "pdisksel.h"
+#include "pdiskseln.h"
 #include "dfxml.h"
 
 extern file_enable_t list_file_enable[];
