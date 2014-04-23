@@ -562,7 +562,7 @@ void interface_options_photorec_ncurses(struct ph_options *options)
 #define INTER_FSELECT_Y	(LINES-2)
 #define INTER_FSELECT	(LINES-10)
 
-static void interface_file_select_ncurses(file_enable_t *files_enable)
+void interface_file_select_ncurses(file_enable_t *files_enable)
 {
   int current_element_num=0;
   int offset=0;
@@ -574,6 +574,7 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
     {'q',"Quit","Return to main menu"},
     {0,NULL,NULL}
   };
+  log_info("\nInterface File Select\n");
 #if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
   mousemask(ALL_MOUSE_EVENTS, NULL);
 #endif
@@ -746,81 +747,3 @@ static void interface_file_select_ncurses(file_enable_t *files_enable)
   }
 }
 #endif
-
-void interface_file_select(file_enable_t *files_enable, char**current_cmd)
-{
-  log_info("\nInterface File Select\n");
-  if(*current_cmd!=NULL)
-  {
-    int keep_asking;
-    do
-    {
-      file_enable_t *file_enable;
-      keep_asking=0;
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"everything",10)==0)
-      {
-	int enable_status;
-	keep_asking=1;
-	(*current_cmd)+=10;
-	while(*current_cmd[0]==',')
-	  (*current_cmd)++;
-	if(strncmp(*current_cmd,"enable",6)==0)
-	{
-	  (*current_cmd)+=6;
-	  enable_status=1;
-	}
-	else if(strncmp(*current_cmd,"disable",7)==0)
-	{
-	  (*current_cmd)+=7;
-	  enable_status=0;
-	}
-	else
-	{
-	  log_critical("Syntax error %s\n",*current_cmd);
-	  return;
-	}
-	for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
-	  file_enable->enable=enable_status;
-      }
-      else
-      {
-	unsigned int cmd_length=0;
-	while((*current_cmd)[cmd_length]!='\0' && (*current_cmd)[cmd_length]!=',')
-	  cmd_length++;
-	for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
-	{
-	  if(file_enable->file_hint->extension!=NULL &&
-	      strlen(file_enable->file_hint->extension)==cmd_length &&
-	      memcmp(file_enable->file_hint->extension,*current_cmd,cmd_length)==0)
-	  {
-	    keep_asking=1;
-	    (*current_cmd)+=cmd_length;
-	    while(*current_cmd[0]==',')
-	      (*current_cmd)++;
-	    if(strncmp(*current_cmd,"enable",6)==0)
-	    {
-	      (*current_cmd)+=6;
-	      file_enable->enable=1;
-	    }
-	    else if(strncmp(*current_cmd,"disable",7)==0)
-	    {
-	      (*current_cmd)+=7;
-	      file_enable->enable=0;
-	    }
-	    else
-	    {
-	      log_critical("Syntax error %s\n",*current_cmd);
-	      return;
-	    }
-	  }
-	}
-      }
-    } while(keep_asking>0);
-    return;
-  }
-#ifdef HAVE_NCURSES
-  interface_file_select_ncurses(files_enable);
-#endif
-}
