@@ -437,6 +437,11 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	    session_save(list_search_space, params, options);
 	    next_checkpoint=current_time+5*60;
 	  }
+	  if(ind_stop!=PSTATUS_OK)
+	  {
+	    log_info("PhotoRec has been stopped\n");
+	    current_search_space=list_search_space;
+	  }
         }
       }
     }
