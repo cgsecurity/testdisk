@@ -49,7 +49,7 @@
 #include "log.h"
 #include "pdisksel.h"
 #include "pdiskseln.h"
-#include "ppartsel.h"
+#include "ppartseln.h"
 #include "hidden.h"
 #include "hiddenn.h"
 #include "nodisk.h"

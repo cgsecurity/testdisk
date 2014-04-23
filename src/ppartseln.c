@@ -1,6 +1,6 @@
 /*
 
-    File: ppartsel.c
+    File: ppartseln.c
 
     Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
 
@@ -47,7 +47,7 @@
 #include "hdaccess.h"
 #include "ext2grp.h"
 #include "pfree_whole.h"
-#include "ppartsel.h"
+#include "ppartseln.h"
 #include "askloc.h"
 #include "geometry.h"
 #include "geometryn.h"

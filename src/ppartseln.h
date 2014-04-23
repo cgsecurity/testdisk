@@ -1,6 +1,6 @@
 /*
 
-    File: ppartsel.h
+    File: ppartseln.h
 
     Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
 
