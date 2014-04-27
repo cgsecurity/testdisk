@@ -61,7 +61,10 @@ int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose)
 
 static int test_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *partition, const int verbose)
 {
-  if (sb->sb_magicnum!=be32(XFS_SB_MAGIC))
+  if(sb->sb_magicnum!=be32(XFS_SB_MAGIC) ||
+      be16(sb->sb_sectsize)  != (1U << sb->sb_sectlog) ||
+      be32(sb->sb_blocksize) != (1U << sb->sb_blocklog) ||
+      be16(sb->sb_inodesize) != (1U << sb->sb_inodelog))
     return 1;
   switch(be16(sb->sb_versionnum) & XFS_SB_VERSION_NUMBITS)
   {
