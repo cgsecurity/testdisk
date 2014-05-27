@@ -1532,8 +1532,10 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
       free(disk_car);
       close(hd_h);
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
+      log_info("EWF format detected.\n");
       return fewf_init(device, testdisk_mode);
 #else
+      log_info("EWF format detected but missing library.\n");
       return NULL;
 #endif
     }
