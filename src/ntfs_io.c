@@ -48,6 +48,7 @@
 #include <ntfs/device.h>
 #endif
 #ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/types.h>
 #include <ntfs-3g/device.h>
 #endif
 #include <stdio.h>
