@@ -281,6 +281,7 @@ file_C			= filegen.c \
 			  file_wks.c \
 			  file_wmf.c \
 			  file_wnk.c \
+			  file_woff.c \
 			  file_wpb.c \
 			  file_wpd.c \
 			  file_wtv.c \
