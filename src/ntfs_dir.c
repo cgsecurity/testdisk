@@ -167,7 +167,15 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 		const MFT_REF mref, const unsigned dt_type)
 {
   int result = 0;
-  char *filename = (char *)calloc (1, MAX_PATH);
+  char *filename;
+  ntfs_inode *ni;
+  ntfs_attr_search_ctx *ctx_si = NULL;
+  file_info_t *new_file=NULL;
+  /* Keep FILE_NAME_WIN32 and FILE_NAME_POSIX */
+  if ((name_type & FILE_NAME_WIN32_AND_DOS) == FILE_NAME_DOS)
+    return 0;
+
+  filename = (char *)calloc (1, MAX_PATH);
   if (!filename)
   {
     log_critical("ntfs_td_list_entry calloc failed\n");
@@ -178,118 +186,111 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
   if (ntfs_ucstoutf8(ls->cd, name, name_len, &filename, MAX_PATH) < 0 &&
       ntfs_ucstombs (name, name_len, &filename, MAX_PATH) < 0) {
     log_error("Cannot represent filename in current locale.\n");
-    goto free;
+    goto freefn;
   }
 #else
   if (ntfs_ucstombs (name, name_len, &filename, MAX_PATH) < 0) {
     log_error("Cannot represent filename in current locale.\n");
-    goto free;
+    goto freefn;
   }
 #endif
 
   result = 0;					/* These are successful */
   if (MREF(mref) < FILE_first_user && filename[0] == '$')	/* Hide system file */
-      goto free;
-  /* Keep FILE_NAME_WIN32 and FILE_NAME_POSIX */
-  if ((name_type & FILE_NAME_WIN32_AND_DOS) == FILE_NAME_DOS)
-    goto free;
+      goto freefn;
+  result = -1;				/* Everything else is bad */
+
+  ni = ntfs_inode_open(ls->vol, mref);
+  if (!ni)
+    goto freefn;
+  new_file=(file_info_t*)MALLOC(sizeof(*new_file));
+  new_file->status=0;
+  new_file->st_ino=MREF(mref);
+  new_file->st_uid=0;
+  new_file->st_gid=0;
+
+  ctx_si = ntfs_attr_get_search_ctx(ni, ni->mrec);
+  if (ctx_si)
   {
-    ntfs_inode *ni;
-    ntfs_attr_search_ctx *ctx_si = NULL;
-    file_info_t *new_file=NULL;
-
-    result = -1;				/* Everything else is bad */
-
-    ni = ntfs_inode_open(ls->vol, mref);
-    if (!ni)
-      goto release;
-    new_file=(file_info_t*)MALLOC(sizeof(*new_file));
-    new_file->status=0;
-    td_list_add_tail(&new_file->list, &ls->dir_list->list);
-    new_file->st_ino=MREF(mref);
-    new_file->st_uid=0;
-    new_file->st_gid=0;
-
-    ctx_si = ntfs_attr_get_search_ctx(ni, ni->mrec);
-    if (ctx_si)
+    if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, CASE_SENSITIVE, 0, NULL, 0, ctx_si)==0)
     {
-      if (ntfs_attr_lookup(AT_STANDARD_INFORMATION, AT_UNNAMED, 0, CASE_SENSITIVE, 0, NULL, 0, ctx_si)==0)
+      const ATTR_RECORD *attr = ctx_si->attr;
+      const STANDARD_INFORMATION *si = (const STANDARD_INFORMATION*)((const char*)attr +
+	  le16_to_cpu(attr->value_offset));
+      if(si)
       {
-	const ATTR_RECORD *attr = ctx_si->attr;
-	const STANDARD_INFORMATION *si = (const STANDARD_INFORMATION*)((const char*)attr +
-	    le16_to_cpu(attr->value_offset));
-	if(si)
-	{
-	  new_file->td_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
-	  new_file->td_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
-	  new_file->td_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
-	}
+	new_file->td_atime=td_ntfs2utc(sle64_to_cpu(si->last_access_time));
+	new_file->td_mtime=td_ntfs2utc(sle64_to_cpu(si->last_data_change_time));
+	new_file->td_ctime=td_ntfs2utc(sle64_to_cpu(si->creation_time));
       }
-      ntfs_attr_put_search_ctx(ctx_si);
     }
+    ntfs_attr_put_search_ctx(ctx_si);
+  }
+  {
+    ATTR_RECORD *rec;
+    int first=1;
+    ntfs_attr_search_ctx *ctx = NULL;
+    if (dt_type == NTFS_DT_DIR)
     {
-      ATTR_RECORD *rec;
-      int first=1;
-      ntfs_attr_search_ctx *ctx = NULL;
-      if (dt_type == NTFS_DT_DIR)
+      new_file->name=strdup(filename);
+      new_file->st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
+      new_file->st_size=0;
+      td_list_add_tail(&new_file->list, &ls->dir_list->list);
+      first=0;
+    }
+    ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
+    /* A file has always an unnamed date stream and
+     * may have named alternate data streams (ADS) */
+    while((rec = find_attribute(AT_DATA, ctx)))
+    {
+      const s64 filesize = ntfs_get_attribute_value_length(ctx->attr);
+      if(rec->name_length &&
+	  (ls->dir_data->param & FLAG_LIST_ADS)!=FLAG_LIST_ADS)
+	continue;
+      if(first==0)
       {
-	new_file->name=strdup(filename);
-	new_file->st_mode = LINUX_S_IFDIR| LINUX_S_IRUGO | LINUX_S_IXUGO;
-	new_file->st_size=0;
-	td_list_add_tail(&new_file->list, &ls->dir_list->list);
-	first=0;
+	const file_info_t *old_file=new_file;
+	new_file=(file_info_t *)MALLOC(sizeof(*new_file));
+	memcpy(new_file, old_file, sizeof(*new_file));
       }
-      ctx = ntfs_attr_get_search_ctx(ni, ni->mrec);
-      /* A file has always an unnamed date stream and
-       * may have named alternate data streams (ADS) */
-      while((rec = find_attribute(AT_DATA, ctx)))
+      new_file->st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
+      new_file->st_size=filesize;
+      if (rec->name_length)
       {
-	const s64 filesize = ntfs_get_attribute_value_length(ctx->attr);
-	if(rec->name_length &&
-	    (ls->dir_data->param & FLAG_LIST_ADS)!=FLAG_LIST_ADS)
-	  continue;
-	if(first==0)
+	char *stream_name=NULL;
+	new_file->status=FILE_STATUS_ADS;
+	new_file->name = (char *)MALLOC(MAX_PATH);
+	if (ntfs_ucstombs((ntfschar *) ((char *) rec + le16_to_cpu(rec->name_offset)),
+	      rec->name_length, &stream_name, 0) < 0)
 	{
-	  const file_info_t *old_file=new_file;
-	  new_file=(file_info_t *)MALLOC(sizeof(*new_file));
-	  memcpy(new_file, old_file, sizeof(*new_file));
-	}
-	new_file->st_mode = LINUX_S_IFREG | LINUX_S_IRUGO;
-	new_file->st_size=filesize;
-	if (rec->name_length)
-	{
-	  char *stream_name=NULL;
-	  new_file->status=FILE_STATUS_ADS;
-	  new_file->name = (char *)MALLOC(MAX_PATH);
-	  if (ntfs_ucstombs((ntfschar *) ((char *) rec + le16_to_cpu(rec->name_offset)),
-		rec->name_length, &stream_name, 0) < 0)
-	  {
-	    log_error("ERROR: Cannot translate name into current locale.\n");
-	    snprintf(new_file->name, MAX_PATH, "%s:???", filename);
-	  }
-	  else
-	  {
-	    snprintf(new_file->name, MAX_PATH, "%s:%s", filename, stream_name);
-	  }
-	  free(stream_name);
+	  log_error("ERROR: Cannot translate name into current locale.\n");
+	  snprintf(new_file->name, MAX_PATH, "%s:???", filename);
 	}
 	else
 	{
-	  new_file->name=strdup(filename);
+	  snprintf(new_file->name, MAX_PATH, "%s:%s", filename, stream_name);
 	}
-	td_list_add_tail(&new_file->list, &ls->dir_list->list);
-	first=0;
+	free(stream_name);
       }
-      ntfs_attr_put_search_ctx(ctx);
+      else
+      {
+	new_file->name=strdup(filename);
+      }
+      td_list_add_tail(&new_file->list, &ls->dir_list->list);
+      first=0;
     }
-
-    result = 0;
-release:
-    /* close the inode. */
-    if (ni)
-      ntfs_inode_close(ni);
+    ntfs_attr_put_search_ctx(ctx);
+    if(first)
+    {
+      free(new_file);
+    }
   }
-free:
+
+  result = 0;
+  /* close the inode. */
+  if (ni)
+    ntfs_inode_close(ni);
+freefn:
   free (filename);
   return result;
 }
