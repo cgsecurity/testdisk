@@ -40,6 +40,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+#include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "exfat.h"
@@ -75,6 +76,31 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 }
 #endif
 
+#ifdef HAVE_ICONV
+static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned int ins_len, char **outs, const unsigned int outs_len)
+{
+  char *inp;
+  char *outp;
+  size_t inb_left, outb_left;
+  if (cd == (iconv_t)(-1))
+    return -1;
+
+  outp = *outs;
+  inp = ins;
+  inb_left = ins_len;
+  outb_left = outs_len - 1;   // reserve 1 byte for NUL
+
+  if (iconv(cd, &inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
+  {
+    // Regardless of the value of errno
+    log_error("exfat_ucstoutf8: iconv failed %s\n", strerror(errno));
+    return -1;
+  }
+  *outp = '\0';
+  return 0;
+}
+#endif
+
 #define ATTR_RO      1  /* read-only */
 #define ATTR_HIDDEN  2  /* hidden */
 #define ATTR_SYS     4  /* system */
@@ -105,8 +131,9 @@ static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *p
   return next_cluster;
 }
 
-static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list)
+static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const dir_data_t *dir_data, file_info_t *dir_list)
 {
+  const struct exfat_dir_struct *ls=(const struct exfat_dir_struct*)dir_data->private_dir_data;
   /*
    * 0x83 Volume label
    * 0x81 Allocation bitmap
@@ -125,7 +152,7 @@ static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, co
   for(offset=0; offset<size; offset+=0x20)
   {
     if((buffer[offset]&0x80)==0 &&
-	(param & FLAG_LIST_DELETED)!=FLAG_LIST_DELETED)
+	(dir_data->param & FLAG_LIST_DELETED)!=FLAG_LIST_DELETED)
       continue;
     if((buffer[offset]&0x7f)==0x05)
     { /* File directory entry */
@@ -161,12 +188,22 @@ static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, co
       }
       else if((buffer[offset]&0x7f)==0x41)
       {
+#ifdef HAVE_ICONV
+	char *outs;
+#endif
 	unsigned int i,j;
 	for(j=0; j<255 && current_file->name[j]!='\0'; j++);
-	/* FIXME see ntfs_ucstoutf8 && ntfs_ucstombs*/
-	for(i=2; i<32; i+=2)
-	  current_file->name[j++]=buffer[offset+i];
-	current_file->name[j]='\0';
+#ifdef HAVE_ICONV
+	for(i=2; i<32 && (buffer[offset+i]!=0 || buffer[offset+i+1]!=0); i+=2);
+	i-=2;
+	outs=&current_file->name[j];
+	if(exfat_ucstoutf8(ls->cd, &buffer[offset+2], i, &outs, 512-j) < 0)
+#endif
+	{
+	  for(i=2; i<32; i+=2)
+	    current_file->name[j++]=buffer[offset+i];
+	  current_file->name[j]='\0';
+	}
       }
       sec_count--;
     }
@@ -243,7 +280,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
     }
   }
   if(nbr_cluster>0)
-    dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data->param, dir_list);
+    dir_exfat_aux(buffer_dir, nbr_cluster<<cluster_shift, dir_data, dir_list);
   free(buffer_dir);
   return 0;
 }
