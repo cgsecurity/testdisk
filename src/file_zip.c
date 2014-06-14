@@ -282,10 +282,13 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	/* iWork */
       if(len==23 && memcmp(filename, "QuickLook/Thumbnail.jpg", 23)==0)
 	*ext="pages";
-      else if(len==20 && strcasecmp(filename, "META-INF/MANIFEST.MF")==0)
+      else if(len==20 && strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
 	*ext="jar";
-      else if(len==15 && strcasecmp(filename, "chrome.manifest")==0)
+      else if(len==15 && strncasecmp(filename, "chrome.manifest", 15)==0)
 	*ext="xpi";
+      /* SMART Notebook */
+      else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
+	*ext="notebook";
       else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
 	*ext="mmap";
     }
