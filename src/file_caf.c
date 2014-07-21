@@ -49,11 +49,6 @@ const file_hint_t file_hint_caf= {
 
 /* http://developer.apple.com/library/mac/documentation/MusicAudio/Reference/CAFSpec/CAF_spec/CAF_spec.html */
 
-static const unsigned char caf_header[12]=  {
-  'c' , 'a' , 'f' , 'f' , 0x00, 0x01, 0x00, 0x00,
-  'd' , 'e' , 's' , 'c' 
-};
-
 struct chunk_struct
 {
   uint32_t type;
@@ -102,19 +97,23 @@ static data_check_t data_check_caf(const unsigned char *buffer, const unsigned i
 
 static int header_check_caf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], caf_header, sizeof(caf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_caf.extension;
-    file_recovery_new->data_check=&data_check_caf;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->calculated_file_size=8;
-    return 1;
-  }
-  return 0;
+  const struct chunk_struct *chunk=(const struct chunk_struct*)&buffer[8];
+  const int64_t chunk_size=be64(chunk->size);
+  if(chunk_size < 0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_caf.extension;
+  file_recovery_new->data_check=&data_check_caf;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->calculated_file_size=8+12;
+  return 1;
 }
 
 static void register_header_check_caf(file_stat_t *file_stat)
 {
+  static const unsigned char caf_header[12]=  {
+    'c' , 'a' , 'f' , 'f' , 0x00, 0x01, 0x00, 0x00,
+    'd' , 'e' , 's' , 'c' 
+  };
   register_header_check(0, caf_header, sizeof(caf_header), &header_check_caf, file_stat);
 }
