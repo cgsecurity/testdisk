@@ -29,9 +29,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_aif(file_stat_t *file_stat);
-static int header_check_aif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_aif= {
   .extension="aif",
@@ -43,24 +43,31 @@ const file_hint_t file_hint_aif= {
   .register_header_check=&register_header_check_aif
 };
 
-static const unsigned char aif_header[4]= {'F','O','R','M'};
-
-static void register_header_check_aif(file_stat_t *file_stat)
+struct aif_header
 {
-  register_header_check(0, aif_header,sizeof(aif_header), &header_check_aif, file_stat);
-}
+  char ckID[4];
+  uint32_t ckSize;
+  char formType[4];
+} __attribute__ ((__packed__));
 
 static int header_check_aif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,aif_header,sizeof(aif_header))==0 && 
-    buffer[8]=='A' && buffer[9]=='I' && buffer[10]=='F' && (buffer[11]=='F' || buffer[11]=='C'))
+  const struct aif_header *hdr=(const struct aif_header *)buffer;
+  if(be32(hdr->ckSize)<4)
+    return 0;
+  if(buffer[8]=='A' && buffer[9]=='I' && buffer[10]=='F' && (buffer[11]=='F' || buffer[11]=='C'))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_aif.extension;
-    file_recovery_new->calculated_file_size=((uint64_t)buffer[7]+(((uint64_t)buffer[6])<<8)+(((uint64_t)buffer[5])<<16)+(((uint64_t)buffer[4])<<24))+8;
+    file_recovery_new->calculated_file_size=be32(hdr->ckSize)+8;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_aif(file_stat_t *file_stat)
+{
+  register_header_check(0, "FORM", 4, &header_check_aif, file_stat);
 }
