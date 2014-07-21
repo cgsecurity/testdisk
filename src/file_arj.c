@@ -32,8 +32,6 @@
 #include "common.h"
 
 static void register_header_check_arj(file_stat_t *file_stat);
-static int header_check_arj(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_arj(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_arj= {
   .extension="arj",
@@ -45,7 +43,6 @@ const file_hint_t file_hint_arj= {
   .register_header_check=&register_header_check_arj
 };
 
-static const unsigned char arj_header[2]={0x60, 0xEA};
 /*
  * 60 ea 24 00 22 0b 01 02  10 00 02 XX XX XX 50 48
  * ID    HS    FH V  V  OS  FL SV FT R  DATE/TIME
@@ -120,42 +117,49 @@ struct arj_main_header {
   char		filename;
 } __attribute__ ((__packed__));
 
-static void register_header_check_arj(file_stat_t *file_stat)
+static void file_check_arj(file_recovery_t *file_recovery)
 {
-  register_header_check(0, arj_header,sizeof(arj_header), &header_check_arj, file_stat);
+  static const unsigned char arj_footer[4]={0x60, 0xEA, 0x00, 0x00 };
+  file_search_footer(file_recovery, arj_footer, sizeof(arj_footer), 0);
 }
 
 static int header_check_arj(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct arj_main_header *arj=(const struct arj_main_header*)buffer;
-  if(memcmp(buffer, arj_header, sizeof(arj_header))==0 &&
-      le16(arj->basic_header_size) > 0 &&
+  if(le16(arj->basic_header_size) > 0 &&
       le16(arj->basic_header_size) <= 2600 &&
       arj->archiver_ver_min <= arj->archiver_ver &&
       arj->archiver_ver <=12 &&
       (arj->flags&0x01)==0 &&
       arj->file_type==2)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_arj.extension;
-    file_recovery_new->time=le32(arj->ctime);
-    if(file_recovery_new->time < le32(arj->mtime))
-      file_recovery_new->time=le32(arj->mtime);
     if((arj->flags&0x040)!=0)
     {
+      if(le32(arj->size) < sizeof(struct arj_main_header))
+	return 0;
+      reset_file_recovery(file_recovery_new);
       file_recovery_new->calculated_file_size=le32(arj->size);
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
     }
     else
+    {
+//      if(le32(arj->size)!=0)
+//	return 0;
+      reset_file_recovery(file_recovery_new);
       file_recovery_new->file_check=&file_check_arj;
+    }
+    file_recovery_new->extension=file_hint_arj.extension;
+    file_recovery_new->time=le32(arj->ctime);
+    if(file_recovery_new->time < le32(arj->mtime))
+      file_recovery_new->time=le32(arj->mtime);
     return 1;
   }
   return 0;
 }
 
-static void file_check_arj(file_recovery_t *file_recovery)
+static void register_header_check_arj(file_stat_t *file_stat)
 {
-  static const unsigned char arj_footer[4]={0x60, 0xEA, 0x00, 0x00 };
-  file_search_footer(file_recovery, arj_footer, sizeof(arj_footer), 0);
+  static const unsigned char arj_header[2]={0x60, 0xEA};
+  register_header_check(0, arj_header,sizeof(arj_header), &header_check_arj, file_stat);
 }
