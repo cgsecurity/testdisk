@@ -68,8 +68,6 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
   if(le64(asf_header_obj->object_size)<30 ||
       le64(asf_header_obj->object_size)>buffer_size)
     return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_asf.extension;
   for(i=0;
       i<le32(asf_header_obj->nbr_header_obj) &&
       (const unsigned char *)(asf_file_prop+1) < buffer + buffer_size;
@@ -81,6 +79,10 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     };
     if(memcmp(asf_file_prop->object_id, asf_file_prop_id, sizeof(asf_file_prop_id))==0)
     {
+      if(le64(asf_file_prop->file_size) < sizeof(struct asf_header_obj_s) + sizeof(struct asf_file_prop_s))
+	return 0;
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_asf.extension;
       file_recovery_new->calculated_file_size=le64(asf_file_prop->file_size);
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
@@ -89,9 +91,15 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     }
     if( le64(asf_file_prop->object_size)==0 ||
 	le64(asf_file_prop->object_size)>1024*1024)
+    {
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_asf.extension;
       return 1;
+    }
     asf_file_prop=(const struct asf_file_prop_s *)((const char *)asf_file_prop + le64(asf_file_prop->object_size));
   }
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_asf.extension;
   return 1;
 }
 
