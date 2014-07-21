@@ -514,6 +514,7 @@ static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, co
 }
 
 typedef enum { INDSTOP_CONTINUE=0, INDSTOP_STOP=1, INDSTOP_SKIP=2, INDSTOP_QUIT=3 } indstop_t;
+
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd)
 {
   unsigned char *buffer_disk;
@@ -570,15 +571,36 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     CHS_t start;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
-    if(old_cylinder!=start.cylinder &&
-	(disk_car->geom.heads_per_cylinder>1 || (start.cylinder & 0x7FFF)==0))
+    if(disk_car->geom.heads_per_cylinder>1)
     {
-      old_cylinder=start.cylinder;
+      if(old_cylinder!=start.cylinder)
+      {
+	old_cylinder=start.cylinder;
+	wmove(stdscr,ANALYSE_Y,ANALYSE_X);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",
+	    start.cylinder, disk_car->geom.cylinders-1,
+	    (unsigned int)(search_location*100/disk_car->disk_size));
+	wrefresh(stdscr);
+	switch(check_enter_key_or_s(stdscr))
+	{
+	  case 1:
+	    ind_stop=INDSTOP_STOP;
+	    break;
+	  case 2:
+	    ind_stop=INDSTOP_SKIP;
+	    break;
+	}
+      }
+    }
+    else if((start.cylinder & 0x7FFF)==0)
+    {
       wmove(stdscr,ANALYSE_Y,ANALYSE_X);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",
-	  start.cylinder, disk_car->geom.cylinders-1,
-	  (unsigned int)((uint64_t)start.cylinder*100/disk_car->geom.cylinders));
+      wprintw(stdscr,"Analyse sector %11llu/%lu: %02u%%",
+	  search_location / disk_car->sector_size,
+	  (disk_car->disk_size-1)/disk_car->sector_size,
+	    (unsigned int)(search_location*100/disk_car->disk_size));
       wrefresh(stdscr);
       switch(check_enter_key_or_s(stdscr))
       {
@@ -872,11 +894,11 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
                   free(new_partition);
               }
               if(verbose>0)
-                log_warning("This partition ends after the disk limits. (start=%lu, size=%lu, end=%lu, disk end=%lu)\n",
-                    (unsigned long)(partition->part_offset/disk_car->sector_size),
-                    (unsigned long)(partition->part_size/disk_car->sector_size),
-                    (unsigned long)(pos_fin/disk_car->sector_size),
-                    (unsigned long)(disk_car->disk_size/disk_car->sector_size));
+                log_warning("This partition ends after the disk limits. (start=%llu, size=%llu, end=%llu, disk end=%llu)\n",
+                    (unsigned long long)(partition->part_offset/disk_car->sector_size),
+                    (unsigned long long)(partition->part_size/disk_car->sector_size),
+                    (unsigned long long)(pos_fin/disk_car->sector_size),
+                    (unsigned long long)(disk_car->disk_size/disk_car->sector_size));
               else
                 log_warning("This partition ends after the disk limits.\n");
             }

@@ -137,7 +137,7 @@ static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const
     wprintw(stdscr, "%s\n", disk->description_short(disk));
     wmove(stdscr,6,0);
     if(disk->geom.heads_per_cylinder == 1 && disk->geom.sectors_per_head == 1)
-      wprintw(stdscr, "     %lu sectors", disk->geom.cylinders);
+      wprintw(stdscr, "     %llu sectors", (long long unsigned)(disk->disk_size / disk->sector_size));
     else
       wprintw(stdscr, "     CHS %lu %u %u",
 	  disk->geom.cylinders, disk->geom.heads_per_cylinder, disk->geom.sectors_per_head);

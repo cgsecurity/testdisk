@@ -87,7 +87,7 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
     if(strncmp(*current_cmd,"C,",2)==0)
     {
       (*current_cmd)+=2;
-      tmp_val = atoi(*current_cmd);
+      tmp_val = atol(*current_cmd);
       while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	(*current_cmd)++;
       if (tmp_val > 0)
