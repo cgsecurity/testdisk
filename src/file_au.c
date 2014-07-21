@@ -66,18 +66,25 @@ static int header_check_au(const unsigned char *buffer, const unsigned int buffe
 {
   const struct header_au_s *au=(const struct header_au_s *)buffer;
   if(memcmp(buffer,au_header,sizeof(au_header))==0 &&
-    be32(au->encoding)<=27 &&
-    be32(au->channels)<=256)
+    be32(au->offset) >= sizeof(struct header_au_s) &&
+    be32(au->encoding)>0 && be32(au->encoding)<=27 &&
+    be32(au->channels)>0 && be32(au->channels)<=256)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=111;
-    file_recovery_new->extension=file_hint_au.extension;
     if(be32(au->size)!=0xffffffff)
     {
+      if(be32(au->offset)+be32(au->size) < 111)
+	return 0;
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->min_filesize=111;
+      file_recovery_new->extension=file_hint_au.extension;
       file_recovery_new->calculated_file_size=be32(au->offset)+be32(au->size);
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
+      return 1;
     }
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->min_filesize=111;
+    file_recovery_new->extension=file_hint_au.extension;
     return 1;
   }
   return 0;
