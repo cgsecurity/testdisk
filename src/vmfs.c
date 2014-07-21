@@ -84,7 +84,7 @@ int recover_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partit
 
 static int test_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int dump_ind)
 {
-  if(le32(sb->magic)!=0xc001d00d)
+  if(le32(sb->magic)!=0xc001d00d || le32(sb->version)>20)
     return 1;
   if(dump_ind!=0)
   {
