@@ -44,8 +44,11 @@ const file_hint_t file_hint_chm= {
 
 static int header_check_chm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint64_t size=(buffer[104]<<0)+(buffer[105]<<8)+(buffer[106]<<16)+((uint64_t)buffer[107]<<24);
+  if(size < 108)
+    return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->calculated_file_size=(buffer[104]<<0)+(buffer[105]<<8)+(buffer[106]<<16)+((uint64_t)buffer[107]<<24);
+  file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=file_hint_chm.extension;
