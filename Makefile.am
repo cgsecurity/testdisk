@@ -12,11 +12,13 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	src/photorec_64x64.png \
 	src/gnome/README \
 	src/gnome/application-exit.png  \
+	src/gnome/application-x-cd-image.png \
 	src/gnome/drive-harddisk.png \
 	src/gnome/folder.png \
 	src/gnome/go-next.png \
 	src/gnome/go-previous.png \
-	src/gnome/application-x-cd-image.png \
+	src/gnome/help-about.png \
+	src/gnome/image-x-generic.png \
 	win/readme.txt win/photorec_win.exe.manifest win/qphotorec_win.exe.manifest \
 	win/testdisk_win.exe.manifest \
 	Android.mk jni/Android.mk
