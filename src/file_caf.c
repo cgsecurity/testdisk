@@ -105,7 +105,8 @@ static int header_check_caf(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_caf.extension;
   file_recovery_new->data_check=&data_check_caf;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->calculated_file_size=8+12;
+  file_recovery_new->calculated_file_size=8;
+  file_recovery_new->min_filesize=8+12;
   return 1;
 }
 
