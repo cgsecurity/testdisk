@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_cwk(file_stat_t *file_stat);
 static int header_check_cwk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -44,27 +45,45 @@ const file_hint_t file_hint_cwk= {
   .register_header_check=&register_header_check_cwk
 };
 
-static const unsigned char cwk_header[4]= {'B','O','B','O'};
-
-static void register_header_check_cwk(file_stat_t *file_stat)
+/* http://wiki.wirelust.com/x/index.php/AppleWorks_/_ClarisWorks */
+struct cwk_header
 {
-  register_header_check(4, cwk_header,sizeof(cwk_header), &header_check_cwk, file_stat);
-}
-
-static int header_check_cwk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer+4, cwk_header, sizeof(cwk_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_cwk.extension;
-    file_recovery_new->file_check=&file_check_cwk;
-    return 1;
-  }
-  return 0;
-}
+  unsigned char major_version;
+  unsigned char minor_version[3];
+  uint32_t	creator_type;	/* BOBO */
+  unsigned char old_major_version;
+  unsigned char old_minor_version[3];
+  uint64_t	reserved0;
+  uint16_t	reserved1;
+  uint16_t	marker;
+  uint16_t	unk1;
+  uint32_t	unk2;
+  uint16_t	height;
+  uint16_t	width;
+  uint16_t	margins[6];
+  uint16_t	inner_height;
+  uint16_t	inner_width;
+} __attribute__ ((__packed__));
 
 static void file_check_cwk(file_recovery_t *file_recovery)
 {
   const unsigned char cwk_footer[4]= {0xf0, 0xf1, 0xf2, 0xf3};
   file_search_footer(file_recovery, cwk_footer, sizeof(cwk_footer), 4);
+}
+
+static int header_check_cwk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct cwk_header *cwk=(const struct cwk_header *)buffer;
+  if(be64(cwk->reserved0)!=0 || be16(cwk->reserved1)!=1)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_cwk.extension;
+  file_recovery_new->file_check=&file_check_cwk;
+  return 1;
+}
+
+static void register_header_check_cwk(file_stat_t *file_stat)
+{
+  static const unsigned char cwk_header[4]= {'B','O','B','O'};
+  register_header_check(4, cwk_header,sizeof(cwk_header), &header_check_cwk, file_stat);
 }
