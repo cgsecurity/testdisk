@@ -65,6 +65,8 @@ static void file_rename_d2s(const char *old_filename)
 static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct d2s_header *d2s=(const struct d2s_header*)buffer;
+  if(le32(d2s->size) < sizeof(struct d2s_header))
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_d2s.extension;
   file_recovery_new->calculated_file_size=le32(d2s->size);
