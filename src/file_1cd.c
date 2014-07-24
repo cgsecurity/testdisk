@@ -29,9 +29,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_1cd(file_stat_t *file_stat);
-static int header_check_1cd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_1cd= {
   .extension="1cd",
@@ -43,26 +43,28 @@ const file_hint_t file_hint_1cd= {
   .register_header_check=&register_header_check_1cd
 };
 
-static const unsigned char header_1cd[9]=  {
-  '1', 'C', 'D', 'B', 'M', 'S', 'V', '8', 0x08
-};
-
-static void register_header_check_1cd(file_stat_t *file_stat)
+struct header_1cd
 {
-  register_header_check(0, header_1cd, sizeof(header_1cd), &header_check_1cd, file_stat);
-}
+  char magic[8];
+  uint32_t version;
+  uint32_t size;
+} __attribute__ ((__packed__));
 
 static int header_check_1cd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, header_1cd, sizeof(header_1cd))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_1cd.extension;
-    file_recovery_new->calculated_file_size=((uint64_t)buffer[0xC]<<12) + (((uint64_t)buffer[0xD])<<20) +
-      (((uint64_t)buffer[0xE])<<28) + (((uint64_t)buffer[0xF])<<36);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  const struct header_1cd *hdr=(const struct header_1cd *)buffer;
+  if(le32(hdr->size)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_1cd.extension;
+  file_recovery_new->calculated_file_size=le32(hdr->size)<<12;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+static void register_header_check_1cd(file_stat_t *file_stat)
+{
+  static const unsigned char header_1cd[9]=  { '1', 'C', 'D', 'B', 'M', 'S', 'V', '8', 0x08 };
+  register_header_check(0, header_1cd, sizeof(header_1cd), &header_check_1cd, file_stat);
 }
