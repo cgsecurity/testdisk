@@ -27,11 +27,12 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_dex(file_stat_t *file_stat);
-static int header_check_dex(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_dex= {
   .extension="dex",
@@ -43,23 +44,53 @@ const file_hint_t file_hint_dex= {
   .register_header_check=&register_header_check_dex
 };
 
-static const unsigned char dex_header[4]= {'d','e','x','\n'};
-
-static void register_header_check_dex(file_stat_t *file_stat)
+/* More information can be found at https://source.android.com/devices/tech/dalvik/dex-format.html */
+struct dex_header
 {
-  register_header_check(0, dex_header,sizeof(dex_header), &header_check_dex, file_stat);
-}
+  unsigned char magic[8];
+  uint32_t	checksum;
+  unsigned char signature[20];
+  uint32_t	file_size;
+  uint32_t	header_size;
+  uint32_t	endian_tag;
+  uint32_t	link_size;
+  uint32_t	link_off;
+  uint32_t	map_off;
+  uint32_t	strings_ids_size;
+  uint32_t	strings_ids_off;
+  uint32_t	type_ids_size;
+  uint32_t	type_ids_off;
+  uint32_t	proto_ids_size;
+  uint32_t	proto_ids_off;
+  uint32_t	field_ids_size;
+  uint32_t	field_ids_off;
+  uint32_t	method_ids_size;
+  uint32_t	method_ids_off;
+  uint32_t	class_def_size;
+  uint32_t	class_def_off;
+  uint32_t	data_size;
+  uint32_t	data_off;
+} __attribute__ ((__packed__));
 
 static int header_check_dex(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, dex_header, sizeof(dex_header))==0 && buffer[7]==0x00)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_dex.extension;
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[0x20]+(((uint64_t)buffer[0x21])<<8)+(((uint64_t)buffer[0x22])<<16)+(((uint64_t)buffer[0x23])<<24);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  const struct dex_header *dex=(const struct dex_header*)buffer;
+  if(!isdigit(buffer[4]) || !isdigit(buffer[5]) || !isdigit(buffer[6]) || buffer[7]!=0x00)
+    return 0;
+  if(le32(dex->header_size) < 0x28)
+    return 0;
+  if(le32(dex->header_size) >= le32(dex->file_size))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_dex.extension;
+  file_recovery_new->calculated_file_size=le32(dex->file_size);
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+static void register_header_check_dex(file_stat_t *file_stat)
+{
+  static const unsigned char dex_header[4]= {'d','e','x','\n'};
+  register_header_check(0, dex_header,sizeof(dex_header), &header_check_dex, file_stat);
 }
