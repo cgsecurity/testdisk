@@ -47,6 +47,12 @@ const file_hint_t file_hint_bac= {
 
 static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  if(buffer_size < 2*0x18)
+  {
+    file_recovery->data_check=NULL;
+    file_recovery->file_check=NULL;
+    return DC_CONTINUE;
+  }
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
