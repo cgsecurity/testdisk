@@ -73,6 +73,8 @@ static int header_check_dpx(const unsigned char *buffer, const unsigned int buff
   if(memcmp(dpx->vers, ver10, sizeof(ver10))==0)
   {
     struct tm tm_time;
+    if(be32(dpx->file_size) < 19)
+      return 0;
     memset(&tm_time, 0, sizeof(tm_time));
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_dpx.extension;
