@@ -162,6 +162,8 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_fits.extension;
 #endif
   file_recovery_new->min_filesize=2880;
+  if(file_recovery_new->blocksize < 80)
+    return 1;
   {
     const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery_new, &i);
     if(tmp==0)
