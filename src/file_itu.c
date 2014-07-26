@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_itunes(file_stat_t *file_stat);
-static int header_check_itunes(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_itunes= {
   .extension="itu",
@@ -42,26 +41,26 @@ const file_hint_t file_hint_itunes= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_itunes
 };
-static const unsigned char itunes_header[8]= {'m', 'h', 'b', 'd', 0x68, 0x00, 0x00, 0x00};
 
-static void register_header_check_itunes(file_stat_t *file_stat)
-{
-  register_header_check(0, itunes_header,sizeof(itunes_header), &header_check_itunes, file_stat);
-}
 
 static int header_check_itunes(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint64_t size= (uint64_t)buffer[8] +
+    (((uint64_t)buffer[9])<<8) + (((uint64_t)buffer[10])<<16) + (((uint64_t)buffer[11])<<24);
+  if(size < 12)
+    return 0;
   /* mhbd */
-  if(memcmp(buffer, itunes_header, sizeof(itunes_header))==0)
-  {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_itunes.extension;
     file_recovery_new->min_filesize=0x68;
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[8] +
-      (((uint64_t)buffer[9])<<8) + (((uint64_t)buffer[10])<<16) + (((uint64_t)buffer[11])<<24);
+    file_recovery_new->calculated_file_size=size;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;
-  }
-  return 0;
+}
+
+static void register_header_check_itunes(file_stat_t *file_stat)
+{
+  static const unsigned char itunes_header[8]= {'m', 'h', 'b', 'd', 0x68, 0x00, 0x00, 0x00};
+  register_header_check(0, itunes_header,sizeof(itunes_header), &header_check_itunes, file_stat);
 }
