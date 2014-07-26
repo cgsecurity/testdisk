@@ -119,9 +119,6 @@ void screen_buffer_to_log(void)
 
 int get_partition_status(const partition_t *partition)
 {
-  /* Don't marked as D(eleted) an entry that is not a partition */
-  if(partition->order==NO_ORDER && partition->status==STATUS_DELETED)
-    return ' ';
   switch(partition->status)
   {
     case STATUS_PRIM:           return 'P';
@@ -157,6 +154,10 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
   if((newline&AFF_PART_STATUS)==AFF_PART_STATUS)
   {
     status=get_partition_status(partition);
+    /* Don't marked as D(eleted) an entry that is not a partition */
+    if((newline&AFF_PART_ORDER)==AFF_PART_ORDER &&
+	partition->order==NO_ORDER && partition->status==STATUS_DELETED)
+      status=' ';
   }
   pos+=snprintf(&msg[pos],sizeof(msg)-pos-1,"%c", status);
   if(arch->get_partition_typename(partition)!=NULL)
