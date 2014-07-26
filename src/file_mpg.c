@@ -171,6 +171,8 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mpg.extension;
+      if(file_recovery_new->blocksize < 14)
+	return 1;
       file_recovery_new->data_check=&data_check_mpg;
       file_recovery_new->file_check=&file_check_size;
       return 1;
@@ -179,6 +181,8 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
       return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
+      if(file_recovery_new->blocksize < 14)
+	return 1;
     file_recovery_new->data_check=&data_check_mpg;
     file_recovery_new->file_check=&file_check_size;
     return 1;
@@ -210,6 +214,8 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
     { /* SCR=0 */
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mpg.extension;
+      if(file_recovery_new->blocksize < 14)
+	return 1;
       file_recovery_new->data_check=&data_check_mpg;
       file_recovery_new->file_check=&file_check_size;
       return 1;
@@ -218,6 +224,8 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
       return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
+    if(file_recovery_new->blocksize < 14)
+      return 1;
     file_recovery_new->data_check=&data_check_mpg;
     file_recovery_new->file_check=&file_check_size;
     return 1;
