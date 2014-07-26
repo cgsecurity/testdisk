@@ -47,37 +47,25 @@ const file_hint_t file_hint_gif= {
   .register_header_check=&register_header_check_gif
 };
 
-static const unsigned char gif_header[6]=  { 'G','I','F','8','7','a'};
-static const unsigned char gif_header2[6]= { 'G','I','F','8','9','a'};
-
-static void register_header_check_gif(file_stat_t *file_stat)
-{
-  register_header_check(0, gif_header,sizeof(gif_header), &header_check_gif, file_stat);
-  register_header_check(0, gif_header2,sizeof(gif_header2), &header_check_gif, file_stat);
-}
-
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,gif_header,sizeof(gif_header))==0
-      || memcmp(buffer,gif_header2,sizeof(gif_header2))==0)
-  {
-    uint64_t offset;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_gif.extension;
-    file_recovery_new->file_check=&file_check_gif;
-    file_recovery_new->min_filesize=42;
-    offset=6;   /* Header */
-    offset+=7;  /* Logical Screen Descriptor */
-    if((buffer[10]>>7)&0x1)
-    {
-      /* Global Color Table */
-      offset+=3<<((buffer[10]&7)+1);
-    }
-    file_recovery_new->calculated_file_size=offset;
-    file_recovery_new->data_check=&data_check_gif;
+  uint64_t offset;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_gif.extension;
+  file_recovery_new->min_filesize=42;
+  if(file_recovery_new->blocksize < 2)
     return 1;
+  file_recovery_new->file_check=&file_check_gif;
+  offset=6;   /* Header */
+  offset+=7;  /* Logical Screen Descriptor */
+  if((buffer[10]>>7)&0x1)
+  {
+    /* Global Color Table */
+    offset+=3<<((buffer[10]&7)+1);
   }
-  return 0;
+  file_recovery_new->calculated_file_size=offset;
+  file_recovery_new->data_check=&data_check_gif;
+  return 1;
 }
 
 static void file_check_gif(file_recovery_t *file_recovery)
@@ -162,4 +150,12 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
   }
   file_recovery->data_check=&data_check_gif2;
   return DC_CONTINUE;
+}
+
+static void register_header_check_gif(file_stat_t *file_stat)
+{
+  static const unsigned char gif_header[6]=  { 'G','I','F','8','7','a'};
+  static const unsigned char gif_header2[6]= { 'G','I','F','8','9','a'};
+  register_header_check(0, gif_header,sizeof(gif_header), &header_check_gif, file_stat);
+  register_header_check(0, gif_header2,sizeof(gif_header2), &header_check_gif, file_stat);
 }
