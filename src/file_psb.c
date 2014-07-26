@@ -36,7 +36,6 @@
 #endif
 
 static void register_header_check_psb(file_stat_t *file_stat);
-static int header_check_psb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static data_check_t psb_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void file_check_psb(file_recovery_t *file_recovery);
 
@@ -50,7 +49,6 @@ const file_hint_t file_hint_psb= {
   .register_header_check=&register_header_check_psb
 };
 
-static const unsigned char psb_header[6]={'8', 'B', 'P', 'S', 0x00, 0x02};
 static uint64_t psb_image_data_size_max=0;
 struct psb_file_header
 {
@@ -64,25 +62,18 @@ struct psb_file_header
   uint16_t color_mode;	/* Bitmap = 0; Grayscale = 1; Indexed = 2; RGB = 3; CMYK = 4; Multichannel = 7; Duotone = 8; Lab = 9 */
 } __attribute__ ((__packed__));
 
-static void register_header_check_psb(file_stat_t *file_stat)
-{
-  register_header_check(0, psb_header,sizeof(psb_header), &header_check_psb, file_stat);
-}
-
 static int header_check_psb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,psb_header,sizeof(psb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=70;
-    file_recovery_new->extension=file_hint_psb.extension;
-    /* File header */
-    file_recovery_new->calculated_file_size=0x1a;
-    file_recovery_new->data_check=&psb_skip_color_mode;
-    file_recovery_new->file_check=&file_check_psb;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=70;
+  file_recovery_new->extension=file_hint_psb.extension;
+  if(file_recovery_new->blocksize < 16)
     return 1;
-  }
-  return 0;
+  /* File header */
+  file_recovery_new->calculated_file_size=0x1a;
+  file_recovery_new->data_check=&psb_skip_color_mode;
+  file_recovery_new->file_check=&file_check_psb;
+  return 1;
 }
 
 static uint64_t get_be64(const void *buffer, const unsigned int offset)
@@ -165,4 +156,10 @@ static void file_check_psb(file_recovery_t *file_recovery)
     file_recovery->file_size=0;
   else if(file_recovery->file_size > file_recovery->calculated_file_size + psb_image_data_size_max)
     file_recovery->file_size=file_recovery->calculated_file_size + psb_image_data_size_max;
+}
+
+static void register_header_check_psb(file_stat_t *file_stat)
+{
+  static const unsigned char psb_header[6]={'8', 'B', 'P', 'S', 0x00, 0x02};
+  register_header_check(0, psb_header,sizeof(psb_header), &header_check_psb, file_stat);
 }
