@@ -97,16 +97,26 @@ static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned i
 
 static int header_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[4], r3d_header1, sizeof(r3d_header1))==0 && buffer[0xa]=='R' && buffer[0xb]=='1')
+  const struct atom_struct *atom=(const struct atom_struct*)buffer;
+  if(be32(atom->size) < 8)
+    return 0;
+  if(buffer[0xa]=='R' && buffer[0xb]=='1')
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_r3d.extension;
     file_recovery_new->file_rename=&file_rename_r3d;
-    file_recovery_new->file_check=&file_check_size;
+    if(file_recovery_new->blocksize < 8)
+      return 1;
     file_recovery_new->data_check=&data_check_r3d;
+    file_recovery_new->file_check=&file_check_size;
     return 1;
   }
-  if(memcmp(&buffer[4], r3d_header2, sizeof(r3d_header2))==0 && buffer[0xa]=='R' && buffer[0xb]=='2')
+  return 0;
+}
+
+static int header_check_r3d_v2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[0xa]=='R' && buffer[0xb]=='2')
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_r3d.extension;
@@ -138,5 +148,5 @@ static void file_rename_r3d(const char *old_filename)
 static void register_header_check_r3d(file_stat_t *file_stat)
 {
   register_header_check(4, r3d_header1, sizeof(r3d_header1), &header_check_r3d, file_stat);
-  register_header_check(4, r3d_header2, sizeof(r3d_header2), &header_check_r3d, file_stat);
+  register_header_check(4, r3d_header2, sizeof(r3d_header2), &header_check_r3d_v2, file_stat);
 }
