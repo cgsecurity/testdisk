@@ -49,7 +49,6 @@ const file_hint_t file_hint_hdf= {
   .register_header_check=&register_header_check_hdf
 };
 
-static const unsigned char hdf_header[4]=  { 0x0e, 0x03, 0x13, 0x01};
 struct ddh_struct
 {
   uint16_t	size;
@@ -115,17 +114,17 @@ static void file_check_hdf(file_recovery_t *file_recovery)
 
 static int header_check_hdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], hdf_header, sizeof(hdf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_hdf.extension;
-    file_recovery_new->file_check=&file_check_hdf;
-    return 1;
-  }
-  return 0;
+  const struct ddh_struct *ddh=(const struct ddh_struct *)&buffer[4];
+  if(be16(ddh->size)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_hdf.extension;
+  file_recovery_new->file_check=&file_check_hdf;
+  return 1;
 }
 
 static void register_header_check_hdf(file_stat_t *file_stat)
 {
+  static const unsigned char hdf_header[4]=  { 0x0e, 0x03, 0x13, 0x01};
   register_header_check(0, hdf_header, sizeof(hdf_header), &header_check_hdf, file_stat);
 }
