@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_xcf(file_stat_t *file_stat);
 static int header_check_xcf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -43,25 +44,34 @@ const file_hint_t file_hint_xcf= {
   .register_header_check=&register_header_check_xcf
 };
 
-// version 0: gimp xcf file
-// version 1: gimp xcf v001
-static const unsigned char xcf_header_v0[13]= {'g','i','m','p',' ','x','c','f',' ','f','i','l','e'};
-static const unsigned char xcf_header_v1[10]= {'g','i','m','p',' ','x','c','f',' ','v'};
-
-static void register_header_check_xcf(file_stat_t *file_stat)
+// https://git.gnome.org/browse/gimp/tree/devel-docs/xcf.txt
+struct xcf_header
 {
-  register_header_check(0, xcf_header_v0,sizeof(xcf_header_v0), &header_check_xcf, file_stat);
-  register_header_check(0, xcf_header_v1,sizeof(xcf_header_v1), &header_check_xcf, file_stat);
-}
+  unsigned char magic[9];
+  unsigned char version[4];
+  unsigned char zero;
+  uint32_t	width;
+  uint32_t	heigth;
+  uint32_t	base_type;
+} __attribute__ ((__packed__));
 
 static int header_check_xcf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,xcf_header_v0, sizeof(xcf_header_v0))==0 ||
-      memcmp(buffer,xcf_header_v1, sizeof(xcf_header_v1))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_xcf.extension;
-    return 1;
-  }
-  return 0;
+  const struct xcf_header *hdr=(const struct xcf_header *)buffer;
+  if(hdr->zero!=0)
+    return 0;
+  if(be32(hdr->width)==0 || be32(hdr->heigth)==0)
+    return 0;
+  if(be32(hdr->base_type) > 2)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_xcf.extension;
+  return 1;
+}
+
+static void register_header_check_xcf(file_stat_t *file_stat)
+{
+  register_header_check(0, "gimp xcf file", 13, &header_check_xcf, file_stat);
+  register_header_check(0, "gimp xcf v001", 13, &header_check_xcf, file_stat);
+  register_header_check(0, "gimp xcf v002", 13, &header_check_xcf, file_stat);
 }
