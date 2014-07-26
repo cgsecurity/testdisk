@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "file_tiff.h"
+#include "common.h"
 
 static void register_header_check_wdp(file_stat_t *file_stat);
 static int header_check_wdp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -44,24 +45,20 @@ const file_hint_t file_hint_wdp= {
   .register_header_check=&register_header_check_wdp
 };
 
-static const unsigned char wdp_header[4]= {'I', 'I', 0xbc, 0x01};
+static int header_check_wdp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const TIFFHeader *header=(const TIFFHeader *)buffer;
+  if(le32(header->tiff_diroff) < sizeof(TIFFHeader))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="wdp";
+  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->file_check=&file_check_tiff;
+  return 1;
+}
 
 static void register_header_check_wdp(file_stat_t *file_stat)
 {
+  static const unsigned char wdp_header[4]= {'I', 'I', 0xbc, 0x01};
   register_header_check(0, wdp_header, sizeof(wdp_header), &header_check_wdp, file_stat);
 }
-
-static int header_check_wdp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, wdp_header, sizeof(wdp_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="wdp";
-    file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
-    file_recovery_new->file_check=&file_check_tiff;
-    return 1;
-  }
-  return 0;
-}
-
-
