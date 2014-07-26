@@ -299,9 +299,12 @@ static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned 
 {
   const char *potential_error=NULL;
   const char *tag_make;
+  const TIFFHeader *header=(const TIFFHeader *)buffer;
+  if(be32(header->tiff_diroff) < sizeof(TIFFHeader))
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tiff.extension;
-  tag_make=find_tag_from_tiff_header_be((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
+  tag_make=find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_MAKE, &potential_error);
   if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
   {
     if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
@@ -312,7 +315,7 @@ static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned 
     else if(strcmp(tag_make, "Kodak")==0)
       file_recovery_new->extension="dcr";
   }
-  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
   file_recovery_new->file_check=&file_check_tiff;
   return 1;
 }
@@ -321,6 +324,9 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
 {
   const char raf_fp[15]={0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00,  0x01, 0x00, 0x00, 0xf0, 0x0d, 0x00, 0x01};
   const char *potential_error=NULL;
+  const TIFFHeader *header=(const TIFFHeader *)buffer;
+  if(le32(header->tiff_diroff) < sizeof(TIFFHeader))
+    return 0;
   /* Avoid a false positiv with some RAF files */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
     file_recovery->file_stat->file_hint==&file_hint_raf &&
@@ -331,7 +337,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
   /* Canon RAW */
   if(buffer[8]=='C' && buffer[9]=='R' && buffer[10]==2)
     file_recovery_new->extension="cr2";
-  else if(find_tag_from_tiff_header_le((const TIFFHeader *)buffer, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
+  else if(find_tag_from_tiff_header_le(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
   {
     /* Adobe Digital Negative */
     file_recovery_new->extension="dng";
@@ -339,7 +345,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
   else
   {
     const char *tag_make;
-    tag_make=find_tag_from_tiff_header_le((const TIFFHeader *)buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
+    tag_make=find_tag_from_tiff_header_le(header, buffer_size, TIFFTAG_MAKE, &potential_error);
     if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
     {
       if(strcmp(tag_make, "SONY")==0)
@@ -348,7 +354,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
 	file_recovery_new->extension="arw";
     }
   }
-  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
   file_recovery_new->file_check=&file_check_tiff;
   return 1;
 }
@@ -494,7 +500,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
   uint64_t tile_offsets=0;
   uint64_t tile_bytecounts=0;
   const TIFFDirEntry *entry;
-  if(tiff_diroff == 0)
+  if(tiff_diroff < sizeof(TIFFHeader))
     return -1;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
     return -1;
@@ -601,7 +607,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
     return -1;
   if(count>16)
     return -1;
-  if(tiff_diroff == 0)
+  if(tiff_diroff < sizeof(TIFFHeader))
     return -1;
   if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
     return -1;
@@ -808,7 +814,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
   uint64_t tile_offsets=0;
   uint64_t tile_bytecounts=0;
   const TIFFDirEntry *entry;
-  if(tiff_diroff == 0)
+  if(tiff_diroff < sizeof(TIFFHeader))
     return -1;
   if(fseek(in, tiff_diroff, SEEK_SET) < 0)
     return -1;
@@ -912,7 +918,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
     return -1;
   if(count>16)
     return -1;
-  if(tiff_diroff == 0)
+  if(tiff_diroff < sizeof(TIFFHeader))
     return -1;
   if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
     return -1;
