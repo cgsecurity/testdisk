@@ -62,17 +62,23 @@ static int header_check_db(const unsigned char *buffer, const unsigned int buffe
     const unsigned int volume_space_size2=iso1->volume_space_size[7] | (iso1->volume_space_size[6]<<8) | (iso1->volume_space_size[5]<<16) | (iso1->volume_space_size[4]<<24);
     const unsigned int logical_block_size=iso1->logical_block_size[0] | (iso1->logical_block_size[1]<<8);
     const unsigned int logical_block_size2=iso1->logical_block_size[3] | (iso1->logical_block_size[2]<<8);
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_iso.extension;
     if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
     {	/* ISO 9660 */
-      file_recovery_new->calculated_file_size=(uint64_t)volume_space_size * logical_block_size;
+      const uint64_t size=(uint64_t)volume_space_size * logical_block_size;
+      if(size < 0x8000+512)
+	return 0;
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_iso.extension;
+      file_recovery_new->calculated_file_size=size;
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->min_filesize=0x8000+512;
+      return 1;
     }
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_iso.extension;
+      file_recovery_new->min_filesize=0x8000+512;
     return 1;
   }
   return 0;
 }
-
-
