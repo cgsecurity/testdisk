@@ -1065,9 +1065,9 @@ static const char *file_description(disk_t *disk)
   size_to_unit(disk->disk_size, buffer_disk_size);
   if(disk->geom.heads_per_cylinder == 1 && disk->geom.sectors_per_head == 1)
     snprintf(disk->description_txt, sizeof(disk->description_txt),
-	"Disk %s - %s - %lu sectors%s",
+	"Disk %s - %s - %llu sectors%s",
 	disk->device, buffer_disk_size,
-	disk->geom.cylinders,
+	(long long unsigned)(disk->disk_size / disk->sector_size),
 	((data->mode&O_RDWR)==O_RDWR?"":" (RO)"));
   else
     snprintf(disk->description_txt, sizeof(disk->description_txt),
