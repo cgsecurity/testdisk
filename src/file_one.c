@@ -44,10 +44,13 @@ const file_hint_t file_hint_one= {
 
 static int header_check_one(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint64_t size=(buffer[196]<<0)+(buffer[197]<<8)+(buffer[198]<<16)+((uint64_t)buffer[199]<<24);
+  if(size < 200)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_one.extension;
   file_recovery_new->min_filesize=200;
-  file_recovery_new->calculated_file_size=(buffer[196]<<0)+(buffer[197]<<8)+(buffer[198]<<16)+((uint64_t)buffer[199]<<24);
+  file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
