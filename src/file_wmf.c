@@ -45,7 +45,33 @@ const file_hint_t file_hint_wmf= {
 	.register_header_check=&register_header_check_wmf
 };
 
+struct wmf_header
+{
+  uint16_t type;
+  uint16_t header_size;
+  uint16_t version;
+  uint32_t size;
+  uint16_t num_objects;
+  uint32_t max_record;
+  uint16_t members;
+} __attribute__ ((__packed__));
+
 static int header_check_wmf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct wmf_header *hdr=(const struct wmf_header *)buffer;
+  if(le16(hdr->num_objects)==0)
+    return 0;
+  if(2*le32(hdr->max_record) + le16(hdr->num_objects) - 1 >= 2*le32(hdr->size))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_wmf.extension;
+  file_recovery_new->calculated_file_size=(uint64_t)2*le32(hdr->size);
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+static int header_check_other_wmf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[0x10]!=0 || buffer[0x11]!=0)
     return 0;
@@ -60,7 +86,7 @@ static void register_header_check_wmf(file_stat_t *file_stat)
   static const unsigned char emf_header[6] = { 0x20, 0x45, 0x4D, 0x46, 0x00, 0x00 };
   /* WMF: file_type=disk, header size=9, version=3.0 */
   static const unsigned char wmf_header[6] = { 0x01, 0x00, 0x09, 0x00, 0x00, 0x03 };
-  register_header_check(0, apm_header,sizeof(apm_header), &header_check_wmf, file_stat);
-  register_header_check(0, emf_header,sizeof(emf_header), &header_check_wmf, file_stat);
+  register_header_check(0, apm_header,sizeof(apm_header), &header_check_other_wmf, file_stat);
+  register_header_check(0, emf_header,sizeof(emf_header), &header_check_other_wmf, file_stat);
   register_header_check(0, wmf_header,sizeof(wmf_header), &header_check_wmf, file_stat);
 }
