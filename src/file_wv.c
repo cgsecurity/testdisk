@@ -32,7 +32,6 @@
 #include "common.h"
 
 static void register_header_check_wv(file_stat_t *file_stat);
-static int header_check_wv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static data_check_t data_check_wv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_wv= {
@@ -65,22 +64,17 @@ typedef struct {
     uint32_t crc;               // crc for actual decoded data
 } WavpackHeader;
 
-static void register_header_check_wv(file_stat_t *file_stat)
-{
-  register_header_check(0, wv_header,  sizeof(wv_header),  &header_check_wv, file_stat);
-}
-
 static int header_check_wv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const WavpackHeader *wv=(const WavpackHeader*)buffer;
-  if(memcmp(buffer, wv_header, sizeof(wv_header))==0 && le32(wv->block_index)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_wv.extension;
-    file_recovery_new->data_check=&data_check_wv;
+  if(le32(wv->block_index)!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_wv.extension;
+  if(file_recovery_new->blocksize < 8)
     return 1;
-  }
-  return 0;
+  file_recovery_new->data_check=&data_check_wv;
+  return 1;
 }
 
 static data_check_t data_check_wv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -115,3 +109,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
   return DC_CONTINUE;
 }
 
+static void register_header_check_wv(file_stat_t *file_stat)
+{
+  register_header_check(0, wv_header,  sizeof(wv_header),  &header_check_wv, file_stat);
+}
