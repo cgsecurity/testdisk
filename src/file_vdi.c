@@ -32,7 +32,6 @@
 #include "common.h"
 
 static void register_header_check_vdi(file_stat_t *file_stat);
-static int header_check_vdi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_vdi= {
   .extension="vdi",
@@ -43,13 +42,6 @@ const file_hint_t file_hint_vdi= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_vdi
 };
-
-static const unsigned char vdi_header[4]= {0x7f, 0x10, 0xda, 0xbe};
-
-static void register_header_check_vdi(file_stat_t *file_stat)
-{
-  register_header_check(0x40, vdi_header,sizeof(vdi_header), &header_check_vdi, file_stat);
-}
 
 /* Image version. */
 #define VDI_VERSION_1_1 0x00010001
@@ -90,8 +82,10 @@ typedef struct {
 static int header_check_vdi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const VdiHeader *header=(const VdiHeader *)buffer;
-  if(memcmp(&buffer[0x40], vdi_header, sizeof(vdi_header))==0 && le32(header->version) == VDI_VERSION_1_1)
+  if(le32(header->version) == VDI_VERSION_1_1)
   {
+    if(le32(header->offset_data) < sizeof(VdiHeader))
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_vdi.extension;
     if(le32(header->image_type) == VDI_TYPE_STATIC)
@@ -103,4 +97,10 @@ static int header_check_vdi(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_vdi(file_stat_t *file_stat)
+{
+  static const unsigned char vdi_header[4]= {0x7f, 0x10, 0xda, 0xbe};
+  register_header_check(0x40, vdi_header,sizeof(vdi_header), &header_check_vdi, file_stat);
 }
