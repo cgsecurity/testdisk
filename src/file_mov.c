@@ -102,12 +102,14 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   {
   }
   else if(file_recovery!=NULL &&
-      file_recovery->data_check==&data_check_mov &&
-      file_recovery->calculated_file_size == file_recovery->file_size)
+      file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_mov &&
+      (file_recovery->calculated_file_size == file_recovery->file_size ||
+       file_recovery->blocksize < 16))
   { /* PhotoRec is already trying to recover this mov file */
     return 0;
   }
-  while(i<buffer_size-8)
+  while(i<buffer_size-16)
   {
     const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
     uint64_t atom_size=be32(atom->size);
@@ -127,6 +129,9 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
+      file_recovery_new->file_rename=&file_rename_mov;
+      if(file_recovery->blocksize < 16)
+	return 1;
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
@@ -138,6 +143,9 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
+      file_recovery_new->file_rename=&file_rename_mov;
+      if(file_recovery->blocksize < 16)
+	return 1;
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
@@ -150,6 +158,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
+      if(file_recovery->blocksize < 16)
+	return 1;
       /*
       if(i==0 && buffer[12]=='m' && buffer[13]=='v' && buffer[14]=='h' && buffer[15]=='d')
       {
@@ -176,6 +186,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mp4";
+	if(file_recovery->blocksize < 16)
+	  return 1;
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
@@ -186,6 +198,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	reset_file_recovery(file_recovery_new);
 	/* acc ? */
 	file_recovery_new->extension="m4p";
+	if(file_recovery->blocksize < 16)
+	  return 1;
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
@@ -196,6 +210,8 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
 	/* Video for 3G mobile phone (GSM) */
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="3gp";
+	if(file_recovery->blocksize < 16)
+	  return 1;
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
 	file_recovery_new->calculated_file_size=i+atom_size;
@@ -222,18 +238,24 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension="mov";
+	file_recovery_new->file_rename=&file_rename_mov;
+	if(file_recovery->blocksize < 16)
+	  return 1;
 	file_recovery_new->data_check=&data_check_mov;
 	file_recovery_new->file_check=&file_check_size;
-	file_recovery_new->file_rename=&file_rename_mov;
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
     }
     if(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t')
     {
+      if(memcmp(buffer, "der.mdat\" anim=\"", 16)==0)
+	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
+      if(file_recovery->blocksize < 16)
+	return 1;
       file_recovery_new->data_check=&data_check_mov;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->calculated_file_size=i+atom_size;
