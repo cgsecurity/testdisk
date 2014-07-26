@@ -214,17 +214,21 @@ static void register_header_check_emf(file_stat_t *file_stat)
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
+  const unsigned int atom_size=le32(hdr->emr.nSize);
   if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
       memcmp(&buffer[0x28],emf_sign,sizeof(emf_sign))==0 &&
       le32(hdr->nBytes) >= 88 &&
-      le16(hdr->sReserved)==0)
+      le16(hdr->sReserved)==0 &&
+      atom_size>=0x34 && atom_size%4==0)
   {
-    const unsigned int atom_size=buffer[4]+(buffer[5]<<8)+(buffer[6]<<16)+(buffer[7]<<24);
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_emf.extension;
-    file_recovery_new->data_check=&data_check_emf;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->calculated_file_size=atom_size;
+    if(file_recovery_new->blocksize >= 8)
+    {
+      file_recovery_new->data_check=&data_check_emf;
+      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->calculated_file_size=atom_size;
+    }
     return 1;
   }
   return 0;
