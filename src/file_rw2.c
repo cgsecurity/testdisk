@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "file_tiff.h"
+#include "common.h"
 
 static void register_header_check_rw2(file_stat_t *file_stat);
 static int header_check_rw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -44,25 +45,21 @@ const file_hint_t file_hint_rw2= {
   .register_header_check=&register_header_check_rw2
 };
 
-static const unsigned char rw2_header_panasonic[4]= {'I','I','U','\0'};
+static int header_check_rw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const TIFFHeader *header=(const TIFFHeader *)buffer;
+  if(le32(header->tiff_diroff) < sizeof(TIFFHeader))
+    return 0;
+  /* Panasonic/Leica */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="rw2";
+  file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
+  file_recovery_new->file_check=&file_check_tiff;
+  return 1;
+}
 
 static void register_header_check_rw2(file_stat_t *file_stat)
 {
+  static const unsigned char rw2_header_panasonic[4]= {'I','I','U','\0'};
   register_header_check(0, rw2_header_panasonic, sizeof(rw2_header_panasonic), &header_check_rw2, file_stat);
 }
-
-static int header_check_rw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /* Panasonic/Leica */
-  if(memcmp(buffer, rw2_header_panasonic, sizeof(rw2_header_panasonic))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="rw2";
-    file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
-    file_recovery_new->file_check=&file_check_tiff;
-    return 1;
-  }
-  return 0;
-}
-
-
