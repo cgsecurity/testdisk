@@ -73,13 +73,19 @@ static data_check_t data_check_dad(const unsigned char *buffer, const unsigned i
 
 static int header_check_dad(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->data_check==&data_check_dad && 
-      file_recovery->calculated_file_size==file_recovery->file_size)
+  if(file_recovery!=NULL && 
+      file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_dad &&
+      (file_recovery->calculated_file_size==file_recovery->file_size ||
+       file_recovery->blocksize < 16))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dad.extension;
-  file_recovery_new->data_check=&data_check_dad;
-  file_recovery_new->file_check=&file_check_size;
+  if(file_recovery_new->blocksize >= 16)
+  {
+    file_recovery_new->data_check=&data_check_dad;
+    file_recovery_new->file_check=&file_check_size;
+  }
   return 1;
 }
 
