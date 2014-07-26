@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_oci(file_stat_t *file_stat);
 
@@ -42,9 +43,11 @@ const file_hint_t file_hint_oci= {
   .register_header_check=&register_header_check_oci
 };
 
-static const unsigned char oci_header[8]=  {
-  'O' , 'P' , 'I' , 'M' , '0' , 0x00, 0x00, 0x00
-};
+struct oci_header
+{
+  unsigned char type[4];
+  uint32_t	size;
+} __attribute__ ((__packed__));
 
 static data_check_t data_check_oci(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -52,7 +55,8 @@ static data_check_t data_check_oci(const unsigned char *buffer, const unsigned i
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int atom_size=(buffer[i+7]<<24)+(buffer[i+6]<<16)+(buffer[i+5]<<8)+buffer[i+4];
+    const struct oci_header *hdr=(const struct oci_header *)&buffer[i];
+    const unsigned int atom_size=le32(hdr->size);
 #ifdef DEBUG_MOV
     log_trace("file_oci.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
 	file_recovery->filename,
@@ -82,18 +86,29 @@ static data_check_t data_check_oci(const unsigned char *buffer, const unsigned i
 
 static int header_check_oci(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], oci_header, sizeof(oci_header))==0)
+  const struct oci_header *hdr=(const struct oci_header *)buffer;
+  if(8+le32(hdr->size)+8 <= buffer_size)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_oci.extension;
-    file_recovery_new->data_check=&data_check_oci;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    const struct oci_header *hdr2=(const struct oci_header *)&buffer[8+le32(hdr->size)];
+    if(!(hdr2->type[0]=='O' &&
+	  (hdr2->type[1]>='A' && hdr2->type[1]<='Z') &&
+	  (hdr2->type[2]>='A' && hdr2->type[2]<='Z') &&
+	  (hdr2->type[3]>='A' && hdr2->type[3]<='Z')))
+      return 0;
   }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_oci.extension;
+  if(file_recovery_new->blocksize < 8)
+    return 1;
+  file_recovery_new->data_check=&data_check_oci;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_oci(file_stat_t *file_stat)
 {
+  static const unsigned char oci_header[8]=  {
+    'O' , 'P' , 'I' , 'M' , '0' , 0x00, 0x00, 0x00
+  };
   register_header_check(0, oci_header, sizeof(oci_header), &header_check_oci, file_stat);
 }
