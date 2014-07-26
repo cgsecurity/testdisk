@@ -98,6 +98,8 @@ static int header_check_flv(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_flv.extension;
+    if(file_recovery_new->blocksize < 15)
+      return 1;
     file_recovery_new->calculated_file_size=be32(flv->data_offset);
     file_recovery_new->data_check=&data_check_flv;
     file_recovery_new->file_check=&file_check_size;
