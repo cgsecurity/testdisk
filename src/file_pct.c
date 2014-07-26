@@ -97,7 +97,9 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
 	be16(pct->OYMin) <= be16(pct->OXMin))) &&
 	be16(pct->XMin)==0 &&			/* Reject some valid but uncommon files */
 	be16(pct->YMin)==0 &&
-	be16(pct->OYMin)==0)
+	be16(pct->OYMin)==0 &&
+	be16(pct->VersionOperator)==0x0011 &&
+	be16(pct->VersionNumber)==0x02ff)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_pct.extension;
