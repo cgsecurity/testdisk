@@ -74,6 +74,8 @@ static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int
   const struct ecrypfs_header *e=(const struct ecrypfs_header *)buffer;
   if((be32(e->marker1) ^ be32(e->marker2)) != 0x3c81b7f5)
     return 0;
+  if(be64(e->unencrypted_file_size) < sizeof(struct ecrypfs_header))
+    return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
   file_recovery_new->extension="ecr";
