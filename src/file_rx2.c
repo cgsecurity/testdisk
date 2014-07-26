@@ -53,18 +53,15 @@ struct rx2_header
 
 static int header_check_rx2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], rx2_header, sizeof(rx2_header))==0 &&
-      memcmp(&buffer[8], "REX2HEAD", 8)==0)
-  {
-    const struct rx2_header *rx2=(const struct rx2_header *)buffer;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_rx2.extension;
-    file_recovery_new->calculated_file_size=(uint64_t)be32(rx2->size)+8;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  const struct rx2_header *rx2=(const struct rx2_header *)buffer;
+  if(memcmp(&buffer[8], "REX2HEAD", 8)!=0 || be32(rx2->size) < 4)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_rx2.extension;
+  file_recovery_new->calculated_file_size=(uint64_t)be32(rx2->size)+8;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_rx2(file_stat_t *file_stat)
