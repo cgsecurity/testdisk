@@ -40,8 +40,6 @@ struct fh5_header_s
 typedef struct fh5_header_s fh5_header_t;
 
 static void register_header_check_fh5(file_stat_t *file_stat);
-static int header_check_fh5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_fh5(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_fh5= {
   .extension="fh5",
@@ -53,33 +51,30 @@ const file_hint_t file_hint_fh5= {
   .register_header_check=&register_header_check_fh5
 };
 
-static const unsigned char fh5_header[8]  = { 0x41, 0x47, 0x44, 0x31, 0xbe, 0xb8, 0xbb, 0xce };
-
-static void register_header_check_fh5(file_stat_t *file_stat)
-{
-  register_header_check(0, fh5_header,sizeof(fh5_header), &header_check_fh5, file_stat);
-}
-
-static int header_check_fh5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const fh5_header_t *fh5_buffer=(const fh5_header_t *) buffer;
-  if(memcmp(fh5_buffer->id,fh5_header,sizeof(fh5_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=4096,
-    file_recovery_new->calculated_file_size=be32(fh5_buffer->datalen);
-    file_recovery_new->extension=file_hint_fh5.extension;
-    file_recovery_new->file_check=file_check_fh5;
-//    log_debug("header_check_fh5: Guessed length : %u\n", fh5_file_size);
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_fh5(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size < file_recovery->calculated_file_size)
     file_recovery->file_size=0;
   else if(file_recovery->file_size> file_recovery->calculated_file_size+4096)
     file_recovery->file_size=file_recovery->calculated_file_size+4096;
+}
+
+static int header_check_fh5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const fh5_header_t *fh5_buffer=(const fh5_header_t *) buffer;
+  if(be32(fh5_buffer->datalen) < sizeof(struct fh5_header_s))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=4096;
+  file_recovery_new->calculated_file_size=be32(fh5_buffer->datalen);
+  file_recovery_new->extension=file_hint_fh5.extension;
+  file_recovery_new->file_check=file_check_fh5;
+  //    log_debug("header_check_fh5: Guessed length : %u\n", fh5_file_size);
+  return 1;
+}
+
+static void register_header_check_fh5(file_stat_t *file_stat)
+{
+  static const unsigned char fh5_header[8] = { 0x41, 0x47, 0x44, 0x31, 0xbe, 0xb8, 0xbb, 0xce };
+  register_header_check(0, fh5_header,sizeof(fh5_header), &header_check_fh5, file_stat);
 }
