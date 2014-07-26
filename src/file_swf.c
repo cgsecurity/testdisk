@@ -32,6 +32,7 @@
 #include <zlib.h>
 #endif
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_swf(file_stat_t *file_stat);
 
@@ -44,6 +45,13 @@ const file_hint_t file_hint_swf= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_swf
 };
+
+struct swf_header
+{
+  char magic[3];
+  unsigned char version;
+  uint32_t size;
+} __attribute__ ((__packed__));
 
 static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigned int nbit)
 {
@@ -67,8 +75,11 @@ static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigne
 
 static int header_check_swfc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct swf_header *hdr=(const struct swf_header *)buffer;
   /* Compressed flash with Z_DEFLATED */
   if(!(buffer[3]>=6 && buffer[3]<=20 && (buffer[8]&0x0f)==8))
+    return 0;
+  if(le32(hdr->size) < 9)
     return 0;
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {
@@ -126,7 +137,7 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
 #endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="swc";
-  file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
+  file_recovery_new->calculated_file_size=le32(hdr->size);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
@@ -135,12 +146,15 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
 static int header_check_swf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* http://www.adobe.com/go/swfspec */
+  const struct swf_header *hdr=(const struct swf_header *)buffer;
   const unsigned char *data=&buffer[8];
   unsigned int offset_bit=5;
   unsigned int nbit;
   /* a twip is 1/20th of a logical pixel */
   int Xmin, Xmax, Ymin, Ymax;
   if(!(buffer[3]>=3 && buffer[3]<=20))
+    return 0;
+  if(le32(hdr->size) < 9)
     return 0;
   nbit=(*data)>>3;
   if(nbit<=1)
@@ -156,7 +170,7 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
 #endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_swf.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
+  file_recovery_new->calculated_file_size=le32(hdr->size);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
@@ -164,8 +178,6 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_swf(file_stat_t *file_stat)
 {
-  static const unsigned char swf_header_compressed[3]= {'C','W','S'};
-  static const unsigned char swf_header[3]= {'F','W','S'};
-  register_header_check(0, swf_header_compressed,sizeof(swf_header_compressed), &header_check_swfc, file_stat);
-  register_header_check(0, swf_header,sizeof(swf_header), &header_check_swf, file_stat);
+  register_header_check(0, "CWS", 3, &header_check_swfc, file_stat);
+  register_header_check(0, "FWS", 3, &header_check_swf, file_stat);
 }
