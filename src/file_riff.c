@@ -208,32 +208,40 @@ static void file_check_size_rifx(file_recovery_t *file_recovery)
 
 static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  uint64_t size;
   if(!( buffer[8]>='A' && buffer[8]<='Z' &&
 	buffer[9]>='A' && buffer[9]<='Z' &&
 	buffer[10]>='A' && buffer[10]<='Z' &&
 	((buffer[11]>='A' && buffer[11]<='Z') || buffer[11]==' ' ||
 	 (buffer[11]>='0' && buffer[11]<='9'))))
     return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->calculated_file_size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
   if(memcmp(&buffer[8],"NUND",4)==0)
   {
     /* Cubase Project File */
+    reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="cpr";
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_size;
     file_recovery_new->calculated_file_size=(((uint64_t)buffer[4])<<24) +
       (((uint64_t)buffer[5])<<16) + (((uint64_t)buffer[6])<<8) +
       (uint64_t)buffer[7] + 12;
     return 1;
   }
+  size=(uint64_t)buffer[4]+(((uint64_t)buffer[5])<<8)+(((uint64_t)buffer[6])<<16)+(((uint64_t)buffer[7])<<24);
+
   /* Windows Animated Cursor */
-  else if(memcmp(&buffer[8],"ACON",4)==0)
+  if(memcmp(&buffer[8],"ACON",4)==0)
   {
+    if(size < 12)
+      return 0;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->calculated_file_size=size;
     file_recovery_new->extension="ani";
     return 1;
   }
-  file_recovery_new->calculated_file_size+=8;
+  size+=8;
   if(memcmp(&buffer[8],"AVI ",4)==0)
   {
     const riff_list_header list_movi={
@@ -241,6 +249,7 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
       .dwSize=le32(4),
       .dwFourCC=be32(0x6d6f7669)	/* movi */
     };
+    reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="avi";
     /* Is it a raw avi stream with Data Binary chunks ? */
     if(file_recovery_new->calculated_file_size + 4 < buffer_size &&
@@ -248,15 +257,27 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
 	buffer[file_recovery_new->calculated_file_size+2]=='d' &&
 	buffer[file_recovery_new->calculated_file_size+3]=='b')
     {
+      if(file_recovery_new->blocksize < 8)
+	return 1;
       file_recovery_new->data_check=&data_check_avi_stream;
+      file_recovery_new->file_check=&file_check_size;
     }
     else
     {
+      if(file_recovery_new->blocksize < 12)
+	return 1;
       file_recovery_new->data_check=&data_check_avi;
       file_recovery_new->file_check=&file_check_avi;
     }
+    file_recovery_new->calculated_file_size=size;
     return 1;
   }
+  if(size < 12)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->calculated_file_size=size;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->data_check=&data_check_size;
   if(memcmp(&buffer[8],"CDDA",4)==0)
     file_recovery_new->extension="cda";
   else if(memcmp(&buffer[8],"CDR",3)==0 || memcmp(&buffer[8],"cdr6",4)==0)
