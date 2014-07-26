@@ -31,8 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_dv(file_stat_t *file_stat);
-static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static data_check_t data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_dv= {
   .extension="dv",
@@ -43,29 +41,6 @@ const file_hint_t file_hint_dv= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_dv
 };
-static const unsigned char dv_header[3]= {0x1f, 0x07, 0x00};
-
-static void register_header_check_dv(file_stat_t *file_stat)
-{
-  register_header_check(0, dv_header,sizeof(dv_header), &header_check_dv, file_stat);
-}
-
-static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(file_recovery!=NULL && file_recovery->data_check==&data_check_dv)
-    return 0;
-  /* The header may be only 3 bytes */
-  if(buffer[0]==0x1f && buffer[1]==0x07 && buffer[2]==0x00 && buffer[5]==0x78 && buffer[6]==0x78 && buffer[7]==0x78)
-  {
-    /* NTSC */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_dv.extension;
-    file_recovery_new->data_check=&data_check_dv;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
-}
 
 static data_check_t data_check_dv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -82,3 +57,30 @@ static data_check_t data_check_dv(const unsigned char *buffer, const unsigned in
   return DC_CONTINUE;
 }
 
+static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(file_recovery!=NULL &&
+      file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_dv)
+    return 0;
+  /* The header may be only 3 bytes */
+  if(buffer[0]==0x1f && buffer[1]==0x07 && buffer[2]==0x00 && buffer[5]==0x78 && buffer[6]==0x78 && buffer[7]==0x78)
+  {
+    /* NTSC */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_dv.extension;
+    if(file_recovery_new->blocksize >= 8)
+    {
+      file_recovery_new->data_check=&data_check_dv;
+      file_recovery_new->file_check=&file_check_size;
+    }
+    return 1;
+  }
+  return 0;
+}
+
+static void register_header_check_dv(file_stat_t *file_stat)
+{
+  static const unsigned char dv_header[3]= {0x1f, 0x07, 0x00};
+  register_header_check(0, dv_header,sizeof(dv_header), &header_check_dv, file_stat);
+}
