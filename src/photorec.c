@@ -885,7 +885,7 @@ static int file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data
 	tmp->start+=blocksize;
 	*offset += blocksize;
 	tmp->file_stat=NULL;
-	if(tmp->start < tmp->end)
+	if(tmp->start <= tmp->end)
 	  return 0;
 	*new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
 	*offset=(*new_current_search_space)->start;
