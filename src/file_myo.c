@@ -43,25 +43,22 @@ const file_hint_t file_hint_myo= {
   .register_header_check=&register_header_check_myo
 };
 
-static const unsigned char myo_header[6]=  {
-  'F', 'C', '!', 'D', 'E', 'F'
-};
-
-static void register_header_check_myo(file_stat_t *file_stat)
-{
-  register_header_check(0x9ce, myo_header, sizeof(myo_header), &header_check_myo, file_stat);
-}
 
 static int header_check_myo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0x9ce], myo_header, sizeof(myo_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_myo.extension;
-    file_recovery_new->calculated_file_size=(uint64_t)buffer[0]+(((uint64_t)buffer[1])<<8)+(((uint64_t)buffer[2])<<16)+(((uint64_t)buffer[3])<<24)+1;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  const uint64_t size=(uint64_t)buffer[0]+(((uint64_t)buffer[1])<<8)+(((uint64_t)buffer[2])<<16)+(((uint64_t)buffer[3])<<24)+1;
+  if(size < 0x9ce + 6)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_myo.extension;
+  file_recovery_new->calculated_file_size=size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+
+static void register_header_check_myo(file_stat_t *file_stat)
+{
+  register_header_check(0x9ce, "FC!DEF", 6, &header_check_myo, file_stat);
 }
