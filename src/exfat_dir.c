@@ -239,7 +239,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   nbr_cluster=0;
   while(!is_EOC(cluster) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)
   {
-    if(exfat_read_cluster(disk, partition, exfat_header, buffer_dir + (uint64_t) (nbr_cluster<< cluster_shift), cluster) != (1<<cluster_shift))
+    if(exfat_read_cluster(disk, partition, exfat_header, buffer_dir + ((uint64_t) nbr_cluster << cluster_shift), cluster) != (1<<cluster_shift))
     {
       log_error("exFAT: Can't read directory cluster.\n");
       stop=1;

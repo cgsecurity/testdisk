@@ -60,7 +60,7 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
   }
 #endif
   /* 2 fats, maximum cluster size=128 */
-  skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*1.5/disk_car->sector_size*2)*disk_car->sector_size;
+  skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*3/2/disk_car->sector_size*2)*disk_car->sector_size;
   if(verbose>0)
   {
     log_verbose("find_sectors_per_cluster skip_sectors=%lu (skip_offset=%lu)\n",

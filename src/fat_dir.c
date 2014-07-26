@@ -340,6 +340,10 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
     }
     cluster=le32(fat_header->root_cluster);
   }
+  if(get_next_cluster(disk_car, partition, partition->upart_type, le16(fat_header->reserved), cluster)==0)
+  {
+    return 0;
+  }
   {
     const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
     unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*NBR_CLUSTER_MAX);
@@ -357,7 +361,7 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
     nbr_cluster=0;
     while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)
     {
-      uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*fat_header->sectors_per_cluster)*fat_sector_size(fat_header);
+      const uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*fat_header->sectors_per_cluster)*fat_sector_size(fat_header);
 //      if(dir_data->verbose>0)
       {
         log_info("FAT: cluster=%u(0x%x), pos=%lu\n",cluster,cluster,(long unsigned)(start/fat_sector_size(fat_header)));
