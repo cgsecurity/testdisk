@@ -47,15 +47,7 @@ const file_hint_t file_hint_tib= {
   .register_header_check=&register_header_check_tib
 };
 
-static const unsigned char tib_header[4]= { 0xb4, 0x6e, 0x68, 0x44};
-static const unsigned char tib2_header[7]= { 0xce, 0x24, 0xb9, 0xa2, 0x20, 0x00, 0x00};
 static const unsigned char tib2_footer[7]= {0x00, 0x00, 0x20, 0xa2, 0xb9, 0x24, 0xce};
-
-static void register_header_check_tib(file_stat_t *file_stat)
-{
-  register_header_check(0, tib_header,sizeof(tib_header), &header_check_tib, file_stat);
-  register_header_check(0, tib2_header,sizeof(tib2_header), &header_check_tib, file_stat);
-}
 
 static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -70,7 +62,7 @@ static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned 
   return DC_CONTINUE;
 }
 
-static void file_check_tib(file_recovery_t *file_recovery)
+static void file_check_tib2(file_recovery_t *file_recovery)
 {
   unsigned char*buffer=(unsigned char*)MALLOC(512);
   int64_t file_size=file_recovery->calculated_file_size-512;
@@ -111,19 +103,26 @@ static void file_check_tib(file_recovery_t *file_recovery)
 
 static int header_check_tib(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,tib_header, sizeof(tib_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_tib.extension;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_tib.extension;
+  return 1;
+}
+
+static int header_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_tib.extension;
+  if(file_recovery_new->blocksize < 512)
     return 1;
-  }
-  if(memcmp(buffer,tib2_header, sizeof(tib2_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=&file_check_tib;
-    file_recovery_new->data_check=&data_check_tib2;
-    file_recovery_new->extension=file_hint_tib.extension;
-    return 1;
-  }
-  return 0;
+  file_recovery_new->file_check=&file_check_tib2;
+  file_recovery_new->data_check=&data_check_tib2;
+  return 1;
+}
+
+static void register_header_check_tib(file_stat_t *file_stat)
+{
+  static const unsigned char tib_header[4]= { 0xb4, 0x6e, 0x68, 0x44};
+  static const unsigned char tib2_header[7]= { 0xce, 0x24, 0xb9, 0xa2, 0x20, 0x00, 0x00};
+  register_header_check(0, tib_header,sizeof(tib_header), &header_check_tib, file_stat);
+  register_header_check(0, tib2_header,sizeof(tib2_header), &header_check_tib2, file_stat);
 }
