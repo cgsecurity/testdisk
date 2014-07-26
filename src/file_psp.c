@@ -76,7 +76,7 @@ static int header_check_psp(const unsigned char *buffer, const unsigned int buff
   const unsigned int ver_major=buffer[0x20]+(buffer[0x21]<<8);
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_psp.extension;
-  if(ver_major>=4)
+  if(ver_major>=4 && file_recovery_new->blocksize >= 16)
   {
     file_recovery_new->calculated_file_size=0x24;
     file_recovery_new->data_check=&data_check_psp;
