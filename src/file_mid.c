@@ -29,11 +29,10 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-
+#include "common.h"
+#include "log.h"
 
 static void register_header_check_mid(file_stat_t *file_stat);
-static int header_check_mid(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_mid(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_mid= {
   .extension="mid",
@@ -45,28 +44,79 @@ const file_hint_t file_hint_mid= {
   .register_header_check=&register_header_check_mid
 };
 
-static const unsigned char mid_header[4]  = { 'M','T','h','d'};
+/* See http://www.sonicspot.com/guide/midifiles.html for more information about MIDI file format */
 
-static void register_header_check_mid(file_stat_t *file_stat)
+struct midi_header
 {
-  register_header_check(0, mid_header,sizeof(mid_header), &header_check_mid, file_stat);
+  char magic[4];
+  uint32_t len;		/* = 6 */
+  uint16_t format;
+  uint16_t tracks;
+  int16_t time_division;
+} __attribute__ ((__packed__));
+
+static void file_check_midi(file_recovery_t *file_recovery)
+{
+  const uint64_t fs_org=file_recovery->file_size;
+  struct midi_header hdr;
+  unsigned int i;
+  uint64_t fs=4+4+6;
+  file_recovery->file_size=0;
+  if(fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
+      fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1)
+    return ;
+  for(i=0; i<be16(hdr.tracks); i++)
+  {
+    struct midi_header track;
+#ifdef DEBUG_MIDI
+    log_info("file_check_midi 0x%08llx\n", (unsigned long long)fs);
+#endif
+    if(fseek(file_recovery->handle, fs, SEEK_SET) < 0 ||
+	fread(&track, 8, 1, file_recovery->handle) != 1 ||
+	memcmp(&track.magic[0], "MTrk", 4)!=0)
+      return ;
+    fs+=8+be32(track.len);
+  }
+  if(fs_org < fs)
+    return ;
+  file_recovery->file_size=fs;
+}
+
+static data_check_t data_check_midi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const struct midi_header *hdr=(const struct midi_header*)&buffer[i];
+    const uint64_t len=be32(hdr->len);
+#ifdef DEBUG_MIDI
+    log_info("data_check_midi 0x%08llx len=%llu\n", (long long unsigned)file_recovery->calculated_file_size, (long long unsigned)len);
+#endif
+    if(memcmp(&hdr->magic[0], "MTrk", 4)!=0)
+      return DC_STOP;
+    file_recovery->calculated_file_size+=len+8;
+  }
+  return DC_CONTINUE;
 }
 
 static int header_check_mid(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,mid_header,sizeof(mid_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mid.extension;
-    file_recovery_new->min_filesize=21;
-    file_recovery_new->file_check=&file_check_mid;
+  const struct midi_header *hdr=(const struct midi_header *)buffer;
+  if(be16(hdr->format) > 2 || be16(hdr->tracks) == 0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mid.extension;
+  file_recovery_new->file_check=&file_check_midi;
+  if(file_recovery_new->blocksize < 8)
     return 1;
-  }
-  return 0;
+  file_recovery_new->calculated_file_size=4+4+6;
+  file_recovery_new->data_check=&data_check_midi;
+  return 1;
 }
 
-static void file_check_mid(file_recovery_t *file_recovery)
+static void register_header_check_mid(file_stat_t *file_stat)
 {
-  const unsigned char mid_footer[3]= {0xff, 0x2f, 0x00};
-  file_search_footer(file_recovery, mid_footer, sizeof(mid_footer), 0);
+  static const unsigned char mid_header[8]  = { 'M','T','h','d', 0, 0, 0, 0x6};
+  register_header_check(0, mid_header,sizeof(mid_header), &header_check_mid, file_stat);
 }
