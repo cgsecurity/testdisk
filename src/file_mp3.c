@@ -220,7 +220,7 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->calculated_file_size=potential_frame_offset;
     file_recovery_new->min_filesize=287;
     file_recovery_new->extension=file_hint_mp3.extension;
-    if(file_recovery_new->blocksize >= 16/2)
+    if(file_recovery_new->blocksize >= 16)
     {
       file_recovery_new->data_check=&data_check_mp3;
       file_recovery_new->file_check=&file_check_size;
