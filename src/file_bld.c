@@ -58,29 +58,29 @@ static void register_header_check_blend(file_stat_t *file_stat)
 
 static int header_check_blend(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,blend_header,sizeof(blend_header))==0 && (buffer[7]=='_' || buffer[7]=='-'))
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->calculated_file_size=12;
-    if(buffer[8]=='v')
-    { /* Little endian */
-      if(buffer[7]=='_')
-        file_recovery_new->data_check=&data_check_blend4le;
-      else
-        file_recovery_new->data_check=&data_check_blend8le;
-    }
-    else
-    { /* Big endian */
-      if(buffer[7]=='_')
-        file_recovery_new->data_check=&data_check_blend4be;
-      else
-        file_recovery_new->data_check=&data_check_blend8be;
-    }
-    file_recovery_new->extension=file_hint_blend.extension;
-    file_recovery_new->file_check=&file_check_size;
+  if(buffer[7]!='_' && buffer[7]!='-')
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_blend.extension;
+  if(file_recovery_new->blocksize < 0x14)
     return 1;
+  file_recovery_new->calculated_file_size=12;
+  if(buffer[8]=='v')
+  { /* Little endian */
+    if(buffer[7]=='_')
+      file_recovery_new->data_check=&data_check_blend4le;
+    else
+      file_recovery_new->data_check=&data_check_blend8le;
   }
-  return 0;
+  else
+  { /* Big endian */
+    if(buffer[7]=='_')
+      file_recovery_new->data_check=&data_check_blend4be;
+    else
+      file_recovery_new->data_check=&data_check_blend8be;
+  }
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static data_check_t data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
