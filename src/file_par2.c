@@ -109,13 +109,16 @@ static void file_rename_par2(const char *old_filename)
 static int header_check_par2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery!=NULL &&
-      file_recovery->data_check==&data_check_par2)
+      file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_par2)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_par2.extension;
+  file_recovery_new->file_rename=&file_rename_par2;
+  if(file_recovery_new->blocksize < 16)
+    return 1;
   file_recovery_new->data_check=&data_check_par2;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->file_rename=&file_rename_par2;
   return 1;
 }
 
