@@ -103,10 +103,13 @@ static int header_check_caf(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_caf.extension;
-  file_recovery_new->data_check=&data_check_caf;
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->calculated_file_size=8;
   file_recovery_new->min_filesize=8+12;
+  if(file_recovery_new->blocksize >= 12)
+  {
+    file_recovery_new->data_check=&data_check_caf;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->calculated_file_size=8;
+  }
   return 1;
 }
 
