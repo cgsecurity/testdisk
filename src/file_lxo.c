@@ -53,6 +53,8 @@ struct lxo_header
 static int header_check_lxo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct lxo_header *header=(const struct lxo_header *)buffer;
+  if(be32(header->size) +8 < sizeof(struct lxo_header))
+    return 0;
   if(buffer[8]=='L' && buffer[9]=='X' && buffer[10]=='O')
   {
     reset_file_recovery(file_recovery_new);
