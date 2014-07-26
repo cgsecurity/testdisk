@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_wtv(file_stat_t *file_stat);
 static int header_check_wtv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -61,9 +62,12 @@ static int header_check_wtv(const unsigned char *buffer, const unsigned int buff
     return 0;
   if(memcmp(&buffer[0], wtv_header, sizeof(wtv_header))==0)
   {
+    const uint32_t *size=(const uint32_t *)(&buffer[0x5c]);
+    if(le32(*size)==0)
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_wtv.extension;
-    file_recovery_new->calculated_file_size=(uint64_t)(buffer[0x5a]>>4)+(((uint64_t)buffer[0x5b])<<4)+(((uint64_t)buffer[0x5c])<<12)+(((uint64_t)buffer[0x5d])<<20);
+    file_recovery_new->calculated_file_size=((uint64_t)le32(*size))<<12;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;
