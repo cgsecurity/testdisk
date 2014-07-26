@@ -51,17 +51,6 @@ struct evt_chunk {
   uint32_t id;
 } __attribute__ ((__packed__));
 
-static int header_check_evt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const struct evt_chunk *chunk=(const struct evt_chunk *)buffer;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->calculated_file_size=le32(chunk->size);
-  file_recovery_new->data_check=&data_check_evt;
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension=file_hint_evt.extension;
-  return 1;
-}
-
 static data_check_t data_check_evt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
@@ -92,6 +81,23 @@ static data_check_t data_check_evt(const unsigned char *buffer, const unsigned i
   */
   return DC_CONTINUE;
 }
+
+static int header_check_evt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct evt_chunk *chunk=(const struct evt_chunk *)buffer;
+  if(le32(chunk->size) < 8)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_evt.extension;
+  if(file_recovery_new->blocksize >= 8)
+  {
+    file_recovery_new->calculated_file_size=le32(chunk->size);
+    file_recovery_new->data_check=&data_check_evt;
+    file_recovery_new->file_check=&file_check_size;
+  }
+  return 1;
+}
+
 
 static void register_header_check_evt(file_stat_t *file_stat)
 {
