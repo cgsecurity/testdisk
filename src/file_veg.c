@@ -44,9 +44,12 @@ const file_hint_t file_hint_veg= {
 
 static int header_check_veg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->calculated_file_size=(uint64_t)buffer[0x10] + (((uint64_t)buffer[0x11])<<8) +
+  const uint64_t size= (uint64_t)buffer[0x10] + (((uint64_t)buffer[0x11])<<8) +
     (((uint64_t)buffer[0x12])<<16) + (((uint64_t)buffer[0x13])<<24);
+  if(size < 0x14)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=file_hint_veg.extension;
