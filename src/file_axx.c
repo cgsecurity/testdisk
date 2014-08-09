@@ -83,26 +83,25 @@ static void file_check_axx(file_recovery_t *fr)
   }
 }
 
-// guidAxCryptFileIdInverse (32 bytes) + length (4) + ePreamble=2
-static const unsigned char axx_header[0x15]=  {
-  0xc0, 0xb9, 0x07, 0x2e, 0x4f, 0x93, 0xf1, 0x46,
-  0xa0, 0x15, 0x79, 0x2c, 0xa1, 0xd9, 0xe8, 0x21,
-  0x15, 0x00, 0x00, 0x00, 0x02
-};
-
 static int header_check_axx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], axx_header, sizeof(axx_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_axx.extension;
-    file_recovery_new->file_check=&file_check_axx;
-    return 1;
-  }
-  return 0;
+  const struct SHeader *header=(const struct SHeader *)&buffer[0x10+0x15];
+  if(le32(header->aoLength) < 5)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_axx.extension;
+  file_recovery_new->file_check=&file_check_axx;
+  file_recovery_new->min_filesize=0x25+le32(header->aoLength);
+  return 1;
 }
 
 static void register_header_check_axx(file_stat_t *file_stat)
 {
+  // guidAxCryptFileIdInverse (32 bytes) + length (4) + ePreamble=2
+  static const unsigned char axx_header[0x15]=  {
+    0xc0, 0xb9, 0x07, 0x2e, 0x4f, 0x93, 0xf1, 0x46,
+    0xa0, 0x15, 0x79, 0x2c, 0xa1, 0xd9, 0xe8, 0x21,
+    0x15, 0x00, 0x00, 0x00, 0x02
+  };
   register_header_check(0, axx_header, sizeof(axx_header), &header_check_axx, file_stat);
 }
