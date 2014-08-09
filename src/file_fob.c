@@ -48,12 +48,18 @@ static int header_check_fob(const unsigned char *buffer, const unsigned int buff
 {
   static const unsigned char sign_navnl[5]	= {'N','A','V','N','L'};
   static const unsigned char sign_navw[4]	= {'N','A','V','W'};
-  if(td_memmem(buffer, buffer_size, sign_navnl, sizeof(sign_navnl))==NULL &&
-      td_memmem(buffer, buffer_size, sign_navw, sizeof(sign_navw))==NULL)
+  unsigned int tmp=0;
+  const unsigned char *pos1=(const unsigned char *)td_memmem(buffer, buffer_size, sign_navnl, sizeof(sign_navnl));
+  const unsigned char *pos2=(const unsigned char *)td_memmem(buffer, buffer_size, sign_navw, sizeof(sign_navw));
+  if(pos1==NULL && pos2==NULL)
     return 0;
+  if(pos1!=NULL)
+    tmp=pos1-buffer;
+  if(pos2!=NULL && pos2-buffer > tmp)
+    tmp=pos2-buffer;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_fob.extension;
-  file_recovery_new->min_filesize=10;
+  file_recovery_new->min_filesize=tmp;
   return 1;
 }
 
