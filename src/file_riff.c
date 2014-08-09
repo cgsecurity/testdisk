@@ -194,8 +194,16 @@ data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned i
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
     if(buffer[i+2]!='d' || buffer[i+3]!='b')	/* Video Data Binary ?*/
+    {
+#ifdef DEBUG_RIFF
+      log_info("data_check_avi_stream stop\n");
+#endif
       return DC_STOP;
+    }
     file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
+#ifdef DEBUG_RIFF
+    log_info("data_check_avi_stream %llu\n", (long long unsigned)file_recovery->calculated_file_size);
+#endif
   }
   return DC_CONTINUE;
 }
@@ -252,15 +260,15 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="avi";
     /* Is it a raw avi stream with Data Binary chunks ? */
-    if(file_recovery_new->calculated_file_size + 4 < buffer_size &&
-	memcmp(&buffer[file_recovery_new->calculated_file_size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
-	buffer[file_recovery_new->calculated_file_size+2]=='d' &&
-	buffer[file_recovery_new->calculated_file_size+3]=='b')
+    if(size + 4 < buffer_size &&
+	memcmp(&buffer[size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
+	buffer[size+2]=='d' &&
+	buffer[size+3]=='b')
     {
       if(file_recovery_new->blocksize < 8)
 	return 1;
       file_recovery_new->data_check=&data_check_avi_stream;
-      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->file_check=&file_check_size_lax;
     }
     else
     {
