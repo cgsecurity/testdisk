@@ -708,12 +708,13 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
 
 static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset,const int verbose)
 {
+  uint64_t hd_offset;
   unsigned int i;
   int dir_entry_found=0;
-  uint64_t hd_offset;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-  hd_offset=partition->part_offset+(uint64_t)offset*disk_car->sector_size;
-  for(i=0; i<200 && i<offset; i++)
+  for(i=0, hd_offset=partition->part_offset+(uint64_t)offset*disk_car->sector_size;
+      i<200 && i<offset;
+      i++, hd_offset-=disk_car->sector_size)
   {
     if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, hd_offset) != disk_car->sector_size)
     {
@@ -755,7 +756,6 @@ static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const
         }
       }
     }
-    hd_offset-=disk_car->sector_size;
   }
   free(buffer);
   return 0;
@@ -1937,19 +1937,19 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
     {	/* Cluster 512 bytes */
       fat_length_max=partition->part_size/sectors_per_cluster_min*4;
     }
+    else if(p_fat16)
+    {
+      while(partition->part_size/sectors_per_cluster_min > (1<<16))
+	sectors_per_cluster_min*=2;
+      fat_length_max=partition->part_size/sectors_per_cluster_min*2;
+    }
     else
-      if(p_fat16)
-      {
-	while(partition->part_size/sectors_per_cluster_min > (1<<16))
-	  sectors_per_cluster_min*=2;
-	fat_length_max=partition->part_size/sectors_per_cluster_min*2;
-      }
-      else
-      {
-	while(partition->part_size/sectors_per_cluster_min > (1<<12))
-	  sectors_per_cluster_min*=2;
-	fat_length_max=partition->part_size/sectors_per_cluster_min*3/2;
-      }
+    {
+      /* dead code */
+      while(partition->part_size/sectors_per_cluster_min > (1<<12))
+	sectors_per_cluster_min*=2;
+      fat_length_max=partition->part_size/sectors_per_cluster_min*3/2;
+    }
     fat_length_max=fat_length_max/disk_car->sector_size*disk_car->sector_size;
     if(verbose>1)
     {
