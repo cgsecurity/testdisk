@@ -45,6 +45,16 @@ const file_hint_t file_hint_bac= {
   .register_header_check=&register_header_check_bac
 };
 
+struct block_header
+{
+  uint32_t CheckSum;                /* Block check sum */
+  uint32_t BlockSize;               /* Block byte size including the header */
+  uint32_t BlockNumber;             /* Block number */
+  char ID[4];              	    /* Identification and block level */
+  uint32_t VolSessionId;            /* Session Id for Job */
+  uint32_t VolSessionTime;          /* Session Time for Job */
+} __attribute__ ((__packed__));
+
 static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size < 2*0x18)
@@ -57,14 +67,15 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int block_size=(buffer[i+4]<<24)|(buffer[i+5]<<16)|(buffer[i+6]<<8)|buffer[i+7];
+    const struct block_header *hdr=(const struct block_header *)&buffer[i];
+    const unsigned int block_size=be32(hdr->BlockSize);
 #ifdef DEBUG_BACULA
-    const unsigned int block_nbr=(buffer[i+8]<<24)|(buffer[i+9]<<16)|(buffer[i+10]<<8)|buffer[i+11];
+    const unsigned int block_nbr=be32(hdr->BlockNumber);
     log_trace("file_bac.c: block %u size %u, calculated_file_size %llu\n",
 	block_nbr, block_size,
 	(long long unsigned)file_recovery->calculated_file_size);
 #endif
-    if(memcmp(&buffer[i+12], "BB02", 4)!=0 || block_size<0x18)
+    if(memcmp(hdr->ID, "BB02", 4)!=0 || block_size<0x18)
     {
       log_error("file_bac.c: invalid block at %llu\n",
 	  (long long unsigned)file_recovery->calculated_file_size);
@@ -81,10 +92,14 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
 
 static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct block_header *hdr=(const struct block_header *)buffer;
+  if(be32(hdr->BlockSize) < 0x18)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_bac.extension;
+  file_recovery_new->min_filesize=be32(hdr->BlockSize);
   file_recovery_new->calculated_file_size=0;
-  if(file_recovery_new->blocksize >= 0x18/2)
+  if(file_recovery_new->blocksize >= 0x18)
   {
     file_recovery_new->data_check=&data_check_bac;
     file_recovery_new->file_check=&file_check_size;
