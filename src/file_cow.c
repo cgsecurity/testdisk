@@ -78,19 +78,29 @@ typedef struct QCowHeader {
 static int header_check_qcow1(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const QCowHeader_t *header=(const QCowHeader_t*)buffer;
+  uint64_t min_size=le64(header->backing_file_offset);
+  if(min_size < be64(header->l1_table_offset))
+    min_size=be64(header->l1_table_offset);
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_cow.extension;
   file_recovery_new->time=be32(header->mtime);
+  file_recovery_new->min_filesize=min_size;
   return 1;
 }
 
 static int header_check_qcow2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-#ifdef DEBUG_COW
   const QCowHeader2_t *header=(const QCowHeader2_t*)buffer;
-#endif
+  uint64_t min_size=be64(header->backing_file_offset);
+  if(min_size < be64(header->l1_table_offset))
+    min_size=be64(header->l1_table_offset);
+  else if(min_size < be64(header->refcount_table_offset))
+    min_size=be64(header->refcount_table_offset);
+  else if(min_size < be64(header->snapshots_offset))
+    min_size=be64(header->snapshots_offset);
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_cow.extension;
+  file_recovery_new->min_filesize=min_size;
 #ifdef DEBUG_COW
   log_info("magic %lu\n", 			be32(header->magic));
   log_info("version %lu\n",     		be32(header->version));
