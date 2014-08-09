@@ -46,6 +46,7 @@ static int header_check_dat(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dat.extension;
+  file_recovery_new->min_filesize=8;
   return 1;
 }
 
@@ -67,6 +68,7 @@ static int header_check_dat_history(const unsigned char *buffer, const unsigned 
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dat.extension;
+  file_recovery_new->min_filesize=8;
   return 1;
 }
 
