@@ -54,5 +54,5 @@ static void register_header_check_dcm(file_stat_t *file_stat)
   static const unsigned char dcm_header[10]=  {
     'D' , 'I' , 'C' , 'M' , 0x02, 0x00, 0x00, 0x00,
     'U' , 'L' };
-  register_header_check(0, dcm_header, sizeof(dcm_header), &header_check_dcm, file_stat);
+  register_header_check(0x80, dcm_header, sizeof(dcm_header), &header_check_dcm, file_stat);
 }
