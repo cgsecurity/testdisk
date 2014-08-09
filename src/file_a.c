@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_a(file_stat_t *file_stat);
-static int header_check_a(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only,  const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_a= {
   .extension="a",
@@ -43,27 +42,35 @@ const file_hint_t file_hint_a= {
   .register_header_check=&register_header_check_a
 };
 
-static const unsigned char a_header[8]  = { '!','<','a','r','c','h','>','\n'};
-static const unsigned char a_header_debian[14]  = { '!','<','a','r','c','h','>','\n','d','e','b','i','a','n'};
-
-static void register_header_check_a(file_stat_t *file_stat)
+struct file_header
 {
-  register_header_check(0, a_header,sizeof(a_header), &header_check_a, file_stat);
-}
+  char name[16];
+  char mtime[12];
+  char uid[6];
+  char gid[6];
+  char mode[8];
+  char size[10];
+  char magic[2];
+} __attribute__ ((__packed__));
 
 static int header_check_a(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only,  const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  static const unsigned char a_header_debian[14]  = { '!','<','a','r','c','h','>','\n','d','e','b','i','a','n'};
+  static const char magic[2]= { 0x60, 0x0a};
+  const struct file_header *fh=(const struct file_header *)&buffer[8];
+  if(memcmp(fh->magic, magic, 2)!=0)
+    return 0;
+  /* http://en.wikipedia.org/wiki/Ar_%28Unix%29 */
+  reset_file_recovery(file_recovery_new);
   if(memcmp(buffer,a_header_debian,sizeof(a_header_debian))==0)
-  {
-    reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="deb";
-    return 1;
-  }
-  if(memcmp(buffer,a_header,sizeof(a_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
+  else
     file_recovery_new->extension=file_hint_a.extension;
-    return 1;
-  }
-  return 0;
+  return 1;
+}
+
+static void register_header_check_a(file_stat_t *file_stat)
+{
+  static const unsigned char a_header[8]  = { '!','<','a','r','c','h','>','\n'};
+  register_header_check(0, a_header,sizeof(a_header), &header_check_a, file_stat);
 }
