@@ -29,9 +29,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 static void register_header_check_vmdk(file_stat_t *file_stat);
-static int header_check_vmdk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_vmdk= {
   .extension="vmdk",
@@ -74,14 +74,37 @@ typedef struct {
   char check_bytes[4];
 } __attribute__((packed)) VMDK4Header;
 
-static int header_check_vmdk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_vmdk3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const VMDK3Header *hdr=(const VMDK3Header *)buffer;
+  const unsigned int cluster_sectors = le32(hdr->granularity);
+  if(cluster_sectors==0)
+    return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
   file_recovery_new->extension="vmd";
 #else
   file_recovery_new->extension=file_hint_vmdk.extension;
 #endif
+  file_recovery_new->min_filesize=512;
+  return 1;
+}
+
+static int header_check_vmdk4(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const VMDK4Header *hdr=(const VMDK4Header *)buffer;
+  const unsigned int cluster_sectors = le64(hdr->granularity);
+  const unsigned int l2_size = le32(hdr->num_gtes_per_gte);
+  const uint32_t l1_entry_sectors = l2_size * cluster_sectors;
+  if (l1_entry_sectors <= 0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+#ifdef DJGPP
+  file_recovery_new->extension="vmd";
+#else
+  file_recovery_new->extension=file_hint_vmdk.extension;
+#endif
+  file_recovery_new->min_filesize=512;
   return 1;
 }
 
@@ -90,7 +113,7 @@ static void register_header_check_vmdk(file_stat_t *file_stat)
   static const unsigned char vmdk_header3_1[8]= { 'C','O','W','D', 0x01, 0x00, 0x00, 0x00};
   static const unsigned char vmdk_header4_1[8]= { 'K','D','M','V', 0x01, 0x00, 0x00, 0x00};
   static const unsigned char vmdk_header4_2[8]= { 'K','D','M','V', 0x02, 0x00, 0x00, 0x00};
-  register_header_check(0, vmdk_header3_1,sizeof(vmdk_header3_1), &header_check_vmdk, file_stat);
-  register_header_check(0, vmdk_header4_1,sizeof(vmdk_header4_1), &header_check_vmdk, file_stat);
-  register_header_check(0, vmdk_header4_2,sizeof(vmdk_header4_2), &header_check_vmdk, file_stat);
+  register_header_check(0, vmdk_header3_1,sizeof(vmdk_header3_1), &header_check_vmdk3, file_stat);
+  register_header_check(0, vmdk_header4_1,sizeof(vmdk_header4_1), &header_check_vmdk4, file_stat);
+  register_header_check(0, vmdk_header4_2,sizeof(vmdk_header4_2), &header_check_vmdk4, file_stat);
 }
