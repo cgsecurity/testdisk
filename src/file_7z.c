@@ -32,7 +32,6 @@
 #include "common.h"
 
 static void register_header_check_7z(file_stat_t *file_stat);
-static int header_check_7z(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery,  file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_7z= {
   .extension="7z",
@@ -44,7 +43,6 @@ const file_hint_t file_hint_7z= {
   .register_header_check=&register_header_check_7z
 };
 
-static const unsigned char header_7z[6]  = {'7','z', 0xbc, 0xaf, 0x27, 0x1c};
 struct header_7z {
   unsigned char signature[6];
   uint8_t majorversion;
@@ -55,26 +53,26 @@ struct header_7z {
   uint64_t nextHeaderCRC;
 } __attribute__ ((__packed__));
 
-static void register_header_check_7z(file_stat_t *file_stat)
-{
-  register_header_check(0, header_7z, sizeof(header_7z), &header_check_7z, file_stat);
-}
 
 static int header_check_7z(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery,  file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, header_7z, sizeof(header_7z))==0)
-  {
-    const struct header_7z *buffer_7z=(const struct header_7z *)buffer;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_7z.extension;
-    file_recovery_new->min_filesize=31;
-    /* Signature size 12 + Start header size 20 */
-    file_recovery_new->calculated_file_size=(uint64_t)le64(buffer_7z->nextHeaderOffset)+
-      le64(buffer_7z->nextHeaderSize) + 12 + 20;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  const struct header_7z *buffer_7z=(const struct header_7z *)buffer;
+  if(buffer_7z->majorversion!=0 ||
+      le64(buffer_7z->nextHeaderSize)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_7z.extension;
+  file_recovery_new->min_filesize=31;
+  /* Signature size 12 + Start header size 20 */
+  file_recovery_new->calculated_file_size=(uint64_t)le64(buffer_7z->nextHeaderOffset)+
+    le64(buffer_7z->nextHeaderSize) + 12 + 20;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
+static void register_header_check_7z(file_stat_t *file_stat)
+{
+  static const unsigned char header_7z[6]  = {'7','z', 0xbc, 0xaf, 0x27, 0x1c};
+  register_header_check(0, header_7z, sizeof(header_7z), &header_check_7z, file_stat);
+}
