@@ -38,7 +38,7 @@ const file_hint_t file_hint_flac= {
   .extension="flac",
   .description="FLAC audio",
   .min_header_distance=0,
-  .max_filesize=(uint64_t)1200*1024*1024,
+  .max_filesize=(uint64_t)1500*1024*1024,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_flac
@@ -81,12 +81,15 @@ static data_check_t data_check_flac_metadata(const unsigned char *buffer, const 
 
 static int header_check_flac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint32_t *p32=(const uint32_t *)&buffer[4];
+  const uint32_t size=be32(*p32)&0x00ffffff;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
   file_recovery_new->extension="flc";
 #else
   file_recovery_new->extension=file_hint_flac.extension;
 #endif
+  file_recovery_new->min_filesize=4+size;
 #if 0
   file_recovery_new->calculated_file_size=4;
   file_recovery_new->data_check=&data_check_flac_metadata;
