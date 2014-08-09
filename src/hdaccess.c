@@ -369,6 +369,8 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     list_disk=hd_glob_parse("/dev/sr?", list_disk, verbose, testdisk_mode);
     /* Software (ATA)Raid configured (disk level) via dmraid */
     list_disk=hd_glob_parse("/dev/dm-*", list_disk, verbose, testdisk_mode);
+    /* Xen virtual disks */
+    list_disk=hd_glob_parse("/dev/xvd?", list_disk, verbose, testdisk_mode);
 #endif
   }
 #elif defined(TARGET_SOLARIS)
