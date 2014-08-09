@@ -44,6 +44,10 @@ const file_hint_t file_hint_3dm= {
 
 static int header_check_3dm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  unsigned int i;
+  for(i=24; i<buffer_size && buffer[i]==' '; i++);
+  if(i>=buffer_size || buffer[i]<'0' || buffer[i]>'9')
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_3dm.extension;
   return 1;
