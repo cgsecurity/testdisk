@@ -40,9 +40,6 @@
 #include "common.h"
 
 static void register_header_check_pdf(file_stat_t *file_stat);
-static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_pdf(file_recovery_t *file_recovery);
-static void file_check_pdf_and_size(file_recovery_t *file_recovery);
 static void file_date_pdf(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_pdf= {
@@ -54,13 +51,6 @@ const file_hint_t file_hint_pdf= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_pdf
 };
-
-static const unsigned char pdf_header[]  = { '%','P','D','F','-','1'};
-
-static void register_header_check_pdf(file_stat_t *file_stat)
-{
-  register_header_check(0, pdf_header,sizeof(pdf_header), &header_check_pdf, file_stat);
-}
 
 static int hex(int c)
 {
@@ -199,50 +189,6 @@ static void file_rename_pdf(const char *old_filename)
   free(buffer);
 }
 
-static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,pdf_header,sizeof(pdf_header))==0)
-  {
-    const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
-    const unsigned char *src;
-    reset_file_recovery(file_recovery_new);
-    if(td_memmem(buffer, buffer_size, "<</Illustrator ", 15) != NULL)
-      file_recovery_new->extension="ai";
-    else
-    {
-      file_recovery_new->extension=file_hint_pdf.extension;
-      file_recovery_new->file_rename=&file_rename_pdf;
-    }
-    if((src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
-    {
-      src+=sizeof(sig_linearized);
-      for(; src<=buffer+512 && *src!='>'; src++)
-      {
-	if(*src=='/' && *(src+1)=='L')
-	{
-	  src+=2;
-	  while(src<buffer+512 &&
-	      (*src==' ' || *src=='\t' || *src=='\n' || *src=='\r'))
-	    src++;
-	  file_recovery_new->calculated_file_size=0;
-	  while(src<buffer+512 &&
-	      *src>='0' && *src<='9')
-	  {
-	    file_recovery_new->calculated_file_size=file_recovery_new->calculated_file_size*10+(*src)-'0';
-	    src++;
-	  }
-	  file_recovery_new->data_check=&data_check_size;
-	  file_recovery_new->file_check=&file_check_pdf_and_size;
-	  return 1;
-	}
-      }
-    }
-    file_recovery_new->file_check=&file_check_pdf;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size>=file_recovery->calculated_file_size)
@@ -346,4 +292,52 @@ static void file_date_pdf(file_recovery_t *file_recovery)
     offset+=bsize;
   }
   free(buffer);
+}
+
+static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
+  const unsigned char *src;
+  if(!isprint(buffer[6]))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  if(td_memmem(buffer, buffer_size, "<</Illustrator ", 15) != NULL)
+    file_recovery_new->extension="ai";
+  else
+  {
+    file_recovery_new->extension=file_hint_pdf.extension;
+    file_recovery_new->file_rename=&file_rename_pdf;
+  }
+  if((src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
+  {
+    src+=sizeof(sig_linearized);
+    for(; src<=buffer+512 && *src!='>'; src++)
+    {
+      if(*src=='/' && *(src+1)=='L')
+      {
+	src+=2;
+	while(src<buffer+512 &&
+	    (*src==' ' || *src=='\t' || *src=='\n' || *src=='\r'))
+	  src++;
+	file_recovery_new->calculated_file_size=0;
+	while(src<buffer+512 &&
+	    *src>='0' && *src<='9')
+	{
+	  file_recovery_new->calculated_file_size=file_recovery_new->calculated_file_size*10+(*src)-'0';
+	  src++;
+	}
+	file_recovery_new->data_check=&data_check_size;
+	file_recovery_new->file_check=&file_check_pdf_and_size;
+	return 1;
+      }
+    }
+  }
+  file_recovery_new->file_check=&file_check_pdf;
+  return 1;
+}
+
+static void register_header_check_pdf(file_stat_t *file_stat)
+{
+  static const unsigned char pdf_header[]  = { '%','P','D','F','-','1'};
+  register_header_check(0, pdf_header,sizeof(pdf_header), &header_check_pdf, file_stat);
 }
