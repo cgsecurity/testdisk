@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-
+#include "common.h"
 
 static void register_header_check_rm(file_stat_t *file_stat);
 static int header_check_rm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -44,20 +44,27 @@ const file_hint_t file_hint_rm= {
   .register_header_check=&register_header_check_rm
 };
 
-static const unsigned char rm_header[9]  = { '.', 'R', 'M', 'F', 0x00, 0x00, 0x00, 0x12, 0x00};
-
-static void register_header_check_rm(file_stat_t *file_stat)
+struct rm_header
 {
-  register_header_check(0, rm_header,sizeof(rm_header), &header_check_rm, file_stat);
-}
+  uint32_t type;
+  uint32_t size;
+  uint16_t version;
+  uint32_t file_version;
+  uint32_t header_nbr;
+} __attribute__ ((__packed__));
 
 static int header_check_rm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,rm_header,sizeof(rm_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_rm.extension;
-    return 1;
-  }
-  return 0;
+  const struct rm_header *hdr=(const struct rm_header *)buffer;
+  if(be32(hdr->header_nbr) < 3)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_rm.extension;
+  return 1;
+}
+
+static void register_header_check_rm(file_stat_t *file_stat)
+{
+  static const unsigned char rm_header[9]  = { '.', 'R', 'M', 'F', 0x00, 0x00, 0x00, 0x12, 0x00};
+  register_header_check(0, rm_header,sizeof(rm_header), &header_check_rm, file_stat);
 }
