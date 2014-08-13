@@ -30,10 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_drw(file_stat_t *file_stat);
-static int header_check_drw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_drw(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_drw= {
   .extension="drw",
@@ -45,31 +42,28 @@ const file_hint_t file_hint_drw= {
   .register_header_check=&register_header_check_drw
 };
 
-static const unsigned char drw_header[14]= {
-  '#', 'U', 'G', 'C', ':', '2', ' ', 'D',
-  'R', 'A', 'W', 'I', 'N', 'G'};
-
-static void register_header_check_drw(file_stat_t *file_stat)
-{
-  register_header_check(0, drw_header,sizeof(drw_header), &header_check_drw, file_stat);
-}
-
-static int header_check_drw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,drw_header,sizeof(drw_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=file_check_drw;
-    file_recovery_new->extension=file_hint_drw.extension;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_drw(file_recovery_t *file_recovery)
 {
   const unsigned char drw_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
   file_search_footer(file_recovery, drw_footer, sizeof(drw_footer), 1);
+}
+
+static int header_check_drw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(!isprint(buffer[14]) || !isprint(buffer[15]) || !isprint(buffer[16]) || !isprint(buffer[17]))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=file_check_drw;
+  file_recovery_new->extension=file_hint_drw.extension;
+  return 1;
+}
+
+static void register_header_check_drw(file_stat_t *file_stat)
+{
+  static const unsigned char drw_header[14]= {
+    '#', 'U', 'G', 'C', ':', '2', ' ', 'D',
+    'R', 'A', 'W', 'I', 'N', 'G'};
+  register_header_check(0, drw_header,sizeof(drw_header), &header_check_drw, file_stat);
 }
