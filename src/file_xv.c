@@ -44,20 +44,18 @@ const file_hint_t file_hint_xv= {
   .register_header_check=&register_header_check_xv
 };
 
-static const unsigned char xv_header[7]= 	{'P', '7', ' ', '3', '3', '2', '\n'};
+static int header_check_xv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(!isprint(buffer[7]) || !isprint(buffer[8]) || !isprint(buffer[9]))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_xv.extension;
+  return 1;
+}
 
 static void register_header_check_xv(file_stat_t *file_stat)
 {
+  static const unsigned char xv_header[7]= 	{'P', '7', ' ', '3', '3', '2', '\n'};
   register_header_check(0, xv_header, sizeof(xv_header), &header_check_xv, file_stat);
 }
 
-static int header_check_xv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,xv_header,sizeof(xv_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_xv.extension;
-    return 1;
-  }
-  return 0;
-}
