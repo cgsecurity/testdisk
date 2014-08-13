@@ -65,6 +65,19 @@ struct psd_file_header
 
 static int header_check_psd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct psd_file_header *hdr=(const struct psd_file_header *)buffer;
+#ifdef DEBUG_PSD
+  log_info("channels %u\n", be16(hdr->channels));
+  log_info("height %u\n", be32(hdr->height));
+  log_info("width  %u\n", be32(hdr->width));
+  log_info("depth  %u\n", be16(hdr->depth));
+  log_info("color_mode %u\n", be16(hdr->color_mode));
+#endif
+  if(be16(hdr->channels)==0 || be16(hdr->channels)>56 ||
+      be32(hdr->height)==0 || be32(hdr->height)>30000 ||
+      be32(hdr->width)==0 || be32(hdr->width)>30000 ||
+      be16(hdr->depth)==0 || (be16(hdr->depth)!=1 && be16(hdr->depth)%8!=0))
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=70;
   file_recovery_new->extension=file_hint_psd.extension;
@@ -130,7 +143,7 @@ static data_check_t psd_skip_image_resources(const unsigned char *buffer, const 
 static data_check_t psd_skip_color_mode(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const struct psd_file_header *psd=(const struct psd_file_header *)&buffer[buffer_size/2];
-  psd_image_data_size_max=(uint64_t)le16(psd->channels) * le32(psd->height) * le32(psd->width) * le16(psd->depth) / 8;
+  psd_image_data_size_max=(uint64_t)be16(psd->channels) * be32(psd->height) * be32(psd->width) * be16(psd->depth) / 8;
 #ifdef DEBUG_PSD
   log_info("psd_image_data_size_max %lu\n", (long unsigned)psd_image_data_size_max);
 #endif
