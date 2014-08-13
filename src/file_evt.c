@@ -85,7 +85,10 @@ static data_check_t data_check_evt(const unsigned char *buffer, const unsigned i
 static int header_check_evt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct evt_chunk *chunk=(const struct evt_chunk *)buffer;
-  if(le32(chunk->size) < 8)
+  const struct evt_chunk *chunk2=(const struct evt_chunk *)&buffer[le32(chunk->size)];
+  if(le32(chunk->size) != 0x30)
+    return 0;
+  if(le32(chunk2->size) < 8)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_evt.extension;
@@ -97,7 +100,6 @@ static int header_check_evt(const unsigned char *buffer, const unsigned int buff
   }
   return 1;
 }
-
 
 static void register_header_check_evt(file_stat_t *file_stat)
 {
