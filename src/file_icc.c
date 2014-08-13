@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_icc(file_stat_t *file_stat);
-static int header_check_icc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_icc= {
   .extension="icc",
@@ -42,26 +41,28 @@ const file_hint_t file_hint_icc= {
   .register_header_check=&register_header_check_icc
 };
 
-/* http://www.npes.org/ICC/ICC1-V41_ForPublicReview.pdf */
+static int header_check_icc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const uint64_t file_size=(((uint64_t)buffer[0])<<24) +
+    (((uint64_t)buffer[1])<<16) + (((uint64_t)buffer[2])<<8) + (uint64_t)buffer[3];
+  unsigned int i;
+  if(file_size<128 || buffer[10]!=0 || buffer[11]!=0)
+    return 0;
+  for(i=100; i<128; i++)
+    if(buffer[i]!=0)
+      return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_icc.extension;
+  file_recovery_new->calculated_file_size=file_size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
 
-static const unsigned char icc_header[4]= { 'a', 'c', 's', 'p' };
+/* http://www.npes.org/ICC/ICC1-V41_ForPublicReview.pdf */
 
 static void register_header_check_icc(file_stat_t *file_stat)
 {
+  static const unsigned char icc_header[4]= { 'a', 'c', 's', 'p' };
   register_header_check(36, icc_header,sizeof(icc_header), &header_check_icc, file_stat);
-}
-
-static int header_check_icc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-    const uint64_t file_size=(((uint64_t)buffer[0])<<24) +
-      (((uint64_t)buffer[1])<<16) + (((uint64_t)buffer[2])<<8) + (uint64_t)buffer[3];
-  if(memcmp(&buffer[36],icc_header,sizeof(icc_header))==0 && file_size>128 &&
-      buffer[10]==0 && buffer[11]==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_icc.extension;
-    file_recovery_new->calculated_file_size=file_size;
-    return 1;
-  }
-  return 0;
 }
