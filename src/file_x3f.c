@@ -44,13 +44,6 @@ const file_hint_t file_hint_x3f= {
   .register_header_check=&register_header_check_x3f
 };
 
-static const unsigned char x3f_header[4]= {'F','O','V','b'};
-
-static void register_header_check_x3f(file_stat_t *file_stat)
-{
-  register_header_check(0, x3f_header,sizeof(x3f_header), &header_check_x3f, file_stat);
-}
-
 struct x3f_header
 {
   uint32_t	id;
@@ -67,12 +60,17 @@ static int header_check_x3f(const unsigned char *buffer, const unsigned int buff
 {
   const struct x3f_header *h=(const struct x3f_header *)buffer;
   const unsigned int rotation=le32(h->rotation);
-  if(memcmp(buffer,x3f_header,sizeof(x3f_header))==0 && 
-      (rotation==0 || rotation==90 || rotation==180 || rotation==270))
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_x3f.extension;
-    return 1;
-  }
-  return 0;
+  if(le32(h->rows)==0 || le32(h->columns)==0)
+    return 0;
+  if(rotation!=0 && rotation!=90 && rotation!=180 && rotation!=270)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_x3f.extension;
+  return 1;
+}
+
+static void register_header_check_x3f(file_stat_t *file_stat)
+{
+  static const unsigned char x3f_header[4]= {'F','O','V','b'};
+  register_header_check(0, x3f_header,sizeof(x3f_header), &header_check_x3f, file_stat);
 }
