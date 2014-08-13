@@ -33,15 +33,6 @@
 #include "filegen.h"
 #include "log.h"
 
-struct indd_header_s {
-  unsigned char   id[24];
-  unsigned char   unknown[256];
-  uint32_t 	  blocks;    /* Little Endian block count, one block is 4096 byte, note that headblocks need to be added in order to have the actual file length */
-  char           headblocks;
-} __attribute__ ((__packed__));
-typedef struct indd_header_s indd_header_t;
-
-
 static void register_header_check_indd(file_stat_t *file_stat);
 static int header_check_indd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_indd(file_recovery_t *file_recovery);
@@ -56,39 +47,104 @@ const file_hint_t file_hint_indd= {
   .register_header_check=&register_header_check_indd
 };
 
+/* See http://www.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cs6/XMPSpecificationPart3.pdf
+ * for more information about the file format */
+
 static const unsigned char indd_header[24]={
   0x06, 0x06, 0xed, 0xf5, 0xd8, 0x1d, 0x46, 0xe5,
   0xbd, 0x31, 0xef, 0xe7, 0xfe, 0x74, 0xb7, 0x1d,
   0x44, 0x4f, 0x43, 0x55, 0x4d, 0x45, 0x4e, 0x54 };
 
-static void register_header_check_indd(file_stat_t *file_stat)
+// Headers are:  DE393979-5188-4b6c-8E63-EEF8AEE0DD38
+// Trailers are: FDCEDB70-F786-4b4f-A4D3-C728B3417106
+static const unsigned char kINDDContigObjHeaderGUID [16] =
+{ 0xDE, 0x39, 0x39, 0x79, 0x51, 0x88, 0x4B, 0x6C, 0x8E, 0x63, 0xEE, 0xF8, 0xAE, 0xE0, 0xDD, 0x38 };
+
+struct InDesignMasterPage {
+  uint8_t  fGUID [16];
+  uint8_t  fMagicBytes [8];
+  uint8_t  fObjectStreamEndian;
+  uint8_t  fIrrelevant1 [239];
+  uint64_t fSequenceNumber;
+  uint8_t  fIrrelevant2 [8];
+  uint32_t fFilePages;
+  uint8_t  fIrrelevant3 [3812];
+} __attribute__ ((__packed__));
+
+struct InDesignContigObjMarker {
+  uint8_t  fGUID [16];
+  uint32_t fObjectUID;
+  uint32_t fObjectClassID;
+  uint32_t fStreamLength;
+  uint32_t fChecksum;
+} __attribute__ ((__packed__));
+
+static void file_check_indd(file_recovery_t *file_recovery)
 {
-  register_header_check(0, indd_header,sizeof(indd_header), &header_check_indd, file_stat);
+  const uint64_t file_size_org=file_recovery->file_size;
+  struct InDesignContigObjMarker hdr;
+  uint64_t offset;
+  if(file_recovery->file_size<file_recovery->calculated_file_size)
+  {
+    file_recovery->file_size=0;
+    return ;
+  }
+  offset=file_recovery->calculated_file_size;
+  do
+  {
+#ifdef DEBUG_INDD
+    log_info("file_check_indd offset=%llu (0x%llx)\n", (long long unsigned)offset, (long long unsigned)offset);
+#endif
+    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
+    {
+      file_recovery->file_size=0;
+      return ;
+    }
+    if(fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1 ||
+	memcmp(hdr.fGUID, kINDDContigObjHeaderGUID, sizeof(kINDDContigObjHeaderGUID))!=0)
+    {
+      file_recovery->file_size=(offset+4096-1)/4096*4096;
+      if(file_recovery->file_size>file_size_org)
+	file_recovery->file_size=0;
+      return ;
+    }
+    /* header + data + trailer */
+    offset+=le32(hdr.fStreamLength)+2*sizeof(struct InDesignContigObjMarker);
+  } while(offset < file_size_org);
+  file_recovery->file_size=(offset+4096-1)/4096*4096;
+  if(file_recovery->file_size>file_size_org)
+    file_recovery->file_size=0;
+  return ;
 }
 
 static int header_check_indd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const indd_header_t *hdr = (const indd_header_t *)buffer;
-  if (memcmp(hdr->id,indd_header,sizeof(indd_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
+  const struct InDesignMasterPage *hdr;
+  const struct InDesignMasterPage *hdr0 = (const struct InDesignMasterPage *)buffer;
+  const struct InDesignMasterPage *hdr1 = (const struct InDesignMasterPage *)&buffer[4096];
+  if(memcmp(hdr1, indd_header, sizeof(indd_header))!=0)
+    return 0;
+  hdr=(le64(hdr0->fSequenceNumber) > le64(hdr1->fSequenceNumber) ? hdr0 : hdr1);
+  if(hdr->fObjectStreamEndian!=1 && hdr->fObjectStreamEndian!=2)
+    return 0;
+  if(le32(hdr->fFilePages)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
-    file_recovery_new->extension="ind";
+  file_recovery_new->extension="ind";
 #else
-    file_recovery_new->extension=file_hint_indd.extension;
+  file_recovery_new->extension=file_hint_indd.extension;
 #endif
-    file_recovery_new->calculated_file_size=(uint64_t)(1+le32(hdr->blocks))*4096;
-    file_recovery_new->file_check=&file_check_indd;
-//    log_debug("header_check_indd: Guessed length: %lu.\n", indd_file_size);
-    return 1;
-  }
-  return 0;
+  /* Contiguous object pages may follow, file_check_indd will search for them */
+  file_recovery_new->calculated_file_size=(uint64_t)(le32(hdr->fFilePages))*4096;
+  file_recovery_new->file_check=&file_check_indd;
+#ifdef DEBUG_INDD
+  log_info("header_check_indd: Guessed length: %llu.\n", (long long unsigned)file_recovery_new->calculated_file_size);
+#endif
+  return 1;
 }
 
-static void file_check_indd(file_recovery_t *file_recovery)
+static void register_header_check_indd(file_stat_t *file_stat)
 {
-  if(file_recovery->file_size<file_recovery->calculated_file_size)
-    file_recovery->file_size=0;
-  else if(file_recovery->file_size>file_recovery->calculated_file_size+10*4096)
-    file_recovery->file_size=file_recovery->calculated_file_size+10*4096;
+  register_header_check(0, indd_header,sizeof(indd_header), &header_check_indd, file_stat);
 }
