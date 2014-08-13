@@ -50,12 +50,6 @@ const file_hint_t file_hint_gif= {
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   uint64_t offset;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_gif.extension;
-  file_recovery_new->min_filesize=42;
-  if(file_recovery_new->blocksize < 2)
-    return 1;
-  file_recovery_new->file_check=&file_check_gif;
   offset=6;   /* Header */
   offset+=7;  /* Logical Screen Descriptor */
   if((buffer[10]>>7)&0x1)
@@ -63,6 +57,14 @@ static int header_check_gif(const unsigned char *buffer, const unsigned int buff
     /* Global Color Table */
     offset+=3<<((buffer[10]&7)+1);
   }
+  if(offset < buffer_size && buffer[offset]!=0x21 && buffer[offset]!=0x2c)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_gif.extension;
+  file_recovery_new->min_filesize=42;
+  if(file_recovery_new->blocksize < 2)
+    return 1;
+  file_recovery_new->file_check=&file_check_gif;
   file_recovery_new->calculated_file_size=offset;
   file_recovery_new->data_check=&data_check_gif;
   return 1;
