@@ -64,11 +64,23 @@ static int header_check_datIE(const unsigned char *buffer, const unsigned int bu
   return 1;
 }
 
-static int header_check_dat_history(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_dat_history4(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(memcmp(&buffer[0x30], "BrowserVisit", 12)!=0)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dat.extension;
-  file_recovery_new->min_filesize=8;
+  file_recovery_new->min_filesize=60;
+  return 1;
+}
+
+static int header_check_dat_history10(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(memcmp(&buffer[0x36], "BrowserVisit", 12)!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_dat.extension;
+  file_recovery_new->min_filesize=66;
   return 1;
 }
 
@@ -79,6 +91,6 @@ static void register_header_check_dat(file_stat_t *file_stat)
   static const unsigned char dat_history[8]={ 'N', 'F', 'P', 'K', 'D', 'D', 'A', 'T'};
   register_header_check(0, dat_header,sizeof(dat_header), &header_check_dat, file_stat);
   register_header_check(0, "Client UrlCache MMF Ver 5.2", 0x1c, &header_check_datIE, file_stat);
-  register_header_check(4, dat_history, sizeof(dat_history), &header_check_dat_history, file_stat);
-  register_header_check(10, dat_history, sizeof(dat_history), &header_check_dat_history, file_stat);
+  register_header_check(4, dat_history, sizeof(dat_history), &header_check_dat_history4, file_stat);
+  register_header_check(10, dat_history, sizeof(dat_history), &header_check_dat_history10, file_stat);
 }
