@@ -57,7 +57,7 @@ static int header_check_qxp(const unsigned char *buffer, const unsigned int buff
   /* Intel or Mac QuarkXpress Document */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="qxp";
-  file_recovery_new->min_filesize=6;
+  file_recovery_new->min_filesize=8;
   return 1;
 }
 
