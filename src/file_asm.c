@@ -56,14 +56,12 @@ static void register_header_check_asm(file_stat_t *file_stat)
 
 static int header_check_asm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,asm_header,sizeof(asm_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=file_check_asm;
-    file_recovery_new->extension=file_hint_asm.extension;
-    return 1;
-  }
-  return 0;
+  if(!isprint(buffer[16]) || !isprint(buffer[17]) || !isprint(buffer[18]) || !isprint(buffer[19]))
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=file_check_asm;
+  file_recovery_new->extension=file_hint_asm.extension;
+  return 1;
 }
 
 static void file_check_asm(file_recovery_t *file_recovery)
