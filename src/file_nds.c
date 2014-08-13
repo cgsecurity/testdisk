@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_nds(file_stat_t *file_stat);
-static int header_check_nds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_nds= {
   .extension="nds",
@@ -43,22 +42,19 @@ const file_hint_t file_hint_nds= {
   .register_header_check=&register_header_check_nds
 };
 
-static const unsigned char nds_header[6]=  {
-  0x24, 0xff, 0xae, 0x51, 0x69, 0x9a
-};
+static int header_check_nds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_nds.extension;
+  file_recovery_new->min_filesize=0xc6;
+  return 1;
+}
 
 static void register_header_check_nds(file_stat_t *file_stat)
 {
+  static const unsigned char nds_header[6]=  {
+    0x24, 0xff, 0xae, 0x51, 0x69, 0x9a
+  };
   register_header_check(0xc0, nds_header, sizeof(nds_header), &header_check_nds, file_stat);
 }
 
-static int header_check_nds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[0xc0], nds_header, sizeof(nds_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_nds.extension;
-    return 1;
-  }
-  return 0;
-}
