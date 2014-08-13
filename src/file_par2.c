@@ -108,9 +108,12 @@ static void file_rename_par2(const char *old_filename)
 
 static int header_check_par2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint64_t length=le64((*(const uint64_t *)(&buffer[8])));
   if(file_recovery!=NULL &&
       file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_par2)
+    return 0;
+  if(length % 4 !=0 || length < 16)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_par2.extension;
