@@ -28,10 +28,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
-
+#include "common.h"
 
 static void register_header_check_hds(file_stat_t *file_stat);
-static int header_check_hds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_hds= {
   .extension="hds",
@@ -41,11 +40,6 @@ const file_hint_t file_hint_hds= {
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_hds
-};
-
-static const unsigned char hds_header[20]= {
-  'W','i','t','h','o','u','t','F','r','e','e','S','p','a','c','e',
-  0x02, 0x00, 0x00, 0x00
 };
 
 // always little-endian
@@ -60,18 +54,24 @@ struct parallels_header {
     char padding[24];
 } __attribute__((packed));
 
-static void register_header_check_hds(file_stat_t *file_stat)
-{
-  register_header_check(0, hds_header,sizeof(hds_header), &header_check_hds, file_stat);
-}
-
 static int header_check_hds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer,hds_header,sizeof(hds_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_hds.extension;
-    return 1;
-  }
-  return 0;
+  const struct parallels_header *hdr=(const struct parallels_header *)buffer;
+  if(le32(hdr->heads)==0 ||
+      le32(hdr->cylinders)==0 ||
+      le32(hdr->tracks)==0 ||
+      le32(hdr->nb_sectors)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_hds.extension;
+  return 1;
+}
+
+static void register_header_check_hds(file_stat_t *file_stat)
+{
+  static const unsigned char hds_header[20]= {
+    'W','i','t','h','o','u','t','F','r','e','e','S','p','a','c','e',
+    0x02, 0x00, 0x00, 0x00
+  };
+  register_header_check(0, hds_header,sizeof(hds_header), &header_check_hds, file_stat);
 }
