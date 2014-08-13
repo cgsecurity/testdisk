@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_torrent(file_stat_t *file_stat);
-static int header_check_torrent(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_torrent= {
   .extension="torrent",
@@ -43,24 +42,16 @@ const file_hint_t file_hint_torrent= {
   .register_header_check=&register_header_check_torrent
 };
 
-static const unsigned char torrent_header[11]=  {
-  'd' , '8' , ':', 'a' , 'n' , 'n' , 'o' , 'u' ,
-  'n' , 'c' , 'e' 
-};
+static int header_check_torrent(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[11]<'0' || buffer[11]>'9')
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_torrent.extension;
+  return 1;
+}
 
 static void register_header_check_torrent(file_stat_t *file_stat)
 {
-  register_header_check(0, torrent_header, sizeof(torrent_header), &header_check_torrent, file_stat);
+  register_header_check(0, "d8:announce", 11, &header_check_torrent, file_stat);
 }
-
-static int header_check_torrent(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[0], torrent_header, sizeof(torrent_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_torrent.extension;
-    return 1;
-  }
-  return 0;
-}
-
