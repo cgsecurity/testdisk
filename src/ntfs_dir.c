@@ -338,7 +338,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   stream_name=strrchr(dir_data->current_directory, ':');
   inode = ntfs_inode_open (ls->vol, first_inode);
   if (!inode) {
-    log_error("ntfs_copy: ntfs_inode_open failed\n");
+    log_error("ntfs_copy: ntfs_inode_open failed for %s\n", dir_data->current_directory);
     return -1;
   }
   {
