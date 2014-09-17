@@ -96,8 +96,7 @@ FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
     return log_open(default_filename, mode, errsv);
   filename=(char*)MALLOC(4096);
 #ifdef __CYGWIN__
-/* FIXME */
-  cygwin_conv_to_posix_path(path, filename);
+  cygwin_conv_path(CCP_WIN_A_TO_POSIX, path, filename, 4096);
 #else
   strcpy(filename, path);
 #endif
