@@ -48,6 +48,7 @@ extern const file_hint_t file_hint_amr;
 extern const file_hint_t file_hint_apa;
 extern const file_hint_t file_hint_ape;
 extern const file_hint_t file_hint_apple;
+extern const file_hint_t file_hint_ari;
 extern const file_hint_t file_hint_arj;
 extern const file_hint_t file_hint_asf;
 extern const file_hint_t file_hint_asl;
@@ -323,6 +324,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_apa  },
   { .enable=0, .file_hint=&file_hint_ape  },
   { .enable=0, .file_hint=&file_hint_apple },
+  { .enable=0, .file_hint=&file_hint_ari  },
   { .enable=0, .file_hint=&file_hint_arj  },
   { .enable=0, .file_hint=&file_hint_asf  },
   { .enable=0, .file_hint=&file_hint_asl  },
