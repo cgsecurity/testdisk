@@ -78,10 +78,13 @@ static int header_check_addressbook(const unsigned char *buffer, const unsigned 
   if(ab->magic[2]!=0x1a && ab->magic[2]!=0x0a)
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->calculated_file_size=length;
-  file_recovery_new->data_check=&data_check_addressbook;
-  file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=file_hint_addressbook.extension;
+  if(file_recovery_new->blocksize >= 8)
+  {
+    file_recovery_new->calculated_file_size=length;
+    file_recovery_new->data_check=&data_check_addressbook;
+    file_recovery_new->file_check=&file_check_size;
+  }
   return 1;
 }
 
