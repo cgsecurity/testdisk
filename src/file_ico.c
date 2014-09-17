@@ -89,7 +89,8 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
        le16(ico_dir->bits_per_pixel)==8 ||
        le16(ico_dir->bits_per_pixel)==16 ||
        le16(ico_dir->bits_per_pixel)==32) &&
-       le32(ico_dir->bitmap_offset) >= sizeof(struct ico_header)+le16(ico->count)*sizeof(struct ico_directory))
+       le32(ico_dir->bitmap_offset) >= sizeof(struct ico_header)+le16(ico->count)*sizeof(struct ico_directory) &&
+       le32(ico_dir->bitmap_size) > 0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ico.extension;
