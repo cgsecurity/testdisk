@@ -98,6 +98,30 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static void file_check_png(file_recovery_t *fr)
+{
+  if(fr->file_size<fr->calculated_file_size)
+  {
+    fr->file_size=0;
+    return ;
+  }
+  fr->file_size=8;
+  while(1)
+  {
+    char buffer[8];
+    const struct png_chunk *chunk=(const struct png_chunk *)&buffer;
+    if(fseek(fr->handle, fr->file_size, SEEK_SET) < 0 ||
+	fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
+    {
+      fr->file_size=0;
+      return ;
+    }
+    fr->file_size+=12 + be32(chunk->length);
+    if(memcmp(&buffer[4], "IEND", 4)==0)
+      return ;
+  }
+}
+
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* SolidWorks files contains a png */
@@ -118,7 +142,7 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
     return 1;
   file_recovery_new->calculated_file_size=8;
   file_recovery_new->data_check=&data_check_png;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->file_check=&file_check_png;
   return 1;
 }
 
@@ -140,8 +164,10 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
 	  (isupper(buffer[i+6]) || islower(buffer[i+6])) &&
 	  (isupper(buffer[i+7]) || islower(buffer[i+7]))))
     {
+      file_recovery->offset_error=file_recovery->calculated_file_size+7;
       return DC_ERROR;
     }
+    file_recovery->offset_ok=file_recovery->calculated_file_size+7;
     file_recovery->calculated_file_size+=12 + be32(chunk->length);
   }
   return DC_CONTINUE;
@@ -167,8 +193,10 @@ static data_check_t data_check_png(const unsigned char *buffer, const unsigned i
 	  (isupper(buffer[i+6]) || islower(buffer[i+6])) &&
 	  (isupper(buffer[i+7]) || islower(buffer[i+7]))))
     {
+      file_recovery->offset_error=file_recovery->calculated_file_size+7;
       return DC_ERROR;
     }
+    file_recovery->offset_ok=file_recovery->calculated_file_size+7;
     file_recovery->calculated_file_size+=12 + be32(chunk->length);
   }
   return DC_CONTINUE;
