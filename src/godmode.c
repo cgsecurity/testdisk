@@ -1346,10 +1346,26 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     disk_car->arch->init_structure(disk_car,list_part,verbose);
     if(verbose>0)
     {
+#ifdef TARGET_LINUX
+      unsigned int i=0;
+#endif
       /* Write found partitions in the log file */
       log_info("\nResults\n");
       for(element=list_part;element!=NULL;element=element->next)
 	log_partition(disk_car,element->part);
+#ifdef TARGET_LINUX
+      if(list_part!=NULL)
+	log_info("\nHint for advanced users. dmsetup may be used if you prefer to avoid to rewrite the partition table for the moment:\n");
+      for(element=list_part;element!=NULL;element=element->next)
+      {
+	const partition_t *partition=element->part;
+	log_info("echo \"0 %llu linear %s %llu\" | dmsetup create test%u\n",
+	    (long long unsigned)(partition->part_size/512),
+	    disk_car->device,
+	    (long long unsigned)(partition->part_offset/512),
+	    i++);
+      }
+#endif
     }
     list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
     if(disk_car->arch->test_structure(list_part)==0)
