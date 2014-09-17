@@ -66,7 +66,8 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
       (buffer[14]==12 || buffer[14]==64 || buffer[14]==40 || buffer[14]==52 ||
        buffer[14]==56 || buffer[14]==108 || buffer[14]==124) &&
       buffer[15]==0 && buffer[16]==0 && buffer[17]==0 &&
-      le32(bm->offset) < le32(bm->size))
+      le32(bm->offset) < le32(bm->size) &&
+      le32(bm->size) >= 65)
   {
     /* See http://en.wikipedia.org/wiki/BMP_file_format */
     reset_file_recovery(file_recovery_new);
