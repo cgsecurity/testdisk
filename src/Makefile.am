@@ -178,6 +178,7 @@ file_C			= filegen.c \
 			  file_mig.c \
 			  file_mk5.c \
 			  file_mkv.c \
+			  file_mlv.c \
 			  file_mobi.c \
 			  file_mov.c \
 			  file_mp3.c \

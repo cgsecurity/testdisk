@@ -180,6 +180,7 @@ extern const file_hint_t file_hint_mid;
 extern const file_hint_t file_hint_mig;
 extern const file_hint_t file_hint_mk5;
 extern const file_hint_t file_hint_mkv;
+extern const file_hint_t file_hint_mlv;
 extern const file_hint_t file_hint_mobi;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_mp3;
@@ -455,6 +456,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_mig  },
   { .enable=0, .file_hint=&file_hint_mk5  },
   { .enable=0, .file_hint=&file_hint_mkv  },
+  { .enable=0, .file_hint=&file_hint_mlv  },
   { .enable=0, .file_hint=&file_hint_mobi },
   { .enable=0, .file_hint=&file_hint_mov  },
   { .enable=0, .file_hint=&file_hint_mp3  },
