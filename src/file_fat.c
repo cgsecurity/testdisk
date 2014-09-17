@@ -93,6 +93,8 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
   start_fat1=le16(fat_header->reserved);
   start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
+  if(part_size < start_data)
+    return 0;
   no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
   if(no_of_cluster<4085)
   {
