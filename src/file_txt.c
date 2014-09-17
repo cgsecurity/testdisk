@@ -473,6 +473,8 @@ static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned i
 
 static int header_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(buffer[56]<'0' || buffer[56]>'9')
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_ttd;
   file_recovery_new->file_check=&file_check_size;
@@ -500,6 +502,8 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
 {
   const char *date_asc;
   char *buffer2;
+  if(buffer[15]=='\0')
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
@@ -583,6 +587,8 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       strcmp(file_recovery->extension,"mbox")==0)
+    return 0;
+  if(buffer[14]==0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_html;
@@ -693,6 +699,10 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
 
 static int header_check_rtf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  unsigned int i;
+  for(i=0; i<16; i++)
+    if(buffer[i]=='\0')
+      return 0;
   /* Avoid a false positive with .snt */
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
@@ -707,6 +717,8 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
 
 static int header_check_xmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(buffer[35]=='\0')
+    return 0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       (file_recovery->file_stat->file_hint==&file_hint_pdf ||
        file_recovery->file_stat->file_hint==&file_hint_tiff))
@@ -721,14 +733,17 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
 
 static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  unsigned int i;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       strcmp(file_recovery->extension,"mbox")==0)
     return 0;
+  for(i=0; i<64; i++)
+    if(buffer[i]==0)
+      return 0;
   if( memcmp(buffer, "From ", 5)==0 &&
       memcmp(buffer, "From MAILER-DAEMON ", 19)!=0)
   {
-    unsigned int i;
     /* From someone@somewhere */
     for(i=5; i<200 && buffer[i]!=' ' && buffer[i]!='@'; i++);
     if(buffer[i]!='@')
@@ -749,10 +764,13 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   {
     if(memcmp(buffer, header->string, header->len)==0)
     {
+      if(buffer[header->len]=='\0')
+	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->extension=header->extension;
+      file_recovery_new->min_filesize=header->len+1;
       return 1;
     }
     header++;
@@ -848,6 +866,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(strncasecmp((const char *)buffer, "@echo off", 9)==0)
   {
+    if(buffer[9]=='\0')
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
@@ -857,6 +877,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(strncasecmp((const char *)buffer, "<%@ language=\"vbscript", 22)==0)
   {
+    if(buffer[22]=='\0')
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
@@ -864,8 +886,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="asp";
     return 1;
   }
-  if(strncasecmp((const char *)buffer, "version 4.00\r\nbegin", 20)==0)
+  if(strncasecmp((const char *)buffer, "version 4.00\r\nbegin", 19)==0)
   {
+    if(buffer[19]=='\0')
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
@@ -875,6 +899,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(strncasecmp((const char *)buffer, "begin:vcard", 11)==0)
   {
+    if(buffer[11]=='\0')
+      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
