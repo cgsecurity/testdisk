@@ -427,16 +427,20 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
       }
-      else if((buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||
-	 buffer[i+1]==0xfe ||
-	 buffer[i+1]==0xdb)
+      else if(buffer[i+1]==0xdb ||			/* DQT */
+	     (buffer[i+1]>=0xc0 && buffer[i+1]<=0xcf) ||	/* SOF0 - SOF15, 0xc4=DHT */
+	     buffer[i+1]==0xdd ||				/* DRI */
+	     (buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||	/* APP0 - APP15 */
+	     buffer[i+1]==0xfe)				/* COM */
       {
       }
       else
       {
+	/* 0xd8=SOI again !
+	 * 0xda=SOS: Start Of Scan */
 	reset_file_recovery(file_recovery_new);
-	file_recovery_new->min_filesize=(i>288?i:288);
-	file_recovery_new->calculated_file_size=2;
+	file_recovery_new->min_filesize=i;
+	file_recovery_new->calculated_file_size=0;
 	file_recovery_new->time=jpg_time;
 	file_recovery_new->extension=file_hint_jpg.extension;
 	file_recovery_new->file_check=&file_check_jpg;
@@ -449,11 +453,12 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->min_filesize=i;
-      file_recovery_new->calculated_file_size=2;
+      file_recovery_new->calculated_file_size=0;
       file_recovery_new->time=jpg_time;
       file_recovery_new->extension=file_hint_jpg.extension;
       file_recovery_new->file_check=&file_check_jpg;
-      file_recovery_new->data_check=&data_check_jpg;
+      if(buffer_size >= 4)
+	file_recovery_new->data_check=&data_check_jpg;
       return 1;
     }
   }
