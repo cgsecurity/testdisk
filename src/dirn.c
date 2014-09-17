@@ -135,12 +135,17 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  wattrset(window, A_REVERSE);
 	  waddstr(window, ">");
 	}
+	else if((current_file->status&FILE_STATUS_MARKED)!=0)
+	  waddstr(window, "*");
 	else
 	  waddstr(window, " ");
-	if((current_file->status&FILE_STATUS_DELETED)!=0 && has_colors())
-	  wbkgdset(window,' ' | COLOR_PAIR(1));
-	else if((current_file->status&FILE_STATUS_MARKED)!=0 && has_colors())
-	  wbkgdset(window,' ' | COLOR_PAIR(2));
+	if(has_colors())
+	{
+	  if((current_file->status&FILE_STATUS_MARKED)!=0)
+	    wbkgdset(window,' ' | COLOR_PAIR(2));
+	  else if((current_file->status&FILE_STATUS_DELETED)!=0)
+	    wbkgdset(window,' ' | COLOR_PAIR(1));
+	}
 	{
 	  const struct tm *tm_p;
 	  if(current_file->td_mtime!=0 && (tm_p = localtime(&current_file->td_mtime))!=NULL)
@@ -160,8 +165,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	wprintw(window, "%9llu", (long long unsigned int)current_file->st_size);
 	/* screen may overlap due to long filename */
 	wprintw(window, " %s %s", datestr, current_file->name);
-	if(((current_file->status&FILE_STATUS_DELETED)!=0 ||
-	      (current_file->status&FILE_STATUS_MARKED)!=0) && has_colors())
+	if((current_file->status&(FILE_STATUS_DELETED|FILE_STATUS_MARKED))!=0 &&
+	    has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if(&current_file->list==pos)
 	  wattroff(window, A_REVERSE);
