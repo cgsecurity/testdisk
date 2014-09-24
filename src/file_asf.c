@@ -125,6 +125,8 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
       else if(memcmp(stream->stream_type, wmv, sizeof(wmv))==0)
 	extension="wmv";
     }
+    if(le64(prop->object_size) > buffer_size)
+      break;
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=extension;
