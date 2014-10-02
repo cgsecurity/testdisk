@@ -70,25 +70,10 @@ const file_hint_t file_hint_jpg= {
   .register_header_check=&register_header_check_jpg
 };
 
-static const unsigned char jpg_header_app0[4]= { 0xff,0xd8,0xff,0xe0};
-static const unsigned char jpg_header_app1[4]= { 0xff,0xd8,0xff,0xe1};
-static const unsigned char jpg_header_app12[4]= { 0xff,0xd8,0xff,0xec};
-static const unsigned char jpg_header_com[4]= { 0xff,0xd8,0xff,0xfe};
-static const unsigned char jpg_footer[2]= { 0xff,0xd9};
-static const unsigned char jpg_header_app0_avi[0x0c]= {
-  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00
-};
-static const unsigned char jpg_header_app0_jfif11_null[0x14]= {
-  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01,
-  0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
 static void register_header_check_jpg(file_stat_t *file_stat)
 {
-  register_header_check(0, jpg_header_app0,sizeof(jpg_header_app0), &header_check_jpg, file_stat);
-  register_header_check(0, jpg_header_app1,sizeof(jpg_header_app1), &header_check_jpg, file_stat);
-  register_header_check(0, jpg_header_app12,sizeof(jpg_header_app12), &header_check_jpg, file_stat);
-  register_header_check(0, jpg_header_com,sizeof(jpg_header_com), &header_check_jpg, file_stat);
+  static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
+  register_header_check(0, jpg_header, sizeof(jpg_header), &header_check_jpg, file_stat);
 }
 
 static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *height, unsigned int *width)
@@ -345,10 +330,47 @@ static void file_check_mpo(file_recovery_t *fr)
     fr->file_size=0;
 }
 
+static int is_marker_valid(const unsigned int marker)
+{
+  switch(marker)
+  {
+    case 0x02 ... 0xbf:	/* Reserved */
+    case 0xc0:		/* SOF0 Start of Frame */
+    case 0xc4:		/* Define Huffman table */
+    case 0xc8:		/* Start of Frame (JPG) (Reserved for JPEG extensions) */
+    case 0xcc:		/* DAC arithmetic-coding conditioning*/
+    case 0xcf:		/* SOF15 */
+    case 0xd0 ... 0xd7:	/* JPEG_RST0 .. JPEG_RST7 markers */
+//    case 0xd8:	/* SOI Start of Image */
+//    case 0xd9:	/* EOI End of Image */
+//    case 0xda:	/* SOS: Start Of Scan */
+    case 0xdb:		/* DQT: Define Quantization Table */
+    case 0xdc:		/* DNL: Define Number of Lines */
+    case 0xdd:		/* DRI: define restart interval */
+    case 0xde:		/* DHP: define hierarchical progression */
+    case 0xe0 ... 0xef:	/* APP0 - APP15 */
+    case 0xf0 ... 0xfd:	/* Reserved for JPEG extensions */
+    case 0xfe:		/* COM */
+    case 0xff:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  unsigned int i=2;
+  time_t jpg_time=0;
   if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
   {
+    static const unsigned char jpg_header_app0_avi[0x0c]= {
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00
+    };
+    static const unsigned char jpg_header_app0_jfif11_null[0x14]= {
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01,
+      0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
     unsigned int width=0;
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
@@ -361,7 +383,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     {
       /* Don't recover the thumb instead of the jpg itself */
       if( file_recovery->file_size <= 1024 &&
-	  memcmp(buffer, jpg_header_app12, sizeof(jpg_header_app12))==0)
+	buffer[3]==0xec)		/* APP12 */
       {
 	log_info("jpg %llu %llu\n",
 	    (long long unsigned)file_recovery->calculated_file_size,
@@ -370,18 +392,20 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       }
       /* Don't recover the thumb instead of the jpg itself */
       if(file_recovery->file_size <= 4096 &&
-	  memcmp(buffer, jpg_header_app0, sizeof(jpg_header_app0))==0 &&
+	  buffer[3]==0xe0 &&
 	  width>0 && width<200 && height>0 && height<200)
       {
 	return 0;
       }
       /* Some JPG have two APP1 markers, avoid to dicard the first one */
-      if( memcmp(buffer, jpg_header_app1, sizeof(jpg_header_app1))==0 &&
+      if( buffer[3]==0xe1	&&
 	  memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
       {
 	return 0;
       }
       if(file_recovery->file_check==&file_check_mpo)
+	return 0;
+      if(buffer[3]==0xdb)	/* *DQT */
 	return 0;
     }
     /* Don't extract jpg inside AVI */
@@ -394,29 +418,12 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
       return 0;
   }
-  if(buffer[0]==0xff && buffer[1]==0xd8)
+  while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {
-    unsigned int i=2;
-    time_t jpg_time=0;
-    while(i+4<buffer_size && buffer[i]==0xff)
+    if(buffer[i+1]==0xff)
+      i++;
+    else
     {
-      /* 0x00 */
-      /* 0x01 */
-      /* 0xc4 Define Huffman table */
-      /* 0xc0 SOF0 Start of Frame */
-      /* 0xcc DAC arithmetic-coding conditioning*/
-      /* 0xcf SOF15 */
-      /* 0xd0-d7 JPEG_RST0 .. JPEG_RST7 markers */
-      /* 0xd8 SOI Start of Image */
-      /* 0xd9 EOI End of Image */
-      /* 0xda SOS: Start Of Scan */
-      /* 0xdb DQT: Define Quantization Table */
-      /* 0xdc DNL: Define Number of Lines */
-      /* 0xdd DRI: define restart interval */
-      /* 0xde DHP: define hierarchical progression */
-      /* 0xe0 APP0 */
-      /* 0xef APP15 */
-      /* 0xfe COM */
       if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
 	if(i+0x0A < buffer_size && 2+(buffer[i+2]<<8)+buffer[i+3] > 0x0A)
@@ -427,42 +434,22 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
       }
-      else if(buffer[i+1]==0xdb ||			/* DQT */
-	     (buffer[i+1]>=0xc0 && buffer[i+1]<=0xcf) ||	/* SOF0 - SOF15, 0xc4=DHT */
-	     buffer[i+1]==0xdd ||				/* DRI */
-	     (buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||	/* APP0 - APP15 */
-	     buffer[i+1]==0xfe)				/* COM */
-      {
-      }
-      else
-      {
-	/* 0xd8=SOI again !
-	 * 0xda=SOS: Start Of Scan */
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->min_filesize=i;
-	file_recovery_new->calculated_file_size=0;
-	file_recovery_new->time=jpg_time;
-	file_recovery_new->extension=file_hint_jpg.extension;
-	file_recovery_new->file_check=&file_check_jpg;
-	file_recovery_new->data_check=&data_check_jpg;
-	return 1;
-      }
       i+=2+(buffer[i+2]<<8)+buffer[i+3];
     }
-    if(i >= 6*512)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->min_filesize=i;
-      file_recovery_new->calculated_file_size=0;
-      file_recovery_new->time=jpg_time;
-      file_recovery_new->extension=file_hint_jpg.extension;
-      file_recovery_new->file_check=&file_check_jpg;
-      if(buffer_size >= 4)
-	file_recovery_new->data_check=&data_check_jpg;
-      return 1;
-    }
   }
-  return 0;
+  if(i+1 < file_recovery->blocksize && buffer[i+1]!=0xda)
+    return 0;
+  if(i+1 < 512 && buffer[i+1]!=0xda)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=i;
+  file_recovery_new->calculated_file_size=0;
+  file_recovery_new->time=jpg_time;
+  file_recovery_new->extension=file_hint_jpg.extension;
+  file_recovery_new->file_check=&file_check_jpg;
+  if(buffer_size >= 4)
+    file_recovery_new->data_check=&data_check_jpg;
+  return 1;
 }
 
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
@@ -1255,6 +1242,7 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size;
   else
   {
+    static const unsigned char jpg_footer[2]= { 0xff,0xd9};
     file_recovery->file_size=jpeg_size;
     file_search_footer(file_recovery, jpg_footer, sizeof(jpg_footer), 0);
   }
@@ -1270,7 +1258,11 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
   if(i + 4 < buffer_size)
   {
     unsigned int j=i+4;
+    const unsigned int tc=buffer[j] & 0x0f;
     const unsigned int n=buffer[j] & 0x0f;
+    /* Table class: 0 = DC table or lossless table, 1 = AC table */
+    if(tc > 1)
+      return 2;
     /* Must be between 0 and 3 Huffman table */
     if(n > 3)
       return 2;
