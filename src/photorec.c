@@ -282,7 +282,7 @@ void get_prev_location(alloc_data_t *list_search_space, alloc_data_t **current_s
   uint64_t size=0;
   /* Search backward the first fragment of a file not successfully recovered
    * Limit the search to 10 fragments or 1GB */
-  for(nbr=0; nbr<10 && size < (uint64_t)1024*1024*1024; nbr++)
+  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
   {
     file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
     if(file_space==list_search_space)
@@ -302,7 +302,7 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
   uint64_t size=0;
   /* Search backward the first fragment of a file not successfully recovered
    * Limit the search to 10 fragments or 1GB */
-  for(nbr=0; nbr<10 && size < (uint64_t)1024*1024*1024; nbr++)
+  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
   {
     file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
     if(file_space==list_search_space)
@@ -556,7 +556,8 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
       file_recovery->file_size < file_recovery->min_filesize)
   { 
-    log_info("File too small ( %llu < %llu), reject it\n",
+    log_info("%s File too small ( %llu < %llu), reject it\n",
+	file_recovery->filename,
 	(long long unsigned) file_recovery->file_size,
 	(long long unsigned) file_recovery->min_filesize);
     file_recovery->file_size=0;

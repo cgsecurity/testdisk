@@ -372,7 +372,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
     {
       /* try to recover the previous file, otherwise stay at the current location */
       offset_before_back=offset;
-      if(back < 10 &&
+      if(back < 5 &&
 	  get_prev_file_header(list_search_space, &current_search_space, &offset)==0)
 	back++;
       else
