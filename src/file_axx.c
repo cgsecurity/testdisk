@@ -57,7 +57,11 @@ static void file_check_axx(file_recovery_t *fr)
   {
     struct SHeader header;
     unsigned int len;
+#ifdef HAVE_FSEEKO
+    if(fseeko(fr->handle, offset, SEEK_SET) < 0)
+#else
     if(fseek(fr->handle, offset, SEEK_SET) < 0)
+#endif
       return ;
     if (fread(&header, sizeof(header), 1, fr->handle)!=1)
       return ;

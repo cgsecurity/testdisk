@@ -98,7 +98,12 @@ static void file_check_mlv(file_recovery_t *file_recovery)
   uint64_t fs=0;
   do
   {
-    if( fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
+    if(
+#ifdef HAVE_FSEEKO
+	fseeko(file_recovery->handle, fs, SEEK_SET)<0 ||
+#else
+	fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
+#endif
 	fread(&hdr, sizeof(hdr), 1, file_recovery->handle)!=1 ||
 	le32(hdr.blockSize)<0x10 ||
 	!is_valid_type(&hdr) ||
@@ -110,7 +115,6 @@ static void file_check_mlv(file_recovery_t *file_recovery)
     fs+=le32(hdr.blockSize);
   } while(1);
 }
-
 static int header_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const mlv_file_hdr_t *hdr=(const mlv_file_hdr_t *)buffer;

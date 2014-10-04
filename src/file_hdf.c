@@ -74,7 +74,12 @@ static void file_check_hdf(file_recovery_t *file_recovery)
     struct ddh_struct ddh;
     const struct dd_struct *p;
     unsigned int i;
-    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
+    if(
+#ifdef HAVE_FSEEKO
+	fseeko(file_recovery->handle, offset, SEEK_SET) < 0 ||
+#else
+	fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
+#endif
 	fread(&ddh, sizeof(ddh), 1, file_recovery->handle) !=1 ||
 	be16(ddh.size)==0 ||
 	fread(dd, sizeof(struct dd_struct)*be16(ddh.size), 1, file_recovery->handle) !=1)

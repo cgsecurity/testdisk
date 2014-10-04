@@ -67,7 +67,12 @@ static void file_check_tib2(file_recovery_t *file_recovery)
   unsigned char*buffer=(unsigned char*)MALLOC(512);
   int64_t file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
-  if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+  if(
+#ifdef HAVE_FSEEKO
+      fseeko(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+#else
+      fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+#endif
       fread(buffer, 1, 512, file_recovery->handle) != 512)
   {
     free(buffer);
@@ -83,7 +88,12 @@ static void file_check_tib2(file_recovery_t *file_recovery)
   for(; file_size>0; file_size-=512)
   {
     unsigned int i;
-    if(fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+    if(
+#ifdef HAVE_FSEEKO
+	fseeko(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+#else
+	fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+#endif
 	fread(buffer, 1, 512, file_recovery->handle) != 512)
     {
       free(buffer);

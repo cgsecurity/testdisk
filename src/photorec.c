@@ -1122,7 +1122,11 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
     uint64_t i;
     unsigned char *block_buffer;
     block_buffer=&buffer[blocksize];
+#ifdef HAVE_FSEEKO
+    if(fseeko(file_recovery->handle, 0, SEEK_SET) < 0)
+#else
     if(fseek(file_recovery->handle, 0, SEEK_SET) < 0)
+#endif
       return ;
     for(i=0; i< file_recovery->file_size; i+= blocksize)
     {
@@ -1133,5 +1137,11 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
     }
   }
   else
+  {
+#ifdef HAVE_FSEEKO
+    fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+#else
     fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+#endif
+  }
 }

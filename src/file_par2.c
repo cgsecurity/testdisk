@@ -76,7 +76,11 @@ static void file_rename_par2(const char *old_filename)
     int buffer_size;
     unsigned char buffer[4096];
     const uint64_t *lengthp=(const uint64_t *)&buffer[8];
+#ifdef HAVE_FSEEKO
+    if(fseeko(file, offset, SEEK_SET)<0)
+#else
     if(fseek(file, offset, SEEK_SET)<0)
+#endif
     {
       fclose(file);
       return;

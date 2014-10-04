@@ -252,7 +252,12 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     unsigned int length_type=0;
     unsigned int length;
     const int old_partial_body_length=partial_body_length;
-    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
+    if(
+#ifdef HAVE_FSEEKO
+	fseeko(file_recovery->handle, offset, SEEK_SET) < 0 ||
+#else
+	fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
+#endif
 	fread(&buffer, sizeof(buffer), 1, file_recovery->handle) != 1)
       return;
 
@@ -313,7 +318,12 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 	  {
 	    int len2;
 	    unsigned char tmp[2];
-	    if(fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
+	    if(
+#ifdef HAVE_FSEEKO
+		fseeko(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
+#else
+		fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
+#endif
 		fread(&tmp, sizeof(tmp), 1, file_recovery->handle) != 1)
 	      return;
 	    mpi=(const uint16_t *)&tmp[0];

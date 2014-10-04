@@ -65,7 +65,11 @@ static void file_check_ace(file_recovery_t *file_recovery)
   file_recovery->offset_error = 0;
   file_recovery->offset_ok = 0;
   file_recovery->file_size = 0;
+#ifdef HAVE_FSEEKO
+  if(fseeko(file_recovery->handle, 0, SEEK_SET)<0)
+#else
   if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
+#endif
     return ;
 #ifdef DEBUG_ACE
   log_trace("file_check_ace\n");
@@ -84,7 +88,11 @@ static void file_check_ace(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return ;
     }
+#ifdef HAVE_FSEEKO
+    if(fseeko(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
+#else
     if(fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
+#endif
     {
       file_recovery->offset_error=file_recovery->file_size;
       file_recovery->file_size=0;
@@ -163,7 +171,11 @@ static void file_check_ace(file_recovery_t *file_recovery)
     if (le16(h.flags)&1)
     {
       file_recovery->file_size += le32(h.addsize);
+#ifdef HAVE_FSEEKO
+      if(fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
+#else
       if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
+#endif
       {
 	file_recovery->offset_error=file_recovery->file_size;
 	file_recovery->file_size=0;

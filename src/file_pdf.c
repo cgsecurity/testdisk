@@ -76,7 +76,11 @@ static void file_rename_pdf(const char *old_filename)
   const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
   if((handle=fopen(old_filename, "rb"))==NULL)
     return;
+#ifdef HAVE_FSEEKO
+  if(fseeko(handle, 0, SEEK_END)<0)
+#else
   if(fseek(handle, 0, SEEK_END)<0)
+#endif
   {
     fclose(handle);
     return;
@@ -198,7 +202,11 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
     int i;
     int taille;
     file_recovery->file_size=file_recovery->calculated_file_size;
+#ifdef HAVE_FSEEKO
+    if(fseeko(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
+#else
     if(fseek(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
+#endif
     {
       file_recovery->file_size=0;
       return ;
@@ -230,7 +238,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   uint64_t offset=0;
   unsigned int j=0;
   unsigned char*buffer=(unsigned char*)MALLOC(4096);
+#ifdef HAVE_FSEEKO
+  if(fseeko(file_recovery->handle, 0, SEEK_SET)<0)
+#else
   if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
+#endif
   {
     free(buffer);
     return ;
@@ -252,7 +264,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	{
 	  const unsigned char *date_asc;
 	  struct tm tm_time;
+#ifdef HAVE_FSEEKO
+	  if(fseeko(file_recovery->handle, offset+i+1, SEEK_SET)<0)
+#else
 	  if(fseek(file_recovery->handle, offset+i+1, SEEK_SET)<0)
+#endif
 	  {
 	    free(buffer);
 	    return ;

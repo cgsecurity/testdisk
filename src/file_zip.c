@@ -128,7 +128,11 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
       if (buffer[count]==*(const char *)needle && memcmp(buffer+count, needle, size)==0)
       {
 	free(buffer);
+#ifdef HAVE_FSEEKO
+        if(fseeko(f, (long)count-read_size, SEEK_CUR)<0)
+#else
         if(fseek(f, (long)count-read_size, SEEK_CUR)<0)
+#endif
           return -1;
         return total;
       }
@@ -136,7 +140,11 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
       total++;
       left--;
     }
+#ifdef HAVE_FSEEKO
+    if(feof(f) || fseeko(f, (long)1-size, SEEK_CUR)<0)
+#else
     if(feof(f) || fseek(f, (long)1-size, SEEK_CUR)<0)
+#endif
     {
       free(buffer);
       return -1;
@@ -218,7 +226,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	    free(filename);
 	    return -1;
 	  }
+#ifdef HAVE_FSEEKO
+	  if (fseeko(fr->handle, -to_read, SEEK_CUR) < 0)
+#else
 	  if (fseek(fr->handle, -to_read, SEEK_CUR) < 0)
+#endif
 	  {
 	    log_info("fseek failed\n");
 	    free(filename);
@@ -307,8 +319,13 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
 #endif
     }
+#ifdef HAVE_FSEEKO
+    if (fseeko(fr->handle, fr->file_size, SEEK_SET) == -1 ||
+	fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
     if (fseek(fr->handle, fr->file_size, SEEK_SET) == -1 ||
 	fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
@@ -326,7 +343,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     len=krita;
   if (len>0)
   {
+#ifdef HAVE_FSEEKO
+    if (fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in file_entry data: %lu bytes expected\n", len);
@@ -376,8 +397,11 @@ static int zip_parse_central_dir(file_recovery_t *fr)
     uint32_t external_attr;           /** External file attributes */
     uint32_t offset_header;           /** Relative offset of local header */
   } __attribute__ ((__packed__)) dir;
-
+#ifdef HAVE_FSEEKO
+  if (fseeko(fr->handle, 2, SEEK_CUR) == -1)
+#else
   if (fseek(fr->handle, 2, SEEK_CUR) == -1)
+#endif
   {
 #ifdef DEBUG_ZIP
     log_trace("Unexpected EOF skipping version from central_dir\n");
@@ -409,7 +433,11 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 
   /* Rest of the block - could attempt CRC check */
   len = le16(file.extra_length) + le16(dir.comment_length) + le16(file.filename_length);
+#ifdef HAVE_FSEEKO
+  if (fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
   if (fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF in central_dir: %u bytes expected\n", len);
@@ -449,7 +477,11 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
   if (dir.end_size > 0)
   {
     const uint64_t len = le64(dir.end_size);
+#ifdef HAVE_FSEEKO
+    if (fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in end_central_dir_64: expected %llu bytes\n", (long long unsigned)len);
@@ -489,7 +521,11 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
   if (dir.comment_length)
   {
     const uint16_t len = le16(dir.comment_length);
+#ifdef HAVE_FSEEKO
+    if (fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in end_central_dir: expected %u bytes\n", len);
@@ -547,7 +583,11 @@ static int zip_parse_signature(file_recovery_t *fr)
   if (len)
   {
     len = le16(len);
+#ifdef HAVE_FSEEKO
+    if (fseeko(fr->handle, len, SEEK_CUR) == -1)
+#else
     if (fseek(fr->handle, len, SEEK_CUR) == -1)
+#endif
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in zip_parse_signature: expected %u bytes\n", len);
@@ -587,7 +627,11 @@ static void file_check_zip(file_recovery_t *fr)
   fr->offset_error=0;
   fr->offset_ok=0;
   first_filename[0]='\0';
+#ifdef HAVE_FSEEKO
+  if(fseeko(fr->handle, 0, SEEK_SET) < 0)
+#else
   if(fseek(fr->handle, 0, SEEK_SET) < 0)
+#endif
     return ;
   while (1)
   {
@@ -673,7 +717,11 @@ static void file_rename_zip(const char *old_filename)
   fr.file_size = 0;
   fr.offset_error=0;
   first_filename[0]='\0';
+#ifdef HAVE_FSEEKO
+  if(fseeko(fr.handle, 0, SEEK_SET) < 0)
+#else
   if(fseek(fr.handle, 0, SEEK_SET) < 0)
+#endif
   {
     fclose(fr.handle);
     return ;

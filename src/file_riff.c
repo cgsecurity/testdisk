@@ -104,7 +104,11 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
     return;
   for(file_size=start; file_size < end;)
   {
+#ifdef HAVE_FSEEKO
+    if(fseeko(fr->handle, file_size, SEEK_SET)<0)
+#else
     if(fseek(fr->handle, file_size, SEEK_SET)<0)
+#endif
     {
       fr->offset_error=file_size;
       return;
@@ -143,7 +147,11 @@ static void file_check_avi(file_recovery_t *fr)
   {
     const uint64_t file_size=fr->file_size;
     riff_list_header list_header;
+#ifdef HAVE_FSEEKO
+    if(fseeko(fr->handle, fr->file_size, SEEK_SET)<0)
+#else
     if(fseek(fr->handle, fr->file_size, SEEK_SET)<0)
+#endif
     {
       fr->file_size=0;
       return ;

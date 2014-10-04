@@ -65,7 +65,11 @@ static void file_check_mig(file_recovery_t *file_recovery)
   while(1)
   {
     size_t res;
+#ifdef HAVE_FSEEKO
+    if(fseeko(file_recovery->handle, offset, SEEK_SET) < 0)
+#else
     if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
+#endif
     {
 #ifdef DEBUG_MIG
       log_info("0x%lx fseek failed\n", (long unsigned)offset);

@@ -74,7 +74,12 @@ static void file_check_gif(file_recovery_t *file_recovery)
 {
   const unsigned char gif_footer[2]= {0x00, 0x3b};
   unsigned char buffer[2];
-  if(fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
+  if(
+#ifdef HAVE_FSEEKO
+      fseeko(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
+#else
+      fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
+#endif
       fread(buffer, 2, 1, file_recovery->handle)!=1 ||
       memcmp(buffer, gif_footer, sizeof(gif_footer))!=0)
   {

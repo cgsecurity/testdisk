@@ -110,7 +110,12 @@ static void file_check_png(file_recovery_t *fr)
   {
     char buffer[8];
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer;
-    if(fseek(fr->handle, fr->file_size, SEEK_SET) < 0 ||
+    if(
+#ifdef HAVE_FSEEKO
+	fseeko(fr->handle, fr->file_size, SEEK_SET) < 0 ||
+#else
+	fseek(fr->handle, fr->file_size, SEEK_SET) < 0 ||
+#endif
 	fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
     {
       fr->file_size=0;

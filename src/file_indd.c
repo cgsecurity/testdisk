@@ -95,7 +95,11 @@ static void file_check_indd(file_recovery_t *file_recovery)
 #ifdef DEBUG_INDD
     log_info("file_check_indd offset=%llu (0x%llx)\n", (long long unsigned)offset, (long long unsigned)offset);
 #endif
+#ifdef HAVE_FSEEKO
+    if(fseeko(file_recovery->handle, offset, SEEK_SET) < 0)
+#else
     if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
+#endif
     {
       file_recovery->file_size=0;
       return ;

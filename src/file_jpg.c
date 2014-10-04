@@ -286,7 +286,11 @@ static void file_check_mpo(file_recovery_t *fr)
   do
   {
     offset+=2+size;
+#ifdef HAVE_FSEEKO
+    if(fseeko(fr->handle, offset, SEEK_SET) < 0)
+#else
     if(fseek(fr->handle, offset, SEEK_SET) < 0)
+#endif
     {
       fr->file_size=0;
       return ;
@@ -755,7 +759,11 @@ static inline int jpeg_session_resume(struct jpeg_session_struct *jpeg_session)
   if(resume_memory((j_common_ptr)&jpeg_session->cinfo))
     return -1;
   src = (my_source_mgr *) jpeg_session->cinfo.src;
+#ifdef HAVE_FSEEKO
+  if(fseeko(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
+#else
   if(fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
+#endif
     return -1;
   return 0;
 }
@@ -768,7 +776,11 @@ static inline void jpeg_session_suspend(struct jpeg_session_struct *jpeg_session
 
 static void jpeg_session_start(struct jpeg_session_struct *jpeg_session)
 {
+#ifdef HAVE_FSEEKO
+  if(fseeko(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
+#else
   if(fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
+#endif
   {
     log_critical("jpeg_session_start: fseek failed.\n");
   }
@@ -1297,7 +1309,11 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
     return ;
   offset=file_recovery->offset_error / file_recovery->blocksize * file_recovery->blocksize;
   i=file_recovery->offset_error % file_recovery->blocksize;
+#ifdef HAVE_FSEEKO
+  if(fseeko(infile, offset, SEEK_SET) < 0)
+#else
   if(fseek(infile, offset, SEEK_SET) < 0)
+#endif
     return ;
   do
   {
@@ -1339,7 +1355,11 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   uint64_t thumb_offset=0;
   int nbytes;
   file_recovery->extra=0;
+#ifdef HAVE_FSEEKO
+  if(fseeko(infile, 0, SEEK_SET) < 0)
+#else
   if(fseek(infile, 0, SEEK_SET) < 0)
+#endif
     return 0;
   if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {

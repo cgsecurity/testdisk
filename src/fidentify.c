@@ -113,7 +113,11 @@ static int file_identify(const char *filename, const unsigned int check)
       if(check > 0 && file_recovery_new.file_check!=NULL)
       {
 	file_recovery_new.handle=file;
+#ifdef HAVE_FSEEKO
+	fseeko(file_recovery_new.handle, 0, SEEK_END);
+#else
 	fseek(file_recovery_new.handle, 0, SEEK_END);
+#endif
 #ifdef HAVE_FTELLO
 	file_recovery_new.file_size=ftello(file_recovery_new.handle);
 #else

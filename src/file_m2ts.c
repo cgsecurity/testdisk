@@ -79,7 +79,12 @@ static void file_rename_ts_188(const char *old_filename)
   unsigned int pid;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
-  if(fseek(file, 0, SEEK_SET) < 0 ||
+  if(
+#ifdef HAVE_FSEEKO
+      fseeko(file, 0, SEEK_SET) < 0 ||
+#else
+      fseek(file, 0, SEEK_SET) < 0 ||
+#endif
       fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);
@@ -99,7 +104,12 @@ static void file_rename_ts_192(const char *old_filename)
   unsigned int pid;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
-  if(fseek(file, 0, SEEK_SET) < 0 ||
+  if(
+#ifdef HAVE_FSEEKO
+      fseeko(file, 0, SEEK_SET) < 0 ||
+#else
+      fseek(file, 0, SEEK_SET) < 0 ||
+#endif
       fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);
