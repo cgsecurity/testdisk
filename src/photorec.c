@@ -871,55 +871,62 @@ list_part_t *init_list_part(disk_t *disk, const struct ph_options *options)
 }
 
 /* file_block_remove_from_sp: remove block from list_search_space, update offset and new_current_search_space in consequence */
-static int file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
+static inline void file_block_remove_from_sp_aux(alloc_data_t *tmp, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
-  struct td_list_head *search_walker = NULL;
+  if(tmp->start == *offset)
+  {
+    tmp->start+=blocksize;
+    *offset += blocksize;
+    tmp->file_stat=NULL;
+    if(tmp->start <= tmp->end)
+      return ;
+    *new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
+    *offset=(*new_current_search_space)->start;
+    td_list_del(&tmp->list);
+    free(tmp);
+    return ;
+  }
+  if(*offset + blocksize == tmp->end + 1)
+  {
+    tmp->end-=blocksize;
+    *new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
+    *offset=(*new_current_search_space)->start;
+    return ;
+  }
+  {
+    alloc_data_t *new_sp;
+    new_sp=(alloc_data_t*)MALLOC(sizeof(*new_sp));
+    new_sp->start=*offset + blocksize;
+    new_sp->end=tmp->end;
+    new_sp->file_stat=NULL;
+    new_sp->data=tmp->data;
+    new_sp->list.prev=&new_sp->list;
+    new_sp->list.next=&new_sp->list;
+    tmp->end=*offset - 1;
+    td_list_add(&new_sp->list, &tmp->list);
+    *new_current_search_space=new_sp;
+    *offset += blocksize;
+  }
+}
+
+static inline void file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
+{
+  struct td_list_head *search_walker = &(*new_current_search_space)->list;
+  if(search_walker!=NULL)
+  {
+    alloc_data_t *tmp;
+    tmp=td_list_entry(search_walker, alloc_data_t, list);
+    if(tmp->start <= *offset && *offset + blocksize <= tmp->end + 1)
+      return file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
+  }
   td_list_for_each(search_walker, &list_search_space->list)
   {
     alloc_data_t *tmp;
     tmp=td_list_entry(search_walker, alloc_data_t, list);
-    if(tmp->start <= *offset &&
-	*offset + blocksize <= tmp->end + 1)
-    {
-      if(tmp->start == *offset)
-      {
-	tmp->start+=blocksize;
-	*offset += blocksize;
-	tmp->file_stat=NULL;
-	if(tmp->start <= tmp->end)
-	  return 0;
-	*new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
-	*offset=(*new_current_search_space)->start;
-	td_list_del(search_walker);
-	free(tmp);
-	return 0;
-      }
-      if(*offset + blocksize == tmp->end + 1)
-      {
-	tmp->end-=blocksize;
-	*new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
-	*offset=(*new_current_search_space)->start;
-	return 0;
-      }
-      {
-	alloc_data_t *new_sp;
-	new_sp=(alloc_data_t*)MALLOC(sizeof(*new_sp));
-	new_sp->start=*offset + blocksize;
-	new_sp->end=tmp->end;
-	new_sp->file_stat=NULL;
-	new_sp->data=tmp->data;
-	new_sp->list.prev=&new_sp->list;
-	new_sp->list.next=&new_sp->list;
-	tmp->end=*offset - 1;
-	td_list_add(&new_sp->list, &tmp->list);
-	*new_current_search_space=new_sp;
-	*offset += blocksize;
-      }
-      return 0;
-    }
+    if(tmp->start <= *offset && *offset + blocksize <= tmp->end + 1)
+      return file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
   }
   log_critical("file_block_remove_from_sp(list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize) failed\n");
-  return -1;
 }
 
 static inline void file_block_add_to_file(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
