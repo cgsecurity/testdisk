@@ -237,6 +237,7 @@ file_C			= filegen.c \
 			  file_res.c \
 			  file_rfp.c \
 			  file_riff.c \
+			  file_rlv.c \
 			  file_rm.c \
 			  file_rns.c \
 			  file_rpm.c \
