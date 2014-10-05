@@ -138,8 +138,8 @@ static int header_check_elf(const unsigned char *buffer, const unsigned int buff
   else
   {
     const Elf64_Ehdr *hdr64=(const Elf64_Ehdr *)buffer;
-    const uint64_t tmp=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr32->e_shoff) : be64(hdr32->e_shoff));
-    file_recovery_new->min_filesize=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr32->e_phoff) : be64(hdr32->e_phoff));
+    const uint64_t tmp=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr64->e_shoff) : be64(hdr64->e_shoff));
+    file_recovery_new->min_filesize=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr64->e_phoff) : be64(hdr64->e_phoff));
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
