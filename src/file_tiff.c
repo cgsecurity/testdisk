@@ -328,7 +328,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
   if(le32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
   /* Avoid a false positiv with some RAF files */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
     file_recovery->file_stat->file_hint==&file_hint_raf &&
     memcmp(buffer, raf_fp, 15)==0)
     return 0;

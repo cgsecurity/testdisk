@@ -164,7 +164,7 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
 	 (buffer[1]&0xFE)==0xF2 ||
 	 (buffer[1]&0xFE)==0xE2)))
     return 0;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
+  if(file_recovery->file_stat!=NULL)
   {
     if(file_recovery->file_stat->file_hint==&file_hint_mp3 ||
 	file_recovery->file_stat->file_hint==&file_hint_mkv)

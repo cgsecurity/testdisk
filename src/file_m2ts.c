@@ -124,7 +124,7 @@ static void file_rename_ts_192(const char *old_filename)
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_m2ts &&
       (file_recovery->data_check==&data_check_ts_192 ||
        file_recovery->blocksize < 5))
@@ -178,7 +178,7 @@ static data_check_t data_check_ts_188(const unsigned char *buffer, const unsigne
 static int header_check_m2t(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->data_check==&data_check_ts_188 &&
       file_recovery->calculated_file_size == file_recovery->file_size)
     return 0;

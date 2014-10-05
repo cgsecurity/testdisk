@@ -60,7 +60,7 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
     return 0;
   if(le16(sb->s_block_group_nr)!=0)
     return 0;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
        file_recovery->file_stat->file_hint==&file_hint_ext2_fs &&
        file_recovery->calculated_file_size==(uint64_t)le32(sb->s_blocks_count)*(EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
     return 0;

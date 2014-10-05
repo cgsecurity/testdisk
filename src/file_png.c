@@ -130,7 +130,7 @@ static void file_check_png(file_recovery_t *fr)
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* SolidWorks files contains a png */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc &&
       (strcmp(file_recovery->extension,"sld")==0 ||
        strcmp(file_recovery->extension,"sldprt")==0))

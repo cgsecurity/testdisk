@@ -56,7 +56,7 @@ static void register_header_check_wtv(file_stat_t *file_stat)
 
 static int header_check_wtv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_wtv &&
       file_recovery->file_size<=0x3000)
     return 0;

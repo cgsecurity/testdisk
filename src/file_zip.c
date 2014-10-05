@@ -826,7 +826,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
   {
     const zip_file_entry_t *file=(const zip_file_entry_t *)&buffer[4];
     const unsigned int len=le16(file->filename_length);
-    if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+    if(file_recovery->file_stat!=NULL &&
 	file_recovery->file_stat->file_hint==&file_hint_doc &&
 	(strcmp(file_recovery->extension,"doc")==0 ||
 	 strcmp(file_recovery->extension,"psmodel")==0)
@@ -834,7 +834,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
       return 0;
     /* A zip file begins by ZIP_FILE_ENTRY, this signature can also be
      * found for each compressed file */
-    if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+    if(file_recovery->file_stat!=NULL &&
 	file_recovery->file_stat->file_hint==&file_hint_zip &&
 	safe_header_only==0)
       return 0;

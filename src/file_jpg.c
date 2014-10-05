@@ -366,7 +366,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 {
   unsigned int i=2;
   time_t jpg_time=0;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
+  if(file_recovery->file_stat!=NULL)
   {
     static const unsigned char jpg_header_app0_avi[0x0c]= {
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'A', 'V', 'I', '1', 0x00, 0x00

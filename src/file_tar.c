@@ -54,7 +54,7 @@ static void register_header_check_tar(file_stat_t *file_stat)
 
 int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
+  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
     return 0;
   if(memcmp(&buffer[0x101],tar_header_gnu,sizeof(tar_header_gnu))==0 ||
       memcmp(&buffer[0x101],tar_header_posix,sizeof(tar_header_posix))==0)

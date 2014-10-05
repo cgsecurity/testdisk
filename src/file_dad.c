@@ -74,8 +74,7 @@ static data_check_t data_check_dad(const unsigned char *buffer, const unsigned i
 static int header_check_dad(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct dad_header *dad=(const struct dad_header *)buffer;
-  if(file_recovery!=NULL && 
-      file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_dad &&
       (file_recovery->calculated_file_size==file_recovery->file_size ||
        file_recovery->blocksize < 16))

@@ -101,8 +101,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
   if(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p')
   {
   }
-  else if(file_recovery!=NULL &&
-      file_recovery->file_stat!=NULL &&
+  else if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
       (file_recovery->calculated_file_size == file_recovery->file_size ||
        file_recovery->blocksize < 16))

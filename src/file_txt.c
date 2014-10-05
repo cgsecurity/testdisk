@@ -584,7 +584,7 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
 
 static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       strcmp(file_recovery->extension,"mbox")==0)
     return 0;
@@ -704,7 +704,7 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
     if(buffer[i]=='\0')
       return 0;
   /* Avoid a false positive with .snt */
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
     return 0;
   reset_file_recovery(file_recovery_new);
@@ -719,7 +719,7 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
 {
   if(buffer[35]=='\0')
     return 0;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       (file_recovery->file_stat->file_hint==&file_hint_pdf ||
        file_recovery->file_stat->file_hint==&file_hint_tiff))
     return 0;
@@ -734,7 +734,7 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
 static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       strcmp(file_recovery->extension,"mbox")==0)
     return 0;
@@ -851,7 +851,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     if(buffer[i]==0x0a &&
       (memcmp(buffer+i+1, "Return-Path: ", 13)==0 ||
        memcmp(buffer+i+1, "Received: from", 14)==0) &&
-        !(file_recovery!=NULL && file_recovery->file_stat!=NULL &&
+        !(file_recovery->file_stat!=NULL &&
           file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
           strcmp(file_recovery->extension,"mbox")==0))
     {
@@ -948,7 +948,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   {
     return 0;
   }
-  if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
+  if(file_recovery->file_stat!=NULL)
   {
     if(file_recovery->file_stat->file_hint == &file_hint_doc)
     {
@@ -1104,7 +1104,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 #endif
     }
     else if(strstr(buffer_lower, "class")!=NULL &&
-	(l>=100 || file_recovery==NULL))
+	(l>=100 || file_recovery->file_stat==NULL))
     {
 #ifdef DJGPP
       ext="jav";
@@ -1135,7 +1135,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     {
       ext="html";
     }
-    if(file_recovery!=NULL && file_recovery->file_stat!=NULL)
+    if(file_recovery->file_stat!=NULL)
     {
       if(file_recovery->file_stat->file_hint == &file_hint_doc)
       {
