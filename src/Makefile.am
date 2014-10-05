@@ -162,6 +162,7 @@ file_C			= filegen.c \
 			  file_lnk.c \
 			  file_logic.c \
 			  file_lso.c \
+			  file_luks.c \
 			  file_lxo.c \
 			  file_lzh.c \
 			  file_lzo.c \
