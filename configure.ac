@@ -4,7 +4,7 @@
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.0-WIP],[grenier@cgsecurity.org])
 sinclude(acx_pthread.m4)
-TESTDISKDATE="August 2014"
+TESTDISKDATE="October 2014"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -271,6 +271,13 @@ AC_ARG_ENABLE(coverage,
     ;;
 esac],
 [coverage_flags=""])
+
+AC_ARG_ENABLE(gprof,
+    AS_HELP_STRING([--enable-gprof],
+      [Produce gprof profiling data in 'gmon.out' (GCC only).]),
+[if test "$enableval" = "yes" ; then
+  coverage_flags="$coverage_flags -pg"
+fi])
 
 use_icon=no
 
