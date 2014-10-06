@@ -409,8 +409,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       }
       if(file_recovery->file_check==&file_check_mpo)
 	return 0;
-      if(buffer[3]==0xdb)	/* *DQT */
-	return 0;
     }
     /* Don't extract jpg inside AVI */
     if( file_recovery->file_stat->file_hint==&file_hint_riff &&
@@ -420,6 +418,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     /* Don't extract jpg inside MOV */
     if( file_recovery->file_stat->file_hint==&file_hint_mov &&
 	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
+      return 0;
+    if(buffer[3]==0xdb)	/* DQT */
       return 0;
   }
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
