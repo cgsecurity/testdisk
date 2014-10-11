@@ -13,6 +13,7 @@ AC_CANONICAL_TARGET([])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_DEFINE([_GNU_SOURCE], 1, [Enable GNU extensions])
 AH_TEMPLATE([TARGET_LINUX], [Define for LINUX target])
@@ -221,7 +222,7 @@ AC_ARG_ENABLE([missing-uuid-ok],
      [missing_uuid_ok=false])
 
 AC_ARG_ENABLE([qt],
-    AS_HELP_STRING(--enable-qt,enable use of qt (default is NO)),
+    AS_HELP_STRING(--enable-qt,enable use of qt (default is YES)),
     [case "${enableval}" in
        yes) use_qt=true ;;
        no)  use_qt=false ;;
