@@ -253,7 +253,7 @@ static int header_check_spe(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_spe.extension;
     file_recovery_new->min_filesize=4100;
-    file_recovery_new->calculated_file_size=(uint64_t)le16(spe->xdim)*le16(spe->ydim)*le16(spe->NumFrames);
+    file_recovery_new->calculated_file_size=(uint64_t)le16(spe->xdim)*le16(spe->ydim)*le32(spe->NumFrames);
     file_recovery_new->calculated_file_size*=(le16(spe->datatype)<=1?4:2);
     file_recovery_new->calculated_file_size+=4100;
     log_debug("spe xdim=%u ydim=%u NumFrames=%u datatype=%u size=%llu\n",
