@@ -1,0 +1,65 @@
+.\" May be distributed under the GNU General Public License
+.TH TESTDISK 8 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+testdisk \- 扫描和恢复硬盘分区
+.SH SYNOPSIS
+.BI "testdisk [/log] [/debug] [/dump] [device|image.dd|image.e01]
+.sp
+.BI "testdisk /version
+.sp
+.BI "testdisk /list [/log]
+.SH DESCRIPTION
+   \fBTestDisk\fP 检查和恢复丢失的分区
+   适用的文件系统 :
+   - BeFS (BeOS)
+   - BSD disklabel (FreeBSD/OpenBSD/NetBSD)
+   - CramFS, 压缩文件系统
+   - DOS/Windows FAT12, FAT16 and FAT32
+   - HFS and HFS+, Hierarchical File System
+   - JFS, IBM 的日志文件系统
+   - Linux ext2/ext3/ext4
+   - Linux Raid
+     RAID 1: 镜像
+     RAID 4: striped array with parity device
+     RAID 5: striped array with distributed parity information
+     RAID 6: striped array with distributed dual redundancy information 
+   - Linux Swap (versions 1 and 2)
+   - LVM and LVM2, Linux Logical Volume Manager
+   - Mac partition map
+   - Novell Storage Services NSS
+   - NTFS (Windows NT/2K/XP/2003/Vista/...)
+   - ReiserFS 3.5, 3.6 and 4
+   - Sun Solaris i386 disklabel
+   - Unix 文件系统 UFS and UFS2 (Sun/BSD/...)
+   - XFS, SGI's 日志文件系统 
+
+   反删除功能适用于 :
+   - DOS/Windows FAT12, FAT16 and FAT32
+   - Linux ext2
+   - NTFS (Windows NT/2K/XP/2003/Vista/...)
+
+.SH OPTIONS
+.TP
+.B /log
+新建一个 testdisk.log 日志文件
+.TP
+.B /debug
+添加 debug 信息
+.TP
+.B /dump
+转储 raw 扇区
+.TP
+.B /list
+显示当前的分区
+.SH SEE ALSO
+.BR fdisk (8),
+.BR photorec(8).
+.BR
+.SH TRANSLATION
+Zhou Mo <cdluminate@gmail.com>
+.SH AUTHOR
+TestDisk @VERSION@, 数据恢复工具, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+http://www.cgsecurity.org

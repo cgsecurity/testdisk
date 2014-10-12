@@ -29,6 +29,7 @@ BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Obsoletes:	testdisk-doc
+%{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
 
 %description
 Tool to check and undelete partition. Works with FAT12, FAT16, FAT32,
@@ -75,14 +76,12 @@ make
 %configure \
  --with-reiserfs-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libreiserfs/.libs/ 	\
  --with-reiserfs-includes=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/include/ 	\
- --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/
+ --with-dal-lib=${RPM_BUILD_DIR}/%{name}-%{version}/progsreiserfs-%ver_progsreiserfs/libdal/.libs/		\
+ --docdir=%{_pkgdocdir}
 make %{?_smp_mflags}
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR="$RPM_BUILD_ROOT" install
-%if 0%{?is_wip}
-mv $RPM_BUILD_ROOT%{_datadir}/doc/%{name}-%{version}-WIP $RPM_BUILD_ROOT%{_datadir}/doc/%{name}-%{version}
-%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -93,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man8/fidentify.8*
 %{_mandir}/man8/photorec.8*
 %{_mandir}/man8/testdisk.8*
+%{_mandir}/zh_CN/man8/fidentify.8*
+%{_mandir}/zh_CN/man8/photorec.8*
+%{_mandir}/zh_CN/man8/testdisk.8*
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec
 %attr(755,root,root) %{_bindir}/testdisk

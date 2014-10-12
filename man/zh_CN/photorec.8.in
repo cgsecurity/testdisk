@@ -1,0 +1,29 @@
+.\" May be distributed under the GNU General Public License
+.TH PHOTOREC 8 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+photorec \- 从硬盘，数码相机或光盘中恢复丢失的文件
+.SH SYNOPSIS
+.BI "photorec [/log] [/debug] [/d recup_dir] [device|image.dd|image.e01]
+.sp
+.BI "photorec /version
+.SH DESCRIPTION
+   \fBPhotoRec\fP 是一个数据恢复工具，它能从硬盘、光盘中恢复丢失的文件包括视频，文档，归档，以及从数码相机存储中恢复丢失的图片(Photo Recovery)。PhotoRec 会忽略文件系统，并根据基本的数据进行恢复。所以即便您存储介质上的文件系统遭到了严重破坏，或者被格式化，它仍能工作。 PhotoRec 的使用是安全的，因为它会拒绝对目标 驱动器/存储器 进行写入操作。
+.SH OPTIONS
+.TP
+.B /log
+新建 photorec.log 日志文件
+.TP
+.B /debug
+添加 debug 信息
+.SH SEE ALSO
+.BR testdisk(8),
+.BR fdisk (8).
+.BR
+.SH TRANSLATION
+Zhou Mo <cdluminate@gmail.com>
+.SH AUTHOR
+PhotoRec @VERSION@, 数据恢复工具, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+http://www.cgsecurity.org
