@@ -48,11 +48,49 @@
 #include "file_jpg.h"
 #include "ntfs_dir.h"
 
+static void display_help(void)
+{
+  printf("\nUsage: qphotorec\n"\
+      "       qphotorec /version\n" \
+      "\n" \
+      "QPhotoRec searches various file formats (JPEG, Office...), it stores them\n" \
+      "in recup_dir directory.\n");
+}
+
+static void display_version(void)
+{
+  printf("QPhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  printf("\n");
+  printf("Version: %s\n", VERSION);
+  printf("Compiler: %s\n", get_compiler());
+  printf("Compilation date: %s\n", get_compilation_date());
+  printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s\n",
+      td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version());
+  printf("OS: %s\n" , get_os());
+}
+
 int main(int argc, char *argv[])
 {
   int log_errno=0;
   time_t my_time;
   FILE *log_handle;
+  int i;
+  for(i=1; i<argc; i++)
+  {
+    if(strcmp(argv[i],"/help")==0 || strcmp(argv[i],"-help")==0 || strcmp(argv[i],"--help")==0 ||
+      strcmp(argv[i],"/h")==0 || strcmp(argv[i],"-h")==0 ||
+      strcmp(argv[i],"/?")==0 || strcmp(argv[i],"-?")==0)
+    {
+      display_help();
+      return 0;
+    }
+    else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
+      (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
+    {
+      display_version();
+      return 0;
+    }
+  }
 #ifdef Q_WS_X11
   if(getenv("DISPLAY")==NULL)
   {

@@ -49,6 +49,8 @@
 #include "filegen.h"
 #include "log.h"
 #include "phcfg.h"
+#include "misc.h"
+#include "file_jpg.h"
 
 extern file_enable_t list_file_enable[];
 extern file_check_list_t file_check_list;
@@ -172,14 +174,54 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
   closedir(dir);
 }
 
+static void display_help(void)
+{
+  printf("\nUsage: fidentify [--check] [directory]\n"\
+      "       fidentify --version\n" \
+      "\n" \
+      "fidentify determine the file type, the 'extension', by using the same database than PhotoRec.\n");
+}
+
+static void display_version(void)
+{
+  printf("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  printf("\n");
+  printf("Version: %s\n", VERSION);
+  printf("Compiler: %s\n", get_compiler());
+  printf("Compilation date: %s\n", get_compilation_date());
+  printf("libjpeg: %s\n", td_jpeg_version());
+  printf("OS: %s\n" , get_os());
+}
+
 int main(int argc, char **argv)
 {
   int i;
   unsigned int check=0;
   FILE *log_handle=NULL;
   int log_errno=0;
+  int todo=1;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
+  for(i=1; i<argc; i++)
+  {
+    if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
+    {
+      check++;
+    }
+    else if(strcmp(argv[i],"/help")==0 || strcmp(argv[i],"-help")==0 || strcmp(argv[i],"--help")==0 ||
+      strcmp(argv[i],"/h")==0 || strcmp(argv[i],"-h")==0 ||
+      strcmp(argv[i],"/?")==0 || strcmp(argv[i],"-?")==0)
+    {
+      display_help();
+      return 0;
+    }
+    else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
+      (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
+    {
+      display_version();
+      return 0;
+    }
+  }
   log_handle=log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
   if(log_handle!=NULL)
   {
@@ -203,20 +245,15 @@ int main(int argc, char **argv)
       file_enable->enable=1;
   }
   file_stats=init_file_stats(list_file_enable);
-  i=1;
-  if(argc>1)
+  for(i=1; i<argc; i++)
   {
-    if(strcmp(argv[1], "-check")==0)
+    if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
     {
-      check++;
-      i++;
     }
-  }
-  if(argc>i)
-  {
-    for(; i<argc; i++)
+    else
     {
       struct stat buf_stat;
+      todo=0;
 #ifdef HAVE_LSTAT
       if(lstat(argv[i], &buf_stat)==0)
 #else
@@ -230,7 +267,7 @@ int main(int argc, char **argv)
 	}
     }
   }
-  else
+  if(todo)
     file_identify_dir(".", check);
   free_header_check();
   free(file_stats);

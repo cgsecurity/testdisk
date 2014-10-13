@@ -318,9 +318,9 @@ qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphbs.c
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp
 
-fidentify_SOURCES	= fidentify.c common.c common.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
+fidentify_SOURCES	= fidentify.c common.c common.h misc.c misc.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
 
-CLEANFILES = nodist_qphotorec_SOURCES
+CLEANFILES = $(nodist_qphotorec_SOURCES)
 DISTCLEANFILES = *~ core
 
 small: $(sbin_PROGRAMS) $(bin_PROGRAMS)
