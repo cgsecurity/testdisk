@@ -38,6 +38,7 @@ testdisk \- Scan and repair disk partitions
    - Linux ext2
    - NTFS (Windows NT/2K/XP/2003/Vista/...)
 
+   For more information on how to use, please visit the wiki pages on www.cgsecurity.org
 .SH OPTIONS
 .TP
 .B /log

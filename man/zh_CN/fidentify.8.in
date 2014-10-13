@@ -1,14 +1,23 @@
 .\" May be distributed under the GNU General Public License
 .TH FIDENTIFY 8 @TESTDISKDATE@ "Administration Tools"
 .SH NAME
-fidentify \- 从硬盘，数码相机或光盘中恢复丢失的文件
+fidentify \- 用PhotoRec数据库来判断文件类型
 .SH SYNOPSIS
-.BI "fidentify [目录]
+.BI "fidentify [--check] [目录|文件]
+.sp
+.BI "fidentify --version
 .sp
 .SH DESCRIPTION
-   \fBfidentify\fP 识别文件类型，以及“扩展名”，其中使用与 PhotoRec 相同的数据库。
+   \fBfidentify\fP 识别文件类型，以及“扩展名”，它使用与 PhotoRec 相同的数据库。
+   当一个文件或者目录被指定时，fidentify会输出这个文件，或者该目录下所有文件的类型。
+   如果没有提供参数，fidentify会输出当前目录下的文件类型。
+   fidentify的功能与file(1)近似。
+.SH OPTIONS
+.TP
+.B --check
+像PhotoRec默认那样检查文件格式
 .SH SEE ALSO
-.BR photorec(8),
+.BR photorec(8), testdisk(8), file(1)
 .BR
 .SH TRANSLATION
 Zhou Mo <cdluminate@gmail.com>

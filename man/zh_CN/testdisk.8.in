@@ -15,16 +15,16 @@ testdisk \- 扫描和恢复硬盘分区
    - BSD disklabel (FreeBSD/OpenBSD/NetBSD)
    - CramFS, 压缩文件系统
    - DOS/Windows FAT12, FAT16 and FAT32
-   - HFS and HFS+, Hierarchical File System
+   - HFS and HFS+, 分层文件系统
    - JFS, IBM 的日志文件系统
    - Linux ext2/ext3/ext4
-   - Linux Raid
+   - Linux 磁盘阵列
      RAID 1: 镜像
-     RAID 4: striped array with parity device
-     RAID 5: striped array with distributed parity information
-     RAID 6: striped array with distributed dual redundancy information 
-   - Linux Swap (versions 1 and 2)
-   - LVM and LVM2, Linux Logical Volume Manager
+     RAID 4: 块交叉奇偶校验
+     RAID 5: 分布式块交叉奇偶校验
+     RAID 6: P+Q冗余
+   - Linux 交换分区 (版本 1 和 2)
+   - LVM and LVM2, Linux 逻辑卷管理器
    - Mac partition map
    - Novell Storage Services NSS
    - NTFS (Windows NT/2K/XP/2003/Vista/...)
@@ -38,10 +38,11 @@ testdisk \- 扫描和恢复硬盘分区
    - Linux ext2
    - NTFS (Windows NT/2K/XP/2003/Vista/...)
 
+   关于该软件的使用方面的信息，可以参见 www.cgsecurity.org 上的维基页面。
 .SH OPTIONS
 .TP
 .B /log
-新建一个 testdisk.log 日志文件
+建立一个 testdisk.log 日志文件
 .TP
 .B /debug
 添加 debug 信息

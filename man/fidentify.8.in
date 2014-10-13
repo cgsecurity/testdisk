@@ -1,14 +1,23 @@
 .\" May be distributed under the GNU General Public License
 .TH FIDENTIFY 8 @TESTDISKDATE@ "Administration Tools"
 .SH NAME
-fidentify \- Recover lost files from harddisk, digital camera and cdrom
+fidentify \- Determine file type using PhotoRec database
 .SH SYNOPSIS
-.BI "fidentify [directory]
+.BI "fidentify [--check] [directory|file]
+.sp
+.BI "fidentify --version
 .sp
 .SH DESCRIPTION
-   \fBfidentify\fP identify the file type, the "extension", by using thr same database than PhotoRec.
+   \fBfidentify\fP identify the file type, the "extension", by using the same database than PhotoRec.
+   When a file or directory is specified, fidentify will output the type of file, or files under the specified directory.
+   If given no arguments, fidentify will output type of files under current directory.
+   fidentify is similar to file(1).
+.SH OPTIONS
+.TP
+.B --check
+check the file format like PhotoRec does by default
 .SH SEE ALSO
-.BR photorec(8),
+.BR photorec(8), testdisk(8), file(1)
 .BR
 .SH AUTHOR
 PhotoRec @VERSION@, Data Recovery Utility, @TESTDISKDATE@
