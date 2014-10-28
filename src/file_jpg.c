@@ -1263,38 +1263,34 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
 
 static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size)
 {
+  unsigned int j=i+4;
   /* DHT must not be shorter than 18 bytes, 1+16+1 */
   /* DHT should not be longer than 1088 bytes, 4*(1+16+255) */
   if(size<18)
     return 2;
-  if(i + 4 < buffer_size)
+  while(j < buffer_size && j < i+size)
   {
-    unsigned int j=i+4;
-    const unsigned int tc=buffer[j] & 0x0f;
+    const unsigned int tc=buffer[j]>>4;
     const unsigned int n=buffer[j] & 0x0f;
+    unsigned int l;
+    unsigned int sum=0;
     /* Table class: 0 = DC table or lossless table, 1 = AC table */
     if(tc > 1)
       return 2;
     /* Must be between 0 and 3 Huffman table */
     if(n > 3)
       return 2;
-    {
-      unsigned int l;
-      unsigned int sum=0;
-      if(j < buffer_size && (buffer[j]&0x0f)>3)
-	return 2;
-      j++;
-      for(l=0; l < 16; l++)
-	if(j < buffer_size)
-	  sum+=buffer[j+l];
-      if(sum>255)
-	return 2;
-      j+=16;
-      j+=sum;
-    }
-    if(j > i+size)
+    j++;
+    for(l=0; l < 16; l++)
+      if(j < buffer_size)
+	sum+=buffer[j+l];
+    if(sum>255)
       return 2;
+    j+=16;
+    j+=sum;
   }
+  if(j > i+size)
+    return 2;
   return 0;
 }
 
