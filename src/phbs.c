@@ -99,6 +99,7 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
     const uint64_t old_offset=offset;
     {
       file_recovery_t file_recovery_new;
+      file_recovery_new.blocksize=blocksize;
       if(file_recovery.file_stat!=NULL &&
           file_recovery.file_stat->file_hint->min_header_distance > 0 &&
           file_recovery.file_size<=file_recovery.file_stat->file_hint->min_header_distance)
