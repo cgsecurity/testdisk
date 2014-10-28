@@ -28,6 +28,9 @@
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>	/* unlink */
+#endif
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -288,6 +291,12 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	      (long long unsigned)offset_next_file);
 #endif
 	}
+      }
+      if(file_recovery.handle!=NULL)
+      {
+	fclose(file_recovery.handle);
+	file_recovery.handle=NULL;
+	unlink(file_recovery.filename);
       }
       search_walker=p;
       if(go_backward==0)

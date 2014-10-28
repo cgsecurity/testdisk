@@ -618,6 +618,11 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
     if(file_recovery->offset_error!=0)
       return -1;
     file_block_truncate_zero(file_recovery, list_search_space);
+    if(file_recovery->handle!=NULL)
+    {
+      fclose(file_recovery->handle);
+      unlink(file_recovery->filename);
+    }
     reset_file_recovery(file_recovery);
     return 0;
   }
@@ -627,7 +632,6 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
   xml_log_file_recovered(file_recovery);
 #endif
   file_block_free(&file_recovery->location);
-  reset_file_recovery(file_recovery);
   return 1;
 }
 
@@ -647,7 +651,7 @@ int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const 
   if(file_recovery->file_stat==NULL)
     return 0;
   if(file_recovery->handle)
-    file_finish_aux(file_recovery, params, paranoid);
+    file_finish_aux(file_recovery, params, (paranoid==0?0:1));
   if(file_recovery->file_size==0)
   {
     file_block_truncate_zero(file_recovery, list_search_space);
