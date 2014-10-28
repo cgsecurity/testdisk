@@ -311,7 +311,6 @@ case "$target" in
     ;;
 esac
 
-AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 AM_CONDITIONAL(USEICON, test "$use_icon" = yes)
 
 # Checks for programs.
@@ -854,6 +853,7 @@ then
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
 fi
+AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 
 # e2fsprogs may be using pthread
 # checks for pthreads
