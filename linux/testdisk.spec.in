@@ -21,14 +21,12 @@ BuildRequires:	libewf-devel
 BuildRequires:	libjpeg-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	ncurses-devel >= 5.2
-%ifnarch ppc ppc64
-#BuildRequires:	ntfsprogs-devel
 BuildRequires:	ntfs-3g-devel
-%endif
-BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
+BuildRequires:	qt-devel
+BuildRequires:	desktop-file-utils
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Obsoletes:	testdisk-doc
+Obsoletes:	testdisk-doc < 6.12
 %{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
 
 %description
@@ -86,17 +84,38 @@ make DESTDIR="$RPM_BUILD_ROOT" install
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%check
+desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
+
+%post
+/bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
+
+%postun
+if [ $1 -eq 0 ] ; then
+    /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null
+    /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+fi
+
+%posttrans
+/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS COPYING ChangeLog NEWS README THANKS
 %{_mandir}/man8/fidentify.8*
 %{_mandir}/man8/photorec.8*
+%{_mandir}/man8/qphotorec.8*
 %{_mandir}/man8/testdisk.8*
 %{_mandir}/zh_CN/man8/fidentify.8*
 %{_mandir}/zh_CN/man8/photorec.8*
+%{_mandir}/zh_CN/man8/qphotorec.8*
 %{_mandir}/zh_CN/man8/testdisk.8*
+%{_datadir}/applications/qphotorec.desktop
+%{_datadir}/icons/hicolor/48x48/apps/qphotorec.png
+%{_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec
+%attr(755,root,root) %{_bindir}/qphotorec
 %attr(755,root,root) %{_bindir}/testdisk
 
 %changelog

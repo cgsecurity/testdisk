@@ -6,6 +6,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	documentation.html \
 	dos/readme.txt \
 	linux/testdisk.spec.in \
+	linux/qphotorec.desktop \
 	src/icon_ph.rc src/icon_qph.rc src/icon_tst.rc \
 	src/photorec_64x64.png \
 	src/gnome/README \
@@ -26,9 +27,16 @@ AUTOMAKE_OPTIONS = gnits
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README $(top_srcdir)/THANKS $(top_srcdir)/documentation.html $(DESTDIR)$(docdir)
+if USEQT
+	$(mkinstalldirs) $(DESTDIR)$(datadir)/applications
+	$(INSTALL_DATA) $(top_srcdir)/linux/qphotorec.desktop $(DESTDIR)$(datadir)/applications
+endif
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(docdir)
+if USEQT
+	rm -f $(DESTDIR)$(datadir)/applications/qphotorec.desktop
+endif
 
 static:
 	rm -f src/testdisk src/testdisk.exe src/photorec src/photorec.exe src/fidentify src/fidentify.exe src/qphotorec src/qphotorec.exe

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=QPhotoRec
+GenericName=Data Recovery Utility
+Icon=qphotorec
+TryExec=/usr/bin/qphotorec
+Exec=/usr/bin/qphotorec %F
+Terminal=false
+Categories=System;Filesystem;Qt;
