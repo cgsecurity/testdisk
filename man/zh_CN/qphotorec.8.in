@@ -1,0 +1,23 @@
+.\" May be distributed under the GNU General Public License
+.TH QPHOTOREC 8 @TESTDISKDATE@ "Administration Tools"
+.SH NAME
+qphotorec \- 从硬盘，数码相机或光盘中恢复丢失的文件
+.SH SYNOPSIS
+.BI "qphotorec
+.SH DESCRIPTION
+   \fBQPhotoRec\fP 是一个数据恢复工具，它能从硬盘、光盘中恢复丢失的文件包括视频，文档，归档，以及从数码相机存储中恢复丢失的图片(Photo Recovery)。QPhotoRec 会忽略文件系统，并根据基本的数据进行恢复。所以即便您存储介质上的文件系统遭到了严重破坏，或者被格式化，它仍能工作。 QPhotoRec 的使用是安全的，因为它会拒绝对目标 驱动器/存储器 进行写入操作。
+   关于该软件的使用方面的信息，可以参见 www.cgsecurity.org 上的维基页面。
+.SH SEE ALSO
+.BR photorec(8),
+.BR testdisk(8),
+.BR fdisk (8).
+.BR
+.SH TRANSLATION
+Zhou Mo <cdluminate@gmail.com>
+.SH AUTHOR
+PhotoRec @VERSION@, 数据恢复工具, @TESTDISKDATE@
+.br
+Christophe GRENIER <grenier@cgsecurity.org>
+.br
+http://www.cgsecurity.org
+

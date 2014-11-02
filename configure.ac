@@ -888,9 +888,9 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 	man/Makefile
-	man/testdisk.8 man/photorec.8 man/fidentify.8
+	man/testdisk.8 man/photorec.8 man/qphotorec.8 man/fidentify.8
 	man/zh_CN/Makefile
-	man/zh_CN/testdisk.8 man/zh_CN/photorec.8 man/zh_CN/fidentify.8
+	man/zh_CN/testdisk.8 man/zh_CN/photorec.8 man/zh_CN/qphotorec.8 man/zh_CN/fidentify.8
 	linux/testdisk.spec
 ])
 AC_OUTPUT
