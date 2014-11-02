@@ -2,9 +2,9 @@
 	$(WINDRES) --include-dir $(srcdir) $< $@ 
 
 if USEICON
-ICON_TESTDISK=icon_tst.rc ../ico/testdisk.ico
-ICON_PHOTOREC=icon_ph.rc ../ico/photorec.ico
-ICON_QPHOTOREC=icon_qph.rc ../ico/photorec.ico
+ICON_TESTDISK=icon_tst.rc ../icons/testdisk.ico ../win/testdisk_win.exe.manifest
+ICON_PHOTOREC=icon_ph.rc ../icons/photorec.ico ../win/photorec_win.exe.manifest
+ICON_QPHOTOREC=icon_qph.rc ../icons/photorec.ico ../win/qphotorec_win.exe.manifest
 endif
 
 if USEQT

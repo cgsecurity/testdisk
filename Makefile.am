@@ -1,12 +1,10 @@
-
-SUBDIRS = src man
+SUBDIRS = icons man src
 
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh \
 	progsreiserfs-journal.patch progsreiserfs-file-read.patch \
 	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
 	documentation.html \
 	dos/readme.txt \
-	ico/photorec.ico ico/testdisk.ico \
 	linux/testdisk.spec.in \
 	src/icon_ph.rc src/icon_qph.rc src/icon_tst.rc \
 	src/photorec_64x64.png \

@@ -886,6 +886,7 @@ AC_SUBST(qphotorec_LDADD)
 AC_SUBST(qphotorec_CXXFLAGS)
 AC_CONFIG_FILES([
 	Makefile
+	icons/Makefile
 	src/Makefile
 	man/Makefile
 	man/testdisk.8 man/photorec.8 man/qphotorec.8 man/fidentify.8

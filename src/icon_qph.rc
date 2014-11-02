@@ -1,4 +1,4 @@
-app                      ICON    DISCARDABLE     "../ico/photorec.ico"
+app                      ICON    DISCARDABLE     "../icons/photorec.ico"
 
 //CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST MOVEABLE PURE "../win/qphotorec_win.exe.manifest"
 1 24 "../win/qphotorec_win.exe.manifest"
