@@ -285,9 +285,11 @@ use_icon=no
 case "$target" in
 *-*-*cygwin*)
   use_icon=yes
+  win_target=yes
 ;;
 *-*-*mingw*)
   use_icon=yes
+  win_target=yes
 ;;
 *-*-*djgpp)
   if test -z "$CC" ; then CC=gcc; fi
@@ -854,6 +856,10 @@ then
   qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
 fi
 AM_CONDITIONAL(USEQT, test "$use_qt" = true)
+if test "$win_target" = yes;
+then
+  qphotorec_LDADD="$qphotorec_LDADD -mwindows"
+fi
 
 # e2fsprogs may be using pthread
 # checks for pthreads
