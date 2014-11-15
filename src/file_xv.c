@@ -27,6 +27,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"

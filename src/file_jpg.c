@@ -42,6 +42,7 @@
 #include <jpeglib.h>
 #include "suspend.h"
 #endif
+#include <ctype.h>      /* isprint */
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
