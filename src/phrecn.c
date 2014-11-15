@@ -552,10 +552,10 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case key_ESC:
       case 'q':
       case 'Q':
+	interface_options_photorec_log(options);
 	return;
     }
   }
-  interface_options_photorec_log(options);
 }
 
 #define INTER_FSELECT_X	0
