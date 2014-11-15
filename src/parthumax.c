@@ -51,11 +51,13 @@ static void init_structure_humax(const disk_t *disk_car,list_part_t *list_part, 
 static const char *get_partition_typename_humax(const partition_t *partition);
 static unsigned int get_part_type_humax(const partition_t *partition);
 
+#if 0
 static const struct systypes humax_sys_types[] = {
   {0x00,	 	"Empty"        	},
   {PHUMAX_PARTITION,	"Partition"	},
   {0, NULL }
 };
+#endif
 
 struct partition_humax {
   uint32_t unk1;

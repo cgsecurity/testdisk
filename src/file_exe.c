@@ -326,7 +326,6 @@ static int PEVersion_aux(const char*buffer, const unsigned int end, const char *
       }
     }
   }
-  return -1;
 }
 
 static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, const char *old_filename)
