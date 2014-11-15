@@ -141,9 +141,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
       while (len>0)
       {
         const unsigned int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
-        const int bytes = fread(buffer, 1, count, file_recovery->handle);
-
-        if (bytes != count)
+        if(fread(buffer, 1, count, file_recovery->handle) != count)
         {
 #ifdef DEBUG_ACE
           log_trace("file_ace: truncated file\n");
