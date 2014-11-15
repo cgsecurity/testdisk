@@ -182,27 +182,27 @@ static unsigned int up2power_aux(const unsigned int number)
 	return(1+up2power_aux(number/2));
 }
 
-void set_part_name(partition_t *partition,const char *src,const int max_size)
+void set_part_name(partition_t *partition, const char *src, const unsigned int max_size)
 {
-  int i;
+  unsigned int i;
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   partition->fsname[i]='\0';
 }
 
-void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size)
+void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size)
 {
-  int i;
+  unsigned int i;
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
+  while(i>0 && src[i-1]==' ')
+    i--;
   partition->fsname[i]='\0';
-  for(i--; i>=0 && src[i]==' '; i--);
-  partition->fsname[i+1]='\0';
 }
 
 char* strip_dup(char* str)
 {
-  int     i;
+  unsigned int i;
   char *end;
   while(isspace(*str))
     str++;

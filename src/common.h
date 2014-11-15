@@ -426,8 +426,8 @@ struct my_data_struct
 
 void *MALLOC(size_t size);
 unsigned int up2power(const unsigned int number);
-void set_part_name(partition_t *partition,const char *src,const int max_size);
-void set_part_name_chomp(partition_t *partition, const unsigned char *src, const int max_size);
+void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
+void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
 char* strip_dup(char* str);
 int date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 void set_secwest(void);
