@@ -79,18 +79,18 @@ static inline void exfat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 #ifdef HAVE_ICONV
 static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned int ins_len, char **outs, const unsigned int outs_len)
 {
-  char *inp;
+  const char *inp;
   char *outp;
   size_t inb_left, outb_left;
   if (cd == (iconv_t)(-1))
     return -1;
 
   outp = *outs;
-  inp = ins;
+  inp = (const char *)ins;
   inb_left = ins_len;
   outb_left = outs_len - 1;   // reserve 1 byte for NUL
 
-  if (iconv(cd, &inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
+  if (iconv(cd, (char **)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
   {
     // Regardless of the value of errno
     log_error("exfat_ucstoutf8: iconv failed %s\n", strerror(errno));
