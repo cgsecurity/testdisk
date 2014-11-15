@@ -151,12 +151,12 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
       (const char*)(ifd0+1) > (const char*)tiff + tiff_size)
     return NULL;
   for(j=0, ifd=&ifd0->ifd;
-      (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd0->nbr_fields);
+      (const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<(uint16_t)be16(ifd0->nbr_fields);
       j++, ifd++)
   {
     if(be16(ifd->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const char*)&ifd->tdir_type+1))
       *potential_error = (const char*)&ifd->tdir_type+1;
-    if(be16(ifd->tdir_tag)==tag)
+    if((uint16_t)be16(ifd->tdir_tag)==tag)
       return (const char*)tiff+be32(ifd->tdir_offset);
     else if(be16(ifd->tdir_tag)==TIFFTAG_EXIFIFD)	/* Exif IFD Pointer */
       exififd=(const struct ifd_header *)((const char*)tiff + be32(ifd->tdir_offset));
@@ -166,13 +166,14 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
       (const char*)exififd > (const char*)tiff &&
       (const char*)(exififd+1) <= (const char*)tiff + tiff_size)
   {	/* Exif */
+    const unsigned int nbr_fields=be16(exififd->nbr_fields);
     for(j=0, ifd=&exififd->ifd;
-	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(exififd->nbr_fields);
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<nbr_fields;
 	j++, ifd++)
     {
       if(be16(ifd->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const char*)&ifd->tdir_type+1))
 	*potential_error = (const char*)&ifd->tdir_type+1;
-      if(be16(ifd->tdir_tag)==tag)
+      if((uint16_t)be16(ifd->tdir_tag)==tag)
 	return (const char*)tiff+be32(ifd->tdir_offset);
     }
   }
@@ -180,16 +181,17 @@ static const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const un
   if(be32(*tiff_next_diroff)>0)
   {
     const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+be32(*tiff_next_diroff));
+    const unsigned int nbr_fields=be16(ifd1->nbr_fields);
     if((const char*)ifd1 <= (const char*)tiff ||
 	(const char*)(ifd1+1) > (const char*)tiff+tiff_size)
       return NULL;
     for(j=0, ifd=&ifd1->ifd;
-	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<be16(ifd1->nbr_fields);
+	(const char*)(ifd+1) <= (const char*)tiff+tiff_size && j<nbr_fields;
 	j++, ifd++)
     {
       if(be16(ifd->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const char*)&ifd->tdir_type+1))
 	*potential_error = (const char*)&ifd->tdir_type+1;
-      if(be16(ifd->tdir_tag)==tag)
+      if((uint16_t)be16(ifd->tdir_tag)==tag)
 	return (const char*)tiff+be32(ifd->tdir_offset);
     }
   }
@@ -300,7 +302,7 @@ static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned 
   const char *potential_error=NULL;
   const char *tag_make;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
-  if(be32(header->tiff_diroff) < sizeof(TIFFHeader))
+  if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tiff.extension;
@@ -325,7 +327,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
   const char raf_fp[15]={0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00,  0x01, 0x00, 0x00, 0xf0, 0x0d, 0x00, 0x01};
   const char *potential_error=NULL;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
-  if(le32(header->tiff_diroff) < sizeof(TIFFHeader))
+  if((uint32_t)le32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
   /* Avoid a false positiv with some RAF files */
   if(file_recovery->file_stat!=NULL &&
@@ -397,7 +399,7 @@ static unsigned int tiff_be_read(const void *val, const unsigned int type)
   }
 }
 
-static uint64_t parse_strip_le(FILE *handle, TIFFDirEntry *entry_strip_offsets, TIFFDirEntry *entry_strip_bytecounts)
+static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_offsets, const TIFFDirEntry *entry_strip_bytecounts)
 {
   const unsigned int nbr=(le32(entry_strip_offsets->tdir_count)<2048?
       le32(entry_strip_offsets->tdir_count):
@@ -438,7 +440,7 @@ static uint64_t parse_strip_le(FILE *handle, TIFFDirEntry *entry_strip_offsets, 
   return max_offset;
 }
 
-static uint64_t parse_strip_be(FILE *handle, TIFFDirEntry *entry_strip_offsets, TIFFDirEntry *entry_strip_bytecounts)
+static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_offsets, const TIFFDirEntry *entry_strip_bytecounts)
 {
   const unsigned int nbr=(be32(entry_strip_offsets->tdir_count)<2048?
       be32(entry_strip_offsets->tdir_count):
@@ -595,11 +597,11 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   uint64_t strip_bytecounts=0;
   uint64_t tile_offsets=0;
   uint64_t tile_bytecounts=0;
-  TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
-  TIFFDirEntry *entry_strip_offsets=NULL;
-  TIFFDirEntry *entry_strip_bytecounts=NULL;
-  TIFFDirEntry *entry_tile_offsets=NULL;
-  TIFFDirEntry *entry_tile_bytecounts=NULL;
+  const TIFFDirEntry *entry=(const TIFFDirEntry *)&buffer[2];
+  const TIFFDirEntry *entry_strip_offsets=NULL;
+  const TIFFDirEntry *entry_strip_bytecounts=NULL;
+  const TIFFDirEntry *entry_tile_offsets=NULL;
+  const TIFFDirEntry *entry_tile_bytecounts=NULL;
 #ifdef DEBUG_TIFF
   log_info("header_check_tiff_le(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
 #endif
@@ -909,11 +911,11 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
   uint64_t strip_bytecounts=0;
   uint64_t tile_offsets=0;
   uint64_t tile_bytecounts=0;
-  TIFFDirEntry *entry=(TIFFDirEntry *)&buffer[2];
-  TIFFDirEntry *entry_strip_offsets=NULL;
-  TIFFDirEntry *entry_strip_bytecounts=NULL;
-  TIFFDirEntry *entry_tile_offsets=NULL;
-  TIFFDirEntry *entry_tile_bytecounts=NULL;
+  const TIFFDirEntry *entry=(const TIFFDirEntry *)&buffer[2];
+  const TIFFDirEntry *entry_strip_offsets=NULL;
+  const TIFFDirEntry *entry_strip_bytecounts=NULL;
+  const TIFFDirEntry *entry_tile_offsets=NULL;
+  const TIFFDirEntry *entry_tile_bytecounts=NULL;
   if(depth>4)
     return -1;
   if(count>16)
