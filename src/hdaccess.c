@@ -1507,11 +1507,13 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
 #endif
   {
     unsigned char *buffer;
+    const struct tdewf_file_header *ewf;
     const uint8_t evf_file_signature[8] = { 'E', 'V', 'F', 0x09, 0x0D, 0x0A, 0xFF, 0x00 };
     if(verbose>1)
       log_verbose("file_test_availability %s is a file\n", device);
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
+    ewf=(const struct tdewf_file_header *)buffer;
     if(read(hd_h,buffer,DEFAULT_SECTOR_SIZE)<0)
     {
       memset(buffer,0,DEFAULT_SECTOR_SIZE);
@@ -1525,7 +1527,7 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
       disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder * disk_car->geom.sectors_per_head * disk_car->sector_size;
       disk_car->offset=*(unsigned long*)(buffer+19);
     }
-    else if(memcmp(buffer, evf_file_signature, 8)==0)
+    else if(memcmp(buffer, evf_file_signature, 8)==0 && le16(ewf->fields_segment)==1)
     {
       free(buffer);
       free(data);
