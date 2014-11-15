@@ -38,7 +38,7 @@
 #include "geometry.h"
 #include "autoset.h"
 
-#define MAX_HEADS 255u
+#define MAX_HEADS 255
 
 void set_cylinders_from_size_up(disk_t *disk_car)
 {

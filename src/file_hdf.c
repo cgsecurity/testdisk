@@ -74,6 +74,7 @@ static void file_check_hdf(file_recovery_t *file_recovery)
     struct ddh_struct ddh;
     const struct dd_struct *p;
     unsigned int i;
+    unsigned int size;
     if(
 #ifdef HAVE_FSEEKO
 	fseeko(file_recovery->handle, offset, SEEK_SET) < 0 ||
@@ -93,7 +94,8 @@ static void file_check_hdf(file_recovery_t *file_recovery)
 #ifdef DEBUG_HDF
     log_info("size=%u next=%lu\n", be16(ddh.size), be32(ddh.next));
 #endif
-    for(i=0, p=dd; i < be16(ddh.size); i++,p++)
+    size=be16(ddh.size);
+    for(i=0, p=dd; i < size; i++,p++)
     {
 #ifdef DEBUG_HDF
       log_info("tag=0x%04x, ref=%u, offset=%lu, length=%lu\n",

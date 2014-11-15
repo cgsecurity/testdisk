@@ -60,6 +60,7 @@ static void file_check_midi(file_recovery_t *file_recovery)
   const uint64_t fs_org=file_recovery->file_size;
   struct midi_header hdr;
   unsigned int i;
+  unsigned int tracks;
   uint64_t fs=4+4+6;
   file_recovery->file_size=0;
   if(
@@ -70,7 +71,8 @@ static void file_check_midi(file_recovery_t *file_recovery)
 #endif
       fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1)
     return ;
-  for(i=0; i<be16(hdr.tracks); i++)
+  tracks=be16(hdr.tracks);
+  for(i=0; i<tracks; i++)
   {
     struct midi_header track;
 #ifdef DEBUG_MIDI

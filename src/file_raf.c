@@ -67,11 +67,11 @@ static int header_check_raf(const unsigned char *buffer, const unsigned int buff
   uint64_t tmp;
   const struct header_raf *raf=(const struct header_raf *)buffer;
   uint64_t size;
-  if(be32(raf->jpg_offset)!=0 && be32(raf->jpg_offset)<sizeof(struct header_raf))
+  if((const uint32_t)be32(raf->jpg_offset)!=0 && (const uint32_t)be32(raf->jpg_offset)<sizeof(struct header_raf))
     return 0;
-  if(be32(raf->cfa_offset)!=0 && be32(raf->cfa_offset)<sizeof(struct header_raf))
+  if((const uint32_t)be32(raf->cfa_offset)!=0 && (const uint32_t)be32(raf->cfa_offset)<sizeof(struct header_raf))
     return 0;
-  if(be32(raf->cfa_header_offset)!=0 && be32(raf->cfa_header_offset)<sizeof(struct header_raf))
+  if((const uint32_t)be32(raf->cfa_header_offset)!=0 && (const uint32_t)be32(raf->cfa_header_offset)<sizeof(struct header_raf))
     return 0;
   size=(uint64_t)be32(raf->jpg_offset)+be32(raf->jpg_size);
   tmp=(uint64_t)be32(raf->cfa_offset)+be32(raf->cfa_size);

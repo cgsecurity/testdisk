@@ -53,13 +53,14 @@ struct lxo_header
 static int header_check_lxo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct lxo_header *header=(const struct lxo_header *)buffer;
-  if(be32(header->size) +8 < sizeof(struct lxo_header))
+  const uint64_t size=be32(header->size) + 8;
+  if(size < sizeof(struct lxo_header))
     return 0;
   if(buffer[8]=='L' && buffer[9]=='X' && buffer[10]=='O')
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_lxo.extension;
-    file_recovery_new->calculated_file_size=be32(header->size)+8;
+    file_recovery_new->calculated_file_size=size;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->data_check=&data_check_size;
     return 1;
@@ -68,7 +69,7 @@ static int header_check_lxo(const unsigned char *buffer, const unsigned int buff
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="lwo";
-    file_recovery_new->calculated_file_size=be32(header->size)+8;
+    file_recovery_new->calculated_file_size=size;
     file_recovery_new->file_check=&file_check_size;
     file_recovery_new->data_check=&data_check_size;
     return 1;

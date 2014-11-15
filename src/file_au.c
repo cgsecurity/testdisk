@@ -66,7 +66,7 @@ static int header_check_au(const unsigned char *buffer, const unsigned int buffe
 {
   const struct header_au_s *au=(const struct header_au_s *)buffer;
   if(memcmp(buffer,au_header,sizeof(au_header))==0 &&
-    be32(au->offset) >= sizeof(struct header_au_s) &&
+    (const uint32_t)be32(au->offset) >= sizeof(struct header_au_s) &&
     be32(au->encoding)>0 && be32(au->encoding)<=27 &&
     be32(au->channels)>0 && be32(au->channels)<=256)
   {

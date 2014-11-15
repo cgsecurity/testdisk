@@ -95,7 +95,7 @@ struct file_hint_struct
   /* needed by tar header */
   const uint64_t max_filesize;
   const int recover;
-  const int enable_by_default;
+  const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
 };
 

@@ -91,7 +91,7 @@ static int header_check_ttf(const unsigned char *buffer, const unsigned int buff
    * entrySelector 	Log2(maximum power of 2 <= numTables).
    * rangeShift 	NumTables x 16-searchRange.
    * */
-  if(td_ilog2(numTables) != be16(ttf->entrySelector))
+  if(td_ilog2(numTables) != (uint16_t)be16(ttf->entrySelector))
     return 0;
   if((16<<be16(ttf->entrySelector)) != be16(ttf->searchRange))
     return 0;

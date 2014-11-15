@@ -388,7 +388,7 @@ static void register_header_check_sig(file_stat_t *file_stat)
 {
   char *pos;
   char *buffer;
-  off_t buffer_size;
+  size_t buffer_size;
   struct stat stat_rec;
   FILE *handle;
   handle=open_signature_file();

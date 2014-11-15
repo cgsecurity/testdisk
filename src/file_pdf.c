@@ -72,7 +72,7 @@ static void file_rename_pdf(const char *old_filename)
   unsigned char*buffer;
   unsigned int i;
   unsigned int j;
-  int bsize;
+  size_t bsize;
   const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
   if((handle=fopen(old_filename, "rb"))==NULL)
     return;
@@ -129,7 +129,7 @@ static void file_rename_pdf(const char *old_filename)
   }
   if(buffer[i]=='<')
   {
-    int s=i;
+    unsigned int s=i;
     /* hexa to ascii */
     j=s;
     buffer[j++]='(';

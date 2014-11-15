@@ -90,7 +90,7 @@ static void file_rename_level0(const char *old_filename)
 {
   unsigned char buffer[512];
   FILE *file;
-  int buffer_size;
+  size_t buffer_size;
   unsigned int i;
   const struct lzh_level0 *hdr=(const struct lzh_level0 *)&buffer;
   if((file=fopen(old_filename, "rb"))==NULL)
@@ -118,7 +118,6 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->file_rename=&file_rename_level0;
 	return 1;
       }
-      break;
       /* Level 1 */
     case 1:
       {
@@ -129,16 +128,14 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 	file_recovery_new->extension=file_hint_lzh.extension;
 	return 1;
       }
-      break;
       /* Level 2 */
     case 2:
       {
-//	const struct lzh_level2 *hdr=(const struct lzh_level2 *)buffer;
+	//	const struct lzh_level2 *hdr=(const struct lzh_level2 *)buffer;
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=file_hint_lzh.extension;
 	return 1;
       }
-      break;
   }
   return 0;
 }

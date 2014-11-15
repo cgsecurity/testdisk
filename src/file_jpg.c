@@ -1299,7 +1299,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
 {
   FILE* infile=file_recovery->handle;
   unsigned char buffer[40*8192];
-  int nbytes;
+  size_t nbytes;
   uint64_t offset;
   unsigned int i;
   if(file_recovery->blocksize==0)
@@ -1350,7 +1350,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   FILE* infile=file_recovery->handle;
   unsigned char buffer[40*8192];
   uint64_t thumb_offset=0;
-  int nbytes;
+  size_t nbytes;
   file_recovery->extra=0;
 #ifdef HAVE_FSEEKO
   if(fseeko(infile, 0, SEEK_SET) < 0)

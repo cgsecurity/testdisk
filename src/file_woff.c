@@ -63,20 +63,21 @@ struct WOFFHeader
 static int header_check_woff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct WOFFHeader *woff=(const struct WOFFHeader *)buffer;
-  if(be32(woff->length) < sizeof(struct WOFFHeader))
+  const uint64_t length=(uint64_t)be32(woff->length);
+  if((uint32_t)be32(woff->length) < sizeof(struct WOFFHeader))
     return 0;
-  if(be32(woff->metaOffset) > 0 && be32(woff->metaOffset) < sizeof(struct WOFFHeader))
+  if((uint32_t)be32(woff->metaOffset) > 0 && (uint32_t)be32(woff->metaOffset) < sizeof(struct WOFFHeader))
     return 0;
-  if(be32(woff->privOffset) > 0 && be32(woff->privOffset) < sizeof(struct WOFFHeader))
+  if((uint32_t)be32(woff->privOffset) > 0 && (uint32_t)be32(woff->privOffset) < sizeof(struct WOFFHeader))
     return 0;
-  if(be32(woff->metaOffset) + be32(woff->metaLength)> be32(woff->length) ||
-      be32(woff->privOffset) + be32(woff->privLength)> be32(woff->length))
+  if((uint64_t)be32(woff->metaOffset) + (uint64_t)be32(woff->metaLength) > length ||
+      (uint64_t)be32(woff->privOffset) + (uint64_t)be32(woff->privLength) > length)
     return 0;
   if(woff->reserved!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_woff.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)be32(woff->length);
+  file_recovery_new->calculated_file_size=length;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;

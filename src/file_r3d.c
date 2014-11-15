@@ -129,7 +129,7 @@ static void file_rename_r3d(const char *old_filename)
 {
   unsigned char buffer[512];
   FILE *file;
-  int buffer_size;
+  size_t buffer_size;
   unsigned int i;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;

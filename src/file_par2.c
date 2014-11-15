@@ -73,7 +73,7 @@ static void file_rename_par2(const char *old_filename)
   while(1)
   {
     uint64_t length;
-    int buffer_size;
+    size_t buffer_size;
     unsigned char buffer[4096];
     const uint64_t *lengthp=(const uint64_t *)&buffer[8];
 #ifdef HAVE_FSEEKO

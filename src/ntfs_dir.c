@@ -134,7 +134,7 @@ static int index_get_size(ntfs_inode *inode)
 }
 
 #ifdef HAVE_ICONV
-static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, int ins_len, char **outs, int outs_len)
+static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, const int ins_len, char **outs, const int outs_len)
 {
     const char *inp;
     char *outp;
