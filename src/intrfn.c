@@ -875,7 +875,7 @@ int screen_buffer_display_ext(WINDOW *window, const char *options_org, const str
   const unsigned int itemLength=8;
   /* FIXME itemLength */
   strncpy(options,"Q",sizeof(options));
-  strncat(options,options_org,sizeof(options)-strlen(options));
+  strncat(options, options_org, sizeof(options)-strlen(options)-1);
   if(intr_buffer_screen[intr_nbr_line][0]!='\0')
     intr_nbr_line++;
   /* curses interface */
