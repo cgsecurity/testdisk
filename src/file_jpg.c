@@ -60,6 +60,7 @@ static void register_header_check_jpg(file_stat_t *file_stat);
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_jpg(file_recovery_t *file_recovery);
 data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size);
 
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
@@ -422,6 +423,14 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       return 0;
     if(buffer[3]==0xdb)	/* DQT */
       return 0;
+    if(buffer[3]==0xc4)	/* DHT - needed to recover .cr2 */
+      return 0;
+    if(buffer[3]==0xe0 && (buffer[6]!='J' || buffer[7]!='F'))	/* Should be JFIF/JFXX */
+      return 0;
+    if(buffer[3]==0xe1 && (buffer[6]!='E' || buffer[7]!='x' || buffer[8]!='i'|| buffer[9]!='f'))	/* Should be EXIF */
+      return 0;
+    if(buffer[3]==0xfe && (!isprint(buffer[6]) || !isprint(buffer[7])))
+      return 0;
   }
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {
@@ -438,6 +447,12 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	    tiff_size=buffer_size - (i+0x0A);
 	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
 	}
+      }
+      else if(buffer[i+1]==0xc4)
+      {
+	/* DHT */
+	if(jpg_check_dht(buffer, buffer_size, i, 2+(buffer[i+2]<<8)+buffer[i+3])!=0)
+	  return 0;
       }
       i+=2+(buffer[i+2]<<8)+buffer[i+3];
     }
