@@ -62,7 +62,7 @@ static void file_check_fh5(file_recovery_t *file_recovery)
 static int header_check_fh5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const fh5_header_t *fh5_buffer=(const fh5_header_t *) buffer;
-  if(be32(fh5_buffer->datalen) < sizeof(struct fh5_header_s))
+  if((const uint32_t)be32(fh5_buffer->datalen) < sizeof(struct fh5_header_s))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=4096;
