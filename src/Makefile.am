@@ -299,6 +299,7 @@ file_C			= filegen.c \
 			  file_xpt.c \
 			  file_xv.c \
 			  file_xz.c \
+			  file_z2d.c \
 			  file_zip.c
 
 file_H			= ext2.h ext2_common.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
