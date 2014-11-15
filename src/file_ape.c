@@ -122,20 +122,16 @@ static int header_check_ape(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_ape.extension;
     return 1;
   }
-  else
-  {
-    if(le16(ape->nChannels)<1 || le16(ape->nChannels)>2)
-      return 0;
-    if(le32(ape->nSampleRate)==0)
-      return 0;
-    if(le32(ape->nTotalFrames)==0)
-      return 0;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ape.extension;
-    /* 4 + le32(ape->nHeaderBytes) + le32(ape->nTerminatingDataBytes) ? */
-    return 1;
-  }
-  return 0;
+  if(le16(ape->nChannels)<1 || le16(ape->nChannels)>2)
+    return 0;
+  if(le32(ape->nSampleRate)==0)
+    return 0;
+  if(le32(ape->nTotalFrames)==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ape.extension;
+  /* 4 + le32(ape->nHeaderBytes) + le32(ape->nTerminatingDataBytes) ? */
+  return 1;
 }
 
 static void register_header_check_ape(file_stat_t *file_stat)
