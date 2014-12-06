@@ -342,7 +342,7 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
   }
   if(get_next_cluster(disk_car, partition, partition->upart_type, le16(fat_header->reserved), cluster)==0)
   {
-    return 0;
+    log_warning("FAT: Directory entry is marked as free.\n");
   }
   {
     const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
