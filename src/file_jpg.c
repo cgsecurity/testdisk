@@ -592,7 +592,7 @@ static void jpg_init_source (j_decompress_ptr cinfo)
  * the front of the buffer rather than discarding it.
  */
 
-static int jpg_fill_input_buffer (j_decompress_ptr cinfo)
+static boolean jpg_fill_input_buffer (j_decompress_ptr cinfo)
 {
   my_source_mgr * src = (my_source_mgr *) cinfo->src;
   size_t nbytes;
@@ -822,8 +822,8 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
   static struct my_error_mgr jerr;
   static uint64_t file_size_max;
   static struct jpeg_session_struct jpeg_session;
-  unsigned int checkpoint_status=0;
-  int avoid_leak=0;
+  unsigned int checkpoint_status;
+  int avoid_leak;
   jpeg_init_session(&jpeg_session);
   jpeg_session.handle=infile;
   jpeg_session.offset=offset;
@@ -856,6 +856,8 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
     }
     file_size_max+=blocksize;
   }
+  checkpoint_status=0;
+  avoid_leak=0;
   while(file_size_max<offset_rel2)
   {
     if(checkpoint_status==0 || jpeg_session_resume(&jpeg_session)<0)
@@ -1310,6 +1312,35 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
   return 0;
 }
 
+struct sof_header
+{
+  uint16_t      marker;
+  uint16_t      length;         /* 8 + 3 * nbr */
+  unsigned char precision;      /* 2-16 8 for SOF0 */
+  uint16_t      height;         /* 0-65535 */
+  uint16_t      width;          /* 1-65535 */
+  unsigned char nbr;            /* 1-255 */
+  unsigned char data[0];
+} __attribute__ ((__packed__));
+
+static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size)
+{
+  const struct sof_header *h=(const struct sof_header *)&buffer[i];
+  if(i+4 > buffer_size)
+    return 0;
+  if(be16(h->length) < sizeof(struct sof_header)-2)
+    return 1;
+  if(i+2+8 > buffer_size)
+    return 0;
+  if(h->precision!=8 || be16(h->width)==0 || be16(h->nbr)==0)
+    return 1;
+  if(be16(h->length) < 8+h->nbr*3)
+    return 1;
+//  if(i+2+be16(h->length) > buffer_size)
+//    return 0;
+  return 0;
+}
+
 static void jpg_search_marker(file_recovery_t *file_recovery)
 {
   FILE* infile=file_recovery->handle;
@@ -1733,17 +1764,27 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  (long long unsigned)file_recovery->calculated_file_size+2+size);
 #endif
       file_recovery->calculated_file_size+=2+size;
-      if(buffer[i+1]==0xc4)	/* DHT */
+      if(buffer[i+1]==0xc0)	/* SOF0 */
+      {
+	if(jpg_check_sof0(buffer, buffer_size, i, 2+size)!=0)
+	  return DC_STOP;
+      }
+      else if(buffer[i+1]==0xc4)	/* DHT */
       {
 	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
 	  return DC_STOP;
       }
-      if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
+      else if(buffer[i+1]==0xc4)	/* DHT */
+      {
+	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
+	  return DC_STOP;
+      }
+      else if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
 	file_recovery->data_check=&data_check_jpg2;
 	return data_check_jpg2(buffer, buffer_size, file_recovery);
       }
-      if(buffer[i+1]==0xe2)	/* APP2 Exif information */
+      else if(buffer[i+1]==0xe2)	/* APP2 Exif information */
       {
 	if(i+8 < buffer_size &&
 	    buffer[i+4]=='M' && buffer[i+5]=='P' && buffer[i+6]=='F' && buffer[i+7]==0)
