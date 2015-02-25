@@ -125,6 +125,12 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
       }
       if(disk->pread(disk, buffer_start, READ_SIZE, offset) != READ_SIZE)
       {
+#ifdef HAVE_NCURSES
+	wmove(stdscr,11,0);
+	wclrtoeol(stdscr);
+	wprintw(stdscr,"Error reading sector %10lu\n",
+	    (unsigned long)((offset - partition->part_offset) / disk->sector_size));
+#endif
       }
     }
   } /* end while(current_search_space!=list_search_space) */
