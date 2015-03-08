@@ -68,31 +68,32 @@ int intr_nbr_line=0;
 
 int screen_buffer_add(const char *_format, ...)
 {
-  char tmp_line[BUFFER_LINE_LENGTH+1];
-  char *pos_in_tmp_line=tmp_line;
+  char tmp[BUFFER_LINE_LENGTH+1];
+  const char *start=tmp;
   va_list ap;
-  memset(tmp_line, '\0', sizeof(tmp_line));
-  va_start(ap,_format);
-  vsnprintf(tmp_line, sizeof(tmp_line), _format, ap);
+  memset(tmp, '\0', sizeof(tmp));
+  va_start(ap, _format);
+  vsnprintf(tmp, sizeof(tmp), _format, ap);
   va_end(ap);
-  while(pos_in_tmp_line!=NULL && (intr_nbr_line<MAX_LINES))
+  while(start!=NULL && intr_nbr_line<MAX_LINES)
   {
-    const unsigned int len=strlen(intr_buffer_screen[intr_nbr_line]);
-    unsigned int nbr=BUFFER_LINE_LENGTH-len;
-    char *ret_ligne= strchr(pos_in_tmp_line,'\n');
-    if(ret_ligne!=NULL && ret_ligne-pos_in_tmp_line < nbr)
-      nbr=ret_ligne-pos_in_tmp_line;
-    memcpy(&intr_buffer_screen[intr_nbr_line][len], pos_in_tmp_line, nbr);
-    intr_buffer_screen[intr_nbr_line][len+nbr]='\0';
-    if(ret_ligne!=NULL)
+    const unsigned int dst_current_len=strlen(intr_buffer_screen[intr_nbr_line]);
+    const char *end=strchr(start,'\n');
+    unsigned int nbr=(end==NULL ? strlen(start) : end-start);
+    if(nbr > BUFFER_LINE_LENGTH-dst_current_len)
+      nbr=BUFFER_LINE_LENGTH-dst_current_len;
+
+    memcpy(&intr_buffer_screen[intr_nbr_line][dst_current_len], start, nbr);
+    intr_buffer_screen[intr_nbr_line][dst_current_len+nbr]='\0';
+    if(end!=NULL)
     {
       if(++intr_nbr_line<MAX_LINES)
 	intr_buffer_screen[intr_nbr_line][0]='\0';
-      ret_ligne++;
+      end++;
     }
-    pos_in_tmp_line=ret_ligne;
+    start=end;
   }
-  /*	log_trace("aff_intr_buffer_screen %d =>%s<=\n",intr_nbr_line,tmp_line); */
+  /*	log_trace("aff_intr_buffer_screen %d =>%s<=\n",intr_nbr_line,tmp); */
   if(intr_nbr_line==MAX_LINES)
   {
     log_warning("Buffer can't store more than %d lines.\n", MAX_LINES);
