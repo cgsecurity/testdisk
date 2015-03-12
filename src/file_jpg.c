@@ -1332,7 +1332,7 @@ static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer
     return 1;
   if(i+2+8 > buffer_size)
     return 0;
-  if(h->precision!=8 || be16(h->width)==0 || be16(h->nbr)==0)
+  if(h->precision!=8 || be16(h->width)==0 || h->nbr==0)
     return 1;
   if(be16(h->length) < 8+h->nbr*3)
     return 1;
