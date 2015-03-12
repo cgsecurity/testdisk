@@ -101,6 +101,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
   int quit=0;
   int ask_destination=1;
   WINDOW *window=(WINDOW*)dir_data->display;
+  const char *needle=NULL;
   do
   {
     int offset=0;
@@ -492,34 +493,81 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		copy_done(window, copy_ok, copy_bad);
 	      }
 	    }
-	    break;	
+	    break;
+	  case '/':
 	  case 'f':
+	    needle=ask_string_ncurses("Filename to find ? ");
+	    if(needle!=NULL && needle[0]!='\0' && pos->next!=&dir_list->list)
 	    {
-	      const char *needle=ask_string_ncurses("Filename to find ? ");
-	      if(needle!=NULL && needle[0]!='\0')
+	      const file_info_t *tmp;
+	      struct td_list_head *pos_org=pos;
+	      const int pos_num_org=pos_num;
+	      tmp=td_list_entry(pos, file_info_t, list);
+	      while(pos->next!=&dir_list->list &&
+		  strcasestr(tmp->name, needle)==NULL)
 	      {
-		file_info_t *tmp;
-		struct td_list_head *pos_org=pos;
-		const int pos_num_org=pos_num;
+		pos=pos->next;
 		tmp=td_list_entry(pos, file_info_t, list);
-		while(pos->next!=&dir_list->list &&
-		  strcmp(tmp->name, needle)!=0)
-		{
-		  pos=pos->next;
-		  tmp=td_list_entry(pos, file_info_t, list);
-		  pos_num++;
-		}
-		if(pos==&dir_list->list)
-		{
-		  pos=pos_org;
-		  pos_num=pos_num_org;
-		}
+		pos_num++;
+	      }
+	      if(strcasestr(tmp->name, needle)==NULL)
+	      {
+		pos=pos_org;
+		pos_num=pos_num_org;
+	      }
+	    }
+	    break;
+	  case 'n':
+	    if(needle!=NULL && needle[0]!='\0' && pos->next!=&dir_list->list)
+	    {
+	      const file_info_t *tmp;
+	      struct td_list_head *pos_org=pos;
+	      const int pos_num_org=pos_num;
+	      tmp=td_list_entry(pos, file_info_t, list);
+	      pos=pos->next;
+	      tmp=td_list_entry(pos, file_info_t, list);
+	      pos_num++;
+	      while(pos->next!=&dir_list->list &&
+		  strcasestr(tmp->name, needle)==0)
+	      {
+		pos=pos->next;
+		tmp=td_list_entry(pos, file_info_t, list);
+		pos_num++;
+	      }
+	      if(strcasestr(tmp->name, needle)==0)
+	      {
+		pos=pos_org;
+		pos_num=pos_num_org;
+	      }
+	    }
+	    break;
+	  case 'N':
+	    if(needle!=NULL && needle[0]!='\0' && pos->prev!=&dir_list->list)
+	    {
+	      const file_info_t *tmp;
+	      struct td_list_head *pos_org=pos;
+	      const int pos_num_org=pos_num;
+	      tmp=td_list_entry(pos, file_info_t, list);
+	      pos=pos->prev;
+	      tmp=td_list_entry(pos, file_info_t, list);
+	      pos_num--;
+	      while(pos->prev!=&dir_list->list &&
+		  strcasestr(tmp->name, needle)==0)
+	      {
+		pos=pos->prev;
+		tmp=td_list_entry(pos, file_info_t, list);
+		pos_num--;
+	      }
+	      if(strcasestr(tmp->name, needle)==0)
+	      {
+		pos=pos_org;
+		pos_num=pos_num_org;
 	      }
 	    }
 	    break;
 	  case 'F':
 	    {
-	      const char *needle=ask_string_ncurses("Filter ? ");
+	      needle=ask_string_ncurses("Filter ? ");
 	      if(needle!=NULL && needle[0]!='\0')
 	      {
 		struct td_list_head *tmpw= NULL;
