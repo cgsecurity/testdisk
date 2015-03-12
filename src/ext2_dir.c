@@ -223,20 +223,19 @@ static int list_dir_proc2(ext2_ino_t dir,
   ext2_ino_t		ino;
   const struct ext2_dir_struct *ls = (const struct ext2_dir_struct *) privateinfo;
   file_info_t *new_file;
+  errcode_t retval;
   if(entry==DIRENT_DELETED_FILE && (ls->dir_data->param & FLAG_LIST_DELETED)==0)
     return 0;
   ino = dirent->inode;
-  if (ino) {
-    errcode_t retval;
-//    log_info("ext2fs_read_inode(ino=%u)\n", ino);
-    if ((retval=ext2fs_read_inode(ls->current_fs,ino, &inode))!=0)
-    {
-      log_error("ext2fs_read_inode(ino=%u) failed with error %ld.\n",(unsigned)ino, (long)retval);
-      memset(&inode, 0, sizeof(struct ext2_inode));
-    }
-  } else {
-    memset(&inode, 0, sizeof(struct ext2_inode));
+  if(ino==0)
+    return 0;
+  if ((retval=ext2fs_read_inode(ls->current_fs,ino, &inode))!=0)
+  {
+    log_error("ext2fs_read_inode(ino=%u) failed with error %ld.\n",(unsigned)ino, (long)retval);
+    return 0;
   }
+  if(inode.i_mode==0)
+    return 0;
   new_file=(file_info_t *)MALLOC(sizeof(*new_file));
   {
     const unsigned int thislen = ((dirent->name_len & 0xFF) < EXT2_NAME_LEN) ?
