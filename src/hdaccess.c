@@ -1514,7 +1514,7 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
     disk_car->sector_size=DEFAULT_SECTOR_SIZE;
     buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
     ewf=(const struct tdewf_file_header *)buffer;
-    if(read(hd_h,buffer,DEFAULT_SECTOR_SIZE)<0)
+    if(read(hd_h,buffer,DEFAULT_SECTOR_SIZE) != DEFAULT_SECTOR_SIZE)
     {
       memset(buffer,0,DEFAULT_SECTOR_SIZE);
     }
