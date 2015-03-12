@@ -517,6 +517,24 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      }
 	    }
 	    break;
+	  case 'F':
+	    {
+	      const char *needle=ask_string_ncurses("Filter ? ");
+	      if(needle!=NULL && needle[0]!='\0')
+	      {
+		struct td_list_head *tmpw= NULL;
+		td_list_for_each(tmpw, &dir_list->list)
+		{
+		  file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
+		  if(strcasestr(tmp->name, needle) != NULL)
+		  {
+		    tmp->status^=FILE_STATUS_MARKED;
+		  }
+		}
+	      }
+	      status^=FILE_STATUS_MARKED;
+	    }
+	    break;
 	}
 	if(pos_num<offset)
 	  offset=pos_num;
