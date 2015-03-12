@@ -1151,9 +1151,11 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
   else
   {
 #ifdef HAVE_FSEEKO
-    fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+    if(fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
+      return ;
 #else
-    fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET);
+    if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
+      return ;
 #endif
   }
 }
