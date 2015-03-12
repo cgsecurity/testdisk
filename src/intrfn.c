@@ -1382,7 +1382,7 @@ const char *ask_string_ncurses(const char *string)
   wmove(local_win,1,1);
   waddstr(local_win, string);
   wrefresh(local_win);			/* Show that box 		*/
-  get_string(local_win, response, 40, NULL);
+  get_string(local_win, response, 120, NULL);
   wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
   wrefresh(local_win);
   delwin(local_win);
