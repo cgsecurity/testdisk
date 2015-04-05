@@ -1774,11 +1774,6 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
 	  return DC_STOP;
       }
-      else if(buffer[i+1]==0xc4)	/* DHT */
-      {
-	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
-	  return DC_STOP;
-      }
       else if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
 	file_recovery->data_check=&data_check_jpg2;
