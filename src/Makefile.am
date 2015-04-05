@@ -247,6 +247,7 @@ file_C			= filegen.c \
 			  file_rx2.c \
 			  file_save.c \
 			  file_ses.c \
+			  file_sgcta.c \
 			  file_shn.c \
 			  file_sib.c \
 			  file_sig.c \
