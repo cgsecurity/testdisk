@@ -297,6 +297,7 @@ file_C			= filegen.c \
 			  file_x3f.c \
 			  file_xcf.c \
 			  file_xfi.c \
+			  file_xfs.c \
 			  file_xm.c \
 			  file_xsv.c \
 			  file_xpt.c \
