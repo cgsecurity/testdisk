@@ -200,10 +200,10 @@ static void interface_editor_location(const disk_t *disk, uint64_t *lba)
       case 'l':
       case 'L':
 	{
-	  uint64_t l_sector;
 	  sprintf(def, "%lu", (unsigned long)(*lba / disk->sector_size));
 	  mvwaddstr(stdscr,INTER_GEOM_Y, INTER_GEOM_X, "Enter the logical sector offset: ");
 	  if (get_string(stdscr, response, sizeof(response), def) > 0) {
+	    uint64_t l_sector;
 	    l_sector= strtoul(response, NULL, 10);
 	    l_sector*=disk->sector_size;
 	    if (l_sector <= disk->disk_size) {
