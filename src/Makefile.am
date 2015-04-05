@@ -149,6 +149,7 @@ file_C			= filegen.c \
 			  file_icc.c \
 			  file_ico.c \
 			  file_ifo.c \
+			  file_idx.c \
 			  file_imb.c \
 			  file_indd.c \
 			  file_info.c \
