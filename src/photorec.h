@@ -32,6 +32,7 @@ enum photorec_status { STATUS_FIND_OFFSET, STATUS_UNFORMAT, STATUS_EXT2_ON, STAT
 typedef enum photorec_status photorec_status_t;
 
 typedef enum { PSTATUS_OK=0, PSTATUS_STOP=1, PSTATUS_EACCES=2, PSTATUS_ENOSPC=3} pstatus_t;
+typedef enum { PFSTATUS_BAD=0, PFSTATUS_OK=1, PFSTATUS_OK_TRUNCATED=2} pfstatus_t;
 
 struct ph_options
 {
@@ -67,7 +68,7 @@ void get_prev_location(alloc_data_t *list_search_space, alloc_data_t **current_s
 int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space);
-int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
+pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
 void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);

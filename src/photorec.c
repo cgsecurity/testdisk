@@ -61,7 +61,7 @@
 
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
-static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize);
+static int file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize);
 
 void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size)
 {
@@ -595,7 +595,7 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     file_recovery->file_stat->recovered++;
 }
 
-/** file_finish()
+/** file_finish_bf()
     @param file_recovery - 
     @param struct ph_param *params
     @param alloc_data_t *list_search_space
@@ -642,30 +642,30 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
     @param alloc_data_t *list_search_space
 
     @returns:
-   -1: file not recovered, file_size=0 offset_error!=0
     0: file not recovered
     1: file recovered
  */
-int file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
+pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
 {
+  int file_truncated;
   if(file_recovery->file_stat==NULL)
-    return 0;
+    return PFSTATUS_BAD;
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, (paranoid==0?0:1));
   if(file_recovery->file_size==0)
   {
     file_block_truncate_zero(file_recovery, list_search_space);
     reset_file_recovery(file_recovery);
-    return 0;
+    return PFSTATUS_BAD;
   }
-  file_block_truncate(file_recovery, list_search_space, params->blocksize);
+  file_truncated=file_block_truncate(file_recovery, list_search_space, params->blocksize);
   file_block_log(file_recovery, params->disk->sector_size);
 #ifdef ENABLE_DFXML
   xml_log_file_recovered(file_recovery);
 #endif
   file_block_free(&file_recovery->location);
   reset_file_recovery(file_recovery);
-  return 1;
+  return (file_truncated>0?PFSTATUS_OK_TRUNCATED:PFSTATUS_OK);
 }
 
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose)
@@ -1067,11 +1067,12 @@ static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc
   }
 }
 
-static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize)
+static int file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize)
 {
   struct td_list_head *tmp;
   struct td_list_head *next;
   uint64_t size=0;
+  int file_truncated=0;
   td_list_for_each_safe(tmp, next, &file_recovery->location.list)
   {
     alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
@@ -1080,6 +1081,7 @@ static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data
       file_block_truncate_aux(element->start, element->end, list_search_space);
       td_list_del(tmp);
       free(element);
+      file_truncated=1;
     }
     else if(element->data>0)
     {
@@ -1094,6 +1096,7 @@ static void file_block_truncate(const file_recovery_t *file_recovery, alloc_data
 	size+=(element->end-element->start+1);
     }
   }
+  return file_truncated;
 }
 
 static uint64_t file_offset_end(const file_recovery_t *file_recovery)

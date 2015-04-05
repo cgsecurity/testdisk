@@ -142,47 +142,40 @@ static pstatus_t photorec_new_file(file_recovery_t *file_recovery, struct ph_par
   return PSTATUS_OK;
 }
 
-static pstatus_t photorec_header_found(file_recovery_t *file_recovery_new, file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, int *file_recovered, alloc_data_t **current_search_space, uint64_t *offset)
+static pstatus_t photorec_header_found(file_recovery_t *file_recovery_new, file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
 {
-  if(file_recovery_new->file_stat!=NULL && file_recovery_new->file_stat->file_hint!=NULL)
+  *file_recovered=PFSTATUS_BAD;
+  if(file_recovery_new->file_stat==NULL || file_recovery_new->file_stat->file_hint==NULL)
+    return PSTATUS_OK;
+  file_recovery_new->location.start=offset;
+  if(file_recovery->file_stat!=NULL)
   {
-    file_recovery_new->location.start=*offset;
-    if(file_recovery->file_stat!=NULL)
-    {
-      if(options->verbose > 1)
-	log_trace("A known header has been found, recovery of the previous file is finished\n");
-      *file_recovered=file_finish2(file_recovery, params, options->paranoid, list_search_space);
-      if(*file_recovered==1)
-	get_prev_location(list_search_space, current_search_space, offset, file_recovery->location.start);
-      if(options->lowmem > 0)
-	forget(list_search_space, *current_search_space);
-    }
-    if(*file_recovered==0)
-    {
-      file_recovery_cpy(file_recovery, file_recovery_new);
-      if(options->verbose > 1)
-      {
-	log_info("%s header found at sector %lu\n",
-	    ((file_recovery->extension!=NULL && file_recovery->extension[0]!='\0')?
-	     file_recovery->extension:file_recovery->file_stat->file_hint->description),
-	    (unsigned long)((file_recovery->location.start-params->partition->part_offset)/params->disk->sector_size));
-	log_info("file_recovery->location.start=%lu\n",
-	    (unsigned long)(file_recovery->location.start/params->disk->sector_size));
-      }
-
-      if(file_recovery->file_stat->file_hint==&file_hint_dir && options->verbose > 0)
-      { /* FAT directory found, list the file */
-	const unsigned int blocksize=params->blocksize;
-	const unsigned int read_size=(blocksize>65536?blocksize:65536);
-	photorec_dir_fat(buffer, read_size, file_recovery->location.start/params->disk->sector_size);
-      }
-      return photorec_new_file(file_recovery, params, *offset);
-    }
+    if(options->verbose > 1)
+      log_trace("A known header has been found, recovery of the previous file is finished\n");
+    *file_recovered=file_finish2(file_recovery, params, options->paranoid, list_search_space);
+    if(*file_recovered==PFSTATUS_OK_TRUNCATED)
+      return PSTATUS_OK;
   }
-  return PSTATUS_OK;
+  file_recovery_cpy(file_recovery, file_recovery_new);
+  if(options->verbose > 1)
+  {
+    log_info("%s header found at sector %lu\n",
+	((file_recovery->extension!=NULL && file_recovery->extension[0]!='\0')?
+	 file_recovery->extension:file_recovery->file_stat->file_hint->description),
+	(unsigned long)((file_recovery->location.start-params->partition->part_offset)/params->disk->sector_size));
+    log_info("file_recovery->location.start=%lu\n",
+	(unsigned long)(file_recovery->location.start/params->disk->sector_size));
+  }
+  if(file_recovery->file_stat->file_hint==&file_hint_dir && options->verbose > 0)
+  { /* FAT directory found, list the file */
+    const unsigned int blocksize=params->blocksize;
+    const unsigned int read_size=(blocksize>65536?blocksize:65536);
+    photorec_dir_fat(buffer, read_size, file_recovery->location.start/params->disk->sector_size);
+  }
+  return photorec_new_file(file_recovery, params, offset);
 }
 
-inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, int *file_recovered, alloc_data_t **current_search_space, uint64_t *offset)
+inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
 {
   const struct td_list_head *tmpl;
   const unsigned int blocksize=params->blocksize;
@@ -199,12 +192,12 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
     if(options->verbose > 1)
     {
       log_verbose("Currently saving a tar file, sector %lu.\n",
-	  (unsigned long)((*offset-params->partition->part_offset)/params->disk->sector_size));
+	  (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size));
     }
     return PSTATUS_OK;
   }
   file_recovery_new.file_stat=NULL;
-  file_recovery_new.location.start=*offset;
+  file_recovery_new.location.start=offset;
   td_list_for_each(tmpl, &file_check_list.list)
   {
     const struct td_list_head *tmp;
@@ -216,7 +209,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
 	  file_check->header_check(buffer, read_size, 0, file_recovery, &file_recovery_new)!=0)
       {
 	file_recovery_new.file_stat=file_check->file_stat;
-	return photorec_header_found(&file_recovery_new, file_recovery, params, options, list_search_space, buffer, file_recovered, current_search_space, offset);
+	return photorec_header_found(&file_recovery_new, file_recovery, params, options, list_search_space, buffer, file_recovered, offset);
       }
     }
   }
@@ -264,7 +257,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   params->disk->pread(params->disk, buffer, READ_SIZE, offset);
   while(current_search_space!=list_search_space)
   {
-    int file_recovered=0;
+    pfstatus_t file_recovered=PFSTATUS_BAD;
     uint64_t old_offset=offset;
     int res=DC_SCAN;
 #ifdef DEBUG
@@ -280,7 +273,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       exit(1);
     }
 #endif
-    ind_stop=photorec_check_header(&file_recovery, params, options, list_search_space, buffer, &file_recovered, &current_search_space, &offset);
+    ind_stop=photorec_check_header(&file_recovery, params, options, list_search_space, buffer, &file_recovered, offset);
     if(file_recovery.file_stat!=NULL)
     {
     /* try to skip ext2/ext3 indirect block */
@@ -359,7 +352,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       log_info("PhotoRec has been stopped\n");
       current_search_space=list_search_space;
     }
-    else if(file_recovered==0)
+    else if(file_recovered==PFSTATUS_BAD)
     {
       if(res==DC_SCAN)
       {
@@ -368,7 +361,8 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  back=0;
       }
     }
-    else if(file_recovered>0)
+    else if(file_recovered==PFSTATUS_OK_TRUNCATED ||
+	(file_recovered==PFSTATUS_OK && file_recovery.file_stat==NULL))
     {
       /* try to recover the previous file, otherwise stay at the current location */
       offset_before_back=offset;
@@ -389,18 +383,18 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       log_trace("End of media\n");
 #endif
       file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
-      if(file_recovered==1)
+      if(file_recovered!=PFSTATUS_BAD)
 	get_prev_location(list_search_space, &current_search_space, &offset, file_recovery.location.start);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }
     buffer_olddata+=blocksize;
     buffer+=blocksize;
-    if(file_recovered==1 ||
+    if(file_recovered!=PFSTATUS_BAD ||
         old_offset+blocksize!=offset ||
         buffer+read_size>buffer_start+buffer_size)
     {
-      if(file_recovered==1)
+      if(file_recovered!=PFSTATUS_BAD)
         memset(buffer_start,0,blocksize);
       else
         memcpy(buffer_start,buffer_olddata,blocksize);
