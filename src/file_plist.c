@@ -1,6 +1,6 @@
 /*
 
-    File: file_abcdp.c
+    File: file_plist.c
 
     Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
   
@@ -31,33 +31,26 @@
 #include "filegen.h"
 
 
-static void register_header_check_abcdp(file_stat_t *file_stat);
-static int header_check_abcdp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void register_header_check_plist(file_stat_t *file_stat);
 
-const file_hint_t file_hint_abcdp= {
-  .extension="abcdp",
+const file_hint_t file_hint_plist= {
+  .extension="plist",
   .description="Apple binary property list",
   .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-  .register_header_check=&register_header_check_abcdp
+  .register_header_check=&register_header_check_plist
 };
 
-static const unsigned char abcdp_header[8]=  { 'b', 'p', 'l', 'i', 's', 't', '0', '0'};
-
-static void register_header_check_abcdp(file_stat_t *file_stat)
+static int header_check_plist(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  register_header_check(0, abcdp_header,  sizeof(abcdp_header),  &header_check_abcdp, file_stat);
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_plist.extension;
+  return 1;
 }
 
-static int header_check_abcdp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static void register_header_check_plist(file_stat_t *file_stat)
 {
-  if(memcmp(buffer, abcdp_header, sizeof(abcdp_header))==0 && buffer[9]==0x01)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_abcdp.extension;
-    return 1;
-  }
-  return 0;
+  register_header_check(0, "bplist00",  8,  &header_check_plist, file_stat);
 }

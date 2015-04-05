@@ -33,7 +33,6 @@ file_C			= filegen.c \
 			  file_DB.c \
 			  file_a.c \
 			  file_ab.c \
-			  file_abcdp.c \
 			  file_abr.c \
 			  file_acb.c \
 			  file_ace.c \
@@ -210,6 +209,7 @@ file_C			= filegen.c \
 			  file_pdf.c \
 			  file_pds.c \
 			  file_pfx.c \
+			  file_plist.c \
 			  file_plt.c \
 			  file_png.c \
 			  file_pnm.c \

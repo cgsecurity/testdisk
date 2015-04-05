@@ -32,7 +32,6 @@ extern const file_hint_t file_hint_3dm;
 extern const file_hint_t file_hint_7z;
 extern const file_hint_t file_hint_DB;
 extern const file_hint_t file_hint_a;
-extern const file_hint_t file_hint_abcdp;
 extern const file_hint_t file_hint_abr;
 extern const file_hint_t file_hint_acb;
 extern const file_hint_t file_hint_accdb;
@@ -212,6 +211,7 @@ extern const file_hint_t file_hint_pcx;
 extern const file_hint_t file_hint_pdf;
 extern const file_hint_t file_hint_pds;
 extern const file_hint_t file_hint_pfx;
+extern const file_hint_t file_hint_plist;
 extern const file_hint_t file_hint_plt;
 extern const file_hint_t file_hint_png;
 extern const file_hint_t file_hint_pnm;
@@ -317,7 +317,6 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_7z   },
   { .enable=0, .file_hint=&file_hint_DB    },
   { .enable=0, .file_hint=&file_hint_a    },
-  { .enable=0, .file_hint=&file_hint_abcdp},
   { .enable=0, .file_hint=&file_hint_abr  },
   { .enable=0, .file_hint=&file_hint_acb  },
   { .enable=0, .file_hint=&file_hint_accdb},
@@ -496,6 +495,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_pdf  },
   { .enable=0, .file_hint=&file_hint_pds  },
   { .enable=0, .file_hint=&file_hint_pfx  },
+  { .enable=0, .file_hint=&file_hint_plist  },
   { .enable=0, .file_hint=&file_hint_plt  },
   { .enable=0, .file_hint=&file_hint_png  },
   { .enable=0, .file_hint=&file_hint_pnm  },
