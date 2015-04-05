@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int sector_size, uint64_t *offset);
+void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsigned int sector_size);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -35,7 +35,7 @@
 #include "pblocksize.h"
 
 #ifdef HAVE_NCURSES
-unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int sector_size, uint64_t *offset)
+void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsigned int sector_size)
 {
   int command;
   unsigned int menu=0;
@@ -66,7 +66,7 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
     case 32768: optionsBlocksize+=8; break;
     case 65536: optionsBlocksize+=9; break;
   }
-  switch(blocksize)
+  switch(*blocksize)
   {
     case 1: menu=0; break;
     case 256: menu=1; break;
@@ -86,26 +86,26 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
       optionsBlocksize, MENU_VERT| MENU_BUTTON|MENU_VERT_WARN, &menu,NULL);
   switch(command)
   {
-    case 'B': blocksize=1; break;
-    case 'S': blocksize=256; break;
-    case '5': blocksize=512; break;
-    case '1': blocksize=1024; break;
-    case '2': blocksize=2048; break;
-    case '4': blocksize=4096; break;
-    case '8': blocksize=8192; break;
-    case '7': blocksize=16384; break;
-    case '3': blocksize=32768; break;
-    case '6': blocksize=65536; break;
+    case 'B': *blocksize=1; break;
+    case 'S': *blocksize=256; break;
+    case '5': *blocksize=512; break;
+    case '1': *blocksize=1024; break;
+    case '2': *blocksize=2048; break;
+    case '4': *blocksize=4096; break;
+    case '8': *blocksize=8192; break;
+    case '7': *blocksize=16384; break;
+    case '3': *blocksize=32768; break;
+    case '6': *blocksize=65536; break;
   }
-  *offset=*offset % blocksize;
+  *offset=*offset % *blocksize;
   if(*offset%sector_size!=0)
     *offset=0;
-  if(sector_size < blocksize)
+  if(sector_size < *blocksize)
   {
     unsigned int quit=0;
     aff_copy(stdscr);
     wmove(stdscr,INTER_PARTITION_Y-2,0);
-    wprintw(stdscr,"Please select the offset (0 - %u). Press Up/Down to increase/decrease it,",blocksize-sector_size);
+    wprintw(stdscr,"Please select the offset (0 - %u). Press Up/Down to increase/decrease it,", *blocksize-sector_size);
     wmove(stdscr,INTER_PARTITION_Y-1,0);
     wprintw(stdscr,"Enter when done.");
     do
@@ -127,7 +127,7 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
 	case KEY_UP:
 	case KEY_RIGHT:
 	case '+':
-	  if(*offset + sector_size < blocksize)
+	  if(*offset + sector_size < *blocksize)
 	    *offset+=sector_size;
 	  break;
 	case KEY_NPAGE:
@@ -140,6 +140,5 @@ unsigned int menu_choose_blocksize(unsigned int blocksize, const unsigned int se
       }
     } while(quit==0);
   }
-  return blocksize;
 }
 #endif

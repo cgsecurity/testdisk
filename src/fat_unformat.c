@@ -417,7 +417,7 @@ pstatus_t fat_unformat(struct ph_param *params, const struct ph_options *options
     params->blocksize=sectors_per_cluster * params->disk->sector_size;
 #ifdef HAVE_NCURSES
     if(options->expert>0)
-      params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &offset);
+      menu_choose_blocksize(&params->blocksize, &offset, params->disk->sector_size);
 #endif
     update_blocksize(params->blocksize, list_search_space, offset);
   }

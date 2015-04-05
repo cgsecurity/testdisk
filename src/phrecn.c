@@ -342,7 +342,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  }
 #ifdef HAVE_NCURSES
 	  if(options->expert>0)
-	    params->blocksize=menu_choose_blocksize(params->blocksize, params->disk->sector_size, &start_offset);
+	    menu_choose_blocksize(&params->blocksize, &start_offset, params->disk->sector_size);
 #endif
 	  update_blocksize(params->blocksize, list_search_space, start_offset);
 	}
