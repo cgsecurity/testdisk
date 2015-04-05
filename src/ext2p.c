@@ -53,6 +53,7 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
   dir_data_t dir_data;
   switch(dir_partition_ext2_init(disk, partition, &dir_data, 0))
   {
+    case DIR_PART_ENOIMP:
     case DIR_PART_ENOSYS:
       return 0;
     case DIR_PART_EIO:

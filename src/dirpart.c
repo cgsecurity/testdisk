@@ -52,7 +52,7 @@
 
 static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *partition, const int verbose, dir_data_t *dir_data)
 {
-  dir_partition_t res=DIR_PART_ENOSYS;
+  dir_partition_t res=DIR_PART_ENOIMP;
   if(is_part_fat(partition))
     res=dir_partition_fat_init(disk, partition, dir_data, verbose);
   else if(is_part_ntfs(partition))
@@ -112,6 +112,23 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
   log_info("\n");
   switch(res)
   {
+    case DIR_PART_ENOIMP:
+      screen_buffer_reset();
+#ifdef HAVE_NCURSES
+      aff_copy(window);
+      wmove(window,4,0);
+      aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
+#endif
+      log_partition(disk,partition);
+      screen_buffer_add("Support for this filesystem hasn't been implemented.\n");
+      screen_buffer_to_log();
+      if(*current_cmd==NULL)
+      {
+#ifdef HAVE_NCURSES
+	screen_buffer_display(window,"",NULL);
+#endif
+      }
+      break;
     case DIR_PART_ENOSYS:
       screen_buffer_reset();
 #ifdef HAVE_NCURSES
