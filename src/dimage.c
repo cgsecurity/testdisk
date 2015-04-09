@@ -38,6 +38,7 @@
 #include <sys/stat.h>
 #endif
 #include <fcntl.h>
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -108,6 +109,8 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
+  assert(disk->sector_size > 0);
+  assert(disk->sector_size <= READ_SIZE);
   if((disk_dst=open(image_dd, O_CREAT|O_LARGEFILE|O_RDWR|O_BINARY, 0644)) < 0)
   {
     log_error("Can't create file %s.\n",image_dd);
