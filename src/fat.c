@@ -831,10 +831,10 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   partition->fsname[0]='\0';
   if((fat_header->sectors_per_cluster>0)&&(fat_header->sectors_per_cluster<=128))
   {
-    unsigned char *buffer=(unsigned char*)MALLOC(fat_header->sectors_per_cluster*disk_car->sector_size);
-    if((unsigned)disk_car->pread(disk_car, buffer,
-	  fat_header->sectors_per_cluster * disk_car->sector_size,
-	  partition->part_offset + (le16(fat_header->reserved) + fat_header->fats * le32(fat_header->fat32_length) + (uint64_t)(le32(fat_header->root_cluster) - 2) * fat_header->sectors_per_cluster) * disk_car->sector_size) != fat_header->sectors_per_cluster * disk_car->sector_size)
+    const unsigned int cluster_size=fat_header->sectors_per_cluster*disk_car->sector_size;
+    unsigned char *buffer=(unsigned char*)MALLOC(cluster_size);
+    if((unsigned)disk_car->pread(disk_car, buffer, cluster_size,
+	  partition->part_offset + (le16(fat_header->reserved) + fat_header->fats * le32(fat_header->fat32_length) + (uint64_t)(le32(fat_header->root_cluster) - 2) * fat_header->sectors_per_cluster) * disk_car->sector_size) != cluster_size) 
     {
       log_error("fat32_set_part_name() cannot read FAT32 root cluster.\n");
     }
