@@ -653,7 +653,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   }
 #endif
   /* TODO read_mft_info(partition,sector,*sectors_per_cluster,*mft_lcn,*mftmirr_lcn,*mft_record_size); */
-  if(sectors_per_cluster>0 && mft_record_size>0)
+  if(sectors_per_cluster>0 && mft_record_size>0 && mft_record_size <= sizeof(buffer))
   {
     // 0x90 AT_INDEX_ROOT
     const ntfs_attribheader *attr90;
