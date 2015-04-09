@@ -105,7 +105,10 @@ static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const i
   struct humaxlabel *humaxlabel;
   list_part_t *new_list_part=NULL;
   uint32_t *p32;
-  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  unsigned char *buffer;
+  if(disk_car->sector_size < DEFAULT_SECTOR_SIZE)
+    return NULL;
+  buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
   humaxlabel=(struct humaxlabel*)buffer;
   p32=(uint32_t*)buffer;

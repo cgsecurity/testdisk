@@ -663,8 +663,12 @@ static int write_part_i386(disk_t *disk_car, const list_part_t *list_part, const
 static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose)
 {
   const list_part_t *element;
-  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
-  unsigned char *buffer_org=(unsigned char *)MALLOC(disk_car->sector_size);
+  unsigned char *buffer;
+  unsigned char *buffer_org;
+  if(disk_car->sector_size < DEFAULT_SECTOR_SIZE)
+    return 0;
+  buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  buffer_org=(unsigned char *)MALLOC(disk_car->sector_size);
   if(verbose>0)
   {
     log_trace("\nwrite_mbr_i386: starting...\n");

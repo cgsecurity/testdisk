@@ -132,7 +132,10 @@ static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int
   unsigned int i;
   sun_disklabel *sunlabel;
   list_part_t *new_list_part=NULL;
-  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  unsigned char *buffer;
+  if(disk_car->sector_size < DEFAULT_SECTOR_SIZE)
+    return NULL;
+  buffer=(unsigned char *)MALLOC(disk_car->sector_size);
   screen_buffer_reset();
   sunlabel=(sun_disklabel*)buffer;
   if(disk_car->pread(disk_car, buffer, DEFAULT_SECTOR_SIZE, (uint64_t)0) != DEFAULT_SECTOR_SIZE)
