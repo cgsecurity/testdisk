@@ -239,15 +239,13 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
 {
   /* Offset can be offset to FAT1 or to FAT2 */
   /* log_trace("get_next_cluster(upart_type=%u,offset=%u,cluster=%u\n",upart_type,offset,cluster); */
-  unsigned char *buffer;
-  const unsigned int buffer_size=(upart_type==UP_FAT12?2*disk_car->sector_size:disk_car->sector_size);
-  buffer=(unsigned char*)MALLOC(buffer_size);
   switch(upart_type)
   {
     case UP_FAT12:
       {
 	unsigned int next_cluster;
 	unsigned long int offset_s,offset_o;
+	unsigned char *buffer=(unsigned char*)MALLOC(2*disk_car->sector_size);
         offset_s=(cluster+cluster/2)/disk_car->sector_size;
         offset_o=(cluster+cluster/2)%disk_car->sector_size;
         if((unsigned)disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
@@ -268,6 +266,7 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
       {
 	unsigned int next_cluster;
 	unsigned long int offset_s,offset_o;
+	unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
         const uint16_t *p16=(const uint16_t*)buffer;
         offset_s=cluster/(disk_car->sector_size/2);
         offset_o=cluster%(disk_car->sector_size/2);
@@ -286,6 +285,7 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
       {
 	unsigned int next_cluster;
 	unsigned long int offset_s,offset_o;
+	unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
         const uint32_t *p32=(const uint32_t*)buffer;
         offset_s=cluster/(disk_car->sector_size/4);
         offset_o=cluster%(disk_car->sector_size/4);
@@ -307,7 +307,6 @@ unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, con
       }
     default:
       log_critical("fat.c get_next_cluster unknown fat type\n");
-      free(buffer);
       return 0;
   }
 }
