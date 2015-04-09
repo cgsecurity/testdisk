@@ -241,7 +241,7 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
   offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, options->verbose);
-  disk->pread(disk, buffer, READ_SIZE, offset);
+  disk->pread(disk, buffer_start, READ_SIZE, offset);
   for(;offset < offset_end; offset+=cluster_size)
   {
     if(buffer[0]=='.' && is_fat_directory(buffer))
@@ -329,7 +329,7 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
 	    (unsigned long long)((offset-partition->part_offset)/disk->sector_size),
 	    (unsigned long long)((partition->part_size-1)/disk->sector_size));
       }
-      if(disk->pread(disk, buffer, READ_SIZE, offset) != READ_SIZE)
+      if(disk->pread(disk, buffer_start, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES
 	wmove(stdscr,11,0);
