@@ -870,7 +870,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
 
 int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
 {
-  unsigned char buffer[0x200];
+  unsigned char buffer[disk->sector_size];
   if((unsigned)disk->pread(disk, &buffer, disk->sector_size, partition->part_offset) != disk->sector_size)
   {
     screen_buffer_add("check_OS2MB: Read error\n");
