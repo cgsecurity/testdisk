@@ -54,7 +54,7 @@ const char *get_os(void)
   {
     static char buffer[100] = {0x00};
     /* For more information, read
-http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getting_the_system_version.asp
+https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.aspx
     */
     OSVERSIONINFOEX Ver;
     int Extended = 1;
@@ -143,6 +143,20 @@ http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/ge
 	snprintf(buffer, sizeof(buffer) - 1, "Windows 7 (%lu)", Ver.dwBuildNumber);
       else
 	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2008 R2 (%lu)", Ver.dwBuildNumber);
+    }
+    else if (Ver.dwMajorVersion == 6 && Ver.dwMinorVersion == 2)
+    {
+      if( Ver.wProductType == VER_NT_WORKSTATION )
+	snprintf(buffer, sizeof(buffer) - 1, "Windows 8 (%lu)", Ver.dwBuildNumber);
+      else
+	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2012 (%lu)", Ver.dwBuildNumber);
+    }
+    else if (Ver.dwMajorVersion == 6 && Ver.dwMinorVersion == 3)
+    {
+      if( Ver.wProductType == VER_NT_WORKSTATION )
+	snprintf(buffer, sizeof(buffer) - 1, "Windows 8.1 (%lu)", Ver.dwBuildNumber);
+      else
+	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2012 R2 (%lu)", Ver.dwBuildNumber);
     }
     else
     {
