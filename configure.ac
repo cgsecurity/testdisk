@@ -3,8 +3,9 @@
 
 AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.0-WIP],[grenier@cgsecurity.org])
+AC_LANG(C)
 sinclude(acx_pthread.m4)
-TESTDISKDATE="October 2014"
+TESTDISKDATE="April 2015"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -787,6 +788,7 @@ do
 done
 unset option
 
+AC_LANG_PUSH([C++])
 for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
@@ -800,6 +802,7 @@ do
   unset SAVE_CXXFLAGS
 done
 unset option
+AC_LANG_POP([C++])
 
 #if defined __GNUC__ && !defined _FORTIFY_SOURCE
 AC_DEFINE([_FORTIFY_SOURCE], 2, [enable compile-time and run-time bounds-checking, and some warnings])
