@@ -39,6 +39,12 @@
 #include "memmem.h"
 #include "common.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_pdf(file_stat_t *file_stat);
 static void file_date_pdf(file_recovery_t *file_recovery);
 
@@ -76,11 +82,7 @@ static void file_rename_pdf(const char *old_filename)
   const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
   if((handle=fopen(old_filename, "rb"))==NULL)
     return;
-#ifdef HAVE_FSEEKO
-  if(fseeko(handle, 0, SEEK_END)<0)
-#else
-  if(fseek(handle, 0, SEEK_END)<0)
-#endif
+  if(my_fseek(handle, 0, SEEK_END)<0)
   {
     fclose(handle);
     return;
@@ -102,11 +104,7 @@ static void file_rename_pdf(const char *old_filename)
     return;
   }
   offset+=sizeof(pattern);
-#ifdef HAVE_FSEEKO
-  if(fseeko(handle, offset, SEEK_SET)<0)
-#else
-  if(fseek(handle, offset, SEEK_SET)<0)
-#endif
+  if(my_fseek(handle, offset, SEEK_SET)<0)
   {
     fclose(handle);
     return ;
@@ -202,11 +200,7 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
     int i;
     int taille;
     file_recovery->file_size=file_recovery->calculated_file_size;
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
-#else
-    if(fseek(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
-#endif
+    if(my_fseek(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
     {
       file_recovery->file_size=0;
       return ;
@@ -238,11 +232,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   uint64_t offset=0;
   unsigned int j=0;
   unsigned char*buffer=(unsigned char*)MALLOC(4096);
-#ifdef HAVE_FSEEKO
-  if(fseeko(file_recovery->handle, 0, SEEK_SET)<0)
-#else
-  if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
-#endif
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
     free(buffer);
     return ;
@@ -264,11 +254,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	{
 	  const unsigned char *date_asc;
 	  struct tm tm_time;
-#ifdef HAVE_FSEEKO
-	  if(fseeko(file_recovery->handle, offset+i+1, SEEK_SET)<0)
-#else
-	  if(fseek(file_recovery->handle, offset+i+1, SEEK_SET)<0)
-#endif
+	  if(my_fseek(file_recovery->handle, offset+i+1, SEEK_SET)<0)
 	  {
 	    free(buffer);
 	    return ;

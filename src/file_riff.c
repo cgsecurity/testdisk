@@ -34,6 +34,12 @@
 #include "log.h"
 #endif
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void register_header_check_riff(file_stat_t *file_stat);
 
@@ -104,11 +110,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
     return;
   for(file_size=start; file_size < end;)
   {
-#ifdef HAVE_FSEEKO
-    if(fseeko(fr->handle, file_size, SEEK_SET)<0)
-#else
-    if(fseek(fr->handle, file_size, SEEK_SET)<0)
-#endif
+    if(my_fseek(fr->handle, file_size, SEEK_SET)<0)
     {
       fr->offset_error=file_size;
       return;
@@ -147,11 +149,7 @@ static void file_check_avi(file_recovery_t *fr)
   {
     const uint64_t file_size=fr->file_size;
     riff_list_header list_header;
-#ifdef HAVE_FSEEKO
-    if(fseeko(fr->handle, fr->file_size, SEEK_SET)<0)
-#else
-    if(fseek(fr->handle, fr->file_size, SEEK_SET)<0)
-#endif
+    if(my_fseek(fr->handle, fr->file_size, SEEK_SET)<0)
     {
       fr->file_size=0;
       return ;

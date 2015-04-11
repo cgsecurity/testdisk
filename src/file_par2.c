@@ -32,6 +32,12 @@
 #include "common.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_par2(file_stat_t *file_stat);
 
 const file_hint_t file_hint_par2= {
@@ -76,11 +82,7 @@ static void file_rename_par2(const char *old_filename)
     size_t buffer_size;
     unsigned char buffer[4096];
     const uint64_t *lengthp=(const uint64_t *)&buffer[8];
-#ifdef HAVE_FSEEKO
-    if(fseeko(file, offset, SEEK_SET)<0)
-#else
-    if(fseek(file, offset, SEEK_SET)<0)
-#endif
+    if(my_fseek(file, offset, SEEK_SET)<0)
     {
       fclose(file);
       return;

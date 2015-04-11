@@ -33,6 +33,12 @@
 #include "filegen.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_indd(file_stat_t *file_stat);
 static int header_check_indd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_indd(file_recovery_t *file_recovery);
@@ -69,7 +75,7 @@ struct InDesignMasterPage {
   uint8_t  fIrrelevant2 [8];
   uint32_t fFilePages;
   uint8_t  fIrrelevant3 [3812];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct InDesignContigObjMarker {
   uint8_t  fGUID [16];
@@ -77,7 +83,7 @@ struct InDesignContigObjMarker {
   uint32_t fObjectClassID;
   uint32_t fStreamLength;
   uint32_t fChecksum;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_indd(file_recovery_t *file_recovery)
 {
@@ -95,11 +101,7 @@ static void file_check_indd(file_recovery_t *file_recovery)
 #ifdef DEBUG_INDD
     log_info("file_check_indd offset=%llu (0x%llx)\n", (long long unsigned)offset, (long long unsigned)offset);
 #endif
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, offset, SEEK_SET) < 0)
-#else
-    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
-#endif
+    if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
     {
       file_recovery->file_size=0;
       return ;

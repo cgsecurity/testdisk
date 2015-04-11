@@ -209,14 +209,14 @@ struct rsrc_entries_s
 {
   uint32_t Type;
   uint32_t Pos;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct PE_index
 {
   uint16_t len;
   uint16_t val_len;
   uint16_t type;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static char vs_version_info[32]={
   'V', 0x0, 'S', 0x0, '_', 0x0, 'V', 0x0, 'E', 0x0, 'R', 0x0, 'S', 0x0, 'I', 0x0,

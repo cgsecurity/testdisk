@@ -38,6 +38,12 @@
 #include "common.h"
 #include "filegen.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 extern const file_hint_t file_hint_doc;
 
 static void register_header_check_png(file_stat_t *file_stat);
@@ -60,7 +66,7 @@ struct png_chunk
   uint32_t type;
   char data[0];
   /* data is followed by uint32_t crc; */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_jng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -110,12 +116,7 @@ static void file_check_png(file_recovery_t *fr)
   {
     char buffer[8];
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer;
-    if(
-#ifdef HAVE_FSEEKO
-	fseeko(fr->handle, fr->file_size, SEEK_SET) < 0 ||
-#else
-	fseek(fr->handle, fr->file_size, SEEK_SET) < 0 ||
-#endif
+    if(my_fseek(fr->handle, fr->file_size, SEEK_SET) < 0 ||
 	fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
     {
       fr->file_size=0;

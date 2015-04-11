@@ -72,7 +72,7 @@ struct struct_sun_partition_i386 {
   unsigned char info[52];   /* Informative text string */
   uint16_t magic;      /* Magic number */
   uint16_t csum;       /* Label xor'd checksum */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 typedef struct struct_sun_partition_i386 sun_partition_i386;
 #define SUN_LABEL_MAGIC         0xDABE
 #define SUN_LABEL_MAGIC_START	0x600DDEEE

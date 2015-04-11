@@ -53,7 +53,7 @@ struct reshdr_disk_short
   };
   uint64_t offset;
   uint64_t original_size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 #define RESHDR_GET_SIZE(R) (le64(R.size) & 0x00FFFFFFFFFFFFFF)
 
@@ -74,7 +74,7 @@ struct _WIMHEADER_V1_PACKED
   uint32_t		dwBootIndex;
   struct reshdr_disk_short	rhIntegrity;
   unsigned char		bUnused[60];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_wim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

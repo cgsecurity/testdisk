@@ -54,7 +54,7 @@ struct x3f_header
   uint32_t	rows;
   uint32_t	rotation;
   /* version 2.1 and later have additional fields */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_x3f(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

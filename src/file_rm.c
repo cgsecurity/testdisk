@@ -51,7 +51,7 @@ struct rm_header
   uint16_t version;
   uint32_t file_version;
   uint32_t header_nbr;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_rm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

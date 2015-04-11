@@ -47,7 +47,7 @@ struct exfat_super_block {
 	unsigned char   allocated_percent;      /* 0x70 percentage of allocated space (?) */
 	unsigned char   xxxx05[397];            /* ??? (0x00...) */
 	uint16_t  	signature;              /* 0xaa55 */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct exfat_file_entry
 {
@@ -67,7 +67,7 @@ struct exfat_file_entry
   uint8_t  ctz;
   uint8_t  mtz;
   uint8_t  reserved2[7];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct exfat_stream_ext_entry
 {
@@ -81,7 +81,7 @@ struct exfat_stream_ext_entry
   uint32_t reserved3;
   uint32_t first_cluster;
   uint64_t data_length;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct exfat_alloc_bitmap_entry
 {
@@ -90,7 +90,7 @@ struct exfat_alloc_bitmap_entry
   uint8_t  reserved[18];
   uint32_t first_cluster;
   uint64_t data_length;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster);
 int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster);

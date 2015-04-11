@@ -68,7 +68,7 @@ struct lnk_header_s {
   uint32_t showWnd_value; 	/* 3Ch */
   uint32_t hot_key; 		/* 40h */
   uint64_t always_zero; 	/* 44h */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 /* These constants comes from winedump/lnk.c */
 #define SCF_PIDL 	1

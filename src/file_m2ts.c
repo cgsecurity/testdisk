@@ -30,6 +30,12 @@
 #include "types.h"
 #include "filegen.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_m2ts(file_stat_t *file_stat);
 static void register_header_check_ts(file_stat_t *file_stat);
 
@@ -79,12 +85,7 @@ static void file_rename_ts_188(const char *old_filename)
   unsigned int pid;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file, 0, SEEK_SET) < 0 ||
-#else
-      fseek(file, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);
@@ -104,12 +105,7 @@ static void file_rename_ts_192(const char *old_filename)
   unsigned int pid;
   if((file=fopen(old_filename, "rb"))==NULL)
     return;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file, 0, SEEK_SET) < 0 ||
-#else
-      fseek(file, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);

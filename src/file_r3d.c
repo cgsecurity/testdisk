@@ -54,7 +54,7 @@ struct atom_struct
 {
   uint32_t size;
   uint32_t type;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

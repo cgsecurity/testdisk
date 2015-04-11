@@ -51,7 +51,7 @@ struct swf_header
   char magic[3];
   unsigned char version;
   uint32_t size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigned int nbit)
 {

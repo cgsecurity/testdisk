@@ -104,7 +104,7 @@ struct xfs_sb
 	uint16_t	sb_logsectsize;	/* sector size for the log, bytes */
 	uint32_t	sb_logsunit;	/* stripe unit size for the log */
 	uint32_t	sb_features2;	/* additonal feature bits */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind);

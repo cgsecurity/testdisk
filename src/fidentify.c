@@ -56,6 +56,11 @@ extern file_enable_t list_file_enable[];
 extern file_check_list_t file_check_list;
 
 #define READ_SIZE 1024*512
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
 
 static int file_identify(const char *filename, const unsigned int check)
 {
@@ -115,11 +120,7 @@ static int file_identify(const char *filename, const unsigned int check)
       if(check > 0 && file_recovery_new.file_check!=NULL)
       {
 	file_recovery_new.handle=file;
-#ifdef HAVE_FSEEKO
-	fseeko(file_recovery_new.handle, 0, SEEK_END);
-#else
-	fseek(file_recovery_new.handle, 0, SEEK_END);
-#endif
+	my_fseek(file_recovery_new.handle, 0, SEEK_END);
 #ifdef HAVE_FTELLO
 	file_recovery_new.file_size=ftello(file_recovery_new.handle);
 #else

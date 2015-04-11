@@ -58,7 +58,7 @@ struct WOFFHeader
   uint32_t	metaOrigLength;
   uint32_t	privOffset;
   uint32_t	privLength;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_woff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

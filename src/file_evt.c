@@ -49,7 +49,7 @@ const file_hint_t file_hint_evt= {
 struct evt_chunk {
   uint32_t size;
   uint32_t id;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_evt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

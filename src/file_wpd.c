@@ -56,7 +56,7 @@ struct wpd_hdr
   uint16_t	indexHeaderOffset;	/* 14 */
   uint32_t	unk;
   uint32_t	documentSize;		/* 20: WP 6.1 or later ? */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_wpd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

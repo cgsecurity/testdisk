@@ -44,7 +44,7 @@ struct gpt_hdr
   uint32_t	hdr_entsz;                      /* 0x54 */
   uint32_t	hdr_crc_table;                  /* 0x58 */
   uint8_t 	padding[420];                   /* 0x5c */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct gpt_ent
 {

@@ -61,7 +61,7 @@ struct mtf_db_hdr
   uint8_t	strType;	/* string type */
   uint8_t	rsv3;		/* reserved for future use */
   uint16_t	check;		/* header checksum */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_bkf(file_recovery_t *file_recovery)
 {

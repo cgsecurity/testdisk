@@ -30,7 +30,7 @@ struct disk_fatx
   uint32_t	cluster_size_in_sector;
   uint16_t	fats;
   uint32_t	unknown;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 int check_FATX(disk_t *disk_car, partition_t *partition);
 int recover_FATX(const struct disk_fatx *fatx_block, partition_t *partition);

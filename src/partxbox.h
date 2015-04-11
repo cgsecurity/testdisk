@@ -29,7 +29,7 @@ struct xbox_partition
 	char unk1[0x600];
 	char magic[4];
 	uint32_t bootnbr;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 list_part_t *add_partition_xbox_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 

@@ -53,7 +53,7 @@ struct psp_chunk {
   char header[4];
   uint16_t id;
   uint32_t size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

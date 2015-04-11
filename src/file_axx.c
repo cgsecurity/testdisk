@@ -48,7 +48,12 @@ struct SHeader
 {
   uint32_t aoLength;
   uint8_t   oType;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
 
 static void file_check_axx(file_recovery_t *fr)
 {
@@ -57,11 +62,7 @@ static void file_check_axx(file_recovery_t *fr)
   {
     struct SHeader header;
     unsigned int len;
-#ifdef HAVE_FSEEKO
-    if(fseeko(fr->handle, offset, SEEK_SET) < 0)
-#else
-    if(fseek(fr->handle, offset, SEEK_SET) < 0)
-#endif
+    if(my_fseek(fr->handle, offset, SEEK_SET) < 0)
       return ;
     if (fread(&header, sizeof(header), 1, fr->handle)!=1)
       return ;

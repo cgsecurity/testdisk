@@ -50,6 +50,12 @@
 #include "file_tiff.h"
 #include "setdate.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
@@ -109,7 +115,7 @@ struct MP_IFD_Field
   uint16_t type;
   uint32_t count;
   char     value[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct MP_Entry
 {
@@ -118,7 +124,7 @@ struct MP_Entry
   uint32_t offset;
   uint16_t dep1;
   uint16_t dep2;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
 {
@@ -288,11 +294,7 @@ static void file_check_mpo(file_recovery_t *fr)
   do
   {
     offset+=2+size;
-#ifdef HAVE_FSEEKO
-    if(fseeko(fr->handle, offset, SEEK_SET) < 0)
-#else
-    if(fseek(fr->handle, offset, SEEK_SET) < 0)
-#endif
+    if(my_fseek(fr->handle, offset, SEEK_SET) < 0)
     {
       fr->file_size=0;
       return ;
@@ -775,11 +777,7 @@ static inline int jpeg_session_resume(struct jpeg_session_struct *jpeg_session)
   if(resume_memory((j_common_ptr)&jpeg_session->cinfo))
     return -1;
   src = (my_source_mgr *) jpeg_session->cinfo.src;
-#ifdef HAVE_FSEEKO
-  if(fseeko(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
-#else
-  if(fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
-#endif
+  if(my_fseek(jpeg_session->handle, jpeg_session->offset + src->file_size, SEEK_SET) < 0)
     return -1;
   return 0;
 }
@@ -792,11 +790,7 @@ static inline void jpeg_session_suspend(struct jpeg_session_struct *jpeg_session
 
 static void jpeg_session_start(struct jpeg_session_struct *jpeg_session)
 {
-#ifdef HAVE_FSEEKO
-  if(fseeko(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
-#else
-  if(fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
-#endif
+  if(my_fseek(jpeg_session->handle, jpeg_session->offset, SEEK_SET) < 0)
   {
     log_critical("jpeg_session_start: fseek failed.\n");
   }
@@ -1321,7 +1315,7 @@ struct sof_header
   uint16_t      width;          /* 1-65535 */
   unsigned char nbr;            /* 1-255 */
   unsigned char data[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size)
 {
@@ -1352,11 +1346,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
     return ;
   offset=file_recovery->offset_error / file_recovery->blocksize * file_recovery->blocksize;
   i=file_recovery->offset_error % file_recovery->blocksize;
-#ifdef HAVE_FSEEKO
-  if(fseeko(infile, offset, SEEK_SET) < 0)
-#else
-  if(fseek(infile, offset, SEEK_SET) < 0)
-#endif
+  if(my_fseek(infile, offset, SEEK_SET) < 0)
     return ;
   do
   {
@@ -1398,11 +1388,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   uint64_t thumb_offset=0;
   size_t nbytes;
   file_recovery->extra=0;
-#ifdef HAVE_FSEEKO
-  if(fseeko(infile, 0, SEEK_SET) < 0)
-#else
-  if(fseek(infile, 0, SEEK_SET) < 0)
-#endif
+  if(my_fseek(infile, 0, SEEK_SET) < 0)
     return 0;
   if((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {

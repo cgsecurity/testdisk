@@ -31,7 +31,7 @@ extern "C" {
 struct hfs_extent {
   uint16_t block;
   uint16_t count;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 typedef struct hfs_extent hfs_extent_rec[3];
 
 typedef struct hfs_mdb hfs_mdb_t;
@@ -74,7 +74,7 @@ struct hfs_mdb {
   hfs_extent_rec drXTExtRec;           /* 0x86 extents B-tree's first 3 extents */
   uint32_t drCTFlSize;                 /* 0x92 bytes in the catalog B-tree */
   hfs_extent_rec drCTExtRec;           /* 0x96 catalog B-tree's first 3 extents */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 int check_HFS(disk_t *disk_car,partition_t *partition,const int verbose);
 int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind);
 int recover_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind, const int backup);

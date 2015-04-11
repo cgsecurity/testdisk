@@ -51,8 +51,7 @@ struct header_7z {
   uint64_t nextHeaderOffset;
   uint64_t nextHeaderSize;
   uint64_t nextHeaderCRC;
-} __attribute__ ((__packed__));
-
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_7z(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery,  file_recovery_t *file_recovery_new)
 {

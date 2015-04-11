@@ -54,7 +54,7 @@ struct ecrypfs_header {
   unsigned char reserved1;
   unsigned char reserved2;
   uint32_t flags;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void register_header_check_ecryptfs(file_stat_t *file_stat)
 {

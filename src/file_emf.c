@@ -78,7 +78,7 @@ struct EMF_HDR
   uint32_t nPalEntries;
   U_SIZEL szlDevice;
   U_SIZEL szlMillimeters; 
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 
 static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};

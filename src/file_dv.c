@@ -42,6 +42,12 @@ const file_hint_t file_hint_dv= {
   .register_header_check=&register_header_check_dv
 };
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static data_check_t data_check_NTSC(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
@@ -62,12 +68,7 @@ static void file_check_dv_NTSC(file_recovery_t *fr)
   unsigned char buffer_header[512];
   unsigned char buffer[120000];
   uint64_t fs=fr->file_size/120000*120000;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(fr->handle, 0, SEEK_SET) < 0 ||
-#else
-      fseek(fr->handle, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, fr->handle) != 1)
     return ;
   if(fs > 0)
@@ -75,11 +76,7 @@ static void file_check_dv_NTSC(file_recovery_t *fr)
   if(fs > 0)
     fs-=120000;
   while(fs < fr->file_size &&
-#ifdef HAVE_FSEEKO
-      fseeko(fr->handle, fs, SEEK_SET) >= 0 &&
-#else
-      fseek(fr->handle, fs, SEEK_SET) >= 0 &&
-#endif
+      my_fseek(fr->handle, fs, SEEK_SET) >= 0 &&
       fread(&buffer, sizeof(buffer), 1, fr->handle) == 1)
   {
     unsigned int i;
@@ -114,12 +111,7 @@ static void file_check_dv_PAL(file_recovery_t *fr)
   unsigned char buffer_header[512];
   unsigned char buffer[144000];
   uint64_t fs=fr->file_size/144000*144000;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(fr->handle, 0, SEEK_SET) < 0 ||
-#else
-      fseek(fr->handle, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, fr->handle) != 1)
     return ;
   if(fs > 0)
@@ -127,11 +119,7 @@ static void file_check_dv_PAL(file_recovery_t *fr)
   if(fs > 0)
     fs-=144000;
   while(fs < fr->file_size &&
-#ifdef HAVE_FSEEKO
-      fseeko(fr->handle, fs, SEEK_SET) >= 0 &&
-#else
-      fseek(fr->handle, fs, SEEK_SET) >= 0 &&
-#endif
+      my_fseek(fr->handle, fs, SEEK_SET) >= 0 &&
       fread(&buffer, sizeof(buffer), 1, fr->handle) == 1)
   {
     unsigned int i;

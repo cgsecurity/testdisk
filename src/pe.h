@@ -47,12 +47,12 @@ struct dos_image_file_hdr
     uint16_t e_oeminfo;       // OEM information; e_oemid specific
     uint16_t e_res2[10];      // Reserved words
     uint32_t e_lfanew;        // File address of new exe header
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct exe_reloc{
   uint16_t offset;
   uint16_t segment;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct pe_image_file_hdr {
     uint32_t Magic;
@@ -63,12 +63,12 @@ struct pe_image_file_hdr {
     uint32_t NumberOfSymbols;		    /* debug */
     uint16_t SizeOfOptionalHeader;	    /* == 224 */
     uint16_t Characteristics;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct pe_image_data_dir {
   uint32_t VirtualAddress;
   uint32_t Size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct pe_image_optional_hdr32 {
   uint16_t Magic;
@@ -102,7 +102,7 @@ struct pe_image_optional_hdr32 {
   uint32_t LoaderFlags;			    /* ? */
   uint32_t NumberOfRvaAndSizes;		    /* unreliable */
   struct pe_image_data_dir DataDirectory[16];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct pe_image_optional_hdr64 {
   uint16_t Magic;
@@ -135,7 +135,7 @@ struct pe_image_optional_hdr64 {
   uint32_t LoaderFlags;			    /* ? */
   uint32_t NumberOfRvaAndSizes;		    /* unreliable */
   struct pe_image_data_dir DataDirectory[16];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct pe_image_section_hdr {
   uint8_t Name[8];			    /* may not end with NULL */
@@ -154,7 +154,7 @@ struct pe_image_section_hdr {
   uint16_t NumberOfRelocations;	    /* object files only */
   uint16_t NumberOfLinenumbers;	    /* object files only */
   uint32_t Characteristics;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 #define IMAGE_SIZEOF_SYMBOL 18
 
@@ -180,7 +180,7 @@ struct pe_image_symbol_hdr {
   WORD    Type;
   uin8_t    StorageClass;
   uin8_t    NumberOfAuxSymbols;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 #endif
 
 #endif

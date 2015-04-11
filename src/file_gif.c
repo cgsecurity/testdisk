@@ -31,6 +31,12 @@
 #include "filegen.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_gif(file_stat_t *file_stat);
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_gif(file_recovery_t *file_recovery);
@@ -74,12 +80,7 @@ static void file_check_gif(file_recovery_t *file_recovery)
 {
   const unsigned char gif_footer[2]= {0x00, 0x3b};
   unsigned char buffer[2];
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
-#else
-      fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
-#endif
+  if(my_fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
       fread(buffer, 2, 1, file_recovery->handle)!=1 ||
       memcmp(buffer, gif_footer, sizeof(gif_footer))!=0)
   {

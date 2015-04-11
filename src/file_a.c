@@ -51,7 +51,7 @@ struct file_header
   char mode[8];
   char size[10];
   char magic[2];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_a(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only,  const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

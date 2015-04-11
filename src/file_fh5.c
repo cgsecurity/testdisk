@@ -36,7 +36,7 @@ struct fh5_header_s
 {
   unsigned char   id[8];
   uint32_t        datalen;    /* Big Endian size w/o headers */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 typedef struct fh5_header_s fh5_header_t;
 
 static void register_header_check_fh5(file_stat_t *file_stat);

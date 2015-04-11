@@ -34,6 +34,11 @@
 #include "crc.h"
 
 /* #define DEBUG_ACE */
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
 
 static void register_header_check_ace(file_stat_t *file_stat);
 
@@ -57,7 +62,8 @@ struct header_ace {
                            bit 0 indicates if field add size is preset */
   uint32_t addsize;    /** an optional field which represents the size of
                            an additional block without specified structure */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
+
 typedef struct header_ace ace_header_t;
 
 static void file_check_ace(file_recovery_t *file_recovery)
@@ -65,11 +71,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
   file_recovery->offset_error = 0;
   file_recovery->offset_ok = 0;
   file_recovery->file_size = 0;
-#ifdef HAVE_FSEEKO
-  if(fseeko(file_recovery->handle, 0, SEEK_SET)<0)
-#else
-  if(fseek(file_recovery->handle, 0, SEEK_SET)<0)
-#endif
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
     return ;
 #ifdef DEBUG_ACE
   log_trace("file_check_ace\n");
@@ -88,11 +90,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return ;
     }
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
-#else
-    if(fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
-#endif
+    if(my_fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
     {
       file_recovery->offset_error=file_recovery->file_size;
       file_recovery->file_size=0;
@@ -169,11 +167,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
     if (le16(h.flags)&1)
     {
       file_recovery->file_size += le32(h.addsize);
-#ifdef HAVE_FSEEKO
-      if(fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
-#else
-      if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
-#endif
+      if(my_fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
       {
 	file_recovery->offset_error=file_recovery->file_size;
 	file_recovery->file_size=0;

@@ -36,7 +36,7 @@ struct wbfs_head
   uint8_t  wbfs_sec_sz_s;     	// size of a wbfs sec
   uint8_t  padding3[2];
   uint8_t  disc_table[0];    	// size depends on hd sector size
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 int check_WBFS(disk_t *disk,partition_t *partition);
 int recover_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int verbose, const int dump_ind);

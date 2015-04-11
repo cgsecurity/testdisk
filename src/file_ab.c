@@ -45,7 +45,7 @@ struct ab_header
 {
   char magic[4];
   uint32_t size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

@@ -56,7 +56,7 @@ struct hdr {
   uint32_t fourcc;
   uint32_t size;
   char data[0];
-}  __attribute__ ((__packed__));
+}  __attribute__ ((gcc_struct, __packed__));
 
 struct prd {
   char ver[8];
@@ -74,7 +74,7 @@ struct prd {
   uint8_t unknown1;
   uint16_t unknown2;
   uint16_t pattern; // 0x0001 RGGB, or 0x0004 GBRG
-}  __attribute__ ((__packed__));
+}  __attribute__ ((gcc_struct, __packed__));
 
 /* Minolta */
 static int header_check_mrw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

@@ -56,7 +56,7 @@ struct lzh_level0
   uint8_t  level;
   uint8_t  filename_len;
   uint8_t  filename[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct lzh_level1
 {
@@ -70,7 +70,7 @@ struct lzh_level1
   uint8_t  level;
   uint8_t  filename_len;
   uint8_t  filename[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct lzh_level2
 {
@@ -84,7 +84,7 @@ struct lzh_level2
   uint16_t file_crc;
   uint8_t  os_id;
   uint16_t next_header_size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_rename_level0(const char *old_filename)
 {

@@ -34,7 +34,7 @@ struct efi_guid_s
   uint8_t  clock_seq_hi_and_reserved;
   uint8_t  clock_seq_low;
   uint8_t  node[6];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 #define DEFAULT_SECTOR_SIZE     0x200u
 

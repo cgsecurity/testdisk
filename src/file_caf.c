@@ -53,7 +53,7 @@ struct chunk_struct
 {
   uint32_t type;
   int64_t  size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_caf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

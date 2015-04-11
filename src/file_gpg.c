@@ -34,6 +34,12 @@
 #include "log.h"
 #endif
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_gpg(file_stat_t *file_stat);
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
@@ -252,12 +258,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     unsigned int length_type=0;
     unsigned int length;
     const int old_partial_body_length=partial_body_length;
-    if(
-#ifdef HAVE_FSEEKO
-	fseeko(file_recovery->handle, offset, SEEK_SET) < 0 ||
-#else
-	fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
-#endif
+    if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
 	fread(&buffer, sizeof(buffer), 1, file_recovery->handle) != 1)
       return;
 
@@ -318,12 +319,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 	  {
 	    int len2;
 	    unsigned char tmp[2];
-	    if(
-#ifdef HAVE_FSEEKO
-		fseeko(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
-#else
-		fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
-#endif
+	    if(my_fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
 		fread(&tmp, sizeof(tmp), 1, file_recovery->handle) != 1)
 	      return;
 	    mpi=(const uint16_t *)&tmp[0];

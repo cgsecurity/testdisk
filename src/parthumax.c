@@ -64,13 +64,13 @@ struct partition_humax {
   uint32_t num_sectors;
   uint32_t unk2;
   uint32_t start_sector;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct humaxlabel {
   char unk1[0x1be];
   struct partition_humax partitions[4];
   uint16_t magic;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 arch_fnct_t arch_humax=
 {

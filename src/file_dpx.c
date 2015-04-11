@@ -64,7 +64,7 @@ struct header_dpx
   char 		copyright[200];   /* right to use or copyright info */
   uint32_t   	key;              /* encryption ( FFFFFFFF = unencrypted ) */
   char 		Reserved[104];    /* reserved field TBD (need to pad) */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_dpx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

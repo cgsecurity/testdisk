@@ -115,7 +115,7 @@ struct arj_main_header {
   uint16_t	security_env_size;
   uint16_t	unused;
   char		filename;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_arj(file_recovery_t *file_recovery)
 {

@@ -37,6 +37,12 @@
 #include "log.h"
 #endif
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_hdf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_hdf= {
@@ -53,7 +59,7 @@ struct ddh_struct
 {
   uint16_t	size;
   uint32_t	next;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct dd_struct
 {
@@ -61,7 +67,7 @@ struct dd_struct
   uint16_t	ref;
   uint32_t	offset;
   uint32_t	length;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_hdf(file_recovery_t *file_recovery)
 {
@@ -75,12 +81,7 @@ static void file_check_hdf(file_recovery_t *file_recovery)
     const struct dd_struct *p;
     unsigned int i;
     unsigned int size;
-    if(
-#ifdef HAVE_FSEEKO
-	fseeko(file_recovery->handle, offset, SEEK_SET) < 0 ||
-#else
-	fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
-#endif
+    if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
 	fread(&ddh, sizeof(ddh), 1, file_recovery->handle) !=1 ||
 	be16(ddh.size)==0 ||
 	fread(dd, sizeof(struct dd_struct)*be16(ddh.size), 1, file_recovery->handle) !=1)

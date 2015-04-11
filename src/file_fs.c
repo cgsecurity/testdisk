@@ -55,7 +55,7 @@ struct transaction_header
   uint16_t len_username;
   uint16_t len_descr;
   uint16_t len_ext;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_fs(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

@@ -32,6 +32,12 @@
 #include "common.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_nk2(file_stat_t *file_stat);
 static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_nk2(file_recovery_t *file_recovery);
@@ -112,12 +118,7 @@ static void file_check_nk2(file_recovery_t *fr)
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(fr->handle, 0, SEEK_SET) < 0 ||
-#else
-      fseek(fr->handle, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&nk2h, sizeof(nk2h), 1, fr->handle)!=1)
     return;
   fr->file_size+=sizeof(nk2h);
@@ -192,11 +193,7 @@ static void file_check_nk2(file_recovery_t *fr)
       }
 #endif
       fr->file_size+=sizeof(entryh);
-#ifdef HAVE_FSEEKO
-      if (fseeko(fr->handle, fr->file_size+size, SEEK_SET) < 0)
-#else
-      if (fseek(fr->handle, fr->file_size+size, SEEK_SET) < 0)
-#endif
+      if (my_fseek(fr->handle, fr->file_size+size, SEEK_SET) < 0)
       {
 	fr->offset_error=fr->file_size;
 	fr->file_size=0;

@@ -59,7 +59,7 @@ struct iso_primary_descriptor
 	char unused4;
 	char application_data[512];
 	char unused5[653];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 #define ISO_PD_SIZE (sizeof(struct iso_primary_descriptor))
 
 #ifdef __cplusplus

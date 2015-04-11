@@ -70,14 +70,14 @@ struct atom_struct
 {
   uint32_t size;
   uint32_t type;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct atom64_struct
 {
   uint32_t size1;
   uint32_t type;
   uint64_t size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_rename_mov(const char *old_filename)
 {

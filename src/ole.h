@@ -54,7 +54,7 @@ struct OLE_HDR
 	uint32_t	FAT_next_block;			/*68*/
 	uint32_t	num_extra_FAT_blocks;	/*72*/
 	/* FAT block list starts here !! first 109 entries  */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct OLE_DIR
 {
@@ -75,7 +75,7 @@ struct OLE_DIR
 	uint32_t	size;		// 120
 	int16_t			reserved;	// 124 must be 0
 	int16_t			padding;	// 126 must be 0
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct DIRECTORY
 {

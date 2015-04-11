@@ -56,7 +56,7 @@ struct gzip_header
   uint32_t mtime;
   uint8_t  extra_flags;
   uint8_t  os;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
 /* flags:

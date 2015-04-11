@@ -38,6 +38,12 @@
 #include "memmem.h"
 #include "setdate.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -84,12 +90,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
   const uint64_t doc_file_size_org=file_recovery->file_size;
   file_recovery->file_size=0;
   /*reads first sector including OLE header */
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file_recovery->handle, 0, SEEK_SET) < 0 ||
-#else
-      fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, file_recovery->handle) != 1)
     return ;
 #ifdef DEBUG_OLE
@@ -154,11 +155,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	free(fat);
 	return ;
       }
-#ifdef HAVE_FSEEKO
-      if(fseeko(file_recovery->handle, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
-#else
-      if(fseek(file_recovery->handle, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
-#endif
+      if(my_fseek(file_recovery->handle, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 #ifdef DEBUG_OLE
 	log_info("fseek failed\n");
@@ -506,11 +503,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;
 	i++, block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)]))
     {
-#ifdef HAVE_FSEEKO
-      if(fseeko(IN, (1+block)<<le16(header->uSectorShift), SEEK_SET) < 0)
-#else
-      if(fseek(IN, (1+block)<<le16(header->uSectorShift), SEEK_SET) < 0)
-#endif
+      if(my_fseek(IN, (1+block)<<le16(header->uSectorShift), SEEK_SET) < 0)
       {
 	free(dif);
 	return NULL;
@@ -531,11 +524,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	j<le32(header->num_FAT_blocks);
 	j++, data+=(1<<le16(header->uSectorShift)))
     {
-#ifdef HAVE_FSEEKO
-      if(fseeko(IN, (1+le32(dif[j]))<<le16(header->uSectorShift), SEEK_SET)<0)
-#else
-      if(fseek(IN, (1+le32(dif[j]))<<le16(header->uSectorShift), SEEK_SET)<0)
-#endif
+      if(my_fseek(IN, (1+le32(dif[j]))<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 	free(dif);
 	free(fat);
@@ -570,11 +559,7 @@ static void *OLE_read_stream(FILE *IN,
       free(dataPt);
       return NULL;
     }
-#ifdef HAVE_FSEEKO
-    if(fseeko(IN, (1+block)<<uSectorShift, SEEK_SET)<0)
-#else
-    if(fseek(IN, (1+block)<<uSectorShift, SEEK_SET)<0)
-#endif
+    if(my_fseek(IN, (1+block)<<uSectorShift, SEEK_SET)<0)
     {
       free(dataPt);
       return NULL;
@@ -601,11 +586,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   block=le32(header->MiniFat_block);
   for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
   {
-#ifdef HAVE_FSEEKO
-    if(fseeko(IN, ((uint64_t)1+block) << le16(header->uSectorShift), SEEK_SET) < 0)
-#else
-    if(fseek(IN, ((uint64_t)1+block) << le16(header->uSectorShift), SEEK_SET) < 0)
-#endif
+    if(my_fseek(IN, ((uint64_t)1+block) << le16(header->uSectorShift), SEEK_SET) < 0)
     {
       free(minifat);
       return NULL;
@@ -865,12 +846,7 @@ static void file_rename_doc(const char *old_filename)
   log_info("file_rename_doc(%s)\n", old_filename);
 #endif
   /*reads first sector including OLE header */
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file, 0, SEEK_SET) < 0 ||
-#else
-      fseek(file, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, file) != 1)
   {
     fclose(file);
@@ -907,11 +883,7 @@ static void file_rename_doc(const char *old_filename)
 	block=le32(fat[block]), i++)
     {
       struct OLE_DIR *dir_entries;
-#ifdef HAVE_FSEEKO
-      if(fseeko(file, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
-#else
-      if(fseek(file, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
-#endif
+      if(my_fseek(file, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
       {
 	free(fat);
 	fclose(file);

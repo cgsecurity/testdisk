@@ -64,7 +64,7 @@ struct DatabaseHdrType_s {
   uint32_t      creator;		/* 0x40 */
   uint32_t      uniqueIDSeed;		/* 0x44 */
   /*  RecordListType recordList; */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_prc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

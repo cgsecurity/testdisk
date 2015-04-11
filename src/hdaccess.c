@@ -135,7 +135,7 @@ struct tdewf_file_header
          * 0x00 0x00
          */
         uint16_t fields_end;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 
 struct info_file_struct
@@ -875,7 +875,7 @@ typedef struct _scsi_inquiry_data
   uint8_t product_revision[4];
   uint8_t vendor_specific[20];
   uint8_t _reserved3[40];
-} __attribute__((packed)) scsi_inquiry_data_t;
+} __attribute__((gcc_struct,__packed__)) scsi_inquiry_data_t;
 #define INQ_CMD_LEN	6
 #define INQ_REPLY_LEN	sizeof(scsi_inquiry_data_t)
 

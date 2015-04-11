@@ -54,7 +54,7 @@ struct wmf_header
   uint16_t num_objects;
   uint32_t max_record;
   uint16_t members;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_wmf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

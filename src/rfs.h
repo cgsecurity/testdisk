@@ -70,7 +70,7 @@ struct reiserfs_super_block
 /*116 */    char s_unused[88] ;            /* zero filled by mkreiserfs and reiserfs_convert_objectid_map_v1()
                                             * so any additions must be updated there as well. */ 
 /*204*/
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 #define SB_SIZE (sizeof(struct reiserfs_super_block))
 
@@ -83,7 +83,7 @@ struct reiser4_master_sb {
   char uuid[16];          /* unique id */
   char label[16];         /* filesystem label */
   uint64_t diskmap;            /* location of the diskmap. 0 if not present */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct format40_super {
   uint64_t sb_block_count;

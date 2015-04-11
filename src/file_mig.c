@@ -34,6 +34,12 @@
 #include "log.h"
 #endif
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_mig(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mig= {
@@ -55,7 +61,7 @@ struct MIG_HDR
   uint32_t unk2;
   uint32_t unk3;
   unsigned char fn[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_mig(file_recovery_t *file_recovery)
 {
@@ -65,11 +71,7 @@ static void file_check_mig(file_recovery_t *file_recovery)
   while(1)
   {
     size_t res;
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, offset, SEEK_SET) < 0)
-#else
-    if(fseek(file_recovery->handle, offset, SEEK_SET) < 0)
-#endif
+    if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
     {
 #ifdef DEBUG_MIG
       log_info("0x%lx fseek failed\n", (long unsigned)offset);

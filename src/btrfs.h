@@ -94,7 +94,7 @@ struct btrfs_dev_item {
 
 	/* uuid of FS who owns this device */
 	uint8_t fsid[BTRFS_UUID_SIZE];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct btrfs_super_block {
 	uint8_t csum[BTRFS_CSUM_SIZE];
@@ -136,7 +136,7 @@ struct btrfs_super_block {
 	/* future expansion */
 	uint64_t reserved[32];
 	uint8_t sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 int check_btrfs(disk_t *disk_car,partition_t *partition);
 int recover_btrfs(disk_t *disk_car, const struct btrfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);

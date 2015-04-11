@@ -59,7 +59,7 @@ struct header_raf
   uint32_t cfa_header_size;
   uint32_t cfa_offset;
   uint32_t cfa_size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_raf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

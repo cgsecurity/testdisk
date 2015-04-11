@@ -53,7 +53,7 @@ struct block_header
   char ID[4];              	    /* Identification and block level */
   uint32_t VolSessionId;            /* Session Id for Job */
   uint32_t VolSessionTime;          /* Session Time for Job */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

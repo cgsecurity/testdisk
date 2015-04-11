@@ -34,6 +34,12 @@
 #include "filegen.h"
 #include "common.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_tib(file_stat_t *file_stat);
 static int header_check_tib(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
@@ -67,12 +73,7 @@ static void file_check_tib2(file_recovery_t *file_recovery)
   unsigned char*buffer=(unsigned char*)MALLOC(512);
   int64_t file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-#else
-      fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
       fread(buffer, 1, 512, file_recovery->handle) != 512)
   {
     free(buffer);
@@ -88,12 +89,7 @@ static void file_check_tib2(file_recovery_t *file_recovery)
   for(; file_size>0; file_size-=512)
   {
     unsigned int i;
-    if(
-#ifdef HAVE_FSEEKO
-	fseeko(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-#else
-	fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-#endif
+    if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
 	fread(buffer, 1, 512, file_recovery->handle) != 512)
     {
       free(buffer);

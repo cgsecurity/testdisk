@@ -67,7 +67,7 @@ struct impulse_header
   uint32_t Reserved;
   char     Chnl_Pan[64];
   char     Chnl_Vol[64];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_it(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

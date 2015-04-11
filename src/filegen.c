@@ -36,6 +36,12 @@
 #include "filegen.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
 };
@@ -179,11 +185,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
   unsigned char buffer[4096];
   int taille;
-#ifdef HAVE_FSEEKO
-  if(fseeko(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
-#else
-  if(fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
-#endif
+  if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
     return;
   taille=fread(buffer,1, 4096,file_recovery->handle);
   if(taille > 0 && buffer[0]=='\n' && (nl_mode&NL_BARENL)==NL_BARENL)
@@ -205,11 +207,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
     int taille;
     const unsigned int read_size=(offset%4096!=0 ? offset%4096 : 4096);
     offset-=read_size;
-#ifdef HAVE_FSEEKO
-    if(fseeko(handle,offset,SEEK_SET)<0)
-#else
-    if(fseek(handle,offset,SEEK_SET)<0)
-#endif
+    if(my_fseek(handle,offset,SEEK_SET)<0)
     {
       free(buffer);
       return 0;
@@ -257,11 +255,7 @@ void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*f
       file_size=file_size-(file_size%read_size);
     else
       file_size-=read_size;
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle,file_size,SEEK_SET)<0)
-#else
-    if(fseek(file_recovery->handle,file_size,SEEK_SET)<0)
-#endif
+    if(my_fseek(file_recovery->handle,file_size,SEEK_SET)<0)
     {
       free(buffer);
       return;

@@ -34,12 +34,12 @@ struct vmfs_volume
 {
   uint32_t magic;
   uint32_t version;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 struct vmfs_lvm
 {
   uint64_t size;
   uint64_t blocks;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 int check_VMFS(disk_t *disk,partition_t *partition);
 int recover_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int verbose, const int dump_ind);

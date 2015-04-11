@@ -53,7 +53,7 @@ struct xcf_header
   uint32_t	width;
   uint32_t	heigth;
   uint32_t	base_type;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_xcf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

@@ -32,6 +32,12 @@
 #include "common.h"
 #include "log.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_mid(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mid= {
@@ -53,7 +59,7 @@ struct midi_header
   uint16_t format;
   uint16_t tracks;
   int16_t time_division;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_midi(file_recovery_t *file_recovery)
 {
@@ -63,12 +69,7 @@ static void file_check_midi(file_recovery_t *file_recovery)
   unsigned int tracks;
   uint64_t fs=4+4+6;
   file_recovery->file_size=0;
-  if(
-#ifdef HAVE_FSEEKO
-      fseeko(file_recovery->handle, 0, SEEK_SET) < 0 ||
-#else
-      fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
-#endif
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
       fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1)
     return ;
   tracks=be16(hdr.tracks);
@@ -78,11 +79,7 @@ static void file_check_midi(file_recovery_t *file_recovery)
 #ifdef DEBUG_MIDI
     log_info("file_check_midi 0x%08llx\n", (unsigned long long)fs);
 #endif
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, fs, SEEK_SET) < 0 ||
-#else
-    if(fseek(file_recovery->handle, fs, SEEK_SET) < 0 ||
-#endif
+    if(my_fseek(file_recovery->handle, fs, SEEK_SET) < 0 ||
 	fread(&track, 8, 1, file_recovery->handle) != 1 ||
 	memcmp(&track.magic[0], "MTrk", 4)!=0)
       return ;

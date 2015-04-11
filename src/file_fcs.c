@@ -61,7 +61,7 @@ struct fcs_header
   unsigned char data_end[8];		/* 34 */
   unsigned char analysis_start[8];	/* 34 */
   unsigned char analysis_end[8];	/* 50 */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static uint64_t ascii2int(const unsigned char *string, const unsigned int max_length)
 {

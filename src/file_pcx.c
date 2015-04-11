@@ -76,7 +76,7 @@ struct pcx_file_entry {
   uint16_t HScrSize; 	/* only supported by		*/
   uint16_t VScrSize; 	/* PC Paintbrush IV or higher 	*/
   uint8_t  Filler[56];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void register_header_check_pcx(file_stat_t *file_stat)
 {

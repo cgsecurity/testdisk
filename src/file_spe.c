@@ -236,7 +236,7 @@ struct header_spe
   char          Istring[40];       /* 3978  special Intensity scaling string   */
   char          empty3[80];        /* 4018  empty block to reach 4100 bytes    */
   int16_t           lastvalue;         /* 4098 Always the LAST value in the header */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static const unsigned char spe_header[4]= {0x67, 0x45, 0x23, 0x01};
 

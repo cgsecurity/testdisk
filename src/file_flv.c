@@ -50,7 +50,7 @@ struct flv_header
   uint8_t	version;
   uint8_t	type_flags;
   uint32_t	data_offset;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct flv_tag
 {
@@ -60,7 +60,7 @@ struct flv_tag
   uint8_t	timestamp[3];
   uint8_t	timestamp_ext;
   uint8_t	streamID[3];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_flv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

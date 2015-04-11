@@ -50,7 +50,7 @@ struct dad_header
   uint32_t unk1;
   uint32_t unk2;
   uint32_t size;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static data_check_t data_check_dad(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {

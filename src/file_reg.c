@@ -54,7 +54,7 @@ struct creg_file_header
   uint32_t uk2;
   uint32_t uk3;
   uint32_t uk4;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct rgdb_block
 {
@@ -68,7 +68,7 @@ struct rgdb_block
   uint16_t first_free_id;
   uint32_t uk1;
   uint32_t chksum;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_reg_9x(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -102,7 +102,7 @@ struct regf_file_header
   uint8_t unknown5[ 64 ];
   uint8_t unknown6[ 396 ];
   uint32_t xor_checksum;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_reg_nt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

@@ -57,7 +57,7 @@ typedef struct {
     uint8_t l2_bits;
     uint32_t crypt_method;
     uint64_t l1_table_offset;
-} __attribute__ ((__packed__)) QCowHeader_t;
+} __attribute__ ((gcc_struct, __packed__)) QCowHeader_t;
 
 typedef struct QCowHeader {
     uint32_t magic;

@@ -31,6 +31,12 @@
 #include "filegen.h"
 #include "common.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 static void register_header_check_mlv(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mlv= {
@@ -58,13 +64,13 @@ typedef struct {
   uint32_t    audioFrameCount;	/* number of audio frames in this file. set to 0 on start, updated when finished. */
   uint32_t    sourceFpsNom;	/* configured fps in 1/s multiplied by sourceFpsDenom */
   uint32_t    sourceFpsDenom;	/* denominator for fps. usually set to 1000, but may be 1001 for NTSC */
-} __attribute__ ((__packed__)) mlv_file_hdr_t;
+} __attribute__ ((gcc_struct, __packed__)) mlv_file_hdr_t;
 
 typedef struct {
   uint8_t     blockType[4];
   uint32_t    blockSize;
   uint64_t    timestamp;
-} __attribute__ ((__packed__)) mlv_hdr_t;
+} __attribute__ ((gcc_struct, __packed__)) mlv_hdr_t;
 
 static int is_valid_type(const mlv_hdr_t *hdr)
 {
@@ -98,12 +104,7 @@ static void file_check_mlv(file_recovery_t *file_recovery)
   uint64_t fs=0;
   do
   {
-    if(
-#ifdef HAVE_FSEEKO
-	fseeko(file_recovery->handle, fs, SEEK_SET)<0 ||
-#else
-	fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
-#endif
+    if(my_fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
 	fread(&hdr, sizeof(hdr), 1, file_recovery->handle)!=1 ||
 	le32(hdr.blockSize)<0x10 ||
 	!is_valid_type(&hdr) ||

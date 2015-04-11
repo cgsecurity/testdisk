@@ -83,7 +83,7 @@ struct APE_DESCRIPTOR
   uint64_t nAPEFrameDataBytes;		// the number of bytes of APE frame data
   uint32_t nTerminatingDataBytes;	// the terminating data of the file (not including tag data)
   uint8_t cFileMD5[16];			// the MD5 hash of the file (see notes for usage... it's a littly tricky)
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 /*****************************************************************************************
  * APE_HEADER structure (describes the format, duration, etc. of the APE file)

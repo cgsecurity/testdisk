@@ -51,7 +51,7 @@ struct ra3_header {
   uint32_t data_size;
   uint8_t title_length;
   char title[0];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct ra4_header {
   char magic[4];
@@ -79,8 +79,7 @@ struct ra4_header {
   char     unk4[3];
   uint8_t  title_length;
   char     title[0];
-} __attribute__ ((__packed__));
-
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_ra(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

@@ -64,7 +64,7 @@ struct ewf_file_header
          * 0x00 0x00
          */
         uint16_t fields_end;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static void file_check_e01(file_recovery_t *file_recovery)
 {

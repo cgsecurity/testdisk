@@ -303,4 +303,4 @@ struct SP3FileInfo
   uint32_t    	Prove_UC_CRC32; 
    
   char 		zzReserved999[1024*10-1312];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));

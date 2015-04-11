@@ -55,6 +55,12 @@
 #include "setdate.h"
 #include "dfxml.h"
 
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
+#define my_fseek fseeko
+#else
+#define my_fseek fseek
+#endif
+
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
 /* #define DEBUG_FREE */
@@ -1137,11 +1143,7 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
     uint64_t i;
     unsigned char *block_buffer;
     block_buffer=&buffer[blocksize];
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, 0, SEEK_SET) < 0)
-#else
-    if(fseek(file_recovery->handle, 0, SEEK_SET) < 0)
-#endif
+    if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0)
       return ;
     for(i=0; i< file_recovery->file_size; i+= blocksize)
     {
@@ -1153,12 +1155,7 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
   }
   else
   {
-#ifdef HAVE_FSEEKO
-    if(fseeko(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
+    if(my_fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
       return ;
-#else
-    if(fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET) < 0)
-      return ;
-#endif
   }
 }

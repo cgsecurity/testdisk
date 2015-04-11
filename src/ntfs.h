@@ -54,7 +54,7 @@ struct ntfs_boot_sector {
 	uint32_t 	checksum;                   	/* 0x50 Boot sector checksum. */
 	uint8_t  	bootstrap[426];             	/* 0x54 Irrelevant (boot up code). */
 	uint16_t	marker;				/* 0x1FE */
-	} __attribute__ ((__packed__));
+	} __attribute__ ((gcc_struct, __packed__));
 
 #define NTFS_Magic 0x454c4946     /* FILE */
 
@@ -73,7 +73,7 @@ struct ntfs_mft_record {
   uint16_t	next_attr_instance;
   uint16_t	reserved;		/* NTFS 3.1+ */
   uint32_t	mft_record_number;	/* NTFS 3.1+ */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 typedef struct ntfs_mft_record ntfs_recordheader;
 
@@ -144,7 +144,7 @@ typedef struct {
 /* 12*/ uint8_t ih_flags;    	/* Bit field of INDEX_HEADER_FLAGS.  */
 /* 13*/ uint8_t reserved[3];    /* Reserved/align to 8-byte boundary.*/
 /* sizeof() == 16 */
-} __attribute__((__packed__)) TD_INDEX_HEADER;
+} __attribute__((gcc_struct, __packed__)) TD_INDEX_HEADER;
 
 /**
  * struct FILE_NAME_ATTR - Attribute: Filename (0x30).
@@ -188,17 +188,17 @@ typedef struct {
 						   pack the extended attributes
 						   (EAs), if such are present.*/
 		/* 3e*/	uint16_t reserved;		/* Reserved for alignment. */
-		} __attribute__((__packed__));
+		} __attribute__((gcc_struct, __packed__));
 	/* 3c*/	uint32_t reparse_point_tag;		/* Type of reparse point,
 						   present only in reparse
 						   points and only if there are
 						   no EAs. */
-	} __attribute__((__packed__));
+	} __attribute__((gcc_struct, __packed__));
 /* 40*/	uint8_t file_name_length;			/* Length of file name in
 						   (Unicode) characters. */
 /* 41*/	uint8_t file_name_type;	/* Namespace of the file name.*/
 /* 42*/	char *file_name[0];			/* File name in Unicode. */
-} __attribute__((__packed__)) TD_FILE_NAME_ATTR;
+} __attribute__((gcc_struct, __packed__)) TD_FILE_NAME_ATTR;
 
 
 /**
@@ -238,7 +238,7 @@ typedef struct {
 /* 16*/	TD_INDEX_HEADER index;		/* Index header describing the
 					   following index entries. */
 /* sizeof()= 32 bytes */
-} __attribute__((__packed__)) TD_INDEX_ROOT;
+} __attribute__((gcc_struct, __packed__)) TD_INDEX_ROOT;
 
 
 int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const int dump_ind);

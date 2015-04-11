@@ -51,7 +51,7 @@ struct asf_header_obj_s {
   uint32_t	nbr_header_obj;
   char		reserved1;	/* 1 */
   char		reserved2;	/* 2 */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct asf_file_prop_s {
   unsigned char object_id[16];
@@ -59,13 +59,13 @@ struct asf_file_prop_s {
   unsigned char file_id[16];
   uint64_t      file_size;
   uint64_t      file_date;
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 struct asf_stream_prop_s {
   unsigned char object_id[16];
   uint64_t      object_size;
   unsigned char stream_type[16];
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 static int header_check_asf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

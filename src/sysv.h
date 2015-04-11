@@ -116,7 +116,7 @@ struct sysv4_super_block {
 	int32_t	s_magic;			/* 0x1f8 version of file system */
 	int32_t	s_type;		/* 0x1fc type of file system: 1 for 512 byte blocks
 								2 for 1024 byte blocks */
-} __attribute__ ((__packed__));
+} __attribute__ ((gcc_struct, __packed__));
 
 /* SystemV2 super-block data on disk */
 struct sysv2_super_block {
