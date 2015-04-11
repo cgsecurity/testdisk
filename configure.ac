@@ -281,6 +281,15 @@ AC_ARG_ENABLE(gprof,
   coverage_flags="$coverage_flags -pg"
 fi])
 
+# Determine if stack protection is disabled
+AC_ARG_ENABLE([stack-protector],
+    AS_HELP_STRING([--disable-stack-protector],
+      [Disable the use of -fstack-protector-strong]))
+AS_IF([test "x$enable_stack_protector" = "xno"],
+    [stackProtector=0],
+    [stackProtector=1]
+    )
+
 use_icon=no
 
 case "$target" in
@@ -294,6 +303,7 @@ case "$target" in
 ;;
 *-*-*djgpp)
   if test -z "$CC" ; then CC=gcc; fi
+  stackProtector=0
 ;;
 *-*-*bsd*)
   AC_DEFINE([TARGET_BSD], 1)
@@ -870,6 +880,54 @@ SAVE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -static"
 ACX_PTHREAD([enable_threads="pthread"],[enable_threads="no"])
 CFLAGS="$SAVE_CFLAGS"
+
+# If using stack protection, try -fstack-protector-strong, if not try to fallback to -fstack-protector-all
+AS_IF(
+      [test $stackProtector = 1],
+      [AC_MSG_CHECKING([whether stack protection works with gcc])]
+      [SAVE_CFLAGS="$CFLAGS"]
+      [CFLAGS="$SAVE_CFLAGS -fstack-protector-strong"]
+      [AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([])],
+	[has_option=yes],
+	[CFLAGS="$SAVE_CFLAGS -fstack-protector-all"]
+	[AC_COMPILE_IFELSE(
+	  [AC_LANG_PROGRAM([])],
+	  [has_option=yes],
+	  [has_option=no; CFLAGS="$SAVE_CFLAGS"]
+	  [AC_MSG_WARN([Cannot configure with stack protection])]
+	  )]
+	)]
+      [AC_MSG_RESULT($has_option)]
+      [unset has_option]
+      [unset SAVE_CFLAGS],
+      []
+      )
+AS_IF(
+      [test $stackProtector = 1],
+      [AC_MSG_CHECKING([whether stack protection works with g++])]
+      [AC_LANG_PUSH([C++])]
+      [SAVE_CXXFLAGS="$CXXFLAGS"]
+      [CXXFLAGS="$SAVE_CXXFLAGS -fstack-protector-strong"]
+      [AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([])],
+	[has_option=yes],
+	[CXXFLAGS="$SAVE_CXXFLAGS -fstack-protector-all"]
+	[AC_COMPILE_IFELSE(
+	  [AC_LANG_PROGRAM([])],
+	  [has_option=yes],
+	  [has_option=no]
+	  [CXXFLAGS="$SAVE_CXXFLAGS"]
+	  [AC_MSG_WARN([Cannot configure with stack protection])]
+	  )]
+	)]
+      [AC_MSG_RESULT($has_option)]
+      [unset has_option]
+      [unset SAVE_CXXFLAGS]
+      [AC_LANG_POP([C++])],
+      []
+      )
+
 
 photorecf_LDADD=$photorec_LDADD
 CFLAGS="$CFLAGS $coverage_flags"
