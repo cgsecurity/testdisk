@@ -80,7 +80,7 @@ int recover_HPFS(disk_t *disk_car,const struct fat_boot_sector*fat_header, parti
 
 int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
-  unsigned char buffer[512];
+  unsigned char buffer[disk_car->sector_size];
   if((unsigned)disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
   {
     screen_buffer_add("check_HPFS: Read error\n");
