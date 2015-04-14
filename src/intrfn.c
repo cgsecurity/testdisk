@@ -1038,37 +1038,54 @@ void not_implemented(const char *msg)
 #if defined(DJGPP) || defined(__MINGW32__)
 #else
 static SCREEN *screenp=NULL;
-#endif
 
-static char *filename_to_directory(const char *filename)
+static void get_newterm_aux(void)
 {
-  char buf[2048];
-  char *res;
-#ifdef HAVE_READLINK
-  const int len=readlink(filename,buf,sizeof(buf)-1);
-  if(len>=0)
-    buf[len]='\0';
-  else
-  {
-    strncpy(buf,filename,sizeof(buf)-1);
-    buf[sizeof(buf)-1]='\0';
-  }
-#else
-  strncpy(buf,filename,sizeof(buf)-1);
-  buf[sizeof(buf)-1]='\0';
+  if((screenp=newterm(NULL,stdout,stdin))!=NULL)
+    return ;
+#if defined(TARGET_BSD)
+  if((screenp=newterm("cons25",stdout,stdin))!=NULL)
+    return ;
+#elif defined(TARGET_LINUX)
+  if((screenp=newterm("linux",stdout,stdin))!=NULL)
+    return ;
+#elif defined(__CYGWIN__)
+  if((screenp=newterm("cygwin",stdout,stdin))!=NULL)
+    return ;
+#elif defined(__OS2__)
+  if((screenp=newterm("ansi",stdout,stdin))!=NULL)
+    return ;
+#elif defined(__APPLE__)
+  if((screenp=newterm("xterm-color",stdout,stdin))!=NULL)
+    return ;
 #endif
-  res=dirname(buf);
-  if(res==NULL)
-    return NULL;
-#ifdef HAVE_GETCWD
-  if(strcmp(res,".")==0 && getcwd(buf, sizeof(buf)-1)!=NULL)
-  {
-    buf[sizeof(buf)-1]='\0';
-    res=buf;
-  }
-#endif
-  return strdup(res);
 }
+
+static void get_newterm(const char *prog_name)
+{
+  char *tmp;
+  char *dirs;
+  char *dirname_prog;
+  get_newterm_aux();
+  if(screenp!=NULL)
+    return ;
+#ifdef HAVE_SETENV
+  /* NCurses 5.9 caches the env variables during 1s, so sleep to avoid this cache */
+  sleep(2);
+  tmp=strdup(prog_name);
+  dirname_prog= dirname(tmp);
+  dirs=(char *)MALLOC(strlen(dirname_prog)+2+1);
+  sprintf(dirs, "%s:.", dirname_prog);
+  setenv("TERMINFO_DIRS", dirs, 1);
+  get_newterm_aux();
+  free(dirs);
+  free(tmp);
+  if(screenp!=NULL)
+    return ;
+  unsetenv("TERMINFO_DIRS");
+#endif
+}
+#endif
 
 int start_ncurses(const char *prog_name, const char *real_prog_name)
 {
@@ -1082,55 +1099,19 @@ int start_ncurses(const char *prog_name, const char *real_prog_name)
     return 1;
   }
 #else
+  get_newterm(real_prog_name);
+  if(screenp==NULL)
   {
-    int term_overwrite;
-    char *terminfo=filename_to_directory(real_prog_name);
-    for(term_overwrite=0;screenp==NULL && term_overwrite<=1;term_overwrite++)
-    {
-#ifdef HAVE_SETENV
-#if defined(TARGET_BSD)
-      setenv("TERM","cons25",term_overwrite);
-#elif defined(TARGET_LINUX)
-      setenv("TERM","linux",term_overwrite);
-#elif defined(__CYGWIN__)
-      setenv("TERM","cygwin",term_overwrite);
-#elif defined(__OS2__)
-      setenv("TERM","ansi",term_overwrite);
-#elif defined(__APPLE__)
-      setenv("TERM","xterm-color",term_overwrite);
-#endif
-#endif
-      screenp=newterm(NULL,stdout,stdin);
-#ifdef HAVE_SETENV
-      if(screenp==NULL && terminfo!=NULL && terminfo[0]!='\0')
-      {
-        setenv("TERMINFO", terminfo, 1);
-        screenp=newterm(NULL,stdout,stdin);
-      }
-      if(screenp==NULL)
-      {
-        setenv("TERMINFO",".",1);
-        screenp=newterm(NULL,stdout,stdin);
-      }
-      if(screenp==NULL)
-        unsetenv("TERMINFO");
-#endif
-    }
-    if(screenp==NULL)
-    {
-      log_critical("Terminfo file is missing.\n");
+    log_critical("Terminfo file is missing.\n");
 #if defined(__CYGWIN__)
-      printf("The terminfo file '%s\\63\\cygwin' is missing.\n", terminfo);
+    printf("The terminfo file '63\\cygwin' is missing.\n");
 #else
-      printf("Terminfo file is missing.\n");
+    printf("Terminfo file is missing.\n");
 #endif
-      printf("Extract all files and subdirectories before running the program.\n");
-      printf("Press Enter key to quit.\n");
-      (void)getchar();
-      free(terminfo);
-      return 1;
-    }
-    free(terminfo);
+    printf("Extract all files and subdirectories before running the program.\n");
+    printf("Press Enter key to quit.\n");
+    (void)getchar();
+    return 1;
   }
 #endif
   /* Should solve a problem with users who redefined the colors */
