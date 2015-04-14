@@ -149,7 +149,7 @@ struct disklabel {
 		} __partition_u1;
 #define	p_cpg	__partition_u1.cpg
 #define	p_sgs	__partition_u1.sgs
-	} d_partitions[BSD_MAXPARTITIONS];	/* actually may be more */
+	} d_partitions[OPENBSD_MAXPARTITIONS];	/* actually may be more */
 };
 #define TST_FS_UNUSED       0               /* unused */
 #define TST_FS_SWAP         1               /* swap */
