@@ -371,7 +371,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	    if(res!=NULL)
 	      *res='\0';
 	  }
-	  res=ask_location("Warning: no free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
+	  res=ask_location("Warning: not enough free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
 	  free(dst);
 	  if(res==NULL)
 	    params->status=STATUS_QUIT;
