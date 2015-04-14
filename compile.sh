@@ -1,6 +1,6 @@
 #!/bin/sh
 # default, host is empty, no cross compilation
-# ./compile.sh [ i586-pc-msdosdjgpp | i386-pc-cygwin | i386-pc-mingw32 | powerpc-mac-darwin ]
+# ./compile.sh [ i586-pc-msdosdjgpp | i686-pc-cygwin | i386-pc-mingw32 | powerpc-mac-darwin ]
 # Comment the version definition to not compile the library
 VER_E2FSPROGS=
 VER_PROGSREISERFS="0.3.1-rc8"
@@ -25,6 +25,10 @@ else
     fi
     if [ ! -d $PKG_CONFIG_PATH ];
     then
+      PKG_CONFIG_PATH=/usr/$crosscompile_target/sys-root/usr/lib/pkgconfig
+    fi
+    if [ ! -d $PKG_CONFIG_PATH ];
+    then
       unset PKG_CONFIG_PATH
     fi
     export PKG_CONFIG_PATH
@@ -34,15 +38,14 @@ case "$crosscompile_target" in
   "")
   ;;
   *-msdosdjgpp)
-	VER_LIBNTFS3G=
-	VER_NTFSPROGS="2.0.0"
+	VER_LIBNTFS3G="2014.2.15"
+	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
   *-cygwin)
 	VER_LIBNTFS3G=
 	VER_NTFSPROGS="2.0.0"
 	VER_E2FSPROGS="1.42.8"
-	export PKG_CONFIG_SYSROOT_DIR=/usr/i386-pc-cygwin/
   ;;
   *-mingw32)
 	VER_LIBNTFS3G=
@@ -50,12 +53,12 @@ case "$crosscompile_target" in
 	VER_E2FSPROGS=
   ;;
   i686-apple-darwin9|powerpc-apple-darwin)
-	VER_LIBNTFS3G="2011.3.28-RC"
+	VER_LIBNTFS3G="2014.2.15"
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
   *)
-	VER_LIBNTFS3G="2011.3.28-RC"
+	VER_LIBNTFS3G="2014.2.15"
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
@@ -190,10 +193,10 @@ then
         cd $compiledir/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G
         case "$crosscompile_target" in
           powerpc-apple-darwin|i686-apple-darwin9)
-	  	CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto --disable-nfconv
+		CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-device-default-io-ops --disable-crypto --disable-ntfs-3g --disable-nfconv
 		;;
 	*)
-		CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-default-device-io-ops --disable-crypto
+		CC=$TESTDISKCC ./configure --host=$crosscompile_target --prefix=$prefix --disable-device-default-io-ops --disable-crypto --disable-ntfs-3g
 		;;
 	esac
 # --disable-default-device-io-ops is need for NT 4
@@ -314,13 +317,10 @@ then
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt --disable-assert
                 ;;
 	  i686-apple-darwin9)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt --disable-stack-protector
                 ;;
           i586-pc-msdosdjgpp)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv --disable-qt
-                ;;
-          i386-pc-cygwin)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-qt
                 ;;
           i386-mingw32)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
