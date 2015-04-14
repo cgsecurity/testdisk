@@ -523,7 +523,6 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      const file_info_t *tmp;
 	      struct td_list_head *pos_org=pos;
 	      const int pos_num_org=pos_num;
-	      tmp=td_list_entry(pos, file_info_t, list);
 	      pos=pos->next;
 	      tmp=td_list_entry(pos, file_info_t, list);
 	      pos_num++;
@@ -547,7 +546,6 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      const file_info_t *tmp;
 	      struct td_list_head *pos_org=pos;
 	      const int pos_num_org=pos_num;
-	      tmp=td_list_entry(pos, file_info_t, list);
 	      pos=pos->prev;
 	      tmp=td_list_entry(pos, file_info_t, list);
 	      pos_num--;
