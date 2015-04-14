@@ -73,6 +73,7 @@ static int header_save_xfs(const unsigned char *buffer, const unsigned int buffe
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_xfs.extension;
   file_recovery_new->data_check=&data_check_stopasap;
+  file_recovery_new->min_filesize=512;
   return 1;
 }
 
