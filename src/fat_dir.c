@@ -272,7 +272,7 @@ RecEnd:
 #endif
 	  if(sizec <= 0)
 	  {
-	    new_file->name[o]=(char) unicode[i];
+	    new_file->name[o++]=(char) unicode[i];
 	    utf8=0;
 	  }
 	  else
