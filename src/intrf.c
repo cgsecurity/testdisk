@@ -79,7 +79,7 @@ int screen_buffer_add(const char *_format, ...)
   {
     const unsigned int dst_current_len=strlen(intr_buffer_screen[intr_nbr_line]);
     const char *end=strchr(start,'\n');
-    unsigned int nbr=(end==NULL ? strlen(start) : end-start);
+    unsigned int nbr=(end==NULL ? strlen(start) : (unsigned int)(end-start));
     if(nbr > BUFFER_LINE_LENGTH-dst_current_len)
       nbr=BUFFER_LINE_LENGTH-dst_current_len;
 
