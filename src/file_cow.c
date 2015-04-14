@@ -78,7 +78,7 @@ typedef struct QCowHeader {
 static int header_check_qcow1(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const QCowHeader_t *header=(const QCowHeader_t*)buffer;
-  uint64_t min_size=le64(header->backing_file_offset);
+  uint64_t min_size=be64(header->backing_file_offset);
   if(min_size < be64(header->l1_table_offset))
     min_size=be64(header->l1_table_offset);
   reset_file_recovery(file_recovery_new);
