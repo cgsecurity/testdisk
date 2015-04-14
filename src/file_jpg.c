@@ -1317,7 +1317,7 @@ struct sof_header
   unsigned char data[0];
 } __attribute__ ((gcc_struct, __packed__));
 
-static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size)
+static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i)
 {
   const struct sof_header *h=(const struct sof_header *)&buffer[i];
   if(i+4 > buffer_size)
@@ -1752,7 +1752,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
       file_recovery->calculated_file_size+=2+size;
       if(buffer[i+1]==0xc0)	/* SOF0 */
       {
-	if(jpg_check_sof0(buffer, buffer_size, i, 2+size)!=0)
+	if(jpg_check_sof0(buffer, buffer_size, i)!=0)
 	  return DC_STOP;
       }
       else if(buffer[i+1]==0xc4)	/* DHT */
