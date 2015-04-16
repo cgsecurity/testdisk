@@ -466,144 +466,157 @@ static void test_MBR_data(list_part_t *list_part)
       screen_buffer_add(msg_ONLY1MUSTBOOT);
 }
 
-static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader)
+static partition_t *get_ext_partition_i386(const list_part_t *list_part)
 {
-  list_part_t *element;
-  partition_t *partition_main_ext=NULL;
-  for(element=list_part;element!=NULL;element=element->next)
+  const list_part_t *element;
+  for(element=list_part; element!=NULL; element=element->next)
   {
     if(element->part->status==STATUS_EXT)
-      partition_main_ext=element->part;
+      return element->part;
   }
-  if(partition_main_ext!=NULL)
+  return NULL;
+}
+
+static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader)
+{
+  partition_t *partition_main_ext;
+  partition_t *partition_ext;
+  partition_t *partition_next_ext;
+  unsigned int order=5;
+  unsigned int nbr_part=0;
+  if((partition_main_ext=get_ext_partition_i386(list_part))==NULL)
+    return list_part;
+  for(partition_ext=partition_main_ext;
+      partition_ext!=NULL && nbr_part<32;
+      partition_ext=partition_next_ext)
   {
-    partition_t *partition_ext=partition_main_ext;
-    partition_t *partition_next_ext=NULL;
-    unsigned int order=5;
-    do
+    unsigned char buffer[DEFAULT_SECTOR_SIZE];
+    int nb_hidden=0, nb_mb=0, nb_part=0, nb_ext=0, nb_boot=0;
+    unsigned int i;
+    partition_next_ext=NULL;
+    if(partition_ext->part_offset==0)
+      return list_part;
+    if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition_ext->part_offset) != sizeof(buffer))
+      return list_part;
+    if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
     {
-      unsigned char buffer[DEFAULT_SECTOR_SIZE];
-      int nb_hidden=0, nb_mb=0, nb_part=0, nb_ext=0, nb_boot=0;
-      unsigned int i;
-      if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition_ext->part_offset) != sizeof(buffer))
-	return list_part;
-      if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
+      screen_buffer_add("\ntest_logical: " msg_TBL_NMARK);
+      return list_part;
+    }
+    for(i=0;i<4;i++)
+    {
+      const struct partition_dos *p=pt_offset(buffer,i);
+      if(p->boot_ind==(unsigned char)0x80)
+	nb_boot++;
+      switch(p->sys_ind)
       {
-	screen_buffer_add("\ntest_logical: " msg_TBL_NMARK);
-	return list_part;
+	case P_16FATBDH:
+	case P_16FATH:
+	case P_NTFSH:
+	  nb_hidden++;
+	  break;
+	case P_OS2MB:
+	  nb_mb++;
+	  break;
+	case P_EXTENDX:
+	case P_EXTENDED:
+	case P_LINUXEXTENDX:
+	  nb_ext++;
+	  break;
+	case P_NO_OS:
+	  break;
+	default:
+	  nb_part++;
       }
-      for(i=0;i<4;i++)
+    }
+    if(nb_hidden>0)
+      screen_buffer_add("Partition must not be hidden\n");
+    if(nb_mb>0)
+      screen_buffer_add("Multiboot must be a primary partition, not a logical\n");
+    if(nb_ext>1)
+      screen_buffer_add("A logical partition must not have more than one link to another logical partition\n");
+    if(nb_part>1)
+      screen_buffer_add("A logical partition must contain only one partition\n");
+    if(nb_boot>0)
+      screen_buffer_add("Logical partition must not be bootable\n");
+    for(i=0;i<4;i++)
+    {
+      const struct partition_dos *p=pt_offset(buffer,i);
+      if(p->sys_ind!=0)
       {
-	const struct partition_dos *p=pt_offset(buffer,i);
-	if(p->boot_ind==(unsigned char)0x80)
-	  nb_boot++;
-	switch(p->sys_ind)
+	int insert_error=0;
+	partition_t *new_partition=partition_new(&arch_i386);
+	new_partition->order=order;
+	if(verbose>1)
+	  log_dos_entry(p);
+	if(is_extended(p->sys_ind))
 	{
-	  case P_16FATBDH:
-	  case P_16FATH:
-	  case P_NTFSH:
-	    nb_hidden++;
-	    break;
-	  case P_OS2MB:
-	    nb_mb++;
-	    break;
-	  case P_EXTENDX:
-	  case P_EXTENDED:
-	  case P_LINUXEXTENDX:
-	    nb_ext++;
-	    break;
-	  case P_NO_OS:
-	    break;
-	  default:
-	    nb_part++;
-	}
-      }
-      if(nb_hidden>0)
-	screen_buffer_add("Partition must not be hidden\n");
-      if(nb_mb>0)
-	screen_buffer_add("Multiboot must be a primary partition, not a logical\n");
-      if(nb_ext>1)
-	screen_buffer_add("A logical partition must not have more than one link to another logical partition\n");
-      if(nb_part>1)
-	screen_buffer_add("A logical partition must contain only one partition\n");
-      if(nb_boot>0)
-	screen_buffer_add("Logical partition must not be bootable\n");
-      partition_next_ext=NULL;
-      for(i=0;i<4;i++)
-      {
-	const struct partition_dos *p=pt_offset(buffer,i);
-	if(p->sys_ind!=0)
-	{
-	  int insert_error=0;
-	  partition_t *new_partition=partition_new(&arch_i386);
-	  new_partition->order=order;
-	  if(verbose>1)
-	    log_dos_entry(p);
-	  if(is_extended(p->sys_ind))
+	  i386_entry2partition(disk_car, partition_main_ext->part_offset, new_partition, p, STATUS_EXT_IN_EXT,order,verbose,saveheader);
+	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
+	  if(new_partition->errcode!=BAD_NOERR)
 	  {
-	    i386_entry2partition(disk_car, partition_main_ext->part_offset, new_partition, p, STATUS_EXT_IN_EXT,order,verbose,saveheader);
-	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-	    if(new_partition->errcode!=BAD_NOERR)
-	    {
-	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	    screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	  }
+	  {
+	    if((new_partition->part_offset<=partition_main_ext->part_offset) ||
+		(new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
+	    {	/* Must be IN partition_main_ext */
+	      screen_buffer_add("Must be in extended partition\n");
+	      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
+	      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    }
+	    else
 	    {
-	      if((new_partition->part_offset<=partition_main_ext->part_offset) ||
-		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
-	      {	/* Must be IN partition_main_ext */
-		screen_buffer_add("Must be in extended partition\n");
-		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
-		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-	      }
-	      else
+	      list_part_t *element;
+	      for(element=list_part;element!=NULL;element=element->next)
 	      {
-		for(element=list_part;element!=NULL;element=element->next)
+		partition_t *partition=element->part;
+		if(partition->status==STATUS_EXT_IN_EXT)
 		{
-		  partition_t *partition=element->part;
-		  if(partition->status==STATUS_EXT_IN_EXT)
-		  {
-		    if(((partition->part_offset>=new_partition->part_offset) && (partition->part_offset<=new_partition->part_offset+new_partition->part_size-1)) ||
-			((partition->part_offset+partition->part_size-1>=new_partition->part_offset) && (partition->part_offset+partition->part_size-1<=new_partition->part_offset+partition->part_size-1)))
-		    { /* New Partition start or end mustn't been in partition */
-		      screen_buffer_add( "Logical partition must be in its own extended partition\n");
-		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-		      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-		    }
+		  if(((partition->part_offset>=new_partition->part_offset) && (partition->part_offset<=new_partition->part_offset+new_partition->part_size-1)) ||
+		      ((partition->part_offset+partition->part_size-1>=new_partition->part_offset) && (partition->part_offset+partition->part_size-1<=new_partition->part_offset+partition->part_size-1)))
+		  { /* New Partition start or end mustn't been in partition */
+		    screen_buffer_add( "Logical partition must be in its own extended partition\n");
+		    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+		    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 		  }
 		}
 	      }
 	    }
 	  }
-	  else
+	}
+	else
+	{
+	  i386_entry2partition(disk_car,partition_ext->part_offset, new_partition, p, STATUS_LOG,order,verbose,saveheader);
+	  order++;
+	  if(verbose>1)
+	    log_dos_entry(p);
+	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
+	  if(new_partition->errcode!=BAD_NOERR)
 	  {
-	    i386_entry2partition(disk_car,partition_ext->part_offset, new_partition, p, STATUS_LOG,order,verbose,saveheader);
-	    order++;
-	    if(verbose>1)
-	      log_dos_entry(p);
-	    aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-	    if(new_partition->errcode!=BAD_NOERR)
-	    {
-	      screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
-	    }
-	    {
-	      if((new_partition->part_offset<=partition_main_ext->part_offset) ||
-		  (new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
-	      {	/* Must be IN partition_main_ext */
-		screen_buffer_add( msg_SAME_SPACE);
-		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
-		aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-	      }
+	    screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+	  }
+	  {
+	    if((new_partition->part_offset<=partition_main_ext->part_offset) ||
+		(new_partition->part_offset+new_partition->part_size-1 > partition_main_ext->part_offset+partition_main_ext->part_size-1))
+	    {	/* Must be IN partition_main_ext */
+	      screen_buffer_add( msg_SAME_SPACE);
+	      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition_main_ext);
+	      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
 	    }
 	  }
-	  list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
-	  if(insert_error>0)
-	    free(new_partition);
-	  else if(is_extended(p->sys_ind))
+	}
+	list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+	if(insert_error>0)
+	  free(new_partition);
+	else
+	{
+	  nbr_part++;
+	  if(is_extended(p->sys_ind))
 	    partition_next_ext=new_partition;
 	}
       }
-      partition_ext=partition_next_ext;
-    } while ((partition_ext!=NULL) && (order<30));
+    }
   }
   return list_part;
 }
