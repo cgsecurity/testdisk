@@ -123,6 +123,7 @@ static int header_check_par2(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_par2.extension;
   file_recovery_new->file_rename=&file_rename_par2;
+  file_recovery_new->min_filesize=64+length;
   if(file_recovery_new->blocksize < 16)
     return 1;
   file_recovery_new->data_check=&data_check_par2;
