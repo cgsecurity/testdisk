@@ -65,6 +65,7 @@ char *ask_log_location(const char*filename, const int errsv);
 int get_string(WINDOW *window, char *str, const int len, const char *def);
 uint64_t ask_int_ncurses(const char *string);
 const char *ask_string_ncurses(const char *string);
+const char *td_curses_version(void);
 #endif
 
 void display_message(const char*msg);

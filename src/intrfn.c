@@ -1071,7 +1071,9 @@ static void get_newterm(const char *prog_name)
     return ;
 #ifdef HAVE_SETENV
   /* NCurses 5.9 caches the env variables during 1s, so sleep to avoid this cache */
+#if defined(NCURSES_VERSION_MAJOR) && defined(NCURSES_VERSION_MINOR) && (NCURSES_VERSION_MAJOR > 5 || (NCURSES_VERSION_MAJOR == 5 && NCURSES_VERSION_MINOR>7))
   sleep(2);
+#endif
   tmp=strdup(prog_name);
   dirname_prog= dirname(tmp);
   dirs=(char *)MALLOC(strlen(dirname_prog)+2+1);
@@ -1370,10 +1372,27 @@ const char *ask_string_ncurses(const char *string)
   return &response[0];
 }
 
+const char *td_curses_version(void)
+{
+  static char curses_version_string[512];
+#ifdef NCURSES_VERSION
+  snprintf(curses_version_string, sizeof(curses_version_string), "ncurses %s", NCURSES_VERSION);
+  return curses_version_string;
+#elif defined(PDC_BUILD)
+  snprintf(curses_version_string, sizeof(curses_version_string), "pdcurses build  %u", PDC_BUILD);
+  return curses_version_string;
+#else
+  return "unknown version";
+#endif
+}
 
 #else
 #include "log.h"
 #include "intrfn.h"
+const char *td_curses_version(void)
+{
+  return "None";
+}
 
 void display_message(const char*msg)
 {
