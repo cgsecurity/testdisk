@@ -75,16 +75,16 @@ static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partiti
   else
     snprintf(partition->info, sizeof(partition->info), "ext2 blocksize=%u", partition->blocksize);
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_LARGE_FILE)!=0)
-    strcat(partition->info," Large file");
+    strcat(partition->info," Large_file");
   if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER)!=0)
-    strcat(partition->info," Sparse superblock");
+    strcat(partition->info," Sparse_SB");
   if(EXT2_HAS_INCOMPAT_FEATURE(sb,EXT3_FEATURE_INCOMPAT_RECOVER)!=0)
     strcat(partition->info," Recover");
   if(EXT2_HAS_INCOMPAT_FEATURE(sb,EXT3_FEATURE_INCOMPAT_JOURNAL_DEV)!=0)
-    strcat(partition->info," Journal dev");
+    strcat(partition->info," Journal_dev");
   if(le16(sb->s_block_group_nr)!=0)
   {
-    strcat(partition->info," Backup superblock");
+    strcat(partition->info," Backup_SB");
     if(verbose>0)
     {
       log_warning("\nblock_group_nr %u\n",le16(sb->s_block_group_nr));

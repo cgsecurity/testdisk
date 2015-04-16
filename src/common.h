@@ -387,9 +387,9 @@ struct param_disk_struct
 
 struct partition_struct
 {
-  char          fsname[80];
-  char          partname[80];
-  char          info[80];
+  char          fsname[128];
+  char          partname[128];
+  char          info[128];
   uint64_t      part_offset;
   uint64_t      part_size;
   uint64_t      sborg_offset;
