@@ -22,7 +22,7 @@ BEGIN
       VALUE "Comments",		"Partition and file recovery utility"
       VALUE "FileVersion",	"7.0"
       VALUE "ProductVersion",	"7.0"
-      VALUE "LegalCopyright",	"Copyright (C) 2013"
+      VALUE "LegalCopyright",	"Copyright (C) 2015"
     END
   END
   BLOCK "VarFileInfo"
