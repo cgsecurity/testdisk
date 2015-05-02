@@ -2,7 +2,7 @@
 #% define is_wip 1
 %{?is_wip:%define ver_wip -WIP}
 
-Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
+Summary:	Tool to check and undelete partition, PhotoRec recovers lost files
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
 Summary(fr.UTF8):	Outil pour vérifier et restaurer des partitions
 Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
@@ -16,15 +16,15 @@ Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Patch0:		progsreiserfs-journal.patch
 Patch1:		progsreiserfs-file-read.patch
 URL:		http://www.cgsecurity.org/wiki/TestDisk
+BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
 BuildRequires:	libewf-devel
 BuildRequires:	libjpeg-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:	ntfs-3g-devel
-BuildRequires:	zlib-devel
 BuildRequires:	qt-devel
-BuildRequires:	desktop-file-utils
+BuildRequires:	zlib-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Obsoletes:	testdisk-doc < 6.12
 %{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
@@ -59,6 +59,16 @@ Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS.
 PhotoRec is a signature based file recovery utility. It handles more than
 440 file formats including JPG, MSOffice, OpenOffice documents.
 
+%package -n qphotorec
+Summary:	Signature based file carver. Recover lost files
+Group:		Applications/System
+
+%description -n qphotorec
+QPhotoRec is a Qt version of PhotoRec. It is a signature based file recovery
+utility. It handles more than 440 file formats including JPG, MSOffice,
+OpenOffice documents.
+
+
 %prep
 %setup -q -n %{name}-%{version}%{?ver_wip}
 %setup -q -a 1 -D -n %{name}-%{version}%{?ver_wip}
@@ -87,36 +97,38 @@ rm -rf $RPM_BUILD_ROOT
 %check
 desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
 
-%post
+%post -n qphotorec
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
 
-%postun
+%postun -n qphotorec
 if [ $1 -eq 0 ] ; then
     /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null
     /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 fi
 
-%posttrans
+%posttrans -n qphotorec
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS COPYING ChangeLog NEWS README THANKS
+%attr(755,root,root) %{_bindir}/fidentify
+%attr(755,root,root) %{_bindir}/photorec
+%attr(755,root,root) %{_bindir}/testdisk
 %{_mandir}/man8/fidentify.8*
 %{_mandir}/man8/photorec.8*
-%{_mandir}/man8/qphotorec.8*
 %{_mandir}/man8/testdisk.8*
 %{_mandir}/zh_CN/man8/fidentify.8*
 %{_mandir}/zh_CN/man8/photorec.8*
-%{_mandir}/zh_CN/man8/qphotorec.8*
 %{_mandir}/zh_CN/man8/testdisk.8*
+
+%files -n qphotorec
+%attr(755,root,root) %{_bindir}/qphotorec
+%{_mandir}/man8/qphotorec.8*
+%{_mandir}/zh_CN/man8/qphotorec.8*
 %{_datadir}/applications/qphotorec.desktop
 %{_datadir}/icons/hicolor/48x48/apps/qphotorec.png
 %{_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
-%attr(755,root,root) %{_bindir}/fidentify
-%attr(755,root,root) %{_bindir}/photorec
-%attr(755,root,root) %{_bindir}/qphotorec
-%attr(755,root,root) %{_bindir}/testdisk
 
 %changelog
 * Wed May 11 2011 Christophe Grenier <grenier@cgsecurity.org> 6.12-0
