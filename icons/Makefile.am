@@ -1,12 +1,14 @@
-EXTRA_DIST = photorec.ico testdisk.ico
+EXTRA_DIST = photorec.ico testdisk.ico \
+	     48x48/apps/qphotorec.png \
+	     scalable/apps/qphotorec.svg
 
 iconsdir = $(datadir)/icons/hicolor
 
-nobase_dist_icons_DATA = 48x48/apps/qphotorec.png \
-	scalable/apps/qphotorec.svg
 
 gtk_update_icon_cache = gtk-update-icon-cache -f -t $(iconsdir)
 if USEQT
+  nobase_icons_DATA = 48x48/apps/qphotorec.png \
+	scalable/apps/qphotorec.svg
   UPDATE_ICON_CACHE=update-icon-cache
 endif
 
