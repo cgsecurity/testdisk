@@ -4,8 +4,8 @@ app                      ICON    DISCARDABLE     "../icons/testdisk.ico"
 1 24 MOVEABLE PURE "../win/testdisk_win.exe.manifest"
 
 1 VERSIONINFO
-FILEVERSION 7, 0, 0, 0
-PRODUCTVERSION 7, 0, 0, 0
+FILEVERSION 7, 1, 0, 0
+PRODUCTVERSION 7, 1, 0, 0
 FILEFLAGSMASK 0x3f
 FILEOS 0x4
 FILETYPE 0x1
@@ -20,8 +20,8 @@ BEGIN
       VALUE "InternalName",	"TestDisk"
       VALUE "OriginalFilename", "testdisk_win.exe"
       VALUE "Comments",		"Partition and file recovery utility"
-      VALUE "FileVersion",	"7.0"
-      VALUE "ProductVersion",	"7.0"
+      VALUE "FileVersion",	"7.1"
+      VALUE "ProductVersion",	"7.1"
       VALUE "LegalCopyright",	"Copyright (C) 2015"
     END
   END
