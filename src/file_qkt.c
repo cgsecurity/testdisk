@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_qkt(file_stat_t *file_stat);
-static int header_check_qkt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_qkt= {
   .extension="qkt",
@@ -43,22 +42,17 @@ const file_hint_t file_hint_qkt= {
   .register_header_check=&register_header_check_qkt
 };
 
-static const unsigned char qkt_header[8]=  {
-  'q' , 'k' , 't' , 'k' , 0x00, 0x00, 0x00, 0x08
-};
+static int header_check_qkt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_qkt.extension;
+  return 1;
+}
 
 static void register_header_check_qkt(file_stat_t *file_stat)
 {
+  static const unsigned char qkt_header[8]=  {
+    'q' , 'k' , 't' , 'k' , 0x00, 0x00, 0x00, 0x08
+  };
   register_header_check(0, qkt_header, sizeof(qkt_header), &header_check_qkt, file_stat);
-}
-
-static int header_check_qkt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, qkt_header, sizeof(qkt_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_qkt.extension;
-    return 1;
-  }
-  return 0;
 }

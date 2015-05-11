@@ -42,20 +42,15 @@ const file_hint_t file_hint_dim= {
   .register_header_check=&register_header_check_dim
 };
 
-static const unsigned char dim_header[4]= { 'S', 'P','C','I'};
+static int header_check_dim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_dim.extension;
+  return 1;
+}
 
 static void register_header_check_dim(file_stat_t *file_stat)
 {
+  static const unsigned char dim_header[4]= { 'S', 'P','C','I'};
   register_header_check(0x0c, dim_header,sizeof(dim_header), &header_check_dim, file_stat);
-}
-
-static int header_check_dim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[0x0c],dim_header,sizeof(dim_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_dim.extension;
-    return 1;
-  }
-  return 0;
 }

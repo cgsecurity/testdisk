@@ -43,21 +43,16 @@ const file_hint_t file_hint_all= {
   .register_header_check=&register_header_check_all
 };
 
-static const unsigned char all_header[8]= { 0x00, 0x00, 0x00, 0x48, 0x00, 0x00, 0x06, 0x04};
+static int header_check_all(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=122;
+  file_recovery_new->extension=file_hint_all.extension;
+  return 1;
+}
 
 static void register_header_check_all(file_stat_t *file_stat)
 {
+  static const unsigned char all_header[8]= { 0x00, 0x00, 0x00, 0x48, 0x00, 0x00, 0x06, 0x04};
   register_header_check(0, all_header,sizeof(all_header), &header_check_all, file_stat);
-}
-
-static int header_check_all(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,all_header,8)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=122;
-    file_recovery_new->extension=file_hint_all.extension;
-    return 1;
-  }
-  return 0;
 }

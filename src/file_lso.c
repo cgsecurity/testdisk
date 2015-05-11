@@ -31,8 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_lso(file_stat_t *file_stat);
-static int header_check_lso(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_lso(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_lso= {
   .extension="lso",
@@ -44,30 +42,25 @@ const file_hint_t file_hint_lso= {
   .register_header_check=&register_header_check_lso
 };
 
-static const unsigned char lso_header[14]=  {
-  0x13, 'G' , 0xc0, 0xab, 0x17, 0x05, 0x15, 0x00,
-    0x03, 0x00, 0x24, 0x00, 0x24, 0x00
-};
-
-static void register_header_check_lso(file_stat_t *file_stat)
-{
-  register_header_check(0, lso_header, sizeof(lso_header), &header_check_lso, file_stat);
-}
-
-static int header_check_lso(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, lso_header, sizeof(lso_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_lso.extension;
-    file_recovery_new->file_check=&file_check_lso;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_lso(file_recovery_t *file_recovery)
 {
   const unsigned char lso_footer[6]= {0xFF, 0xFF, 0xFF, 0x7F, 0x7F, 0x7F};
   file_search_footer(file_recovery, lso_footer, sizeof(lso_footer), 0x46);
+}
+
+static int header_check_lso(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_lso.extension;
+  file_recovery_new->file_check=&file_check_lso;
+  return 1;
+}
+
+static void register_header_check_lso(file_stat_t *file_stat)
+{
+  static const unsigned char lso_header[14]=  {
+    0x13, 'G' , 0xc0, 0xab, 0x17, 0x05, 0x15, 0x00,
+    0x03, 0x00, 0x24, 0x00, 0x24, 0x00
+  };
+  register_header_check(0, lso_header, sizeof(lso_header), &header_check_lso, file_stat);
 }

@@ -43,20 +43,15 @@ const file_hint_t file_hint_cm= {
   .register_header_check=&register_header_check_cm
 };
 
-static const unsigned char cm_header[8]	= { 'f','L','m','C','0','0','0','1'};
+static int header_check_cm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_cm.extension;
+  return 1;
+}
 
 static void register_header_check_cm(file_stat_t *file_stat)
 {
+  static const unsigned char cm_header[8]	= { 'f','L','m','C','0','0','0','1'};
   register_header_check(0x0, cm_header,sizeof(cm_header), &header_check_cm, file_stat);
-}
-
-static int header_check_cm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[0x0],cm_header,sizeof(cm_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_cm.extension;
-    return 1;
-  }
-  return 0;
 }

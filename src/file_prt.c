@@ -30,10 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_prt(file_stat_t *file_stat);
-static int header_check_prt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_prt(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_prt= {
   .extension="prt",
@@ -45,31 +42,26 @@ const file_hint_t file_hint_prt= {
   .register_header_check=&register_header_check_prt
 };
 
-static const unsigned char prt_header[12]= {
-  '#', 'U', 'G', 'C', ':', '2', ' ', 'P',
-  'A', 'R', 'T', ' '};
-
-static void register_header_check_prt(file_stat_t *file_stat)
-{
-  register_header_check(0, prt_header,sizeof(prt_header), &header_check_prt, file_stat);
-}
-
-static int header_check_prt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,prt_header,sizeof(prt_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=file_check_prt;
-    file_recovery_new->extension=file_hint_prt.extension;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_prt(file_recovery_t *file_recovery)
 {
   const unsigned char prt_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
   file_search_footer(file_recovery, prt_footer, sizeof(prt_footer), 1);
+}
+
+static int header_check_prt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=file_check_prt;
+  file_recovery_new->extension=file_hint_prt.extension;
+  return 1;
+}
+
+static void register_header_check_prt(file_stat_t *file_stat)
+{
+  static const unsigned char prt_header[12]= {
+    '#', 'U', 'G', 'C', ':', '2', ' ', 'P',
+    'A', 'R', 'T', ' '};
+  register_header_check(0, prt_header,sizeof(prt_header), &header_check_prt, file_stat);
 }

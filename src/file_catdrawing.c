@@ -42,23 +42,18 @@ const file_hint_t file_hint_catdrawing= {
   .register_header_check=&register_header_check_catdrawing
 };
 
-static const unsigned char catdrawing_header[9]=  {
-  'V' , '5' , '_' , 'C' , 'F' , 'V' , '2' , 0x00,
-    0x00
-};
-
 static int header_check_catdrawing(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], catdrawing_header, sizeof(catdrawing_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_catdrawing.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_catdrawing.extension;
+  return 1;
 }
 
 static void register_header_check_catdrawing(file_stat_t *file_stat)
 {
+  static const unsigned char catdrawing_header[9]=  {
+    'V' , '5' , '_' , 'C' , 'F' , 'V' , '2' , 0x00,
+    0x00
+  };
   register_header_check(0, catdrawing_header, sizeof(catdrawing_header), &header_check_catdrawing, file_stat);
 }

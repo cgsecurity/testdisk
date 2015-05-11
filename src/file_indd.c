@@ -56,11 +56,6 @@ const file_hint_t file_hint_indd= {
 /* See http://www.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cs6/XMPSpecificationPart3.pdf
  * for more information about the file format */
 
-static const unsigned char indd_header[24]={
-  0x06, 0x06, 0xed, 0xf5, 0xd8, 0x1d, 0x46, 0xe5,
-  0xbd, 0x31, 0xef, 0xe7, 0xfe, 0x74, 0xb7, 0x1d,
-  0x44, 0x4f, 0x43, 0x55, 0x4d, 0x45, 0x4e, 0x54 };
-
 // Headers are:  DE393979-5188-4b6c-8E63-EEF8AEE0DD38
 // Trailers are: FDCEDB70-F786-4b4f-A4D3-C728B3417106
 static const unsigned char kINDDContigObjHeaderGUID [16] =
@@ -128,8 +123,6 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
   const struct InDesignMasterPage *hdr;
   const struct InDesignMasterPage *hdr0 = (const struct InDesignMasterPage *)buffer;
   const struct InDesignMasterPage *hdr1 = (const struct InDesignMasterPage *)&buffer[4096];
-  if(memcmp(hdr1, indd_header, sizeof(indd_header))!=0)
-    return 0;
   hdr=(le64(hdr0->fSequenceNumber) > le64(hdr1->fSequenceNumber) ? hdr0 : hdr1);
   if(hdr->fObjectStreamEndian!=1 && hdr->fObjectStreamEndian!=2)
     return 0;
@@ -152,5 +145,9 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
 
 static void register_header_check_indd(file_stat_t *file_stat)
 {
+  static const unsigned char indd_header[24]={
+    0x06, 0x06, 0xed, 0xf5, 0xd8, 0x1d, 0x46, 0xe5,
+    0xbd, 0x31, 0xef, 0xe7, 0xfe, 0x74, 0xb7, 0x1d,
+    0x44, 0x4f, 0x43, 0x55, 0x4d, 0x45, 0x4e, 0x54 };
   register_header_check(0, indd_header,sizeof(indd_header), &header_check_indd, file_stat);
 }

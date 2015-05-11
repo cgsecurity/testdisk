@@ -794,7 +794,7 @@ static void jpeg_session_start(struct jpeg_session_struct *jpeg_session)
   {
     log_critical("jpeg_session_start: fseek failed.\n");
   }
-  jpeg_create_decompress(&jpeg_session->cinfo); 
+  jpeg_create_decompress(&jpeg_session->cinfo);
   jpeg_testdisk_src(&jpeg_session->cinfo, jpeg_session->handle, jpeg_session->offset, jpeg_session->blocksize);
   (void) jpeg_read_header(&jpeg_session->cinfo, TRUE);
   jpeg_session->cinfo.two_pass_quantize = FALSE;
@@ -831,7 +831,7 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
   jerr.pub.output_message = my_output_message;
   jerr.pub.error_exit = my_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
-  if (setjmp(jerr.setjmp_buffer)) 
+  if (setjmp(jerr.setjmp_buffer))
   {
     if(jpeg_session.frame!=NULL && jpeg_session.cinfo.output_scanline >= y)
     {
@@ -1109,7 +1109,7 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
   jerr.pub.trace_level= 3;
 #endif
   /* Establish the setjmp return context for my_error_exit to use. */
-  if (setjmp(jerr.setjmp_buffer)) 
+  if (setjmp(jerr.setjmp_buffer))
   {
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object and return.
@@ -1176,7 +1176,7 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
   jerr.pub.trace_level= 3;
 #endif
   /* Establish the setjmp return context for my_error_exit to use. */
-  if (setjmp(jerr.setjmp_buffer)) 
+  if (setjmp(jerr.setjmp_buffer))
   {
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object and return.

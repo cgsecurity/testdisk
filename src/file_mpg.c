@@ -71,13 +71,13 @@ static int calculate_packet_size(const unsigned char *buffer)
       /* Extension */
     case 0xB5:
       /* Sequence_Extension */
-      if((buffer[4]&0xF0)==0x10 && (buffer[7]&1)==1)	
+      if((buffer[4]&0xF0)==0x10 && (buffer[7]&1)==1)
 	return 10;
       /* Sequence_Display_Extension without color description */
-      if((buffer[4]&0xF0)==0x20 && (buffer[4]&1)==0 && (buffer[6]&2)==2)	
+      if((buffer[4]&0xF0)==0x20 && (buffer[4]&1)==0 && (buffer[6]&2)==2)
 	return 9;
       /* Sequence_Display_Extension with color description */
-      if((buffer[4]&0xF0)==0x20 && (buffer[4]&1)==1 && (buffer[9]&2)==2)	
+      if((buffer[4]&0xF0)==0x20 && (buffer[4]&1)==1 && (buffer[9]&2)==2)
 	return 12;
       /* Picture_Coding_Extension */
       if((buffer[4]&0xF0)==0x40)

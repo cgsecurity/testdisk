@@ -3,17 +3,17 @@
     File: file_mp3.c
 
     Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -107,7 +107,7 @@ static const unsigned int bit_rate_table[4][4][16]=
     /* MPEG_L3 */
     { 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0},
     /* MPEG_L2 */
-    { 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 0}, 
+    { 0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 0},
     /* MPEG_L1 */
     { 0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 294, 416, 448, 0}
   },
@@ -305,10 +305,10 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       /*
 	 Lyrics3 tag		http://www.id3.org/Lyrics3
 	 Lyrics3 v2.00 tag	http://www.id3.org/Lyrics3v2
-	 Lyrics Header : 
+	 Lyrics Header :
 	 'LYRICSBEGIN' (both version)
-	 Lyrics Footer : 
-	 'LYRICSEND'  Lyrics3 tags 
+	 Lyrics Footer :
+	 'LYRICSEND'  Lyrics3 tags
 	 'LYRICS200'  Lyrics3v2 Tags
 	 The maximum length of the lyrics is 5100 bytes for Lyrics3 and 4096 bytes for Lyrics3 v2.
        */
@@ -324,7 +324,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       {
 	file_recovery->calculated_file_size+=pos_lyrics;
       }
-      else 
+      else
       {
 	/*
 	   log_warning("End of Lyrics not found \n");
@@ -337,7 +337,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       const unsigned int ape_tag_size = (buffer[i+12] + (buffer[i+13]<<8) + (buffer[i+14]<<16) + (buffer[i+15]<<24))+32;
       file_recovery->calculated_file_size+=ape_tag_size;
     }
-    else if(buffer[i]=='T' && buffer[i+1]=='A' && buffer[i+2]=='G')	
+    else if(buffer[i]=='T' && buffer[i+1]=='A' && buffer[i+2]=='G')
     { /* http://www.id3.org/ID3v1 TAGv1 size = 128 bytes with header "TAG" */
       file_recovery->calculated_file_size+=128;
     }
@@ -375,7 +375,7 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
 	http://freenet-homepage.de/StefanRypalla/stuff/musicmatch.txt
 	min size = 8192bytes
 	header is optional
-	structure : 
+	structure :
 	header				256 bytes optional
 	image extension	4 bytes
 	image binary		>= 4 bytes
@@ -387,7 +387,7 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
 	All subsequent versions allowed three possible lengths for this section: 7936, 8004, and 8132 bytes.
 	data offsets		20 bytes
 	Footer				48 bytes (optional?!)
-   */ 
+   */
   const unsigned char mm_header[10]= {'1','8','2','7','3','6','4','5',0x00, 0x00};
   const unsigned char mm_pad_version_info[14] = {0x00,0x00,0x00,0x00,'1','8','2','7','3','6','4','5',0x00,0x00};
   const char *mm_footer="Brava Software Inc.";

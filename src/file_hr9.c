@@ -30,8 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_hr9(file_stat_t *file_stat);
-static int header_check_hr9(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_hr9(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_hr9= {
   .extension="hr9",
@@ -43,31 +41,26 @@ const file_hint_t file_hint_hr9= {
   .register_header_check=&register_header_check_hr9
 };
 
-static const unsigned char hr9_header[17]= {
-  0xc0, 0xde, 0xca, 0xfe, 0x00, 0x00, 0x00, 0x00, 
-   'H',  'e',  'r',  'e',  'd',  'i',  's', 0x99, 
-  0x20
-};
-
-static void register_header_check_hr9(file_stat_t *file_stat)
-{
-  register_header_check(0, hr9_header,sizeof(hr9_header), &header_check_hr9, file_stat);
-}
-
-static int header_check_hr9(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,hr9_header,sizeof(hr9_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_hr9.extension;
-    file_recovery_new->file_check=file_check_hr9;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_hr9(file_recovery_t *file_recovery)
 {
   const unsigned char hr9_footer[4]= {0xc0, 0xde, 0xca, 0xfe};
   file_search_footer(file_recovery, hr9_footer, sizeof(hr9_footer), 0x50-4);
+}
+
+static int header_check_hr9(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_hr9.extension;
+  file_recovery_new->file_check=file_check_hr9;
+  return 1;
+}
+
+static void register_header_check_hr9(file_stat_t *file_stat)
+{
+  static const unsigned char hr9_header[17]= {
+    0xc0, 0xde, 0xca, 0xfe, 0x00, 0x00, 0x00, 0x00,
+    'H',  'e',  'r',  'e',  'd',  'i',  's', 0x99,
+    0x20
+  };
+  register_header_check(0, hr9_header,sizeof(hr9_header), &header_check_hr9, file_stat);
 }

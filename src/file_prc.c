@@ -44,13 +44,6 @@ const file_hint_t file_hint_prc= {
   .register_header_check=&register_header_check_prc
 };
 
-static const unsigned char prc_header[16]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,'a','p','p','l'};
-
-static void register_header_check_prc(file_stat_t *file_stat)
-{
-  register_header_check(0x30, prc_header,sizeof(prc_header), &header_check_prc, file_stat);
-}
-
 struct DatabaseHdrType_s {
   unsigned char name[32];
   uint16_t 	attributes;		/* 0x20 */
@@ -69,8 +62,7 @@ struct DatabaseHdrType_s {
 static int header_check_prc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct DatabaseHdrType_s *prc=(const struct DatabaseHdrType_s *)buffer;
-  if(memcmp(&buffer[0x30],prc_header,sizeof(prc_header))==0 &&
-      be32(prc->uniqueIDSeed)==0)
+  if(be32(prc->uniqueIDSeed)==0)
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_prc.extension;
@@ -78,4 +70,10 @@ static int header_check_prc(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_prc(file_stat_t *file_stat)
+{
+  static const unsigned char prc_header[16]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,'a','p','p','l'};
+  register_header_check(0x30, prc_header,sizeof(prc_header), &header_check_prc, file_stat);
 }

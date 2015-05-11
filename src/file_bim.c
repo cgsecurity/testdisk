@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_bim(file_stat_t *file_stat);
-static int header_check_bim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_bim= {
   .extension="bim",
@@ -43,25 +42,20 @@ const file_hint_t file_hint_bim= {
   .register_header_check=&register_header_check_bim
 };
 
-static const unsigned char bim_header[0x20]=  {
-  0x00, 0x1f, 0x01, '4' , 'u' , 'r' , 'n' , ':',
-  's' , 'c' , 'h' , 'e' , 'm' , 'a' , 's' , '-',
-  'p' , 'r' , 'o' , 'f' , 'e' , 's' , 's' , 'i' ,
-  'o' , 'n' , 'a' , 'l' , 'D' , 'i' , 's' , 'c' 
-};
+static int header_check_bim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_bim.extension;
+  return 1;
+}
 
 static void register_header_check_bim(file_stat_t *file_stat)
 {
+  static const unsigned char bim_header[0x20]=  {
+    0x00, 0x1f, 0x01, '4' , 'u' , 'r' , 'n' , ':',
+    's' , 'c' , 'h' , 'e' , 'm' , 'a' , 's' , '-',
+    'p' , 'r' , 'o' , 'f' , 'e' , 's' , 's' , 'i' ,
+    'o' , 'n' , 'a' , 'l' , 'D' , 'i' , 's' , 'c'
+  };
   register_header_check(0, bim_header, sizeof(bim_header), &header_check_bim, file_stat);
-}
-
-static int header_check_bim(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, bim_header, sizeof(bim_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_bim.extension;
-    return 1;
-  }
-  return 0;
 }

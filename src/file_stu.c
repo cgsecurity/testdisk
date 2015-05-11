@@ -32,7 +32,6 @@
 
 
 static void register_header_check_stuffit(file_stat_t *file_stat);
-static int header_check_stuffit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_stuffit= {
   .extension="sit",
@@ -44,20 +43,15 @@ const file_hint_t file_hint_stuffit= {
   .register_header_check=&register_header_check_stuffit
 };
 
-static const unsigned char stuffit_header[7] = { 'S', 't', 'u', 'f', 'f', 'I', 't'};
+static int header_check_stuffit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_stuffit.extension;
+  return 1;
+}
 
 static void register_header_check_stuffit(file_stat_t *file_stat)
 {
+  static const unsigned char stuffit_header[7] = { 'S', 't', 'u', 'f', 'f', 'I', 't'};
   register_header_check(0, stuffit_header,sizeof(stuffit_header), &header_check_stuffit, file_stat);
-}
-
-static int header_check_stuffit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,stuffit_header,sizeof(stuffit_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_stuffit.extension;
-    return 1;
-  }
-  return 0;
 }

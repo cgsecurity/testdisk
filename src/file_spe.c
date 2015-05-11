@@ -179,7 +179,7 @@ struct header_spe
   char          background[120];   /* 1752 Background sub. file name.          */
   char          blemish[120];      /* 1872 Blemish file name.                  */
   float		  file_header_ver;   /* 1992 Version of this file header		 */
-  char          UserInfo[1000];    /* 1996-2995 user data.                     */     
+  char          UserInfo[1000];    /* 1996-2995 user data.                     */
   int32_t          WinView_id;        /* 2996 Set to 0x01234567L if file was      */
   /*      created by WinX                     */
 

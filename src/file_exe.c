@@ -138,7 +138,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 	if(le16(pe_image_section->NumberOfRelocations)>0)
 	{
 #ifdef DEBUG_EXE
-	  log_debug("relocations 0x%lx-0x%lx\n", 
+	  log_debug("relocations 0x%lx-0x%lx\n",
 	      (unsigned long)le32(pe_image_section->PointerToRelocations),
 	      (unsigned long)le32(pe_image_section->PointerToRelocations)+1*le16(pe_image_section->NumberOfRelocations)-1);
 #endif

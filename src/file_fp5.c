@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_fp5(file_stat_t *file_stat);
-static int header_check_fp5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_fp5= {
   .extension="fp5",
@@ -42,23 +41,18 @@ const file_hint_t file_hint_fp5= {
   .register_header_check=&register_header_check_fp5
 };
 
-static const unsigned char fp5_header[0x10]= {
-  0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 
-  0x00, 0x05, 0x00, 0x02, 0x00, 0x02, 0xc0, 0x00
-};
+static int header_check_fp5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fp5.extension;
+  return 1;
+}
 
 static void register_header_check_fp5(file_stat_t *file_stat)
 {
+  static const unsigned char fp5_header[0x10]= {
+    0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01,
+    0x00, 0x05, 0x00, 0x02, 0x00, 0x02, 0xc0, 0x00
+  };
   register_header_check(0, fp5_header,sizeof(fp5_header), &header_check_fp5, file_stat);
-}
-
-static int header_check_fp5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,fp5_header,sizeof(fp5_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fp5.extension;
-    return 1;
-  }
-  return 0;
 }

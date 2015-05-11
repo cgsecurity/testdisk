@@ -29,9 +29,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_mxf(file_stat_t *file_stat);
-static int header_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_mxf= {
   .extension="mxf",
@@ -49,23 +47,18 @@ const file_hint_t file_hint_mxf= {
  * Material Exchange Format (MXF)
  * */
 
-static const unsigned char mxf_header[11]= {
-  0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01,
-  0x0d, 0x01, 0x02
-};
+static int header_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mxf.extension;
+  return 1;
+}
 
 static void register_header_check_mxf(file_stat_t *file_stat)
 {
+  static const unsigned char mxf_header[11]= {
+    0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01,
+    0x0d, 0x01, 0x02
+  };
   register_header_check(0, mxf_header,sizeof(mxf_header), &header_check_mxf, file_stat);
-}
-
-static int header_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,mxf_header,sizeof(mxf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mxf.extension;
-    return 1;
-  }
-  return 0;
 }

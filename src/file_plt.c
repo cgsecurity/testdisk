@@ -42,27 +42,22 @@ const file_hint_t file_hint_plt= {
   .register_header_check=&register_header_check_plt
 };
 
-static const unsigned char plt_header[44]=  {
-  'G', 'e', 'r', 'b', 'e', 'r', ' ', 'S',
-  'c', 'i', 'e', 'n', 't', 'i', 'f', 'i',
-  'c', ' ', 'P', 'r', 'o', 'd', 'u', 'c',
-  't', 's', ' ', 'G', 'R', 'A', 'P', 'H',
-  'I', 'X', ' ', 'A', 'D', 'V', 'A', 'N',
-  'T', 'A', 'G', 'E',
-};
-
 static int header_check_plt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[2], plt_header, sizeof(plt_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_plt.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_plt.extension;
+  return 1;
 }
 
 static void register_header_check_plt(file_stat_t *file_stat)
 {
+  static const unsigned char plt_header[44]=  {
+    'G', 'e', 'r', 'b', 'e', 'r', ' ', 'S',
+    'c', 'i', 'e', 'n', 't', 'i', 'f', 'i',
+    'c', ' ', 'P', 'r', 'o', 'd', 'u', 'c',
+    't', 's', ' ', 'G', 'R', 'A', 'P', 'H',
+    'I', 'X', ' ', 'A', 'D', 'V', 'A', 'N',
+    'T', 'A', 'G', 'E',
+  };
   register_header_check(2, plt_header, sizeof(plt_header), &header_check_plt, file_stat);
 }

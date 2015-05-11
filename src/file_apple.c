@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_apple(file_stat_t *file_stat);
-static int header_check_apple(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_apple= {
   .extension="apple",
@@ -42,22 +41,17 @@ const file_hint_t file_hint_apple= {
   .register_header_check=&register_header_check_apple
 };
 
-static const unsigned char apple_header[8]= {
-  0x00, 0x05, 0x16, 0x07, 0x00, 0x02, 0x00, 0x00
-};
+static int header_check_apple(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_apple.extension;
+  return 1;
+}
 
 static void register_header_check_apple(file_stat_t *file_stat)
 {
+  static const unsigned char apple_header[8]= {
+    0x00, 0x05, 0x16, 0x07, 0x00, 0x02, 0x00, 0x00
+  };
   register_header_check(0, apple_header,sizeof(apple_header), &header_check_apple, file_stat);
-}
-
-static int header_check_apple(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,apple_header,sizeof(apple_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_apple.extension;
-    return 1;
-  }
-  return 0;
 }

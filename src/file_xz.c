@@ -48,25 +48,20 @@ static void file_check_xz(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, xz_footer, sizeof(xz_footer), 0);
 }
 
-/* http://tukaani.org/xz/xz-file-format.txt */
-/* HEADER_MAGIC + Stream Flag[0] */
-static const unsigned char xz_header[7]=  {
-  0xfd, '7' , 'z' , 'X' , 'Z' , 0x00, 0x00
-};
-
 static int header_check_xz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], xz_header, sizeof(xz_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_xz.extension;
-    file_recovery_new->file_check=&file_check_xz;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_xz.extension;
+  file_recovery_new->file_check=&file_check_xz;
+  return 1;
 }
 
 static void register_header_check_xz(file_stat_t *file_stat)
 {
+  /* http://tukaani.org/xz/xz-file-format.txt */
+  /* HEADER_MAGIC + Stream Flag[0] */
+  static const unsigned char xz_header[7]=  {
+    0xfd, '7' , 'z' , 'X' , 'Z' , 0x00, 0x00
+  };
   register_header_check(0, xz_header, sizeof(xz_header), &header_check_xz, file_stat);
 }

@@ -45,7 +45,6 @@ const file_hint_t file_hint_pct= {
   .register_header_check=&register_header_check_pct
 };
 
-static const unsigned char pct_header[6]= { 0x00, 0x11, 0x02, 0xff, 0x0c, 0x00};
 /* We are searching for PICTv2 files
    http://www.fileformat.info/format/macpict/
    SHORT    Version operator (0x0011)
@@ -80,16 +79,10 @@ struct pct_file_entry {
   uint32_t Reserved2;		/* 0x24 */
 } __attribute__ ((gcc_struct, __packed__));
 
-static void register_header_check_pct(file_stat_t *file_stat)
-{
-  register_header_check(0x20a, pct_header,sizeof(pct_header), &header_check_pct, file_stat);
-}
-
 static int header_check_pct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct pct_file_entry *pct=(const struct pct_file_entry *)(&buffer[0x200]);
-  if(memcmp(&buffer[0x20a],pct_header,sizeof(pct_header))==0 &&
-      be16(pct->XMin) <= be16(pct->XMax) &&
+  if(be16(pct->XMin) <= be16(pct->XMax) &&
       be16(pct->YMin) <= be16(pct->YMax) &&
       ((be16(pct->OXMin) <= be16(pct->OXMax) &&
 	be16(pct->OYMin) <= be16(pct->OYMax)) ||
@@ -130,3 +123,8 @@ static void file_check_pct(file_recovery_t *file_recovery)
   file_recovery->file_size-=((file_recovery->file_size-file_recovery->min_filesize)&0xFFFF);
 }
 
+static void register_header_check_pct(file_stat_t *file_stat)
+{
+  static const unsigned char pct_header[6]= { 0x00, 0x11, 0x02, 0xff, 0x0c, 0x00};
+  register_header_check(0x20a, pct_header,sizeof(pct_header), &header_check_pct, file_stat);
+}

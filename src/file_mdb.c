@@ -30,10 +30,8 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_mdb(file_stat_t *file_stat);
 static void register_header_check_accdb(file_stat_t *file_stat);
-static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_mdb= {
   .extension="mdb",
@@ -55,36 +53,28 @@ const file_hint_t file_hint_accdb= {
   .register_header_check=&register_header_check_accdb
 };
 
+static int header_check_accdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_accdb.extension;
+  return 1;
+}
 
-static const unsigned char mdb_header[]= { 0x00, 0x01, 0x00, 0x00, 'S', 't', 'a', 'n', 'd','a','r','d',' ','J','e','t',' ', 'D','B', 0x00};
-
-static const unsigned char accdb_header[]= { 0x00, 0x01, 0x00, 0x00, 'S', 't', 'a', 'n', 'd','a','r','d',' ','A','C','E',' ', 'D','B', 0x00};
+static int header_check_mdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mdb.extension;
+  return 1;
+}
 
 static void register_header_check_mdb(file_stat_t *file_stat)
 {
-  register_header_check(0, mdb_header,sizeof(mdb_header), &header_check_db, file_stat);
+  static const unsigned char mdb_header[]= { 0x00, 0x01, 0x00, 0x00, 'S', 't', 'a', 'n', 'd','a','r','d',' ','J','e','t',' ', 'D','B', 0x00};
+  register_header_check(0, mdb_header,sizeof(mdb_header), &header_check_mdb, file_stat);
 }
 
 static void register_header_check_accdb(file_stat_t *file_stat)
 {
-  register_header_check(0, accdb_header,sizeof(accdb_header), &header_check_db, file_stat);
+  static const unsigned char accdb_header[]= { 0x00, 0x01, 0x00, 0x00, 'S', 't', 'a', 'n', 'd','a','r','d',' ','A','C','E',' ', 'D','B', 0x00};
+  register_header_check(0, accdb_header,sizeof(accdb_header), &header_check_accdb, file_stat);
 }
-
-static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp (buffer, mdb_header, sizeof(mdb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mdb.extension;
-    return 1;
-  }
-  else if(memcmp (buffer, accdb_header, sizeof(accdb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_accdb.extension;
-    return 1;
-  }
-  return 0;
-}
-
-

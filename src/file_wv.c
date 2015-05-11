@@ -97,7 +97,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
       const unsigned int ape_tag_size = (buffer[i+12] + (buffer[i+13]<<8) + (buffer[i+14]<<16) + (buffer[i+15]<<24))+32;
       file_recovery->calculated_file_size+=ape_tag_size;
     }
-    else if(buffer[i]=='T' && buffer[i+1]=='A' && buffer[i+2]=='G')	
+    else if(buffer[i]=='T' && buffer[i+1]=='A' && buffer[i+2]=='G')
     { /* http://www.id3.org/ID3v1 TAGv1 size = 128 bytes with header "TAG" */
       file_recovery->calculated_file_size+=128;
     }
@@ -105,7 +105,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
     {
       return DC_CONTINUE;
     }
-    else 
+    else
     {
       return DC_STOP;
     }

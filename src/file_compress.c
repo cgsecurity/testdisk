@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_compress(file_stat_t *file_stat);
-static int header_check_compress(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_compress= {
   .extension="cp_",
@@ -43,20 +42,15 @@ const file_hint_t file_hint_compress= {
   .register_header_check=&register_header_check_compress
 };
 
-static const unsigned char compress_header[9]	= {'S', 'Z', 'D', 'D', 0x88, 0xf0, 0x27, 0x33, 'A'};
+static int header_check_compress(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_compress.extension;
+  return 1;
+}
 
 static void register_header_check_compress(file_stat_t *file_stat)
 {
+  static const unsigned char compress_header[9]	= {'S', 'Z', 'D', 'D', 0x88, 0xf0, 0x27, 0x33, 'A'};
   register_header_check(0, compress_header, sizeof(compress_header), &header_check_compress, file_stat);
-}
-
-static int header_check_compress(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, compress_header, sizeof(compress_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_compress.extension;
-    return 1;
-  }
-  return 0;
 }

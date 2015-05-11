@@ -61,12 +61,6 @@ const file_hint_t file_hint_doc= {
   .register_header_check=&register_header_check_doc
 };
 
-static const unsigned char doc_header[]= { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
-
-static void register_header_check_doc(file_stat_t *file_stat)
-{
-  register_header_check(0, doc_header,sizeof(doc_header), &header_check_doc, file_stat);
-}
 
 const char WilcomDesignInformationDDD[56]=
 {
@@ -85,7 +79,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
   uint64_t doc_file_size;
   uint32_t *fat;
   unsigned long int i;
-  unsigned int freesect_count=0;  
+  unsigned int freesect_count=0;
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   const uint64_t doc_file_size_org=file_recovery->file_size;
   file_recovery->file_size=0;
@@ -378,8 +372,6 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
-  if(memcmp(buffer,doc_header,sizeof(doc_header))!=0)
-    return 0;
   /* Check for Little Endian */
   if(le16(header->uByteOrder)!=0xFFFE)
     return 0;
@@ -444,8 +436,8 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="sdd";
   }
   else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
-      td_memmem(buffer,buffer_size,"Book",4)!=NULL || 
-      td_memmem(buffer,buffer_size,"Workbook",8)!=NULL || 
+      td_memmem(buffer,buffer_size,"Book",4)!=NULL ||
+      td_memmem(buffer,buffer_size,"Workbook",8)!=NULL ||
       td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
   {
     file_recovery_new->extension="xls";
@@ -1074,4 +1066,10 @@ static void file_rename_doc(const char *old_filename)
   }
   else
     file_rename(old_filename, NULL, 0, 0, ext, 1);
+}
+
+static void register_header_check_doc(file_stat_t *file_stat)
+{
+  static const unsigned char doc_header[]= { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
+  register_header_check(0, doc_header,sizeof(doc_header), &header_check_doc, file_stat);
 }

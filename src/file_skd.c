@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_skd(file_stat_t *file_stat);
-static int header_check_skd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_skd= {
   .extension="skd",
@@ -42,25 +41,20 @@ const file_hint_t file_hint_skd= {
   .register_header_check=&register_header_check_skd
 };
 
-static const unsigned char skd_header[29]= {
-   'A',  'u',  't',  'o',  'S',  'k',  'e',  't', 
-   'c',  'h', 0x20,  'd',  'r',  'a',  'w',  'i', 
-   'n',  'g', 0x20,  'd',  'a',  't',  'a',  'b', 
-   'a',  's',  'e', 0x0d, 0x0a
-};
+static int header_check_skd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_skd.extension;
+  return 1;
+}
 
 static void register_header_check_skd(file_stat_t *file_stat)
 {
+  static const unsigned char skd_header[29]= {
+    'A',  'u',  't',  'o',  'S',  'k',  'e',  't',
+    'c',  'h', 0x20,  'd',  'r',  'a',  'w',  'i',
+    'n',  'g', 0x20,  'd',  'a',  't',  'a',  'b',
+    'a',  's',  'e', 0x0d, 0x0a
+  };
   register_header_check(0, skd_header,sizeof(skd_header), &header_check_skd, file_stat);
-}
-
-static int header_check_skd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,skd_header,sizeof(skd_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_skd.extension;
-    return 1;
-  }
-  return 0;
 }

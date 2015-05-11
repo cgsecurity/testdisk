@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_freeway(file_stat_t *file_stat);
-static int header_check_freeway(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_freeway= {
   .extension="freeway",
@@ -43,24 +42,18 @@ const file_hint_t file_hint_freeway= {
   .register_header_check=&register_header_check_freeway
 };
 
-static const unsigned char freeway_header[0x10]=  {
-    0x13, 'F' , 'r' , 'e' , 'e' , 'w' , 'a' , 'y' ,
-    ' ' , '5' , ' ' , 'P' , 'r' , 'o' , ' ' , '5' ,
-};
+static int header_check_freeway(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_freeway.extension;
+  return 1;
+}
 
 static void register_header_check_freeway(file_stat_t *file_stat)
 {
+  static const unsigned char freeway_header[0x10]=  {
+    0x13, 'F' , 'r' , 'e' , 'e' , 'w' , 'a' , 'y' ,
+    ' ' , '5' , ' ' , 'P' , 'r' , 'o' , ' ' , '5' ,
+  };
   register_header_check(0x10, freeway_header, sizeof(freeway_header), &header_check_freeway, file_stat);
 }
-
-static int header_check_freeway(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[0x10], freeway_header, sizeof(freeway_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_freeway.extension;
-    return 1;
-  }
-  return 0;
-}
-

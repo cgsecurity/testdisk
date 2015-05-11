@@ -34,7 +34,6 @@
 #include "log.h"
 
 static void register_header_check_xm(file_stat_t *file_stat);
-static int header_check_xm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_xm= {
   .extension="xm",
@@ -180,22 +179,17 @@ static void file_check_xm(file_recovery_t *fr)
 }
 
 
-static const unsigned char xm_header[17]  = { 'E','x','t','e','n','d','e','d',' ','M','o','d','u','l','e',':',' '};
+static int header_check_xm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_xm.extension;
+  file_recovery_new->min_filesize=336 + 29; /* Header + 1 instrument */
+  file_recovery_new->file_check=&file_check_xm;
+  return 1;
+}
 
 static void register_header_check_xm(file_stat_t *file_stat)
 {
+  static const unsigned char xm_header[17]  = { 'E','x','t','e','n','d','e','d',' ','M','o','d','u','l','e',':',' '};
   register_header_check(0, xm_header,sizeof(xm_header), &header_check_xm, file_stat);
-}
-
-static int header_check_xm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,xm_header,sizeof(xm_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_xm.extension;
-    file_recovery_new->min_filesize=336 + 29; /* Header + 1 instrument */
-    file_recovery_new->file_check=&file_check_xm;
-    return 1;
-  }
-  return 0;
 }

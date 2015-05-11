@@ -32,7 +32,6 @@
 #include "filegen.h"
 
 static void register_header_check_ttf(file_stat_t *file_stat);
-static int header_check_ttf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ttf= {
   .extension="ttf",
@@ -43,13 +42,6 @@ const file_hint_t file_hint_ttf= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_ttf
 };
-
-static const unsigned char header_ttf[5]= 	{0x00 , 0x01, 0x00, 0x00, 0x00};
-
-static void register_header_check_ttf(file_stat_t *file_stat)
-{
-  register_header_check(0, header_ttf, sizeof(header_ttf), &header_check_ttf, file_stat);
-}
 
 /*
  * http://www.microsoft.com/typography/otspec/otff.htm
@@ -84,8 +76,6 @@ static int header_check_ttf(const unsigned char *buffer, const unsigned int buff
 {
   const struct ttf_offset_table *ttf=(const struct ttf_offset_table *)buffer;
   unsigned int numTables;
-  if(memcmp(buffer, header_ttf, sizeof(header_ttf))!=0)
-    return 0;
   numTables=be16(ttf->numTables);
   /* searchRange 	(Maximum power of 2 <= numTables) x 16.
    * entrySelector 	Log2(maximum power of 2 <= numTables).
@@ -117,4 +107,10 @@ static int header_check_ttf(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->file_check=&file_check_size;
   }
   return 1;
+}
+
+static void register_header_check_ttf(file_stat_t *file_stat)
+{
+  static const unsigned char header_ttf[5]= 	{0x00 , 0x01, 0x00, 0x00, 0x00};
+  register_header_check(0, header_ttf, sizeof(header_ttf), &header_check_ttf, file_stat);
 }

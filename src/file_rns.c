@@ -30,9 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_rns(file_stat_t *file_stat);
-static int header_check_rns(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_rns= {
   .extension="rns",
@@ -44,21 +42,15 @@ const file_hint_t file_hint_rns= {
   .register_header_check=&register_header_check_rns
 };
 
-static const unsigned char rns_header[]  = "Propellerheads Reason Song File";
+static int header_check_rns(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_rns.extension;
+  return 1;
+}
 
 static void register_header_check_rns(file_stat_t *file_stat)
 {
+  static const unsigned char rns_header[]  = "Propellerheads Reason Song File";
   register_header_check(0, rns_header,sizeof(rns_header)-1, &header_check_rns, file_stat);
-}
-
-static int header_check_rns(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-
-  if(memcmp(buffer,rns_header,sizeof(rns_header)-1)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_rns.extension;
-    return 1;
-  }
-  return 0;
 }

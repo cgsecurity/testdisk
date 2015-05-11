@@ -55,7 +55,7 @@ const file_hint_t file_hint_pfx= {
  *    30 82 XX XX	XXXX + 4 = filesize
  *  4:d=1  hl=2 l=   1 prim: INTEGER
  *    02 01 03		version 3
- *  7:d=1  hl=4 l=XXXX cons: SEQUENCE          
+ *  7:d=1  hl=4 l=XXXX cons: SEQUENCE
  *    30 82 XX XX
  * 11:d=2  hl=2 l=   9 prim: OBJECT            :pkcs7-data
  *    06 09 2a 86 48 86 f7 0d 01 07 01

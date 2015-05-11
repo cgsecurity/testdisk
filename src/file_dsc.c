@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_dsc(file_stat_t *file_stat);
-static int header_check_dsc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_dsc= {
   .extension="dsc",
@@ -42,22 +41,17 @@ const file_hint_t file_hint_dsc= {
   .register_header_check=&register_header_check_dsc
 };
 
-static const unsigned char dsc_header[3]= { 'M','L','T'};
-
-static void register_header_check_dsc(file_stat_t *file_stat)
-{
-  register_header_check(588, dsc_header,sizeof(dsc_header), &header_check_dsc, file_stat);
-}
-
 static int header_check_dsc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer_size<1024)
     return 0;
-  if(memcmp(&buffer[588],dsc_header,sizeof(dsc_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_dsc.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_dsc.extension;
+  return 1;
+}
+
+static void register_header_check_dsc(file_stat_t *file_stat)
+{
+  static const unsigned char dsc_header[3]= { 'M','L','T'};
+  register_header_check(588, dsc_header,sizeof(dsc_header), &header_check_dsc, file_stat);
 }

@@ -226,27 +226,27 @@ static int filtre(unsigned int car)
     case 0xd7:	/* '×' */
     case 0xd9:  /* 'Ù' */
     case 0xdf:	/* 'ß' */
-    case 0xe0: 	/* 'à' */
-    case 0xe1: 	/* 'á' */
-    case 0xe2: 	/* 'â' */
+    case 0xe0:	/* 'à' */
+    case 0xe1:	/* 'á' */
+    case 0xe2:	/* 'â' */
     case 0xe3:  /* 'ã' */
-    case 0xe4: 	/* 'ä' */
+    case 0xe4:	/* 'ä' */
     case 0xe6:  /* 'æ' */
-    case 0xe7: 	/* 'ç' */
-    case 0xe8: 	/* 'è' */
-    case 0xe9: 	/* 'é' */
-    case 0xea: 	/* 'ê' */
-    case 0xeb: 	/* 'ë' */
+    case 0xe7:	/* 'ç' */
+    case 0xe8:	/* 'è' */
+    case 0xe9:	/* 'é' */
+    case 0xea:	/* 'ê' */
+    case 0xeb:	/* 'ë' */
     case 0xed:  /* 'í' */
-    case 0xee: 	/* 'î' */
-    case 0xef: 	/* 'ï' */
-    case 0xf4: 	/* 'ô' */
-    case 0xf6: 	/* 'ö' */
+    case 0xee:	/* 'î' */
+    case 0xef:	/* 'ï' */
+    case 0xf4:	/* 'ô' */
+    case 0xf6:	/* 'ö' */
     case 0xf8:  /* 'ø' */
-    case 0xf9: 	/* 'ù' */
+    case 0xf9:	/* 'ù' */
     case 0xfa:  /* 'ú' */
-    case 0xfb: 	/* 'û' */
-    case 0xfc: 	/* 'ü' */
+    case 0xfb:	/* 'û' */
+    case 0xfc:	/* 'ü' */
       return 1;
   }
   if(car=='\b' || car=='\t' || car=='\r' || car=='\n' ||
@@ -261,10 +261,10 @@ static int filtre(unsigned int car)
    return read size */
 int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
 {
-  const unsigned char *p; 	/* pointers to actual position in source buffer */
+  const unsigned char *p;	/* pointers to actual position in source buffer */
   unsigned char *q;	/* pointers to actual position in destination buffer */
   int i; /* counter of remaining bytes available in destination buffer */
-  for (i = buf_len, p = buffer, q = buffer_lower; p-buffer<buf_len && i > 0 && *p!='\0';) 
+  for (i = buf_len, p = buffer, q = buffer_lower; p-buffer<buf_len && i > 0 && *p!='\0';)
   {
     const unsigned char *p_org=p;
     if((*p & 0xf0)==0xe0 && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
@@ -275,12 +275,12 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
       *q = '\0';
       switch (*p)
       {
-        case 0xE2 : 
+        case 0xE2 :
           switch (*(p+1))
-          { 
-            case 0x80 : 
+          {
+            case 0x80 :
               switch (*(p+2))
-              { 
+              {
                 case 0x93 : (*q) = 150; break;
                 case 0x94 : (*q) = 151; break;
                 case 0x98 : (*q) = 145; break;
@@ -299,15 +299,15 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
                 case 0xBA : (*q) = 155; break;
               }
               break;
-            case 0x82 : 
+            case 0x82 :
               switch (*(p+2))
-              { 
+              {
                 case 0xAC : (*q) = 128; break;
               }
               break;
-            case 0x84 : 
+            case 0x84 :
               switch (*(p+2))
-              { 
+              {
                 case 0xA2 : (*q) = 153; break;
               }
               break;
@@ -321,22 +321,22 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
       *q = '\0';
       switch (*p)
       {
-        case 0xC2 : 
+        case 0xC2 :
           (*q) = ((*(p+1)) | 0x80) & 0xBF; /* A0-BF and a few 80-9F */
           if((*q)==0xA0)
             (*q)=' ';
           break;
-        case 0xC3 : 
+        case 0xC3 :
           switch (*(p+1))
-	  { 
+	  {
 	    case 0xB3 : (*q) = 162; break;
 	    default:
 			(*q) = (*(p+1)) | 0xC0; /* C0-FF */
 			break;
 	  }
           break;
-        case 0xC5 : 
-          switch (*(p+1)) { 
+        case 0xC5 :
+          switch (*(p+1)) {
             case 0x92 : (*q) = 140; break;
             case 0x93 : (*q) = 156; break;
             case 0xA0 : (*q) = 138; break;
@@ -346,13 +346,13 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
             case 0xBE : (*q) = 158; break;
           }
           break;
-        case 0xC6: 
-          switch (*(p+1)) { 
+        case 0xC6:
+          switch (*(p+1)) {
             case 0x92 : (*q) = 131; break;
           }
           break;
-        case 0xCB : 
-          switch (*(p+1)) { 
+        case 0xCB :
+          switch (*(p+1)) {
             case 0x86 : (*q) = 136; break;
             case 0x9C : (*q) = 152; break;
           }
@@ -384,7 +384,7 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
 
 static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
 {
-  const unsigned char *p=buffer; 	/* pointers to actual position in source buffer */
+  const unsigned char *p=buffer;	/* pointers to actual position in source buffer */
   unsigned int i=0;
   while(i<buf_len && *p!='\0')
   {
@@ -530,7 +530,7 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
     tm_time.tm_mday=(date_asc[6]-'0')*10+(date_asc[7]-'0');	/* day of the month 1-31 */
     tm_time.tm_mon=(date_asc[4]-'0')*10+(date_asc[5]-'0')-1;	/* month 0-11 */
     tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
-      (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+      (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;		/* year */
     tm_time.tm_isdst = -1;		/* unknown daylight saving time */
     file_recovery_new->time=mktime(&tm_time);
   }
@@ -1219,7 +1219,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
     register_header_check(0, header->string, header->len, &header_check_fasttxt, file_stat);
     header++;
   }
-  register_header_check(4, "SC V10", 		6,  &header_check_dc, file_stat);
+  register_header_check(4, "SC V10",		6,  &header_check_dc, file_stat);
   register_header_check(0, "DatasetHeader Begin", 19, &header_check_ers, file_stat);
 //  register_header_check(0, "\n<!DOCTYPE html",	15, &header_check_html, file_stat);
   register_header_check(0, "<!DOCTYPE html",	14, &header_check_html, file_stat);
@@ -1234,7 +1234,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "Return-path: ",	13, &header_check_mbox, file_stat);
   register_header_check(0, "Return-Path: ",	13, &header_check_mbox, file_stat);
   register_header_check(0, "package ",		 8, &header_check_perlm, file_stat);
-  register_header_check(0, "package\t", 	 8, &header_check_perlm, file_stat);
+  register_header_check(0, "package\t",		 8, &header_check_perlm, file_stat);
   register_header_check(0, "{\\rtf",		 5, &header_check_rtf, file_stat);
   register_header_check(0, "<smil>",		 6, &header_check_smil, file_stat);
   register_header_check(0, "solid ",		 6, &header_check_stl, file_stat);

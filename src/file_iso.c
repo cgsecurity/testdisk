@@ -44,18 +44,10 @@ const file_hint_t file_hint_iso= {
   .register_header_check=&register_header_check_iso
 };
 
-static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
-
-static void register_header_check_iso(file_stat_t *file_stat)
-{
-  register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_db, file_stat);
-}
-
 static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer_size<0x8000+512)	/* +2048 for the full mapping */
     return 0;
-  if(memcmp (&buffer[0x8000], iso_header, sizeof(iso_header))==0)
   {
     const struct iso_primary_descriptor *iso1=(const struct iso_primary_descriptor*)&buffer[0x8000];
     const unsigned int volume_space_size=iso1->volume_space_size[0] | (iso1->volume_space_size[1]<<8) | (iso1->volume_space_size[2]<<16) | (iso1->volume_space_size[3]<<24);
@@ -75,10 +67,16 @@ static int header_check_db(const unsigned char *buffer, const unsigned int buffe
       file_recovery_new->min_filesize=0x8000+512;
       return 1;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_iso.extension;
-      file_recovery_new->min_filesize=0x8000+512;
-    return 1;
   }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_iso.extension;
+  file_recovery_new->min_filesize=0x8000+512;
+  return 1;
 }
+
+static void register_header_check_iso(file_stat_t *file_stat)
+{
+  static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
+  register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_db, file_stat);
+}
+

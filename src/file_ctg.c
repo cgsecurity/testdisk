@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_ctg(file_stat_t *file_stat);
-static int header_check_ctg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ctg= {
   .extension="ctg",
@@ -43,22 +42,15 @@ const file_hint_t file_hint_ctg= {
   .register_header_check=&register_header_check_ctg
 };
 
-static const unsigned char ctg_header[7]= {':','\\','D','C','I','M','\\'};
+static int header_check_ctg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ctg.extension;
+  return 1;
+}
 
 static void register_header_check_ctg(file_stat_t *file_stat)
 {
+  static const unsigned char ctg_header[7]= {':','\\','D','C','I','M','\\'};
   register_header_check(1, ctg_header,sizeof(ctg_header), &header_check_ctg, file_stat);
 }
-
-static int header_check_ctg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer+1, ctg_header,sizeof(ctg_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ctg.extension;
-    return 1;
-  }
-  return 0;
-}
-
-

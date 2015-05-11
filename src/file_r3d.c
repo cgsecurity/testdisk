@@ -69,8 +69,8 @@ static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned i
 #ifdef DEBUG_R3D
     log_trace("file_r3d.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
 	file_recovery->filename,
-        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
-        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7], 
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
+        buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
         (long long unsigned)atom_size,
         (long long unsigned)file_recovery->calculated_file_size);
 #endif

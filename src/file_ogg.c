@@ -46,10 +46,10 @@ const file_hint_t file_hint_ogg= {
 
 /* header=OggS, version=0 */
 static const unsigned char ogg_header[5]= {'O','g','g','S', 0x00};
-static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
 
 static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
   /* http://en.wikipedia.org/wiki/Ogg#File_format */
   /* Return if not Beginning Of Stream and already saving the file */
   if((buffer[5]&0x02)!=0x02 &&

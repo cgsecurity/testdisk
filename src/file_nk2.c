@@ -39,8 +39,6 @@
 #endif
 
 static void register_header_check_nk2(file_stat_t *file_stat);
-static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_nk2(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_nk2= {
   .extension="nk2",
@@ -51,8 +49,6 @@ const file_hint_t file_hint_nk2= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_nk2
 };
-
-static const unsigned char nk2_header[8]=  { 0x0d, 0xf0, 0xad, 0xba, 0x0a, 0x00, 0x00, 0x00 };
 
 typedef struct {
   uint32_t magic;
@@ -72,23 +68,6 @@ typedef struct {
   uint32_t unk2;
   uint32_t unk3;
 } entryHeader;
-
-static void register_header_check_nk2(file_stat_t *file_stat)
-{
-  register_header_check(0, nk2_header,  sizeof(nk2_header),  &header_check_nk2, file_stat);
-}
-
-static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, nk2_header, sizeof(nk2_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_nk2.extension;
-    file_recovery_new->file_check=&file_check_nk2;
-    return 1;
-  }
-  return 0;
-}
 
 #define	PT_UNSPECIFIED	0x0000
 #define	PT_NULL		0x0001
@@ -205,3 +184,16 @@ static void file_check_nk2(file_recovery_t *fr)
   fr->file_size+=12;
 }
 
+static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_nk2.extension;
+  file_recovery_new->file_check=&file_check_nk2;
+  return 1;
+}
+
+static void register_header_check_nk2(file_stat_t *file_stat)
+{
+  static const unsigned char nk2_header[8]=  { 0x0d, 0xf0, 0xad, 0xba, 0x0a, 0x00, 0x00, 0x00 };
+  register_header_check(0, nk2_header,  sizeof(nk2_header),  &header_check_nk2, file_stat);
+}

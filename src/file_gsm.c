@@ -60,7 +60,7 @@ static data_check_t data_check_gsm(const unsigned char *buffer, const unsigned i
     const struct block_header *hdr=(const struct block_header *)&buffer[i];
     if(hdr->marker < 0xd0 || hdr->marker > 0xdf)
       return DC_STOP;
-    file_recovery->calculated_file_size+=sizeof(struct block_header); 
+    file_recovery->calculated_file_size+=sizeof(struct block_header);
   }
   return DC_CONTINUE;
 }
@@ -81,7 +81,6 @@ static int header_check_gsm(const unsigned char *buffer, const unsigned int buff
   }
   if(i<3)
     return 0;
- 
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gsm.extension;
   file_recovery_new->min_filesize=sizeof(struct block_header);

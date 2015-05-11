@@ -70,7 +70,7 @@ static int header_check_mft(const unsigned char *buffer, const unsigned int buff
   const unsigned int attrs_offset = le16(mft_rec->attrs_offset);
   const unsigned int bytes_in_use = le32(mft_rec->bytes_in_use);
   const unsigned int bytes_allocated = le32(mft_rec->bytes_allocated);
-  if(!(memcmp(buffer,"FILE",4)==0 && 
+  if(!(memcmp(buffer,"FILE",4)==0 &&
     usa_ofs+usa_count <= attrs_offset &&
     42 <= attrs_offset &&
     attrs_offset%8==0 &&

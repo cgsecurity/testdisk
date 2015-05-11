@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_res(file_stat_t *file_stat);
-static int header_check_res(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_res= {
   .extension="res",
@@ -43,21 +42,16 @@ const file_hint_t file_hint_res= {
   .register_header_check=&register_header_check_res
 };
 
-static const unsigned char MS_res_header[14]= {0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
-  0xFF, 0xFF, 0, 0, 0xFF, 0xFF};
+static int header_check_res(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_res.extension;
+  return 1;
+}
 
 static void register_header_check_res(file_stat_t *file_stat)
 {
+  static const unsigned char MS_res_header[14]= {0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
+    0xFF, 0xFF, 0, 0, 0xFF, 0xFF};
   register_header_check(0, MS_res_header,sizeof(MS_res_header), &header_check_res, file_stat);
-}
-
-static int header_check_res(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,MS_res_header,sizeof(MS_res_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_res.extension;
-    return 1;
-  }
-  return 0;
 }

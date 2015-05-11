@@ -77,12 +77,8 @@ struct EMF_HDR
   uint32_t offDescription;
   uint32_t nPalEntries;
   U_SIZEL szlDevice;
-  U_SIZEL szlMillimeters; 
+  U_SIZEL szlMillimeters;
 } __attribute__ ((gcc_struct, __packed__));
-
-
-static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
-static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
 
 #define EMR_HEADER	1
 #define EMR_POLYBEZIER	2
@@ -206,17 +202,12 @@ static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
 #define EMR_COLORMATCHTOTARGETW	121
 #define EMR_CREATECOLORSPACEW	122
 
-static void register_header_check_emf(file_stat_t *file_stat)
-{
-  register_header_check(0x28, emf_sign,sizeof(emf_sign), &header_check_emf, file_stat);
-}
-
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
   const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
   const unsigned int atom_size=le32(hdr->emr.nSize);
   if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
-      memcmp(&buffer[0x28],emf_sign,sizeof(emf_sign))==0 &&
       le32(hdr->nBytes) >= 88 &&
       le16(hdr->sReserved)==0 &&
       atom_size>=0x34 && atom_size%4==0)
@@ -379,3 +370,8 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+static void register_header_check_emf(file_stat_t *file_stat)
+{
+  static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
+  register_header_check(0x28, emf_sign,sizeof(emf_sign), &header_check_emf, file_stat);
+}

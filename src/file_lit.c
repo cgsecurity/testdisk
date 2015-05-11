@@ -42,24 +42,19 @@ const file_hint_t file_hint_lit= {
   .register_header_check=&register_header_check_lit
 };
 
-static const unsigned char lit_header[12]=  {
-  'I' , 'T' , 'O' , 'L' , 'I' , 'T' , 'L' , 'S' ,
-  0x01, 0x00, 0x00, 0x00
-};
-
 static int header_check_lit(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* TODO: file may be a chm (MS Help) or .lit e-book */
-  if(memcmp(&buffer[0], lit_header, sizeof(lit_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_lit.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_lit.extension;
+  return 1;
 }
 
 static void register_header_check_lit(file_stat_t *file_stat)
 {
+  static const unsigned char lit_header[12]=  {
+    'I' , 'T' , 'O' , 'L' , 'I' , 'T' , 'L' , 'S' ,
+    0x01, 0x00, 0x00, 0x00
+  };
   register_header_check(0, lit_header, sizeof(lit_header), &header_check_lit, file_stat);
 }

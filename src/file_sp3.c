@@ -36,7 +36,6 @@
 #include "common.h"
 
 static void register_header_check_sp3(file_stat_t *file_stat);
-static int header_check_sp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sp3= {
   .extension="sp3",
@@ -48,15 +47,6 @@ const file_hint_t file_hint_sp3= {
   .register_header_check=&register_header_check_sp3
 };
 
-static const unsigned char sp31_header[8]=  { 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const unsigned char sp32_header[8]=  { 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-static void register_header_check_sp3(file_stat_t *file_stat)
-{
-  register_header_check(0, sp31_header,  sizeof(sp31_header),  &header_check_sp3, file_stat);
-  register_header_check(0, sp32_header,  sizeof(sp32_header),  &header_check_sp3, file_stat);
-}
-
 static uint64_t file_offset_end(uint64_t offset, uint64_t len)
 {
   return(offset==0 && len==0?0:offset+len-1);
@@ -65,9 +55,7 @@ static uint64_t file_offset_end(uint64_t offset, uint64_t len)
 static int header_check_sp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct SP3FileInfo *h=(const struct SP3FileInfo *)buffer;
-  if((memcmp(buffer, sp31_header, sizeof(sp31_header))==0 ||
-	memcmp(buffer, sp32_header, sizeof(sp32_header))==0) &&
-      le16(h->DataExameAno)>1960 && le16(h->DataExameAno)<2100 &&
+  if(le16(h->DataExameAno)>1960 && le16(h->DataExameAno)<2100 &&
       h->DataExameMes>=1 && h->DataExameMes<=12 &&
       h->DataExameDia>=1 && h->DataExameDia<=31)
   {
@@ -122,4 +110,12 @@ static int header_check_sp3(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_sp3(file_stat_t *file_stat)
+{
+  static const unsigned char sp31_header[8]=  { 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  static const unsigned char sp32_header[8]=  { 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  register_header_check(0, sp31_header,  sizeof(sp31_header),  &header_check_sp3, file_stat);
+  register_header_check(0, sp32_header,  sizeof(sp32_header),  &header_check_sp3, file_stat);
 }

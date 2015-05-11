@@ -42,22 +42,17 @@ const file_hint_t file_hint_save= {
   .register_header_check=&register_header_check_save
 };
 
-static const unsigned char save_header[8]=  {
-    'A' , 0x00, 'C' , 0x00, 'I' , 0x00, 'I' , 0x00
-};
-
 static int header_check_save(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[8], save_header, sizeof(save_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_save.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_save.extension;
+  return 1;
 }
 
 static void register_header_check_save(file_stat_t *file_stat)
 {
+  static const unsigned char save_header[8]=  {
+    'A' , 0x00, 'C' , 0x00, 'I' , 0x00, 'I' , 0x00
+  };
   register_header_check(8, save_header, sizeof(save_header), &header_check_save, file_stat);
 }

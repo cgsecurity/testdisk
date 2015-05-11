@@ -32,7 +32,6 @@
 #include "filegen.h"
 
 static void register_header_check_au(file_stat_t *file_stat);
-static int header_check_au(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only,  const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_au= {
   .extension="au",
@@ -43,13 +42,6 @@ const file_hint_t file_hint_au= {
   .enable_by_default=1,
   .register_header_check=&register_header_check_au
 };
-
-static const unsigned char au_header[4]= {'.','s','n','d'};
-
-static void register_header_check_au(file_stat_t *file_stat)
-{
-  register_header_check(0, au_header,sizeof(au_header), &header_check_au, file_stat);
-}
 
 /* http://en.wikipedia.org/wiki/Au_file_format */
 struct header_au_s
@@ -65,8 +57,7 @@ struct header_au_s
 static int header_check_au(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct header_au_s *au=(const struct header_au_s *)buffer;
-  if(memcmp(buffer,au_header,sizeof(au_header))==0 &&
-    (const uint32_t)be32(au->offset) >= sizeof(struct header_au_s) &&
+  if((const uint32_t)be32(au->offset) >= sizeof(struct header_au_s) &&
     be32(au->encoding)>0 && be32(au->encoding)<=27 &&
     be32(au->channels)>0 && be32(au->channels)<=256)
   {
@@ -88,4 +79,10 @@ static int header_check_au(const unsigned char *buffer, const unsigned int buffe
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_au(file_stat_t *file_stat)
+{
+  static const unsigned char au_header[4]= {'.','s','n','d'};
+  register_header_check(0, au_header,sizeof(au_header), &header_check_au, file_stat);
 }

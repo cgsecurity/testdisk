@@ -31,8 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_vfb(file_stat_t *file_stat);
-static int header_check_vfb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_vfb(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_vfb= {
   .extension="vfb",
@@ -44,27 +42,6 @@ const file_hint_t file_hint_vfb= {
   .register_header_check=&register_header_check_vfb
 };
 
-static const unsigned char vfb_header[8]=  {
-  0x1a, 'W' , 'L' , 'F' , '1' , '0' , 0x03, 0x00
-};
-
-static void register_header_check_vfb(file_stat_t *file_stat)
-{
-  register_header_check(0, vfb_header, sizeof(vfb_header), &header_check_vfb, file_stat);
-}
-
-static int header_check_vfb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, vfb_header, sizeof(vfb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_vfb.extension;
-    file_recovery_new->file_check=&file_check_vfb;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_vfb(file_recovery_t *file_recovery)
 {
   const unsigned char vfb_footer[9]= {
@@ -73,3 +50,20 @@ static void file_check_vfb(file_recovery_t *file_recovery)
   };
   file_search_footer(file_recovery, vfb_footer, sizeof(vfb_footer), 0);
 }
+
+static int header_check_vfb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_vfb.extension;
+  file_recovery_new->file_check=&file_check_vfb;
+  return 1;
+}
+
+static void register_header_check_vfb(file_stat_t *file_stat)
+{
+  static const unsigned char vfb_header[8]=  {
+    0x1a, 'W' , 'L' , 'F' , '1' , '0' , 0x03, 0x00
+  };
+  register_header_check(0, vfb_header, sizeof(vfb_header), &header_check_vfb, file_stat);
+}
+

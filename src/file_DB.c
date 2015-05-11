@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_DB(file_stat_t *file_stat);
-static int header_check_DB(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_DB= {
   .extension="DB",
@@ -42,22 +41,17 @@ const file_hint_t file_hint_DB= {
   .register_header_check=&register_header_check_DB
 };
 
-static const unsigned char DB_header[6]= {
-  0x19, 0x01, 0x00, 0x08, 0x02, 0x20
-};
+static int header_check_DB(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_DB.extension;
+  return 1;
+}
 
 static void register_header_check_DB(file_stat_t *file_stat)
 {
+  static const unsigned char DB_header[6]= {
+    0x19, 0x01, 0x00, 0x08, 0x02, 0x20
+  };
   register_header_check(0, DB_header,sizeof(DB_header), &header_check_DB, file_stat);
-}
-
-static int header_check_DB(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,DB_header,sizeof(DB_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_DB.extension;
-    return 1;
-  }
-  return 0;
 }

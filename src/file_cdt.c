@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_cdt(file_stat_t *file_stat);
-static int header_check_cdt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_cdt= {
   .extension="cdt",
@@ -43,29 +42,24 @@ const file_hint_t file_hint_cdt= {
   .register_header_check=&register_header_check_cdt
 };
 
-static const unsigned char cdt_header[7]=  {
-  'C' , 'O' , 'N' , 'C' , 'E' , 'P' , 'T' 
-};
+static int header_check_cdt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  if(buffer[0]==0xee)
+    file_recovery_new->extension="cdl";	/* ConceptDraw PRO Library File */
+  else if(buffer[0]==0xef)
+    file_recovery_new->extension="cdd";	/* ConceptDraw PRO Document */
+  else if(buffer[0]==0xf0)
+    file_recovery_new->extension="cdt";	/* ConceptDraw PRO Template */
+  else
+    file_recovery_new->extension=file_hint_cdt.extension;
+  return 1;
+}
 
 static void register_header_check_cdt(file_stat_t *file_stat)
 {
+  static const unsigned char cdt_header[7]=  {
+    'C' , 'O' , 'N' , 'C' , 'E' , 'P' , 'T'
+  };
   register_header_check(12, cdt_header, sizeof(cdt_header), &header_check_cdt, file_stat);
-}
-
-static int header_check_cdt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(&buffer[12], cdt_header, sizeof(cdt_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    if(buffer[0]==0xee)
-      file_recovery_new->extension="cdl";	/* ConceptDraw PRO Library File */
-    else if(buffer[0]==0xef)
-      file_recovery_new->extension="cdd";	/* ConceptDraw PRO Document */
-    else if(buffer[0]==0xf0)
-      file_recovery_new->extension="cdt";	/* ConceptDraw PRO Template */
-    else
-      file_recovery_new->extension=file_hint_cdt.extension;
-    return 1;
-  }
-  return 0;
 }

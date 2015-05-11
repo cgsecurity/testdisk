@@ -43,15 +43,6 @@ const file_hint_t file_hint_dta= {
   .register_header_check=&register_header_check_dta
 };
 
-static const unsigned char dta_header_71le[3]= {0x71, 0x02, 0x01};
-static const unsigned char dta_header_72le[3]= {0x72, 0x02, 0x01};
-
-static void register_header_check_dta(file_stat_t *file_stat)
-{
-  register_header_check(0, dta_header_71le,sizeof(dta_header_71le), &header_check_dta, file_stat);
-  register_header_check(0, dta_header_72le,sizeof(dta_header_72le), &header_check_dta, file_stat);
-}
-
 static int header_check_dta(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /*
@@ -63,13 +54,16 @@ static int header_check_dta(const unsigned char *buffer, const unsigned int buff
      nobs (number of obs)     4    int       encoded per byteorder
      data_label              81    char      dataset label, \0 terminated
      time_stamp              18    char      date/time saved, \0 terminated
-   */
-  if(memcmp(buffer,dta_header_71le,sizeof(dta_header_71le))==0 ||
-      memcmp(buffer,dta_header_72le,sizeof(dta_header_72le))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_dta.extension;
-    return 1;
-  }
-  return 0;
+     */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_dta.extension;
+  return 1;
+}
+
+static void register_header_check_dta(file_stat_t *file_stat)
+{
+  static const unsigned char dta_header_71le[3]= {0x71, 0x02, 0x01};
+  static const unsigned char dta_header_72le[3]= {0x72, 0x02, 0x01};
+  register_header_check(0, dta_header_71le,sizeof(dta_header_71le), &header_check_dta, file_stat);
+  register_header_check(0, dta_header_72le,sizeof(dta_header_72le), &header_check_dta, file_stat);
 }

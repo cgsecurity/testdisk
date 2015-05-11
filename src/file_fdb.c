@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_fdb(file_stat_t *file_stat);
-static int header_check_fdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_fdb= {
   .extension="fdb",
@@ -43,23 +42,18 @@ const file_hint_t file_hint_fdb= {
   .register_header_check=&register_header_check_fdb
 };
 
-static const unsigned char fdb_header[7]	= { 0x00, 0x00, 0x00, 0x5c, 0xa0, 0x83, 0x02};
-
-static void register_header_check_fdb(file_stat_t *file_stat)
-{
-  register_header_check(5, fdb_header,      sizeof(fdb_header), 	&header_check_fdb, file_stat);
-}
-
 static int header_check_fdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fdb)
     return 0;
-  if(memcmp(&buffer[5], fdb_header, sizeof(fdb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fdb.extension;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fdb.extension;
+  return 1;
+}
+
+static void register_header_check_fdb(file_stat_t *file_stat)
+{
+  static const unsigned char fdb_header[7]	= { 0x00, 0x00, 0x00, 0x5c, 0xa0, 0x83, 0x02};
+  register_header_check(5, fdb_header,      sizeof(fdb_header), 	&header_check_fdb, file_stat);
 }

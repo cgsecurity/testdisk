@@ -264,7 +264,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 
     if(partial_body_length==0)
     {
-      if((buffer[i]&0x80)==0)	
+      if((buffer[i]&0x80)==0)
 	break;	/* Invalid */
       tag=openpgp_packet_tag(&buffer[i]);
       if((buffer[i]&0x40)==0)
@@ -431,7 +431,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     const int old_partial_body_length=partial_body_length;
     if(partial_body_length==0)
     {
-      if((buffer[i]&0x80)==0)	
+      if((buffer[i]&0x80)==0)
 	break;	/* Invalid */
       packet_tag[nbr]=openpgp_packet_tag(&buffer[i]);
       if((buffer[i]&0x40)==0)

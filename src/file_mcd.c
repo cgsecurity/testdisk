@@ -30,7 +30,6 @@
 #include "filegen.h"
 
 static void register_header_check_mcd(file_stat_t *file_stat);
-static int header_check_mcd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_mcd= {
   .extension="mcd",
@@ -42,21 +41,17 @@ const file_hint_t file_hint_mcd= {
   .register_header_check=&register_header_check_mcd
 };
 
-static const unsigned char mcd_header[11]= { 'V', 'e','c','t','o','r','W','o','r','k','s'};
+static int header_check_mcd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[0]!=0x00 || buffer[1]!=0x00)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mcd.extension;
+  return 1;
+}
 
 static void register_header_check_mcd(file_stat_t *file_stat)
 {
+  static const unsigned char mcd_header[11]= { 'V', 'e','c','t','o','r','W','o','r','k','s'};
   register_header_check(0x0e, mcd_header,sizeof(mcd_header), &header_check_mcd, file_stat);
-}
-
-static int header_check_mcd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(buffer[0]==0x00 && buffer[1]==0x00 &&
-      memcmp(buffer+0x0e,mcd_header,sizeof(mcd_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mcd.extension;
-    return 1;
-  }
-  return 0;
 }

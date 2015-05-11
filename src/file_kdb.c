@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_kdb(file_stat_t *file_stat);
-static int header_check_kdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_kdb= {
   .extension="kdb",
@@ -43,20 +42,16 @@ const file_hint_t file_hint_kdb= {
   .register_header_check=&register_header_check_kdb
 };
 
-static const unsigned char kdb_header[8]= {0x03, 0xd9, 0xa2, 0x9a, 0x65, 0xfb, 0x4b, 0xb5};
-static void register_header_check_kdb(file_stat_t *file_stat)
-{
-  register_header_check(0, kdb_header,sizeof(kdb_header), &header_check_kdb, file_stat);
-}
-
 static int header_check_kdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, kdb_header, sizeof(kdb_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_kdb.extension;
-    file_recovery_new->min_filesize=124;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_kdb.extension;
+  file_recovery_new->min_filesize=124;
+  return 1;
+}
+
+static void register_header_check_kdb(file_stat_t *file_stat)
+{
+  static const unsigned char kdb_header[8]= {0x03, 0xd9, 0xa2, 0x9a, 0x65, 0xfb, 0x4b, 0xb5};
+  register_header_check(0, kdb_header,sizeof(kdb_header), &header_check_kdb, file_stat);
 }

@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_fbk(file_stat_t *file_stat);
-static int header_check_fbk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_fbk= {
   .extension="fbk",
@@ -43,20 +42,15 @@ const file_hint_t file_hint_fbk= {
   .register_header_check=&register_header_check_fbk
 };
 
-static const unsigned char fbk_header[10]	= {'T','a','b','l','e','D','a','t','a',' '};
+static int header_check_fbk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fbk.extension;
+  return 1;
+}
 
 static void register_header_check_fbk(file_stat_t *file_stat)
 {
+  static const unsigned char fbk_header[10]	= {'T','a','b','l','e','D','a','t','a',' '};
   register_header_check(0, fbk_header,      sizeof(fbk_header), 	&header_check_fbk, file_stat);
-}
-
-static int header_check_fbk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, fbk_header, sizeof(fbk_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fbk.extension;
-    return 1;
-  }
-  return 0;
 }

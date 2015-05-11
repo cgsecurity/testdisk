@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_paf(file_stat_t *file_stat);
-static int header_check_paf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_paf= {
   .extension="paf",
@@ -46,20 +45,15 @@ const file_hint_t file_hint_paf= {
 /* Personal Ancestral File Family Database is handled by
  * The Church of Jesus Christ of Latter-day Saints	*/
 
-static const unsigned char paf_header[11]= {'5', '0', '0', '\0', '5', '0', '0', '\0', 'P','A','F'};
+static int header_check_paf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_paf.extension;
+  return 1;
+}
 
 static void register_header_check_paf(file_stat_t *file_stat)
 {
+  static const unsigned char paf_header[11]= {'5', '0', '0', '\0', '5', '0', '0', '\0', 'P','A','F'};
   register_header_check(0, paf_header,sizeof(paf_header), &header_check_paf, file_stat);
-}
-
-static int header_check_paf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,paf_header,sizeof(paf_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_paf.extension;
-    return 1;
-  }
-  return 0;
 }

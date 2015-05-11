@@ -42,15 +42,10 @@ const file_hint_t file_hint_dar= {
   .register_header_check=&register_header_check_dar
 };
 
-static const unsigned char dar_header[4]=  {
-  0, 0, 0, 0x7b
-};
-
 static int header_check_dar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* http://darbinding.sourceforge.net/specs/dar3.html */
-  if(memcmp(buffer, dar_header, sizeof(dar_header))==0 && 
-    (buffer[0xe]=='N' || buffer[0xe]=='T') &&
+  if((buffer[0xe]=='N' || buffer[0xe]=='T') &&
     (buffer[0xf]=='N' || buffer[0xf]=='S'))
   {
     reset_file_recovery(file_recovery_new);
@@ -62,5 +57,8 @@ static int header_check_dar(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_dar(file_stat_t *file_stat)
 {
+  static const unsigned char dar_header[4]=  {
+    0, 0, 0, 0x7b
+  };
   register_header_check(0, dar_header, sizeof(dar_header), &header_check_dar, file_stat);
 }

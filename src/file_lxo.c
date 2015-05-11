@@ -80,7 +80,7 @@ static int header_check_lxo(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_lxo(file_stat_t *file_stat)
 {
   static const unsigned char lxo_header[4]=  {
-    'F' , 'O' , 'R' , 'M' 
+    'F' , 'O' , 'R' , 'M'
   };
   register_header_check(0, lxo_header, sizeof(lxo_header), &header_check_lxo, file_stat);
 }

@@ -30,10 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_mfg(file_stat_t *file_stat);
-static int header_check_mfg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_mfg(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_mfg= {
   .extension="mfg",
@@ -45,31 +42,27 @@ const file_hint_t file_hint_mfg= {
   .register_header_check=&register_header_check_mfg
 };
 
-static const unsigned char mfg_header[16]= {
-  '#', 'U', 'G', 'C', ':', '2', ' ', 'M',
-  'F', 'G', '_', 'A', 'S', 'S', 'E', 'M'};
-
-static void register_header_check_mfg(file_stat_t *file_stat)
-{
-  register_header_check(0, mfg_header,sizeof(mfg_header), &header_check_mfg, file_stat);
-}
-
-static int header_check_mfg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer,mfg_header,sizeof(mfg_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=file_check_mfg;
-    file_recovery_new->extension=file_hint_mfg.extension;
-    return 1;
-  }
-  return 0;
-}
-
 static void file_check_mfg(file_recovery_t *file_recovery)
 {
   const unsigned char mfg_footer[11]= {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
     'U', 'G', 'C'};
   file_search_footer(file_recovery, mfg_footer, sizeof(mfg_footer), 1);
+}
+
+static int header_check_mfg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=file_check_mfg;
+  file_recovery_new->extension=file_hint_mfg.extension;
+  return 1;
+}
+
+static void register_header_check_mfg(file_stat_t *file_stat)
+{
+  static const unsigned char mfg_header[16]= {
+    '#', 'U', 'G', 'C', ':', '2', ' ', 'M',
+    'F', 'G', '_', 'A', 'S', 'S', 'E', 'M'};
+
+  register_header_check(0, mfg_header,sizeof(mfg_header), &header_check_mfg, file_stat);
 }

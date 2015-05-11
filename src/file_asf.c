@@ -88,7 +88,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     // ASF_File_Properties_Object   // 8CABDCA1-A947-11CF-8EE4-00C00C205365
     // ASF_Stream_Properties_Object // B7DC0791-A9B7-11CF-8EE6-00C00C205365
     static const unsigned char asf_file_prop_id[16]= {
-      0xa1, 0xdc, 0xab, 0x8c, 0x47, 0xa9, 0xcf, 0x11, 
+      0xa1, 0xdc, 0xab, 0x8c, 0x47, 0xa9, 0xcf, 0x11,
       0x8e, 0xe4, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65
     };
     static const unsigned char asf_stream_prop_s[16]= {
@@ -143,7 +143,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_asf(file_stat_t *file_stat)
 {
   static const unsigned char asf_header[16]= {
-    0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11, 
+    0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11,
     0xa6, 0xd9, 0x00, 0xaa, 0x00, 0x62, 0xce, 0x6c
   };
   register_header_check(0, asf_header,sizeof(asf_header), &header_check_asf, file_stat);

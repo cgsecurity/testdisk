@@ -3,17 +3,17 @@
     File: file_xfs.c
 
     Copyright (C) 2015 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -81,7 +81,7 @@ typedef struct xfs_timestamp
 {
   int32_t t_sec;
   int32_t t_nsec;
-} xfs_timestamp_t; 
+} xfs_timestamp_t;
 
 typedef int64_t xfs_fsize_t;    /* bytes in a file */
 typedef int32_t xfs_extnum_t;   /* # of extents in a file */
@@ -114,7 +114,7 @@ typedef struct xfs_dinode_core
   uint16_t di_dmstate;
   uint16_t di_flags;
   uint32_t di_gen;
-} xfs_dinode_core_t; 
+} xfs_dinode_core_t;
 
 static int header_check_xfs_inode(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

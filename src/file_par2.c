@@ -51,7 +51,7 @@ const file_hint_t file_hint_par2= {
 };
 
 static const unsigned char par2_header[8]=  {
-  'P' , 'A' , 'R' , '2' , 0x00, 'P' , 'K' , 'T' 
+  'P' , 'A' , 'R' , '2' , 0x00, 'P' , 'K' , 'T'
 };
 
 static data_check_t data_check_par2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)

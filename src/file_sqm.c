@@ -30,9 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_sqm(file_stat_t *file_stat);
-static int header_check_sqm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sqm= {
   .extension="sqm",
@@ -44,20 +42,15 @@ const file_hint_t file_hint_sqm= {
   .register_header_check=&register_header_check_sqm
 };
 
-static const unsigned char sqm_header[6]=  { 'M', 'S', 'Q', 'M', 'x', 0x00};
+static int header_check_sqm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_sqm.extension;
+  return 1;
+}
 
 static void register_header_check_sqm(file_stat_t *file_stat)
 {
+  static const unsigned char sqm_header[6]=  { 'M', 'S', 'Q', 'M', 'x', 0x00};
   register_header_check(0, sqm_header,  sizeof(sqm_header),  &header_check_sqm, file_stat);
-}
-
-static int header_check_sqm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, sqm_header, sizeof(sqm_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_sqm.extension;
-    return 1;
-  }
-  return 0;
 }

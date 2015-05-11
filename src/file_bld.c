@@ -32,11 +32,6 @@
 #include "log.h"
 
 static void register_header_check_blend(file_stat_t *file_stat);
-static int header_check_blend(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static data_check_t data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static data_check_t data_check_blend8le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static data_check_t data_check_blend4be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-static data_check_t data_check_blend8be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_blend= {
   .extension="blend",
@@ -48,12 +43,99 @@ const file_hint_t file_hint_blend= {
   .register_header_check=&register_header_check_blend
 };
 
-static const unsigned char blend_header[7]  = { 'B', 'L', 'E', 'N', 'D', 'E', 'R'};
 static const unsigned char blend_header_footer[4]  = { 'E', 'N', 'D', 'B'};
 
-static void register_header_check_blend(file_stat_t *file_stat)
+static data_check_t data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  register_header_check(0, blend_header,sizeof(blend_header), &header_check_blend, file_stat);
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+#ifdef DEBUG_BLEND
+    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        len,
+        (long long unsigned)file_recovery->calculated_file_size);
+#endif
+    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
+    {
+      file_recovery->calculated_file_size+=0x14;
+      return DC_STOP;
+    }
+    file_recovery->calculated_file_size+=0x14+len;
+  }
+  return DC_CONTINUE;
+}
+
+static data_check_t data_check_blend8le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+#ifdef DEBUG_BLEND
+    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        len,
+        (long long unsigned)file_recovery->calculated_file_size);
+#endif
+    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
+    {
+      file_recovery->calculated_file_size+=0x18;
+      return DC_STOP;
+    }
+    file_recovery->calculated_file_size+=0x18+len;
+  }
+  return DC_CONTINUE;
+}
+
+static data_check_t data_check_blend4be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+#ifdef DEBUG_BLEND
+    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        len,
+        (long long unsigned)file_recovery->calculated_file_size);
+#endif
+    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
+    {
+      file_recovery->calculated_file_size+=0x14;
+      return DC_STOP;
+    }
+    file_recovery->calculated_file_size+=0x14+len;
+  }
+  return DC_CONTINUE;
+}
+
+static data_check_t data_check_blend8be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+#ifdef DEBUG_BLEND
+    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
+        len,
+        (long long unsigned)file_recovery->calculated_file_size);
+#endif
+    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
+    {
+      file_recovery->calculated_file_size+=0x18;
+      return DC_STOP;
+    }
+    file_recovery->calculated_file_size+=0x18+len;
+  }
+  return DC_CONTINUE;
 }
 
 static int header_check_blend(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -83,95 +165,8 @@ static int header_check_blend(const unsigned char *buffer, const unsigned int bu
   return 1;
 }
 
-static data_check_t data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static void register_header_check_blend(file_stat_t *file_stat)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
-#ifdef DEBUG_BLEND
-    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        len,
-        (long long unsigned)file_recovery->calculated_file_size);
-#endif
-    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
-    {
-      file_recovery->calculated_file_size+=0x14;
-      return DC_STOP;
-    }
-    file_recovery->calculated_file_size+=0x14+len;
-  }
-  return DC_CONTINUE;
-}
-
-static data_check_t data_check_blend8le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
-#ifdef DEBUG_BLEND
-    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        len,
-        (long long unsigned)file_recovery->calculated_file_size);
-#endif
-    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
-    {
-      file_recovery->calculated_file_size+=0x18;
-      return DC_STOP;
-    }
-    file_recovery->calculated_file_size+=0x18+len;
-  }
-  return DC_CONTINUE;
-}
-
-static data_check_t data_check_blend4be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  while(file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
-#ifdef DEBUG_BLEND
-    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        len,
-        (long long unsigned)file_recovery->calculated_file_size);
-#endif
-    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
-    {
-      file_recovery->calculated_file_size+=0x14;
-      return DC_STOP;
-    }
-    file_recovery->calculated_file_size+=0x14+len;
-  }
-  return DC_CONTINUE;
-}
-
-static data_check_t data_check_blend8be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
-#ifdef DEBUG_BLEND
-    log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3], 
-        len,
-        (long long unsigned)file_recovery->calculated_file_size);
-#endif
-    if(memcmp(&buffer[i],blend_header_footer,sizeof(blend_header_footer))==0)
-    {
-      file_recovery->calculated_file_size+=0x18;
-      return DC_STOP;
-    }
-    file_recovery->calculated_file_size+=0x18+len;
-  }
-  return DC_CONTINUE;
+  static const unsigned char blend_header[7]  = { 'B', 'L', 'E', 'N', 'D', 'E', 'R'};
+  register_header_check(0, blend_header,sizeof(blend_header), &header_check_blend, file_stat);
 }

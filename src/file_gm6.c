@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_gm6(file_stat_t *file_stat);
-static int header_check_gm6(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_gm6= {
   .extension="gm6",
@@ -43,34 +42,28 @@ const file_hint_t file_hint_gm6= {
   .register_header_check=&register_header_check_gm6
 };
 
-static const unsigned char gm6_header[8]=  {
-  0x91, 0xd5, 0x12, 0x00, 0x58, 0x02, 0x00, 0x00
-};
+static int header_check_gm6(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_gm6.extension;
+  return 1;
+}
 
-static const unsigned char gmd_header[8]=  {
-  0x91, 0xd5, 0x12, 0x00, 0xf4, 0x01, 0x00, 0x00
-};
+static int header_check_gmd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="gmd";
+  return 1;
+}
 
 static void register_header_check_gm6(file_stat_t *file_stat)
 {
+  static const unsigned char gm6_header[8]=  {
+    0x91, 0xd5, 0x12, 0x00, 0x58, 0x02, 0x00, 0x00
+  };
+  static const unsigned char gmd_header[8]=  {
+    0x91, 0xd5, 0x12, 0x00, 0xf4, 0x01, 0x00, 0x00
+  };
   register_header_check(0, gm6_header, sizeof(gm6_header), &header_check_gm6, file_stat);
-  register_header_check(0, gmd_header, sizeof(gmd_header), &header_check_gm6, file_stat);
+  register_header_check(0, gmd_header, sizeof(gmd_header), &header_check_gmd, file_stat);
 }
-
-static int header_check_gm6(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, gm6_header, sizeof(gm6_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_gm6.extension;
-    return 1;
-  }
-  if(memcmp(buffer, gmd_header, sizeof(gmd_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension="gmd";
-    return 1;
-  }
-  return 0;
-}
-

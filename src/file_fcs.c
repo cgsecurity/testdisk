@@ -124,10 +124,10 @@ static int header_check_fcs(const unsigned char *buffer, const unsigned int buff
 	  if(i+1+8+1<text_end &&
 	      memcmp(buffer+i+1,"$ENDDATA",8)==0 && buffer[i+1+8]==delimiter)
 	    data_end=ascii2int2(&buffer[i+1+8+1], text_end-(i+1+8+1), delimiter);
-	  else if(i+1+9+1<text_end && 
+	  else if(i+1+9+1<text_end &&
 	      memcmp(buffer+i+1,"$ENDSTEXT",9)==0 && buffer[i+1+9]==delimiter)
 	    stext_end=ascii2int2(&buffer[i+1+9+1], text_end-(i+1+9+1), delimiter);
-	  else if(i+1+12+1<text_end && 
+	  else if(i+1+12+1<text_end &&
 	      memcmp(buffer+i+1,"$ENDANALYSIS",12)==0 && buffer[i+1+12]==delimiter)
 	    analysis_end=ascii2int2(&buffer[i+1+12+1], text_end-(i+1+12+1), delimiter);
 	}

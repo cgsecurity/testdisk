@@ -42,26 +42,21 @@ const file_hint_t file_hint_gct= {
   .register_header_check=&register_header_check_gct
 };
 
-static const unsigned char gct_header[9]=  {
-  'J' , 'L' , 'G' , 'E' , 'N' , '2' , 'X' , 'F' ,
-  'I' 
-};
-
 static int header_check_gct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], gct_header, sizeof(gct_header))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_gct.extension;
-    file_recovery_new->calculated_file_size=2416;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_gct.extension;
+  file_recovery_new->calculated_file_size=2416;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_gct(file_stat_t *file_stat)
 {
+  static const unsigned char gct_header[9]=  {
+    'J' , 'L' , 'G' , 'E' , 'N' , '2' , 'X' , 'F' ,
+    'I'
+  };
   register_header_check(0, gct_header, sizeof(gct_header), &header_check_gct, file_stat);
 }

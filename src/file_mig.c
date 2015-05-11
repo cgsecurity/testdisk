@@ -101,24 +101,20 @@ static void file_check_mig(file_recovery_t *file_recovery)
   }
 }
 
-static const unsigned char mig_header[8]=  {
-  '1' , 'g' , 'i' , 'M' , 0x02, 0x00, 0x00, 0x00
-};
-
 static int header_check_mig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0], mig_header, sizeof(mig_header))==0 &&
-      memcmp(&buffer[0x34], "MRTS", 4)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mig.extension;
-    file_recovery_new->file_check=&file_check_mig;
-    return 1;
-  }
-  return 0;
+  if(memcmp(&buffer[0x34], "MRTS", 4)!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mig.extension;
+  file_recovery_new->file_check=&file_check_mig;
+  return 1;
 }
 
 static void register_header_check_mig(file_stat_t *file_stat)
 {
+  static const unsigned char mig_header[8]=  {
+    '1' , 'g' , 'i' , 'M' , 0x02, 0x00, 0x00, 0x00
+  };
   register_header_check(0, mig_header, sizeof(mig_header), &header_check_mig, file_stat);
 }

@@ -66,8 +66,8 @@ static data_check_t data_check_caf(const unsigned char *buffer, const unsigned i
 #ifdef DEBUG_CAF
     log_trace("file_caf.c: %s chunk %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu (0x%llx)\n",
 	file_recovery->filename,
-        buffer[i],buffer[i+1],buffer[i+2],buffer[i+3], 
-        buffer[i],buffer[i+1],buffer[i+2],buffer[i+3], 
+        buffer[i],buffer[i+1],buffer[i+2],buffer[i+3],
+        buffer[i],buffer[i+1],buffer[i+2],buffer[i+3],
         (long long unsigned)chunk_size,
         (long long unsigned)file_recovery->calculated_file_size,
         (long long unsigned)file_recovery->calculated_file_size);
@@ -117,7 +117,7 @@ static void register_header_check_caf(file_stat_t *file_stat)
 {
   static const unsigned char caf_header[12]=  {
     'c' , 'a' , 'f' , 'f' , 0x00, 0x01, 0x00, 0x00,
-    'd' , 'e' , 's' , 'c' 
+    'd' , 'e' , 's' , 'c'
   };
   register_header_check(0, caf_header, sizeof(caf_header), &header_check_caf, file_stat);
 }

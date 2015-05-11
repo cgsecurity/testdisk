@@ -31,7 +31,6 @@
 #include "filegen.h"
 
 static void register_header_check_ahn(file_stat_t *file_stat);
-static int header_check_ahn(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ahn= {
   .extension="ahn",
@@ -43,22 +42,18 @@ const file_hint_t file_hint_ahn= {
   .register_header_check=&register_header_check_ahn
 };
 
-static const unsigned char ahn_header[4]	= {'d','b','f',0x00};
-static const unsigned char ahn_magic[10]	= {'A','H','N','E','N','B','L','A','T','T'};
+static int header_check_ahn(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  static const unsigned char ahn_header[4]	= {'d','b','f',0x00};
+  if(memcmp(buffer, ahn_header, sizeof(ahn_header))!=0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ahn.extension;
+  return 1;
+}
 
 static void register_header_check_ahn(file_stat_t *file_stat)
 {
+  static const unsigned char ahn_magic[10]	= {'A','H','N','E','N','B','L','A','T','T'};
   register_header_check(8, ahn_magic,      sizeof(ahn_magic), 	&header_check_ahn, file_stat);
-}
-
-static int header_check_ahn(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(memcmp(buffer, ahn_header, sizeof(ahn_header))==0 &&
-      memcmp(&buffer[8], ahn_magic, sizeof(ahn_magic))==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ahn.extension;
-    return 1;
-  }
-  return 0;
 }
