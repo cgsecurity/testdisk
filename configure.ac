@@ -5,7 +5,7 @@ AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
-TESTDISKDATE="April 2015"
+TESTDISKDATE="May 2015"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -33,156 +33,133 @@ fi
 
 # Command-line options.
 AC_ARG_WITH([ncurses],
-    AS_HELP_STRING(--without-ncurses,disabled use of the curses/ncurses/pdcurses/curses library (default is NO)),
-    [	use_ncurses="n" ])
+    AS_HELP_STRING([--without-ncurses],[disabled use of the curses/ncurses/pdcurses/curses library (default is NO)]))
 
 AC_ARG_WITH(ncurses-lib,
-    AS_HELP_STRING(--with-ncurses-lib=DIR,location of the ncurses library),
+    AS_HELP_STRING([--with-ncurses-lib=DIR],[location of the ncurses library]),
     [ ncurses_lib_dir="${withval}"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(ncurses-includes,
-    AS_HELP_STRING(--with-ncurses-includes=DIR,location of the ncurses includes files),
+    AS_HELP_STRING([--with-ncurses-includes=DIR],[location of the ncurses includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH([ext2fs],
-    AS_HELP_STRING(--without-ext2fs,disabled use of the ext2fs library (default is NO)),
-    [	use_ext2fs="n" ])
+    AS_HELP_STRING([--without-ext2fs],[disabled use of the ext2fs library (default is NO)]))
 
 AC_ARG_WITH(ext2fs-lib,
-    AS_HELP_STRING(--with-ext2fs-lib=DIR,location of the ext2fs library),
+    AS_HELP_STRING([--with-ext2fs-lib=DIR],[location of the ext2fs library]),
     [ ext2fs_lib_a="${withval}/libext2fs.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(ext2fs-includes,
-    AS_HELP_STRING(--with-ext2fs-includes=DIR,location of the ext2fs includes files),
+    AS_HELP_STRING([--with-ext2fs-includes=DIR],[location of the ext2fs includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH(com_err-lib,
-    AS_HELP_STRING(--with-com_err-lib=DIR,location of the com_err library),
+    AS_HELP_STRING([--with-com_err-lib=DIR],[location of the com_err library]),
     [ com_err_lib_a="${withval}/libcom_err.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(com_err-includes,
-    AS_HELP_STRING(--with-com_err-includes=DIR,location of the com_err includes files),
+    AS_HELP_STRING([--with-com_err-includes=DIR],[location of the com_err includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH([jpeg],
-    AS_HELP_STRING(--without-jpeg,disabled use of the jpeg library (default is NO)),
-    [	use_jpeg="n" ])
+    AS_HELP_STRING([--without-jpeg],[disabled use of the jpeg library (default is NO)]))
 
 AC_ARG_WITH(jpeg-lib,
-    AS_HELP_STRING(--with-jpeg-lib=DIR,location of the jpeg library),
+    AS_HELP_STRING([--with-jpeg-lib=DIR],[location of the jpeg library]),
     [ jpeg_lib_a="${withval}/libjpeg.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(jpeg-includes,
-    AS_HELP_STRING(--with-jpeg-includes=DIR,location of the jpeg includes files),
+    AS_HELP_STRING([--with-jpeg-includes=DIR],[location of the jpeg includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([ntfs], 
-    AS_HELP_STRING(--without-ntfs,disabled use of the ntfs library (default is NO)),
-    [	use_ntfs="n" ])
+AC_ARG_WITH([ntfs],
+    AS_HELP_STRING([--without-ntfs],[disabled use of the ntfs library (default is NO)]))
 
 AC_ARG_WITH(ntfs-lib,
-    AS_HELP_STRING(--with-ntfs-lib=DIR,location of the ntfs library),
+    AS_HELP_STRING([--with-ntfs-lib=DIR],[location of the ntfs library]),
     [ ntfs_lib_a="${withval}/libntfs.a"
       LDFLAGS="${LDFLAGS} -L${withval}"
     ])
 
 AC_ARG_WITH(ntfs-includes,
-    AS_HELP_STRING(--with-ntfs-includes=DIR,location of the ntfs includes files),
+    AS_HELP_STRING([--with-ntfs-includes=DIR],[location of the ntfs includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([ntfs3g], 
-    AS_HELP_STRING(--without-ntfs3g,disabled use of the ntfs3g library (default is NO)),
-    [	use_ntfs3g="n" ])
+AC_ARG_WITH([ntfs3g],
+    AS_HELP_STRING([--without-ntfs3g],[disabled use of the ntfs3g library (default is NO)]))
 
 AC_ARG_WITH(ntfs3g-lib,
-    AS_HELP_STRING(--with-ntfs3g-lib=DIR,location of the ntfs3g library),
+    AS_HELP_STRING([--with-ntfs3g-lib=DIR],[location of the ntfs3g library]),
     [ ntfs3g_lib_a="${withval}/libntfs-3g.a"
       LDFLAGS="${LDFLAGS} -L${withval}"
     ])
 
 AC_ARG_WITH(ntfs3g-includes,
-    AS_HELP_STRING(--with-ntfs3g-includes=DIR,location of the ntfs3g includes files),
+    AS_HELP_STRING([--with-ntfs3g-includes=DIR],[location of the ntfs3g includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH(dal-lib,
-    AS_HELP_STRING(--with-dal-lib=DIR,location of the dal library),
+    AS_HELP_STRING([--with-dal-lib=DIR],[location of the dal library]),
     [ LDFLAGS="${LDFLAGS} -L${withval}" ])
 
-AC_ARG_WITH([reiserfs], 
-    AS_HELP_STRING(--without-reiserfs,disabled use of the reiserfs library (default is NO)),
-    [	use_reiserfs="n" ])
+AC_ARG_WITH([reiserfs],
+    AS_HELP_STRING([--without-reiserfs],[disabled use of the reiserfs library (default is NO)]))
 
 AC_ARG_WITH(reiserfs-lib,
-    AS_HELP_STRING(--with-reiserfs-lib=DIR,location of the reiserfs library),
+    AS_HELP_STRING([--with-reiserfs-lib=DIR],[location of the reiserfs library]),
     [ reiserfs_lib_a="${withval}/libreiserfs.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(reiserfs-includes,
-    AS_HELP_STRING(--with-reiserfs-includes=DIR,location of the reiserfs includes files),
+    AS_HELP_STRING([--with-reiserfs-includes=DIR],[location of the reiserfs includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([ewf], 
-    AS_HELP_STRING(--without-ewf,disabled use of the ewf library (default is NO)),
-    [	use_ewf="n" ])
+AC_ARG_WITH([ewf],
+    AS_HELP_STRING([--without-ewf],[disabled use of the ewf library (default is NO)]))
 
 AC_ARG_WITH(ewf-lib,
-    AS_HELP_STRING(--with-ewf-lib=DIR,location of the ewf library),
+    AS_HELP_STRING([--with-ewf-lib=DIR],[location of the ewf library]),
     [ ewf_lib_a="${withval}/libewf.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(ewf-includes,
-    AS_HELP_STRING(--with-ewf-includes=DIR,location of the ewf includes files),
+    AS_HELP_STRING([--with-ewf-includes=DIR],[location of the ewf includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([iconv], 
-    AS_HELP_STRING(--without-iconv,disabled use of the iconv library (default is NO)),
-    [	use_iconv="n" ])
+AC_ARG_WITH([iconv],
+    AS_HELP_STRING([--without-iconv],[disabled use of the iconv library (default is NO)]))
 
 AC_ARG_WITH(iconv-lib,
-    AS_HELP_STRING(--with-iconv-lib=DIR,location of the iconv library),
+    AS_HELP_STRING([--with-iconv-lib=DIR],[location of the iconv library]),
     [ iconv_lib_a="${withval}/libiconv.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(iconv-includes,
-    AS_HELP_STRING(--with-iconv-includes=DIR,location of the iconv includes files),
+    AS_HELP_STRING([--with-iconv-includes=DIR],[location of the iconv includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH(giconv-lib,
-    AS_HELP_STRING(--with-giconv-lib=DIR,location of the giconv library),
+    AS_HELP_STRING([--with-giconv-lib=DIR],[location of the giconv library]),
     [ iconv_lib_a="${withval}/libgiconv.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(giconv-includes,
-    AS_HELP_STRING(--with-giconv-includes=DIR,location of the giconv includes files),
+    AS_HELP_STRING([--with-giconv-includes=DIR],[location of the giconv includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
-AC_ARG_WITH([zlib], 
-    AS_HELP_STRING(--without-zlib,disabled use of the zlib library),
-    [	use_zlib="y" ])
+AC_ARG_WITH([zlib],
+    AS_HELP_STRING([--without-zlib],[disabled use of the zlib library (default is NO)]))
 
-AC_ARG_WITH([uuid], 
-    AS_HELP_STRING(--without-uuid,disabled use of the uuid library),
-    [	use_uuid="y" ])
-
-#AC_ARG_WITH([carvpath], 
-#    AS_HELP_STRING(--without-carvpath,disabled use of the carvpath library (default is NO)),
-#    [	use_carvpath="n" ])
-#
-#AC_ARG_WITH(carvpath-lib,
-#    AS_HELP_STRING(--with-carvpath-lib=DIR,location of the carvpath library),
-#    [ carvpath_lib_a="${withval}/libcarvpath.a"
-#    LDFLAGS="${LDFLAGS} -L${withval}" ])
-#
-#AC_ARG_WITH(carvpath-includes,
-#    AS_HELP_STRING(--with-carvpath-includes=DIR,location of the carvpath includes files),
-#    [CPPFLAGS="${CPPFLAGS} -I${withval}"])
+AC_ARG_WITH([uuid],
+    AS_HELP_STRING([--without-uuid],[disabled use of the uuid library]))
 
 AC_ARG_ENABLE([assert],
-    AS_HELP_STRING(--enable-assert, enable compilation of assert code (default is YES)),
+    AS_HELP_STRING([--enable-assert],[enable compilation of assert code (default is YES)]),
     [case "${enableval}" in
        yes) use_assert=true ;;
        no)  use_assert=false ;;
@@ -191,7 +168,7 @@ AC_ARG_ENABLE([assert],
      [use_assert=true])
 
 AC_ARG_ENABLE([sudo],
-    AS_HELP_STRING(--enable-sudo,enable use of sudo (default is NO)),
+    AS_HELP_STRING([--enable-sudo],[enable use of sudo (default is NO)]),
     [case "${enableval}" in
        yes) use_sudo=true ;;
        no)  use_sudo=false ;;
@@ -200,21 +177,21 @@ AC_ARG_ENABLE([sudo],
      [use_sudo=false])
 
 AC_ARG_WITH(sudo-bin,
-    AS_HELP_STRING(--with-sudo-bin=PROG,location of the sudo binary),
+    AS_HELP_STRING([--with-sudo-bin=PROG],[location of the sudo binary]),
     [SUDO_BIN="${withval}"])
 
 AC_ARG_WITH(uuid-lib,
-    AS_HELP_STRING(--with-uuid-lib=DIR,location of the uuid library),
+    AS_HELP_STRING([--with-uuid-lib=DIR],[location of the uuid library]),
     [ uuid_lib_a="${withval}/libuuid.a"
     LDFLAGS="${LDFLAGS} -L${withval}" ])
 
 AC_ARG_WITH(uuid-includes,
-    AS_HELP_STRING(--with-uuid-includes=DIR,location of the uuid includes files),
+    AS_HELP_STRING([--with-uuid-includes=DIR],[location of the uuid includes files]),
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 
 AC_ARG_ENABLE([missing-uuid-ok],
-    AS_HELP_STRING(--enable-missing-uuid-ok, [force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)]),
+    AS_HELP_STRING([--enable-missing-uuid-ok], [force compilation even if both uuidgen and uuid_generate are missing, for developpement only (default is NO)]),
     [case "${enableval}" in
        yes) missing_uuid_ok=true ;;
        no)  missing_uuid_ok=false ;;
@@ -223,7 +200,7 @@ AC_ARG_ENABLE([missing-uuid-ok],
      [missing_uuid_ok=false])
 
 AC_ARG_ENABLE([qt],
-    AS_HELP_STRING(--enable-qt,enable use of qt (default is YES)),
+    AS_HELP_STRING([--enable-qt],[enable use of qt (default is YES)]),
     [case "${enableval}" in
        yes) use_qt=true ;;
        no)  use_qt=false ;;
@@ -232,7 +209,7 @@ AC_ARG_ENABLE([qt],
      [use_qt=true])
 
 AC_ARG_ENABLE([ncmouse],
-    AS_HELP_STRING(--enable-ncmouse,enable use of mouse in ncurses(default is NO)),
+    AS_HELP_STRING([--enable-ncmouse],[enable use of mouse in ncurses(default is NO)]),
     [case "${enableval}" in
        yes) use_ncmouse=true ;;
        no)  use_ncmouse=false ;;
@@ -241,7 +218,7 @@ AC_ARG_ENABLE([ncmouse],
      [use_ncmouse=false])
 
 AC_ARG_ENABLE([dfxml],
-    AS_HELP_STRING(--disable-dfxml),
+    AS_HELP_STRING([--disable-dfxml]),
     [case "${enableval}" in
       yes) AC_DEFINE([ENABLE_DFXML],1,[Define to 1 if DFXML log is enabled]) ;;
       no) ;;
@@ -362,7 +339,7 @@ AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.
 #
 # First, check if there's a working iconv in libc (ie. if the test program
 # compiles and links without any extra flags).
-if test -z "${use_iconv}"; then
+if test "x$with_iconv" != "xno"; then
 AC_MSG_CHECKING(iconv support)
 AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
 int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
@@ -370,12 +347,10 @@ int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
   # libc has a working iconv.
   AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
   AC_MSG_RESULT([[yes, in libc]])
-  found_iconv=yes
-,
-  found_iconv=no
+  have_iconv=yes
 )
 
-if test $found_iconv = no ; then
+if test "x$have_iconv" != "xyes" ; then
   # libc doesn't have a working iconv. Try adding -liconv and any user
   # supplied directory.
 
@@ -391,14 +366,13 @@ if test $found_iconv = no ; then
     # -liconv works.
     AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
     AC_MSG_RESULT([[yes, -liconv]])
-    found_iconv=yes
+    have_iconv=yes
   ,
-    found_iconv=no
     LIBS="$old_LIBS"
   )
 fi
 
-if test $found_iconv = no ; then
+if test "x$have_iconv" != "xyes" ; then
   # -liconv didn't work. Try giconv.h and -lgiconv.
   # BSDs install this lib as libgiconv.
   old_LIBS="$LIBS"
@@ -422,6 +396,11 @@ else
   AC_MSG_WARN(Use of iconv function disabled)
 fi
 
+if test "x$have_iconv" != "xyes"; then
+  if test "x$with_iconv" = "xyes"; then
+    AC_MSG_ERROR([iconv requested but not found])
+  fi
+fi
 
 AC_CHECK_HEADERS(sys/mount.h,,,
 [[
@@ -463,7 +442,7 @@ AC_CHECK_HEADERS([ext2fs/ext2fs.h],,
 AC_CHECK_TYPE(
  [off64_t],
  [AC_DEFINE( [HAVE_OFF64_T], [1], [Define to 1 if off64_t is available])],
- [AC_DEFINE( [HAVE_OFF64_T], [0], [Define to 1 if off64_t isn't available])])
+ [AC_DEFINE( [HAVE_OFF64_T], [0], [Define to 0 if off64_t is not available])])
 
 AC_CHECK_HEADERS([libewf.h],,
               use_ewf=no
@@ -482,10 +461,6 @@ AC_CHECK_HEADERS([ntfs/attrib.h ntfs/volume.h],,
 AC_CHECK_HEADERS([ntfs-3g/attrib.h ntfs-3g/volume.h],,
               use_ntfs3g=no
               AC_MSG_WARN(Disable use of ntfs3g library))
-
-#AC_CHECK_HEADERS([libcarvpath.h],,
-#              use_carvpath=no
-#              AC_MSG_WARN(Disable use of carvpath library))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -531,7 +506,7 @@ AC_PROG_GCC_TRADITIONAL
 #AC_FUNC_MALLOC
 
 # Checks for libraries.
-if test -z "${use_ncurses}"; then
+if test "x$with_ncurses" != "xno"; then
   AC_CHECK_LIB(ncursesw, initscr, [ ncurses_lib="ncursesw" ])
  if test -z "${ncurses_lib}"; then
   AC_CHECK_LIB( ncurses, initscr, [ ncurses_lib="ncurses" ])
@@ -557,7 +532,7 @@ if test -z "${use_ncurses}"; then
       AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
 # if lib${ncurses_lib}.a is present, try to use libtinfo.a
  if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a";
- then 
+ then
    if test -e "${ncurses_lib_dir}/libtinfo.a"; then
      testdisk_LDADD="$testdisk_LDADD ${ncurses_lib_dir}/libtinfo.a"
      photorec_LDADD="$photorec_LDADD ${ncurses_lib_dir}/libtinfo.a"
@@ -586,7 +561,8 @@ else
   AC_MSG_WARN(Use of ncurses library disabled)
 fi
 
-if test -z "${use_ext2fs}"; then
+if test "x$use_ext2fs" != "xno"; then
+if test "x$with_ext2fs" != "xno"; then
   AC_CHECK_LIB(ext2fs,ext2fs_open,[
       AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
       if test "${ext2fs_lib_a}" = ""; then
@@ -594,6 +570,7 @@ if test -z "${use_ext2fs}"; then
       else
         LIBS="$LIBS ${ext2fs_lib_a}"
       fi
+      have_ext2fs=yes
       ],AC_MSG_WARN(No ext2fs library detected))
   AC_CHECK_LIB(com_err,com_err,[
       AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
@@ -602,14 +579,24 @@ if test -z "${use_ext2fs}"; then
       else
         LIBS="$LIBS ${com_err_lib_a}"
       fi
+      have_com_err=yes
       ], AC_MSG_WARN(No com_err library detected))
 
   AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
 fi
+fi
 
-if test -z "${use_jpeg}"; then
+if test "x$have_ext2fs" != "xyes"; then
+  if test "x$with_ext2fs" = "xyes"; then
+    AC_MSG_ERROR([ext2fs requested but not found])
+  fi
+fi
+
+
+if test "x$use_jpeg" != "xno"; then
+if test "x$with_jpeg" != "xno"; then
   AC_CHECK_LIB(jpeg,jpeg_std_error,[
       AC_DEFINE([HAVE_LIBJPEG],1,[Define to 1 if you have the jpeg library (-ljpeg).])
       if test "${jpeg_lib_a}" = ""; then
@@ -621,13 +608,22 @@ if test -z "${use_jpeg}"; then
         qphotorec_LDADD="$qphotorec_LDADD ${jpeg_lib_a}"
         fidentify_LDADD="$fidentify_LDADD ${jpeg_lib_a}"
       fi
+      have_jpeg=yes
       ],AC_MSG_WARN(No jpeg library detected))
 #  )
 else
   AC_MSG_WARN(Use of jpeg library disabled)
 fi
+fi
 
-if test -z "${use_ntfs3g}"; then
+if test "x$have_jpeg" != "xyes"; then
+  if test "x$with_jpeg" = "xyes"; then
+    AC_MSG_ERROR([jpeg requested but not found])
+  fi
+fi
+
+if test "x$use_ntfs3g" != "xno"; then
+if test "x$with_ntfs3g" != "xno"; then
   AC_CHECK_LIB(ntfs-3g,ntfs_device_mount,
   [
     AC_DEFINE([HAVE_LIBNTFS3G],1,[Define to 1 if you have the ntfs3g library (-lntfs3g).])
@@ -636,6 +632,7 @@ if test -z "${use_ntfs3g}"; then
     else
       LIBS="${ntfs3g_lib_a} $LIBS"
     fi
+    have_ntfs3g=yes
     use_ntfs=no
   ],
   AC_MSG_WARN(No ntfs-3g library detected)
@@ -643,8 +640,16 @@ if test -z "${use_ntfs3g}"; then
 else
   AC_MSG_WARN(Use of ntfs3g library disabled)
 fi
+fi
 
-if test -z "${use_ntfs}"; then
+if test "x$have_ntfs-3g" != "xyes"; then
+  if test "x$with_ntfs-3g" = "xyes"; then
+    AC_MSG_ERROR([ntfs-3g requested but not found])
+  fi
+fi
+
+if test "x$use_ntfs" != "xno"; then
+if test "x$with_ntfs" != "xno"; then
   AC_CHECK_LIB(ntfs,ntfs_device_mount,
   [
     AC_DEFINE([HAVE_LIBNTFS],1,[Define to 1 if you have the ntfs library (-lntfs).])
@@ -653,6 +658,7 @@ if test -z "${use_ntfs}"; then
     else
       LIBS="${ntfs_lib_a} $LIBS"
     fi
+    have_ntfs=yes
   ],
     AC_CHECK_LIB(ntfs,ntfs_libntfs_version,
     [
@@ -662,10 +668,18 @@ if test -z "${use_ntfs}"; then
       else
         LIBS="$LIBS ${ntfs_lib_a}"
       fi
+      have_ntfs=yes
     ],AC_MSG_WARN(No ntfs library detected))
   )
 else
   AC_MSG_WARN(Use of ntfs library disabled)
+fi
+fi
+
+if test "x$have_ntfs" != "xyes"; then
+  if test "x$with_ntfs" = "xyes"; then
+    AC_MSG_ERROR([ntfs requested but not found])
+  fi
 fi
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -685,7 +699,8 @@ if test "${ac_cv_c_ntfs_mbstoucs_have_two_arguments}" != "no"; then
   AC_DEFINE([NTFS_MBSTOUCS_HAVE_TWO_ARGUMENTS], 1, [Define if ntfs_mbstoucs takes two parameters.])
 fi
 
-if test -z "${use_reiserfs}"; then
+if test "x$use_reiserfs" != "xno"; then
+if test "x$with_reiserfs" != "xno"; then
   AC_CHECK_LIB(reiserfs,libreiserfs_get_version,[
   AC_DEFINE([HAVE_LIBREISERFS],1,[Define to 1 if you have the reiserfs library (-lreiserfs).])
   if test "${reiserfs_lib_a}" = ""; then
@@ -693,29 +708,24 @@ if test -z "${use_reiserfs}"; then
   else
     testdisk_LDADD="$testdisk_LDADD ${reiserfs_lib_a}"
   fi
+  have_reiserfs=yes
   ],AC_MSG_WARN(No reiserfs library detected),[-ldal])
 else
   AC_MSG_WARN(Use of reiserfs library disabled)
 fi
+fi
 
-#if test -z "${use_carvpath}"; then
-#  AC_CHECK_LIB(carvpath,carvpath_top_entity,[
-#      AC_DEFINE([HAVE_LIBCARVPATH],1,[Define to 1 if you have the carvpath library (-lcarvpath).])
-#      if test "${carvpath_lib_a}" = ""; then
-#        photorec_LDADD="$photorec_LDADD -lcarvpath"
-#      else
-#        photorec_LDADD="$photorec_LDADD ${carvpath_lib_a}"
-#      fi
-#      ],AC_MSG_WARN(No carvpath library detected))
-#else
-#  AC_MSG_WARN(Use of carvpath library disabled)
-#fi
+if test "x$have_reiserfs" != "xyes"; then
+  if test "x$with_reiserfs" = "xyes"; then
+    AC_MSG_ERROR([reiserfs requested but not found])
+  fi
+fi
 
 # Check for UUID functions
 AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h uuid.h])
 found_uuid_function=yes
 AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
-if test -z "${use_uuid}"; then
+if test "x$with_uuid" != "xno"; then
   if test "${found_uuid_function}" = "no";
   then
     found_uuid_function=yes
@@ -745,11 +755,24 @@ then
   fi
 fi
 
-if test -z "${use_zlib}"; then
-  AC_CHECK_LIB(z, compress2, [], AC_MSG_WARN(Missing function: compress2 in library zlib))
+if test "x$use_zlib" != "xno"; then
+if test "x$with_zlib" != "xno"; then
+  AC_CHECK_LIB(z, compress2, [
+      AC_DEFINE([HAVE_LIBZ],1,[Define to 1 if you have the z library (-lz).])
+      have_zlib=yes
+      LIBS="-lz $LIBS"
+  ], AC_MSG_WARN(Missing function: compress2 in library zlib))
+fi
+fi
+
+if test "x$have_zlib" != "xyes"; then
+  if test "x$with_zlib" = "xyes"; then
+    AC_MSG_ERROR([zlib requested but not found])
+  fi
 fi
 #
-if test -z "${use_ewf}"; then
+if test "x$use_ewf" != "xno"; then
+if test "x$with_ewf" != "xno"; then
   AC_CHECK_LIB(ewf,libewf_check_file_signature,[
   AC_DEFINE([HAVE_LIBEWF],1,[Define to 1 if you have the ewf library (-lewf).])
   if test "${ewf_lib_a}" = ""; then
@@ -757,6 +780,7 @@ if test -z "${use_ewf}"; then
   else
     LIBS="${ewf_lib_a} $LIBS"
   fi
+  have_ewf=yes
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libewf.h>]],
       [[ libewf_get_bytes_per_sector(NULL,NULL); ]])],
     [ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=yes],
@@ -781,8 +805,13 @@ if test -z "${use_ewf}"; then
 else
   AC_MSG_WARN(Use of ewf library disabled)
 fi
+fi
 
-
+if test "x$have_ewf" != "xyes"; then
+  if test "x$with_ewf" = "xyes"; then
+    AC_MSG_ERROR([ewf requested but not found])
+  fi
+fi
 #-Wconversion -Wmissing-noreturn -ffunction-sections -Wl,--gc-sections -Wl,--print-gc-sections
 for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wunreachable-code
 do
@@ -822,7 +851,7 @@ case "$target" in
   *hpux*)
 	;;
   *)
-  	AC_CHECK_FUNCS(pread)
+	AC_CHECK_FUNCS(pread)
   ;;
 esac
 
@@ -859,12 +888,12 @@ then
   if test x$MOC = x ; then
 	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
 	use_qt=false
-  fi 
+  fi
   AC_CHECK_TOOLS(RCC,[rcc-qt4 rcc],)
   if test x$RCC = x ; then
 	AC_MSG_WARN(Could not find a rcc-qt4 or rcc tool in your PATH.)
 	use_qt=false
-  fi 
+  fi
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
   qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
 fi
