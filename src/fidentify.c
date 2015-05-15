@@ -189,7 +189,9 @@ static void display_version(void)
   printf("\n");
   printf("Version: %s\n", VERSION);
   printf("Compiler: %s\n", get_compiler());
+#ifdef RECORD_COMPILATION_DATE
   printf("Compilation date: %s\n", get_compilation_date());
+#endif
   printf("libjpeg: %s\n", td_jpeg_version());
   printf("OS: %s\n" , get_os());
 }

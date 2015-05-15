@@ -185,7 +185,9 @@ void xml_add_DFXML_creator(const char *package, const char *version)
   xml_out2s("version", version);
   xml_push("build_environment","");
   xml_printf("<compiler>%s</compiler>\n", get_compiler());
+#ifdef RECORD_COMPILATION_DATE
   xml_out2s("compilation_date", get_compilation_date());
+#endif
   xml_printf("<library name='libext2fs' version='%s'/>\n", td_ext2fs_version());
   xml_printf("<library name='libewf' version='%s'/>\n", td_ewf_version());
   xml_printf("<library name='libjpeg' version='%s'/>\n", td_jpeg_version());

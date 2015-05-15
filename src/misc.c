@@ -270,6 +270,7 @@ const char *get_compiler(void)
   return buffer;
 }
 
+#ifdef RECORD_COMPILATION_DATE
 const char *get_compilation_date(void)
 {
   static char buffer[100] = {0x00};
@@ -294,3 +295,4 @@ const char *get_compilation_date(void)
 #endif
   return buffer;
 }
+#endif

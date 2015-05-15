@@ -267,6 +267,15 @@ AS_IF([test "x$enable_stack_protector" = "xno"],
     [stackProtector=1]
     )
 
+AC_ARG_ENABLE([record-compilation-date],
+    AS_HELP_STRING([--enable-record-compilation-date],[record compilation date (default is NO)]),
+    [case "${enableval}" in
+       yes) AC_DEFINE([RECORD_COMPILATION_DATE],1,[Define to 1 to record compilation date]) ;;
+       no)  ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --enable-record-compilation-date]) ;;
+     esac]
+     )
+
 use_icon=no
 
 case "$target" in

@@ -25,7 +25,9 @@ extern "C" {
 
 const char *get_os(void);
 const char *get_compiler(void);
+#ifdef RECORD_COMPILATION_DATE
 const char *get_compilation_date(void);
+#endif
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
