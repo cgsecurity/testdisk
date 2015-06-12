@@ -35,7 +35,7 @@
 
 static void register_header_check_r3d(file_stat_t *file_stat);
 static int header_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_rename_r3d(const char *old_filename);
+static void file_rename_r3d(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_r3d= {
   .extension="r3d",
@@ -125,24 +125,24 @@ static int header_check_r3d_v2(const unsigned char *buffer, const unsigned int b
   return 0;
 }
 
-static void file_rename_r3d(const char *old_filename)
+static void file_rename_r3d(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   FILE *file;
   size_t buffer_size;
   unsigned int i;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  if(buffer_size<10)
+  if(buffer_size<0x44)
     return;
   for(i=0x43; i< buffer_size && buffer[i]!=0 && buffer[i]!='.'; i++)
   {
     if(!isalnum(buffer[i]) && buffer[i]!='_')
       return ;
   }
-  file_rename(old_filename, buffer, i, 0x43, NULL, 1);
+  file_rename(file_recovery, buffer, i, 0x43, NULL, 1);
 }
 
 static void register_header_check_r3d(file_stat_t *file_stat)

@@ -590,7 +590,7 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
     set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
   if(file_recovery->file_rename!=NULL)
-    file_recovery->file_rename(file_recovery->filename);
+    file_recovery->file_rename(file_recovery);
   if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
   {
     params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);

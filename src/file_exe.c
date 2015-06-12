@@ -38,7 +38,7 @@
 
 static void register_header_check_exe(file_stat_t *file_stat);
 static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_rename_pe_exe(const char *old_filename);
+static void file_rename_pe_exe(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_exe= {
   .extension="exe",
@@ -253,7 +253,7 @@ static unsigned int ReadUnicodeStr(const char *buffer, unsigned int pos, const u
   return pos;
 }
 
-static int PEVersion_aux(const char*buffer, const unsigned int end, const char *old_filename, const char *needle, const unsigned int needle_len, const int force_ext)
+static int PEVersion_aux(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
   unsigned int pos=0;
   while(1)
@@ -306,7 +306,7 @@ static int PEVersion_aux(const char*buffer, const unsigned int end, const char *
 	    {
 	      if(do_rename)
 	      {
-		file_rename_unicode(old_filename, buffer, end, pt, NULL, force_ext);
+		file_rename_unicode(file_recovery, buffer, end, pt, NULL, force_ext);
 		return 0;
 	      }
 #ifdef DEBUG_EXE
@@ -328,7 +328,7 @@ static int PEVersion_aux(const char*buffer, const unsigned int end, const char *
   }
 }
 
-static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, const char *old_filename)
+static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, file_recovery_t *file_recovery)
 {
   char *buffer;
   if(length==0 || length > 1024*1024)
@@ -341,16 +341,16 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
     free(buffer);
     return ;
   }
-  if(PEVersion_aux(buffer, length, old_filename, OriginalFilename, sizeof(OriginalFilename), 0)==0)
+  if(PEVersion_aux(file_recovery, buffer, length, OriginalFilename, sizeof(OriginalFilename), 0)==0)
   {
     free(buffer);
     return;
   }
-  PEVersion_aux(buffer, length, old_filename, InternalName, sizeof(InternalName), 1);
+  PEVersion_aux(file_recovery, buffer, length, InternalName, sizeof(InternalName), 1);
   free(buffer);
 }
 
-static void file_exe_ressource(FILE *file, const unsigned int base, const unsigned int dir_start, const unsigned int size, const unsigned int rsrcType, const unsigned int level, const struct pe_image_section_hdr *pe_sections, unsigned int nbr_sections, const char *old_filename)
+static void file_exe_ressource(FILE *file, const unsigned int base, const unsigned int dir_start, const unsigned int size, const unsigned int rsrcType, const unsigned int level, const struct pe_image_section_hdr *pe_sections, unsigned int nbr_sections, file_recovery_t *file_recovery)
 {
   struct rsrc_entries_s *rsrc_entries;
   struct rsrc_entries_s *rsrc_entry;
@@ -401,7 +401,7 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
 	    size,
 	    (level==0?le32(rsrc_entry->Type):rsrcType),
 	    level + 1,
-	    pe_sections, nbr_sections, old_filename);
+	    pe_sections, nbr_sections, file_recovery);
       }
       if(level==2)
       {
@@ -421,7 +421,7 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
 	    if(le32(pe_section->VirtualAddress) <= off
 	      && off < le32(pe_section->VirtualAddress) + le32(pe_section->SizeOfRawData))
 	    {
-	      PEVersion(file, off - le32(pe_section->VirtualAddress) + base, len, old_filename);
+	      PEVersion(file, off - le32(pe_section->VirtualAddress) + base, len, file_recovery);
 	      free(rsrc_entries);
 	      return ;
 	    }
@@ -435,14 +435,14 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
   free(rsrc_entries);
 }
 
-static void file_rename_pe_exe(const char *old_filename)
+static void file_rename_pe_exe(file_recovery_t *file_recovery)
 {
   unsigned char buffer[4096];
   FILE *file;
   int buffer_size;
   const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
   const struct pe_image_file_hdr *pe_hdr;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   if(buffer_size < (int)sizeof(struct dos_image_file_hdr))
@@ -503,7 +503,7 @@ static void file_rename_pe_exe(const char *old_filename)
 	      le32(pe_section->SizeOfRawData),
 	      0,
 	      0,
-	      pe_sections, nbr_sections, old_filename);
+	      pe_sections, nbr_sections, file_recovery);
 	  fclose(file);
 	  return;
 	}

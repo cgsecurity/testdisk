@@ -47,7 +47,7 @@
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_rename_doc(const char *old_filename);
+static void file_rename_doc(file_recovery_t *file_recovery);
 static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header);
 static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries);
 
@@ -820,7 +820,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
   }
 }
 
-static void file_rename_doc(const char *old_filename)
+static void file_rename_doc(file_recovery_t *file_recovery)
 {
   const char *ext=NULL;
   char *title=NULL;
@@ -830,12 +830,12 @@ static void file_rename_doc(const char *old_filename)
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   time_t file_time=0;
   unsigned int fat_entries;
-  if(strstr(old_filename, ".sdd")!=NULL)
+  if(strstr(file_recovery->filename, ".sdd")!=NULL)
     ext="sdd";
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
 #ifdef DEBUG_OLE
-  log_info("file_rename_doc(%s)\n", old_filename);
+  log_info("file_rename_doc(%s)\n", file_recovery->filename);
 #endif
   /*reads first sector including OLE header */
   if(my_fseek(file, 0, SEEK_SET) < 0 ||
@@ -1058,14 +1058,14 @@ static void file_rename_doc(const char *old_filename)
   free(fat);
   fclose(file);
   if(file_time!=0 && file_time!=(time_t)-1)
-    set_date(old_filename, file_time, file_time);
+    set_date(file_recovery->filename, file_time, file_time);
   if(title!=NULL)
   {
-    file_rename(old_filename, (const unsigned char*)title, strlen(title), 0, ext, 1);
+    file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, ext, 1);
     free(title);
   }
   else
-    file_rename(old_filename, NULL, 0, 0, ext, 1);
+    file_rename(file_recovery, NULL, 0, 0, ext, 1);
 }
 
 static void register_header_check_doc(file_stat_t *file_stat)

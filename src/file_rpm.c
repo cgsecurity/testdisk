@@ -56,11 +56,11 @@ struct rpmlead {
   char reserved[16];
 } __attribute__ ((gcc_struct, __packed__));
 
-static void file_rename_rpm(const char *old_filename)
+static void file_rename_rpm(file_recovery_t *file_recovery)
 {
   FILE *file;
   struct rpmlead hdr;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(fread(&hdr, sizeof(hdr), 1, file)!=1)
   {
@@ -68,7 +68,7 @@ static void file_rename_rpm(const char *old_filename)
     return ;
   }
   fclose(file);
-  file_rename(old_filename, &hdr.name, 66, 0, "rpm", 0);
+  file_rename(file_recovery, &hdr.name, 66, 0, "rpm", 0);
 }
 
 static int header_check_rpm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

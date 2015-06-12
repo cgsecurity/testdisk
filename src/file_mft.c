@@ -45,21 +45,21 @@ const file_hint_t file_hint_mft= {
   .register_header_check=&register_header_check_mft
 };
 
-static void file_rename_mft(const char *old_filename)
+static void file_rename_mft(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)&buffer;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
   if(buffer_size<54)
     return;
   sprintf(buffer_cluster, "record_%u", (unsigned int)le32(record->mft_record_number));
-  file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
+  file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
 static int header_check_mft(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

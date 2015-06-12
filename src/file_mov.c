@@ -79,11 +79,11 @@ struct atom64_struct
   uint64_t size;
 } __attribute__ ((gcc_struct, __packed__));
 
-static void file_rename_mov(const char *old_filename)
+static void file_rename_mov(file_recovery_t *file_recovery)
 {
   FILE *file;
   unsigned char buffer[512];
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(fread(&buffer,sizeof(buffer),1,file)!=1)
   {
@@ -92,7 +92,7 @@ static void file_rename_mov(const char *old_filename)
   }
   fclose(file);
   buffer[8]='\0';
-  file_rename(old_filename, buffer, sizeof(buffer), 4, NULL, 1);
+  file_rename(file_recovery, buffer, sizeof(buffer), 4, NULL, 1);
 }
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

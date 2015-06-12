@@ -36,7 +36,7 @@
 
 static void register_header_check_gz(file_stat_t *file_stat);
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_rename_gz(const char *old_filename);
+static void file_rename_gz(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_gz= {
   .extension="gz",
@@ -239,12 +239,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   return 1;
 }
 
-static void file_rename_gz(const char *old_filename)
+static void file_rename_gz(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   FILE *file;
   int buffer_size;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
@@ -262,7 +262,7 @@ static void file_rename_gz(const char *old_filename)
     }
     if((flags&GZ_FNAME)!=0)
     {
-      file_rename(old_filename, buffer, buffer_size, off, NULL, 1);
+      file_rename(file_recovery, buffer, buffer_size, off, NULL, 1);
     }
   }
 }

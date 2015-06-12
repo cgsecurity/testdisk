@@ -77,13 +77,13 @@ static data_check_t data_check_ts_192(const unsigned char *buffer, const unsigne
   return DC_CONTINUE;
 }
 
-static void file_rename_ts_188(const char *old_filename)
+static void file_rename_ts_188(file_recovery_t *file_recovery)
 {
   FILE *file;
   unsigned char buffer[188];
   char buffer_pid[32];
   unsigned int pid;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(my_fseek(file, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(buffer), 1, file) != 1)
@@ -94,16 +94,16 @@ static void file_rename_ts_188(const char *old_filename)
   fclose(file);
   pid=((buffer[1]<<8)|buffer[2])&0x1fff;
   sprintf(buffer_pid, "pid_%u", pid);
-  file_rename(old_filename, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
+  file_rename(file_recovery, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
 }
 
-static void file_rename_ts_192(const char *old_filename)
+static void file_rename_ts_192(file_recovery_t *file_recovery)
 {
   FILE *file;
   unsigned char buffer[192];
   char buffer_pid[32];
   unsigned int pid;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(my_fseek(file, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(buffer), 1, file) != 1)
@@ -114,7 +114,7 @@ static void file_rename_ts_192(const char *old_filename)
   fclose(file);
   pid=((buffer[5]<<8)|buffer[6])&0x1fff;
   sprintf(buffer_pid, "pid_%u", pid);
-  file_rename(old_filename, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
+  file_rename(file_recovery, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
 }
 
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

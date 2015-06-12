@@ -363,17 +363,18 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
-void file_rename(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
+int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
-  const char *src=old_filename;
-  const char *ext=src;
+  const char *src=file_recovery->filename;
+  const char *ext=NULL;
   char *dst;
   char *directory_sep;
-  int len=strlen(old_filename)+1;
+  int len;
   if(buffer_size<0)
-    return ;
+    return -1;
+  len=strlen(src)+1;
   if(offset < buffer_size && buffer!=NULL)
     len+=buffer_size-offset+1;
   if(new_ext!=NULL)
@@ -384,7 +385,10 @@ void file_rename(const char *old_filename, const void *buffer, const int buffer_
   while(*src!='\0')
   {
     if(*src=='/')
+    {
       directory_sep=dst;
+      ext=NULL;
+    }
     if(*src=='.')
       ext=src;
     *dst++ = *src++;
@@ -450,31 +454,42 @@ void file_rename(const char *old_filename, const void *buffer, const int buffer_
   }
   else if(force_ext>0)
   {
-    while(*ext!='\0')
-      *dst++ = *ext++;
+    if(ext!=NULL)
+    {
+      while(*ext!='\0')
+	*dst++ = *ext++;
+    }
   }
   *dst='\0';
-  if(rename(old_filename, new_filename)<0)
+  if(rename(file_recovery->filename, new_filename)<0)
   {
-    /* Rename has failed, try without the original filename */
-    if(buffer!=NULL)
-      file_rename(old_filename, NULL, 0, 0, new_ext, force_ext);
+    /* Rename has failed */
+    free(new_filename);
+    if(buffer==NULL)
+      return -1;
+    /* Try without the original filename */
+    return file_rename(file_recovery, NULL, 0, 0, new_ext, force_ext);
+  }
+  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  {
+    strcpy(file_recovery->filename, new_filename);
   }
   free(new_filename);
+  return 0;
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
-void file_rename_unicode(const char *old_filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
+int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext)
 {
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
-  const char *src=old_filename;
+  const char *src=file_recovery->filename;
   const char *ext=src;
   char *dst;
   char *directory_sep;
-  int len=strlen(old_filename)+1;
+  int len=strlen(src)+1;
   if(buffer_size<0)
-    return ;
+    return -1;
   if(offset < buffer_size && buffer!=NULL)
     len+=buffer_size-offset;
   if(new_ext!=NULL)
@@ -551,11 +566,19 @@ void file_rename_unicode(const char *old_filename, const void *buffer, const int
       *dst++ = *ext++;
   }
   *dst='\0';
-  if(rename(old_filename, new_filename)<0)
+  if(rename(file_recovery->filename, new_filename)<0)
   {
-    /* Rename has failed, try without the original filename */
-    if(buffer!=NULL)
-      file_rename_unicode(old_filename, NULL, 0, 0, new_ext, force_ext);
+    /* Rename has failed */
+    free(new_filename);
+    if(buffer==NULL)
+      return -1;
+    /* Try without the original filename */
+    return file_rename_unicode(file_recovery, NULL, 0, 0, new_ext, force_ext);
+  }
+  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  {
+    strcpy(file_recovery->filename, new_filename);
   }
   free(new_filename);
+  return 0;
 }

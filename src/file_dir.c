@@ -51,14 +51,14 @@ const file_hint_t file_hint_dir= {
   .register_header_check=&register_header_check_dir
 };
 
-static void file_rename_fatdir(const char *old_filename)
+static void file_rename_fatdir(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   unsigned int cluster;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
@@ -66,7 +66,7 @@ static void file_rename_fatdir(const char *old_filename)
     return;
   cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)&buffer[0]);
   sprintf(buffer_cluster, "cluster_%u", cluster);
-  file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
+  file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
 static data_check_t data_check_fatdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)

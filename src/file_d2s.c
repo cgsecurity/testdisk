@@ -50,16 +50,16 @@ struct d2s_header {
   char name[0];
 } __attribute__ ((gcc_struct, __packed__));
 
-static void file_rename_d2s(const char *old_filename)
+static void file_rename_d2s(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   FILE *file;
   int buffer_size;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  file_rename(old_filename, buffer, buffer_size, 0x14, NULL, 1);
+  file_rename(file_recovery, buffer, buffer_size, 0x14, NULL, 1);
 }
 
 static int header_check_d2s(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

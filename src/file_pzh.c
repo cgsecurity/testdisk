@@ -49,12 +49,12 @@ static const unsigned char pzh_header[10]=  {
   0x05, 0x03
 };
 
-static void file_rename_pzh(const char *old_filename)
+static void file_rename_pzh(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   FILE *file;
   int buffer_size;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(fseek(file, 0x9ce, SEEK_SET)<0)
   {
@@ -64,7 +64,7 @@ static void file_rename_pzh(const char *old_filename)
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
   if(buffer_size > 0)
-    file_rename(old_filename, buffer, buffer_size, 0, "pzh", 0);
+    file_rename(file_recovery, buffer, buffer_size, 0, "pzh", 0);
 }
 
 static int header_check_pzh(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

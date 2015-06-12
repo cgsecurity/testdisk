@@ -53,7 +53,7 @@ static void register_header_check_zip(file_stat_t *file_stat);
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_zip(file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
-static void file_rename_zip(const char *old_filename);
+static void file_rename_zip(file_recovery_t *file_recovery);
 static char first_filename[256];
 
 const file_hint_t file_hint_zip= {
@@ -668,13 +668,13 @@ static void file_check_zip(file_recovery_t *fr)
   }
 }
 
-static void file_rename_zip(const char *old_filename)
+static void file_rename_zip(file_recovery_t *file_recovery)
 {
   const char *ext=NULL;
   unsigned int file_nbr=0;
   file_recovery_t fr;
   reset_file_recovery(&fr);
-  if((fr.handle=fopen(old_filename, "rb"))==NULL)
+  if((fr.handle=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   fr.file_size = 0;
   fr.offset_error=0;
@@ -728,7 +728,7 @@ static void file_rename_zip(const char *old_filename)
 	if(ext!=NULL)
 	{
 	  fclose(fr.handle);
-	  file_rename(old_filename, NULL, 0, 0, ext, 1);
+	  file_rename(file_recovery, NULL, 0, 0, ext, 1);
 	  return;
 	}
         break;
@@ -763,7 +763,7 @@ static void file_rename_zip(const char *old_filename)
 	  first_filename[len]!='/' &&
 	  first_filename[len]!='\\';
 	  len++);
-      file_rename(old_filename, first_filename, len, 0, "zip", 0);
+      file_rename(file_recovery, first_filename, len, 0, "zip", 0);
       return;
     }
   }

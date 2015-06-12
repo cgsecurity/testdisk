@@ -69,7 +69,7 @@ static int hex(int c)
   return -1;
 }
 
-static void file_rename_pdf(const char *old_filename)
+static void file_rename_pdf(file_recovery_t *file_recovery)
 {
   char title[512];
   const unsigned char pattern[6]={ '/', 'T', 'i', 't', 'l', 'e' };
@@ -80,7 +80,7 @@ static void file_rename_pdf(const char *old_filename)
   unsigned int j;
   size_t bsize;
   const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
-  if((handle=fopen(old_filename, "rb"))==NULL)
+  if((handle=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(my_fseek(handle, 0, SEEK_END)<0)
   {
@@ -187,7 +187,7 @@ static void file_rename_pdf(const char *old_filename)
       (memcmp(&title[j-5], ".docx", 5)==0 ||
        memcmp(&title[j-5], ".xlsx", 5)==0))
     j-=5;
-  file_rename(old_filename, title, j, 0, NULL, 1);
+  file_rename(file_recovery, title, j, 0, NULL, 1);
   free(buffer);
 }
 

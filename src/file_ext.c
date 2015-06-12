@@ -45,7 +45,7 @@ const file_hint_t file_hint_ext2_sb= {
   .register_header_check=&register_header_check_ext2_sb
 };
 
-static void file_rename_ext(const char *old_filename)
+static void file_rename_ext(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   char buffer_cluster[32];
@@ -53,7 +53,7 @@ static void file_rename_ext(const char *old_filename)
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer;
   int buffer_size;
   unsigned long int block_nr;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
@@ -61,7 +61,7 @@ static void file_rename_ext(const char *old_filename)
     return;
   block_nr=(le32(sb->s_first_data_block)+le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group));
   sprintf(buffer_cluster, "sb_%lu", block_nr);
-  file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
+  file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
 static int header_check_ext2_sb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -85,21 +85,21 @@ static data_check_t data_check_extdir(const unsigned char *buffer, const unsigne
   return DC_STOP;
 }
 
-static void file_rename_extdir(const char *old_filename)
+static void file_rename_extdir(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   char buffer_cluster[32];
   FILE *file;
   int buffer_size;
   const uint32_t *inode=(const uint32_t *)&buffer[0];
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
   if(buffer_size!=sizeof(buffer))
     return;
   sprintf(buffer_cluster, "inode_%u", (unsigned int)le32(*inode));
-  file_rename(old_filename, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
+  file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
 static int header_check_ext2_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

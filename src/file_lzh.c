@@ -86,21 +86,21 @@ struct lzh_level2
   uint16_t next_header_size;
 } __attribute__ ((gcc_struct, __packed__));
 
-static void file_rename_level0(const char *old_filename)
+static void file_rename_level0(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
   FILE *file;
   size_t buffer_size;
   unsigned int i;
   const struct lzh_level0 *hdr=(const struct lzh_level0 *)&buffer;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
   if(buffer_size<sizeof(struct lzh_level0))
     return;
   for(i=0; i< hdr->filename_len && hdr->filename[i]!=0 && hdr->filename[i]!='.'; i++);
-  file_rename(old_filename, hdr->filename, i, 0, NULL, 1);
+  file_rename(file_recovery, hdr->filename, i, 0, NULL, 1);
 }
 
 static int header_check_lzh(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

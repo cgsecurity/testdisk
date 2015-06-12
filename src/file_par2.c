@@ -70,11 +70,11 @@ static data_check_t data_check_par2(const unsigned char *buffer, const unsigned 
   return DC_CONTINUE;
 }
 
-static void file_rename_par2(const char *old_filename)
+static void file_rename_par2(file_recovery_t *file_recovery)
 {
   FILE *file;
   uint64_t offset=0;
-  if((file=fopen(old_filename, "rb"))==NULL)
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   while(1)
   {
@@ -102,10 +102,10 @@ static void file_rename_par2(const char *old_filename)
     }
     if(memcmp(&buffer[0x30], "PAR 2.0\0FileDesc", 16)==0)
     {
-      file_rename(old_filename, buffer,
+      fclose(file);
+      file_rename(file_recovery, buffer,
 	  (length < buffer_size ? length : buffer_size),
 	  0x78, NULL, 1);
-      fclose(file);
       return ;
     }
     offset+=length;
