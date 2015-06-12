@@ -14,7 +14,7 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", 	"CGSecurity"
+      VALUE "CompanyName",	"CGSecurity"
       VALUE "ProductName",	"PhotoRec"
       VALUE "FileDescription",	"PhotoRec"
       VALUE "InternalName",	"PhotoRec"
@@ -22,9 +22,9 @@ BEGIN
       VALUE "Comments",		"Signature based file recovery utility"
       VALUE "FileVersion",	"7.1"
       VALUE "ProductVersion",	"7.1"
-      VALUE "LegalCopyright",	"Copyright (C) 2015"
+      VALUE "LegalCopyright",	"Copyright (C) 1998-2015 Christophe GRENIER, et al."
     END
-  END 
+  END
   BLOCK "VarFileInfo"
       BEGIN
       /* Once again -- same meanings -- apparently necessary */

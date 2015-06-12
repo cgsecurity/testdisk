@@ -14,7 +14,7 @@ BEGIN
   BEGIN
     BLOCK "040904E4"
     BEGIN
-      VALUE "CompanyName", 	"CGSecurity"
+      VALUE "CompanyName",	"CGSecurity"
       VALUE "ProductName",	"TestDisk"
       VALUE "FileDescription",	"TestDisk"
       VALUE "InternalName",	"TestDisk"
@@ -22,7 +22,7 @@ BEGIN
       VALUE "Comments",		"Partition and file recovery utility"
       VALUE "FileVersion",	"7.1"
       VALUE "ProductVersion",	"7.1"
-      VALUE "LegalCopyright",	"Copyright (C) 2015"
+      VALUE "LegalCopyright",	"Copyright (C) 1998-2015 Christophe GRENIER, et al."
     END
   END
   BLOCK "VarFileInfo"
