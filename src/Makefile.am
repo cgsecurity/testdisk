@@ -98,6 +98,7 @@ file_C			= filegen.c \
 			  file_dta.c \
 			  file_dump.c \
 			  file_dv.c \
+			  file_dvr.c \
 			  file_dwg.c \
 			  file_dxf.c \
 			  file_e01.c \
