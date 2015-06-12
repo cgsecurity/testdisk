@@ -314,28 +314,28 @@ then
 # libewf should work under MacOSX but it hasn't been tested
 # use  --with-ncurses-lib=$prefix/usr/lib to get binaries that don't need libncurses
 # but users may be unable to navigate...
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt --disable-assert
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --enable-sudo --with-sudo-bin=/usr/bin/sudo  --disable-qt --disable-assert --enable-record-compilation-date
                 ;;
 	  i686-apple-darwin9)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt --disable-stack-protector
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-sudo --with-sudo-bin=/usr/bin/sudo --disable-qt --disable-stack-protector --enable-record-compilation-date
                 ;;
           i586-pc-msdosdjgpp)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv --disable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-iconv --disable-qt --enable-record-compilation-date
                 ;;
           i386-mingw32)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-iconv --enable-missing-uuid-ok --enable-record-compilation-date
                 ;;
 	  i686-pc-mingw32|x86_64-pc-mingw32|i686-w64-mingw32|x86_64-w64-mingw32)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok --enable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok --enable-qt --enable-record-compilation-date
                 ;;
 	  arm-marvell-linux-gnu)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs --disable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs --disable-qt --enable-record-compilation-date
                 ;;
 	  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ntfs --disable-qt
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ntfs --disable-qt --enable-record-compilation-date
                 ;;
           *)
-		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-record-compilation-date
                 ;;
 	esac
 	cd $pwd_saved
