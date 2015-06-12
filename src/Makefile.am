@@ -268,6 +268,7 @@ file_C			= filegen.c \
 			  file_swf.c \
 			  file_tar.c \
 			  file_tax.c \
+			  file_tg.c \
 			  file_tib.c \
 			  file_tiff.c \
 			  file_tivo.c \
