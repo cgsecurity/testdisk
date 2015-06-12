@@ -67,7 +67,6 @@ const file_hint_t file_hint_zip= {
 };
 
 static const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
-static const unsigned char zip_header2[8]  = { 'P', 'K', '0', '0', 'P', 'K', 0x03, 0x04}; /* WinZIPv8-compressed files. */
 #define ZIP_CENTRAL_DIR         0x02014B50
 #define ZIP_FILE_ENTRY          0x04034B50
 #define ZIP_SIGNATURE           0x05054B50
@@ -770,97 +769,88 @@ static void file_rename_zip(const char *old_filename)
   }
 }
 
-static void register_header_check_zip(file_stat_t *file_stat)
-{
-  register_header_check(0, zip_header,sizeof(zip_header), &header_check_zip, file_stat);
-  register_header_check(0, zip_header2,sizeof(zip_header2), &header_check_zip, file_stat);
-}
-
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const zip_file_entry_t *file=(const zip_file_entry_t *)&buffer[4];
+  const unsigned int len=le16(file->filename_length);
 #ifdef DEBUG_ZIP
   log_trace("header_check_zip\n");
 #endif
-  if(memcmp(buffer,zip_header,sizeof(zip_header))==0)
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc &&
+      (strcmp(file_recovery->extension,"doc")==0 ||
+       strcmp(file_recovery->extension,"psmodel")==0)
+      && memcmp(&buffer[30], "macrolog_1.mac", 14)==0)
+    return 0;
+  /* A zip file begins by ZIP_FILE_ENTRY, this signature can also be
+   * found for each compressed file */
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_zip &&
+      safe_header_only==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=21;
+  file_recovery_new->file_check=&file_check_zip;
+  if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
   {
-    const zip_file_entry_t *file=(const zip_file_entry_t *)&buffer[4];
-    const unsigned int len=le16(file->filename_length);
-    if(file_recovery->file_stat!=NULL &&
-	file_recovery->file_stat->file_hint==&file_hint_doc &&
-	(strcmp(file_recovery->extension,"doc")==0 ||
-	 strcmp(file_recovery->extension,"psmodel")==0)
-	&& memcmp(&buffer[30], "macrolog_1.mac", 14)==0)
-      return 0;
-    /* A zip file begins by ZIP_FILE_ENTRY, this signature can also be
-     * found for each compressed file */
-    if(file_recovery->file_stat!=NULL &&
-	file_recovery->file_stat->file_hint==&file_hint_zip &&
-	safe_header_only==0)
-      return 0;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->min_filesize=21;
-    file_recovery_new->file_check=&file_check_zip;
-    if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
-    {
-      const unsigned int compressed_size=le32(file->compressed_size);
-      /* Mypaint .ora */
-      if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
-	file_recovery_new->extension="ora";
-      else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
-	file_recovery_new->extension="sxc";
-      else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
-	file_recovery_new->extension="sxd";
-      else if(compressed_size==31 && memcmp(&buffer[38],"application/vnd.sun.xml.impress",31)==0)
-	file_recovery_new->extension="sxi";
-      else if(compressed_size==30 && memcmp(&buffer[38],"application/vnd.sun.xml.writer",30)==0)
-	file_recovery_new->extension="sxw";
-      else if(compressed_size==39 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.text",39)==0)
-	file_recovery_new->extension="odt";
-      else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
-	file_recovery_new->extension="odg";
-      else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
-	file_recovery_new->extension="ods";
-      else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
-	file_recovery_new->extension="odp";
-      else if(memcmp(&buffer[38],"application/x-krita",19)==0)
-	file_recovery_new->extension="kra";
-      else
-      { /* default to writer */
-	file_recovery_new->extension="sxw";
-      }
-    }
-    else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
-    {
-      if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
-	file_recovery_new->extension="docx";
-      else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
-	file_recovery_new->extension="xlsx";
-      else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
-	file_recovery_new->extension="pptx";
-      else
-	file_recovery_new->extension="docx";
-      file_recovery_new->file_rename=&file_rename_zip;
-    }
-    /* Extended Renoise song file */
-    else if(len==8 && memcmp(&buffer[30], "Song.xml", 8)==0)
-      file_recovery_new->extension="xrns";
-    else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
-      file_recovery_new->extension="sh3d";
+    const unsigned int compressed_size=le32(file->compressed_size);
+    /* Mypaint .ora */
+    if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
+      file_recovery_new->extension="ora";
+    else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
+      file_recovery_new->extension="sxc";
+    else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
+      file_recovery_new->extension="sxd";
+    else if(compressed_size==31 && memcmp(&buffer[38],"application/vnd.sun.xml.impress",31)==0)
+      file_recovery_new->extension="sxi";
+    else if(compressed_size==30 && memcmp(&buffer[38],"application/vnd.sun.xml.writer",30)==0)
+      file_recovery_new->extension="sxw";
+    else if(compressed_size==39 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.text",39)==0)
+      file_recovery_new->extension="odt";
+    else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
+      file_recovery_new->extension="odg";
+    else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
+      file_recovery_new->extension="ods";
+    else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
+      file_recovery_new->extension="odp";
+    else if(memcmp(&buffer[38],"application/x-krita",19)==0)
+      file_recovery_new->extension="kra";
     else
-    {
-      file_recovery_new->extension=file_hint_zip.extension;
-      file_recovery_new->file_rename=&file_rename_zip;
+    { /* default to writer */
+      file_recovery_new->extension="sxw";
     }
-    return 1;
   }
-  else if(memcmp(buffer,zip_header2,sizeof(zip_header2))==0)
+  else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
   {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->file_check=&file_check_zip;
-    file_recovery_new->extension=file_hint_zip.extension;
-    return 1;
+    if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
+      file_recovery_new->extension="docx";
+    else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
+      file_recovery_new->extension="xlsx";
+    else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
+      file_recovery_new->extension="pptx";
+    else
+      file_recovery_new->extension="docx";
+    file_recovery_new->file_rename=&file_rename_zip;
   }
-  return 0;
+  /* Extended Renoise song file */
+  else if(len==8 && memcmp(&buffer[30], "Song.xml", 8)==0)
+    file_recovery_new->extension="xrns";
+  else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
+    file_recovery_new->extension="sh3d";
+  else
+  {
+    file_recovery_new->extension=file_hint_zip.extension;
+    file_recovery_new->file_rename=&file_rename_zip;
+  }
+  return 1;
+}
+
+static int header_check_winzip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=&file_check_zip;
+  file_recovery_new->extension=file_hint_zip.extension;
+  return 1;
 }
 
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size)
@@ -872,3 +862,9 @@ static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int
   return 0;
 }
 
+static void register_header_check_zip(file_stat_t *file_stat)
+{
+  static const unsigned char zip_header2[8]  = { 'P', 'K', '0', '0', 'P', 'K', 0x03, 0x04}; /* WinZIPv8-compressed files. */
+  register_header_check(0, zip_header,sizeof(zip_header), &header_check_zip, file_stat);
+  register_header_check(0, zip_header2,sizeof(zip_header2), &header_check_winzip, file_stat);
+}
