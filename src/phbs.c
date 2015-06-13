@@ -100,12 +100,7 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
     {
       file_recovery_t file_recovery_new;
       file_recovery_new.blocksize=blocksize;
-      if(file_recovery.file_stat!=NULL &&
-          file_recovery.file_stat->file_hint->min_header_distance > 0 &&
-          file_recovery.file_size<=file_recovery.file_stat->file_hint->min_header_distance)
-      {
-      }
-      else if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
+      if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
           header_check_tar(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
       { /* Currently saving a tar, do not check the data for know header */
       }

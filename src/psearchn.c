@@ -182,10 +182,6 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery_new;
   file_recovery_new.blocksize=blocksize;
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint->min_header_distance > 0 &&
-      file_recovery->file_size<=file_recovery->file_stat->file_hint->min_header_distance)
-    return PSTATUS_OK;
   if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar &&
       header_check_tar(buffer-0x200,0x200, 0, file_recovery, &file_recovery_new))
   { /* Currently saving a tar, do not check the data for know header */

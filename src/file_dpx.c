@@ -39,7 +39,6 @@ static void register_header_check_dpx(file_stat_t *file_stat);
 const file_hint_t file_hint_dpx= {
   .extension="dpx",
   .description="Cineon image file/SMTPE DPX",
-  .min_header_distance=0,
   .max_filesize=10*1024*1024,
   .recover=1,
   .enable_by_default=1,

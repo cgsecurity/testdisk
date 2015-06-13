@@ -90,9 +90,6 @@ struct file_hint_struct
 {
   const char *extension;
   const char *description;
-  const uint64_t min_header_distance;
-  /* don't try head_check if min_header_distance >0 and previous_header_distance <= min_header_distance */
-  /* needed by tar header */
   const uint64_t max_filesize;
   const int recover;
   const unsigned int enable_by_default;

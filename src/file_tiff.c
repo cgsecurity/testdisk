@@ -48,7 +48,6 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 const file_hint_t file_hint_tiff= {
   .extension="tif",
   .description="Tag Image File Format and some raw file formats (pef/nef/dcr/sr2/cr2)",
-  .min_header_distance=0,
   .max_filesize=100*1024*1024,
   .recover=1,
   .enable_by_default=1,

@@ -39,7 +39,6 @@ static int header_check_fs(const unsigned char *buffer, const unsigned int buffe
 const file_hint_t file_hint_fs= {
   .extension="fs",
   .description="Zope",
-  .min_header_distance=0,
   .max_filesize=200*1024*1024,
   .recover=1,
   .enable_by_default=1,

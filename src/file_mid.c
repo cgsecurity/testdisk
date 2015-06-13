@@ -43,7 +43,6 @@ static void register_header_check_mid(file_stat_t *file_stat);
 const file_hint_t file_hint_mid= {
   .extension="mid",
   .description="MIDI Musical Instrument Digital Interface",
-  .min_header_distance=0,
   .max_filesize=50*1024*1024,
   .recover=1,
   .enable_by_default=1,

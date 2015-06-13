@@ -37,7 +37,6 @@ static int header_check_xsv(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_xsv= {
   .extension="xsv",
   .description="XBOX GTA San Andreas Save File",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

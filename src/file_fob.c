@@ -37,7 +37,6 @@ static int header_check_fob(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_fob= {
   .extension="fob",
   .description="Microsoft Dynamics NAV (MS Navision)",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

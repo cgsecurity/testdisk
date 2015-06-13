@@ -37,7 +37,6 @@ static void register_header_check_tar(file_stat_t *file_stat);
 const file_hint_t file_hint_tar= {
   .extension="tar",
   .description="tar archive",
-  .min_header_distance=0x200,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

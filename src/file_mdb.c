@@ -36,7 +36,6 @@ static void register_header_check_accdb(file_stat_t *file_stat);
 const file_hint_t file_hint_mdb= {
   .extension="mdb",
   .description="Access Data Base",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -46,7 +45,6 @@ const file_hint_t file_hint_mdb= {
 const file_hint_t file_hint_accdb= {
   .extension="accdb",
   .description="Access Data Base",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

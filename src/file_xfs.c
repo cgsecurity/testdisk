@@ -38,7 +38,6 @@ static int header_check_xfs_sb(const unsigned char *buffer, const unsigned int b
 const file_hint_t file_hint_xfs= {
   .extension="xfs",
   .description="xfs structure",
-  .min_header_distance=0,
   .max_filesize=0,
   .recover=1,
   .enable_by_default=1,

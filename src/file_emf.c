@@ -38,7 +38,6 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
 const file_hint_t file_hint_emf= {
   .extension="emf",
   .description="Windows Enhanced MetaFile",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

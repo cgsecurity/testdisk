@@ -36,7 +36,6 @@ static void register_header_check_jsonlz4(file_stat_t *file_stat);
 const file_hint_t file_hint_jsonlz4= {
   .extension="jsonlz4",
   .description="Mozilla bookmarks",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_SIZE_32,
   .recover=1,
   .enable_by_default=1,

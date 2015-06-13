@@ -39,7 +39,6 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
 const file_hint_t file_hint_ext2_fs= {
   .extension="ext",
   .description="ext2/ext3/ext4 Filesystem",
-  .min_header_distance=0,
   .max_filesize=0,
   .recover=1,
   .enable_by_default=0,

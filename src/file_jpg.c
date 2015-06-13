@@ -72,7 +72,6 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
 const file_hint_t file_hint_jpg= {
   .extension="jpg",
   .description="JPG picture",
-  .min_header_distance=0,
   .max_filesize=50*1024*1024,
   .recover=1,
   .enable_by_default=1,

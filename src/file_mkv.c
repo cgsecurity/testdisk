@@ -45,7 +45,6 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_mkv= {
   .extension="mkv",
   .description="Matroska",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

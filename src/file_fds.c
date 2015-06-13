@@ -37,7 +37,6 @@ static int header_check_fds(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_fds= {
   .extension="fds",
   .description="fwNES Disk Image (with header)",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=0,

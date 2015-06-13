@@ -36,7 +36,6 @@ static void register_header_check_arj(file_stat_t *file_stat);
 const file_hint_t file_hint_arj= {
   .extension="arj",
   .description="ARJ archive",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_SIZE_32,
   .recover=1,
   .enable_by_default=1,

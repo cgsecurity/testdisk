@@ -37,7 +37,6 @@ static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int
 const file_hint_t file_hint_ecryptfs= {
   .extension="eCryptfs",
   .description="Encrypted file by eCryptfs",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

@@ -46,7 +46,6 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
 const file_hint_t file_hint_gif= {
   .extension="gif",
   .description="Graphic Interchange Format",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

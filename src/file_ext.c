@@ -38,7 +38,6 @@ static void register_header_check_ext2_sb(file_stat_t *file_stat);
 const file_hint_t file_hint_ext2_sb= {
   .extension="ext",
   .description="ext2/ext3/ext4 Superblock",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=0,
   .enable_by_default=1,

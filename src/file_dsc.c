@@ -34,7 +34,6 @@ static void register_header_check_dsc(file_stat_t *file_stat);
 const file_hint_t file_hint_dsc= {
   .extension="dsc",
   .description="Nikon dsc",
-  .min_header_distance=0,
   .max_filesize=1024*1024,
   .recover=0,
   .enable_by_default=0,

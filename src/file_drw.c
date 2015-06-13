@@ -36,7 +36,6 @@ static void register_header_check_drw(file_stat_t *file_stat);
 const file_hint_t file_hint_drw= {
   .extension="drw",
   .description="Pro/ENGINEER Drawing",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

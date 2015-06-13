@@ -37,7 +37,6 @@ static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned i
 const file_hint_t file_hint_ogg= {
   .extension="ogg",
   .description="OGG audio",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

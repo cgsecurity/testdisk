@@ -35,7 +35,6 @@ static void register_header_check_rdc(file_stat_t *file_stat);
 const file_hint_t file_hint_rdc= {
   .extension="rdc",
   .description="Rollei picture",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

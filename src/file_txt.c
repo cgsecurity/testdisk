@@ -60,7 +60,6 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
   .description="Text files with header: rtf,xml,xhtml,mbox/imm,pm,ram,reg,sh,slk,stp,jad,url",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -70,7 +69,6 @@ const file_hint_t file_hint_fasttxt= {
 const file_hint_t file_hint_txt= {
   .extension="txt",
   .description="Other text files: txt,html,asp,bat,C,jsp,perl,php,py/emlx... scripts",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

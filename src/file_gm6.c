@@ -35,7 +35,6 @@ static void register_header_check_gm6(file_stat_t *file_stat);
 const file_hint_t file_hint_gm6= {
   .extension="gm6",
   .description="Game Maker",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

@@ -51,7 +51,6 @@ static void file_date_pdf(file_recovery_t *file_recovery);
 const file_hint_t file_hint_pdf= {
   .extension="pdf",
   .description="Portable Document Format, Adobe Illustrator",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

@@ -37,7 +37,6 @@ static int header_check_x3f(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_x3f= {
   .extension="x3f",
   .description="Sigma/Foveon X3 raw picture",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

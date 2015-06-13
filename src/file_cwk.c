@@ -38,7 +38,6 @@ static void file_check_cwk(file_recovery_t *file_recovery);
 const file_hint_t file_hint_cwk= {
   .extension="cwk",
   .description="AppleWorks",
-  .min_header_distance=0,
   .max_filesize=200*1024*1024,
   .recover=1,
   .enable_by_default=1,

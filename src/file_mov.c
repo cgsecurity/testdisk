@@ -39,7 +39,6 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 const file_hint_t file_hint_mov= {
   .extension="mov",
   .description="mov/mp4/3gp/3g2/jp2",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

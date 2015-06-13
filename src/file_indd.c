@@ -46,7 +46,6 @@ static void file_check_indd(file_recovery_t *file_recovery);
 const file_hint_t file_hint_indd= {
   .extension="indd",
   .description="InDesign File",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

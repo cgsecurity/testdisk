@@ -37,7 +37,6 @@ static int header_check_wtv(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_wtv= {
   .extension="wtv",
   .description="Windows Media Center TV",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

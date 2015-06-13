@@ -36,7 +36,6 @@ static void register_header_check_xpt(file_stat_t *file_stat);
 const file_hint_t file_hint_xpt= {
   .extension="xpt",
   .description="Mozilla XPCOM Type Library",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

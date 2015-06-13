@@ -37,7 +37,6 @@ static int header_check_db(const unsigned char *buffer, const unsigned int buffe
 const file_hint_t file_hint_iso= {
   .extension="iso",
   .description="ISO",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

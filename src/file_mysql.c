@@ -37,7 +37,6 @@ static int header_check_mysql(const unsigned char *buffer, const unsigned int bu
 const file_hint_t file_hint_mysql= {
   .extension="MYI",
   .description="MySQL (myi/frm)",
-  .min_header_distance=0,
   .max_filesize=0,
   .recover=1,
   .enable_by_default=1,

@@ -38,7 +38,6 @@ static int header_check_rw2(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_rw2= {
   .extension="rw2",
   .description="Panasonic/Leica RAW",
-  .min_header_distance=0x800,	/* Avoid jpg fragment */
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

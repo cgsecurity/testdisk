@@ -34,7 +34,6 @@ static void register_header_check_hr9(file_stat_t *file_stat);
 const file_hint_t file_hint_hr9= {
   .extension="hr9",
   .description="Heredis - Genealogy",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

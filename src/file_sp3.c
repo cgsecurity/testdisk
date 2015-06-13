@@ -40,7 +40,6 @@ static void register_header_check_sp3(file_stat_t *file_stat);
 const file_hint_t file_hint_sp3= {
   .extension="sp3",
   .description="Sisporto SP3/SPM",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

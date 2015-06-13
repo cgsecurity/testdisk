@@ -39,7 +39,6 @@ static data_check_t data_check_ps(const unsigned char *buffer, const unsigned in
 const file_hint_t file_hint_ps= {
   .extension="ps",
   .description="PostScript or Encapsulated PostScript document",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

@@ -37,7 +37,6 @@ static void register_header_check_pzh(file_stat_t *file_stat);
 const file_hint_t file_hint_pzh= {
   .extension="pzh",
   .description="Presto",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

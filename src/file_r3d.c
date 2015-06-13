@@ -40,7 +40,6 @@ static void file_rename_r3d(file_recovery_t *file_recovery);
 const file_hint_t file_hint_r3d= {
   .extension="r3d",
   .description="RED r3d camera",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

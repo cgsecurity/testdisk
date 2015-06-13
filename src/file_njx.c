@@ -38,7 +38,6 @@ static void file_check_njx(file_recovery_t *file_recovery);
 const file_hint_t file_hint_njx= {
   .extension="njx",
   .description="NJStar Document",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

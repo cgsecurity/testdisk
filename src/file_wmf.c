@@ -38,7 +38,6 @@ static int header_check_wmf(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_wmf= {
   .extension="wmf",
   .description="Microsoft Windows Metafile",
-  .min_header_distance=0,
   .max_filesize=50*1024*1024,
   .recover=1,
   .enable_by_default=1,

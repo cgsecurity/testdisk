@@ -35,7 +35,6 @@ static void register_header_check_dcm(file_stat_t *file_stat);
 const file_hint_t file_hint_dcm= {
   .extension="dcm",
   .description="Digital Imaging and Communications in Medicine (DICOM)",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

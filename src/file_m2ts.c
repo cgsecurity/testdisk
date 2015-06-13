@@ -42,7 +42,6 @@ static void register_header_check_ts(file_stat_t *file_stat);
 const file_hint_t file_hint_m2ts= {
   .extension="m2ts",
   .description="Blu-ray MPEG-2",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -52,7 +51,6 @@ const file_hint_t file_hint_m2ts= {
 const file_hint_t file_hint_ts= {
   .extension="ts",
   .description="MPEG transport stream (TS)",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=0,

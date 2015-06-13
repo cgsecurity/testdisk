@@ -38,7 +38,6 @@ static int header_check_mft(const unsigned char *buffer, const unsigned int buff
 const file_hint_t file_hint_mft= {
   .extension="mft",
   .description="NTFS MFT record",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=0,
   .enable_by_default=1,

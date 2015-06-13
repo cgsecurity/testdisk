@@ -37,7 +37,6 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
 const file_hint_t file_hint_wv= {
   .extension="wv",
   .description="WavPack, Hybrid Lossless Wavefile Compressor",
-  .min_header_distance=0,
   .max_filesize=100*1024*1024,
   .recover=1,
   .enable_by_default=1,

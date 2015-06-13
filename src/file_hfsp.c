@@ -37,7 +37,6 @@ static void register_header_check_hfsp(file_stat_t *file_stat);
 const file_hint_t file_hint_hfsp= {
   .extension="hfsp",
   .description="HFS+/HFSX",
-  .min_header_distance=0,
   .max_filesize=2048,
   .recover=0,
   .enable_by_default=1,

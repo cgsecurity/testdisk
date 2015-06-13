@@ -35,7 +35,6 @@ static void register_header_check_dv(file_stat_t *file_stat);
 const file_hint_t file_hint_dv= {
   .extension="dv",
   .description="DIF Digital Video",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

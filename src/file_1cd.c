@@ -36,7 +36,6 @@ static void register_header_check_1cd(file_stat_t *file_stat);
 const file_hint_t file_hint_1cd= {
   .extension="1cd",
   .description="Russian Finance 1C:Enterprise 8",
-  .min_header_distance=0,
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,

@@ -36,7 +36,6 @@ static void register_header_check_pap(file_stat_t *file_stat);
 const file_hint_t file_hint_pap= {
   .extension="pap",
   .description="Papyrus word file",
-  .min_header_distance=0,
   .max_filesize=1024*1024,
   .recover=1,
   .enable_by_default=1,

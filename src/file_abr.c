@@ -35,7 +35,6 @@ static void register_header_check_abr(file_stat_t *file_stat);
 const file_hint_t file_hint_abr= {
   .extension="abr",
   .description="Adobe Brush",
-  .min_header_distance=0,
   .max_filesize=100*1024*1024,
   .recover=1,
   .enable_by_default=1,
