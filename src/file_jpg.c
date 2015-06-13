@@ -60,6 +60,7 @@ extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_riff;
+extern const file_hint_t file_hint_rw2;
 extern data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 static void register_header_check_jpg(file_stat_t *file_stat);
@@ -422,6 +423,10 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     /* Don't extract jpg inside MOV */
     if( file_recovery->file_stat->file_hint==&file_hint_mov &&
 	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
+      return 0;
+    /* Don't extract jpg inside rw2 */
+    if( file_recovery->file_stat->file_hint==&file_hint_rw2 &&
+      file_recovery->file_size <= 8192)
       return 0;
     if(buffer[3]==0xdb)	/* DQT */
       return 0;
