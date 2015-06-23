@@ -63,6 +63,15 @@ static int header_check_aif(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->file_check=&file_check_size;
     return 1;
   }
+  if(memcmp(&buffer[8], "ILBMBMHD", 8)==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="iff";
+    file_recovery_new->calculated_file_size=be32(hdr->ckSize)+8;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
   return 0;
 }
 
