@@ -282,6 +282,7 @@ file_C			= filegen.c \
 			  file_v2i.c \
 			  file_vault.c \
 			  file_vdi.c \
+			  file_vdj.c \
 			  file_veg.c \
 			  file_vfb.c \
 			  file_vmdk.c \
