@@ -270,7 +270,7 @@ disk_t *fewf_init(const char *device, const int mode)
   disk->description=fewf_description;
   disk->description_short=fewf_description_short;
   disk->pread=fewf_pread;
-  disk->pwrite=(data->mode&TESTDISK_O_RDWR?fewf_pwrite:fewf_nopwrite);
+  disk->pwrite=((data->mode&TESTDISK_O_RDWR)?fewf_pwrite:fewf_nopwrite);
   disk->sync=fewf_sync;
   disk->access_mode=(data->mode&TESTDISK_O_RDWR);
   disk->clean=fewf_clean;

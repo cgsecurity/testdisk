@@ -107,15 +107,15 @@ static char ftypelet (unsigned int bits)
 void mode_string (const unsigned int mode, char *str)
 {
   str[0] = ftypelet(mode);
-  str[1] = mode & LINUX_S_IRUSR ? 'r' : '-';
-  str[2] = mode & LINUX_S_IWUSR ? 'w' : '-';
-  str[3] = mode & LINUX_S_IXUSR ? 'x' : '-';
-  str[4] = mode & LINUX_S_IRGRP ? 'r' : '-';
-  str[5] = mode & LINUX_S_IWGRP ? 'w' : '-';
-  str[6] = mode & LINUX_S_IXGRP ? 'x' : '-';
-  str[7] = mode & LINUX_S_IROTH ? 'r' : '-';
-  str[8] = mode & LINUX_S_IWOTH ? 'w' : '-';
-  str[9] = mode & LINUX_S_IXOTH ? 'x' : '-';
+  str[1] = (mode & LINUX_S_IRUSR) ? 'r' : '-';
+  str[2] = (mode & LINUX_S_IWUSR) ? 'w' : '-';
+  str[3] = (mode & LINUX_S_IXUSR) ? 'x' : '-';
+  str[4] = (mode & LINUX_S_IRGRP) ? 'r' : '-';
+  str[5] = (mode & LINUX_S_IWGRP) ? 'w' : '-';
+  str[6] = (mode & LINUX_S_IXGRP) ? 'x' : '-';
+  str[7] = (mode & LINUX_S_IROTH) ? 'r' : '-';
+  str[8] = (mode & LINUX_S_IWOTH) ? 'w' : '-';
+  str[9] = (mode & LINUX_S_IXOTH) ? 'x' : '-';
   str[10]='\0';
 #ifdef LINUX_S_ISUID
   if (mode & LINUX_S_ISUID)
