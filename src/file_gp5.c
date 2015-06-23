@@ -34,7 +34,7 @@ static void register_header_check_gp5(file_stat_t *file_stat);
 
 const file_hint_t file_hint_gp5= {
   .extension="gp5",
-  .description="Guitar Pro 5",
+  .description="Guitar Pro 4 & 5",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -52,6 +52,16 @@ static void file_check_gp5(file_recovery_t *file_recovery)
 
 static int header_check_gp5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(buffer[22]!='.')
+    return 0;
+  if(buffer[21]=='4')
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension="gp4";
+    return 1;
+  }
+  if(buffer[21]!='5')
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gp5.extension;
   file_recovery_new->file_check=&file_check_gp5;
@@ -60,10 +70,10 @@ static int header_check_gp5(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_gp5(file_stat_t *file_stat)
 {
-  static const unsigned char gp5_header[23]=  {
+  static const unsigned char gp5_header[21]=  {
     0x18, 'F' , 'I' , 'C' , 'H' , 'I' , 'E' , 'R' ,
     ' ' , 'G' , 'U' , 'I' , 'T' , 'A' , 'R' , ' ' ,
-    'P' , 'R' , 'O' , ' ' , 'v' , '5' , '.'
+    'P' , 'R' , 'O' , ' ' , 'v'
   };
   register_header_check(0, gp5_header, sizeof(gp5_header), &header_check_gp5, file_stat);
 }
