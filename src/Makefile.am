@@ -139,6 +139,7 @@ file_C			= filegen.c \
 			  file_gm6.c \
 			  file_gp5.c \
 			  file_gpg.c \
+			  file_gpx.c \
 			  file_gsm.c \
 			  file_gz.c \
 			  file_hdf.c \
