@@ -159,7 +159,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
   }
   td_list_for_each(file_walker, &dir_list->list)
   {
-    const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
     char		datestr[80];
     char str[11];
     {
@@ -216,7 +216,7 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
   {
     char		datestr[80];
     char str[11];
-    const file_info_t *current_file=td_list_entry(tmp, file_info_t, list);
+    const file_info_t *current_file=td_list_entry_const(tmp, const file_info_t, list);
     if((current_file->status&FILE_STATUS_DELETED)!=0)
       log_info("X");
     else
@@ -286,7 +286,7 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
   inode_known[dir_nbr++]=inode;
   td_list_for_each(file_walker, &dir_list.list)
   {
-    const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
     if(LINUX_S_ISDIR(current_file->st_mode)!=0)
     {
       const unsigned long int new_inode=current_file->st_ino;

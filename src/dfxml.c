@@ -317,7 +317,7 @@ void xml_log_file_recovered(const file_recovery_t *file_recovery)
   xml_push("byte_runs", "");
   td_list_for_each(tmp, &file_recovery->location.list)
   {
-    const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
+    const alloc_list_t *element=td_list_entry_const(tmp, const alloc_list_t, list);
     if(element->data>0)
     {
       const uint64_t len=element->end - element->start + 1;

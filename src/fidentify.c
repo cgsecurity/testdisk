@@ -98,10 +98,10 @@ static int file_identify(const char *filename, const unsigned int check)
     td_list_for_each(tmpl, &file_check_list.list)
     {
       struct td_list_head *tmp;
-      const file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+      const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
       td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
       {
-	const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
+	const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
 	if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 	    file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
 	{

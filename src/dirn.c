@@ -126,7 +126,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  file_walker!=&dir_list->list && (i-offset)<INTER_DIR;
 	  file_walker=file_walker->next,i++)
       {
-	const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+	const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
 	char str[11];
 	char		datestr[80];
 	wmove(window, 6+i-offset, 0);

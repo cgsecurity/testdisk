@@ -264,7 +264,7 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
 	    stop==0 && file_walker!=&dir_list.list;
 	    file_walker=file_walker->next, nbr++)
 	{
-	  const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+	  const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
 	  if(current_file->st_ino==1 ||
 	      current_file->st_ino >= no_of_cluster+2)
 	    stop=1;

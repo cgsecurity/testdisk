@@ -1163,7 +1163,7 @@ static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 			    struct td_list_head *item;
 			    td_list_for_each(item, &file->data)
 			    {
-			      const struct data *d = td_list_entry(item, struct data, list);
+			      const struct data *d = td_list_entry_const(item, const struct data, list);
 			      file_info_t *new_file;
 			      new_file=ufile_to_file_data(file, d);
 			      if(new_file!=NULL)
@@ -1195,7 +1195,7 @@ static struct td_list_head *ntfs_next_non_deleted(struct td_list_head *current_f
   {
     const file_info_t *file_info;
     walker=walker->next;
-    file_info=td_list_entry(walker, file_info_t, list);
+    file_info=td_list_entry_const(walker, const file_info_t, list);
     if((file_info->status&FILE_STATUS_DELETED)==0)
       return walker;
   }
@@ -1209,7 +1209,7 @@ static struct td_list_head *ntfs_prev_non_deleted(struct td_list_head *current_f
   {
     const file_info_t *file_info;
     walker=walker->prev;
-    file_info=td_list_entry(walker, file_info_t, list);
+    file_info=td_list_entry_const(walker, const file_info_t, list);
     if((file_info->status&FILE_STATUS_DELETED)==0)
       return walker;
   }

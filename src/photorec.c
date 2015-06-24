@@ -77,7 +77,7 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
   log_info("%s\t",file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
   {
-    const alloc_list_t *element=td_list_entry(tmp, alloc_list_t, list);
+    const alloc_list_t *element=td_list_entry_const(tmp, const alloc_list_t, list);
     if(element->data>0)
       log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
     else
@@ -457,7 +457,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
     run_again=0;
     td_list_for_each(search_walker, &list_search_space->list)
     {
-      const alloc_data_t *tmp=td_list_entry(search_walker, alloc_data_t, list);
+      const alloc_data_t *tmp=td_list_entry_const(search_walker, const alloc_data_t, list);
       if(tmp->file_stat!=NULL)
       {
 	if(tmp->start%blocksize!=*offset && blocksize>default_blocksize)

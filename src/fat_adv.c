@@ -205,7 +205,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 	file_walker!=&dir_list->list && (i-offset)<INTER_DIR;
 	file_walker=file_walker->next,i++)
     {
-      const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+      const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
       char str[11];
       char		datestr[80];
       wmove(window,8+i-offset,0);
@@ -382,7 +382,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               dir_aff_log(NULL, &dir_list);
             }
             {
-	      const file_info_t *first_entry=td_list_entry(&dir_list.list, file_info_t, list);
+	      const file_info_t *first_entry=td_list_entry_const(&dir_list.list, const file_info_t, list);
               file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
               memcpy(new_file, first_entry, sizeof(*new_file));
 	      new_file->name=(char*)MALLOC(32);
@@ -505,8 +505,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };
-	      const file_info_t *file1=td_list_entry(dir_list.list.next, file_info_t, list);
-	      const file_info_t *file2=td_list_entry(file1->list.next, file_info_t, list);
+	      const file_info_t *file1=td_list_entry_const(dir_list.list.next, const file_info_t, list);
+	      const file_info_t *file2=td_list_entry_const(file1->list.next, const file_info_t, list);
               dir_fat_aux(buffer, cluster_size, 0, &dir_list);
               if(!td_list_empty(&dir_list.list) && (&file2->list==&dir_list.list || file1->st_ino!=file2->st_ino))
               {
@@ -653,7 +653,7 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
   memset(buffer,0,cluster_size);
   td_list_for_each(file_walker, &rootdir_list->list)
   {
-    const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
     file2entry((struct msdos_dir_entry*)buffer+current_entry,current_file);
     if(++current_entry==(cluster_size/sizeof(struct msdos_dir_entry)))
     {
@@ -847,7 +847,7 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
   }
   td_list_for_each(file_walker, &dir_list.list)
   {
-    const file_info_t *current_file=td_list_entry(file_walker, file_info_t, list);
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
     if(LINUX_S_ISDIR(current_file->st_mode) && (current_file->status&FILE_STATUS_DELETED)==0)
     {
       const unsigned long int new_inode=current_file->st_ino;

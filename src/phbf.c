@@ -596,7 +596,7 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
     extrablock_offset=0;
     if(!td_list_empty(&file_recovery->location.list))
     {
-      const alloc_list_t *element=td_list_entry(file_recovery->location.list.prev, alloc_list_t, list);
+      const alloc_list_t *element=td_list_entry_const(file_recovery->location.list.prev, const alloc_list_t, list);
       extrablock_offset=element->end/blocksize*blocksize;
     }
     /* Get the corresponding search_place */
