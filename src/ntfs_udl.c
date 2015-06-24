@@ -1599,11 +1599,42 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 }
 #endif
 
+static void ntfs_undelete_cli(dir_data_t *dir_data, file_info_t *dir_list)
+{
+  unsigned int file_ok=0;
+  unsigned int file_bad=0;
+  struct td_list_head *file_walker = NULL;
+  struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data->private_dir_data;
+  char *dst_path;
+  dst_path=get_default_location();
+  dir_data->local_dir=dst_path;
+  opts.dest=dst_path;
+  td_list_for_each(file_walker,&dir_list->list)
+  {
+    const file_info_t *file_info=td_list_entry_const(file_walker, const file_info_t, list);
+    if(undelete_file(ls->vol, file_info->st_ino) < 0)
+      file_bad++;
+    else
+      file_ok++;
+  }
+  log_info("NTFS undelete done (%u/%u)\n", file_ok, (file_ok+file_bad));
+  free(dst_path);
+  dir_data->local_dir=NULL;
+  opts.dest=NULL;
+}
+
 static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list, char**current_cmd)
 {
   log_list_file(disk_car, partition, dir_data, dir_list);
   if(*current_cmd!=NULL)
   {
+    while(*current_cmd[0]==',')
+      (*current_cmd)++;
+    if(strncmp(*current_cmd,"allundelete",11)==0)
+    {
+      (*current_cmd)+=11;
+      ntfs_undelete_cli(dir_data, dir_list);
+    }
     return;	/* Quit */
   }
 #ifdef HAVE_NCURSES
