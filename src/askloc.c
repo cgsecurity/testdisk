@@ -553,6 +553,8 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	  if(offset+old_LINES <= pos_num+line_base+1)
 	    offset=pos_num + line_base + 2 - old_LINES;
         } while(quit==ASK_LOCATION_WAITKEY && old_LINES==LINES);
+	wmove(window, line_directory-1, 0);
+	wclrtoeol(window);	/* before addstr for BSD compatibility */
       } while(quit==ASK_LOCATION_UPDATE || old_LINES!=LINES);
       delete_list_file(&dir_list);
     }
@@ -562,6 +564,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
       quit=ASK_LOCATION_NEWDIR;
     }
   } while(quit==ASK_LOCATION_NEWDIR);
+  wrefresh(window);
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN

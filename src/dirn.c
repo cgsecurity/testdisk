@@ -47,11 +47,12 @@
 
 extern const char *monstr[];
 
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
+static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
+static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad);
 
 #define INTER_DIR (LINES-25+15)
 
-static void copy_progress(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad)
+static int copy_progress(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad)
 {
   static time_t prev_time=0;
   const time_t tmp=time(NULL);
@@ -72,9 +73,10 @@ static void copy_progress(WINDOW *window, const unsigned int copy_ok, const unsi
       wbkgdset(window,' ' | COLOR_PAIR(0));
     wrefresh(window);
   }
+  return check_enter_key_or_s(window);
 }
 
-static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad)
+static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad, const unsigned int copy_stopped)
 {
   wmove(window,5,0);
   wclrtoeol(window);
@@ -85,7 +87,10 @@ static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned
     else
       wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
   }
-  wprintw(window,"Copy done! %u ok, %u failed", copy_ok, copy_bad);
+  if(copy_stopped)
+    wprintw(window,"Copy stopped! %u ok, %u failed", copy_ok, copy_bad);
+  else
+    wprintw(window,"Copy done! %u ok, %u failed", copy_ok, copy_bad);
   if(has_colors())
     wbkgdset(window,' ' | COLOR_PAIR(0));
   wrefresh(window);
@@ -429,9 +434,19 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		{
 		  unsigned int copy_bad=0;
 		  unsigned int copy_ok=0;
+		  unsigned int copy_stopped=0;
+		  aff_copy(window);
+		  wmove(window,3,0);
+		  aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
+		  wmove(window,4,0);
+		  wprintw(window,"Directory %s\n",dir_data->current_directory);
 		  if(LINUX_S_ISDIR(tmp->st_mode)!=0)
 		  {
-		    copy_dir(window, disk, partition, dir_data, tmp, &copy_ok, &copy_bad);
+		    wmove(window,22,0);
+		    wattrset(window, A_REVERSE);
+		    waddstr(window,"  Stop  ");
+		    wattroff(window, A_REVERSE);
+		    copy_stopped=copy_dir(window, disk, partition, dir_data, tmp, &copy_ok, &copy_bad);
 		  }
 		  else if(LINUX_S_ISREG(tmp->st_mode)!=0)
 		  {
@@ -441,7 +456,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		    else
 		      copy_bad++;
 		  }
-		  copy_done(window, copy_ok, copy_bad);
+		  copy_done(window, copy_ok, copy_bad, copy_stopped);
 		}
 		dir_data->current_directory[current_directory_namelength]='\0';
 	      }
@@ -461,36 +476,18 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      {
 		unsigned int copy_bad=0;
 		unsigned int copy_ok=0;
-		const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-		struct td_list_head *tmpw= NULL;
-		td_list_for_each(tmpw, &dir_list->list)
-		{
-		  file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
-		  if((tmp->status&FILE_STATUS_MARKED)!=0 &&
-		      current_directory_namelength + 1 + strlen(tmp->name) <
-		      sizeof(dir_data->current_directory)-1)
-		  {
-		    tmp->status&=~FILE_STATUS_MARKED;
-		    if(strcmp(dir_data->current_directory,"/"))
-		      strcat(dir_data->current_directory,"/");
-		    if(strcmp(tmp->name,".")!=0)
-		      strcat(dir_data->current_directory,tmp->name);
-		    if(LINUX_S_ISDIR(tmp->st_mode)!=0)
-		    {
-		      copy_dir(window, disk, partition, dir_data, tmp, &copy_ok, &copy_bad);
-		    }
-		    else if(LINUX_S_ISREG(tmp->st_mode)!=0)
-		    {
-		      copy_progress(window, copy_ok, copy_bad);
-		      if(dir_data->copy_file(disk, partition, dir_data, tmp) == 0)
-			copy_ok++;
-		      else
-			copy_bad++;
-		    }
-		  }
-		  dir_data->current_directory[current_directory_namelength]='\0';
-		}
-		copy_done(window, copy_ok, copy_bad);
+		unsigned int copy_stopped;
+		aff_copy(window);
+		wmove(window,3,0);
+		aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
+		wmove(window,4,0);
+		wprintw(window,"Directory %s\n",dir_data->current_directory);
+		wmove(window,22,0);
+		wattrset(window, A_REVERSE);
+		waddstr(window,"  Stop  ");
+		wattroff(window, A_REVERSE);
+		copy_stopped=copy_selection(dir_list, window, disk, partition, dir_data, &copy_ok, &copy_bad);
+		copy_done(window, copy_ok, copy_bad, copy_stopped);
 	      }
 	    }
 	    break;
@@ -660,7 +657,7 @@ Returns
 0: all files has been copied
 */
 #define MAX_DIR_NBR 256
-static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
+static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
@@ -672,7 +669,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
   char *dir_name;
   struct td_list_head *file_walker = NULL;
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
-    return;
+    return 0;
   inode_known[dir_nbr++]=dir->st_ino;
   dir_name=mkdir_local(dir_data->local_dir, dir_data->current_directory);
   dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->st_ino, &dir_list);
@@ -683,6 +680,7 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
     dir_data->current_directory[current_directory_namelength]='\0';
     if(current_directory_namelength+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
     {
+      int copy_stopped=0;
       if(strcmp(dir_data->current_directory,"/"))
 	strcat(dir_data->current_directory,"/");
       strcat(dir_data->current_directory,current_file->name);
@@ -700,16 +698,25 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
 	    new_inode_ok=0;
 	if(new_inode_ok>0)
 	{
-	  copy_dir(window, disk, partition, dir_data, current_file, copy_ok, copy_bad);
+	  copy_stopped=copy_dir(window, disk, partition, dir_data, current_file, copy_ok, copy_bad);
 	}
       }
       else if(LINUX_S_ISREG(current_file->st_mode)!=0)
       {
-	copy_progress(window, *copy_ok, *copy_bad);
+	copy_stopped=copy_progress(window, *copy_ok, *copy_bad);
 	if(dir_data->copy_file(disk, partition, dir_data, current_file)==0)
 	  (*copy_ok)++;
 	else
 	  (*copy_bad)++;
+      }
+      if(copy_stopped)
+      {
+	dir_data->current_directory[current_directory_namelength]='\0';
+	delete_list_file(&dir_list);
+	set_date(dir_name, dir->td_atime, dir->td_mtime);
+	free(dir_name);
+	dir_nbr--;
+	return 1;
       }
     }
   }
@@ -718,6 +725,44 @@ static void copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition,
   set_date(dir_name, dir->td_atime, dir->td_mtime);
   free(dir_name);
   dir_nbr--;
+  return 0;
 }
 
+static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad)
+{
+  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+  struct td_list_head *tmpw=NULL;
+  td_list_for_each(tmpw, &dir_list->list)
+  {
+    file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
+    if((tmp->status&FILE_STATUS_MARKED)!=0 &&
+	current_directory_namelength + 1 + strlen(tmp->name) <
+	sizeof(dir_data->current_directory)-1)
+    {
+      tmp->status&=~FILE_STATUS_MARKED;
+      if(strcmp(dir_data->current_directory,"/"))
+	strcat(dir_data->current_directory,"/");
+      if(strcmp(tmp->name,".")!=0)
+	strcat(dir_data->current_directory,tmp->name);
+      if(LINUX_S_ISDIR(tmp->st_mode)!=0)
+      {
+	if(copy_dir(window, disk, partition, dir_data, tmp, copy_ok, copy_bad))
+	{
+	  dir_data->current_directory[current_directory_namelength]='\0';
+	  return 1;
+	}
+      }
+      else if(LINUX_S_ISREG(tmp->st_mode)!=0)
+      {
+	copy_progress(window, *copy_ok, *copy_bad);
+	if(dir_data->copy_file(disk, partition, dir_data, tmp) == 0)
+	  copy_ok++;
+	else
+	  copy_bad++;
+      }
+    }
+    dir_data->current_directory[current_directory_namelength]='\0';
+  }
+  return 0;
+}
 #endif
