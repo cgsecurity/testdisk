@@ -194,7 +194,7 @@ int main( int argc, char **argv )
     }
     else if(((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)) &&(i+1<argc))
     {
-      int len=strlen(argv[i+1]);
+      const int len=strlen(argv[i+1]);
       if(argv[i+1][len-1]=='\\' || argv[i+1][len-1]=='/')
       {
         params.recup_dir=(char *)MALLOC(len + strlen(DEFAULT_RECUP_DIR) + 1);
