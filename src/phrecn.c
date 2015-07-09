@@ -380,7 +380,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	    free(params->recup_dir);
 	    params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
 	    strcpy(params->recup_dir,res);
-	    strcat(params->recup_dir,"/");
+	    if(strcmp(params->recup_dir,"/")!=0)
+	      strcat(params->recup_dir,"/");
 	    strcat(params->recup_dir,DEFAULT_RECUP_DIR);
 	    free(res);
 	    /* Create the directory */
@@ -463,7 +464,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       }
       filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
       strcpy(filename, dst_path);
-      strcat(filename, "/");
+      if(strcmp(params->recup_dir,"/")!=0)
+	strcat(filename, "/");
       strcat(filename, DEFAULT_IMAGE_NAME);
       gen_image(filename, params->disk, list_search_space);
       free(filename);

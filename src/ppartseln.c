@@ -102,7 +102,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	{
 	  params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
 	  strcpy(params->recup_dir,res);
-	  strcat(params->recup_dir,"/");
+	  if(strcmp(params->recup_dir,"/")!=0)
+	    strcat(params->recup_dir,"/");
 	  strcat(params->recup_dir,DEFAULT_RECUP_DIR);
 	  free(res);
 	}
@@ -238,7 +239,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	    {
 	      params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
 	      strcpy(params->recup_dir,res);
-	      strcat(params->recup_dir,"/");
+	      if(strcmp(params->recup_dir,"/")!=0)
+		strcat(params->recup_dir,"/");
 	      strcat(params->recup_dir,DEFAULT_RECUP_DIR);
 	      free(res);
 	    }
