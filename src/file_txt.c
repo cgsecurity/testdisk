@@ -133,6 +133,7 @@ static const txt_header_t fasttxt_headers[] = {
   { "{\"title\":\"\",\"id\":1,\"dateAdded\":",		31, "json"},
   /* Lyx http://www.lyx.org */
   { "#LyX 1.", 						 7, "lyx"},
+  { "#LyX 2.", 						 7, "lyx"},
   /* LilyPond http://lilypond.org*/
   { "\n\\version \"", 					11, "ly"},
   /* Moving Picture Experts Group Audio Layer 3 Uniform Resource Locator */
