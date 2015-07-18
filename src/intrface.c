@@ -406,7 +406,10 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
       case PADENTER:
 #endif
       case 'M':
-	return list_part;
+	if(list_part==NULL || ask_confirmation("Return to main menu, confirm ? (Y/N)")!=0)
+	  return list_part;
+	rewrite=1;
+	break;
       default:
 /*	log_trace("ask_structure command=%x\n",command); */
 	break;
