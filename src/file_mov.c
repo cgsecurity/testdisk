@@ -3,17 +3,17 @@
     File: file_mov.c
 
     Copyright (C) 1998-2008 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -33,7 +33,9 @@
 #include "log.h"
 
 static void register_header_check_mov(file_stat_t *file_stat);
+static void register_header_check_mov_mdat(file_stat_t *file_stat);
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static int header_check_mov_aux(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static data_check_t data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_mov= {
@@ -45,13 +47,27 @@ const file_hint_t file_hint_mov= {
   .register_header_check=&register_header_check_mov
 };
 
+const file_hint_t file_hint_mov_mdat= {
+  .extension="mov/mdat",
+  .description="Recover mdat atom as a separate file",
+  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .recover=1,
+  .enable_by_default=0,
+  .register_header_check=&register_header_check_mov_mdat
+};
+
+static void register_header_check_mov_mdat(file_stat_t *file_stat)
+{
+  register_header_check(4, (const unsigned char*)"mdat",4, &header_check_mov_aux, file_stat);
+}
+
 static void register_header_check_mov(file_stat_t *file_stat)
 {
   register_header_check(4, (const unsigned char*)"cmov",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"cmvd",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"dcom",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"free",4, &header_check_mov, file_stat);
-  register_header_check(4, (const unsigned char*)"ftyp",4, &header_check_mov, file_stat);
+  register_header_check(4, (const unsigned char*)"ftyp",4, &header_check_mov_aux, file_stat);
   register_header_check(4, (const unsigned char*)"jp2h",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"mdat",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"mdia",4, &header_check_mov, file_stat);
@@ -96,17 +112,19 @@ static void file_rename_mov(file_recovery_t *file_recovery)
 
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  uint64_t i=0;
-  if(buffer[4]=='f' && buffer[5]=='t' && buffer[6]=='y' && buffer[7]=='p')
-  {
-  }
-  else if(file_recovery->file_stat!=NULL &&
+  if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_mov &&
       (file_recovery->calculated_file_size == file_recovery->file_size ||
        file_recovery->blocksize < 16))
   { /* PhotoRec is already trying to recover this mov file */
     return 0;
   }
+  return header_check_mov_aux(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+}
+
+static int header_check_mov_aux(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  uint64_t i=0;
   while(i<buffer_size-16)
   {
     const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
