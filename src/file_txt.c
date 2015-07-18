@@ -1014,6 +1014,14 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="bat";
     return 1;
   }
+  if(strncasecmp((const char *)buffer, "dn: ", 4)==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="ldif";
+    return 1;
+  }
   {
     const char *ext=NULL;
     /* ind=~0: random
