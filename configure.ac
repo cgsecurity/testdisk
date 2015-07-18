@@ -431,6 +431,12 @@ AC_CHECK_HEADERS([winioctl.h],,,
 #include <windef.h>
 #endif
 ]])
+AC_CHECK_HEADERS([w32api/winioctl.h],,,
+[[
+#ifdef HAVE_WINDEF_H
+#include <windef.h>
+#endif
+]])
 
 AC_CHECK_HEADERS([ext2fs/ext2_fs.h],,,
 [[

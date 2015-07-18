@@ -22,7 +22,7 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <stdio.h>
 #include "types.h"
@@ -38,18 +38,17 @@
 #include <winbase.h>
 #endif
 #include <ctype.h>	/* isspace */
-#ifdef HAVE_W32API_DDK_NTDDDISK_H
-#include <w32api/ddk/ntdddisk.h>
+#ifdef HAVE_WINIOCTL_H
+#include <winioctl.h>
 #endif
-#ifdef HAVE_DDK_NTDDSTOR_H
-#include <ddk/ntddstor.h>
+#ifdef HAVE_W32API_WINIOCTL_H
+#include <w32api/winioctl.h>
 #endif
 #include "log.h"
 #include "hdwin32.h"
 
 void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose)
 {
-#ifdef IOCTL_STORAGE_QUERY_PROPERTY
   DWORD               cbBytesReturned = 0;
   STORAGE_PROPERTY_QUERY query;
   char buffer [10240];
@@ -64,7 +63,7 @@ void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose)
 	&buffer,
 	sizeof (buffer)-1,
 	&cbBytesReturned, NULL) )
-  {         
+  {
     const STORAGE_DEVICE_DESCRIPTOR * descrip = (const STORAGE_DEVICE_DESCRIPTOR *) & buffer;
     const unsigned int offsetVendor=descrip->VendorIdOffset;
     const unsigned int offsetProduct=descrip->ProductIdOffset;
@@ -111,6 +110,5 @@ void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose)
       dev->model=NULL;
     }
   }
-#endif
 }
 #endif
