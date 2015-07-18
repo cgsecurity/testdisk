@@ -55,7 +55,7 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   qsort(new_file_stats, nbr, sizeof(file_stat_t), sorfile_stat_ts);
   for(i=0; i<10 && i<nbr && new_file_stats[i].recovered>0; i++)
   {
-    wmove(window,11+i,0);
+    wmove(window,12+i,0);
     wclrtoeol(window);
     wprintw(window, "%s: %u recovered\n",
 	(new_file_stats[i].file_hint->extension!=NULL?
@@ -66,7 +66,7 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
     others+=new_file_stats[i].recovered;
   if(others>0)
   {
-    wmove(window,11+10,0);
+    wmove(window,12+10,0);
     wclrtoeol(window);
     wprintw(window, "others: %u recovered\n", others);
   }
@@ -77,7 +77,13 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
 {
   const partition_t *partition=params->partition;
   const unsigned int sector_size=params->disk->sector_size;
-  wmove(window,9,0);
+  if(params->status!=STATUS_FIND_OFFSET)
+  {
+    wmove(window,8,0);
+    wclrtoeol(window);
+    wprintw(window,"Destination %s", params->recup_dir);
+  }
+  wmove(window,10,0);
   wclrtoeol(window);
   if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
   {
@@ -96,7 +102,7 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
     wprintw(window,"%u/10 headers found\n", params->file_nbr);
   else
     wprintw(window,"%u files found\n", params->file_nbr);
-  wmove(window,10,0);
+  wmove(window,11,0);
   wclrtoeol(window);
   if(current_time > params->real_start_time)
   {
