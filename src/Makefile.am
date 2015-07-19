@@ -53,6 +53,7 @@ file_C			= filegen.c \
 			  file_asm.c \
 			  file_atd.c \
 			  file_au.c \
+			  file_axp.c \
 			  file_axx.c \
 			  file_bac.c \
 			  file_berkeley.c \
