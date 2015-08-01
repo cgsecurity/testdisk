@@ -344,10 +344,21 @@ static int is_marker_valid(const unsigned int marker)
   {
     case 0x02 ... 0xbf:	/* Reserved */
     case 0xc0:		/* SOF0 Start of Frame */
+    case 0xc1:		/* SOF1 Extended sequential */
+    case 0xc2:		/* SOF2 Progressive */
+    case 0xc3:		/* SOF3 Lossless */
     case 0xc4:		/* Define Huffman table */
+    case 0xc5:		/* SOF5 Differential sequential */
+    case 0xc6:		/* SOF6 Differential progressive */
+    case 0xc7:		/* SOF7 Differential lossless */
     case 0xc8:		/* Start of Frame (JPG) (Reserved for JPEG extensions) */
+    case 0xc9:		/* SOF9 Extended sequential, arithmetic coding */
+    case 0xca:		/* SOF10 Progressive, arithmetic coding */
+    case 0xcb:		/* SOF11 Lossless, arithmetic coding */
     case 0xcc:		/* DAC arithmetic-coding conditioning*/
-    case 0xcf:		/* SOF15 */
+    case 0xcd:		/* SOF13 Differential sequential, arithmetic coding */
+    case 0xce:		/* SOF14 Differential progressive, arithmetic coding */
+    case 0xcf:		/* SOF15 Differential lossless, arithmetic coding */
     case 0xd0 ... 0xd7:	/* JPEG_RST0 .. JPEG_RST7 markers */
 //    case 0xd8:	/* SOI Start of Image */
 //    case 0xd9:	/* EOI End of Image */
@@ -1718,6 +1729,13 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 	old_marker=buffer[i];
 #endif
       }
+      else if(buffer[i] == 0xda || buffer[i] == 0xc4)
+      {
+	/* SOS and DHT may be embedded by progressive jpg */
+	file_recovery->data_check=NULL;
+	file_recovery->calculated_file_size=0;
+	return DC_CONTINUE;
+      }
       else if(buffer[i]!=0x00)
       {
 #ifdef DEBUG_JPEG
@@ -1748,7 +1766,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
     else if(buffer[i]==0xFF)
     {
       const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
-#if 0
+#ifdef DEBUG_JPEG
       log_info("data_check_jpg %02x%02x at %llu, next expected at %llu\n", buffer[i], buffer[i+1],
 	  (long long unsigned)file_recovery->calculated_file_size,
 	  (long long unsigned)file_recovery->calculated_file_size+2+size);
