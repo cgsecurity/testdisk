@@ -1840,6 +1840,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
     if(fat2_location == *reserved)
     {
       *fats=1;
+      *fat_length=0;
     }
     else if(fat2_location > *reserved)
     {
