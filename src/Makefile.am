@@ -162,6 +162,7 @@ file_C			= filegen.c \
 			  file_jsonlz4.c \
 			  file_kdb.c \
 			  file_kdbx.c \
+			  file_key.c \
 			  file_ldf.c \
 			  file_lit.c \
 			  file_lnk.c \
