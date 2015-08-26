@@ -407,6 +407,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	}
 	else
 	{
+	  log_flush();
 #ifdef HAVE_NCURSES
 	  if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
 #endif
