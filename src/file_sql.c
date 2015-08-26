@@ -74,10 +74,11 @@ struct db_header
 static int header_check_sqlite(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct db_header *hdr=(const struct db_header *)buffer;
-  const unsigned int pagesize=be16(hdr->pagesize);
+  unsigned int pagesize=be16(hdr->pagesize);
   /* Must be a power of two between 512 and 32768 inclusive, or the value 1 representing a page size of 65536. */
-  if(pagesize!=1 &&
-      (pagesize<512 || ((pagesize-1) & pagesize)!=0))
+  if(pagesize==1)
+    pagesize=65536;
+  if(pagesize<512 || ((pagesize-1) & pagesize)!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
@@ -86,6 +87,12 @@ static int header_check_sqlite(const unsigned char *buffer, const unsigned int b
   file_recovery_new->extension=file_hint_sqlite.extension;
 #endif
   file_recovery_new->min_filesize=sizeof(struct db_header);
+  if(be32(hdr->filesize_in_page)!=0 && be32(hdr->file_change_counter)==be32(hdr->version_valid_for))
+  {
+    file_recovery_new->calculated_file_size=(uint64_t)be32(hdr->filesize_in_page) * pagesize;
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->file_check=&file_check_size;
+  }
   return 1;
 }
 
