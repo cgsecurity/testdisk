@@ -262,6 +262,10 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	       * To carve the whole space, need to quit and reselect the params->partition */
 	      done = 1;
 	    }
+	    else
+	    {
+	      params->blocksize=params->partition->blocksize;
+	    }
 	    photorec(params, options, list_search_space);
 	  }
 	}
