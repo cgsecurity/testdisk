@@ -204,15 +204,15 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	(*current_cmd)+=4;
 	command='L';
       }
-      else if(strncmp(*current_cmd,"originalntfs",11)==0)
+      else if(strncmp(*current_cmd,"originalntfs",12)==0)
       {
-	(*current_cmd)+=11;
+	(*current_cmd)+=12;
 	if(strchr(options,'O')!=NULL)
 	    command='O';
       }
-      else if(strncmp(*current_cmd,"backupntfs",9)==0)
+      else if(strncmp(*current_cmd,"backupntfs",10)==0)
       {
-	(*current_cmd)+=9;
+	(*current_cmd)+=10;
 	if(strchr(options,'B')!=NULL)
 	    command='B';
       }
