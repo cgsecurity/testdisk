@@ -92,6 +92,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
     { 0, NULL, NULL }
   };
 #endif
+  int no_confirm = 0;
   buffer_bs=(unsigned char*)MALLOC(NTFS_BOOT_SECTOR_SIZE);
   buffer_backup_bs=(unsigned char*)MALLOC(NTFS_BOOT_SECTOR_SIZE);
 
@@ -222,6 +223,11 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	if(strchr(options,'M')!=NULL)
 	    command='M';
       }
+      else if(strncmp(*current_cmd,"noconfirm",9)==0)
+      {
+          (*current_cmd)+=9;
+          no_confirm = 1;
+      }
     }
     else
     {
@@ -240,7 +246,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	return 0;
       case 'O': /* O : copy original boot sector over backup boot */
 #ifdef HAVE_NCURSES
-	if(ask_confirmation("Copy original NTFS boot sector over backup boot, confirm ? (Y/N)")!=0)
+	if(no_confirm == 1 || ask_confirmation("Copy original NTFS boot sector over backup boot, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy original boot sector over backup boot\n");
 	  if(disk_car->pwrite(disk_car, buffer_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_BOOT_SECTOR_SIZE)
@@ -253,7 +259,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
 	break;
       case 'B': /* B : copy backup boot sector over boot sector */
 #ifdef HAVE_NCURSES
-	if(ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
+	if(no_confirm == 1 || ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
 	{
 	  log_info("copy backup boot sector over boot sector\n");
 	  /* Reset information about backup boot sector */
