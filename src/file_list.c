@@ -313,6 +313,7 @@ extern const file_hint_t file_hint_wpd;
 extern const file_hint_t file_hint_wtv;
 extern const file_hint_t file_hint_wv;
 extern const file_hint_t file_hint_x3f;
+extern const file_hint_t file_hint_xar;
 extern const file_hint_t file_hint_xcf;
 extern const file_hint_t file_hint_xfi;
 extern const file_hint_t file_hint_xfs;
@@ -612,6 +613,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_wtv  },
   { .enable=0, .file_hint=&file_hint_wv   },
   { .enable=0, .file_hint=&file_hint_x3f  },
+  { .enable=0, .file_hint=&file_hint_xar  },
   { .enable=0, .file_hint=&file_hint_xcf  },
   { .enable=0, .file_hint=&file_hint_xfi  },
   { .enable=0, .file_hint=&file_hint_xfs  },
