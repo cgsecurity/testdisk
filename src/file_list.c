@@ -141,6 +141,7 @@ extern const file_hint_t file_hint_fwd;
 extern const file_hint_t file_hint_gam;
 extern const file_hint_t file_hint_gct;
 extern const file_hint_t file_hint_gho;
+extern const file_hint_t file_hint_gi;
 extern const file_hint_t file_hint_gif;
 extern const file_hint_t file_hint_gm6;
 extern const file_hint_t file_hint_gp5;
@@ -436,6 +437,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_gam  },
   { .enable=0, .file_hint=&file_hint_gct  },
   { .enable=0, .file_hint=&file_hint_gho  },
+  { .enable=0, .file_hint=&file_hint_gi  },
   { .enable=0, .file_hint=&file_hint_gif  },
   { .enable=0, .file_hint=&file_hint_gm6  },
   { .enable=0, .file_hint=&file_hint_gp5  },

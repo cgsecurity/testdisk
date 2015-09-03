@@ -139,6 +139,7 @@ file_C			= filegen.c \
 			  file_gam.c \
 			  file_gct.c \
 			  file_gho.c \
+			  file_gi.c \
 			  file_gif.c \
 			  file_gm6.c \
 			  file_gp5.c \
