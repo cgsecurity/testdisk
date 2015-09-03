@@ -129,17 +129,20 @@ static void file_check_png(file_recovery_t *fr)
 
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  /* SolidWorks files contains a png */
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc &&
-      (strcmp(file_recovery->extension,"sld")==0 ||
-       strcmp(file_recovery->extension,"sldprt")==0))
-    return 0;
   if( !((isupper(buffer[8+4]) || islower(buffer[8+4])) &&
 	(isupper(buffer[8+5]) || islower(buffer[8+5])) &&
 	(isupper(buffer[8+6]) || islower(buffer[8+6])) &&
 	(isupper(buffer[8+7]) || islower(buffer[8+7]))))
     return 0;
+  /* SolidWorks files contains a png */
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc &&
+      (strcmp(file_recovery->extension,"sld")==0 ||
+       strcmp(file_recovery->extension,"sldprt")==0))
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_png.extension;
   file_recovery_new->min_filesize=16;

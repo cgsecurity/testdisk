@@ -394,10 +394,16 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(file_recovery->file_stat->file_hint==&file_hint_doc &&
       strstr(file_recovery->filename, ".albm")!=NULL)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if( file_recovery->file_stat->file_hint==&file_hint_jpg)
     {
       /* Don't recover the thumb instead of the jpg itself */
@@ -407,6 +413,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	log_info("jpg %llu %llu\n",
 	    (long long unsigned)file_recovery->calculated_file_size,
 	    (long long unsigned)file_recovery->file_size);
+	header_ignored(file_recovery_new);
 	return 0;
       }
       /* Don't recover the thumb instead of the jpg itself */
@@ -414,40 +421,69 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  buffer[3]==0xe0 &&
 	  width>0 && width<200 && height>0 && height<200)
       {
+	header_ignored(file_recovery_new);
 	return 0;
       }
       /* Some JPG have two APP1 markers, avoid to dicard the first one */
       if( buffer[3]==0xe1	&&
 	  memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
       {
+	header_ignored(file_recovery_new);
 	return 0;
       }
       if(file_recovery->file_check==&file_check_mpo)
+      {
+	header_ignored(file_recovery_new);
 	return 0;
+      }
     }
     /* Don't extract jpg inside AVI */
     if( file_recovery->file_stat->file_hint==&file_hint_riff &&
 	(memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||
 	 file_recovery->data_check == &data_check_avi_stream))
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     /* Don't extract jpg inside MOV */
     if( file_recovery->file_stat->file_hint==&file_hint_mov &&
 	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     /* Don't extract jpg inside rw2 */
     if( file_recovery->file_stat->file_hint==&file_hint_rw2 &&
       file_recovery->file_size <= 8192)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(buffer[3]==0xdb)	/* DQT */
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(buffer[3]==0xc4)	/* DHT - needed to recover .cr2 */
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(buffer[3]==0xe0 && (buffer[6]!='J' || buffer[7]!='F'))	/* Should be JFIF/JFXX */
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(buffer[3]==0xe1 && (buffer[6]!='E' || buffer[7]!='x' || buffer[8]!='i'|| buffer[9]!='f'))	/* Should be EXIF */
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     if(buffer[3]==0xfe && (!isprint(buffer[6]) || !isprint(buffer[7])))
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
   }
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {

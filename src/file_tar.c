@@ -67,10 +67,13 @@ struct posix_header
 int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct posix_header *h=(const struct posix_header *)buffer;
-  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
-    return 0;
   if(!isspace(h->chksum[0]) && !((unsigned) (h->chksum[0]) - '0' <= 7))
     return 0;
+  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tar.extension;
   file_recovery_new->min_filesize=512;

@@ -582,3 +582,45 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
   free(new_filename);
   return 0;
 }
+
+static uint64_t offset_skipped_header=0;
+
+void header_ignored(const file_recovery_t *file_recovery_new)
+{
+  if(file_recovery_new==NULL)
+  {
+    offset_skipped_header=0;
+    return ;
+  }
+  if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+    offset_skipped_header=file_recovery_new->location.start;
+}
+
+void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
+{
+  alloc_data_t *file_space=*current_search_space;
+  uint64_t size=0;
+  int nbr;
+  if(offset_skipped_header==0)
+    return ;
+  offset_skipped_header=0;
+  /* Search backward the first fragment of a file not successfully recovered
+   * Limit the search to 3 fragments or 200 MB */
+  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
+  {
+    file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
+    if(file_space==list_search_space)
+      return;
+    if(file_space->start <= offset_skipped_header && offset_skipped_header < file_space->end)
+    {
+      *current_search_space=file_space;
+      *offset=offset_skipped_header;
+      return ;
+    }
+    if(file_space->start < prev_location)
+      return ;
+    size+=file_space->end - file_space->start + 1;
+    *current_search_space=file_space;
+    *offset=file_space->start;
+  }
+}

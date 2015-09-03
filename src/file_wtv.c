@@ -52,7 +52,10 @@ static int header_check_wtv(const unsigned char *buffer, const unsigned int buff
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_wtv &&
       file_recovery->file_size<=0x3000)
+  {
+    header_ignored(file_recovery_new);
     return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_wtv.extension;
   file_recovery_new->calculated_file_size=((uint64_t)le32(*size))<<12;

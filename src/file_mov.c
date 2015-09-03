@@ -117,6 +117,7 @@ static int header_check_mov(const unsigned char *buffer, const unsigned int buff
       (file_recovery->calculated_file_size == file_recovery->file_size ||
        file_recovery->blocksize < 16))
   { /* PhotoRec is already trying to recover this mov file */
+    header_ignored(file_recovery_new);
     return 0;
   }
   return header_check_mov_aux(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);

@@ -251,6 +251,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	(unsigned long long)((params->partition->part_size-1)/params->disk->sector_size));
   }
   params->disk->pread(params->disk, buffer, READ_SIZE, offset);
+  header_ignored(NULL);
   while(current_search_space!=list_search_space)
   {
     pfstatus_t file_recovered=PFSTATUS_BAD;
@@ -368,7 +369,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       else
       {
 	back=0;
-	get_prev_location(list_search_space, &current_search_space, &offset, file_recovery.location.start);
+	get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
       }
     }
     if(current_search_space==list_search_space)

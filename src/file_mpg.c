@@ -177,7 +177,10 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
       return 1;
     }
     if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
       if(file_recovery_new->blocksize < 14)
@@ -220,7 +223,10 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
       return 1;
     }
     if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
     if(file_recovery_new->blocksize < 14)
@@ -234,8 +240,6 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
 
 static int header_check_mpg_System(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
-    return 0;
   /* MPEG-1 http://andrewduncan.ws/MPEG/MPEG-1.ps */
   /*   ISO/IEC INTERNATIONAL 13818-1 STANDARD
   	system_header_start_code           32
@@ -265,6 +269,11 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
 	return 0;
       i+=ret;
     }
+    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    {
+      header_ignored(file_recovery_new);
+      return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
     file_recovery_new->data_check=&data_check_mpg;
@@ -276,8 +285,6 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
 
 static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
-    return 0;
   /* MPEG-1 sequence header code 0x1B3 */
   /* horizontal size>0 */
   if((buffer[4]<<4)+(buffer[5]>>4)>0 &&
@@ -300,6 +307,11 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
 	return 0;
       i+=ret;
     }
+    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    {
+      header_ignored(file_recovery_new);
+      return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;
     file_recovery_new->data_check=&data_check_mpg;
@@ -311,8 +323,6 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
 
 static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
-    return 0;
   /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object start code */
   /* is_visual_object_identifier */
   if((buffer[4]&0xf0)==0x80 &&
@@ -331,6 +341,11 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
       if(ret==0)
 	return 0;
       i+=ret;
+    }
+    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    {
+      header_ignored(file_recovery_new);
+      return 0;
     }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_mpg.extension;

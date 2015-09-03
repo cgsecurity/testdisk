@@ -56,7 +56,10 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
       file_recovery->file_stat->file_hint==&file_hint_ogg &&
       (file_recovery->blocksize < 27+255 ||
        file_recovery->calculated_file_size == file_recovery->file_size))
+  {
+    header_ignored(file_recovery_new);
     return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->calculated_file_size=0;
   if(file_recovery_new->blocksize > 27+255)

@@ -123,14 +123,17 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
   const struct InDesignMasterPage *hdr0 = (const struct InDesignMasterPage *)buffer;
   const struct InDesignMasterPage *hdr1 = (const struct InDesignMasterPage *)&buffer[4096];
   hdr=(le64(hdr0->fSequenceNumber) > le64(hdr1->fSequenceNumber) ? hdr0 : hdr1);
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_indd &&
-      file_recovery->file_size <= 8192)
-    return 0;
   if(hdr->fObjectStreamEndian!=1 && hdr->fObjectStreamEndian!=2)
     return 0;
   if(le32(hdr->fFilePages)==0)
     return 0;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_indd &&
+      file_recovery->file_size <= 8192)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
   file_recovery_new->extension="ind";

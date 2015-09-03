@@ -780,13 +780,19 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
       (strcmp(file_recovery->extension,"doc")==0 ||
        strcmp(file_recovery->extension,"psmodel")==0)
       && memcmp(&buffer[30], "macrolog_1.mac", 14)==0)
+  {
+    header_ignored(file_recovery_new);
     return 0;
+  }
   /* A zip file begins by ZIP_FILE_ENTRY, this signature can also be
    * found for each compressed file */
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_zip &&
       safe_header_only==0)
+  {
+    header_ignored(file_recovery_new);
     return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=21;
   file_recovery_new->file_check=&file_check_zip;

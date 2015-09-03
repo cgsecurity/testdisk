@@ -118,17 +118,19 @@ static void file_rename_ts_192(file_recovery_t *file_recovery)
 static int header_check_m2ts(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_m2ts &&
-      (file_recovery->data_check==&data_check_ts_192 ||
-       file_recovery->blocksize < 5))
-    return 0;
   /* BDAV MPEG-2 transport stream */
   /* Each frame is 192 byte long and begins by a TS_SYNC_BYTE */
   for(i=4; i<buffer_size && buffer[i]==0x47; i+=192);
   if(i<buffer_size)
     return 0;
-  reset_file_recovery(file_recovery_new);
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_m2ts &&
+      (file_recovery->data_check==&data_check_ts_192 ||
+       file_recovery->blocksize < 5))
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }  reset_file_recovery(file_recovery_new);
   if( memcmp(&buffer[0xd7], &buffer[0xe8], 4)==0)
   {
     if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 ||

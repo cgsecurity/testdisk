@@ -68,9 +68,6 @@ static int header_check_gsm(const unsigned char *buffer, const unsigned int buff
 {
   const struct block_header *hdr;
   unsigned int i=0;
-  if(file_recovery->file_stat!=NULL
-      &&  file_recovery->file_stat->file_hint==&file_hint_gsm)
-    return 0;
   for(i=0, hdr=(const struct block_header *)buffer;
       i * sizeof(struct block_header) < file_recovery_new->blocksize;
       i++, hdr++)
@@ -80,6 +77,12 @@ static int header_check_gsm(const unsigned char *buffer, const unsigned int buff
   }
   if(i<3)
     return 0;
+  if(file_recovery->file_stat!=NULL
+      &&  file_recovery->file_stat->file_hint==&file_hint_gsm)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gsm.extension;
   file_recovery_new->min_filesize=sizeof(struct block_header);

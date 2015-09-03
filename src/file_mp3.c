@@ -167,11 +167,17 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
   {
     if(file_recovery->file_stat->file_hint==&file_hint_mp3 ||
 	file_recovery->file_stat->file_hint==&file_hint_mkv)
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
     /* RGV values from TIFF may be similar to the beginning of an mp3 */
     if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
 	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
+    {
+      header_ignored(file_recovery_new);
       return 0;
+    }
   }
   while(potential_frame_offset+1 < buffer_size &&
       potential_frame_offset+1 < 2048)
