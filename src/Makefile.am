@@ -297,6 +297,7 @@ file_C			= filegen.c \
 			  file_vmg.c \
 			  file_wallet.c \
 			  file_wdp.c \
+			  file_wee.c \
 			  file_wim.c \
 			  file_win.c \
 			  file_wks.c \

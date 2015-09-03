@@ -301,6 +301,7 @@ extern const file_hint_t file_hint_vmdk;
 extern const file_hint_t file_hint_vmg;
 extern const file_hint_t file_hint_wallet;
 extern const file_hint_t file_hint_wdp;
+extern const file_hint_t file_hint_wee;
 extern const file_hint_t file_hint_wim;
 extern const file_hint_t file_hint_win;
 extern const file_hint_t file_hint_wks;
@@ -599,6 +600,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_vmg  },
   { .enable=0, .file_hint=&file_hint_wallet  },
   { .enable=0, .file_hint=&file_hint_wdp  },
+  { .enable=0, .file_hint=&file_hint_wee  },
   { .enable=0, .file_hint=&file_hint_wim  },
   { .enable=0, .file_hint=&file_hint_win  },
   { .enable=0, .file_hint=&file_hint_wks  },
