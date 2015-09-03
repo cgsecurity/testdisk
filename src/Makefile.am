@@ -96,6 +96,7 @@ file_C			= filegen.c \
 			  file_dpx.c \
 			  file_drw.c \
 			  file_ds2.c \
+			  file_ds_store.c \
 			  file_dsc.c \
 			  file_dss.c \
 			  file_dta.c \
