@@ -153,6 +153,7 @@ file_C			= filegen.c \
 			  file_hr9.c \
 			  file_http.c \
 			  file_icc.c \
+			  file_icns.c \
 			  file_ico.c \
 			  file_ifo.c \
 			  file_idx.c \
