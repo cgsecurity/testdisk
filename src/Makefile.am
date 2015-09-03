@@ -196,6 +196,7 @@ file_C			= filegen.c \
 			  file_mov.c \
 			  file_mp3.c \
 			  file_mpg.c \
+			  file_mpl.c \
 			  file_mrw.c \
 			  file_mus.c \
 			  file_mxf.c \
