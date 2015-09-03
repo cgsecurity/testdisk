@@ -178,15 +178,15 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, c
 	(*current_cmd)+=4;
 	command='D';
       }
-      else if(strncmp(*current_cmd,"originalexFAT",11)==0)
+      else if(strncmp(*current_cmd,"originalexFAT",13)==0)
       {
-	(*current_cmd)+=11;
+	(*current_cmd)+=13;
 	if(strchr(options,'O')!=NULL)
 	    command='O';
       }
-      else if(strncmp(*current_cmd,"backupexFAT",9)==0)
+      else if(strncmp(*current_cmd,"backupexFAT",11)==0)
       {
-	(*current_cmd)+=9;
+	(*current_cmd)+=11;
 	if(strchr(options,'B')!=NULL)
 	    command='B';
       }
