@@ -288,8 +288,11 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	    break;
 	  case 22:
 	    /* SigmaPlot .jnb */
-	    if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0", 22)==0)
+	    if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0\0", 22)==0)
 	      return "jnb";
+	    /* Autodesk Inventor part ipt or iam file */
+	    if(memcmp(dir_entry->name, "R\0S\0e\0S\0t\0o\0r\0a\0g\0e\0\0\0", 22)==0)
+	      return "ipt";
 	    break;
 	  case 24:
 	    /* HP Photosmart Photo Printing Album */
@@ -962,8 +965,11 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		break;
 	      case 22:
 		/* SigmaPlot .jnb */
-		if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0", 22)==0)
+		if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0\0", 22)==0)
 		  ext="jnb";
+		/* Autodesk Inventor part ipt or iam file */
+		if(memcmp(dir_entry->name, "R\0S\0e\0S\0t\0o\0r\0a\0g\0e\0\0\0", 22)==0)
+		  ext="ipt";
 		break;
 	      case 24:
 		/* HP Photosmart Photo Printing Album */
