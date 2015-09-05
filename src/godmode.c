@@ -1310,6 +1310,17 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
   return 0;
 }
 
+static int is_structure_empty(const list_part_t *list_part)
+{
+  const list_part_t *element;
+  for(element=list_part; element!=NULL; element=element->next)
+  {
+    if(element->part->status!=STATUS_DELETED)
+      return 0;
+  }
+  return 1;
+}
+
 int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd)
 {
   int res_interface_write;
@@ -1370,7 +1381,10 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
       }
 #endif
     }
-    list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
+    do
+    {
+      list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
+    } while(fast_mode!=0 && list_part!=NULL && is_structure_empty(list_part) && ask_confirmation("Discard the results, confirm ? (Y/N)")==0);
     if(disk_car->arch->test_structure(list_part)==0)
     {
       int do_again=0;
