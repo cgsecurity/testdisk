@@ -756,9 +756,9 @@ static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, co
       {
 	copy_progress(window, *copy_ok, *copy_bad);
 	if(dir_data->copy_file(disk, partition, dir_data, tmp) == 0)
-	  copy_ok++;
+	  (*copy_ok)++;
 	else
-	  copy_bad++;
+	  (*copy_bad)++;
       }
     }
     dir_data->current_directory[current_directory_namelength]='\0';
