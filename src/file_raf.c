@@ -84,7 +84,7 @@ static int header_check_raf(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_raf.extension;
   file_recovery_new->calculated_file_size=size;
-  if(raf->dir_version[0]=='0' && raf->dir_version[0]=='1')
+  if(raf->dir_version[0]=='0' && raf->dir_version[1]=='1')
   {
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
