@@ -34,6 +34,7 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#include "photorec.h"
 #include "log.h"
 
 #if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
