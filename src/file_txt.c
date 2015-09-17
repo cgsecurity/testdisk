@@ -581,6 +581,74 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
+static void file_rename_fods(file_recovery_t *file_recovery)
+{
+  FILE *file;
+  char buffer[4096];
+  char *tmp;
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+    return;
+  memset(buffer, 0, sizeof(buffer));
+  if(fread(&buffer, 1, sizeof(buffer)-1, file) <= 0)
+  {
+    fclose(file);
+    return ;
+  }
+  tmp=strchr(buffer,'<');
+  while(tmp!=NULL)
+  {
+    if(strncasecmp(tmp, "<office:meta><dc:title>", 23)==0)
+    {
+      const char *title=tmp+23;
+      tmp=strchr(title,'<');
+      if(tmp!=NULL)
+	*tmp='\0';
+      file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, NULL, 1);
+      fclose(file);
+      return ;
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
+  }
+  fclose(file);
+}
+static void file_rename_html(file_recovery_t *file_recovery)
+{
+  FILE *file;
+  char buffer[4096];
+  char *tmp;
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+    return;
+  memset(buffer, 0, sizeof(buffer));
+  if(fread(&buffer, 1, sizeof(buffer)-1, file) <= 0)
+  {
+    fclose(file);
+    return ;
+  }
+  tmp=strchr(buffer,'<');
+  while(tmp!=NULL)
+  {
+    if(strncasecmp(tmp, "</head", 5)==0)
+    {
+      fclose(file);
+      return ;
+    }
+    if(strncasecmp(tmp, "<title>", 7)==0)
+    {
+      const char *title=tmp+7;
+      tmp=strchr(title,'<');
+      if(tmp!=NULL)
+	*tmp='\0';
+      file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, NULL, 1);
+      fclose(file);
+      return ;
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
+  }
+  fclose(file);
+}
+
 static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery->file_stat!=NULL &&
@@ -598,6 +666,7 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
 #else
   file_recovery_new->extension="html";
 #endif
+  file_recovery_new->file_rename=&file_rename_html;
   return 1;
 }
 
@@ -644,6 +713,7 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
 #else
       file_recovery_new->extension="html";
 #endif
+      file_recovery_new->file_rename=&file_rename_html;
     }
     else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
     {
@@ -682,6 +752,13 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     {
       /* FictionBook, see http://www.fictionbook.org */
       file_recovery_new->extension="fb2";
+    }
+    else if(strncasecmp(tmp, "<office:document", 16)==0)
+    {
+      /* OpenDocument Flat XML Spreadsheet */
+      file_recovery_new->extension="fods";
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->file_rename=&file_rename_fods;
     }
     tmp++;
     tmp=strchr(tmp,'<');
@@ -1177,7 +1254,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     }
     reset_file_recovery(file_recovery_new);
     if(strcmp(ext, "html")==0)
+    {
+      file_recovery_new->file_rename=&file_rename_html;
       file_recovery_new->data_check=&data_check_html;
+    }
     else
       file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
