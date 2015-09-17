@@ -206,10 +206,14 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     {
       static int msoffice=0;
       static int sh3d=0;
-      if(file_nbr==0)
+      static const char *ext_msoffice=NULL;
+      if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
+	msoffice=1;
+      else if(file_nbr==0)
       {
 	msoffice=0;
 	sh3d=0;
+	ext_msoffice=NULL;
 	if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file.extra_length)==0)
 	{
 	  unsigned char buffer[128];
@@ -258,8 +262,6 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	    *ext="sxw";
 	  }
 	}
-	else if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
-	  msoffice=1;
 	/* Zipped Keyhole Markup Language (KML) used by Google Earth */
 	else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
 	  *ext="kmz";
@@ -271,17 +273,19 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	if(len==1 && filename[0]=='0')
 	  *ext="sh3d";
       }
-      else if(file_nbr==2 && msoffice!=0)
+      else if(file_nbr==2 || file_nbr==4)
       {
 	if(strncmp(filename, "word/", 5)==0)
-	  *ext="docx";
+	  ext_msoffice="docx";
 	else if(strncmp(filename, "xl/", 3)==0)
-	  *ext="xlsx";
+	  ext_msoffice="xlsx";
 	else if(strncmp(filename, "ppt/", 4)==0)
-	  *ext="pptx";
-	else
-	  *ext="docx";
+	  ext_msoffice="pptx";
+	else if(ext_msoffice==NULL)
+	  ext_msoffice="docx";
       }
+      if(msoffice && ext_msoffice!=NULL)
+	*ext=ext_msoffice;
     }
     if(*ext==NULL)
     {
