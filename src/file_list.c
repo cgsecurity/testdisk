@@ -154,6 +154,7 @@ extern const file_hint_t file_hint_hds;
 extern const file_hint_t file_hint_hfsp;
 extern const file_hint_t file_hint_hr9;
 extern const file_hint_t file_hint_http;
+extern const file_hint_t file_hint_ibd;
 extern const file_hint_t file_hint_icc;
 extern const file_hint_t file_hint_icns;
 extern const file_hint_t file_hint_ico;
@@ -454,6 +455,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_hfsp },
   { .enable=0, .file_hint=&file_hint_hr9  },
   { .enable=0, .file_hint=&file_hint_http },
+  { .enable=0, .file_hint=&file_hint_ibd  },
   { .enable=0, .file_hint=&file_hint_icc  },
   { .enable=0, .file_hint=&file_hint_icns  },
   { .enable=0, .file_hint=&file_hint_ico  },
