@@ -651,6 +651,8 @@ static void software2ext(const char **ext, const unsigned int count, const unsig
 
 static const char *software_uni2ext(const unsigned int count, const unsigned char *software)
 {
+  if(count>=15 && memcmp(software, "M\0i\0c\0r\0o\0s\0o\0f\0t\0 \0E\0x\0c\0e\0l\0", 30)==0)
+    return "et";
   if(count>=17 && memcmp(software, "D\0e\0l\0c\0a\0m\0 \0P\0o\0w\0e\0r\0S\0H\0A\0P\0E\0", 34)==0)
     return "psmodel";
   return NULL;
