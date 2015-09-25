@@ -115,22 +115,39 @@ static unsigned int align_structure_aux(const uint64_t offset, const disk_t *dis
   return disk->sector_size;
 }
 
+static void align_structure_i386(list_part_t *list_part, const disk_t *disk, const unsigned int align)
+{
+  list_part_t *element;
+  for(element=list_part; element!=NULL; element=element->next)
+  {
+    uint64_t partition_end;
+    unsigned int location_boundary;
+    const partition_t *part=element->part;
+    if(align==0)
+      location_boundary=disk->sector_size;
+    else
+      location_boundary=align_structure_aux(part->part_offset, disk);
+    partition_end=(part->part_offset+part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
+    if(align!=0 && element->next!=NULL)
+    {
+      const partition_t *next_partition=element->next->part;
+      if( next_partition->part_offset > part->part_offset + part->part_size -1 &&
+	  next_partition->part_offset <= partition_end)
+      {
+	/* Do not align the partition if it overlaps with the next one because of that */
+	location_boundary=disk->sector_size;
+	partition_end=(part->part_offset + part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
+      }
+    }
+    element->part->part_size=partition_end - part->part_offset+1;
+  }
+}
+
 static void align_structure(list_part_t *list_part, const disk_t *disk, const unsigned int align)
 {
   if(disk->arch==&arch_i386)
   {
-    list_part_t *element;
-    for(element=list_part; element!=NULL; element=element->next)
-    {
-      uint64_t partition_end;
-      unsigned int location_boundary;
-      if(align==0)
-	location_boundary=disk->sector_size;
-      else 
-	location_boundary=align_structure_aux(element->part->part_offset, disk);
-      partition_end=(element->part->part_offset+element->part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
-      element->part->part_size=partition_end-element->part->part_offset+1;
-    }
+    align_structure_i386(list_part, disk, align);
     return ;
   }
   {
