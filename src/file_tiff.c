@@ -42,8 +42,8 @@
 extern const file_hint_t file_hint_raf;
 
 static void register_header_check_tiff(file_stat_t *file_stat);
-static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
-static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make);
+static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
+static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 
 const file_hint_t file_hint_tiff= {
   .extension="tif",
@@ -312,22 +312,30 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
 static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const char *potential_error=NULL;
-  const char *tag_make;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
   if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tiff.extension;
-  tag_make=find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_MAKE, &potential_error);
-  if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+  if(find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
   {
-    if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
-	strcmp(tag_make, "PENTAX             ")==0)
-      file_recovery_new->extension="pef";
-    else if(strcmp(tag_make, "NIKON CORPORATION")==0)
-      file_recovery_new->extension="nef";
-    else if(strcmp(tag_make, "Kodak")==0)
-      file_recovery_new->extension="dcr";
+    /* Adobe Digital Negative, ie. PENTAX K-30 */
+    file_recovery_new->extension="dng";
+  }
+  else
+  {
+    const char *tag_make;
+    tag_make=find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_MAKE, &potential_error);
+    if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+    {
+      if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
+	  strcmp(tag_make, "PENTAX             ")==0)
+	file_recovery_new->extension="pef";
+      else if(strcmp(tag_make, "NIKON CORPORATION")==0)
+	file_recovery_new->extension="nef";
+      else if(strcmp(tag_make, "Kodak")==0)
+	file_recovery_new->extension="dcr";
+    }
   }
   file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
   file_recovery_new->file_check=&file_check_tiff;
@@ -356,7 +364,7 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
     file_recovery_new->extension="cr2";
   else if(find_tag_from_tiff_header_le(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
   {
-    /* Adobe Digital Negative */
+    /* Adobe Digital Negative, ie. NIKON D50 */
     file_recovery_new->extension="dng";
   }
   else
@@ -595,7 +603,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
 }
 #endif
 
-static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
+static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
 {
   unsigned char buffer[8192];
   unsigned int i,n;
@@ -681,7 +689,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
 	  {
-	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0);
 	    if(new_offset==-1)
 	      return -1;
 	    if(max_offset < new_offset)
@@ -700,7 +708,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	  else
 #endif
 	  {
-	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_le(fr, tmp, depth+1, 0);
 	    if(new_offset==-1)
 	      return -1;
 	    if(max_offset < new_offset)
@@ -744,7 +752,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
-	      const uint64_t new_offset=header_check_tiff_le(fr, le32(subifd_offsetp[j]), depth+1, 0, tag_make);
+	      const uint64_t new_offset=header_check_tiff_le(fr, le32(subifd_offsetp[j]), depth+1, 0);
 	      if(new_offset==-1)
 	      {
 		free(subifd_offsetp);
@@ -803,7 +811,7 @@ static uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_di
   tiff_next_diroff=(const uint32_t *)entry;
   if(le32(*tiff_next_diroff) > 0)
   {
-    const uint64_t new_offset=header_check_tiff_le(fr, le32(*tiff_next_diroff), depth, count+1, tag_make);
+    const uint64_t new_offset=header_check_tiff_le(fr, le32(*tiff_next_diroff), depth, count+1);
     if(new_offset != -1 && max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -909,7 +917,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
 }
 #endif
 
-static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count, const char *tag_make)
+static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
 {
   unsigned char buffer[8192];
   unsigned int i,n;
@@ -991,7 +999,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
 	  {
-	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0);
 	    if(new_offset==-1)
 	      return -1;
 	    if(max_offset < new_offset)
@@ -1010,7 +1018,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	  else
 #endif
 	  {
-	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0, tag_make);
+	    const uint64_t new_offset=header_check_tiff_be(fr, tmp, depth+1, 0);
 	    if(new_offset==-1)
 	      return -1;
 	    if(max_offset < new_offset)
@@ -1054,7 +1062,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
 	    }
 	    for(j=0; j<nbr; j++)
 	    {
-	      const uint64_t new_offset=header_check_tiff_be(fr, be32(subifd_offsetp[j]), depth+1, 0, tag_make);
+	      const uint64_t new_offset=header_check_tiff_be(fr, be32(subifd_offsetp[j]), depth+1, 0);
 	      if(new_offset==-1)
 	      {
 		free(subifd_offsetp);
@@ -1109,7 +1117,7 @@ static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_di
   tiff_next_diroff=(const uint32_t *)entry;
   if(be32(*tiff_next_diroff) > 0)
   {
-    const uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth, count+1, tag_make);
+    const uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth, count+1);
     if(max_offset!=-1 && max_offset < new_offset)
       max_offset=new_offset;
   }
@@ -1120,6 +1128,7 @@ void file_check_tiff(file_recovery_t *fr)
 {
   static uint64_t calculated_file_size=0;
   unsigned char *buffer=(unsigned char *)MALLOC(8192);
+  const TIFFHeader *header=(const TIFFHeader *)buffer;
   int data_read;
   calculated_file_size = 0;
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
@@ -1129,18 +1138,10 @@ void file_check_tiff(file_recovery_t *fr)
     fr->file_size=0;
     return;
   }
-  {
-    const TIFFHeader *header=(const TIFFHeader *)buffer;
-    const char *tag_make;
-    const char *potential_error=NULL;
-    tag_make=find_tag_from_tiff_header(header, data_read, TIFFTAG_MAKE, &potential_error);
-    if(tag_make < (const char *)buffer || tag_make >= (const char *)buffer + data_read - 20)
-      tag_make=NULL;
-    if(header->tiff_magic==TIFF_LITTLEENDIAN)
-      calculated_file_size=header_check_tiff_le(fr, le32(header->tiff_diroff), 0, 0, tag_make);
-    else if(header->tiff_magic==TIFF_BIGENDIAN)
-      calculated_file_size=header_check_tiff_be(fr, be32(header->tiff_diroff), 0, 0, tag_make);
-  }
+  if(header->tiff_magic==TIFF_LITTLEENDIAN)
+    calculated_file_size=header_check_tiff_le(fr, le32(header->tiff_diroff), 0, 0);
+  else if(header->tiff_magic==TIFF_BIGENDIAN)
+    calculated_file_size=header_check_tiff_be(fr, be32(header->tiff_diroff), 0, 0);
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu\n", (unsigned long long)calculated_file_size);
