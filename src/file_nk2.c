@@ -32,12 +32,6 @@
 #include "common.h"
 #include "log.h"
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 static void register_header_check_nk2(file_stat_t *file_stat);
 
 const file_hint_t file_hint_nk2= {

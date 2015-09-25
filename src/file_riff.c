@@ -34,12 +34,6 @@
 #include "log.h"
 #endif
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static void register_header_check_riff(file_stat_t *file_stat);
 

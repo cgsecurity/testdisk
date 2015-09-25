@@ -50,12 +50,6 @@
 #include "file_tiff.h"
 #include "setdate.h"
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;

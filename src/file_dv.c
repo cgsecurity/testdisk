@@ -41,12 +41,6 @@ const file_hint_t file_hint_dv= {
   .register_header_check=&register_header_check_dv
 };
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 static data_check_t data_check_NTSC(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&

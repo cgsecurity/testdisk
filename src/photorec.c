@@ -55,12 +55,6 @@
 #include "setdate.h"
 #include "dfxml.h"
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
 /* #define DEBUG_FREE */

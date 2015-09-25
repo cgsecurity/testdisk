@@ -71,12 +71,6 @@
 #include "phbf.h"
 #include "phnc.h"
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 //#define DEBUG_BF
 //#define DEBUG_BF2
 #define READ_SIZE 1024*512

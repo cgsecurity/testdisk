@@ -48,11 +48,6 @@ struct SHeader
   uint32_t aoLength;
   uint8_t   oType;
 } __attribute__ ((gcc_struct, __packed__));
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
 
 static void file_check_axx(file_recovery_t *fr)
 {

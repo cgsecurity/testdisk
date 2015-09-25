@@ -135,6 +135,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable);
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 void header_ignored(const file_recovery_t *file_recovery_new);
+int my_fseek(FILE *stream, off_t offset, int whence);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

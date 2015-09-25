@@ -56,11 +56,6 @@ extern file_enable_t list_file_enable[];
 extern file_check_list_t file_check_list;
 
 #define READ_SIZE 1024*512
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
 
 static int file_identify(const char *filename, const unsigned int check)
 {

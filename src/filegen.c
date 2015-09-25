@@ -37,12 +37,6 @@
 #include "photorec.h"
 #include "log.h"
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
 };
@@ -625,4 +619,16 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
     *offset=file_space->start;
   }
   offset_skipped_header=0;
+}
+
+int my_fseek(FILE *stream, off_t offset, int whence)
+{
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__) && !defined(__ARM_EABI__)
+  {
+    int res;
+    if((res=fseeko(stream, offset, whence))>=0)
+      return res;
+  }
+#endif
+ return fseek(stream, offset, whence);
 }

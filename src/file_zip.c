@@ -42,12 +42,6 @@
 
 /* #define DEBUG_ZIP */
 
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__)
-#define my_fseek fseeko
-#else
-#define my_fseek fseek
-#endif
-
 extern const file_hint_t file_hint_doc;
 static void register_header_check_zip(file_stat_t *file_stat);
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
