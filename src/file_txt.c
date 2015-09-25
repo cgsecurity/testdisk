@@ -1028,8 +1028,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   {
     if(file_recovery->file_stat->file_hint == &file_hint_doc)
     {
-      if(strstr(file_recovery->filename,".doc")==NULL)
-	return 0;
+      return 0;
     }
     else if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
 	file_recovery->file_stat->file_hint == &file_hint_txt)
