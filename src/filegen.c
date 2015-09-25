@@ -604,7 +604,6 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
   int nbr;
   if(offset_skipped_header==0)
     return ;
-  offset_skipped_header=0;
   /* Search backward the first fragment of a file not successfully recovered
    * Limit the search to 3 fragments or 200 MB */
   for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
@@ -616,6 +615,7 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
     {
       *current_search_space=file_space;
       *offset=offset_skipped_header;
+      offset_skipped_header=0;
       return ;
     }
     if(file_space->start < prev_location)
@@ -624,4 +624,5 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
     *current_search_space=file_space;
     *offset=file_space->start;
   }
+  offset_skipped_header=0;
 }
