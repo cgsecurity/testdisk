@@ -201,13 +201,16 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       static int msoffice=0;
       static int sh3d=0;
       static const char *ext_msoffice=NULL;
-      if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
-	msoffice=1;
-      else if(file_nbr==0)
+      if(file_nbr==0)
       {
 	msoffice=0;
 	sh3d=0;
 	ext_msoffice=NULL;
+      }
+      if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
+	msoffice=1;
+      else if(file_nbr==0)
+      {
 	if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file.extra_length)==0)
 	{
 	  unsigned char buffer[128];
