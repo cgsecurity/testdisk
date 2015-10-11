@@ -128,16 +128,20 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
       if (buffer[count]==*(const char *)needle && memcmp(buffer+count, needle, size)==0)
       {
 	free(buffer);
-        if(my_fseek(f, (long)count-read_size, SEEK_CUR)<0)
+        if(my_fseek(f, (off_t)count-read_size, SEEK_CUR)<0)
+	{
+	  log_trace("zip: file_get_pos count-read failed\n");
           return -1;
+	}
         return total;
       }
       count++;
       total++;
       left--;
     }
-    if(feof(f) || my_fseek(f, (long)1-size, SEEK_CUR)<0)
+    if(feof(f) || my_fseek(f, (off_t)1-size, SEEK_CUR)<0)
     {
+      log_trace("zip: file_get_pos 1-size failed\n");
       free(buffer);
       return -1;
     }
@@ -270,17 +274,12 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	if(len==1 && filename[0]=='0')
 	  *ext="sh3d";
       }
-      else if(file_nbr==2 || file_nbr==4)
-      {
-	if(strncmp(filename, "word/", 5)==0)
-	  ext_msoffice="docx";
-	else if(strncmp(filename, "xl/", 3)==0)
-	  ext_msoffice="xlsx";
-	else if(strncmp(filename, "ppt/", 4)==0)
-	  ext_msoffice="pptx";
-	else if(ext_msoffice==NULL)
-	  ext_msoffice="docx";
-      }
+      if(strncmp(filename, "word/", 5)==0)
+	ext_msoffice="docx";
+      else if(strncmp(filename, "xl/", 3)==0)
+	ext_msoffice="xlsx";
+      else if(strncmp(filename, "ppt/", 4)==0)
+	ext_msoffice="pptx";
       if(msoffice && ext_msoffice!=NULL)
 	*ext=ext_msoffice;
     }
