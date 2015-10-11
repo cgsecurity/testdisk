@@ -331,7 +331,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
       log_info("PhotoRec has been stopped\n");
       current_search_space=list_search_space;
     }
-    else if(file_recovered==0)
+    else if(file_recovered==PFSTATUS_BAD)
     {
       if(res==DC_SCAN)
       {
@@ -340,15 +340,19 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	  back=0;
       }
     }
-    else if(file_recovered>0)
+    else if(file_recovered==PFSTATUS_OK_TRUNCATED ||
+              (file_recovered==PFSTATUS_OK && file_recovery.file_stat==NULL))
     {
       /* try to recover the previous file, otherwise stay at the current location */
       offset_before_back=offset;
-      if(back < 10 &&
+      if(back < 5 &&
 	  get_prev_file_header(list_search_space, &current_search_space, &offset)==0)
 	back++;
       else
+      {
 	back=0;
+	get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
+      }
     }
     if(current_search_space==list_search_space)
     {
