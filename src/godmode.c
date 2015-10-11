@@ -47,6 +47,7 @@
 #include "fat32.h"
 #include "tntfs.h"
 #include "thfs.h"
+#include "partgpt.h"
 #include "partmacn.h"
 
 #define RO 1
@@ -134,7 +135,7 @@ static void align_structure_i386(list_part_t *list_part, const disk_t *disk, con
       if( next_partition->part_offset > part->part_offset + part->part_size -1 &&
 	  next_partition->part_offset <= partition_end)
       {
-	/* Do not align the partition if it overlaps with the next one because of that */
+	/* Do not align the partition if it overlaps the next one because of that */
 	location_boundary=disk->sector_size;
 	partition_end=(part->part_offset + part->part_size-1+location_boundary-1)/location_boundary*location_boundary-1;
       }
@@ -435,7 +436,15 @@ static void search_add_hints(const disk_t *disk, uint64_t *try_offset, unsigned 
 	hint_insert(try_offset, CHS2offset_inline(disk, &start), try_offset_nbr);
       }
     }
-    hint_insert(try_offset, (disk->disk_size-512)/(2048*512)*(2048*512)+(2048-1)*512, try_offset_nbr);
+    hint_insert(try_offset, (disk->disk_size-disk->sector_size)/(2048*512)*(2048*512)-disk->sector_size, try_offset_nbr);
+  }
+  else if(disk->arch==&arch_gpt)
+  {
+    /* Hint for NTFS backup */
+    const unsigned int gpt_entries_size=128*sizeof(struct gpt_ent);
+    const uint64_t hdr_lba_end=le64((disk->disk_size-1 - gpt_entries_size)/disk->sector_size - 1);
+    const uint64_t ntfs_backup_offset=(hdr_lba_end-1)*disk->sector_size/(2048*512)*(2048*512)-disk->sector_size;
+    hint_insert(try_offset, ntfs_backup_offset, try_offset_nbr);
   }
   else if(disk->arch==&arch_mac)
   {
