@@ -89,7 +89,7 @@ static int header_check_dad(const unsigned char *buffer, const unsigned int buff
   if(file_recovery_new->blocksize >= 16)
   {
     file_recovery_new->data_check=&data_check_dad;
-    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->file_check=&file_check_size_lax;
   }
   return 1;
 }
