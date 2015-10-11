@@ -189,6 +189,8 @@ static const txt_header_t fasttxt_headers[] = {
   },
   /* Mathlab Model .mdl */
   { "Model {", 7, "mdl"},
+  /* Windows folder settings for file explorer */
+  { "[.ShellClassInfo]",				17, "Desktop.ini" },
   {NULL, 0, NULL}
 };
 
@@ -390,31 +392,63 @@ static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
     /* Reject some invalid UTF-8 sequences */
     if(*p==0xc0 || *p==0xc1 || *p==0xf7 || *p>=0xfd)
       return i;
-    if((*p & 0xf0)==0xe0 && i+3 <= buf_len && (*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)
+    if((*p & 0xf0)==0xe0 && (i+2 >= buf_len || ((*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)))
     { /* UTF8 l=3 */
-      const unsigned int car=(((*p)&0x1f)<<12) | (((*(p+1))&0x3f)<<6) | ((*(p+2))&0x3f);
-      if(filtre(car)==0)
-	return i;
+#ifdef DEBUG_TXT
+      log_info("UTFsize i=%u l=3\n", i);
+#endif
       p+=3;
       i+=3;
     }
-    else if((*p & 0xe0)==0xc0 && i+2 <= buf_len && (*(p+1) & 0xc0)==0x80)
+    else if((*p & 0xe0)==0xc0 && (i+1 >= buf_len || (*(p+1) & 0xc0)==0x80))
     { /* UTF8 l=2 */
-      const unsigned int car=(((*p)&0x1f)<<6) | ((*(p+1))&0x3f);
-      if(filtre(car)==0)
-	return i;
+#ifdef DEBUG_TXT
+      log_info("UTFsize i=%u l=2\n", i);
+#endif
       p+=2;
       i+=2;
     }
     else
     { /* Ascii UCS */
-      if(filtre(*p)==0)
-	return i;
+#ifdef DEBUG_TXT
+      log_info("UTFsize i=%u l=1 ? *p=%c\n", i, *p);
+#endif
+      switch(*p)
+      {
+	case 0x00:
+	case 0x01:
+	case 0x02:
+	case 0x03:
+	case 0x04:
+	case 0x05:
+	case 0x06:
+	case 0x07:
+	case 0x0b:
+	case 0x0c:
+	case 0x10:
+	case 0x11:
+	case 0x12:
+	case 0x13:
+	case 0x14:
+	case 0x15:
+	case 0x16:
+	case 0x17:
+	case 0x18:
+	case 0x19:
+	case 0x1a:
+	case 0x1b:
+	case 0x1c:
+	case 0x1d:
+	case 0x1e:
+	case 0x1f:
+	case 0x7f:
+	  return i;
+      }
       p++;
       i++;
     }
   }
-  return i;
+  return (i<buf_len?i:buf_len);
 }
 
 static data_check_t data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -680,6 +714,31 @@ static void file_check_svg(file_recovery_t *file_recovery)
 {
   file_search_footer(file_recovery, "</svg>", 6, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+}
+
+static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  unsigned int i;
+  if(buffer_size<=8)
+    return DC_CONTINUE;
+  i=UTFsize(&buffer[buffer_size/2+4], buffer_size/2-4)+4;
+  if(i<buffer_size/2)
+  {
+    file_recovery->calculated_file_size=file_recovery->file_size+i;
+    return DC_STOP;
+  }
+  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
+  file_recovery->data_check=&data_check_txt;
+  return DC_CONTINUE;
+}
+
+static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_xml_utf8;
+  file_recovery_new->extension="xml";
+  file_recovery_new->file_check=&file_check_xml;
+  return 1;
 }
 
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1105,9 +1164,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     double ind=1;
     unsigned int nbrf=0;
     unsigned int is_csv=1;
+    char *str;
     /* Detect Fortran */
     {
-      char *str=buffer_lower;
+      str=buffer_lower;
       while((str=strstr(str, "\n      "))!=NULL)
       {
 	nbrf++;
@@ -1185,6 +1245,16 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 #else
       ext="java";
 #endif
+    }
+    else if((str=strstr(buffer_lower, "\nimport "))!=NULL)
+    {
+      str+=8;
+      while(*str!='\0' && *str!='\n' && *str!=';')
+	str++;
+      if(*str==';')
+	ext="java";
+      else
+	ext="py";
     }
     else if(strstr(buffer_lower, "class")!=NULL &&
 	(l>=100 || file_recovery->file_stat==NULL))
@@ -1325,7 +1395,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "<smil>",		 6, &header_check_smil, file_stat);
   register_header_check(0, "solid ",		 6, &header_check_stl, file_stat);
   register_header_check(0, "<?xml version=",	14, &header_check_xml, file_stat);
-  register_header_check(0, header_xml_utf8, sizeof(header_xml_utf8), &header_check_xml, file_stat);
+  register_header_check(0, header_xml_utf8, sizeof(header_xml_utf8), &header_check_xml_utf8, file_stat);
   /* TinyTag */
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
