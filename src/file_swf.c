@@ -138,7 +138,7 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension="swc";
   file_recovery_new->calculated_file_size=le32(hdr->size);
   file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->file_check=&file_check_size_lax;
   return 1;
 }
 
