@@ -39,7 +39,7 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
 {
   int command;
   unsigned int menu=0;
-  const char *optionsBlocksize="BS51248736";
+  const char *optionsBlocksize="BS512487360ACM";
   static const struct MenuItem menuBlocksize[]=
   {
 	{'B',"1",""},
@@ -52,6 +52,10 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
 	{'7',"16384",""},
 	{'3',"32768",""},
 	{'6',"65536",""},
+	{'0',"128k",""},
+	{'A',"256k",""},
+	{'C',"512k",""},
+	{'M',"1M",""},
 	{0,NULL,NULL}
   };
   switch(sector_size)
@@ -65,6 +69,10 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
     case 16384: optionsBlocksize+=7;break;
     case 32768: optionsBlocksize+=8; break;
     case 65536: optionsBlocksize+=9; break;
+    case 131072: optionsBlocksize+=10; break;
+    case 262144: optionsBlocksize+=11; break;
+    case 524288: optionsBlocksize+=12; break;
+    case 1048576: optionsBlocksize+=13; break;
   }
   switch(*blocksize)
   {
@@ -78,6 +86,10 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
     case 16384: menu=7; break;
     case 32768: menu=8; break;
     case 65536: menu=9; break;
+    case 131072: menu=10; break;
+    case 262144: menu=11; break;
+    case 524288: menu=12; break;
+    case 1048576: menu=13; break;
   }
   aff_copy(stdscr);
   wmove(stdscr,INTER_PARTITION_Y-1,0);
@@ -96,6 +108,10 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
     case '7': *blocksize=16384; break;
     case '3': *blocksize=32768; break;
     case '6': *blocksize=65536; break;
+    case '0': *blocksize=131072; break;
+    case 'A': *blocksize=262144; break;
+    case 'C': *blocksize=524288; break;
+    case 'M': *blocksize=1048576; break;
   }
   *offset=*offset % *blocksize;
   if(*offset%sector_size!=0)
