@@ -245,6 +245,12 @@ const char *get_compiler(void)
   snprintf(buffer, sizeof(buffer) - 1, "Borland C++ %i",__BORLANDC__);
 #  elif defined(__MINGW32__)
   snprintf(buffer, sizeof(buffer) - 1, "GCC %i.%i, MinGW %i.%i", __GNUC__, __GNUC_MINOR__, __MINGW32_MAJOR_VERSION, __MINGW32_MINOR_VERSION);
+#  elif defined(__CYGWIN32__)
+#if defined(CYGWIN_VERSION_DLL_MAJOR) && defined(CYGWIN_VERSION_DLL_MINOR)
+  snprintf(buffer, sizeof(buffer) - 1, "GCC %i.%i, Cygwin32 %i.%i", __GNUC__, __GNUC_MINOR__, CYGWIN_VERSION_DLL_MAJOR, CYGWIN_VERSION_DLL_MINOR);
+#else
+  snprintf(buffer, sizeof(buffer) - 1, "GCC %i.%i, Cygwin32", __GNUC__, __GNUC_MINOR__);
+#endif
 #  elif defined(__CYGWIN__)
 #if defined(CYGWIN_VERSION_DLL_MAJOR) && defined(CYGWIN_VERSION_DLL_MINOR)
   snprintf(buffer, sizeof(buffer) - 1, "GCC %i.%i, Cygwin %i.%i", __GNUC__, __GNUC_MINOR__, CYGWIN_VERSION_DLL_MAJOR, CYGWIN_VERSION_DLL_MINOR);
