@@ -148,6 +148,7 @@ file_C			= filegen.c \
 			  file_gsm.c \
 			  file_gz.c \
 			  file_hdf.c \
+			  file_hdr.c \
 			  file_hds.c \
 			  file_hfsp.c \
 			  file_hr9.c \
