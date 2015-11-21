@@ -112,7 +112,9 @@ static void register_header_check_vmdk(file_stat_t *file_stat)
   static const unsigned char vmdk_header3_1[8]= { 'C','O','W','D', 0x01, 0x00, 0x00, 0x00};
   static const unsigned char vmdk_header4_1[8]= { 'K','D','M','V', 0x01, 0x00, 0x00, 0x00};
   static const unsigned char vmdk_header4_2[8]= { 'K','D','M','V', 0x02, 0x00, 0x00, 0x00};
+  static const unsigned char vmdk_header4_3[8]= { 'K','D','M','V', 0x03, 0x00, 0x00, 0x00};
   register_header_check(0, vmdk_header3_1,sizeof(vmdk_header3_1), &header_check_vmdk3, file_stat);
   register_header_check(0, vmdk_header4_1,sizeof(vmdk_header4_1), &header_check_vmdk4, file_stat);
   register_header_check(0, vmdk_header4_2,sizeof(vmdk_header4_2), &header_check_vmdk4, file_stat);
+  register_header_check(0, vmdk_header4_3,sizeof(vmdk_header4_3), &header_check_vmdk4, file_stat);
 }
