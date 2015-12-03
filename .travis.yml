@@ -7,7 +7,7 @@ before_install:
 install:
   - sudo apt-get install -y e2fslibs-dev libncurses5-dev libncursesw5-dev libntfs-dev libjpeg-dev uuid-dev zlib1g-dev
 before_script:
-  - autoreconf --install -W all -I config
+  - autoreconf -i
 script:
   - ./configure && make
 after_success:
