@@ -245,7 +245,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	}
 	for(;j<64;j+=2)
 	  log_info(" ");
-	log_info(" type %u", dir_entry->type);
+	log_info(" namsiz=%u type %u", le16(dir_entry->namsiz), dir_entry->type);
 	log_info(" Flags=%s", (dir_entry->bflags==0?"Red  ":"Black"));
 	log_info(" sector %u (%u bytes)\n",
 	    (unsigned int)le32(dir_entry->start_block),
@@ -309,6 +309,11 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	      return "sldprt";
 #endif
 	    }
+	    break;
+	  case 32:
+	    /* Revit */
+	    if(memcmp(dir_entry->name, "R\0e\0v\0i\0t\0P\0r\0e\0v\0i\0e\0w\0004\0.\0000\0\0", 32)==0)
+	      return "rvt";
 	    break;
 	  case 34:
 	    if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)

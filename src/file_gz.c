@@ -37,6 +37,7 @@
 static void register_header_check_gz(file_stat_t *file_stat);
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_rename_gz(file_recovery_t *file_recovery);
+extern const file_hint_t file_hint_doc;
 
 const file_hint_t file_hint_gz= {
   .extension="gz",
@@ -123,6 +124,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   }
   if(off >= 512 || off >= buffer_size)
     return 0;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {
     static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,

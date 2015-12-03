@@ -130,9 +130,7 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
     return 0;
   /* SolidWorks files contains a png */
   if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc &&
-      (strcmp(file_recovery->extension,"sld")==0 ||
-       strcmp(file_recovery->extension,"sldprt")==0))
+      file_recovery->file_stat->file_hint==&file_hint_doc)
   {
     header_ignored(file_recovery_new);
     return 0;
