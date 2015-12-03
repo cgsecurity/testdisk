@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
+#include "log.h"
 
 static void register_header_check_mlv(file_stat_t *file_stat);
 
@@ -103,17 +104,49 @@ static void file_check_mlv(file_recovery_t *file_recovery)
 	!is_valid_type(&hdr) ||
 	fs + le32(hdr.blockSize) > file_recovery->file_size)
     {
-      file_recovery->file_size=fs;
+      file_recovery->file_size=(fs <= file_recovery->blocksize ? 0 : fs);
       return;
     }
     fs+=le32(hdr.blockSize);
   } while(1);
 }
+
+static void file_rename_mlv(file_recovery_t *file_recovery)
+{
+  FILE *file;
+  mlv_file_hdr_t hdr;
+  char ext[16];
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+    return;
+  if(my_fseek(file, 0, SEEK_SET) < 0 ||
+      fread(&hdr, sizeof(hdr), 1, file) != 1)
+  {
+    fclose(file);
+    return ;
+  }
+  fclose(file);
+  sprintf(ext, "M%02u", le16(hdr.fileNum));
+  file_rename(file_recovery, NULL, 0, 0, ext, 1);
+}
+
 static int header_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const mlv_file_hdr_t *hdr=(const mlv_file_hdr_t *)buffer;
   if(le32(hdr->blockSize) < 0x34)
     return 0;
+#ifdef DEBUG_MLV
+  log_info("header_check_mlv fileCount=%u fileNum=%u\n", le16(hdr->fileCount), le16(hdr->fileNum));
+#endif
+  if(le16(hdr->fileCount)==0 && le16(hdr->fileNum) > 0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_mlv.extension;
+    file_recovery_new->calculated_file_size=(uint64_t)le32(hdr->blockSize);
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->file_rename=&file_rename_mlv;
+    return 1;
+  }
   if(le16(hdr->fileNum) > le16(hdr->fileCount))
     return 0;
   if(le16(hdr->fileNum) >= le16(hdr->fileCount) && le16(hdr->fileCount)>0)
