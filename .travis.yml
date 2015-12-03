@@ -1,0 +1,8 @@
+language: c
+compiler:
+  - clang
+  - gcc
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y e2fslibs-dev libncurses5-dev libncursesw5-dev libntfs-dev libjpeg-dev uuid-dev zlib1g-dev
+sudo: false
