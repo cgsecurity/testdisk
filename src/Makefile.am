@@ -59,6 +59,7 @@ file_C			= filegen.c \
 			  file_bdm.c \
 			  file_berkeley.c \
 			  file_bim.c \
+			  file_bin.c \
 			  file_binvox.c \
 			  file_bkf.c \
 			  file_bld.c \
