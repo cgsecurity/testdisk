@@ -52,10 +52,20 @@ static inline int filtre(unsigned int car);
 static void register_header_check_txt(file_stat_t *file_stat);
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void register_header_check_fasttxt(file_stat_t *file_stat);
+static void register_header_check_snz(file_stat_t *file_stat);
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #ifdef UTF16
 static int header_check_le16_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
+
+const file_hint_t file_hint_snz= {
+  .extension="snz",
+  .description="Olfaction SeeNez odorama",
+  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .recover=1,
+  .enable_by_default=1,
+  .register_header_check=&register_header_check_snz
+};
 
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
@@ -162,9 +172,6 @@ static const txt_header_t fasttxt_headers[] = {
   { "#SeeNez ",						 8, "SeeNezSST"},
   /* Sylk, Multiplan Symbolic Link Interchange  */
   { "ID;PSCALC3",					10, "slk"},
-  /* Olfaction SeeNez odorama */
-  { "DEFAULT\n",					 8, "snz"},
-  { "DEFAULT\r\n",					 9, "snz"},
   /* ISO 10303 is an ISO standard for the computer-interpretable
    * representation and exchange of industrial product data.
    * - Industrial automation systems and integration - Product data representation and exchange
@@ -1364,6 +1371,24 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension="stl";
   return 1;
+}
+
+static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
+  if(td_memmem(buffer, buffer_size_test, ".snz", 4)==NULL)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="snz";
+  return 1;
+}
+
+static void register_header_check_snz(file_stat_t *file_stat)
+{
+  register_header_check(0, "DEFAULT\n",   8, &header_check_snz, file_stat);
+  register_header_check(0, "DEFAULT\r\n", 9, &header_check_snz, file_stat);
 }
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)

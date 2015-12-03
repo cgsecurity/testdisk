@@ -271,6 +271,7 @@ extern const file_hint_t file_hint_sig;
 extern const file_hint_t file_hint_sit;
 extern const file_hint_t file_hint_skd;
 extern const file_hint_t file_hint_skp;
+extern const file_hint_t file_hint_snz;
 extern const file_hint_t file_hint_sp3;
 extern const file_hint_t file_hint_spe;
 extern const file_hint_t file_hint_spf;
@@ -573,6 +574,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_sit  },
   { .enable=0, .file_hint=&file_hint_skd  },
   { .enable=0, .file_hint=&file_hint_skp  },
+  { .enable=0, .file_hint=&file_hint_snz  },
   { .enable=0, .file_hint=&file_hint_sp3  },
   { .enable=0, .file_hint=&file_hint_spe  },
   { .enable=0, .file_hint=&file_hint_spf  },
