@@ -1,6 +1,5 @@
 language: c
 compiler:
-  - clang
   - gcc
 before_install:
   - sudo apt-get update -qq
@@ -9,7 +8,7 @@ install:
 before_script:
   - autoreconf -i
 script:
-  - ./configure && make
+  - ./configure --disable-qt && make
 after_success:
   - sudo make install
 sudo: true
