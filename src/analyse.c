@@ -2,7 +2,7 @@
 
     File: analyse.c
 
-    Copyright (C) 1998-2011 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 1998-2015 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@
 #include "md.h"
 #include "netware.h"
 #include "ntfs.h"
+#include "refs.h"
 #include "rfs.h"
 #include "sun.h"
 #include "swap.h"
@@ -145,6 +146,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   const struct wbfs_head *wbfs=(const struct wbfs_head *)buffer;
   const struct xfs_sb *xfs=(const struct xfs_sb *)buffer;
   const union swap_header *swap_header=(const union swap_header *)buffer;
+  const struct ReFS_boot_sector *refs_header=(const struct ReFS_boot_sector *)buffer;
   static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
 //  assert(sizeof(union swap_header)<=8*DEFAULT_SECTOR_SIZE);
 //  assert(sizeof(pv_disk_t)<=8*DEFAULT_SECTOR_SIZE);
@@ -191,6 +193,9 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
     return 1;
   if(memcmp(luks->magic,LUKS_MAGIC,LUKS_MAGIC_L)==0 &&
       recover_LUKS(disk, luks, partition, verbose, dump_ind)==0)
+    return 1;
+  if(refs_header->fsname==be32(0x52654653) &&
+      recover_ReFS(disk, refs_header, partition)==0)
     return 1;
   /* MD 1.1 */
   if(le32(sb1->major_version)==1 &&

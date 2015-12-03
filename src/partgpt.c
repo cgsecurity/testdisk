@@ -56,6 +56,7 @@
 #include "hfsp.h"
 #include "lvm.h"
 #include "ntfs.h"
+#include "refs.h"
 #include "log.h"
 #include "log_part.h"
 #include "md.h"
@@ -459,6 +460,8 @@ static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition
       ret=check_EXFAT(disk, partition);
     if(ret!=0)
       ret=check_NTFS(disk,partition,verbose,0);
+    if(ret!=0)
+      ret=check_ReFS(disk, partition);
     if(ret!=0)
       ret=check_linux(disk, partition, verbose);
     if(ret!=0)

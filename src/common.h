@@ -254,6 +254,7 @@ enum upart_type {
   UP_NTFS,
   UP_OPENBSD,
   UP_OS2MB,
+  UP_ReFS,
   UP_RFS,
   UP_RFS2,
   UP_RFS3,

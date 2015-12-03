@@ -119,6 +119,7 @@ static const struct systypes none_sys_types[] = {
   {UP_NTFS,	"NTFS"},
   {UP_OPENBSD,	"OpenBSD"},
   {UP_OS2MB,	"OS2 Multiboot"},
+  {UP_ReFS,	"ReFS"},
   {UP_RFS,	"ReiserFS 3.5"},
   {UP_RFS2,	"ReiserFS 3.6"},
   {UP_RFS3,	"ReiserFS 3.x"},
