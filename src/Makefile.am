@@ -297,6 +297,7 @@ file_C			= filegen.c \
 			  file_vdj.c \
 			  file_veg.c \
 			  file_vfb.c \
+			  file_vib.c \
 			  file_vmdk.c \
 			  file_vmg.c \
 			  file_wallet.c \
