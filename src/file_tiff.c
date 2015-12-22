@@ -40,6 +40,7 @@
 #include "log.h"
 
 extern const file_hint_t file_hint_raf;
+extern const file_hint_t file_hint_jpg;
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 static uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
@@ -315,6 +316,12 @@ static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned 
   const TIFFHeader *header=(const TIFFHeader *)buffer;
   if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_jpg)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tiff.extension;
   if(find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
@@ -353,6 +360,12 @@ static int header_check_tiff_le_new(const unsigned char *buffer, const unsigned 
   if(file_recovery->file_stat!=NULL &&
     file_recovery->file_stat->file_hint==&file_hint_raf &&
     memcmp(buffer, raf_fp, 15)==0)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
     header_ignored(file_recovery_new);
     return 0;

@@ -1656,6 +1656,8 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 {
   uint64_t thumb_offset;
   static uint64_t thumb_error=0;
+  if(file_recovery->calculated_file_size<=2)
+    file_recovery->calculated_file_size=0;
   /* FIXME REMOVE ME */
   file_recovery->flags=1;
   file_recovery->file_size=0;

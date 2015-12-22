@@ -862,7 +862,8 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   if(buffer[35]=='\0')
     return 0;
   if(file_recovery->file_stat!=NULL &&
-      (file_recovery->file_stat->file_hint==&file_hint_pdf ||
+      (file_recovery->file_stat->file_hint==&file_hint_jpg ||
+       file_recovery->file_stat->file_hint==&file_hint_pdf ||
        file_recovery->file_stat->file_hint==&file_hint_tiff))
     return 0;
   /* Adobe's Extensible Metadata Platform */
