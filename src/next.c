@@ -45,9 +45,9 @@ struct search_location
 typedef struct search_location search_location_t;
 static inline uint64_t CHS_to_offset(const unsigned int C, const int H, const int S,const disk_t *disk_car);
 
-#define SEARCH_LOCATION_MAX 128
+#define SEARCH_LOCATION_MAX 256
 static unsigned int search_location_nbr=0;
-static search_location_t search_location_info[SEARCH_LOCATION_MAX];
+static search_location_t search_location_info[SEARCH_LOCATION_MAX+1];
 
 static inline uint64_t CHS_to_offset(const unsigned int C, const int H, const int S,const disk_t *disk_car)
 {
@@ -59,7 +59,8 @@ static void update_location(void)
   unsigned int i;
   if(search_location_info[search_location_nbr].inc==0)
   {
-    search_location_nbr++;
+    if(search_location_nbr < SEARCH_LOCATION_MAX)
+      search_location_nbr++;
     return;
   }
   for(i=0; i<search_location_nbr; i++)
@@ -87,7 +88,8 @@ static void update_location(void)
 	(search_location_info[search_location_nbr].offset - search_location_info[i].offset)%search_location_info[i].inc==0)
       return ;
   }
-  search_location_nbr++;
+  if(search_location_nbr < SEARCH_LOCATION_MAX)
+    search_location_nbr++;
 }
 
 void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode)
