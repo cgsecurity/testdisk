@@ -131,6 +131,7 @@ file_C			= filegen.c \
 			  file_flp.c \
 			  file_flv.c \
 			  file_fob.c \
+			  file_fos.c \
 			  file_fp5.c \
 			  file_fp7.c \
 			  file_freeway.c \
