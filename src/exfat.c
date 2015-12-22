@@ -33,6 +33,9 @@
 #include "types.h"
 #include "common.h"
 #include "exfat.h"
+#include "log.h"
+
+extern const arch_fnct_t arch_none;
 
 uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster)
 {
@@ -95,8 +98,15 @@ int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_head
   partition->part_type_i386=P_EXFAT;
   partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
   partition->part_size=(uint64_t)le64(exfat_header->nr_sectors) * disk->sector_size;
-  if(le64(exfat_header->start_sector) +
-      (12 << exfat_header->blocksize_bits) == partition->part_offset)
+#ifdef DEBUG_EXFAT
+  log_info("recover_EXFAT:\n");
+  log_info("start_sector=%llu\n", (long long unsigned)le64(exfat_header->start_sector));
+  log_info("blocksize=%u\n", (12<<exfat_header->blocksize_bits));
+  log_info("part_offset=%llu\n", partition->part_offset);
+#endif
+  if((le64(exfat_header->start_sector) * disk ->sector_size +
+      (12 << exfat_header->blocksize_bits) == partition->part_offset) ||
+    (disk->arch==&arch_none && (12 << exfat_header->blocksize_bits) == partition->part_offset))
   {
     partition->sb_offset=12 << exfat_header->blocksize_bits;
     partition->part_offset-=partition->sb_offset;
