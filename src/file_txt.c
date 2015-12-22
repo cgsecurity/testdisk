@@ -1264,7 +1264,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       else
 	ext="py";
     }
-    else if(strstr(buffer_lower, "class")!=NULL &&
+    else if(strstr(buffer_lower, "class ")!=NULL &&
 	(l>=100 || file_recovery->file_stat==NULL))
     {
 #ifdef DJGPP
