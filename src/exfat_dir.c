@@ -52,7 +52,7 @@
 #include "setdate.h"
 #include "fat.h"
 
-#define EXFAT_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
+#define EXFAT_MKMODE(a,m) ((m & ((a & ATTR_RO) ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | ((a & ATTR_DIR) ? LINUX_S_IFDIR : LINUX_S_IFREG))
 struct exfat_dir_struct
 {
   struct exfat_super_block*boot_sector;
@@ -106,7 +106,6 @@ static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned 
 #define ATTR_SYS     4  /* system */
 #define ATTR_DIR     16 /* directory */
 #define ATTR_ARCH    32 /* archived */
-#define EXFAT_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
 
 static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *partition, const int offset, const unsigned int cluster)
 {
