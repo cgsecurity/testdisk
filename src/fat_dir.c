@@ -49,7 +49,7 @@
 #include "log.h"
 #include "setdate.h"
 
-#define MSDOS_MKMODE(a,m) ((m & (a & ATTR_RO ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | (a & ATTR_DIR ? LINUX_S_IFDIR : LINUX_S_IFREG))
+#define MSDOS_MKMODE(a,m) ((m & ((a & ATTR_RO) ? LINUX_S_IRUGO|LINUX_S_IXUGO : LINUX_S_IRWXUGO)) | ((a & ATTR_DIR) ? LINUX_S_IFDIR : LINUX_S_IFREG))
 struct fat_dir_struct
 {
   struct fat_boot_sector*boot_sector;
