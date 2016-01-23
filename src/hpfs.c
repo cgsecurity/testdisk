@@ -38,9 +38,12 @@
 #include "log.h"
 #include "log_part.h"
 
-static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *hpfs_header, partition_t *partition,const int verbose, const int dump_ind);
+static void set_HPFS_info(partition_t *partition)
+{
+  partition->upart_type=UP_HPFS;
+}
 
-static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *hpfs_header, partition_t *partition,const int verbose, const int dump_ind)
+static int test_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)hpfs_header;
   if(le16(hpfs_header->marker)==0xAA55)
@@ -58,23 +61,23 @@ static int test_HPFS(disk_t *disk_car,const struct fat_boot_sector *hpfs_header,
       }
       if(dump_ind!=0)
         dump_log(buffer, DEFAULT_SECTOR_SIZE);
-      partition->part_size=(uint64_t)(fat_sectors(hpfs_header)>0?fat_sectors(hpfs_header):le32(hpfs_header->total_sect)) *
-        fat_sector_size(hpfs_header);
-      partition->upart_type=UP_HPFS;
       return 0;
     }
   }     /* fin marqueur de fin :)) */
   return 1;
 }
 
-int recover_HPFS(disk_t *disk_car,const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose)
+int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, partition_t *partition, const int verbose)
 {
-  if(test_HPFS(disk_car,fat_header,partition,verbose,0)!=0)
+  if(test_HPFS(disk_car, hpfs_header, partition, verbose,0)!=0)
     return 1;
+  set_HPFS_info(partition);
   partition->part_type_i386=P_HPFS;
   partition->part_type_gpt=GPT_ENT_TYPE_MAC_HFS;
   partition->fsname[0]='\0';
   partition->info[0]='\0';
+  partition->part_size=(uint64_t)(fat_sectors(hpfs_header)>0?fat_sectors(hpfs_header):le32(hpfs_header->total_sect)) *
+    fat_sector_size(hpfs_header);
   return 0;
 }
 
@@ -96,6 +99,7 @@ int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
     }
     return 1;
   }
+  set_HPFS_info(partition);
   return 0;
 }
 
