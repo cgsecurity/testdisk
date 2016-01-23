@@ -61,6 +61,7 @@
 #include "md.h"
 #include "netware.h"
 #include "ntfs.h"
+#include "refs.h"
 #include "rfs.h"
 #include "sun.h"
 #include "sysv.h"
@@ -423,6 +424,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_MD(disk_car,partition,verbose);
       if(ret!=0)
       { screen_buffer_add("Invalid RAID superblock\n"); }
+      break;
+    case UP_ReFS:
+      ret=check_ReFS(disk_car, partition);
       break;
     case UP_RFS:
     case UP_RFS2:
