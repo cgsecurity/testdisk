@@ -48,10 +48,10 @@
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
 
-static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition);
+static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition);
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header);
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
-static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind);
+static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind);
 static int is_fat12(const partition_t *partition);
 static int is_fat16(const partition_t *partition);
 static int is_fat32(const partition_t *partition);
@@ -196,43 +196,49 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-static int set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition)
+static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition)
 {
+  uint64_t start_fat1,start_data,part_size;
+  unsigned long int no_of_cluster,fat_length;
   const char*buffer=(const char*)fat_header;
   partition->fsname[0]='\0';
   partition->blocksize=fat_sector_size(fat_header)* fat_header->sectors_per_cluster;
-  switch(partition->upart_type)
+  fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
+  part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
+  start_fat1=le16(fat_header->reserved);
+  start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+fat_sector_size(fat_header)-1)/fat_sector_size(fat_header);
+  no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
+  if(no_of_cluster<4085)
   {
-    case UP_FAT12:
-      snprintf(partition->info, sizeof(partition->info), "FAT12, blocksize=%u", partition->blocksize);
-      if(buffer[38]==0x29)	/* BS_BootSig */
-      {
-        set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
-        if(check_VFAT_volume_name(partition->fsname, 11))
-          partition->fsname[0]='\0';
-      }
-      break;
-    case UP_FAT16:
-      snprintf(partition->info, sizeof(partition->info), "FAT16, blocksize=%u", partition->blocksize);
-      if(buffer[38]==0x29)	/* BS_BootSig */
-      {
-        set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
-        if(check_VFAT_volume_name(partition->fsname, 11))
-          partition->fsname[0]='\0';
-      }
-      break;
-    case UP_FAT32:
-      if(partition->sb_offset==0)
-	snprintf(partition->info, sizeof(partition->info), "FAT32, blocksize=%u", partition->blocksize);
-      else
-	snprintf(partition->info, sizeof(partition->info), "FAT32 found using backup sector, blocksize=%u", partition->blocksize);
-      fat32_set_part_name(disk_car,partition,fat_header);
-      break;
-    default:
-      log_critical("set_FAT_info unknown upart_type\n");
-      return 1;
+    partition->upart_type=UP_FAT12;
+    snprintf(partition->info, sizeof(partition->info), "FAT12, blocksize=%u", partition->blocksize);
+    if(buffer[38]==0x29)	/* BS_BootSig */
+    {
+      set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+      if(check_VFAT_volume_name(partition->fsname, 11))
+	partition->fsname[0]='\0';
+    }
   }
-  return 0;
+  else if(no_of_cluster<65525)
+  {
+    partition->upart_type=UP_FAT16;
+    snprintf(partition->info, sizeof(partition->info), "FAT16, blocksize=%u", partition->blocksize);
+    if(buffer[38]==0x29)	/* BS_BootSig */
+    {
+      set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+      if(check_VFAT_volume_name(partition->fsname, 11))
+	partition->fsname[0]='\0';
+    }
+  }
+  else
+  {
+    partition->upart_type=UP_FAT32;
+    if(partition->sb_offset==0)
+      snprintf(partition->info, sizeof(partition->info), "FAT32, blocksize=%u", partition->blocksize);
+    else
+      snprintf(partition->info, sizeof(partition->info), "FAT32 found using backup sector, blocksize=%u", partition->blocksize);
+    fat32_set_part_name(disk_car,partition,fat_header);
+  }
 }
 
 unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster)
@@ -425,7 +431,7 @@ static unsigned int get_prev_cluster(disk_t *disk_car,const partition_t *partiti
 }
 */
 
-int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
   uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
   unsigned long int no_of_cluster,fat_length,fat_length_calc;
@@ -534,7 +540,6 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     }
     start_rootdir=start_fat2+fat_length;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)*2/3-1)*3/2/fat_sector_size(fat_header));
-    partition->upart_type=UP_FAT12;
     if(memcmp(buffer+FAT_NAME1,"FAT12   ",8)!=0) /* 2 Mo max */
     {
       screen_buffer_add("Should be marked as FAT12\n");
@@ -574,7 +579,6 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     }
     start_rootdir=start_fat2+fat_length;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/2-1)*2/fat_sector_size(fat_header));
-    partition->upart_type=UP_FAT16;
     if(memcmp(buffer+FAT_NAME1,"FAT16   ",8)!=0)
     {
       screen_buffer_add("Should be marked as FAT16\n");
@@ -620,7 +624,6 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     }
     start_rootdir=start_data+(uint64_t)(le32(fat_header->root_cluster)-2)*fat_header->sectors_per_cluster;
     fat_length_calc=((no_of_cluster+2+fat_sector_size(fat_header)/4-1)*4/fat_sector_size(fat_header));
-    partition->upart_type=UP_FAT32;
     if(memcmp(buffer+FAT_NAME2,"FAT32   ",8)!=0)
     {
       screen_buffer_add("Should be marked as FAT32\n");
@@ -662,7 +665,7 @@ int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, partiti
     log_info("FAT1 : %lu-%lu\n", (long unsigned)start_fat1, (long unsigned)(start_fat1+fat_length-1));
     log_info("FAT2 : %lu-%lu\n", (long unsigned)start_fat2, (long unsigned)(start_fat2+fat_length-1));
     log_info("start_rootdir : %lu", (long unsigned)start_rootdir);
-    if(partition->upart_type==UP_FAT32)
+    if(no_of_cluster >= 65525)	/* FAT32 */
       log_info(" root cluster : %u",(unsigned int)le32(fat_header->root_cluster));
     log_info("\nData : %lu-%lu\n", (long unsigned)start_data, (long unsigned)end_data);
     log_info("sectors : %lu\n", (long unsigned)part_size);
@@ -886,6 +889,7 @@ int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
     }
     return 1;
   }
+  partition->upart_type=UP_OS2MB;
   return 0;
 }
 
@@ -894,6 +898,7 @@ int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, p
   if(test_OS2MB(disk, fat_header, partition, verbose, dump_ind))
     return 1;
   /* 1 cylinder */
+  partition->upart_type=UP_OS2MB;
   partition->part_size=(uint64_t)disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
   partition->part_type_i386=P_OS2MB;
   partition->fsname[0]='\0';
@@ -901,7 +906,7 @@ int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, p
   return 0;
 }
 
-static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, partition_t *partition,const int verbose, const int dump_ind)
+static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)fat_header;
   if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)
@@ -915,7 +920,6 @@ static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_head
     }
     if(dump_ind)
       dump_log(buffer, DEFAULT_SECTOR_SIZE);
-    partition->upart_type=UP_OS2MB;
     return 0;
   }
   return 1;
