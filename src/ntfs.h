@@ -241,13 +241,13 @@ typedef struct {
 } __attribute__((gcc_struct, __packed__)) TD_INDEX_ROOT;
 
 
-int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const int dump_ind);
+int check_NTFS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind);
 int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2);
 int log_ntfs_info(const struct ntfs_boot_sector *ntfs_header);
 int is_ntfs(const partition_t *partition);
 int is_part_ntfs(const partition_t *partition);
 int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,partition_t *partition,const int verbose, const int dump_ind, const int backup);
-int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind);
+int test_NTFS(const disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, const partition_t *partition, const int verbose, const int dump_ind);
 #define NTFS_GETU8(p)      (*(const uint8_t*)(p))
 #define NTFS_GETU16(p)     (le16(*(const uint16_t*)(p)))
 #define NTFS_GETU32(p)     (le32(*(const uint32_t*)(p)))

@@ -52,7 +52,7 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header)
 { return (ntfs_header->sector_size[1]<<8)+ntfs_header->sector_size[0]; }
 
-int check_NTFS(disk_t *disk_car,partition_t *partition,const int verbose,const int dump_ind)
+int check_NTFS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(DEFAULT_SECTOR_SIZE);
 /*  log_trace("check_NTFS part_offset=%llu\n",(long long unsigned)partition->part_offset); */
@@ -111,6 +111,7 @@ int recover_NTFS(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,par
 
 static void set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, partition_t *partition)
 {
+  partition->upart_type=UP_NTFS;
   partition->fsname[0]='\0';
   partition->blocksize=ntfs_header->sectors_per_cluster*ntfs_sector_size(ntfs_header);
   if(partition->sb_offset==0)
@@ -120,7 +121,7 @@ static void set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_h
   ntfs_get_volume_name(disk_car, partition, ntfs_header);
 }
 
-int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, partition_t *partition,const int verbose, const int dump_ind)
+int test_NTFS(const disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
   if(le16(ntfs_header->marker)!=0xAA55 ||
       le16(ntfs_header->reserved)>0 ||
@@ -180,7 +181,6 @@ int test_NTFS(const disk_t *disk_car,const struct ntfs_boot_sector*ntfs_header, 
       log_info("Info: size boot_sector %lu, partition %lu\n",(long unsigned)part_size,(long unsigned)(partition->part_size/disk_car->sector_size));
     }
   }
-  partition->upart_type=UP_NTFS;
   return 0;
 }
 
