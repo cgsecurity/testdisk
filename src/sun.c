@@ -41,8 +41,8 @@
 #define SUN_LABEL_MAGIC          0xDABE
 extern const arch_fnct_t arch_sun;
 
-static int set_sun_info_i386(partition_t *partition);
-static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition, const int verbose);
+static void set_sun_info_i386(partition_t *partition);
+static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, const partition_t *partition, const int verbose);
 
 int check_sun_i386(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -63,40 +63,37 @@ int check_sun_i386(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition, const int verbose)
+static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, const partition_t *partition, const int verbose)
 {
-  if ((le16(sunlabel->magic) == SUN_LABEL_MAGIC)
-      && (le32(sunlabel->magic_start) == SUN_LABEL_MAGIC_START))
+  if ((le16(sunlabel->magic) != SUN_LABEL_MAGIC) ||
+      (le32(sunlabel->magic_start) != SUN_LABEL_MAGIC_START))
+    return 1;
+  if(verbose>0)
+    log_info("\nSUN Marker at %u/%u/%u\n",
+	offset2cylinder(disk_car,partition->part_offset),
+	offset2head(disk_car,partition->part_offset),
+	offset2sector(disk_car,partition->part_offset));
   {
-    partition->upart_type = UP_SUN;
-    if(verbose>0)
-      log_info("\nSUN Marker at %u/%u/%u\n",
-	  offset2cylinder(disk_car,partition->part_offset),
-	  offset2head(disk_car,partition->part_offset),
-	  offset2sector(disk_car,partition->part_offset));
+    int i;
+    partition_t *new_partition=partition_new(NULL);
+    for(i=0;i<16;i++)
     {
-      int i;
-      partition_t *new_partition=partition_new(NULL);
-      for(i=0;i<16;i++)
+      if (sunlabel->partitions[i].num_sectors > 0
+	  && sunlabel->partitions[i].id > 0)
+	//	    && sunlabel->partitions[i].id != WHOLE_DISK)
       {
-	if (sunlabel->partitions[i].num_sectors > 0
-	    && sunlabel->partitions[i].id > 0)
-//	    && sunlabel->partitions[i].id != WHOLE_DISK)
-	{
-	  partition_reset(new_partition, &arch_sun);
-	  new_partition->order=i;
-	  new_partition->part_type_sun=sunlabel->partitions[i].id;
-	  new_partition->part_offset=partition->part_offset+(uint64_t)le32(sunlabel->partitions[i].start_sector) * le16(sunlabel->sector_size);
-	  new_partition->part_size=(uint64_t)le32(sunlabel->partitions[i].num_sectors) * le16(sunlabel->sector_size);
-	  new_partition->status=STATUS_PRIM;
-	  log_partition(disk_car,new_partition);
-	}
+	partition_reset(new_partition, &arch_sun);
+	new_partition->order=i;
+	new_partition->part_type_sun=sunlabel->partitions[i].id;
+	new_partition->part_offset=partition->part_offset+(uint64_t)le32(sunlabel->partitions[i].start_sector) * le16(sunlabel->sector_size);
+	new_partition->part_size=(uint64_t)le32(sunlabel->partitions[i].num_sectors) * le16(sunlabel->sector_size);
+	new_partition->status=STATUS_PRIM;
+	log_partition(disk_car,new_partition);
       }
-      free(new_partition);
     }
-    return 0;
+    free(new_partition);
   }
-  return 1;
+  return 0;
 }
 
 int recover_sun_i386(disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition,const int verbose, const int dump_ind)
@@ -118,9 +115,9 @@ int recover_sun_i386(disk_t *disk_car, const sun_partition_i386 *sunlabel, parti
   return 0;
 }
 
-static int set_sun_info_i386(partition_t *partition)
+static void set_sun_info_i386(partition_t *partition)
 {
+  partition->upart_type = UP_SUN;
   partition->info[0]='\0';
   partition->fsname[0]='\0';
-  return 0;
 }
