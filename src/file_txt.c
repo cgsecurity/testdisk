@@ -373,7 +373,8 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
 #ifdef DEBUG_TXT
       log_info("UTF8 Ascii UCS 0x%02x\n", *p);
 #endif
-      *q = tolower(*p++);
+      *q = tolower(*p);
+      p++;
     }
     if (*q=='\0' || filtre(*q)==0)
     {
@@ -627,14 +628,15 @@ static void file_rename_fods(file_recovery_t *file_recovery)
   FILE *file;
   char buffer[4096];
   char *tmp;
+  size_t lu;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
-  memset(buffer, 0, sizeof(buffer));
-  if(fread(&buffer, 1, sizeof(buffer)-1, file) <= 0)
+  if((lu=fread(&buffer, 1, sizeof(buffer)-1, file)) <= 0)
   {
     fclose(file);
     return ;
   }
+  buffer[lu]='\0';
   tmp=strchr(buffer,'<');
   while(tmp!=NULL)
   {
@@ -653,19 +655,21 @@ static void file_rename_fods(file_recovery_t *file_recovery)
   }
   fclose(file);
 }
+
 static void file_rename_html(file_recovery_t *file_recovery)
 {
   FILE *file;
   char buffer[4096];
   char *tmp;
+  size_t lu;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
-  memset(buffer, 0, sizeof(buffer));
-  if(fread(&buffer, 1, sizeof(buffer)-1, file) <= 0)
+  if((lu=fread(&buffer, 1, sizeof(buffer)-1, file)) <= 0)
   {
     fclose(file);
     return ;
   }
+  buffer[lu]='\0';
   tmp=strchr(buffer,'<');
   while(tmp!=NULL)
   {
@@ -1377,12 +1381,14 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
 static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
-  if(td_memmem(buffer, buffer_size_test, ".snz", 4)==NULL)
+  const unsigned char *pos=(const unsigned char *)td_memmem(buffer, buffer_size_test, ".snz", 4);
+  if(pos==NULL)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension="snz";
+  file_recovery_new->min_filesize=pos-buffer;
   return 1;
 }
 
