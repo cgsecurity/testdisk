@@ -118,7 +118,7 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?mingw_debug_package}
 
 %prep
-%setup -q -n testdisk-%{version}%{?ver_wip}
+%setup -q -n mingw-testdisk-%{version}%{?ver_wip}
 
 %build
 %mingw_configure --enable-missing-uuid-ok
