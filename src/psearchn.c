@@ -347,9 +347,11 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
     if(ind_stop!=PSTATUS_OK)
     {
       log_info("PhotoRec has been stopped\n");
-      current_search_space=list_search_space;
+      file_recovery_aborted(&file_recovery, params, list_search_space);
+      free(buffer_start);
+      return ind_stop;
     }
-    else if(file_recovered==PFSTATUS_BAD)
+    if(file_recovered==PFSTATUS_BAD)
     {
       if(res==DC_SCAN)
       {
@@ -431,7 +433,9 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  if(ind_stop!=PSTATUS_OK)
 	  {
 	    log_info("PhotoRec has been stopped\n");
-	    current_search_space=list_search_space;
+	    file_recovery_aborted(&file_recovery, params, list_search_space);
+	    free(buffer_start);
+	    return ind_stop;
 	  }
         }
       }

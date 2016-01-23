@@ -635,16 +635,22 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
   return 1;
 }
 
-/*  file_finish2()
-    @param file_recovery - 
-    @param struct ph_param *params
-    const struct ph_options *options
-    @param alloc_data_t *list_search_space
+void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *params, alloc_data_t *list_search_space)
+{
+  if(file_recovery->file_stat==NULL)
+    return ;
+  params->offset=file_recovery->location.start;
+  if(file_recovery->handle)
+  {
+    fclose(file_recovery->handle);
+    file_recovery->handle=NULL;
+    /* File is zero-length; erase it */
+    unlink(file_recovery->filename);
+  }
+  file_block_truncate_zero(file_recovery, list_search_space);
+  reset_file_recovery(file_recovery);
+}
 
-    @returns:
-    0: file not recovered
-    1: file recovered
- */
 pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
 {
   int file_truncated;

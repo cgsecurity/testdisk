@@ -330,5 +330,6 @@ void xml_log_file_recovered(const file_recovery_t *file_recovery)
   }
   xml_pop("byte_runs");
   xml_pop("fileobject");
+  fflush(xml_handle);
 }
 #endif
