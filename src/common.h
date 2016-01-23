@@ -271,6 +271,7 @@ enum upart_type {
   UP_XFS2,
   UP_XFS3,
   UP_XFS4,
+  UP_XFS5,
   UP_ZFS};
 typedef enum upart_type upart_type_t;
 enum status_type { STATUS_DELETED, STATUS_PRIM, STATUS_PRIM_BOOT, STATUS_LOG, STATUS_EXT, STATUS_EXT_IN_EXT};

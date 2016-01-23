@@ -137,6 +137,7 @@ static const struct systypes none_sys_types[] = {
   {UP_XFS2,	"XFS 2"},
   {UP_XFS3,	"XFS 3"},
   {UP_XFS4,	"XFS 4"},
+  {UP_XFS5,	"XFS 5"},
   {UP_ZFS,	"ZFS"},
   { 0,NULL }
 };
@@ -451,6 +452,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_XFS2:
     case UP_XFS3:
     case UP_XFS4:
+    case UP_XFS5:
       ret=check_xfs(disk_car,partition,verbose);
       break;
     case UP_ZFS:

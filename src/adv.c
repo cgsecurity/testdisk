@@ -119,6 +119,7 @@ static int is_linux(const partition_t *partition)
     case UP_XFS2:
     case UP_XFS3:
     case UP_XFS4:
+    case UP_XFS5:
       return 1;
     default:
       break;

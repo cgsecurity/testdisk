@@ -38,6 +38,7 @@ extern "C" {
 #define	XFS_SB_VERSION_2	2		/* 6.2 - attributes */
 #define	XFS_SB_VERSION_3	3		/* 6.2 - new inode version */
 #define	XFS_SB_VERSION_4	4		/* 6.2+ - bitmask version */
+#define	XFS_SB_VERSION_5	5		/* CRC enabled filesystem */
 #define XFS_SB_VERSION_NUMBITS          0x000f
 
 typedef	uint32_t	xfs_extlen_t;	/* extent length in blocks */
