@@ -36,8 +36,8 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_ZFS(disk_t *disk, const struct vdev_boot_header *sb, partition_t *partition, const int dump_ind);
-static int set_ZFS_info(const struct vdev_boot_header *sb, partition_t *partition);
+static int test_ZFS(disk_t *disk, const struct vdev_boot_header *sb, const partition_t *partition, const int dump_ind);
+static void set_ZFS_info(const struct vdev_boot_header *sb, partition_t *partition);
 
 int check_ZFS(disk_t *disk,partition_t *partition)
 {
@@ -57,10 +57,10 @@ int check_ZFS(disk_t *disk,partition_t *partition)
   return 0;
 }
 
-static int set_ZFS_info(const struct vdev_boot_header *sb, partition_t *partition)
+static void set_ZFS_info(const struct vdev_boot_header *sb, partition_t *partition)
 {
+  partition->upart_type=UP_ZFS;
   sprintf(partition->info,"ZFS %lu (Data size unknown)", (long unsigned)le64(sb->vb_version));
-  return 0;
 }
 
 int recover_ZFS(disk_t *disk, const struct vdev_boot_header *sb,partition_t *partition,const int verbose, const int dump_ind)
@@ -85,7 +85,7 @@ int recover_ZFS(disk_t *disk, const struct vdev_boot_header *sb,partition_t *par
   return 0;
 }
 
-static int test_ZFS(disk_t *disk, const struct vdev_boot_header *sb, partition_t *partition, const int dump_ind)
+static int test_ZFS(disk_t *disk, const struct vdev_boot_header *sb, const partition_t *partition, const int dump_ind)
 {
   if(le64(sb->vb_magic)!=VDEV_BOOT_MAGIC)
     return 1;
@@ -98,8 +98,5 @@ static int test_ZFS(disk_t *disk, const struct vdev_boot_header *sb, partition_t
           offset2sector(disk,partition->part_offset));
     dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
-  if(partition==NULL)
-    return 0;
-  partition->upart_type=UP_ZFS;
   return 0;
 }
