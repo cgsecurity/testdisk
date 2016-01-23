@@ -37,11 +37,11 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_LVM_info(partition_t *partition);
-static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
+static void set_LVM_info(partition_t *partition);
+static int test_LVM(disk_t *disk_car, const pv_disk_t *pv, const partition_t *partition,const int verbose, const int dump_ind);
 
-static int set_LVM2_info(partition_t*partition);
-static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind);
+static void set_LVM2_info(partition_t*partition);
+static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh, const partition_t *partition, const int verbose, const int dump_ind);
 
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -79,7 +79,7 @@ int recover_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,con
   return 0;
 }
 
-static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind)
+static int test_LVM(disk_t *disk_car, const pv_disk_t *pv, const partition_t *partition, const int verbose, const int dump_ind)
 {
   if ((memcmp((const char *)pv->id,LVM_ID,sizeof(pv->id)) == 0) && (le16(pv->version) == 1 || le16(pv->version) == 2))
   {
@@ -113,18 +113,17 @@ static int test_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition
       return (1);
     if (le32(pv->pe_allocated) > le32(pv->pe_total))
       return (1);
-    partition->upart_type=UP_LVM;
     return 0;
   }
   return 1;
 }
 
-static int set_LVM_info(partition_t *partition)
+static void set_LVM_info(partition_t *partition)
 {
+  partition->upart_type=UP_LVM;
   partition->fsname[0]='\0';
   partition->info[0]='\0';
   snprintf(partition->info,sizeof(partition->info),"LVM");
-  return 0;
 }
 
 int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose)
@@ -166,7 +165,7 @@ int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partiti
   return 0;
 }
 
-static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partition_t *partition,const int verbose, const int dump_ind)
+static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh, const partition_t *partition, const int verbose, const int dump_ind)
 {
   if (memcmp((const char *)lh->type,LVM2_LABEL,sizeof(lh->type)) == 0)
   {
@@ -181,16 +180,15 @@ static int test_LVM2(disk_t *disk_car, const struct lvm2_label_header *lh,partit
       /* There is a little offset ... */
       dump_log(lh,DEFAULT_SECTOR_SIZE);
     }
-    partition->upart_type=UP_LVM2;
     return 0;
   }
   return 1;
 }
 
-static int set_LVM2_info(partition_t*partition)
+static void set_LVM2_info(partition_t*partition)
 {
+  partition->upart_type=UP_LVM2;
   partition->fsname[0]='\0';
   partition->info[0]='\0';
   snprintf(partition->info,sizeof(partition->info),"LVM2");
-  return 0;
 }
