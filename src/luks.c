@@ -36,8 +36,8 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind);
-static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition);
+static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, const partition_t *partition, const int dump_ind);
+static void set_LUKS_info(const struct luks_phdr *sb, partition_t *partition);
 
 int check_LUKS(disk_t *disk_car,partition_t *partition)
 {
@@ -57,13 +57,13 @@ int check_LUKS(disk_t *disk_car,partition_t *partition)
   return 0;
 }
 
-static int set_LUKS_info(const struct luks_phdr *sb, partition_t *partition)
+static void set_LUKS_info(const struct luks_phdr *sb, partition_t *partition)
 {
+  partition->upart_type=UP_LUKS;
   if(partition->part_size > 0)
     sprintf(partition->info,"LUKS %u", be16(sb->version));
   else
     sprintf(partition->info,"LUKS %u (Data size unknown)", be16(sb->version));
-  return 0;
 }
 
 int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind)
@@ -90,7 +90,7 @@ int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *parti
   return 0;
 }
 
-static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *partition, const int dump_ind)
+static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, const partition_t *partition, const int dump_ind)
 {
   static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
   if(memcmp(sb->magic, LUKS_MAGIC, LUKS_MAGIC_L)!=0)
@@ -104,8 +104,5 @@ static int test_LUKS(disk_t *disk_car, const struct luks_phdr *sb, partition_t *
           offset2sector(disk_car,partition->part_offset));
     dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
-  if(partition==NULL)
-    return 0;
-  partition->upart_type=UP_LUKS;
   return 0;
 }
