@@ -30,16 +30,12 @@
 #include "common.h"
 #include "fatx.h"
 static void set_FATX_info(partition_t *partition);
-static int test_fatx(const struct disk_fatx *fatx_block, partition_t *partition);
 
-static int test_fatx(const struct disk_fatx *fatx_block, partition_t *partition)
+static int test_fatx(const struct disk_fatx *fatx_block)
 {
-  if(memcmp(fatx_block->magic,"FATX",4)==0)
-  {
-    partition->upart_type=UP_FATX;
-    return 0;
-  }
-  return 1;
+  if(memcmp(fatx_block->magic,"FATX",4)!=0)
+    return 1;
+  return 0;
 }
 
 int check_FATX(disk_t *disk_car,partition_t *partition)
@@ -47,7 +43,7 @@ int check_FATX(disk_t *disk_car,partition_t *partition)
   unsigned char buffer[8*DEFAULT_SECTOR_SIZE];
   if(disk_car->pread(disk_car, &buffer, sizeof(buffer), partition->part_offset) != sizeof(buffer))
   { return 1; }
-  if(test_fatx((const struct disk_fatx *)&buffer, partition)!=0)
+  if(test_fatx((const struct disk_fatx *)&buffer)!=0)
     return 1;
   set_FATX_info(partition);
   return 0;
@@ -55,7 +51,7 @@ int check_FATX(disk_t *disk_car,partition_t *partition)
 
 int recover_FATX(const struct disk_fatx *fatx_block, partition_t *partition)
 {
-  if(test_fatx(fatx_block, partition)!=0)
+  if(test_fatx(fatx_block)!=0)
     return 1;
   set_FATX_info(partition);
   partition->part_type_xbox=PXBOX_FATX;
@@ -66,7 +62,7 @@ int recover_FATX(const struct disk_fatx *fatx_block, partition_t *partition)
 
 static void set_FATX_info(partition_t *partition)
 {
+  partition->upart_type=UP_FATX;
   partition->fsname[0]='\0';
   strncpy(partition->info,"FATX",sizeof(partition->info));
 }
-
