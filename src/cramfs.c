@@ -37,8 +37,8 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_cramfs_info(const struct cramfs_super *sb, partition_t *partition);
-static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partition_t *partition, const int verbose);
+static void set_cramfs_info(const struct cramfs_super *sb, partition_t *partition);
+static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, const partition_t *partition, const int verbose);
 
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -65,14 +65,12 @@ int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose)
   return 1;
 }
 
-static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition, const int verbose)
+static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, const partition_t *partition, const int verbose)
 {
-  if (sb->magic==le32(CRAMFS_MAGIC))
-  {
-    partition->upart_type = UP_CRAMFS;
-  }
-  else
+  if (sb->magic!=le32(CRAMFS_MAGIC))
     return 1;
+  if(partition==NULL)
+    return 0;
   if(verbose>0)
     log_info("\ncramfs Marker at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
   return 0;
@@ -99,18 +97,9 @@ int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *
   return 0;
 }
 
-static int set_cramfs_info(const struct cramfs_super *sb, partition_t *partition)
+static void set_cramfs_info(const struct cramfs_super *sb, partition_t *partition)
 {
+  partition->upart_type = UP_CRAMFS;
   set_part_name(partition, (const char*)sb->name, 16);
-  switch(partition->upart_type)
-  {
-    case UP_CRAMFS:
-      strncpy(partition->info,"cramfs",sizeof(partition->info));
-      break;
-    default:
-      partition->info[0]='\0';
-      return 1;
-  }
-
-  return 0;
+  strncpy(partition->info,"cramfs",sizeof(partition->info));
 }
