@@ -36,15 +36,20 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh)
+static void set_HFSP_info(partition_t *partition, const struct hfsp_vh *vh)
 {
   partition->blocksize=be32(vh->blocksize);
   partition->fsname[0]='\0';
-  if(partition->upart_type==UP_HFSP)
+  if (be16(vh->version)==4)
+  {
+    partition->upart_type=UP_HFSP;
     snprintf(partition->info, sizeof(partition->info), "HFS+ blocksize=%u", partition->blocksize);
-  else
+  }
+  else if (be16(vh->version)==5)
+  {
+    partition->upart_type=UP_HFSX;
     snprintf(partition->info, sizeof(partition->info), "HFSX blocksize=%u", partition->blocksize);
-  return 0;
+  }
 }
 
 
@@ -111,7 +116,7 @@ int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partiti
   return 0;
 }
 
-int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind)
+int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh, const partition_t *partition, const int verbose, const int dump_ind)
 {
   if (be32(vh->free_blocks) > be32(vh->total_blocks))
     return 1;
@@ -122,7 +127,8 @@ int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,
   /* http://developer.apple.com/technotes/tn/tn1150.html */
   if (be16(vh->version)==4 && vh->signature==be16(HFSP_VOLHEAD_SIG))
   {
-    partition->upart_type=UP_HFSP;
+    if(partition==NULL)
+      return 0;
     if(verbose>0 || dump_ind!=0)
     {
       log_info("\nHFS+ magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
@@ -130,7 +136,8 @@ int test_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,
   }
   else if (be16(vh->version)==5 && vh->signature==be16(HFSX_VOLHEAD_SIG))
   {
-    partition->upart_type=UP_HFSX;
+    if(partition==NULL)
+      return 0;
     if(verbose>0 || dump_ind!=0)
     {
       log_info("\nHFSX magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
