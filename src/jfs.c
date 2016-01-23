@@ -37,8 +37,8 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition_t *partition, const int dump_ind);
-static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition);
+static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, const partition_t *partition, const int dump_ind);
+static void set_JFS_info(const struct jfs_superblock *sb, partition_t *partition);
 
 int check_JFS(disk_t *disk_car, partition_t *partition)
 {
@@ -58,8 +58,9 @@ int check_JFS(disk_t *disk_car, partition_t *partition)
   return 0;
 }
 
-static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
+static void set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
 {
+  partition->upart_type=UP_JFS;
   partition->blocksize=le32(sb->s_bsize);
   snprintf(partition->info, sizeof(partition->info), "JFS %u, blocksize=%u",
       (unsigned int)le32(sb->s_version), partition->blocksize);
@@ -68,7 +69,6 @@ static int set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
   {
     set_part_name(partition,sb->s_fpack,11);
   }
-  return 0;
 }
 
 /*
@@ -101,7 +101,7 @@ int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *p
   return 0;
 }
 
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition_t *partition, const int dump_ind)
+static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, const partition_t *partition, const int dump_ind)
 {
   if(memcmp(sb->s_magic,"JFS1",4)!=0)
     return 1;
@@ -122,6 +122,5 @@ static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, partition
   if(partition->part_size!=0 && (partition->part_size<le64(sb->s_size)))
     return 8;
     */
-  partition->upart_type=UP_JFS;
   return 0;
 }
