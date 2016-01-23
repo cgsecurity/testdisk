@@ -1,8 +1,5 @@
 %{?mingw_package_header}
 
-%define is_wip 1
-%{?is_wip:%define ver_wip -WIP}
-
 Name:		mingw-testdisk
 Version:	7.1
 Release:	0%{?dist}
@@ -13,9 +10,10 @@ Summary(ru_RU.UTF8): Программа для проверки и восста�
 License:	GPLv2+
 Group:		Applications/System
 URL:		http://www.cgsecurity.org/wiki/TestDisk
-Source0:	http://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
+Source0:	http://www.cgsecurity.org/testdisk-%{version}.tar.bz2
 
 BuildArch:	noarch
+BuildRequires: libtool autoconf automake
 
 BuildRequires:	mingw32-filesystem >= 95
 BuildRequires:	mingw32-binutils
@@ -118,9 +116,10 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?mingw_debug_package}
 
 %prep
-%setup -q -n mingw-testdisk-%{version}%{?ver_wip}
+%setup -q -n mingw-testdisk-%{version}
 
 %build
+autoreconf -vif -I config -W all
 %mingw_configure --enable-missing-uuid-ok
 %mingw_make %{?_smp_mflags}
 %install
