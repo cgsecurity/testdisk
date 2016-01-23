@@ -35,7 +35,7 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb);
+static void set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb);
 
 int check_HFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -83,7 +83,7 @@ int recover_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partitio
   return 0;
 }
 
-int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind)
+int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb, const partition_t *partition, const int verbose, const int dump_ind)
 {
   /* Check for HFS signature */
   if (hfs_mdb->drSigWord!=be16(HFS_SUPER_MAGIC))
@@ -117,19 +117,18 @@ int test_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,c
     log_info("drAlBlSt %u\n",(unsigned) be16(hfs_mdb->drAlBlSt));
     log_info("drFreeBks %u\n",(unsigned) be16(hfs_mdb->drFreeBks));
   }
-  partition->upart_type=UP_HFS;
   return 0;
 }
 
-static int set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb)
+static void set_HFS_info(partition_t *partition, const hfs_mdb_t *hfs_mdb)
 {
   unsigned int name_size=sizeof(hfs_mdb->drVN)-1;
+  partition->upart_type=UP_HFS;
   partition->blocksize=be32(hfs_mdb->drAlBlkSiz);
   snprintf(partition->info, sizeof(partition->info),
       "HFS blocksize=%u", partition->blocksize);
   if(name_size>hfs_mdb->drVN[0])
     name_size=hfs_mdb->drVN[0];
   memcpy(partition->fsname,&hfs_mdb->drVN[0]+1,name_size);
-  return 0;
 }
 
