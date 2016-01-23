@@ -35,12 +35,12 @@
 #include "log.h"
 #include "wbfs.h"
 
-static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int dump_ind);
+static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, const partition_t *partition, const int dump_ind);
 
-static int set_WBFS_info(partition_t *partition)
+static void set_WBFS_info(partition_t *partition)
 {
+  partition->upart_type=UP_WBFS;
   memcpy(partition->info,"WBFS",5);
-  return 0;
 }
 
 int check_WBFS(disk_t *disk,partition_t *partition)
@@ -80,7 +80,7 @@ int recover_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partitio
   return 0;
 }
 
-static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int dump_ind)
+static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, const partition_t *partition, const int dump_ind)
 {
   if(be32(sb->magic)!=WBFS_MAGIC)
     return 1;
@@ -93,8 +93,5 @@ static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *part
           offset2sector(disk,partition->part_offset));
     dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
-  if(partition==NULL)
-    return 0;
-  partition->upart_type=UP_WBFS;
   return 0;
 }
