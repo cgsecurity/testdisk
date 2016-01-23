@@ -37,10 +37,11 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_btrfs(const struct btrfs_super_block *sb, partition_t *partition);
+static int test_btrfs(const struct btrfs_super_block *sb);
 
-static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition)
+static void set_btrfs_info(const struct btrfs_super_block *sb, partition_t *partition)
 {
+  partition->upart_type=UP_BTRFS;
   partition->blocksize=le32(sb->dev_item.sector_size);
   set_part_name(partition, sb->label, sizeof(sb->label));
   snprintf(partition->info, sizeof(partition->info), "btrfs blocksize=%u", partition->blocksize);
@@ -49,7 +50,6 @@ static int set_btrfs_info(const struct btrfs_super_block *sb, partition_t *parti
     strcat(partition->info," Backup superblock");
   }
   /* last mounted => date */
-  return 0;
 }
 
 int check_btrfs(disk_t *disk_car,partition_t *partition)
@@ -60,7 +60,7 @@ int check_btrfs(disk_t *disk_car,partition_t *partition)
     free(buffer);
     return 1;
   }
-  if(test_btrfs((struct btrfs_super_block*)buffer, partition)!=0)
+  if(test_btrfs((struct btrfs_super_block*)buffer)!=0)
   {
     free(buffer);
     return 1;
@@ -76,7 +76,7 @@ Group 0 begin at s_first_data_block
 */
 int recover_btrfs(disk_t *disk, const struct btrfs_super_block *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
-  if(test_btrfs(sb, partition)!=0)
+  if(test_btrfs(sb)!=0)
     return 1;
   if(dump_ind!=0)
   {
@@ -112,12 +112,11 @@ int recover_btrfs(disk_t *disk, const struct btrfs_super_block *sb, partition_t 
   return 0;
 }
 
-static int test_btrfs(const struct btrfs_super_block *sb, partition_t *partition)
+static int test_btrfs(const struct btrfs_super_block *sb)
 {
   if(memcmp(&sb->magic, BTRFS_MAGIC, 8)!=0)
     return 1;
   if(le32(sb->dev_item.sector_size)==0)
     return 1;
-  partition->upart_type=UP_BTRFS;
   return 0;
 }
