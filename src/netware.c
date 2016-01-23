@@ -22,7 +22,7 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -32,13 +32,11 @@
 #include "types.h"
 #include "common.h"
 #include "netware.h"
-static int test_netware(const struct disk_netware *netware_block, partition_t *partition);
 
-static int test_netware(const struct disk_netware *netware_block, partition_t *partition)
+static int test_netware(const struct disk_netware *netware_block)
 {
   if(memcmp(netware_block->magic,"Nw_PaRtItIoN",12)==0)
   {
-    partition->upart_type=UP_NETWARE;
     return 0;
   }
   return 1;
@@ -52,19 +50,21 @@ int check_netware(disk_t *disk_car, partition_t *partition)
     free(buffer);
     return 1;
   }
-  if(test_netware((const struct disk_netware *)buffer, partition)!=0)
+  if(test_netware((const struct disk_netware *)buffer)!=0)
   {
     free(buffer);
     return 1;
   }
+  partition->upart_type=UP_NETWARE;
   free(buffer);
   return 0;
 }
 
 int recover_netware(disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition)
 {
-  if(test_netware(netware_block, partition)!=0)
+  if(test_netware(netware_block)!=0)
     return 1;
+  partition->upart_type=UP_NETWARE;
   partition->part_type_i386=P_NETWARE;
   partition->part_size=(uint64_t)le32(netware_block->nbr_sectors) * disk_car->sector_size;
   partition->fsname[0]='\0';
