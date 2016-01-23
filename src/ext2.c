@@ -38,7 +38,7 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose);
+static void set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose);
 
 int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
 {
@@ -58,8 +58,19 @@ int check_EXT2(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose)
+static void set_EXT2_info(const struct ext2_super_block *sb, partition_t *partition, const int verbose)
 {
+  if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_HUGE_FILE)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_GDT_CSUM)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_DIR_NLINK)!=0 ||
+      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_64BIT)!=0 ||
+      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_MMP)!=0)
+    partition->upart_type=UP_EXT4;
+  else if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
+    partition->upart_type=UP_EXT3;
+  else
+    partition->upart_type=UP_EXT2;
   partition->blocksize=EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size);
   set_part_name(partition,sb->s_volume_name,16);
   /* sb->s_last_mounted seems to be unemployed in kernel 2.2.16 */
@@ -91,7 +102,6 @@ static int set_EXT2_info(const struct ext2_super_block *sb, partition_t *partiti
     }
   }
   /* last mounted => date */
-  return 0;
 }
 
 /*

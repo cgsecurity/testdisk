@@ -25,7 +25,7 @@ extern "C" {
 
 uint64_t td_ext2fs_blocks_count(const struct ext2_super_block *super);
 uint64_t td_ext2fs_free_blocks_count(const struct ext2_super_block *super);
-int test_EXT2(const struct ext2_super_block *sb, partition_t *partition);
+int test_EXT2(const struct ext2_super_block *sb, const partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

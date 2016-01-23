@@ -49,7 +49,7 @@ uint64_t td_ext2fs_free_blocks_count(const struct ext2_super_block *super)
      (uint64_t) le32(super->s_free_blocks_hi) << 32 : 0);
 }
 
-int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
+int test_EXT2(const struct ext2_super_block *sb, const partition_t *partition)
 {
     /* There is a little offset ... */
   if(le16(sb->s_magic)!=EXT2_SUPER_MAGIC)
@@ -88,16 +88,5 @@ int test_EXT2(const struct ext2_super_block *sb, partition_t *partition)
       partition->part_size < td_ext2fs_blocks_count(sb) *
       (EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
     return 8;
-  if(EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_HUGE_FILE)!=0 ||
-      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_GDT_CSUM)!=0 ||
-      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_DIR_NLINK)!=0 ||
-      EXT2_HAS_RO_COMPAT_FEATURE(sb,EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE)!=0 ||
-      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_64BIT)!=0 ||
-      EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_MMP)!=0)
-    partition->upart_type=UP_EXT4;
-  else if(EXT2_HAS_COMPAT_FEATURE(sb,EXT3_FEATURE_COMPAT_HAS_JOURNAL)!=0)
-    partition->upart_type=UP_EXT3;
-  else
-    partition->upart_type=UP_EXT2;
   return 0;
 }
