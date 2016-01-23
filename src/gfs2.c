@@ -34,19 +34,20 @@
 #include "fnctdsk.h"
 #include "log.h"
 
-static int set_gfs2_info(const struct gfs2_sb *sb, partition_t *partition)
+static void set_gfs2_info(partition_t *partition)
 {
+  partition->upart_type=UP_GFS2;
   partition->info[0]='\0';
-  return 0;
 }
 
-static int test_gfs2(disk_t *disk, const struct gfs2_sb *sb, partition_t *partition, const int dump_ind)
+static int test_gfs2(disk_t *disk, const struct gfs2_sb *sb, const partition_t *partition, const int dump_ind)
 {
   if(sb->sb_header.mh_magic != be32(GFS2_MAGIC))
     return 1;
   if(sb->sb_header.mh_format != be32(GFS2_FORMAT_SB))
     return 1;
-  partition->upart_type=UP_GFS2;
+  if(partition==NULL)
+    return 0;
   if(dump_ind!=0)
   {
     log_info("\ngfs2 magic value at %u/%u/%u\n",
@@ -72,7 +73,7 @@ int check_gfs2(disk_t *disk, partition_t *partition)
     free(buffer);
     return 1;
   }
-  set_gfs2_info((const struct gfs2_sb *)buffer, partition);
+  set_gfs2_info(partition);
   free(buffer);
   return 0;
 }
@@ -81,10 +82,8 @@ int recover_gfs2(disk_t *disk, const struct gfs2_sb *sb, partition_t *partition,
 {
   if(test_gfs2(disk,sb,partition,dump_ind)!=0)
     return 1;
-  set_gfs2_info(sb, partition);
+  set_gfs2_info(partition);
   partition->part_size=disk->sector_size;
   partition->part_type_i386=(unsigned char)P_LINUX;
   return 0;
 }
-
-
