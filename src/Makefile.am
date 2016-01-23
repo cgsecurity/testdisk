@@ -219,6 +219,7 @@ file_C			= filegen.c \
 			  file_pap.c \
 			  file_par2.c \
 			  file_pcap.c \
+			  file_pcb.c \
 			  file_pct.c \
 			  file_pcx.c \
 			  file_pdf.c \
