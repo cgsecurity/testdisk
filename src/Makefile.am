@@ -64,6 +64,7 @@ file_C			= filegen.c \
 			  file_bkf.c \
 			  file_bld.c \
 			  file_bmp.c \
+			  file_bpg.c \
 			  file_bz2.c \
 			  file_cab.c \
 			  file_caf.c \
