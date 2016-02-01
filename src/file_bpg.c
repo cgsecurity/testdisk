@@ -4,6 +4,9 @@
 
     Copyright (C) 1998-2007 Christophe GRENIER <grenier@cgsecurity.org>
     Copyright (C) 2016 Dmitry Brant <me@dmitrybrant.com>
+    
+    BPG specification can be found at:
+    http://bellard.org/bpg/bpg_spec.txt
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,18 +34,20 @@
 #include "types.h"
 #include "filegen.h"
 
+#define MAX_BPG_SIZE 0x800000
+
 static void register_header_check_bpg(file_stat_t *file_stat);
 
 const file_hint_t file_hint_bpg= {
   .extension="bpg",
   .description="Better Portable Graphics image",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .max_filesize=MAX_BPG_SIZE,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_bpg
 };
 
-static int getue32(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *buf_ptr)
+static unsigned int getue32(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *buf_ptr)
 {
   unsigned int value = 0;
   unsigned int b;
@@ -66,14 +71,15 @@ static int header_check_bpg(const unsigned char *buffer, const unsigned int buff
 {
   unsigned int buf_ptr = 6;
   // get image width, and throw it away
-  int width = getue32(buffer, buffer_size, &buf_ptr);
-  printf(">>>> width...%d\n", width);
+  unsigned int width = getue32(buffer, buffer_size, &buf_ptr);
   // get image height, and throw it away
-  int height = getue32(buffer, buffer_size, &buf_ptr);
-  printf(">>>> height...%d\n", height);
-  int size = getue32(buffer, buffer_size, &buf_ptr);
-  printf(">>>> size...%d\n", size);
-
+  unsigned int height = getue32(buffer, buffer_size, &buf_ptr);
+  unsigned int size = getue32(buffer, buffer_size, &buf_ptr);
+  if (size == 0) {
+    size = MAX_BPG_SIZE;
+  } else {
+    size += buf_ptr;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
