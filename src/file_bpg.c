@@ -50,11 +50,10 @@ const file_hint_t file_hint_bpg= {
 static unsigned int getue32(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *buf_ptr)
 {
   unsigned int value = 0;
-  unsigned int b;
   int bitsRead = 0;
   while (*buf_ptr < buffer_size)
   {
-    b = buffer[*buf_ptr];
+    const unsigned int b = buffer[*buf_ptr];
     *buf_ptr = *buf_ptr + 1;
     value <<= 7;
     value |= (b & 0x7F);
@@ -71,9 +70,9 @@ static int header_check_bpg(const unsigned char *buffer, const unsigned int buff
 {
   unsigned int buf_ptr = 6;
   // get image width, and throw it away
-  unsigned int width = getue32(buffer, buffer_size, &buf_ptr);
+  const unsigned int width = getue32(buffer, buffer_size, &buf_ptr);
   // get image height, and throw it away
-  unsigned int height = getue32(buffer, buffer_size, &buf_ptr);
+  const unsigned int height = getue32(buffer, buffer_size, &buf_ptr);
   unsigned int size = getue32(buffer, buffer_size, &buf_ptr);
   if (size == 0) {
     size = MAX_BPG_SIZE;
