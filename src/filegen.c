@@ -522,7 +522,12 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
 	case '\\':
 	case ':':
 	case '*':
-	  *dst++ = '_';
+	case '<':
+	case '>':
+	case '|':
+	case '\'':
+	  if(*(dst-1) != '_')
+	    *dst++ = '_';
 	  bad++;
 	  break;
 	default:
