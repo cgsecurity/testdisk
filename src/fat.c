@@ -44,6 +44,8 @@
 #include "log.h"
 #include "log_part.h"
 #include "fat_common.h"
+#include "dir.h"
+#include "fat_dir.h"
 
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
@@ -759,8 +761,36 @@ unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const uns
   return le32(fsinfo->nextfree);
 }
 
+static int fat_has_EFI_entry(disk_t *disk, partition_t *partition, const int verbose)
+{
+  dir_data_t dir_data;
+  struct td_list_head *file_walker = NULL;
+  file_info_t dir_list = {
+    .list = TD_LIST_HEAD_INIT(dir_list.list),
+    .name = NULL
+  };
+  const dir_partition_t res=dir_partition_fat_init(disk, partition, &dir_data, verbose);
+  if(res!=DIR_PART_OK)
+    return 0;
+  dir_data.get_dir(disk, partition, &dir_data, 0, &dir_list);
+  td_list_for_each(file_walker, &dir_list.list)
+  {
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
+    if(strcmp(current_file->name, "EFI")==0)
+    {
+      delete_list_file(&dir_list);
+      dir_data.close(&dir_data);
+      return 1;
+    }
+  }
+  delete_list_file(&dir_list);
+  dir_data.close(&dir_data);
+  return 0;
+}
+
 int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, partition_t *partition, const int verbose, const int dump_ind, const int backup)
 {
+  int efi=0;
   if(test_FAT(disk_car, fat_header, partition, verbose, dump_ind))
     return 1;
   partition->part_size=(uint64_t)(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect)) *
@@ -812,10 +842,7 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
       else
         partition->part_type_i386=P_32FAT_LBA;
       partition->part_type_mac=PMAC_FAT32;
-      if(memcmp(partition->fsname,"EFI",4)==0)
-	partition->part_type_gpt=GPT_ENT_TYPE_EFI;
-      else
-	partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
+      partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
       if(backup)
       {
         partition->sb_offset=6*512;
@@ -825,6 +852,15 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
     default:
       log_critical("recover_FAT unknown FAT type\n");
       return 1;
+  }
+  if(memcmp(partition->fsname,"EFI",4)==0)
+    efi=1;
+  if(efi==0)
+    efi=fat_has_EFI_entry(disk_car, partition, verbose);
+  if(efi)
+  {
+    partition->part_type_gpt=GPT_ENT_TYPE_EFI;
+    strcpy(partition->partname, "EFI System Partition");
   }
   return 0;
 }
