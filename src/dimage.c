@@ -39,6 +39,8 @@
 #endif
 #include <fcntl.h>
 #include <assert.h>
+#include <string.h>
+#include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -106,6 +108,9 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   unsigned char *buffer=(unsigned char *)MALLOC(READ_SIZE);
   unsigned int readsize=READ_SIZE;
   int disk_dst;
+#ifdef HAVE_PWRITE
+  int use_pwrite=1;
+#endif
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
@@ -175,20 +180,23 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
     if(pread_res > 0)
     {
 #if defined(HAVE_PWRITE)
-      if(pwrite(disk_dst, buffer, pread_res, dst_offset)<0)
-      {
-	ind_stop=2;
-      }
-#else
-      if(lseek(disk_dst, dst_offset, SEEK_SET)<0)
-      {
-	ind_stop=2;
-      }
-      if(write(disk_dst, buffer, pread_res) != pread_res)
-      {
-	ind_stop=2;
-      }
+      if(use_pwrite>0 && pwrite(disk_dst, buffer, pread_res, dst_offset)<0)
 #endif
+      {
+#ifdef HAVE_PWRITE
+	use_pwrite=0;
+#endif
+	if(lseek(disk_dst, dst_offset, SEEK_SET)<0)
+	{
+	  ind_stop=2;
+	  log_critical("disk_image lseek() failed: %s\n",strerror(errno));
+	}
+	else if(write(disk_dst, buffer, pread_res) != pread_res)
+	{
+	  log_critical("disk_image write() failed: %s\n",strerror(errno));
+	  ind_stop=2;
+	}
+      }
       if(src_offset_old + SKIP_SIZE==src_offset)
       {
 	disk_image_backward(disk_dst, disk, src_offset_old, src_offset, dst_offset);
@@ -214,7 +222,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
       update=1;
       src_offset_next=src_offset+offset_inc;
     }
-    if(update)
+    if(update && ind_stop==0)
     {
 #ifdef HAVE_NCURSES
       unsigned int i;
