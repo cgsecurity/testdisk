@@ -206,9 +206,9 @@ unsigned long long int ask_number_cli(char **current_cmd, const unsigned long lo
     while(*current_cmd[0]==',')
       (*current_cmd)++;
 #ifdef HAVE_ATOLL
-      tmp_val = atoll(*current_cmd);
+    tmp_val = atoll(*current_cmd);
 #else
-      tmp_val = atol(*current_cmd);
+    tmp_val = atol(*current_cmd);
 #endif
     while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
       (*current_cmd)++;

@@ -49,13 +49,13 @@ static int header_check_itunes(const unsigned char *buffer, const unsigned int b
   if(size < 12)
     return 0;
   /* mhbd */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_itunes.extension;
-    file_recovery_new->min_filesize=0x68;
-    file_recovery_new->calculated_file_size=size;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_itunes.extension;
+  file_recovery_new->min_filesize=0x68;
+  file_recovery_new->calculated_file_size=size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_itunes(file_stat_t *file_stat)
