@@ -1652,7 +1652,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
-  int res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+  dir_partition_t res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;
@@ -1663,7 +1663,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
   log_info("\n");
   switch(res)
   {
-    case -2:
+    case DIR_PART_ENOSYS:
       screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
@@ -1680,7 +1680,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
 #endif
       }
       break;
-    case -1:
+    case DIR_PART_EIO:
       screen_buffer_reset();
 #ifdef HAVE_NCURSES
       aff_copy(window);
