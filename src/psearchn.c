@@ -426,9 +426,12 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  params->offset=offset;
 	  if(current_time >= next_checkpoint)
 	  {
+	    time_t new_time;
 	    /* Save current progress */
 	    session_save(list_search_space, params, options);
-	    next_checkpoint=current_time+5*60;
+	    new_time=time(NULL);
+	    /* If it takes more then 30s to save the session, save every 15 minutes instead of every 5 minutes */
+	    next_checkpoint=new_time+(current_time+30<new_time?15:5)*60;
 	  }
 	  if(ind_stop!=PSTATUS_OK)
 	  {
