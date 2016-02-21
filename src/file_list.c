@@ -103,6 +103,7 @@ extern const file_hint_t file_hint_ds2;
 extern const file_hint_t file_hint_ds_store;
 extern const file_hint_t file_hint_dsc;
 extern const file_hint_t file_hint_dss;
+extern const file_hint_t file_hint_dst;
 extern const file_hint_t file_hint_dta;
 extern const file_hint_t file_hint_dump;
 extern const file_hint_t file_hint_dv;
@@ -414,6 +415,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_ds_store  },
   { .enable=0, .file_hint=&file_hint_dsc  },
   { .enable=0, .file_hint=&file_hint_dss  },
+  { .enable=0, .file_hint=&file_hint_dst  },
   { .enable=0, .file_hint=&file_hint_dta  },
   { .enable=0, .file_hint=&file_hint_dump },
   { .enable=0, .file_hint=&file_hint_dv   },

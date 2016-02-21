@@ -102,6 +102,7 @@ file_C			= filegen.c \
 			  file_ds_store.c \
 			  file_dsc.c \
 			  file_dss.c \
+			  file_dst.c \
 			  file_dta.c \
 			  file_dump.c \
 			  file_dv.c \
