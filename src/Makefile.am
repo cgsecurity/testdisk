@@ -71,6 +71,7 @@ file_C			= filegen.c \
 			  file_cam.c \
 			  file_catdrawing.c \
 			  file_cdt.c \
+			  file_che.c \
 			  file_chm.c \
 			  file_class.c \
 			  file_cm.c \

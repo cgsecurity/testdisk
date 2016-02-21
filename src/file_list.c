@@ -72,6 +72,7 @@ extern const file_hint_t file_hint_caf;
 extern const file_hint_t file_hint_cam;
 extern const file_hint_t file_hint_catdrawing;
 extern const file_hint_t file_hint_cdt;
+extern const file_hint_t file_hint_che;
 extern const file_hint_t file_hint_chm;
 extern const file_hint_t file_hint_class;
 extern const file_hint_t file_hint_cm;
@@ -382,6 +383,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_cam  },
   { .enable=0, .file_hint=&file_hint_catdrawing  },
   { .enable=0, .file_hint=&file_hint_cdt  },
+  { .enable=0, .file_hint=&file_hint_che  },
   { .enable=0, .file_hint=&file_hint_chm  },
   { .enable=0, .file_hint=&file_hint_class },
   { .enable=0, .file_hint=&file_hint_cm  },
