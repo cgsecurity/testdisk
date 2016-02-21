@@ -323,6 +323,7 @@ file_C			= filegen.c \
 			  file_xfi.c \
 			  file_xfs.c \
 			  file_xm.c \
+			  file_xml.c \
 			  file_xsv.c \
 			  file_xpt.c \
 			  file_xv.c \
