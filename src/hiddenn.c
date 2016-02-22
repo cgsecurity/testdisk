@@ -38,7 +38,7 @@ int interface_check_hidden_ncurses(disk_t *disk, const int hpa_dco)
 {
   static const struct MenuItem menuHidden[]=
   {
-    { 'C', "Continue", "Continue even if there are hidden data"},
+    { 'C', "Continue", "Continue even if there is hidden data"},
     { 0,NULL,NULL}
   };
   unsigned int menu=0;

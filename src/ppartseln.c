@@ -94,7 +94,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       {
 	char *res;
 #ifdef HAVE_NCURSES
-	res=ask_location("Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
+	res=ask_location("Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 #else
 	res=get_default_location();
 #endif
@@ -243,7 +243,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	  if(params->recup_dir==NULL)
 	  {
 	    char *res;
-	    res=ask_location("Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
+	    res=ask_location("Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
 	    if(res!=NULL)
 	    {
 	      params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);

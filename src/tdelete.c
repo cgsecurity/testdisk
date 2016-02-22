@@ -46,7 +46,7 @@ int write_clean_table(disk_t *disk_car)
   wmove(stdscr,INTER_DISK_Y,INTER_DISK_X);
   if(disk_car->arch->erase_list_part==NULL)
   {
-    display_message("Clear partition table not implemented for this partition type.\n");
+    display_message("Partition table clearing is not implemented for this partition type.\n");
     return 1;
   }
   wprintw(stdscr,msg_WRITE_CLEAN_TABLE);
@@ -67,7 +67,7 @@ int write_clean_table(disk_t *disk_car)
 {
   if(disk_car->arch->erase_list_part==NULL)
   {
-    log_error("Clear partition table not implemented for this partition type.\n");
+    log_error("Partition table clearing is not implemented for this partition type.\n");
     return 1;
   }
   if(disk_car->arch->erase_list_part(disk_car))

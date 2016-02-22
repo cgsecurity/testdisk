@@ -1671,7 +1671,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
       aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
       log_partition(disk_car,partition);
-      screen_buffer_add("Support for this filesystem hasn't been enable during compilation.\n");
+      screen_buffer_add("Support for this filesystem wasn't enabled during compilation.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
       {
@@ -1736,7 +1736,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
   aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 #endif
   log_partition(disk_car,partition);
-  screen_buffer_add("Support for this filesystem hasn't been enable during compilation.\n");
+  screen_buffer_add("Support for this filesystem wasn't enabled during compilation.\n");
   screen_buffer_to_log();
   if(*current_cmd==NULL)
   {

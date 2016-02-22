@@ -74,7 +74,7 @@ static int interface_check_disk_access_ncurses(disk_t *disk_car)
     wprintw(stdscr,"Use the sudo command to launch TestDisk.\n");
 #endif
     wmove(stdscr,line++,0);
-    wprintw(stdscr,"- Check the OS permission for this file or device.\n");
+    wprintw(stdscr,"- Check the OS permissions for this file or device.\n");
   }
 #endif
 #if defined(__APPLE__)

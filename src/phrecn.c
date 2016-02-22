@@ -109,7 +109,7 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
       if(file_nbr > 0)
       {
 	wmove(stdscr, 12, 0);
-	wprintw(stdscr, "You are welcome to donate to support further development and encouragement");
+	wprintw(stdscr, "You are welcome to donate to support and encourage further development");
 	wmove(stdscr, 13, 0);
 	wprintw(stdscr, "http://www.cgsecurity.org/wiki/Donation");
       }
@@ -181,7 +181,7 @@ static int interface_cannot_create_file(void)
   wmove(stdscr,5,0);
   wprintw(stdscr,"This problem may be due to antivirus blocking write access while scanning files created by PhotoRec.");
   wmove(stdscr,6,0);
-  wprintw(stdscr,"If possible, temporary disable your antivirus live protection.");
+  wprintw(stdscr,"If possible, temporarily disable your live antivirus protection.");
   car= wmenuSelect_ext(stdscr, 23, INTER_MAIN_Y, INTER_MAIN_X, menuMain, 10,
       "CQ", MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);
   if(car=='c' || car=='C')
@@ -371,7 +371,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	    if(res!=NULL)
 	      *res='\0';
 	  }
-	  res=ask_location("Warning: not enough free space available. Please select a destination to save the recovered files.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
+	  res=ask_location("Warning: not enough free space available. Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
 	  free(dst);
 	  if(res==NULL)
 	    params->status=STATUS_QUIT;

@@ -130,7 +130,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 #endif
       waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
-      wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
+      wprintw(stdscr,"If a disk listed above has an incorrect size, check HD jumper settings and BIOS");
       wmove(stdscr,line,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }

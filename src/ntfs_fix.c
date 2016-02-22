@@ -124,9 +124,9 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   }
   if(memcmp(buffer_mft, buffer_mftmirr, mftmirr_size_bytes)==0)
   {
-    log_info("MFT and MFT mirror matches perfectly.\n");
+    log_info("MFT and MFT mirror match perfectly.\n");
     if(*current_cmd==NULL)
-      display_message("MFT and MFT mirror matches perfectly.\n");
+      display_message("MFT and MFT mirror match perfectly.\n");
     free(buffer_mftmirr);
     free(buffer_mft);
     free(ntfs_header);
@@ -261,7 +261,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
 	wmove(stdscr,8,0);
 	if(res1>0 && res2>0)
-	  wprintw(stdscr, "Both MFT seems ok but they don't match.\n");
+	  wprintw(stdscr, "Both MFT seem ok but they don't match.\n");
 	else
 	  wprintw(stdscr, "MFT and MFT mirror are bad.\n");
 	command=wmenuSelect_ext(stdscr, 23, INTER_MFT_Y, INTER_MFT_X, menuMFT, 10, "MBQ",

@@ -98,7 +98,7 @@ int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned
   wmove(window,4,0);
   aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
   wmove(window,6,0);
-  waddstr(window,"To recover lost files, PhotoRec need to know the filesystem type where the");
+  waddstr(window,"To recover lost files, PhotoRec needs to know the filesystem type where the");
   wmove(window,7,0);
   waddstr(window,"file were stored:");
   command = wmenuSelect_ext(window, 23, 8, 0, menuMode, 11,
@@ -115,7 +115,7 @@ int ask_mode_ext2(const disk_t *disk_car, const partition_t *partition, unsigned
     wclrtoeol(window);
     wmove(window,7,0);
     wclrtoeol(window);
-    waddstr(window,"Please choose if all space need to be analysed:");
+    waddstr(window,"Please choose if all space needs to be analysed:");
     if(partition->upart_type==UP_EXFAT)
       command = wmenuSelect_ext(window, 23, 8, 0, menuexFAT, 11,
 	  options, MENU_VERT | MENU_VERT_WARN | MENU_BUTTON, &menu,NULL);

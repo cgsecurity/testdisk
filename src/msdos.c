@@ -309,17 +309,17 @@ static int hd_identify_enh_bios(disk_t *disk_car,const int verbose)
   {
     data->bad_geometry=1;
     disk_car->geom.sectors_per_head=1;
-    log_critical("Incorrect number of sector\n");
+    log_critical("Incorrect number of sectors\n");
   }
   if(disk_car->geom.sectors_per_head>63)
   {
 /*    data->bad_geometry=1; */
-    log_critical("Incorrect number of sector\n");
+    log_critical("Incorrect number of sectors\n");
   }
   if(disk_car->geom.heads_per_cylinder>255)
   {
     data->bad_geometry=1;
-    log_critical("Incorrect number of head\n");
+    log_critical("Incorrect number of heads\n");
   }
   computed_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   if(verbose>0 || data->bad_geometry!=0)
@@ -396,7 +396,7 @@ disk_t *hd_identify(const int verbose, const unsigned int disk, const int testdi
     }
     if(disk_car->geom.sectors_per_head==0)
     { /* Problem found by Brian Barrett */
-      log_critical("BIOS reports an invalid number of sector per head\n");
+      log_critical("BIOS reports an invalid number of sectors per head\n");
       data->bad_geometry=1;
       disk_car->geom.sectors_per_head=1;
     }

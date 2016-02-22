@@ -129,5 +129,5 @@ void autodetect_arch(disk_t *disk, const arch_fnct_t *arch)
       disk->arch=&arch_gpt;
 #endif
   }
-  log_info("Partition table type default to %s\n", disk->arch->part_name);
+  log_info("Partition table type defaults to %s\n", disk->arch->part_name);
 }

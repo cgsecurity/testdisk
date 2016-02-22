@@ -105,8 +105,8 @@ static void display_help(void)
       "/log          : create a photorec.log file\n" \
       "/debug        : add debug information\n" \
       "\n" \
-      "PhotoRec searches various file formats (JPEG, Office...), it stores them\n" \
-      "in recup_dir directory.\n");
+      "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
+      "in the recup_dir directory.\n");
 }
 
 static void display_version(void)

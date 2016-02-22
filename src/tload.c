@@ -82,7 +82,7 @@ static struct td_list_head *interface_load_ncurses(disk_t *disk_car, backup_disk
       if(!td_list_empty(&backup_list->list))
       {
 	mvwaddstr(stdscr,5,0,"Choose the backup you want to restore:");
-	mvwaddstr(stdscr,20,0,"PS: Don't worry you will have to confirm the partition restoration.");
+	mvwaddstr(stdscr,20,0,"PS: Don't worry, you will have to confirm the partition restoration.");
       }
       else
       {

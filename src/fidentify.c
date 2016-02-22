@@ -175,7 +175,7 @@ static void display_help(void)
   printf("\nUsage: fidentify [--check] [directory]\n"\
       "       fidentify --version\n" \
       "\n" \
-      "fidentify determine the file type, the 'extension', by using the same database than PhotoRec.\n");
+      "fidentify determine the file type, the 'extension', by using the same database as PhotoRec.\n");
 }
 
 static void display_version(void)

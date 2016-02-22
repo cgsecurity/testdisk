@@ -147,7 +147,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
   wmove(window,10,0);
   waddstr(window, "Disk images are mainly used ");
   wmove(window,11,0);
-  waddstr(window, "- for forensics purpose");
+  waddstr(window, "- for forensic purposes");
   wmove(window,12,0);
   waddstr(window, "- or to deal with media with bad sectors");
 #ifdef WIN32

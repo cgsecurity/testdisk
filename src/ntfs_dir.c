@@ -494,7 +494,7 @@ dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *par
 #endif
       if(vol)
       {
-	log_warning("NTFS filesystem need to be repaired.\n");
+	log_warning("NTFS filesystem needs to be repaired.\n");
       }
     }
 #endif

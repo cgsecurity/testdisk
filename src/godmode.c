@@ -204,7 +204,7 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
 	buffer_disk_size, buffer_disk_size_found);
   }
   wmove(stdscr,7,0);
-  wprintw(stdscr,"Check the harddisk size: HD jumpers settings, BIOS detection...");
+  wprintw(stdscr,"Check the harddisk size: HD jumper settings, BIOS detection...");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(disk_car->disk_size<=((uint64_t)1<<(28-1)) && disk_size>=((uint64_t)1<<(28-1)))
   {
@@ -323,7 +323,7 @@ static int interface_part_bad_log(disk_t *disk_car, list_part_t *list_part)
     }
   }
   log_warning("%s\n",disk_car->description(disk_car));
-  log_warning("Check the harddisk size: HD jumpers settings, BIOS detection...\n");
+  log_warning("Check the harddisk size: HD jumper settings, BIOS detection...\n");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(disk_car->disk_size<=((uint64_t)1<<(28-1)) && disk_size>=((uint64_t)1<<(28-1)))
   {
@@ -370,7 +370,7 @@ static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recomm
   wmove(stdscr,10,0);
   wprintw(stdscr,"- some partitions are not found by TestDisk");
   wmove(stdscr,11,0);
-  wprintw(stdscr,"- or the partition table can not be written because partitions overlaps.");
+  wprintw(stdscr,"- or the partition table can not be written because partitions overlap.");
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);
   wprintw(stdscr,"[ Continue ]");
@@ -1012,7 +1012,7 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
       table[nbr_prim++]=element->part;
   }
   /* */
-  log_info("\nSelect primaries partition\n");
+  log_info("\nSelect primary partition\n");
   for(i=0;i<nbr_prim;i++)
       log_partition(disk_car,table[i]);
   /* */
@@ -1395,7 +1395,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 	log_partition(disk_car,element->part);
 #ifdef TARGET_LINUX
       if(list_part!=NULL)
-	log_info("\nHint for advanced users. dmsetup may be used if you prefer to avoid to rewrite the partition table for the moment:\n");
+	log_info("\nHint for advanced users: dmsetup may be used if you prefer to avoid rewriting the partition table for the moment:\n");
       for(element=list_part;element!=NULL;element=element->next)
       {
 	const partition_t *partition=element->part;

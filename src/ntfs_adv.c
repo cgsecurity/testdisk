@@ -108,7 +108,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     {
       log_ntfs2_info(ntfs_header, org_ntfs_header);
       if(error)
-	log_error("Warning: Extrapolated boot sector have incorrect values.\n");
+	log_error("Warning: Extrapolated boot sector has incorrect values.\n");
     }
     else
     {
@@ -197,7 +197,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
       log_ntfs2_info(ntfs_header, org_ntfs_header);
       if(error)
-	log_error("Warning: Extrapolated boot sector have incorrect values.\n");
+	log_error("Warning: Extrapolated boot sector has incorrect values.\n");
     }
     else
     {
@@ -240,8 +240,8 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	  wprintw(window,"%s",disk_car->description(disk_car));
 	  wmove(window,5,0);
 	  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-	  log_info("     Rebuild Boot sector           Boot sector\n");
-	  mvwaddstr(window,6,0, "     Rebuild Boot sector           Boot sector");
+	  log_info("     Rebuild boot sector           Boot sector\n");
+	  mvwaddstr(window,6,0, "     Rebuild boot sector           Boot sector");
 	  dump2(window, newboot, orgboot, NTFS_SECTOR_SIZE);
 	  dump2_log(newboot, orgboot, NTFS_SECTOR_SIZE);
 	  delwin(window);

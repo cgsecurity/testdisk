@@ -405,7 +405,7 @@ void write_stats_log(const file_stat_t *file_stats)
     }
   }
   free(new_file_stats);
-  if(file_nbr>1)
+  if(file_nbr!=1)
   {
     log_info("Total: %u files found\n\n",file_nbr);
   }
@@ -701,7 +701,7 @@ void info_list_search_space(const alloc_data_t *list_search_space, const alloc_d
            "(null)"));
     }
   }
-  log_info("%llu sectors contains unknown data, %lu invalid files found %s.\n",
+  log_info("%llu sectors contain unknown data, %lu invalid files found %s.\n",
       (long long unsigned)sectors_with_unknown_data, (long unsigned)nbr_headers,
       (keep_corrupted_file>0?"but saved":"and rejected"));
 }

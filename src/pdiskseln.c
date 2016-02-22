@@ -145,7 +145,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
       wmove(stdscr, INTER_NOTE_Y+1, 0);
       wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr, INTER_NOTE_Y+2, 0);
-      wprintw(stdscr,"If a disk listed above has incorrect size, check HD jumper settings, BIOS");
+      wprintw(stdscr,"If a disk listed above has an incorrect size, check HD jumper settings and BIOS");
       wmove(stdscr, INTER_NOTE_Y+3, 0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }

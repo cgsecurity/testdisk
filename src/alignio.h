@@ -72,7 +72,7 @@ static int align_pwrite(int (*fnct_pread)(disk_t *disk_car, void *buf, const uns
       disk_car->wbuffer=(char*)MALLOC(disk_car->wbuffer_size);
     if(fnct_pread(disk_car, disk_car->wbuffer, count_new, offset_new/disk_car->sector_size*disk_car->sector_size)<0)
     {
-      log_error("read failed but try to write anyway");
+      log_error("read failed but trying to write anyway");
       memset(disk_car->wbuffer,0, disk_car->wbuffer_size);
     }
     memcpy((char*)disk_car->wbuffer+(offset_new%disk_car->sector_size),buf,count);

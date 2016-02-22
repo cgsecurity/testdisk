@@ -137,7 +137,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
       aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk,partition);
 #endif
       log_partition(disk,partition);
-      screen_buffer_add("Support for this filesystem hasn't been enable during compilation.\n");
+      screen_buffer_add("Support for this filesystem wasn't enabled during compilation.\n");
       screen_buffer_to_log();
       if(*current_cmd==NULL)
       {

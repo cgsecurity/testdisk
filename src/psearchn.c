@@ -326,13 +326,13 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       if(res!=DC_STOP && res!=DC_ERROR && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
       {
 	res=DC_STOP;
-	log_verbose("File should not be bigger than %llu, stop adding data\n",
+	log_verbose("File should not be bigger than %llu, stopped adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
       if(res!=DC_STOP && res!=DC_ERROR && file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
       {
       	res=DC_STOP;
-	log_verbose("File should not be bigger than %llu, stop adding data\n",
+	log_verbose("File should not be bigger than %llu, stopped adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
       if(res==DC_STOP || res==DC_ERROR)

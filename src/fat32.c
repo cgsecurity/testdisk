@@ -174,12 +174,12 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       else
       {
 	if(memcmp(buffer_bs,buffer_backup_bs,0x200)!=0)
-	  screen_buffer_add("First sectors (Boot code and partition information) are not identical.\n");
+	  screen_buffer_add("First sectors (boot code and partition information) are not identical.\n");
 	if((memcmp(buffer_bs+disk_car->sector_size, buffer_backup_bs+disk_car->sector_size,0x1E8)!=0)||
 	    (memcmp(buffer_bs+disk_car->sector_size+0x1F0, buffer_backup_bs+disk_car->sector_size+0x1F0,0x200-0x1F0)!=0))
 	  screen_buffer_add("Second sectors (cluster information) are not identical.\n");
 	if(memcmp(buffer_bs+2*disk_car->sector_size, buffer_backup_bs+2*disk_car->sector_size,0x200)!=0)
-	  screen_buffer_add("Third sectors (Second part of boot code) are not identical.\n");
+	  screen_buffer_add("Third sectors (second part of boot code) are not identical.\n");
       }
       screen_buffer_add("\n");
       screen_buffer_add("A valid FAT Boot sector must be present in order to access\n");

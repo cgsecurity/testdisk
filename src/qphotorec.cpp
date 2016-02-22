@@ -153,7 +153,7 @@ QPhotorec::~QPhotorec()
 void QPhotorec::setExistingDirectory()
 {
   QString directory = QFileDialog::getExistingDirectory(this,
-      "Please select a destination to save the recovered files.",
+      "Please select a destination to save the recovered files to.",
       directoryLabel->text(),
       QFileDialog::ShowDirsOnly);
   if (!directory.isEmpty())
@@ -460,7 +460,7 @@ void QPhotorec::setupUI()
 
   HDDlistWidget = new QComboBox();
   HDDlistWidget->setToolTip("Disk capacity must be correctly detected for a successful recovery.\n"
-      "If a disk listed above has incorrect size, check HD jumper settings, BIOS\n"
+      "If a disk listed above has an incorrect size, check HD jumper settings and BIOS\n"
       "detection, and install the latest OS patches and disk drivers."
   );
 
@@ -515,7 +515,7 @@ void QPhotorec::setupUI()
   groupBox->setLayout(groupBoxLayout);
 
 
-  QLabel *dstWidget= new QLabel("Please select a destination to save the recovered files.");
+  QLabel *dstWidget= new QLabel("Please select a destination to save the recovered files to.");
   directoryLabel=new QLineEdit("");
   QPushButton *dst_button = new QPushButton(
       QIcon::fromTheme("folder", QIcon(":res/gnome/folder.png")),
@@ -750,7 +750,7 @@ void QPhotorec::qphotorec_search_setupUI()
 
   QStringList oLabel;
   oLabel.append("File familly");
-  oLabel.append("Number of file recovered");
+  oLabel.append("Number of files recovered");
 
   filestatsWidget=new QTableWidget();
   filestatsWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);

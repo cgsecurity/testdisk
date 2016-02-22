@@ -808,7 +808,7 @@ void update_disk_car_fields(disk_t *disk_car)
       (uint64_t)disk_car->sector_size;
     if(cylinder_num>0 && disk_car->geom.cylinders != cylinder_num)
     {
-      log_debug("Fix cylinder count for %s: number of cylinders %lu !=  %lu (calculated)\n",
+      log_debug("Fix cylinder count for %s: number of cylinders %lu != %lu (calculated)\n",
 	  disk_car->device, disk_car->geom.cylinders, cylinder_num);
       disk_car->geom.cylinders = cylinder_num;
     }
