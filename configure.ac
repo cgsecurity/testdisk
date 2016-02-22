@@ -5,7 +5,7 @@ AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
-TESTDISKDATE="January 2016"
+TESTDISKDATE="February 2016"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -843,7 +843,7 @@ done
 unset option
 
 AC_LANG_PUSH([C++])
-for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $option"
@@ -898,19 +898,20 @@ AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
 if test "$use_qt" = "true";
 then
-  PKG_CHECK_MODULES(QTGUI, [QtGui  >= 4.0.1],,use_qt=false)
-  AC_CHECK_TOOLS(MOC,[moc-qt4 moc],)
+  PKG_CHECK_MODULES(QTGUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
+  PKG_CHECK_MODULES(QTWIDGETS, [Qt5Widgets  >= 5.0.0],,use_qt=false)
+  AC_CHECK_TOOLS(MOC,[moc-qt5 moc],)
   if test x$MOC = x ; then
-	AC_MSG_WARN(Could not find a moc-qt4 or moc tool in your PATH.)
+	AC_MSG_WARN(Could not find a moc-qt5 or moc tool in your PATH.)
 	use_qt=false
   fi
-  AC_CHECK_TOOLS(RCC,[rcc-qt4 rcc],)
+  AC_CHECK_TOOLS(RCC,[rcc-qt5 rcc],)
   if test x$RCC = x ; then
-	AC_MSG_WARN(Could not find a rcc-qt4 or rcc tool in your PATH.)
+	AC_MSG_WARN(Could not find a rcc-qt5 or rcc tool in your PATH.)
 	use_qt=false
   fi
-  qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS"
-  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS"
+  qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS $QTWIDGETS_LIBS"
+  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS $QTWIDGETS_CFLAGS"
 fi
 AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 if test "$win_target" = yes;

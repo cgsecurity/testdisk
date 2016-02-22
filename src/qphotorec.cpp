@@ -638,9 +638,10 @@ void QPhotorec::qphotorec_search_updateUI()
   const partition_t *partition=params->partition;
   const unsigned int sector_size=params->disk->sector_size;
   QString tmp;
-  folder_txt->setText("Destination: <a href=\"file://" + Qt::escape(directoryLabel->text()) + "/" +
+  QString txt = QString(directoryLabel->text()).toHtmlEscaped();
+  folder_txt->setText("Destination: <a href=\"file://" + txt + "/" +
       DEFAULT_RECUP_DIR + "." + QString::number(params->dir_num) + "\">" +
-      Qt::escape(directoryLabel->text()) + "</a>");
+      txt + "</a>");
   if(params->status==STATUS_QUIT)
   {
     tmp.sprintf("Recovery completed");
