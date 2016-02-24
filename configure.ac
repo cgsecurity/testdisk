@@ -13,7 +13,7 @@ AC_CANONICAL_HOST([])
 AC_CANONICAL_TARGET([])
 AC_CONFIG_SRCDIR([config.h.in])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wall foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_DEFINE([_GNU_SOURCE], 1, [Enable GNU extensions])

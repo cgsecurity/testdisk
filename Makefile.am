@@ -1,6 +1,6 @@
 SUBDIRS = icons man src
 
-EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.sh \
+EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_photorec.txt THANKS compile.sh \
 	progsreiserfs-journal.patch progsreiserfs-file-read.patch \
 	darwin/readme_mac_powerpc.txt darwin/readme_mac_intel.txt \
 	documentation.html \
@@ -22,11 +22,9 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README THANKS compile.s
 	win/testdisk_win.exe.manifest \
 	Android.mk jni/Android.mk
 
-AUTOMAKE_OPTIONS = gnits
-
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(docdir)
-	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README $(top_srcdir)/THANKS $(top_srcdir)/documentation.html $(DESTDIR)$(docdir)
+	$(INSTALL_DATA) $(top_srcdir)/AUTHORS $(top_srcdir)/ChangeLog $(top_srcdir)/NEWS $(top_srcdir)/README.md $(top_srcdir)/THANKS $(top_srcdir)/documentation.html $(DESTDIR)$(docdir)
 if USEQT
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/applications
 	$(INSTALL_DATA) $(top_srcdir)/linux/qphotorec.desktop $(DESTDIR)$(datadir)/applications
