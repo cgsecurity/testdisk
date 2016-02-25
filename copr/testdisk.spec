@@ -93,7 +93,7 @@ fi
 %files
 %defattr(644,root,root,755)
 %license COPYING
-%doc AUTHORS ChangeLog NEWS README THANKS
+%doc AUTHORS ChangeLog NEWS README.md THANKS
 %doc documentation.html
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec

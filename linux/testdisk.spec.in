@@ -111,7 +111,7 @@ fi
 
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS COPYING ChangeLog NEWS README THANKS
+%doc AUTHORS COPYING ChangeLog NEWS README.md THANKS
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec
 %attr(755,root,root) %{_bindir}/testdisk

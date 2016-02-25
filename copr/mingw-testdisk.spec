@@ -134,7 +134,7 @@ rm -rf $RPM_BUILD_ROOT
 %{mingw32_docdir}/testdisk/AUTHORS
 %{mingw32_docdir}/testdisk/ChangeLog
 %{mingw32_docdir}/testdisk/NEWS
-%{mingw32_docdir}/testdisk/README
+%{mingw32_docdir}/testdisk/README.md
 %{mingw32_docdir}/testdisk/THANKS
 %{mingw32_docdir}/testdisk/documentation.html
 %{mingw32_mandir}/man8/*-fidentify.8*
@@ -158,7 +158,7 @@ rm -rf $RPM_BUILD_ROOT
 %{mingw64_docdir}/testdisk/AUTHORS
 %{mingw64_docdir}/testdisk/ChangeLog
 %{mingw64_docdir}/testdisk/NEWS
-%{mingw64_docdir}/testdisk/README
+%{mingw64_docdir}/testdisk/README.md
 %{mingw64_docdir}/testdisk/THANKS
 %{mingw64_docdir}/testdisk/documentation.html
 %{mingw64_mandir}/man8/*-fidentify.8*
