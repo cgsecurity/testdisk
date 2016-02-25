@@ -51,7 +51,7 @@ static int header_check_jsonlz4(const unsigned char *buffer, const unsigned int 
   file_recovery_new->extension=file_hint_jsonlz4.extension;
   file_recovery_new->calculated_file_size=le32(*uncompressed_size);
   file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size_lax;
+  file_recovery_new->file_check=&file_check_size_max;
   return 1;
 }
 

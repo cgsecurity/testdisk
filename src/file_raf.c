@@ -31,7 +31,6 @@
 #include "common.h"
 #include "filegen.h"
 
-
 static void register_header_check_raf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_raf= {
@@ -92,7 +91,7 @@ static int header_check_raf(const unsigned char *buffer, const unsigned int buff
   else
   {
     /* The size is bigger than calculated_file_size */
-    file_recovery_new->file_check=&file_check_size_lax;
+    file_recovery_new->file_check=&file_check_size_min;
   }
   return 1;
 }

@@ -267,7 +267,7 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
       if(file_recovery_new->blocksize < 8)
 	return 1;
       file_recovery_new->data_check=&data_check_avi_stream;
-      file_recovery_new->file_check=&file_check_size_lax;
+      file_recovery_new->file_check=&file_check_size_max;
     }
     else
     {

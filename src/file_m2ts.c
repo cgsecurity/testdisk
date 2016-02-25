@@ -149,7 +149,7 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
     return 1;
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->data_check=&data_check_ts_192;
-  file_recovery_new->file_check=&file_check_size_lax;
+  file_recovery_new->file_check=&file_check_size_max;
   return 1;
 }
 
@@ -184,7 +184,7 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->min_filesize=188;
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->data_check=&data_check_ts_188;
-  file_recovery_new->file_check=&file_check_size_lax;
+  file_recovery_new->file_check=&file_check_size_max;
   file_recovery_new->file_rename=&file_rename_ts_188;
   return 1;
 }

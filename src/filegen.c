@@ -291,7 +291,13 @@ void file_check_size(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size;
 }
 
-void file_check_size_lax(file_recovery_t *file_recovery)
+void file_check_size_min(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size<file_recovery->calculated_file_size)
+    file_recovery->file_size=0;
+}
+
+void file_check_size_max(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size > file_recovery->calculated_file_size)
     file_recovery->file_size=file_recovery->calculated_file_size;
