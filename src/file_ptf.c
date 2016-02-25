@@ -43,14 +43,26 @@ const file_hint_t file_hint_ptf= {
 
 static int header_check_ptf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_ptf.extension;
-  return 1;
+  switch(buffer[0x12])
+  {
+    case 1:
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_ptf.extension;
+      return 1;
+    case 5:
+      if(memcmp(&buffer[0x2d], "Pro Tools", 9)!=0)
+	return 0;
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension="ptx";
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 static void register_header_check_ptf(file_stat_t *file_stat)
 {
-  static const unsigned char ptf_header[19]=  {
+  static const unsigned char ptf_header[18]=  {
     0x03,  '0' , '0' , '1' , '0' , '1' , '1' , '1' ,
     '1', '0' , '0' , '1' , '0' , '1' , '0' , '1' ,
     '1', 0x00, 0x01
