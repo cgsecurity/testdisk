@@ -26,7 +26,7 @@ BuildRequires:	mingw32-libjpeg-turbo-static
 BuildRequires:	mingw32-ntfsprogs
 BuildRequires:	mingw32-openssl
 BuildRequires:	mingw32-pdcurses
-BuildRequires:	mingw32-qt
+BuildRequires:	mingw32-qt5-qtbase-devel
 BuildRequires:	mingw32-win-iconv
 BuildRequires:	mingw32-zlib
 
@@ -40,7 +40,7 @@ BuildRequires:	mingw64-libjpeg-turbo
 BuildRequires:	mingw64-ntfsprogs
 BuildRequires:	mingw64-openssl
 BuildRequires:	mingw64-pdcurses
-BuildRequires:	mingw64-qt
+BuildRequires:	mingw64-qt5-qtbase-devel
 BuildRequires:	mingw64-win-iconv
 BuildRequires:	mingw64-zlib
 
