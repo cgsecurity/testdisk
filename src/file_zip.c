@@ -171,6 +171,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       le32(file.uncompressed_size),
       le32(file.crc32));
 #endif
+  /* Avoid Jan  1  1980 files */
+  if(le16(file.last_mod_time)!=0 || le16(file.last_mod_date)!=33)
   {
     /* Use the more recent file to set the time/date of the recovered archive */
     const time_t tmp=date_dos2unix(le16(file.last_mod_time), le16(file.last_mod_date));
@@ -237,6 +239,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	  }
 	  if(compressed_size==16      && memcmp(buffer,"image/openraster",16)==0)
 	    *ext="ora";
+	  else if(compressed_size==20 && memcmp(buffer,"application/epub+zip",20)==0)
+	    *ext="epub";
 	  else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
 	    *ext="sxc";
 	  else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.draw",28)==0)
@@ -280,6 +284,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	ext_msoffice="xlsx";
       else if(strncmp(filename, "ppt/", 4)==0)
 	ext_msoffice="pptx";
+      else if(strncmp(filename, "visio/", 6)==0)
+	ext_msoffice="vsdx";
       if(msoffice && ext_msoffice!=NULL)
 	*ext=ext_msoffice;
     }
@@ -799,6 +805,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     /* Mypaint .ora */
     if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
       file_recovery_new->extension="ora";
+    else if(compressed_size==20 && memcmp(&buffer[38],"application/epub+zip",20)==0)
+      file_recovery_new->extension="epub";
     else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
       file_recovery_new->extension="sxc";
     else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
@@ -830,6 +838,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="xlsx";
     else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
       file_recovery_new->extension="pptx";
+    else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"visio/", 6)!=0)
+      file_recovery_new->extension="vsdx";
     else
       file_recovery_new->extension="docx";
     file_recovery_new->file_rename=&file_rename_zip;
