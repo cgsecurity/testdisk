@@ -281,6 +281,7 @@ file_C			= filegen.c \
 			  file_spss.c \
 			  file_sql.c \
 			  file_sqm.c \
+			  file_steuer2014.c \
 			  file_stl.c \
 			  file_stu.c \
 			  file_swf.c \
