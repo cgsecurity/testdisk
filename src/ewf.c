@@ -105,6 +105,9 @@ disk_t *fewf_init(const char *device, const int mode)
 #if !defined( HAVE_LIBEWF_V2_API ) && defined( HAVE_GLOB_H )
   glob_t globbuf;
 #endif
+#if defined( HAVE_LIBEWF_V2_API )
+  libewf_error_t *ewf_error = NULL;
+#endif
   data=(struct info_fewf_struct *)MALLOC(sizeof(struct info_fewf_struct));
   memset(data, 0, sizeof(struct info_fewf_struct)); 
   data->file_name = strdup(device);
@@ -127,11 +130,14 @@ disk_t *fewf_init(const char *device, const int mode)
        LIBEWF_FORMAT_UNKNOWN,
        &filenames,
        (int *)&num_files,
-       NULL ) != 1 )
+       &ewf_error) < 0 )
   {
-      log_error("libewf_glob failed\n");
-      free(data);
-      return NULL;
+    char buffer[4096];
+    libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
+    log_error("libewf_glob(%s) failed: %s\n", device, buffer);
+    libewf_error_free(&ewf_error);
+    free(data);
+    return NULL;
   }
 #elif defined( HAVE_GLOB_H )
   {
@@ -164,10 +170,13 @@ disk_t *fewf_init(const char *device, const int mode)
 #if defined( HAVE_LIBEWF_V2_API )
     if( libewf_handle_initialize(
 	  &( data->handle ),
-	  NULL ) != 1 )
+	  &ewf_error) != 1 )
     {
+      char buffer[4096];
       log_error("libewf_handle_initialize failed\n");
-
+      libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
+      log_error("%s\n", buffer);
+      libewf_error_free(&ewf_error);
       libewf_glob_free(
 	  filenames,
 	  num_files,
@@ -180,9 +189,14 @@ disk_t *fewf_init(const char *device, const int mode)
 	  filenames,
 	  num_files,
 	  LIBEWF_OPEN_READ_WRITE,
-	  NULL ) != 1 )
+	  &ewf_error) != 1 )
     {
+      char buffer[4096];
       log_error("libewf_handle_open(%s) in RW mode failed\n", device);
+      libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
+      log_error("%s\n", buffer);
+      libewf_error_free(&ewf_error);
+      ewf_error=NULL;
       libewf_handle_free(
 	  &( data->handle ),
 	  NULL );
@@ -202,10 +216,12 @@ disk_t *fewf_init(const char *device, const int mode)
 #if defined( HAVE_LIBEWF_V2_API )
     if( libewf_handle_initialize(
 	  &( data->handle ),
-	  NULL ) != 1 )
+	  &ewf_error) != 1 )
     {
+      char buffer[4096];
       log_error("libewf_handle_initialize failed\n");
-
+      libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
+      log_error("%s\n", buffer);
       libewf_glob_free(
 	  filenames,
 	  num_files,
@@ -218,9 +234,12 @@ disk_t *fewf_init(const char *device, const int mode)
 	  filenames,
 	  num_files,
 	  LIBEWF_OPEN_READ,
-	  NULL ) != 1 )
+	  &ewf_error) != 1 )
     {
+      char buffer[4096];
       log_error("libewf_handle_open(%s) in RO mode failed\n", device);
+      libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
+      log_error("%s\n", buffer);
 
       libewf_handle_free(
 	  &( data->handle ),
