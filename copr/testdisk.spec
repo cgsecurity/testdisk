@@ -17,6 +17,7 @@ BuildRequires:	libjpeg-devel
 BuildRequires:	libuuid-devel
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:	ntfs-3g-devel
+BuildRequires:  qt5-linguist
 BuildRequires:	qt5-qtbase-devel
 BuildRequires:	zlib-devel
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
