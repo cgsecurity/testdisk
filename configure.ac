@@ -5,7 +5,7 @@ AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
-TESTDISKDATE="February 2016"
+TESTDISKDATE="April 2016"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -318,6 +318,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PROG_MKDIR_P
 PKG_PROG_PKG_CONFIG
 AC_ARG_VAR(WINDRES, [Windows Resource compiler tool path])
 AC_PATH_TOOL(WINDRES,windres,)
@@ -843,7 +844,7 @@ done
 unset option
 
 AC_LANG_PUSH([C++])
-for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Winline -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $option"
@@ -908,6 +909,11 @@ then
   AC_CHECK_TOOLS(RCC,[rcc-qt5 rcc],)
   if test x$RCC = x ; then
 	AC_MSG_WARN(Could not find a rcc-qt5 or rcc tool in your PATH.)
+	use_qt=false
+  fi
+  AC_CHECK_TOOLS(LRELEASE,[lrelease-qt5 lrelease],)
+  if test x$LRELEASE = x ; then
+	AC_MSG_WARN(Could not find a lrelease-qt5 or lrelease tool in your PATH.)
 	use_qt=false
   fi
   qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS $QTWIDGETS_LIBS"
@@ -984,6 +990,7 @@ AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(MOC)
+AC_SUBST(LRELEASE)
 AC_SUBST(fidentify_LDADD)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)

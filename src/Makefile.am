@@ -343,15 +343,21 @@ photorec_H		= photorec.h phcfg.h addpart.h chgarch.h dir.h exfatp.h ext2grp.h ex
 photorec_ncurses_C	= addpartn.c askloc.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartseln.c psearchn.c
 photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h
 
+QT_TS = \
+  lang/qphotorec.fr.ts
+
 photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
 
 photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphbs.cpp qpsearch.cpp psearch.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c
+qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphotorec_locale.qrc qphbs.cpp qpsearch.cpp psearch.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c $(QT_TS)
 
-nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp
+nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp rcc_qphotorec_locale.cpp
 
 fidentify_SOURCES	= fidentify.c common.c common.h misc.c misc.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
+
+QT_QM=$(QT_TS:.ts=.qm)
+SECONDARY: $(QT_QM)
 
 CLEANFILES = $(nodist_qphotorec_SOURCES)
 DISTCLEANFILES = *~ core
@@ -362,10 +368,14 @@ small: $(sbin_PROGRAMS) $(bin_PROGRAMS)
 extras: $(EXTRA_PROGRAMS)
 
 moc_qphotorec.cpp: qphotorec.h
-	$(MOC) $< -o $@
+	$(AM_V_GEN) $(MOC) $< -o $@
 
 rcc_qphotorec.cpp: qphotorec.qrc
-	$(RCC) $< -o $@
+	$(AM_V_GEN) $(RCC) $< -o $@ -name qphotorec
+
+rcc_qphotorec_locale.cpp: qphotorec_locale.qrc $(QT_QM)
+	$(LN_S) $< $(@D) || exit 0
+	$(AM_V_GEN) $(RCC) $(@D)/$(<F) -o $@ -name qphotorec_locale
 
 Android.mk: Makefile.am
 	androgenizer \
@@ -383,3 +393,7 @@ Android.mk: Makefile.am
 	-:CFLAGS $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CFLAGS) $(CFLAGS) \
 	-:LDFLAGS $(testdisk_LDADD) $(LIBS) \
 > $@
+
+%.qm: %.ts
+	$(MKDIR_P) $(@D)
+	$(AM_V_GEN) $(LRELEASE) -silent $< -qm $@

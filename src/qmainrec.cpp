@@ -25,6 +25,7 @@
 #endif
 
 #include <QApplication>
+#include <QTranslator>
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_UNISTD_H
@@ -103,8 +104,20 @@ int main(int argc, char *argv[])
     }
   }
 #endif
-  QApplication a(argc, argv);
   log_handle=log_open("qphotorec.log", TD_LOG_CREATE, &log_errno);
+  QApplication a(argc, argv);
+  QTranslator translator;
+  QString locale = QLocale::system().name().section('_', 0, 0);
+  log_info("%s\n", locale.toStdString().c_str());
+  if(translator.load(QLocale(), "qphotorec", ".", ":lang/", ".qm"))
+  {
+    a.installTranslator(&translator);
+    log_info("translator installed\n");
+  }
+  else
+  {
+    log_info("translator not installed\n");
+  }
 #ifdef HAVE_DUP2
   if(log_handle)
   {

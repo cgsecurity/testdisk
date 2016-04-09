@@ -153,7 +153,7 @@ QPhotorec::~QPhotorec()
 void QPhotorec::setExistingDirectory()
 {
   QString directory = QFileDialog::getExistingDirectory(this,
-      "Please select a destination to save the recovered files to.",
+      tr("Please select a destination to save the recovered files to."),
       directoryLabel->text(),
       QFileDialog::ShowDirsOnly);
   if (!directory.isEmpty())
@@ -167,9 +167,9 @@ void QPhotorec::newSourceFile()
 {
   const int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   QString filename = QFileDialog::getOpenFileName(this,
-      "Please select a raw file",
+      tr("Please select a raw file"),
       "",
-      "Raw Files (*.dd *.raw *.img)");
+      tr("Raw Files (*.dd *.raw *.img)"));
   if(!filename.isEmpty())
   {
     disk_t *new_disk=NULL;
@@ -256,9 +256,9 @@ void QPhotorec::PartListWidget_updateUI()
       if(arch->get_partition_typename(partition)!=NULL)
 	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem(QString(arch->get_partition_typename(partition))));
       else if(arch->get_part_type)
-	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem("Sys=" + QString::number(arch->get_part_type(partition))));
+	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem(tr("Sys=") + QString::number(arch->get_part_type(partition))));
       else
-	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem("Unknown"));
+	PartListWidget->setItem(currentRow, 2, new QTableWidgetItem(tr("Unknown")));
       if(partition->upart_type>0)
       {
 	QTableWidgetItem *item=new QTableWidgetItem(QString(arch_none.get_partition_typename(partition)));
@@ -373,24 +373,24 @@ QWidget *QPhotorec::copyright(QWidget * qwparent)
 /* TODO replace by a warning */
 int QPhotorec::no_disk_warning()
 {
-  const char *msg;
-  msg="No harddisk found";
+  QString msg;
+  msg=tr("No harddisk found");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-  msg="No harddisk found\n"
+  msg=tr("No harddisk found\n"
     "You need to be administrator to use this program.\n"
     "Under Win9x, use the DOS version instead.\n"
-    "Under Vista or later, select this program, right-click and choose \"Run as administrator\".";
+    "Under Vista or later, select this program, right-click and choose \"Run as administrator\".");
 #elif defined(DJGPP)
 #else
 #ifdef HAVE_GETEUID
   if(geteuid()!=0)
   {
-    msg="No harddisk found\n"
-      "You need to be root to use PhotoRec.";
+    msg=tr("No harddisk found\n"
+      "You need to be root to use PhotoRec.");
   }
 #endif
 #endif
-  return QMessageBox::warning(this,"No Disk!", msg, QMessageBox::Ok);
+  return QMessageBox::warning(this,tr("No Disk!"), msg, QMessageBox::Ok);
 }
 
 void QPhotorec::buttons_updateUI()
@@ -449,28 +449,28 @@ void QPhotorec::HDDlistWidget_updateUI()
   }
   HDDlistWidget->addItem(
       QIcon::fromTheme("application-x-cd-image", QIcon(":res/gnome/application-x-cd-image.png")),
-      "Add a raw disk image...");
+      tr("Add a raw disk image..."));
 }
 
 void QPhotorec::setupUI()
 {
   QWidget *t_copy = copyright(this);
-  QLabel *t_free_soft = new QLabel("PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.");
-  QLabel *t_select = new QLabel("Please select a media to recover from");
+  QLabel *t_free_soft = new QLabel(tr("PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY."));
+  QLabel *t_select = new QLabel(tr("Please select a media to recover from"));
 
   HDDlistWidget = new QComboBox();
-  HDDlistWidget->setToolTip("Disk capacity must be correctly detected for a successful recovery.\n"
+  HDDlistWidget->setToolTip(tr("Disk capacity must be correctly detected for a successful recovery.\n"
       "If a disk listed above has an incorrect size, check HD jumper settings and BIOS\n"
-      "detection, and install the latest OS patches and disk drivers."
+      "detection, and install the latest OS patches and disk drivers.")
   );
 
   QStringList oLabel;
   oLabel.append("");
-  oLabel.append("Flags");
-  oLabel.append("Type");
-  oLabel.append("File System");
-  oLabel.append("Size");
-  oLabel.append("Label");
+  oLabel.append(tr("Flags"));
+  oLabel.append(tr("Type"));
+  oLabel.append(tr("File System"));
+  oLabel.append(tr("Size"));
+  oLabel.append(tr("Label"));
 
   PartListWidget= new QTableWidget();
   PartListWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -485,14 +485,14 @@ void QPhotorec::setupUI()
   QGroupBox *groupBox1;
   QGroupBox *groupBox2;
 
-  groupBox1 = new QGroupBox("File System type");
-  qextRadioButton = new QRadioButton("ext2/ext3/ext4 filesystem");
-  qfatRadioButton = new QRadioButton("FAT/NTFS/HFS+/ReiserFS/...");
+  groupBox1 = new QGroupBox(tr("File System type"));
+  qextRadioButton = new QRadioButton(tr("ext2/ext3/ext4 filesystem"));
+  qfatRadioButton = new QRadioButton(tr("FAT/NTFS/HFS+/ReiserFS/..."));
   qfatRadioButton->setChecked(true);
 
   groupBox2 = new QGroupBox();
-  qfreeRadioButton = new QRadioButton("Free: Scan for file from unallocated space only");
-  qwholeRadioButton = new QRadioButton("Whole: Extract files from whole partition");
+  qfreeRadioButton = new QRadioButton(tr("Free: Scan for file from unallocated space only"));
+  qwholeRadioButton = new QRadioButton(tr("Whole: Extract files from whole partition"));
   qfreeRadioButton->setEnabled(false);
   qwholeRadioButton->setChecked(true);
 
@@ -515,11 +515,11 @@ void QPhotorec::setupUI()
   groupBox->setLayout(groupBoxLayout);
 
 
-  QLabel *dstWidget= new QLabel("Please select a destination to save the recovered files to.");
+  QLabel *dstWidget= new QLabel(tr("Please select a destination to save the recovered files to."));
   directoryLabel=new QLineEdit("");
   QPushButton *dst_button = new QPushButton(
       QIcon::fromTheme("folder", QIcon(":res/gnome/folder.png")),
-      "&Browse");
+      tr("&Browse"));
 
   QWidget *dst_widget= new QWidget(this);
   QWidget *dst_widget2= new QWidget(this);
@@ -539,7 +539,7 @@ void QPhotorec::setupUI()
   button_search->setEnabled(false);
   QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
   QPushButton *button_about= new QPushButton(QIcon::fromTheme("help-about", QIcon(":res/gnome/help-about.png")), "&About");
-  QPushButton *button_formats= new QPushButton(QIcon::fromTheme("image-x-generic.png", QIcon(":res/gnome/image-x-generic.png")),"&File Formats");
+  QPushButton *button_formats= new QPushButton(QIcon::fromTheme("image-x-generic.png", QIcon(":res/gnome/image-x-generic.png")),tr("&File Formats"));
 
   QWidget *B_widget = new QWidget(this);
   QHBoxLayout *B_layout = new QHBoxLayout(B_widget);
@@ -639,34 +639,32 @@ void QPhotorec::qphotorec_search_updateUI()
   const unsigned int sector_size=params->disk->sector_size;
   QString tmp;
   QString txt = QString(directoryLabel->text()).toHtmlEscaped();
-  folder_txt->setText("Destination: <a href=\"file://" + txt + "/" +
+  folder_txt->setText(tr("Destination:")+" <a href=\"file://" + txt + "/" +
       DEFAULT_RECUP_DIR + "." + QString::number(params->dir_num) + "\">" +
       txt + "</a>");
   if(params->status==STATUS_QUIT)
   {
-    tmp.sprintf("Recovery completed");
+    tmp=QString(tr("Recovery completed"));
   }
   else if(params->status==STATUS_EXT2_ON_BF || params->status==STATUS_EXT2_OFF_BF)
   {
-    tmp.sprintf("Bruteforce %10lu sectors remaining (test %u)",
-        (unsigned long)((params->offset-partition->part_offset)/sector_size),
-	params->pass);
+    const unsigned long sectors_remaining=(params->offset-partition->part_offset)/sector_size;
+    tmp=QString(tr("Bruteforce %1 sectors remaining (test %2)").arg(sectors_remaining).arg(params->pass));
   }
   else
   {
-    tmp.sprintf("Pass %u - Reading sector %10llu/%llu",
-	params->pass,
-	(unsigned long long)(params->offset>partition->part_offset && params->offset < partition->part_size ?
-	  ((params->offset-partition->part_offset)/sector_size):
-	  0),
-	(unsigned long long)(partition->part_size/sector_size));
+    const unsigned long long sector_current=(params->offset>partition->part_offset && params->offset < partition->part_size ?
+	((params->offset-partition->part_offset)/sector_size):
+	0);
+    const unsigned long long sector_total=partition->part_size/sector_size;
+    tmp=QString(tr("Pass %1 - Reading sector %2/%3").arg(params->pass).arg(sector_current).arg(sector_total));
   }
   progress_info->setText(tmp);
 
   if(params->status==STATUS_FIND_OFFSET)
-    tmp.sprintf("%u/10 headers found", params->file_nbr);
+    tmp=QString(tr("%1/10 headers found").arg(params->file_nbr));
   else
-    tmp.sprintf("%u files found", params->file_nbr);
+    tmp=QString(tr("%1 files found").arg(params->file_nbr));
   progress_filefound->setText(tmp);
 
   if(params->status==STATUS_QUIT)
@@ -761,7 +759,7 @@ void QPhotorec::qphotorec_search_setupUI()
   filestatsWidget->setHorizontalHeaderLabels( oLabel );
   filestatsWidget->resizeColumnsToContents();
 
-  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
+  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), tr("&Quit"));
   mainLayout->addWidget(t_copy);
   mainLayout->addWidget(diskWidget);
   mainLayout->addWidget(folderWidget);
@@ -832,7 +830,10 @@ int QPhotorec::photorec(alloc_data_t *list_search_space)
     {
       case PSTATUS_EACCES:
 	{
-	  int ret=QMessageBox::warning(this,"QPhotoRec: Failed to create file!", "Failed to create file! Please choose another destination", QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
+	  int ret=QMessageBox::warning(this,
+	      tr("QPhotoRec: Failed to create file!"),
+	      tr("Failed to create file! Please choose another destination"),
+	      QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
 	  if(ret==QMessageBox::Cancel)
 	  {
 	    params->status=STATUS_QUIT;
@@ -849,7 +850,10 @@ int QPhotorec::photorec(alloc_data_t *list_search_space)
 	break;
       case PSTATUS_ENOSPC:
 	{
-	  int ret=QMessageBox::warning(this,"QPhotoRec: Not enough space!", "There is not enough space left! Please free disk space and/or choose another destination", QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
+	  int ret=QMessageBox::warning(this,
+	      tr("QPhotoRec: Not enough space!"),
+	      tr("There is not enough space left! Please free disk space and/or choose another destination"),
+	      QMessageBox::Ok| QMessageBox::Cancel, QMessageBox::Ok);
 	  if(ret==QMessageBox::Cancel)
 	  {
 	    params->status=STATUS_QUIT;
@@ -888,7 +892,11 @@ void QPhotorec::qphotorec_search()
   if(selected_disk==NULL || selected_partition==NULL)
     return;
   static alloc_data_t list_search_space={
-    .list = TD_LIST_HEAD_INIT(list_search_space.list)
+    .list = TD_LIST_HEAD_INIT(list_search_space.list),
+    .start=0,
+    .end=0,
+    .file_stat=NULL,
+    .data=0
   };
 
   QByteArray byteArray = (directoryLabel->text() + "/" + DEFAULT_RECUP_DIR).toUtf8();
@@ -918,8 +926,8 @@ void QPhotorec::qphotorec_about()
 {
   QPixmap pixmap_img = QPixmap(":res/photorec_64x64.png");
   QMessageBox msg;
-  msg.setText("QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.\n\nQPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see <http://www.gnu.org/licenses/>.");
-  msg.setWindowTitle("QPhotoRec: About");
+  msg.setText(tr("QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.\n\nQPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nYou should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see <http://www.gnu.org/licenses/>."));
+  msg.setWindowTitle(tr("QPhotoRec: About"));
   msg.addButton(QMessageBox::Close);
   msg.setIconPixmap(pixmap_img);
   msg.exec();
@@ -948,11 +956,11 @@ void QPhotorec::qphotorec_formats()
   }
 
   QDialog fenetre3;
-  fenetre3.setWindowTitle("QPhotoRec: File Formats");
+  fenetre3.setWindowTitle("QPhotoRec: "+tr("File Formats"));
   QDialogButtonBox buttonBox(Qt::Horizontal);
 
-  QPushButton *bt_reset= new QPushButton("&Reset");
-  QPushButton *bt_restore= new QPushButton("Res&tore");
+  QPushButton *bt_reset= new QPushButton(tr("&Reset"));
+  QPushButton *bt_restore= new QPushButton(tr("Res&tore"));
 
   buttonBox.addButton(bt_reset, QDialogButtonBox::ResetRole);
   buttonBox.addButton(bt_restore, QDialogButtonBox::ResetRole);
