@@ -58,13 +58,15 @@ static int header_check_steuer(const unsigned char *buffer, const unsigned int b
   if(h->version1!=h->version2)
     return 0;
   memset(&tm_time, 0, sizeof(struct tm));
-  strptime(h->date_string, "%b %d %Y %H:%M:%S", &tm_time);
   reset_file_recovery(file_recovery_new);
   if(le32(h->version1)>=0x13)
     file_recovery_new->extension="steuer2015";
   else
     file_recovery_new->extension=file_hint_steuer2014.extension;
+#ifdef HAVE_STRPTIME
+  strptime(h->date_string, "%b %d %Y %H:%M:%S", &tm_time);
   file_recovery_new->time=mktime(&tm_time);
+#endif
   return 1;
 }
 
