@@ -1165,13 +1165,13 @@ void file_check_tiff(file_recovery_t *fr)
      * Sony arw and dng,
      * Panasonic raw/rw2,
      * Minolta tif
+     * Sony sr2
      * so don't truncate them */
   else if(strcmp(fr->extension,"cr2")==0 ||
       strcmp(fr->extension,"dcr")==0 ||
       strcmp(fr->extension,"nef")==0 ||
       strcmp(fr->extension,"orf")==0 ||
       strcmp(fr->extension,"pef")==0 ||
-      strcmp(fr->extension,"sr2")==0 ||
       (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
       strcmp(fr->extension,"wdp")==0)
     fr->file_size=calculated_file_size;
