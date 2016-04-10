@@ -604,10 +604,8 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
   {
     const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
     long int new_inode=-1;	/* Quit */
-    file_info_t dir_list = {
-      .list = TD_LIST_HEAD_INIT(dir_list.list),
-      .name = NULL
-    };
+    file_info_t dir_list;
+    TD_INIT_LIST_HEAD(&dir_list.list);
     /* Not perfect for FAT32 root cluster */
     inode_known[depth]=inode;
     dir_data->get_dir(disk, partition, dir_data, inode, &dir_list);
@@ -661,10 +659,8 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
-  file_info_t dir_list = {
-    .list = TD_LIST_HEAD_INIT(dir_list.list),
-    .name = NULL
-  };
+  file_info_t dir_list;
+  TD_INIT_LIST_HEAD(&dir_list.list);
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   char *dir_name;
   struct td_list_head *file_walker = NULL;

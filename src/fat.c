@@ -765,13 +765,11 @@ static int fat_has_EFI_entry(disk_t *disk, partition_t *partition, const int ver
 {
   dir_data_t dir_data;
   struct td_list_head *file_walker = NULL;
-  file_info_t dir_list = {
-    .list = TD_LIST_HEAD_INIT(dir_list.list),
-    .name = NULL
-  };
+  file_info_t dir_list;
   const dir_partition_t res=dir_partition_fat_init(disk, partition, &dir_data, verbose);
   if(res!=DIR_PART_OK)
     return 0;
+  TD_INIT_LIST_HEAD(&dir_list.list);
   dir_data.get_dir(disk, partition, &dir_data, 0, &dir_list);
   td_list_for_each(file_walker, &dir_list.list)
   {

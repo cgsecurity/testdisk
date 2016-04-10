@@ -196,10 +196,8 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
 	  dir_partition_aff(disk, partition, &dir_data, dir_data.current_inode, current_cmd);
 #else
 	  {
-	    file_info_t dir_list = {
-	      .list = TD_LIST_HEAD_INIT(dir_list.list),
-	      .name = NULL
-	    };
+	    file_info_t dir_list;
+	    TD_INIT_LIST_HEAD(&dir_list.list);
 	    dir_data.get_dir(disk, partition, &dir_data, dir_data.current_inode, &dir_list);
 	    dir_aff_log(&dir_data, &dir_list);
 	    delete_list_file(&dir_list);

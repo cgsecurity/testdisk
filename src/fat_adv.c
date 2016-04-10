@@ -333,10 +333,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 #endif
     unsigned char *buffer;
     int ind_stop=0;
-    file_info_t rootdir_list= {
-      .list = TD_LIST_HEAD_INIT(rootdir_list.list),
-      .name = NULL
-    };
+    file_info_t rootdir_list;
+    TD_INIT_LIST_HEAD(&rootdir_list.list);
     buffer=(unsigned char *)MALLOC(cluster_size);
 #ifdef HAVE_NCURSES
     if(interface)
@@ -378,10 +376,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
           if(fat_get_cluster_from_entry(entry2)==0 &&
 	      buffer[0x40]!=0) /* First-level directory with files */
           {
-	    file_info_t dir_list = {
-	      .list = TD_LIST_HEAD_INIT(dir_list.list),
-	      .name = NULL
-	    };
+	    file_info_t dir_list;
+	    TD_INIT_LIST_HEAD(&dir_list.list);
             log_info("First-level directory found at cluster %lu\n",root_cluster);
             dir_fat_aux(buffer, cluster_size, 0, &dir_list);
             if(verbose>0)
@@ -508,10 +504,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               }
             }
             {
-	      file_info_t dir_list = {
-		.list = TD_LIST_HEAD_INIT(dir_list.list),
-		.name = NULL
-	      };
+	      file_info_t dir_list;
+	      TD_INIT_LIST_HEAD(&dir_list.list);
               dir_fat_aux(buffer, cluster_size, 0, &dir_list);
               if(is_root_cluster_candidat(&dir_list))
               {
@@ -697,10 +691,8 @@ static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, c
   }
 #ifdef DEBUG
   {
-    file_info_t dir_list = {
-      .list = TD_LIST_HEAD_INIT(dir_list.list),
-      .name = NULL
-    };
+    file_info_t dir_list;
+    TD_INIT_LIST_HEAD(&dir_list.list);
     dir_fat_aux(buffer, cluster_size, 0, &dir_list);
     dir_aff_log(NULL, dir_list);
     delete_list_file(&dir_list);
@@ -826,11 +818,9 @@ static int analyse_dir_entries2(disk_t *disk_car,const partition_t *partition, c
 {
   unsigned char *buffer_dir;
   unsigned int root_dir_size;
-  file_info_t dir_list = {
-    .list = TD_LIST_HEAD_INIT(dir_list.list),
-    .name = NULL
-  };
+  file_info_t dir_list;
   struct td_list_head *file_walker = NULL;
+  TD_INIT_LIST_HEAD(&dir_list.list);
   if(root_size_max==0)
   {
     root_size_max=4096;

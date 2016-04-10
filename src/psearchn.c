@@ -109,10 +109,8 @@ static FILE *fopen_with_retry(const char *path, const char *mode)
 
 static void photorec_dir_fat(const unsigned char *buffer, const unsigned int read_size, const unsigned long long sector)
 {
-  file_info_t dir_list = {
-    .list = TD_LIST_HEAD_INIT(dir_list.list),
-    .name = NULL
-  };
+  file_info_t dir_list;
+  TD_INIT_LIST_HEAD(&dir_list.list);
   dir_fat_aux(buffer, read_size, 0, &dir_list);
   if(!td_list_empty(&dir_list.list))
   {

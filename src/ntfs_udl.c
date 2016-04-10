@@ -1699,11 +1699,9 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
       break;
     default:
       {
-	file_info_t dir_list = {
-	  .list = TD_LIST_HEAD_INIT(dir_list.list),
-	  .name = NULL
-	};
 	struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data.private_dir_data;
+	file_info_t dir_list;
+	TD_INIT_LIST_HEAD(&dir_list.list);
 	scan_disk(ls->vol, &dir_list);
 	ntfs_undelete_menu(disk_car, partition, &dir_data, &dir_list, current_cmd);
 	delete_list_file(&dir_list);

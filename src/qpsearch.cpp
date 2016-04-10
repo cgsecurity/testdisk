@@ -220,10 +220,8 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 
             if(file_recovery.file_stat->file_hint==&file_hint_dir && options->verbose > 0)
             { /* FAT directory found, list the file */
-	      file_info_t dir_list = {
-		.list = TD_LIST_HEAD_INIT(dir_list.list),
-		.name = NULL
-	      };
+	      file_info_t dir_list;
+	      TD_INIT_LIST_HEAD(&dir_list.list);
 	      dir_fat_aux(buffer, read_size, 0, &dir_list);
 	      if(!td_list_empty(&dir_list.list))
               {

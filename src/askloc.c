@@ -178,10 +178,8 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
   do
   {
     DIR* dir;
-    file_info_t dir_list = {
-      .list = TD_LIST_HEAD_INIT(dir_list.list),
-      .name = NULL
-    };
+    file_info_t dir_list;
+    TD_INIT_LIST_HEAD(&dir_list.list);
     wmove(window,5,0);
     wclrtoeol(window);	/* before addstr for BSD compatibility */
     if(has_colors())

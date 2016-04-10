@@ -891,13 +891,8 @@ void QPhotorec::qphotorec_search()
 {
   if(selected_disk==NULL || selected_partition==NULL)
     return;
-  static alloc_data_t list_search_space={
-    .list = TD_LIST_HEAD_INIT(list_search_space.list),
-    .start=0,
-    .end=0,
-    .file_stat=NULL,
-    .data=0
-  };
+  alloc_data_t list_search_space;
+  TD_INIT_LIST_HEAD(&list_search_space.list);
 
   QByteArray byteArray = (directoryLabel->text() + "/" + DEFAULT_RECUP_DIR).toUtf8();
   params->recup_dir=strdup(byteArray.constData());

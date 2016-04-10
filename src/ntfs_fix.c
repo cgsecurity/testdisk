@@ -171,10 +171,8 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     }
     if(res1==DIR_PART_OK)
     {
-      file_info_t dir_list = {
-	.list = TD_LIST_HEAD_INIT(dir_list.list),
-	.name = NULL
-      };
+      file_info_t dir_list;
+      TD_INIT_LIST_HEAD(&dir_list.list);
       dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode, &dir_list);
       if(!td_list_empty(&dir_list.list))
       {
@@ -191,10 +189,8 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     res2=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
     if(res2==DIR_PART_OK)
     {
-      file_info_t dir_list = {
-	.list = TD_LIST_HEAD_INIT(dir_list.list),
-	.name = NULL
-      };
+      file_info_t dir_list;
+      TD_INIT_LIST_HEAD(&dir_list.list);
       dir_data.get_dir(disk_car,partition,&dir_data,dir_data.current_inode, &dir_list);
       if(!td_list_empty(&dir_list.list))
       {
