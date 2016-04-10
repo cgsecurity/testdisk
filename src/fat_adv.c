@@ -310,6 +310,13 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 }
 #endif
 
+static int is_root_cluster_candidat(const file_info_t *dir_list)
+{
+  const file_info_t *file1=td_list_entry_const(dir_list->list.next, const file_info_t, list);
+  const file_info_t *file2=td_list_entry_const(file1->list.next, const file_info_t, list);
+  return (!td_list_empty(&dir_list->list) && (&file2->list==&dir_list->list || file1->st_ino!=file2->st_ino));
+}
+
 static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster,const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats)
 {
   unsigned long int root_cluster=0;
@@ -505,10 +512,8 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 		.list = TD_LIST_HEAD_INIT(dir_list.list),
 		.name = NULL
 	      };
-	      const file_info_t *file1=td_list_entry_const(dir_list.list.next, const file_info_t, list);
-	      const file_info_t *file2=td_list_entry_const(file1->list.next, const file_info_t, list);
               dir_fat_aux(buffer, cluster_size, 0, &dir_list);
-              if(!td_list_empty(&dir_list.list) && (&file2->list==&dir_list.list || file1->st_ino!=file2->st_ino))
+              if(is_root_cluster_candidat(&dir_list))
               {
                 int test_date=1;
                 if(verbose>0)
