@@ -14,12 +14,14 @@ BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
 BuildRequires:	libewf-devel
 BuildRequires:	libjpeg-devel
-BuildRequires:	libuuid-devel
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:	ntfs-3g-devel
+BuildRequires:	zlib-devel
+%if "%{el5}" != "1"
+BuildRequires:	libuuid-devel
 BuildRequires:  qt5-linguist
 BuildRequires:	qt5-qtbase-devel
-BuildRequires:	zlib-devel
+%endif
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
 
@@ -53,6 +55,7 @@ Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS.
 PhotoRec is a signature based file recovery utility. It handles more than
 440 file formats including JPG, MSOffice, OpenOffice documents.
 
+%if "%{el5}" != "1"
 %package -n qphotorec
 Summary:	Signature based file carver. Recover lost files
 Group:		Applications/System
@@ -62,12 +65,18 @@ QPhotoRec is a Qt version of PhotoRec. It is a signature based file recovery
 utility. It handles more than 440 file formats including JPG, MSOffice,
 OpenOffice documents.
 
+%endif
+
 %prep
 %setup -q
 
 %build
 autoreconf -vif -I config -W all
+%if "%{el5}" == "1"
+%configure
+%else
 %configure --docdir=%{_pkgdocdir}
+%endif
 make %{?_smp_mflags}
 %install
 rm -rf %{buildroot}
@@ -76,6 +85,7 @@ make DESTDIR="%{buildroot}" install
 %clean
 rm -rf %{buildroot}
 
+%if "%{el5}" != "1"
 %check
 desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
 
@@ -91,11 +101,22 @@ fi
 %posttrans -n qphotorec
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
+%endif
+
 %files
 %defattr(644,root,root,755)
+%if "%{el5}" == "1"
+%doc /usr/share/doc/testdisk/AUTHORS
+%doc /usr/share/doc/testdisk/ChangeLog
+%doc /usr/share/doc/testdisk/NEWS
+%doc /usr/share/doc/testdisk/README.md
+%doc /usr/share/doc/testdisk/THANKS
+%doc /usr/share/doc/testdisk/documentation.html
+%else
 %license COPYING
 %doc AUTHORS ChangeLog NEWS README.md THANKS
 %doc documentation.html
+%endif
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec
 %attr(755,root,root) %{_bindir}/testdisk
@@ -106,6 +127,7 @@ fi
 %{_mandir}/zh_CN/man8/photorec.8*
 %{_mandir}/zh_CN/man8/testdisk.8*
 
+%if "%{el5}" != "1"
 %files -n qphotorec
 %attr(755,root,root) %{_bindir}/qphotorec
 %{_mandir}/man8/qphotorec.8*
@@ -113,6 +135,7 @@ fi
 %{_datadir}/applications/qphotorec.desktop
 %{_datadir}/icons/hicolor/48x48/apps/qphotorec.png
 %{_datadir}/icons/hicolor/scalable/apps/qphotorec.svg
+%endif
 
 %changelog
 * Sun Jan 24 2016 Christophe Grenier <grenier@cgsecurity.org> 7.1-0

@@ -1,4 +1,5 @@
 SUBDIRS = icons man src
+docdir ?= $(datadir)/doc/$(PACKAGE)
 
 EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_photorec.txt THANKS compile.sh \
 	progsreiserfs-journal.patch progsreiserfs-file-read.patch \

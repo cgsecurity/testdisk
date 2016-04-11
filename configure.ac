@@ -5,6 +5,7 @@ AC_PREREQ([2.59])
 AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
+sinclude(mkdir.m4)
 TESTDISKDATE="April 2016"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
