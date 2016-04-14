@@ -17,7 +17,7 @@ BuildRequires:	libjpeg-devel
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:	ntfs-3g-devel
 BuildRequires:	zlib-devel
-%if "%{el5}" != "1"
+%if  0%{?rhel} != 5
 BuildRequires:	libuuid-devel
 BuildRequires:  qt5-linguist
 BuildRequires:	qt5-qtbase-devel
@@ -55,7 +55,7 @@ Linux Raid, Linux Swap, LVM, LVM2, NSS, ReiserFS, UFS, XFS.
 PhotoRec is a signature based file recovery utility. It handles more than
 440 file formats including JPG, MSOffice, OpenOffice documents.
 
-%if "%{el5}" != "1"
+%if  0%{?rhel} != 5
 %package -n qphotorec
 Summary:	Signature based file carver. Recover lost files
 Group:		Applications/System
@@ -72,7 +72,7 @@ OpenOffice documents.
 
 %build
 autoreconf -vif -I config -W all
-%if "%{el5}" == "1"
+%if  0%{?rhel} == 5
 %configure
 %else
 %configure --docdir=%{_pkgdocdir}
@@ -85,7 +85,7 @@ make DESTDIR="%{buildroot}" install
 %clean
 rm -rf %{buildroot}
 
-%if "%{el5}" != "1"
+%if  0%{?rhel} != 5
 %check
 desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
 
@@ -105,7 +105,7 @@ fi
 
 %files
 %defattr(644,root,root,755)
-%if "%{el5}" == "1"
+%if  0%{?rhel} == 5
 %doc /usr/share/doc/testdisk/AUTHORS
 %doc /usr/share/doc/testdisk/ChangeLog
 %doc /usr/share/doc/testdisk/NEWS
@@ -127,7 +127,7 @@ fi
 %{_mandir}/zh_CN/man8/photorec.8*
 %{_mandir}/zh_CN/man8/testdisk.8*
 
-%if "%{el5}" != "1"
+%if  0%{?rhel} != 5
 %files -n qphotorec
 %attr(755,root,root) %{_bindir}/qphotorec
 %{_mandir}/man8/qphotorec.8*
