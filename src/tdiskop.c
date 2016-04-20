@@ -123,6 +123,10 @@ static int menu_disk_ncurses(disk_t *disk, const int verbose,int dump_ind, const
 	{0,NULL,NULL}
   };
   unsigned int menu=(disk->arch == &arch_none ? 1 : 0);
+  if(disk->arch == &arch_none)
+  {
+    interface_adv(disk, verbose, dump_ind, expert, current_cmd);
+  }
   strcpy(options, "AGOPTQ");
   if(disk->arch->write_MBR_code!=NULL)
     strcat(options,"C");
