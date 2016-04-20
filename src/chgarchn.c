@@ -91,10 +91,13 @@ int change_arch_type_ncurses(disk_t *disk, const int verbose)
 	wbkgdset(stdscr,' ' | COLOR_PAIR(0));
       wprintw(stdscr, " partition table type has been detected.");
     }
-    wmove(stdscr,20,0);
-    wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
-    wmove(stdscr,21,0);
-    wprintw(stdscr,"rare for a disk to be 'Non-partitioned'.");
+    if(disk->arch_autodetected!=&arch_none)
+    {
+      wmove(stdscr,20,0);
+      wprintw(stdscr,"Note: Do NOT select 'None' for media with only a single partition. It's very");
+      wmove(stdscr,21,0);
+      wprintw(stdscr,"rare for a disk to be 'Non-partitioned'.");
+    }
     car=wmenuSelect_ext(stdscr, 23, INTER_PARTITION_Y, INTER_PARTITION_X, menuOptions, 7, "IGHMNSXQ", MENU_BUTTON | MENU_VERT | MENU_VERT_WARN, &menu,&real_key);
     switch(car)
     {
