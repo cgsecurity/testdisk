@@ -660,10 +660,10 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
   file_info_t dir_list;
-  TD_INIT_LIST_HEAD(&dir_list.list);
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   char *dir_name;
   struct td_list_head *file_walker = NULL;
+  TD_INIT_LIST_HEAD(&dir_list.list);
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
     return 0;
   inode_known[dir_nbr++]=dir->st_ino;
