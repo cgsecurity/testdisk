@@ -30,6 +30,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#include <time.h>
 #include "types.h"
 #include "common.h"
 #include "ext2.h"
@@ -168,6 +169,16 @@ int recover_EXT2(disk_t *disk, const struct ext2_super_block *sb,partition_t *pa
       log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size / DEFAULT_SECTOR_SIZE));
     else
       log_info("recover_EXT2: part_size %lu\n", (long unsigned)(partition->part_size / disk->sector_size));
+  }
+  if(sb->s_mkfs_time>0)
+  {
+    const time_t tm=le32(sb->s_mkfs_time);
+    log_info("Filesystem created: %s", ctime(&tm));
+  }
+  if(sb->s_mtime>0)
+  {
+    const time_t tm=le32(sb->s_mtime);
+    log_info("Last mount time:    %s", ctime(&tm));
   }
   return 0;
 }
