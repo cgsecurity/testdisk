@@ -331,6 +331,7 @@ file_C			= filegen.c \
 			  file_xv.c \
 			  file_xz.c \
 			  file_z2d.c \
+			  file_zcode.c \
 			  file_zip.c \
 			  file_zpr.c
 
