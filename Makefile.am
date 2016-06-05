@@ -20,6 +20,8 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_ph
 	src/gnome/help-about.png \
 	src/gnome/image-x-generic.png \
 	src/lang/qphotorec.fr.ts \
+	src/lang/qphotorec.it.ts \
+	src/lang/qphotorec.zh_TW.ts \
 	win/readme.txt win/photorec_win.exe.manifest win/qphotorec_win.exe.manifest \
 	win/testdisk_win.exe.manifest \
 	Android.mk jni/Android.mk
