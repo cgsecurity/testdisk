@@ -135,6 +135,8 @@ static const txt_header_t fasttxt_headers[] = {
     "emka"
 #endif
   },
+  /* Source code in go language */
+  { "package main",					12, "go"},
   /* ENVI */
   { "ENVI\r\ndescription",				17, "hdr"},
   /* Java Application Descriptor
@@ -1257,6 +1259,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 #else
       ext="java";
 #endif
+    }
+    else if((str=strstr(buffer_lower, "\nimport ("))!=NULL)
+    {
+      ext="go";
     }
     else if((str=strstr(buffer_lower, "\nimport "))!=NULL)
     {
