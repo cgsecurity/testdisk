@@ -122,6 +122,8 @@ static void register_header_check_cow(file_stat_t *file_stat)
 {
   static const unsigned char cow_header[8]=  {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x1};
   static const unsigned char cow_header2[8]= {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x2};
+  static const unsigned char cow_header3[8]= {'Q', 'F', 'I', 0xfb, 0x0, 0x0, 0x0, 0x3};
   register_header_check(0, cow_header,sizeof(cow_header), &header_check_qcow1, file_stat);
   register_header_check(0, cow_header2,sizeof(cow_header2), &header_check_qcow2, file_stat);
+  register_header_check(0, cow_header3,sizeof(cow_header3), &header_check_qcow2, file_stat);
 }
