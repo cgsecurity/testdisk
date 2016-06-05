@@ -206,14 +206,14 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
     partition->part_type_gpt=GPT_ENT_TYPE_LINUX_RAID;
     if(le32(sb->major_version)==0)
     {
-      partition->part_size=(uint64_t)(le32(sb->size)<<1)*disk_car->sector_size+MD_RESERVED_BYTES;
+      partition->part_size=(uint64_t)(le32(sb->size)<<1)*512+MD_RESERVED_BYTES;	/* 512-byte sectors */
       memcpy(&partition->part_uuid, &sb->set_uuid0, 4);
       memcpy((char*)(&partition->part_uuid)+4, &sb->set_uuid1, 3*4);
     }
     else
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
-      partition->part_size=(uint64_t)le64(sb1->size) * (uint64_t)disk_car->sector_size+4096;
+      partition->part_size=(uint64_t)le64(sb1->size) * 512 + 4096;	/* 512-byte sectors */
       memcpy(&partition->part_uuid, &sb1->set_uuid, 16);
     }
     return 0;
@@ -226,14 +226,14 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
     partition->part_type_gpt=GPT_ENT_TYPE_LINUX_RAID;
     if(be32(sb->major_version)==0)
     {
-      partition->part_size=(uint64_t)(be32(sb->size)<<1)*disk_car->sector_size+MD_RESERVED_BYTES;
+      partition->part_size=(uint64_t)(be32(sb->size)<<1)*512+MD_RESERVED_BYTES;	/* 512-byte sectors */
       memcpy(&partition->part_uuid, &sb->set_uuid0, 4);
       memcpy((char*)(&partition->part_uuid)+4, &sb->set_uuid1, 3*4);
     }
     else
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
-      partition->part_size=(uint64_t)be64(sb1->size) * (uint64_t)disk_car->sector_size+4096;
+      partition->part_size=(uint64_t)be64(sb1->size) * 512 + 4096;	/* 512-byte sectors */
       memcpy(&partition->part_uuid, &sb1->set_uuid, 16);
     }
     return 0;
