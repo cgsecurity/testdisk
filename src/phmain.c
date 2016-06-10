@@ -125,7 +125,9 @@ static void display_version(void)
 int main( int argc, char **argv )
 {
   int i;
+#ifdef SUDO_BIN
   int use_sudo=0;
+#endif
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
@@ -359,9 +361,11 @@ int main( int argc, char **argv )
 #endif
 #endif
   }
-#endif
   if(use_sudo==0)
     use_sudo=do_curses_photorec(&params, &options, list_disk);
+#else
+  do_curses_photorec(&params, &options, list_disk);
+#endif
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif

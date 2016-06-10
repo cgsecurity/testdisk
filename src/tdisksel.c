@@ -62,7 +62,9 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
   unsigned int menu=0;
   int offset=0;
   int pos_num=0;
+#ifdef SUDO_BIN
   int use_sudo=0;
+#endif
   const list_disk_t *element_disk;
   const list_disk_t *current_disk;
   static const struct MenuItem menuMain[]=
@@ -134,6 +136,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       wmove(stdscr,line,0);
       wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
     }
+#ifdef SUDO_BIN
     if(use_sudo > 0)
     {
       if(i<=NBR_DISK_MAX && element_disk==NULL)
@@ -142,6 +145,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	options="PNOSQ";
     }
     else
+#endif
     {
       if(i<=NBR_DISK_MAX && element_disk==NULL)
 	options="OQ";
