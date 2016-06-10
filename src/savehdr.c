@@ -229,7 +229,7 @@ int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose)
       case STATUS_LOG:            status='L'; break;
       case STATUS_DELETED:        status='D'; break;
     }
-    fprintf(f_backup,"%2d : start=%9lu, size=%9lu, Id=%02X, %c\n",
+    fprintf(f_backup,"%2u : start=%9lu, size=%9lu, Id=%02X, %c\n",
 	(parts->part->order < 100 ? parts->part->order : 0),
 	(unsigned long)(parts->part->part_offset/disk_car->sector_size),
 	(unsigned long)(parts->part->part_size/disk_car->sector_size),
