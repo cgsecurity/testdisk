@@ -32,6 +32,7 @@
 #include <string.h>
 #endif
 #include <ctype.h>      /* isdigit */
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -141,6 +142,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   { /* ncurses interface */
     list_part_t *element;
     unsigned int i;
+    assert(current_element!=NULL);
     aff_copy(stdscr);
     wmove(stdscr,4,0);
     wprintw(stdscr,"%s",params->disk->description_short(params->disk));
@@ -206,7 +208,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
     switch(command)
     {
       case KEY_UP:
-	if(current_element!=NULL && current_element->prev!=NULL)
+	if(current_element->prev!=NULL)
 	{
 	  current_element=current_element->prev;
 	  current_element_num--;
@@ -235,7 +237,6 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	break;
       case 's':
       case 'S':
-	if(current_element!=NULL)
 	{
 	  params->partition=current_element->part;
 	  ask_mode_ext2(params->disk, params->partition, &options->mode_ext2, &params->carve_free_space_only);
