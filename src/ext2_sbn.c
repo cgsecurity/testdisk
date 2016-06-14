@@ -144,7 +144,7 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
 	  log_info("Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)\n",
 	      (long long unsigned) hd_offset/DEFAULT_SECTOR_SIZE,
 	      (long long unsigned) hd_offset>>(EXT2_MIN_BLOCK_LOG_SIZE+le32(sb->s_log_block_size)),
-	      EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
+	      (unsigned int)EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size));
 #ifdef HAVE_NCURSES
 	  wmove(stdscr,10+nbr_sb,0);
 	  wprintw(stdscr,"Ext2 superblock found at sector %llu (block=%llu, blocksize=%u)        \n",

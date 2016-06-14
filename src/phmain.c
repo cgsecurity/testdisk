@@ -288,6 +288,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
   {
     free(params.recup_dir);
+    log_close();
     return 1;
   }
   {

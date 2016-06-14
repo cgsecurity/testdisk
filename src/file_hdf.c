@@ -83,12 +83,12 @@ static void file_check_hdf(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return ;
     }
-    if(file_size < offset + sizeof(struct dd_struct) * be16(ddh.size))
-      file_size = offset + sizeof(struct dd_struct) * be16(ddh.size);
-#ifdef DEBUG_HDF
-    log_info("size=%u next=%lu\n", be16(ddh.size), be32(ddh.next));
-#endif
     size=be16(ddh.size);
+    if(file_size < offset + sizeof(struct dd_struct) * size)
+      file_size = offset + sizeof(struct dd_struct) * size;
+#ifdef DEBUG_HDF
+    log_info("size=%u next=%lu\n", size, be32(ddh.next));
+#endif
     for(i=0, p=dd; i < size; i++,p++)
     {
 #ifdef DEBUG_HDF

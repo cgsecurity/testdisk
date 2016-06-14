@@ -261,7 +261,7 @@ RecEnd:
       unsigned int i,o;
       file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
       new_file->name=(char*)MALLOC(DIR_NAME_LEN);
-      for(i=0,o=0; unicode[i]!=0 && o<DIR_NAME_LEN-1; i++)
+      for(i=0,o=0; o<DIR_NAME_LEN-2 && unicode[i]!=0; i++)
       {
 	if(utf8 && unicode[i]>0x7f)
 	{

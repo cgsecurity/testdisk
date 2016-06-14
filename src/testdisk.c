@@ -203,7 +203,9 @@ static int display_disk_list(list_disk_t *list_disk, const int testdisk_mode,
 int main( int argc, char **argv )
 {
   int i;
+#ifdef SUDO_BIN
   int use_sudo=0;
+#endif
   int verbose=0, dump_ind=0;
   int create_log=TD_LOG_NONE;
   int do_list=0;
@@ -455,9 +457,11 @@ int main( int argc, char **argv )
 #endif
 #endif
   }
-#endif
   if(use_sudo==0)
     use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
+#else
+  do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
+#endif
 #ifdef HAVE_NCURSES
   end_ncurses();
 #endif
