@@ -535,10 +535,10 @@ void QPhotorec::setupUI()
   dst_widget->setLayout(dst_widgetLayout);
   
 
-  button_search = new QPushButton(QIcon::fromTheme("go-next", QIcon(":res/gnome/go-next.png")), "&Search");
+  button_search = new QPushButton(QIcon::fromTheme("go-next", QIcon(":res/gnome/go-next.png")), tr("&Search"));
   button_search->setEnabled(false);
-  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), "&Quit");
-  QPushButton *button_about= new QPushButton(QIcon::fromTheme("help-about", QIcon(":res/gnome/help-about.png")), "&About");
+  QPushButton *button_quit= new QPushButton(QIcon::fromTheme("application-exit", QIcon(":res/gnome/application-exit.png")), tr("&Quit"));
+  QPushButton *button_about= new QPushButton(QIcon::fromTheme("help-about", QIcon(":res/gnome/help-about.png")), tr("&About"));
   QPushButton *button_formats= new QPushButton(QIcon::fromTheme("image-x-generic.png", QIcon(":res/gnome/image-x-generic.png")),tr("&File Formats"));
 
   QWidget *B_widget = new QWidget(this);
@@ -747,8 +747,8 @@ void QPhotorec::qphotorec_search_setupUI()
   progressWidget2->setLayout(progressWidgetLayout2);
 
   QStringList oLabel;
-  oLabel.append("File familly");
-  oLabel.append("Number of files recovered");
+  oLabel.append(tr("File familly"));
+  oLabel.append(tr("Number of files recovered"));
 
   filestatsWidget=new QTableWidget();
   filestatsWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
