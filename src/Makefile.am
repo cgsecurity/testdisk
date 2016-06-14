@@ -347,6 +347,7 @@ photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_clu
 QT_TS = \
   lang/qphotorec.fr.ts \
   lang/qphotorec.it.ts \
+  lang/qphotorec.ru.ts \
   lang/qphotorec.zh_TW.ts
 
 photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
