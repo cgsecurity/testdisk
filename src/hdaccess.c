@@ -299,7 +299,6 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     int j;
     char device[100];
     char device_ide[]="/dev/hda";
-    char device_scsi[]="/dev/sda";
     char device_ida[]="/dev/ida/c0d0";
     char device_cciss[]="/dev/cciss/c0d0";
     char device_p_ide[]="/dev/pda";
@@ -310,12 +309,6 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     {
       device_ide[strlen(device_ide)-1]='a'+i;
       list_disk=insert_new_disk(list_disk, file_test_availability(device_ide, verbose, testdisk_mode));
-    }
-    /* Disk SCSI */
-    for(i=0;i<26;i++)
-    {
-      device_scsi[strlen(device_scsi)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi, verbose, testdisk_mode));
     }
     /* Device RAID Compaq */
     for(j=0;j<8;j++)
@@ -363,6 +356,9 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
       list_disk=insert_new_disk(list_disk, file_test_availability(device_mmc, verbose, testdisk_mode));
     }
 #ifdef HAVE_GLOB_H
+    /* Disk SCSI */
+    list_disk=hd_glob_parse("/dev/sd[a-z]", list_disk, verbose, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/sd[a-z][a-z]", list_disk, verbose, testdisk_mode);
     list_disk=hd_glob_parse("/dev/mapper/*", list_disk, verbose, testdisk_mode);
     /* Software Raid (partition level) */
     list_disk=hd_glob_parse("/dev/md*", list_disk, verbose, testdisk_mode);
