@@ -59,9 +59,7 @@
 #include "common.h"
 #include "intrf.h"
 #include "fnctdsk.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#endif
 #include "dir.h"
 #include "filegen.h"
 #include "photorec.h"
