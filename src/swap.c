@@ -123,14 +123,20 @@ int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partit
   {
     case UP_LINSWAP:
       {
-	int i, j;
+	int i;
 	for(i=PAGE_SIZE-10-1;i>=0;i--)
 	  if(swap_header->magic.reserved[i]!=(char)0)
 	    break;
-	for(j=7;j>=0;j--)
-	  if((swap_header->magic.reserved[i]&(1<<j))!=(char)0)
-	    break;
-	partition->part_size=(uint64_t)(8*i+j+1)*PAGE_SIZE;
+	if(i>=0)
+	{
+	  int j;
+	  for(j=7;j>=0;j--)
+	    if((swap_header->magic.reserved[i]&(1<<j))!=(char)0)
+	      break;
+	  partition->part_size=(uint64_t)(8*i+j+1)*PAGE_SIZE;
+	}
+	else
+	  partition->part_size=PAGE_SIZE;
       }
       break;
     case UP_LINSWAP2:
@@ -141,14 +147,20 @@ int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partit
       break;
     case UP_LINSWAP_8K:
       {
-	int i, j;
+	int i;
 	for(i=PAGE_8K - 10 - 1; i>=0; i--)
 	  if(swap_header->magic8k.reserved[i]!=(char)0)
 	    break;
-	for(j=7;j>=0;j--)
-	  if((swap_header->magic8k.reserved[i]&(1<<j))!=(char)0)
-	    break;
-	partition->part_size=(uint64_t)(8*i+j+1)*PAGE_8K;
+	if(i>=0)
+	{
+	  int j;
+	  for(j=7;j>=0;j--)
+	    if((swap_header->magic8k.reserved[i]&(1<<j))!=(char)0)
+	      break;
+	  partition->part_size=(uint64_t)(8*i+j+1)*PAGE_8K;
+	}
+	else
+	  partition->part_size=PAGE_8K;
       }
       break;
     case UP_LINSWAP2_8K:

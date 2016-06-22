@@ -89,7 +89,10 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
 	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
 	break;
       case 0x84:
-	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<24)+(buffer[i+0x12]<<16)+(buffer[i+0x13]<<8)+buffer[i+0x14];
+	{
+	  const uint32_t *p32=(const uint32_t*)&buffer[i+0x11];
+	  file_recovery->calculated_file_size+=0x14 + le32(*p32);
+	}
 	break;
       default:
 	file_recovery->calculated_file_size+=0x14+buffer[i+0x10];

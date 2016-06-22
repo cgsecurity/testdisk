@@ -599,7 +599,7 @@ static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned sho
   }
   else {
     nl_day = (year & 3) || day <= 59 ? day : day-1;
-    for (month = 0; month < 12; month++)
+    for (month = 1; month < 12; month++)
       if (day_n[month] > nl_day) break;
   }
   *msdate = le16(nl_day-day_n[month-1]+1+(month << 5)+(year << 9));
@@ -1088,8 +1088,9 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
     memset(orgboot,0,3*disk_car->sector_size);
   }
   memcpy(newboot,orgboot,3*disk_car->sector_size);
-  if((le16(fat_header->marker)!=0xAA55)||
-      !((fat_header->ignored[0]==0xeb && fat_header->ignored[2]==0x90)||fat_header->ignored[0]==0xe9))
+  if(3*disk_car->sector_size >= DEFAULT_SECTOR_SIZE &&
+      (le16(fat_header->marker)!=0xAA55 ||
+       !((fat_header->ignored[0]==0xeb && fat_header->ignored[2]==0x90)||fat_header->ignored[0]==0xe9)))
   {
     write_FAT_boot_code_aux(newboot);
   }

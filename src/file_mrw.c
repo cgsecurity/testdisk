@@ -75,7 +75,7 @@ static int header_check_mrw(const unsigned char *buffer, const unsigned int buff
   const struct hdr *prdhdr = (const struct hdr*)&mrmhdr->data;
   /* Picture Raw Dimensions */
   const struct prd *prd = (const struct prd*)&prdhdr->data;
-  if(memcmp(mrmhdr->data,prd_header,sizeof(prd_header))!=0)
+  if(memcmp(&prdhdr->fourcc, prd_header, sizeof(prd_header))!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mrw.extension;
