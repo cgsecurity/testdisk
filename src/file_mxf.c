@@ -85,6 +85,7 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
 	break;
       case 0x82:
 	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<8)+buffer[i+0x12];
+	break;
       case 0x83:
 	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
 	break;
