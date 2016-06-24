@@ -94,7 +94,7 @@ struct ico_directory
 static int header_check_ico(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ico_header *ico=(const struct ico_header*)buffer;
-  const struct ico_directory *ico_dir=(const struct ico_directory*)(ico+1);
+  const struct ico_directory *ico_dir;
   unsigned int i;
   uint64_t fs=0;
 #ifdef DEBUG_ICO
