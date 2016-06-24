@@ -93,7 +93,7 @@ static struct struct_io_manager my_struct_manager = {
 };
 static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
 
-static io_channel *shared_ioch=NULL;
+static io_channel shared_ioch=NULL;
 /*
  * Macro taken from unix_io.c
  * For checking structure magic numbers...
@@ -134,7 +134,7 @@ static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data)
 
 static errcode_t my_open(const char *dev, int flags, io_channel *channel)
 {
-  *channel = *shared_ioch;
+  *channel = shared_ioch;
 #ifdef DEBUG_EXT2
   log_info("my_open %s done\n", dev);
 #endif
@@ -366,7 +366,7 @@ dir_partition_t dir_partition_ext2_init(disk_t *disk_car, const partition_t *par
   my_data->partition=partition;
   my_data->disk_car=disk_car;
   ioch=alloc_io_channel(disk_car,my_data);
-  shared_ioch=&ioch;
+  shared_ioch=ioch;
   /* An alternate superblock may be used if the calling function has set an IO redirection */
   if(ext2fs_open ("/dev/testdisk", 0, 0, 0, &my_struct_manager, &ls->current_fs)!=0)
   {
