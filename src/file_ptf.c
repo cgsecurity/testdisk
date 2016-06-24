@@ -62,7 +62,7 @@ static int header_check_ptf(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_ptf(file_stat_t *file_stat)
 {
-  static const unsigned char ptf_header[18]=  {
+  static const unsigned char ptf_header[19]=  {
     0x03,  '0' , '0' , '1' , '0' , '1' , '1' , '1' ,
     '1', '0' , '0' , '1' , '0' , '1' , '0' , '1' ,
     '1', 0x00, 0x01
