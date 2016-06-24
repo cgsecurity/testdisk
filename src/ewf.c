@@ -136,6 +136,7 @@ disk_t *fewf_init(const char *device, const int mode)
     libewf_error_sprint(ewf_error, buffer, sizeof(buffer));
     log_error("libewf_glob(%s) failed: %s\n", device, buffer);
     libewf_error_free(&ewf_error);
+    free(data->file_name);
     free(data);
     return NULL;
   }
@@ -154,6 +155,7 @@ disk_t *fewf_init(const char *device, const int mode)
   if(filenames==NULL)
   {
     globfree(&globbuf);
+    free(data->file_name);
     free(data);
     return NULL;
   }
@@ -181,6 +183,7 @@ disk_t *fewf_init(const char *device, const int mode)
 	  filenames,
 	  num_files,
 	  NULL );
+      free(data->file_name);
       free(data);
       return NULL;
     }
@@ -226,6 +229,7 @@ disk_t *fewf_init(const char *device, const int mode)
 	  filenames,
 	  num_files,
 	  NULL );
+      free(data->file_name);
       free(data);
       return NULL;
     }
@@ -249,6 +253,7 @@ disk_t *fewf_init(const char *device, const int mode)
 	  filenames,
 	  num_files,
 	  NULL );
+      free(data->file_name);
       free(data);
       return NULL;
     }
@@ -261,6 +266,7 @@ disk_t *fewf_init(const char *device, const int mode)
       globfree(&globbuf);
 #endif
       free(filenames);
+      free(data->file_name);
       free(data);
       return NULL;
     }
