@@ -96,7 +96,9 @@ static void file_rename_level0(file_recovery_t *file_recovery)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  if(buffer_size<sizeof(struct lzh_level0))
+  if(buffer_size < sizeof(struct lzh_level0))
+    return;
+  if(buffer_size < sizeof(struct lzh_level0) + hdr->filename_len)
     return;
   for(i=0; i< hdr->filename_len && hdr->filename[i]!=0 && hdr->filename[i]!='.'; i++);
   file_rename(file_recovery, hdr->filename, i, 0, NULL, 1);
