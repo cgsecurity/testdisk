@@ -237,7 +237,7 @@ int file_options_load(file_enable_t *files_enable)
     if(extension_status!=NULL)
     {
       file_enable_t *file_enable;
-      unsigned int cmd_length=extension_status-extension;
+      const unsigned int cmd_length=extension_status-extension;
       *extension_status='\0';
       extension_status++;
 #ifdef DEBUG_PHCFG
