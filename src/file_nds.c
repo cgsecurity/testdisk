@@ -41,11 +41,29 @@ const file_hint_t file_hint_nds= {
   .register_header_check=&register_header_check_nds
 };
 
+static void file_rename_nds(file_recovery_t *file_recovery)
+{
+  FILE *file;
+  unsigned char buffer[12];
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+    return;
+  if(fread(&buffer, sizeof(buffer), 1, file) != 1)
+  {
+    fclose(file);
+    return ;
+  }
+  fclose(file);
+  file_rename(file_recovery, &buffer, 12, 0, file_hint_nds.extension, 0);
+}
+
 static int header_check_nds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(memcmp(&buffer[0x0c], "NTRJ", 4)==0)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_nds.extension;
-  file_recovery_new->min_filesize=0xc6;
+  file_recovery_new->min_filesize=0x180;
+  file_recovery_new->file_rename=&file_rename_nds;
   return 1;
 }
 
@@ -56,4 +74,3 @@ static void register_header_check_nds(file_stat_t *file_stat)
   };
   register_header_check(0xc0, nds_header, sizeof(nds_header), &header_check_nds, file_stat);
 }
-
