@@ -896,7 +896,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
               }
               {
                 const uint64_t next_part_offset=partition->part_offset+partition->part_size-1+1;
-                const uint64_t head_size=disk_car->geom.sectors_per_head * disk_car->sector_size;
+                const uint64_t head_size=(uint64_t)disk_car->geom.sectors_per_head * disk_car->sector_size;
                 hint_insert(try_offset, next_part_offset, &try_offset_nbr);
                 hint_insert(try_offset, next_part_offset+head_size, &try_offset_nbr);
                 if(next_part_offset%head_size!=0)
@@ -1179,6 +1179,7 @@ static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, cons
   }
   if(deb==NULL)
     return list_part;
+  assert(fin!=NULL);
   if(nbr_entries==4 || max_ext!=0)
   {
     if(verbose>0)
