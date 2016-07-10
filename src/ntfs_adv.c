@@ -661,7 +661,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     log_info("ntfs_find_mft: sectors_per_cluster %u\n",sectors_per_cluster);
     log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
     log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
-    log_info("ntfs_find_mft: mft_record_size     %u\n",mft_record_size);
+    log_info("ntfs_find_mft: mft_record_size     %u bytes\n",mft_record_size);
     /* Read "root directory" in MFT */
     if((unsigned)disk_car->pread(disk_car, &buffer, mft_record_size, partition->part_offset + (uint64_t)mft_lcn * sectors_per_cluster * disk_car->sector_size + 5 * (uint64_t)mft_record_size) != mft_record_size)
     {

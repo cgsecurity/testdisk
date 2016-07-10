@@ -303,35 +303,33 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
   unsigned char *buffer;
   uint64_t mft_pos;
   unsigned int mft_record_size;
-  unsigned int mft_size;
   if(ntfs_header->clusters_per_mft_record>0)
-    mft_record_size=ntfs_header->sectors_per_cluster*ntfs_header->clusters_per_mft_record;
+    mft_record_size=ntfs_header->clusters_per_mft_record * ntfs_header->sectors_per_cluster * ntfs_sector_size(ntfs_header);
   else
     mft_record_size=1<<(-ntfs_header->clusters_per_mft_record);
-  mft_size=mft_record_size*ntfs_sector_size(ntfs_header);
   mft_pos=partition->part_offset+(uint64_t)(le16(ntfs_header->reserved)+le64(ntfs_header->mft_lcn)*ntfs_header->sectors_per_cluster)*ntfs_sector_size(ntfs_header);
   /* Record 3 = $Volume */
-  mft_pos+=3*mft_size;
+  mft_pos+=3*mft_record_size;
 #ifdef NTFS_DEBUG
-  log_debug("NTFS cluster size = %u\n",ntfs_header->sectors_per_cluster);
   log_debug("NTFS MFT cluster = %lu\n",le64(ntfs_header->mft_lcn));
-  log_debug("NTFS MFT_record_size = %u\n",mft_record_size);
-  log_debug("NTFS sector size= %u\n", ntfs_sector_size(ntfs_header));
+  log_debug("NTFS cluster size =    %5u sectors\n",ntfs_header->sectors_per_cluster);
+  log_debug("NTFS MFT_record_size = %5u bytes\n",mft_record_size);
+  log_debug("NTFS sector size =     %5u bytes\n", ntfs_sector_size(ntfs_header));
 #endif
-  if(mft_size==0)
+  if(mft_record_size==0)
   {
     log_error("Invalid MFT record size or NTFS sector size\n");
     return;
   }
-  buffer=(unsigned char *)MALLOC(mft_size);
-  if((unsigned)disk_car->pread(disk_car, buffer, mft_size, mft_pos) != mft_size)
+  buffer=(unsigned char *)MALLOC(mft_record_size);
+  if((unsigned)disk_car->pread(disk_car, buffer, mft_record_size, mft_pos) != mft_record_size)
   {
     log_error("NTFS: Can't read MFT\n");
     free(buffer);
     return;
   }
   {
-    const ntfs_attribresident *attrib=(const ntfs_attribresident *)ntfs_findattribute((const ntfs_recordheader*)buffer, 0x60, (char*)buffer+mft_size);
+    const ntfs_attribresident *attrib=(const ntfs_attribresident *)ntfs_findattribute((const ntfs_recordheader*)buffer, 0x60, (char*)buffer+mft_record_size);
     if(attrib && attrib->header.bNonResident==0)	/* attribute is resident */
     {
       char *dest=partition->fsname;
@@ -340,7 +338,7 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
       volume_name_length/=2;	/* Unicode */
       if(volume_name_length>sizeof(partition->fsname)-1)
 	volume_name_length=sizeof(partition->fsname)-1;
-      for(name_it=ntfs_getattributedata(attrib, (char*)(buffer+mft_size));
+      for(name_it=ntfs_getattributedata(attrib, (char*)(buffer+mft_record_size));
 	  volume_name_length>0 && *name_it!='\0' && name_it[1]=='\0';
 	  name_it+=2,volume_name_length--)
 	*dest++=*name_it;

@@ -80,20 +80,20 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   mft_pos=partition->part_offset+(uint64_t)(le16(ntfs_header->reserved)+le64(ntfs_header->mft_lcn)*ntfs_header->sectors_per_cluster)*ntfs_sector_size(ntfs_header);
   mftmirr_pos=partition->part_offset+(uint64_t)(le16(ntfs_header->reserved)+le64(ntfs_header->mftmirr_lcn)*ntfs_header->sectors_per_cluster)*ntfs_sector_size(ntfs_header);
   if(ntfs_header->clusters_per_mft_record>0)
-    mft_record_size=ntfs_header->sectors_per_cluster*ntfs_header->clusters_per_mft_record;
+    mft_record_size=ntfs_header->clusters_per_mft_record * ntfs_header->sectors_per_cluster * ntfs_sector_size(ntfs_header);
   else
     mft_record_size=1<<(-ntfs_header->clusters_per_mft_record);
 
-  cluster_size=ntfs_header->sectors_per_cluster;
+  cluster_size=ntfs_header->sectors_per_cluster * ntfs_sector_size(ntfs_header);
 
-  mftmirr_size_bytes = (cluster_size <= 4 * mft_record_size ? 4 * mft_record_size : cluster_size) * ntfs_sector_size(ntfs_header);
+  mftmirr_size_bytes = td_max(cluster_size , 4 * mft_record_size);
 #ifdef DEBUG_REPAIR_MFT
-  log_debug("mft_pos %lu\n",(unsigned long)(mft_pos/disk_car->sector_size));
-  log_debug("mftmirr_pos %lu\n",(unsigned long)(mftmirr_pos/disk_car->sector_size));
-  log_debug("cluster_size %u\n", cluster_size);
-  log_debug("mft_record_size    %u\n", mft_record_size);
-  log_debug("ntfs_sector_size   %u\n", ntfs_sector_size(ntfs_header));
-  log_debug("mftmirr_size_bytes %u\n", mftmirr_size_bytes);
+  log_info("mft_pos          %lu\n",(unsigned long)(mft_pos/disk_car->sector_size));
+  log_info("mftmirr_pos      %lu\n",(unsigned long)(mftmirr_pos/disk_car->sector_size));
+  log_info("cluster_size     %5u bytes\n", cluster_size);
+  log_info("mft_record_size  %5u bytes\n", mft_record_size);
+  log_info("ntfs_sector_size %5u bytes\n", ntfs_sector_size(ntfs_header));
+  log_info("mftmirr_size     %5u bytes\n", mftmirr_size_bytes);
 #endif
   if(mftmirr_size_bytes==0)
   {
@@ -141,12 +141,13 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     free(ntfs_header);
     return -1;
   }
-/*
-  log_debug("MFT\n");
+#ifdef DEBUG_REPAIR_MFT
+  log_info("MFT\n");
   dump_log(buffer_mft, mftmirr_size_bytes);
-  log_debug("MFT mirror\n");
+  log_info("MFT mirror\n");
   dump_log(buffer_mftmirr, mftmirr_size_bytes);
-  */
+  log_flush();
+#endif
   /*
   The idea is to use the internal IO redirector built-in TestDisk
   to redirect read access to the MFT to the MFT backup instead (or
