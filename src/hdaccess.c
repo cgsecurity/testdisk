@@ -101,6 +101,9 @@
 #if defined(__CYGWIN__)
 #include <io.h>
 #endif
+#if defined(__HAIKU__)
+#include <Drivers.h>
+#endif
 #include "fnctdsk.h"
 #include "ewf.h"
 #include "log.h"
@@ -565,6 +568,21 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
     return disk_get_sector_size_win32(handle, device, verbose);
   }
 #endif
+#ifdef __HAIKU__
+  {
+    device_geometry g;
+    int error;
+    error = ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g));
+    if(error==0)
+    {
+      if(verbose>1)
+      {
+	log_verbose("disk_get_sector_size B_GET_GEOMETRY %s sector_size=%u\n",device,g.bytes_per_sector);
+      }
+    return g.bytes_per_sector;
+    }
+  }
+#endif
   if(verbose>1)
   {
     log_verbose("disk_get_sector_size default sector size for %s\n",device);
@@ -695,6 +713,23 @@ static void disk_get_geometry(CHSgeometry_t *geom, const int hd_h, const char *d
     return disk_get_geometry_win32(geom, handle, device, verbose);
   }
 #endif
+#ifdef __HAIKU__
+  {
+    device_geometry g;
+    int error;
+    error = ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g));
+    if(error==0)
+    {
+      if(verbose>1)
+      {
+	log_verbose("disk_get_geometry B_GET_GEOMETRY %s Ok\n", device);
+      }
+	geom->cylinders=g.cylinder_count;
+	geom->heads_per_cylinder=g.head_count;
+	geom->sectors_per_head=g.sectors_per_track;
+    }
+  }
+#endif
   if(geom->sectors_per_head>0 && geom->heads_per_cylinder>0)
     return ;
   geom->cylinders=0;
@@ -779,6 +814,23 @@ static uint64_t disk_get_size(const int hd_h, const char *device, const int verb
     handle=(HANDLE)_get_osfhandle(hd_h);
 #endif
     return disk_get_size_win32(handle, device, verbose);
+  }
+#endif
+#ifdef __HAIKU__
+  {
+    device_geometry g;
+    int error;
+    error = ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g));
+    if(error==0)
+    {
+      off_t o = (off_t)g.bytes_per_sector * g.sectors_per_track * g.cylinder_count * g.head_count;
+      if(verbose>1)
+      {
+	log_verbose("disk_get_size B_GET_GEOMETRY %s size %llu\n",
+	    device, (long long unsigned)o);
+      }
+      return o;
+    }
   }
 #endif
   return compute_device_size(hd_h, device, verbose, sector_size);
@@ -1393,6 +1445,24 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
       if (ioctl(hd_h, BLKROGET, &readonly) >= 0)
       {
         if(readonly>0)
+        {
+          try_readonly=1;
+          close(hd_h);
+	  hd_h = -1;
+        }
+      }
+#endif
+#ifdef __HAIKU__
+      device_geometry g;
+      int readonly;
+      /* If the device can be opened read-write, then
+       * check whether BKROGET says that it is read-only.
+       * read-only loop devices may be openend read-write,
+       * use BKROGET to detect the problem
+       */
+      if (ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g)) >= 0)
+      {
+        if(g.read_only>0)
         {
           try_readonly=1;
           close(hd_h);
