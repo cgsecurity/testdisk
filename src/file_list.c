@@ -67,6 +67,7 @@ extern const file_hint_t file_hint_blend;
 extern const file_hint_t file_hint_bmp;
 extern const file_hint_t file_hint_bpg;
 extern const file_hint_t file_hint_bz2;
+extern const file_hint_t file_hint_c4d;
 extern const file_hint_t file_hint_cab;
 extern const file_hint_t file_hint_caf;
 extern const file_hint_t file_hint_cam;
@@ -384,6 +385,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_bmp  },
   { .enable=0, .file_hint=&file_hint_bpg  },
   { .enable=0, .file_hint=&file_hint_bz2  },
+  { .enable=0, .file_hint=&file_hint_c4d  },
   { .enable=0, .file_hint=&file_hint_cab  },
   { .enable=0, .file_hint=&file_hint_caf  },
   { .enable=0, .file_hint=&file_hint_cam  },
