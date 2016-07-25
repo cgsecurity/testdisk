@@ -292,6 +292,9 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	    /* HP Photosmart Photo Printing Album */
 	    if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
 	      return "albm";
+	    /* Lotus Approch */
+	    if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
+	      return "apr";
 	    break;
 	  case 28:
 	    /* Microsoft Works Spreadsheet or Chart */
@@ -976,6 +979,9 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		/* HP Photosmart Photo Printing Album */
 		if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
 		  ext="albm";
+		/* Lotus Approch */
+		else if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
+		  ext="apr";
 		break;
 	      case 28:
 		/* Microsoft Works Spreadsheet or Chart */
