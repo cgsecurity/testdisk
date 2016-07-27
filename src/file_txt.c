@@ -1384,6 +1384,15 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static int header_check_svg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* Scalable Vector Graphics */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="svg";
+  file_recovery_new->file_check=&file_check_svg;
+  return 1;
+}
+
 static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
@@ -1437,4 +1446,5 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   /* TinyTag */
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
+  register_header_check(0, "<svg xmlns=\"http://www.w3.org/2000/svg\"", 39, &header_check_svg, file_stat);
 }
