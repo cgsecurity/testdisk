@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="April 2016"
+TESTDISKDATE="August 2016"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -367,9 +367,9 @@ if test "x$have_iconv" != "xyes" ; then
 
   old_LIBS="$LIBS"
   if test "${iconv_lib_a}" = ""; then
-    LIBS="$LIBS -liconv"
+    LIBS="-liconv $LIBS"
   else
-    LIBS="$LIBS ${iconv_lib_a}"
+    LIBS="${iconv_lib_a} $LIBS"
   fi
   AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
   int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
@@ -388,9 +388,9 @@ if test "x$have_iconv" != "xyes" ; then
   # BSDs install this lib as libgiconv.
   old_LIBS="$LIBS"
   if test "${giconv_lib_a}" = ""; then
-    LIBS="$LIBS -lgiconv"
+    LIBS="-lgiconv $LIBS"
   else
-    LIBS="$LIBS ${giconv_lib_a}"
+    LIBS="${giconv_lib_a} $LIBS"
   fi
   AC_LINK_IFELSE([AC_LANG_SOURCE([#include <giconv.h>
   int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
@@ -580,25 +580,25 @@ fi
 
 if test "x$use_ext2fs" != "xno"; then
 if test "x$with_ext2fs" != "xno"; then
-  AC_CHECK_LIB(ext2fs,ext2fs_open,[
-      AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
-      if test "${ext2fs_lib_a}" = ""; then
-        LIBS="$LIBS -lext2fs"
-      else
-        LIBS="$LIBS ${ext2fs_lib_a}"
-      fi
-      have_ext2fs=yes
-      ],AC_MSG_WARN(No ext2fs library detected))
   AC_CHECK_LIB(com_err,com_err,[
       AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
       if test "${com_err_lib_a}" = ""; then
-        LIBS="$LIBS -lcom_err"
+        LIBS="-lcom_err $LIBS"
       else
-        LIBS="$LIBS ${com_err_lib_a}"
+        LIBS="${com_err_lib_a} $LIBS"
       fi
       have_com_err=yes
       ], AC_MSG_WARN(No com_err library detected))
 
+  AC_CHECK_LIB(ext2fs,ext2fs_open,[
+      AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
+      if test "${ext2fs_lib_a}" = ""; then
+        LIBS="-lext2fs $LIBS"
+      else
+        LIBS="${ext2fs_lib_a} $LIBS"
+      fi
+      have_ext2fs=yes
+      ],AC_MSG_WARN(No ext2fs library detected))
   AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
@@ -681,9 +681,9 @@ if test "x$with_ntfs" != "xno"; then
     [
       AC_DEFINE([HAVE_LIBNTFS],1,[Define to 1 if you have the ntfs library (-lntfs).])
       if test "${ntfs_lib_a}" = ""; then
-        LIBS="$LIBS -lntfs"
+        LIBS="-lntfs $LIBS"
       else
-        LIBS="$LIBS ${ntfs_lib_a}"
+        LIBS="${ntfs_lib_a} $LIBS"
       fi
       have_ntfs=yes
     ],AC_MSG_WARN(No ntfs library detected))
