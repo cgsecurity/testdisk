@@ -648,7 +648,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
 #endif
   }
 #else
-#warning You need a mkdir function!
+#warning "You need a mkdir function!"
 #endif
   return localdir;
 }

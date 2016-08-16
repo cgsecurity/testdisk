@@ -253,7 +253,7 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
       if(mkdir(working_recup_dir, 0775)!=0 && errno==EEXIST)
 #endif
 #else
-#warning You need a mkdir function!
+#warning "You need a mkdir function!"
 #endif
       {
 	dir_num++;

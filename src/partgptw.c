@@ -75,7 +75,7 @@ static void efi_generate_uuid(efi_guid_t *ent_uuid)
   uuid_export(uuid, UUID_FMT_BIN, (void **)&data_ptr, &data_len);
   uuid_destroy(uuid);
 #else
-#warning You need a uuid_generate, uuidgen or uuid_create function
+#warning "You need a uuid_generate, uuidgen or uuid_create function"
 #endif
   swap_uuid_and_efi_guid(ent_uuid);
 }
