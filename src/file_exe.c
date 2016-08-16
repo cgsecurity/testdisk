@@ -407,10 +407,16 @@ static void file_exe_ressource(FILE *file, const unsigned int base, const unsign
 	unsigned int off;
 	unsigned int len;
 	if(fseek(file, base + (le32(rsrc_entry->Pos) & 0x7fffffff), SEEK_SET)<0)
+	{
+	  free(rsrc_entries);
 	  return ;
+	}
 	buffer_size=fread(buffer, 1, sizeof(buffer), file);
 	if(buffer_size<16)
+	{
+	  free(rsrc_entries);
 	  return ;
+	}
 	off=buffer[0]+ (buffer[1]<<8) + (buffer[2]<<16) + (buffer[3]<<24);
 	len=buffer[4]+ (buffer[5]<<8) + (buffer[6]<<16) + (buffer[7]<<24);
 	{
