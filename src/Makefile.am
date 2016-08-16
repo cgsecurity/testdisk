@@ -318,6 +318,7 @@ file_C			= filegen.c \
 			  file_wim.c \
 			  file_win.c \
 			  file_wks.c \
+			  file_wld.c \
 			  file_wmf.c \
 			  file_wnk.c \
 			  file_woff.c \
