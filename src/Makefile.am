@@ -107,6 +107,7 @@ file_C			= filegen.c \
 			  file_dta.c \
 			  file_dump.c \
 			  file_dv.c \
+			  file_dvi.c \
 			  file_dvr.c \
 			  file_dwg.c \
 			  file_dxf.c \
