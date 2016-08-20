@@ -39,7 +39,7 @@ typedef struct {
 /*
  * Almost identical to Linux's timespec, but not quite
  */
-struct timestruc_t {
+struct jfs_timestruc_t {
 	uint32_t tv_sec;
 	uint32_t tv_nsec;
 };
@@ -89,7 +89,7 @@ struct jfs_superblock {
 
 	pxd_t s_fsckpxd;	/* 8: inline fsck work space extent */
 
-	struct timestruc_t s_time;	/* 8: time last updated */
+	struct jfs_timestruc_t s_time;	/* 8: time last updated */
 
 	int32_t s_fsckloglen;	/* 4: Number of filesystem blocks reserved for
 				 *    the fsck service log.  
