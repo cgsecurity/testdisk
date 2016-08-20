@@ -80,13 +80,36 @@ static void efi_generate_uuid(efi_guid_t *ent_uuid)
   swap_uuid_and_efi_guid(ent_uuid);
 }
 
-static void partition_generate_gpt_entry(struct gpt_ent* gpt_entry, const partition_t *partition, const disk_t *disk_car)
+static int find_gpt_entry(const uint64_t lba_start, const struct gpt_ent* gpt_entries_org)
 {
+  int i;
+  if(gpt_entries_org==NULL)
+    return -1;
+  for(i=0; i<128; i++)
+  {
+    if(gpt_entries_org[i].ent_lba_start==le64(lba_start) &&
+	guid_cmp(gpt_entries_org[i].ent_uuid, GPT_ENT_TYPE_UNUSED)!=0)
+    {
+      int j;
+      for(j=0; j<i; j++)
+	if(guid_cmp(gpt_entries_org[j].ent_uuid, gpt_entries_org[i].ent_uuid)==0)
+	  return -1;
+      return i;
+    }
+  }
+  return -1;
+}
+
+static void partition_generate_gpt_entry(struct gpt_ent* gpt_entry, const partition_t *partition, const disk_t *disk_car, const struct gpt_ent* gpt_entries_org)
+{
+  const int entry=find_gpt_entry(partition->part_offset / disk_car->sector_size, gpt_entries_org);
   guid_cpy(&gpt_entry->ent_type, &partition->part_type_gpt);
   gpt_entry->ent_lba_start=le64(partition->part_offset / disk_car->sector_size);
   gpt_entry->ent_lba_end=le64((partition->part_offset + partition->part_size - 1) / disk_car->sector_size);
   str2UCSle((uint16_t *)&gpt_entry->ent_name, partition->partname, sizeof(gpt_entry->ent_name)/2);
-  if(guid_cmp(partition->part_uuid, GPT_ENT_TYPE_UNUSED)!=0)
+  if(entry >= 0)
+    guid_cpy(&gpt_entry->ent_uuid, &gpt_entries_org[entry].ent_uuid);
+  else if(guid_cmp(partition->part_uuid, GPT_ENT_TYPE_UNUSED)!=0)
     guid_cpy(&gpt_entry->ent_uuid, &partition->part_uuid);
   else
     efi_generate_uuid(&gpt_entry->ent_uuid);
@@ -197,21 +220,32 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
 {
   struct gpt_hdr *gpt;
   struct gpt_ent* gpt_entries;
+  struct gpt_hdr *gpt_org;
+  struct gpt_ent* gpt_entries_org;
   const list_part_t *element;
   const unsigned int hdr_entries=128;
   const unsigned int gpt_entries_size=hdr_entries*sizeof(struct gpt_ent);
   if(ro>0)
     return 0;
+  gpt_entries_org=(struct gpt_ent*)MALLOC(gpt_entries_size);
+  disk_car->pread(disk_car, gpt_entries_org, gpt_entries_size, 2 * disk_car->sector_size);
+
   gpt_entries=(struct gpt_ent*)MALLOC(gpt_entries_size);
   for(element=list_part;element!=NULL;element=element->next)
   {
     if(element->part->order > 0 && element->part->order <= hdr_entries)
     {
       partition_generate_gpt_entry(&gpt_entries[element->part->order-1],
-          element->part, disk_car);
+          element->part, disk_car, gpt_entries_org);
     }
   }
   gpt=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
+  gpt_org=(struct gpt_hdr*)MALLOC(disk_car->sector_size);
+  if(disk_car->pread(disk_car, gpt_org, disk_car->sector_size, disk_car->sector_size) == disk_car->sector_size)
+    guid_cpy(&gpt->hdr_guid, &gpt_org->hdr_guid);
+  else
+    efi_generate_uuid(&gpt->hdr_guid);
+
   memcpy(gpt->hdr_sig, GPT_HDR_SIG, 8);
   gpt->hdr_revision=le32(GPT_HDR_REVISION);
   gpt->hdr_size=le32(92);
@@ -220,21 +254,30 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   gpt->__reserved=le32(0);
   gpt->hdr_lba_start=le64(1 + gpt_entries_size/disk_car->sector_size + 1);
   gpt->hdr_lba_end=le64((disk_car->disk_size-1 - gpt_entries_size)/disk_car->sector_size - 1);
-  efi_generate_uuid(&gpt->hdr_guid);
   gpt->hdr_crc_table=le32(get_crc32(gpt_entries, gpt_entries_size, 0xFFFFFFFF)^0xFFFFFFFF);
   gpt->hdr_lba_self=le64(1);
   gpt->hdr_lba_alt=le64((disk_car->disk_size-1)/disk_car->sector_size);
   gpt->hdr_lba_table=le64(1+1);
   gpt->hdr_crc_self=le32(0);
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
+
+#ifdef DEBUG_GPT
+  dump2_log(gpt_entries, gpt_entries_org, gpt_entries_size);
+  dump2_log(gpt, gpt_org, disk_car->sector_size);
+#endif
+
   if((unsigned)disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
+    free(gpt_org);
+    free(gpt_entries_org);
     free(gpt);
     free(gpt_entries);
     return 1;
   }
   if((unsigned)disk_car->pwrite(disk_car, gpt, disk_car->sector_size, le64(gpt->hdr_lba_self) * disk_car->sector_size) != disk_car->sector_size)
   {
+    free(gpt_org);
+    free(gpt_entries_org);
     free(gpt);
     free(gpt_entries);
     return 1;
@@ -246,16 +289,22 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   gpt->hdr_crc_self=le32(get_crc32(gpt, le32(gpt->hdr_size), 0xFFFFFFFF)^0xFFFFFFFF);
   if((unsigned)disk_car->pwrite(disk_car, gpt_entries, gpt_entries_size, le64(gpt->hdr_lba_table) * disk_car->sector_size) != gpt_entries_size)
   {
+    free(gpt_org);
+    free(gpt_entries_org);
     free(gpt);
     free(gpt_entries);
     return 1;
   }
   if((unsigned)disk_car->pwrite(disk_car, gpt, disk_car->sector_size, le64(gpt->hdr_lba_self) * disk_car->sector_size) != disk_car->sector_size)
   {
+    free(gpt_org);
+    free(gpt_entries_org);
     free(gpt);
     free(gpt_entries);
     return 1;
   }
+  free(gpt_org);
+  free(gpt_entries_org);
   free(gpt);
   free(gpt_entries);
   write_part_gpt_i386(disk_car, list_part);
