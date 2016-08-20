@@ -238,7 +238,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   previous_time=start_time;
   next_checkpoint=start_time+5*60;
   memset(buffer_olddata,0,blocksize);
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+  current_search_space=td_list_first_entry(&list_search_space->list, alloc_data_t, list);
   offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose > 0)
     info_list_search_space(list_search_space, current_search_space, params->disk->sector_size, 0, options->verbose);

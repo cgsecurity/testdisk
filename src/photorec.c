@@ -127,7 +127,7 @@ static void update_search_space_aux(alloc_data_t *list_search_space, const uint6
       if(offset!=NULL && new_current_search_space!=NULL &&
           current_search_space->start<=*offset && *offset<=current_search_space->end)
       {
-        *new_current_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
+        *new_current_search_space=td_list_next_entry(current_search_space, list);
         *offset=(*new_current_search_space)->start;
       }
       td_list_del(search_walker);
@@ -146,7 +146,7 @@ static void update_search_space_aux(alloc_data_t *list_search_space, const uint6
         if(offset!=NULL && new_current_search_space!=NULL &&
             start<=*offset && *offset<=current_search_space->end)
         {
-          *new_current_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
+	  *new_current_search_space=td_list_next_entry(current_search_space, list);
           *offset=(*new_current_search_space)->start;
         }
         current_search_space->end=start-1;
@@ -156,7 +156,7 @@ static void update_search_space_aux(alloc_data_t *list_search_space, const uint6
       if(offset!=NULL && new_current_search_space!=NULL &&
           current_search_space->start<=*offset && *offset<=current_search_space->end)
       {
-        *new_current_search_space=td_list_entry(current_search_space->list.next, alloc_data_t, list);
+	*new_current_search_space=td_list_next_entry(current_search_space, list);
         *offset=(*new_current_search_space)->start;
       }
       td_list_del(search_walker);
@@ -284,7 +284,7 @@ void get_prev_location(alloc_data_t *list_search_space, alloc_data_t **current_s
    * Limit the search to 10 fragments or 1GB */
   for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
   {
-    file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
+    file_space=td_list_prev_entry(file_space, list);
     if(file_space==list_search_space)
       return;
     size+=file_space->end - file_space->start + 1;
@@ -304,7 +304,7 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
    * Limit the search to 10 fragments or 1GB */
   for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
   {
-    file_space=td_list_entry(file_space->list.prev, alloc_data_t, list);
+    file_space=td_list_prev_entry(file_space, list);
     if(file_space==list_search_space)
       return -1;
     size+=file_space->end - file_space->start + 1;
@@ -445,7 +445,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
   *offset=0;
   if(td_list_empty(&list_search_space->list))
     return default_blocksize;
-  *offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % blocksize;
+  *offset=(td_list_first_entry(&list_search_space->list, alloc_data_t, list))->start % blocksize;
   do
   {
     run_again=0;
@@ -890,7 +890,7 @@ static inline void file_block_remove_from_sp_aux(alloc_data_t *tmp, alloc_data_t
     tmp->file_stat=NULL;
     if(tmp->start <= tmp->end)
       return ;
-    *new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
+    *new_current_search_space=td_list_next_entry(tmp, list);
     *offset=(*new_current_search_space)->start;
     td_list_del(&tmp->list);
     free(tmp);
@@ -899,7 +899,7 @@ static inline void file_block_remove_from_sp_aux(alloc_data_t *tmp, alloc_data_t
   if(*offset + blocksize == tmp->end + 1)
   {
     tmp->end-=blocksize;
-    *new_current_search_space=td_list_entry(tmp->list.next, alloc_data_t, list);
+    *new_current_search_space=td_list_next_entry(tmp, list);
     *offset=(*new_current_search_space)->start;
     return ;
   }
@@ -943,7 +943,7 @@ static inline void file_block_add_to_file(alloc_list_t *list, const uint64_t off
 {
   if(!td_list_empty(&list->list))
   {
-    alloc_list_t *prev=td_list_entry(list->list.prev, alloc_list_t, list);
+    alloc_list_t *prev=td_list_last_entry(&list->list, alloc_list_t, list);
     if(prev->end+1==offset && prev->data==data)
     {
       prev->end=offset+blocksize-1;

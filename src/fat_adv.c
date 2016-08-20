@@ -312,8 +312,8 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
 
 static int is_root_cluster_candidat(const file_info_t *dir_list)
 {
-  const file_info_t *file1=td_list_entry_const(dir_list->list.next, const file_info_t, list);
-  const file_info_t *file2=td_list_entry_const(file1->list.next, const file_info_t, list);
+  const file_info_t *file1=td_list_first_entry(&dir_list->list, const file_info_t, list);
+  const file_info_t *file2=td_list_next_entry(file1, list);
   return (!td_list_empty(&dir_list->list) && (&file2->list==&dir_list->list || file1->st_ino!=file2->st_ino));
 }
 
@@ -385,7 +385,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
               dir_aff_log(NULL, &dir_list);
             }
             {
-	      const file_info_t *first_entry=td_list_entry_const(&dir_list.list, const file_info_t, list);
+	      const file_info_t *first_entry=td_list_first_entry(&dir_list.list, const file_info_t, list);
               file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
               memcpy(new_file, first_entry, sizeof(*new_file));
 	      new_file->name=(char*)MALLOC(32);

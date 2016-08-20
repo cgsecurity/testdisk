@@ -229,10 +229,10 @@ static inline void td_list_splice_init(struct td_list_head *list,
  * @member:	the name of the td_list_struct within the struct.
  */
 #define td_list_entry(ptr, type, member) \
-	((type *)((char *)(ptr)-(unsigned long long)(&((type *)0)->member)))
+	((type *)((char *)(ptr)-(size_t)(&((type *)0)->member)))
 
 #define td_list_entry_const(ptr, type, member) \
-	((type *)((const char *)(ptr)-(unsigned long long)(&((type *)0)->member)))
+	((type *)((const char *)(ptr)-(size_t)(&((type *)0)->member)))
 
 /**
  * __td_list_for_each	-	iterate over a list
@@ -328,6 +328,48 @@ static inline void td_list_splice_init(struct td_list_head *list,
 		n = td_list_entry(pos->member.next, typeof(*pos), member);	\
 	     &pos->member != (head); 					\
 	     pos = n, n = td_list_entry(n->member.next, typeof(*n), member))
+
+
+/**
+ * td_list_first_entry - get the first element from a list
+ * @ptr:	the list head to take the element from.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_head within the struct.
+ *
+ * Note, that list is expected to be not empty.
+ */
+
+#define td_list_first_entry(ptr, type, member) \
+	td_list_entry((ptr)->next, type, member)
+
+
+/**
+ * td_list_last_entry - get the last element from a list
+ * @ptr:	the list head to take the element from.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_head within the struct.
+ *
+ * Note, that list is expected to be not empty.
+ */
+#define td_list_last_entry(ptr, type, member) \
+	td_list_entry((ptr)->prev, type, member)
+
+
+/**
+ * td_list_next_entry - get the next element in list
+ * @pos:	the type * to cursor
+ * @member:	the name of the list_head within the struct.
+ */
+#define td_list_next_entry(pos, member) \
+	td_list_entry((pos)->member.next, typeof(*(pos)), member)
+
+/**
+ * td_list_prev_entry - get the prev element in list
+ * @pos:	the type * to cursor
+ * @member:	the name of the list_head within the struct.
+ */
+#define td_list_prev_entry(pos, member) \
+	td_list_entry((pos)->member.prev, typeof(*(pos)), member)
 
 
 static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,

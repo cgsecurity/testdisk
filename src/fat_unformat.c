@@ -68,7 +68,7 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   unsigned char *buffer_start=(unsigned char *)MALLOC(READ_SIZE);
   unsigned char *buffer=buffer_start;
   assert(disk->sector_size!=0);
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+  current_search_space=td_list_first_entry(&list_search_space->list, alloc_data_t, list);
   if(current_search_space!=list_search_space)
     offset=current_search_space->start;
   if(verbose>0)
@@ -226,21 +226,20 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
 #endif
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=cluster_size;
-  buffer_start=(unsigned char *)MALLOC(READ_SIZE);
-  buffer=buffer_start;
   start_time=time(NULL);
   previous_time=start_time;
-  current_search_space=td_list_entry(list_search_space->list.prev, alloc_data_t, list);
+  current_search_space=td_list_last_entry(&list_search_space->list, alloc_data_t, list);
   if(current_search_space==list_search_space)
   {
-    free(buffer_start);
     return PSTATUS_OK;
   }
   offset_end=current_search_space->end;
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+  current_search_space=td_list_first_entry(&list_search_space->list, alloc_data_t, list);
   offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose>0)
     info_list_search_space(list_search_space, current_search_space, disk->sector_size, 0, options->verbose);
+  buffer_start=(unsigned char *)MALLOC(READ_SIZE);
+  buffer=buffer_start;
   disk->pread(disk, buffer_start, READ_SIZE, offset);
   for(;offset < offset_end; offset+=cluster_size)
   {

@@ -333,7 +333,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  {
 	    ind_stop=PSTATUS_OK;
 	    if(!td_list_empty(&list_search_space->list))
-	      start_offset=(td_list_entry(list_search_space->list.next, alloc_data_t, list))->start % params->blocksize;
+	      start_offset=(td_list_first_entry(&list_search_space->list, alloc_data_t, list))->start % params->blocksize;
 	  }
 	  else
 	  {

@@ -88,7 +88,7 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
   start_time=time(NULL);
   previous_time=start_time;
   memset(buffer_olddata, 0, blocksize);
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+  current_search_space=td_list_first_entry(&list_search_space->list, alloc_data_t, list);
   if(current_search_space!=list_search_space)
     offset=current_search_space->start;
   if(options->verbose>0)
