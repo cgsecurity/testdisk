@@ -78,7 +78,7 @@ static int header_check_ibd(const unsigned char *buffer, const unsigned int buff
   }
   else if(be16(hdr->type)==FIL_PAGE_TYPE_FSP_HDR)
   {
-    const unsigned int format = flags & DICT_TF_FORMAT_MASK >> DICT_TF_FORMAT_SHIFT;
+    const unsigned int format = (flags & DICT_TF_FORMAT_MASK) >> DICT_TF_FORMAT_SHIFT;
     if(flags==0)
     {
       /* Antelope (5.1.7 or newer) */
