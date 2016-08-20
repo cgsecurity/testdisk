@@ -147,6 +147,7 @@ static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, const int ins_len, ch
     inb_left = ins_len << 1;    // ntfschar is 16-bit
     outb_left = outs_len - 1;   // reserve 1 byte for NUL
 
+    *outp = '\0';
     if (iconv(cd, (char**)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
     {
       // Regardless of the value of errno
@@ -335,8 +336,6 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   const unsigned long int first_inode=file->st_ino;
   ntfs_inode *inode;
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct*)dir_data->private_dir_data;
-  char *stream_name;
-  stream_name=strrchr(dir_data->current_directory, ':');
   inode = ntfs_inode_open (ls->vol, first_inode);
   if (!inode) {
     log_error("ntfs_copy: ntfs_inode_open failed for %s\n", dir_data->current_directory);
@@ -347,6 +346,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     char *new_file;
     ntfs_attr *attr=NULL;
     FILE *f_out;
+    char *stream_name;
     s64 offset;
     u32 block_size;
     buffer = (char *)MALLOC(bufsize);
@@ -355,6 +355,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       ntfs_inode_close(inode);
       return -2;
     }
+    stream_name=strrchr(dir_data->current_directory, ':');
     if(stream_name)
       stream_name++;
     if(stream_name != NULL)
@@ -420,7 +421,7 @@ static int ntfs_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
 	bytes_read = ntfs_attr_pread(attr, offset, bufsize, buffer);
       }
       //ntfs_log_info("read %lld bytes\n", bytes_read);
-      if (bytes_read == -1) {
+      if (bytes_read < 0) {
 	log_error("ERROR: Couldn't read file");
 	break;
       }
