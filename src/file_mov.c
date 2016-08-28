@@ -27,6 +27,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <ctype.h>
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
@@ -268,6 +269,12 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
     {
       if(memcmp(buffer, "der.mdat\" anim=\"", 16)==0)
 	return 0;
+      if(file_recovery->file_stat!=NULL &&
+	  buffer[8]=='a' && isprint(buffer[0]) && isprint(buffer[1]) && isprint(buffer[2]) && isprint(buffer[3]))
+      {
+	header_ignored(file_recovery_new);
+	return 0;
+      }
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=file_hint_mov.extension;
       file_recovery_new->file_rename=&file_rename_mov;
