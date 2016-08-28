@@ -258,6 +258,10 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	  is_db++;
 	switch(le16(dir_entry->namsiz))
 	{
+	  case 10:
+	    if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
+	      return "qdf-backup";
+	    break;
 	  case 12:
 	    /* 3ds max */
 	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
@@ -937,6 +941,10 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 #endif
 	    switch(le16(dir_entry->namsiz))
 	    {
+	      case 10:
+		if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
+		  ext="qdf-backup";
+		break;
 	      case 12:
 		/* 3ds max */
 		if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)

@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
+extern const file_hint_t file_hint_doc;
 static void register_header_check_qdf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_qdf= {
@@ -43,10 +44,18 @@ const file_hint_t file_hint_qdf= {
 
 static int header_check_qdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(file_recovery->file_stat != NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc &&
+      strstr(file_recovery->filename, ".qdf-backup")!=NULL)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_qdf.extension;
   return 1;
 }
+
 static void register_header_check_qdf(file_stat_t *file_stat)
 {
   static const unsigned char qdf_header[6]  = { 0xAC, 0x9E, 0xBD, 0x8F, 0x00, 0x00};
