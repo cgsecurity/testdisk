@@ -31,6 +31,7 @@
 #include "common.h"
 #include "log.h"
 
+extern const file_hint_t file_hint_indd;
 static void register_header_check_pct(file_stat_t *file_stat);
 static int header_check_pct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_pct(file_recovery_t *file_recovery);
@@ -93,6 +94,12 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
 	be16(pct->VersionOperator)==0x0011 &&
 	be16(pct->VersionNumber)==0x02ff)
   {
+    if(file_recovery->file_stat != NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_indd)
+    {
+      header_ignored(file_recovery_new);
+      return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_pct.extension;
     /* We only have the low 16bits of the filesystem */
