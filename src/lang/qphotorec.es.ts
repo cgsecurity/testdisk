@@ -1,4 +1,4 @@
-<?xml version="1.0" ?><!DOCTYPE TS><TS language="fr" version="2.1">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="es" version="2.1">
 <context>
     <name>QPhotorec</name>
     <message>
@@ -10,17 +10,17 @@
         <location filename="src/qphotorec.cpp" line="156"/>
         <location filename="src/qphotorec.cpp" line="518"/>
         <source>Please select a destination to save the recovered files to.</source>
-        <translation>Merci de sélectionner une destination pour sauvegarder les fichiers récupérés.</translation>
+        <translation>Por favor escoje un directorio para grabar los archivos recuperados.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="170"/>
         <source>Please select a raw file</source>
-        <translation>Merci de sélectionner une image disque</translation>
+        <translation>Por favor escoje un archivo raw.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="172"/>
         <source>Raw Files (*.dd *.raw *.img)</source>
-        <translation>Fichiers Raw/Image disque (*.dd *.raw *.img)</translation>
+        <translation>Archivos raw (*.dd *.raw *.img)</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="259"/>
@@ -30,12 +30,12 @@
     <message>
         <location filename="src/qphotorec.cpp" line="261"/>
         <source>Unknown</source>
-        <translation>Inconnu</translation>
+        <translation>Desconocido</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="377"/>
         <source>No harddisk found</source>
-        <translation>Aucun disque trouvé</translation>
+        <translation>No se pudo encontrar el disco duro</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="379"/>
@@ -43,80 +43,76 @@
 You need to be administrator to use this program.
 Under Win9x, use the DOS version instead.
 Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</source>
-        <translation>Aucun disque trouvé.
-Il faut être administrateur pour utiliser ce programme.
-Sous Win9x, utiliser la version DOS plutôt.
-Sous Vista et suivant, lancer ce programme en utilisant le clique droit &quot;Executer en tant qu&apos;administrateur&quot;.</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="388"/>
         <source>No harddisk found
 You need to be root to use PhotoRec.</source>
-        <translation>Aucun disque trouvé.
-Il faut être root pour utiliser ce programme.</translation>
+        <translation>No se pudo encontrar los discos duros 
+Necesitas ser root para usar PhotoRec.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="393"/>
         <source>No Disk!</source>
-        <translation>Pas de disque!</translation>
+        <translation>Sin disco</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="452"/>
         <source>Add a raw disk image...</source>
-        <translation>Ajouter une image disque...</translation>
+        <translation>Añade imagen de disco raw</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="458"/>
         <source>PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation>PhotoRec est un logiciel libre, il vient avec ABSOLUMENT AUCUNE GARANTIE.</translation>
+        <translation>Photorec es un program gatis y no TIENE NINGUNA GARANTIA.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="459"/>
         <source>Please select a media to recover from</source>
-        <translation>Merci de sélectionner un média à partir duquel récupérer les données</translation>
+        <translation>Por favor escoje un medio para recuperarse de </translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="462"/>
         <source>Disk capacity must be correctly detected for a successful recovery.
 If a disk listed above has an incorrect size, check HD jumper settings and BIOS
 detection, and install the latest OS patches and disk drivers.</source>
-        <translation>La capacité du disque doit être correctement détecter pour une récupération de donnée réussie.
-Si un disque listé ci dessus a une taille incorrecte, vérifier le paramétrage des cavaliers du disque et la détection au niveau du BIOS, installer les derniers correctifs au niveau de votre système d&apos;exploitation et des gestionnaires de disques.</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="469"/>
         <source>Flags</source>
-        <translation>Drapeaux</translation>
+        <translation>Bandera</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="470"/>
         <source>Type</source>
-        <translation>Type</translation>
+        <translation>Tipo</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="471"/>
         <source>File System</source>
-        <translation>Système de fichiers</translation>
+        <translation>Sistem de archivos</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="472"/>
         <source>Size</source>
-        <translation>Taille</translation>
+        <translation>tamaño</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="473"/>
         <source>Label</source>
-        <translation>Label</translation>
+        <translation>Etiqueta</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="488"/>
         <source>File System type</source>
-        <translation>Type de système de fichiers</translation>
+        <translation>Tipo de sistema de archivo </translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="489"/>
         <source>ext2/ext3/ext4 filesystem</source>
-        <translation>Système de fichier ext2/ext3/ext4</translation>
+        <translation>sistema de archivos ext2/ext3/ext4</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="490"/>
@@ -126,98 +122,98 @@ Si un disque listé ci dessus a une taille incorrecte, vérifier le paramétrage
     <message>
         <location filename="src/qphotorec.cpp" line="494"/>
         <source>Free: Scan for file from unallocated space only</source>
-        <translation>Free: Rechercher des fichiers depuis l&apos;espace non alloué uniquement</translation>
+        <translation>Libre: Escanea por un archivo en el espacio que no es usado solamente.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="495"/>
         <source>Whole: Extract files from whole partition</source>
-        <translation>Whole: Extraire les fichiers depuis la totalité de la partition</translation>
+        <translation>Todo: Sacar los archivos de toda la directoria</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="522"/>
         <source>&amp;Browse</source>
-        <translation>&amp;Parcourir</translation>
+        <translation>&amp;Mirar</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="538"/>
         <source>&amp;Search</source>
-        <translation>&amp;Rechercher</translation>
+        <translation>&amp;Buscar</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="541"/>
         <source>&amp;About</source>
-        <translation>&amp;A propos</translation>
+        <translation>&amp;Acerca de</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="542"/>
         <source>&amp;File Formats</source>
-        <translation>&amp;Formats de fichier</translation>
+        <translation>&amp;Formatos de el archivo</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="642"/>
         <source>Destination:</source>
-        <translation>Destination:</translation>
+        <translation>destinación:</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="647"/>
         <source>Recovery completed</source>
-        <translation>Récupération de données terminée</translation>
+        <translation>Recuperación completada</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="652"/>
         <source>Bruteforce %1 sectors remaining (test %2)</source>
-        <translation>Force brute %1 secteurs restants (test %2)</translation>
+        <translation>Bruteforce quedan 1% sectores (testiar %2)</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="660"/>
         <source>Pass %1 - Reading sector %2/%3</source>
-        <translation>Passe %1 - Lecture du secteur %2/%3</translation>
+        <translation>Pass %1 - Leyendo el sector %2/%3</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="665"/>
         <source>%1/10 headers found</source>
-        <translation>%1/10 entêtes trouvés</translation>
+        <translation>%1/10 headers encontrado</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="667"/>
         <source>%1 files found</source>
-        <translation>%1 fichiers trouvés</translation>
+        <translation>%1 de archivos encontrado</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="540"/>
         <location filename="src/qphotorec.cpp" line="762"/>
         <source>&amp;Quit</source>
-        <translation>&amp;Quitter</translation>
+        <translation>&amp;abandonar</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
         <source>File familly</source>
-        <translation>Familles de fichier</translation>
+        <translation>Familia de archivos</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="751"/>
         <source>Number of files recovered</source>
-        <translation>Nombre de fichiers récupérés</translation>
+        <translation>El numero de archivos recuperados</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="834"/>
         <source>QPhotoRec: Failed to create file!</source>
-        <translation>QPhotoRec: Échec de création de fichier!</translation>
+        <translation>QPhotoRec: fallo en crear un archivo!</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="835"/>
         <source>Failed to create file! Please choose another destination</source>
-        <translation>Impossible de créer un fichier! Merci de sélectionner une autre destination</translation>
+        <translation>No se pudo crear un achivo! Por favor escoje otro directorio</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="854"/>
         <source>QPhotoRec: Not enough space!</source>
-        <translation>QPhotoRec: Pas assez d&apos;espace!</translation>
+        <translation>QPhotoRec: No hay suficiente espacio </translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="855"/>
         <source>There is not enough space left! Please free disk space and/or choose another destination</source>
-        <translation>Il n&apos;y a pas assez d&apos;espace disponible! Merci de libérer de l&apos;espace disque et/ou de choisir une autre destination</translation>
+        <translation>No quedan bastante espacio! Por favor escoje otro disco duro con espacio o otro directorio</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="924"/>
@@ -226,31 +222,27 @@ Si un disque listé ci dessus a une taille incorrecte, vérifier le paramétrage
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
-        <translation>QPhotoRec est un logiciel libre: vous pouvez le redistribuer et/ou le modifier sous les termes de la Licence Publique Générale GNU telle que publiée par la Free Software Foundation ; soit la version 2 de la licence, ou (à votre discrétion) toute version ultérieure.
-
-QPhotoRec est distribué dans l&apos;espoir qu&apos;il sera utile, mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de VALEUR MARCHANDE ou D&apos;ADÉQUATION À UN BESOIN PARTICULIER. Pour plus de détails, voir la Licence Publique Générale GNU.
-
-Vous avez du recevoir un exemplaire de la Licence Publique Générale GNU avec ce programme ; si ce n&apos;est pas le cas, consulter &lt;http://www.gnu.org/licenses/&gt;.</translation>
+        <translation>QPhotoRect is es un programa gratis: Tu puedes redistribuirlo o modificarlo bajo el contrato de GNU General Public License como publicado por Free Software Foundation usando version 2 de la licensia o tu opcion de una de las ultima versiones.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="925"/>
         <source>QPhotoRec: About</source>
-        <translation>QPhotoRec: A propos</translation>
+        <translation>QPhotoRec: Sobre</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="954"/>
         <source>File Formats</source>
-        <translation>Formats de fichier</translation>
+        <translation>EL formato de los archivos</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="957"/>
         <source>&amp;Reset</source>
-        <translation>&amp;Réinitialiser</translation>
+        <translation>&amp;Empesar</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="958"/>
         <source>Res&amp;tore</source>
-        <translation>Res&amp;taurer</translation>
+        <translation>Res&amp;tore</translation>
     </message>
 </context>
 </TS>

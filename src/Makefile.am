@@ -352,8 +352,10 @@ photorec_ncurses_C	= addpartn.c askloc.c chgarchn.c chgtype.c chgtypen.c fat_clu
 photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h
 
 QT_TS = \
+  lang/qphotorec.es.ts \
   lang/qphotorec.fr.ts \
   lang/qphotorec.it.ts \
+  lang/qphotorec.pt.ts \
   lang/qphotorec.ru.ts \
   lang/qphotorec.zh_TW.ts
 

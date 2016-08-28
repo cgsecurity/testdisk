@@ -141,6 +141,16 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
         <translation>&amp;Naviga</translation>
     </message>
     <message>
+        <location filename="src/qphotorec.cpp" line="538"/>
+        <source>&amp;Search</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="541"/>
+        <source>&amp;About</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
         <location filename="src/qphotorec.cpp" line="542"/>
         <source>&amp;File Formats</source>
         <translation>&amp;Formati dei file</translation>
@@ -176,9 +186,20 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
         <translation>%1 documenti trovati</translation>
     </message>
     <message>
+        <location filename="src/qphotorec.cpp" line="540"/>
         <location filename="src/qphotorec.cpp" line="762"/>
         <source>&amp;Quit</source>
         <translation>&amp;Uscire</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="750"/>
+        <source>File familly</source>
+        <translation type="unfinished"/>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="751"/>
+        <source>Number of files recovered</source>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="834"/>
@@ -201,7 +222,7 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
         <translation>Spazio disponibile insufficiente. Liberare spazio su disco e/o scegliere un&apos;altra destinazione</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="929"/>
+        <location filename="src/qphotorec.cpp" line="924"/>
         <source>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
 
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
@@ -214,22 +235,22 @@ QPhotoRec viene distribuito con la speranza che possa essere utile ma SENZA ALCU
 Una copia della GNU General Public License è distribuita con QPhotoRec. In caso contrario se ne può ottenere una all&apos;indirizzo &lt;http://www.gnu.org/licenses/&gt;.</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="930"/>
+        <location filename="src/qphotorec.cpp" line="925"/>
         <source>QPhotoRec: About</source>
         <translation>QPhotoRec: A proposito</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="959"/>
+        <location filename="src/qphotorec.cpp" line="954"/>
         <source>File Formats</source>
         <translation>Formati dei file</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="962"/>
+        <location filename="src/qphotorec.cpp" line="957"/>
         <source>&amp;Reset</source>
         <translation>&amp;Resettare</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="963"/>
+        <location filename="src/qphotorec.cpp" line="958"/>
         <source>Res&amp;tore</source>
         <translation>Ripri&amp;stinare</translation>
     </message>

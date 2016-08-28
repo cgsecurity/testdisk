@@ -53,7 +53,7 @@ Under Vista or later, select this program, right-click and choose &quot;Run as a
         <source>No harddisk found
 You need to be root to use PhotoRec.</source>
         <translation>找不到硬碟
-您需要是 root 使用者才能使用 PhotoRec。</translation>
+您必須是 root 使用者才能使用 PhotoRec。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="393"/>
@@ -68,7 +68,7 @@ You need to be root to use PhotoRec.</source>
     <message>
         <location filename="src/qphotorec.cpp" line="458"/>
         <source>PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation>PhotoRec 是自由軟體，並不提供任何保證。</translation>
+        <translation>PhotoRec 是自由軟體，並不提供任何擔保。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="459"/>
@@ -80,9 +80,9 @@ You need to be root to use PhotoRec.</source>
         <source>Disk capacity must be correctly detected for a successful recovery.
 If a disk listed above has an incorrect size, check HD jumper settings and BIOS
 detection, and install the latest OS patches and disk drivers.</source>
-        <translation>如要成功還原媒體，必需正確偵測磁碟容量。
-如果所列出的磁碟的大小並不正確，請檢查硬碟的跳針設定及 BIOS 偵測系統，
-並安裝最近更新的作業系統修補包及磁碟驅動程式。</translation>
+        <translation>如要成功還原媒體，必須正確偵測磁碟容量。
+如果上列的磁碟大小並不正確，請檢查硬碟跳針的設定以及 BIOS 偵測系統，
+並請安裝最近更新的作業系統修補包以及磁碟驅動程式。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="469"/>
@@ -140,6 +140,16 @@ detection, and install the latest OS patches and disk drivers.</source>
         <translation>瀏覽(&amp;B)</translation>
     </message>
     <message>
+        <location filename="src/qphotorec.cpp" line="538"/>
+        <source>&amp;Search</source>
+        <translation>搜尋(&amp;S)</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="541"/>
+        <source>&amp;About</source>
+        <translation>關於(&amp;A)</translation>
+    </message>
+    <message>
         <location filename="src/qphotorec.cpp" line="542"/>
         <source>&amp;File Formats</source>
         <translation>檔案系統(&amp;F)</translation>
@@ -175,9 +185,20 @@ detection, and install the latest OS patches and disk drivers.</source>
         <translation>找到 %1 個檔案</translation>
     </message>
     <message>
+        <location filename="src/qphotorec.cpp" line="540"/>
         <location filename="src/qphotorec.cpp" line="762"/>
         <source>&amp;Quit</source>
         <translation>離開(&amp;Q)</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="750"/>
+        <source>File familly</source>
+        <translation>檔案家族</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="751"/>
+        <source>Number of files recovered</source>
+        <translation>完成還原的檔案數目</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="834"/>
@@ -200,7 +221,7 @@ detection, and install the latest OS patches and disk drivers.</source>
         <translation>磁碟空間不足！請騰出空間並／或選取另一目的地</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="929"/>
+        <location filename="src/qphotorec.cpp" line="924"/>
         <source>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
 
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
@@ -213,22 +234,22 @@ You should have received a copy of the GNU General Public License along with QPh
 您應該連同 QPhotoRec 取得 GNU 通用公共許可證 (GPL) 的複本，否則您可以參見&lt;http://www.gnu.org/licenses/&gt;。</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="930"/>
+        <location filename="src/qphotorec.cpp" line="925"/>
         <source>QPhotoRec: About</source>
         <translation>QPhotoRec: 關於</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="959"/>
+        <location filename="src/qphotorec.cpp" line="954"/>
         <source>File Formats</source>
         <translation>檔案格式</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="962"/>
+        <location filename="src/qphotorec.cpp" line="957"/>
         <source>&amp;Reset</source>
         <translation>重設(&amp;R)</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="963"/>
+        <location filename="src/qphotorec.cpp" line="958"/>
         <source>Res&amp;tore</source>
         <translation>還原(&amp;T)</translation>
     </message>
