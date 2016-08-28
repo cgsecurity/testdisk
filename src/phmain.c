@@ -72,6 +72,7 @@
 #include "misc.h"
 #include "ext2_dir.h"
 #include "file_jpg.h"
+#include "file_gz.h"
 #include "ntfs_dir.h"
 #include "pdiskseln.h"
 #include "dfxml.h"
@@ -115,8 +116,8 @@ static void display_version(void)
 #ifdef RECORD_COMPILATION_DATE
   printf("Compilation date: %s\n", get_compilation_date());
 #endif
-  printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s, curses lib: %s\n",
-      td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version(), td_curses_version());
+  printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s, curses lib: %s, zlib: %s\n",
+      td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version(), td_curses_version(), td_zlib_version());
   printf("OS: %s\n" , get_os());
 }
 

@@ -33,6 +33,7 @@
 #endif
 #include "filegen.h"
 #include "common.h"
+#include "file_gz.h"
 
 static void register_header_check_gz(file_stat_t *file_stat);
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -271,4 +272,13 @@ static void file_rename_gz(file_recovery_t *file_recovery)
       file_rename(file_recovery, buffer, buffer_size, off, NULL, 1);
     }
   }
+}
+
+const char*td_zlib_version(void)
+{
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+  return ZLIB_VERSION;
+#else
+  return "none";
+#endif
 }

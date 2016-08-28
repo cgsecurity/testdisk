@@ -342,7 +342,7 @@ file_C			= filegen.c \
 			  file_zip.c \
 			  file_zpr.c
 
-file_H			= ext2.h ext2_common.h filegen.h file_jpg.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
+file_H			= ext2.h ext2_common.h filegen.h file_jpg.h file_gz.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
 
 photorec_C		= photorec.c phcfg.c addpart.c chgarch.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c phcli.c poptions.c sessionp.c setdate.c dfxml.c
 

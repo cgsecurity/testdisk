@@ -57,6 +57,7 @@
 #include "ext2_dir.h"
 #include "ewf.h"
 #include "file_jpg.h"
+#include "file_gz.h"
 #include "ntfs_dir.h"
 #include "misc.h"
 #include "dfxml.h"
@@ -192,6 +193,7 @@ void xml_add_DFXML_creator(const char *package, const char *version)
   xml_printf("<library name='libewf' version='%s'/>\n", td_ewf_version());
   xml_printf("<library name='libjpeg' version='%s'/>\n", td_jpeg_version());
   xml_printf("<library name='libntfs' version='%s'/>\n", td_ntfs_version());
+  xml_printf("<library name='zlib' version='%s'/>\n", td_zlib_version());
   xml_pop("build_environment");
   xml_push("execution_environment","");
 #if defined(__CYGWIN__) || defined(__MINGW32__)

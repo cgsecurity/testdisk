@@ -51,6 +51,7 @@
 #include "phcfg.h"
 #include "misc.h"
 #include "file_jpg.h"
+#include "file_gz.h"
 
 extern file_enable_t list_file_enable[];
 extern file_check_list_t file_check_list;
@@ -187,7 +188,7 @@ static void display_version(void)
 #ifdef RECORD_COMPILATION_DATE
   printf("Compilation date: %s\n", get_compilation_date());
 #endif
-  printf("libjpeg: %s\n", td_jpeg_version());
+  printf("libjpeg: %s, zlib: %s\n", td_jpeg_version(), td_zlib_version());
   printf("OS: %s\n" , get_os());
 }
 
