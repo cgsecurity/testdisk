@@ -293,6 +293,7 @@ extern const file_hint_t file_hint_sqlite;
 extern const file_hint_t file_hint_sqm;
 extern const file_hint_t file_hint_steuer2014;
 extern const file_hint_t file_hint_stl;
+extern const file_hint_t file_hint_studio;
 extern const file_hint_t file_hint_stuffit;
 extern const file_hint_t file_hint_swf;
 extern const file_hint_t file_hint_tar;
@@ -614,6 +615,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_sqm  },
   { .enable=0, .file_hint=&file_hint_steuer2014  },
   { .enable=0, .file_hint=&file_hint_stl  },
+  { .enable=0, .file_hint=&file_hint_studio  },
   { .enable=0, .file_hint=&file_hint_stuffit  },
   { .enable=0, .file_hint=&file_hint_swf  },
   { .enable=0, .file_hint=&file_hint_tar  },

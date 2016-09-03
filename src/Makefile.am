@@ -290,6 +290,7 @@ file_C			= filegen.c \
 			  file_steuer2014.c \
 			  file_stl.c \
 			  file_stu.c \
+			  file_studio.c \
 			  file_swf.c \
 			  file_tar.c \
 			  file_tax.c \
