@@ -259,7 +259,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     if(list_disk==NULL)
       do_insert=1;
     {
-      for(i=0;i<16;i++)
+      for(i=0;i<64;i++)
       {
 	disk_t *disk_car;
 	sprintf(device_hd,"\\\\.\\PhysicalDrive%u", i);
