@@ -328,6 +328,7 @@ file_C			= filegen.c \
 			  file_wtv.c \
 			  file_wv.c \
 			  file_x3f.c \
+			  file_x4a.c \
 			  file_xar.c \
 			  file_xcf.c \
 			  file_xfi.c \
