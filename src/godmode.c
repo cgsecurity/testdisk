@@ -623,9 +623,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
     {
       wmove(stdscr,ANALYSE_Y,ANALYSE_X);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Analyse sector %11llu/%lu: %02u%%",
-	  search_location / disk_car->sector_size,
-	  (disk_car->disk_size-1)/disk_car->sector_size,
+      wprintw(stdscr,"Analyse sector %11llu/%llu: %02u%%",
+	  (long long unsigned)(search_location / disk_car->sector_size),
+	  (long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size),
 	    (unsigned int)(search_location*100/disk_car->disk_size));
       wrefresh(stdscr);
       switch(check_enter_key_or_s(stdscr))
