@@ -3,9 +3,9 @@
 # ./compile.sh [ i586-pc-msdosdjgpp | i686-pc-cygwin | i386-pc-mingw32 | powerpc-mac-darwin ]
 # Comment the version definition to not compile the library
 VER_E2FSPROGS=
-VER_PROGSREISERFS="0.3.1-rc8"
-#VER_LIBEWF=20100226
-VER_LIBEWF=20120504
+#VER_PROGSREISERFS="0.3.1-rc8"
+VER_PROGSREISERFS=
+VER_LIBEWF=20140608
 smp_mflags="-j 2"
 crosscompile_target=
 prefix=/usr/
@@ -333,6 +333,9 @@ then
                 ;;
 	  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ntfs --disable-qt --enable-record-compilation-date
+                ;;
+          *cygwin*)
+		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-missing-uuid-ok --enable-record-compilation-date
                 ;;
           *)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --enable-record-compilation-date
