@@ -381,7 +381,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #endif
       file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
       if(file_recovered!=PFSTATUS_BAD)
-	get_prev_location(list_search_space, &current_search_space, &offset, file_recovery.location.start);
+	get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }

@@ -610,13 +610,11 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
   int nbr;
   if(offset_skipped_header==0)
     return ;
-  /* Search backward the first fragment of a file not successfully recovered
-   * Limit the search to 3 fragments or 200 MB */
-  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
+  while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
     if(file_space==list_search_space)
-      return;
+      break;
     if(file_space->start <= offset_skipped_header && offset_skipped_header < file_space->end)
     {
       *current_search_space=file_space;
@@ -625,12 +623,23 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
       return ;
     }
     if(file_space->start < prev_location)
+      break;
+  }
+
+  /* Go backward up to 3 fragments or 200 MB */
+  offset_skipped_header=0;
+  log_info("get_prev_location_smart: reset offset_skipped_header\n");
+  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
+  {
+    file_space=td_list_prev_entry(file_space, list);
+    if(file_space==list_search_space)
+      return;
+    if(file_space->start < prev_location)
       return ;
     size+=file_space->end - file_space->start + 1;
     *current_search_space=file_space;
     *offset=file_space->start;
   }
-  offset_skipped_header=0;
 }
 
 int my_fseek(FILE *stream, off_t offset, int whence)
