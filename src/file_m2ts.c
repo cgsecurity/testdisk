@@ -124,7 +124,8 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   {
     header_ignored(file_recovery_new);
     return 0;
-  }  reset_file_recovery(file_recovery_new);
+  }
+  reset_file_recovery(file_recovery_new);
   if( memcmp(&buffer[0xd7], &buffer[0xe8], 4)==0)
   {
     if( memcmp(&buffer[0xd7], hdmv_header, sizeof(hdmv_header))==0 ||
