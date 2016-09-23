@@ -50,7 +50,7 @@ static int header_check_edb(const unsigned char *buffer, const unsigned int buff
       file_recovery->file_stat->file_hint==&file_hint_edb &&
       file_recovery->file_size==4096)
   {
-    header_ignored(file_recovery_new);
+    /* header_ignored(file_recovery_new); is useless as there is no file check */
     return 0;
   }
   reset_file_recovery(file_recovery_new);

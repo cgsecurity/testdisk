@@ -47,7 +47,7 @@ static int header_check_dvr(const unsigned char *buffer, const unsigned int buff
     return 0;
   if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_dvr)
   {
-    header_ignored(file_recovery_new);
+    /* header_ignored(file_recovery_new); is useless as there is no file check */
     return 0;
   }
   reset_file_recovery(file_recovery_new);
