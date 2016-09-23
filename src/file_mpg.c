@@ -133,7 +133,6 @@ static int calculate_packet_size(const unsigned char *buffer)
   }
 }
 
-
 static data_check_t data_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
@@ -149,6 +148,17 @@ static data_check_t data_check_mpg(const unsigned char *buffer, const unsigned i
     file_recovery->calculated_file_size+=ret;
   }
   return DC_CONTINUE;
+}
+
+static int header_mpg_found(file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_mpg.extension;
+  if(file_recovery_new->blocksize < 14)
+    return 1;
+  file_recovery_new->data_check=&data_check_mpg;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -168,26 +178,14 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
   {
     if(buffer[5]==0 && buffer[6]==1 && buffer[7]==0 && buffer[8]==1)
     {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=file_hint_mpg.extension;
-      if(file_recovery_new->blocksize < 14)
-	return 1;
-      file_recovery_new->data_check=&data_check_mpg;
-      file_recovery_new->file_check=&file_check_size;
-      return 1;
+      return header_mpg_found(file_recovery_new);
     }
     if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mpg.extension;
-      if(file_recovery_new->blocksize < 14)
-	return 1;
-    file_recovery_new->data_check=&data_check_mpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return header_mpg_found(file_recovery_new);
   }
   /* MPEG-2 Program stream http://neuron2.net/library/mpeg2/iso13818-1.pdf */
   /* MPEG2 system header start code, several per file */
@@ -214,26 +212,14 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
 
     if(buffer[4]==0x44 && buffer[5]==0 && buffer[6]==4 && buffer[7]==0 && (buffer[8]&0xfc)==4)
     { /* SCR=0 */
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=file_hint_mpg.extension;
-      if(file_recovery_new->blocksize < 14)
-	return 1;
-      file_recovery_new->data_check=&data_check_mpg;
-      file_recovery_new->file_check=&file_check_size;
-      return 1;
+      return header_mpg_found(file_recovery_new);
     }
     if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mpg.extension;
-    if(file_recovery_new->blocksize < 14)
-      return 1;
-    file_recovery_new->data_check=&data_check_mpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return header_mpg_found(file_recovery_new);
   }
   return 0;
 }
@@ -274,11 +260,7 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
       header_ignored(file_recovery_new);
       return 0;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mpg.extension;
-    file_recovery_new->data_check=&data_check_mpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return header_mpg_found(file_recovery_new);
   }
   return 0;
 }
@@ -312,11 +294,7 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
       header_ignored(file_recovery_new);
       return 0;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mpg.extension;
-    file_recovery_new->data_check=&data_check_mpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return header_mpg_found(file_recovery_new);
   }
   return 0;
 }
@@ -347,11 +325,7 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
       header_ignored(file_recovery_new);
       return 0;
     }
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_mpg.extension;
-    file_recovery_new->data_check=&data_check_mpg;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return header_mpg_found(file_recovery_new);
   }
   return 0;
 }
