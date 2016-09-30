@@ -128,8 +128,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
   {
-    header_ignored(file_recovery_new);
-    return 0;
+    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+      return 0;
   }
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {

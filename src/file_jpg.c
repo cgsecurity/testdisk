@@ -395,8 +395,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if(file_recovery->file_stat->file_hint==&file_hint_doc &&
       strstr(file_recovery->filename, ".albm")!=NULL)
     {
-      header_ignored(file_recovery_new);
-      return 0;
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
     }
     if( file_recovery->file_stat->file_hint==&file_hint_jpg)
     {
