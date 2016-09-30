@@ -31,6 +31,7 @@
 #endif
 #include <stdio.h>
 #include <ctype.h>
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
@@ -591,6 +592,47 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
 }
 
 static uint64_t offset_skipped_header=0;
+
+/* 0: file_recovery is bad *
+ * 1: file_recovery is ok  */
+int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)
+{
+  file_recovery_t fr_test;
+  off_t offset;
+  assert(file_recovery!=NULL);
+  assert(file_recovery_new!=NULL);
+  if(file_recovery->file_check==NULL)
+  {
+    log_warning("header_ignored_adv: file_check==NULL\n");
+    return 1;
+  }
+  if(file_recovery->handle==NULL)
+  {
+    if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+      offset_skipped_header=file_recovery_new->location.start;
+    return 0;
+  }
+
+  memcpy(&fr_test, file_recovery, sizeof(fr_test));
+#ifdef HAVE_FTELLO
+  if((offset=ftello(file_recovery->handle)) < 0)
+    offset=ftell(file_recovery->handle);
+#else
+  offset=ftell(file_recovery->handle);
+#endif
+  assert(offset >= 0);
+  file_recovery->file_check(&fr_test);
+  if(fr_test.file_size>0)
+    return 1;
+  if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
+  {
+    log_error("BUG in header_ignored_adv: my_fseek() failed\n");
+    return 1;
+  }
+  if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+    offset_skipped_header=file_recovery_new->location.start;
+  return 0;
+}
 
 void header_ignored(const file_recovery_t *file_recovery_new)
 {
