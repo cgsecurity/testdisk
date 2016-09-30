@@ -648,8 +648,6 @@ void header_ignored(const file_recovery_t *file_recovery_new)
 void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
 {
   alloc_data_t *file_space=*current_search_space;
-  uint64_t size=0;
-  int nbr;
   if(offset_skipped_header==0)
     return ;
   while(1)
@@ -667,18 +665,29 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
     if(file_space->start < prev_location)
       break;
   }
-
-  /* Go backward up to 3 fragments or 200 MB */
-  offset_skipped_header=0;
-  log_info("get_prev_location_smart: reset offset_skipped_header\n");
-  for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
+#ifdef DEBUG_HEADER_CHECK
+  log_info("get_prev_location_smart: reset offset_skipped_header=%llu, offset=%llu\n",
+      (long long unsigned)(offset_skipped_header/512),
+      (long long unsigned)(*offset/512));
+#endif
+  while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
     if(file_space==list_search_space)
+    {
+      offset_skipped_header=0;
       return;
-    if(file_space->start < prev_location)
+    }
+    if(file_space->start < prev_location || file_space->start < offset_skipped_header)
+    {
+#ifdef DEBUG_HEADER_CHECK
+      log_info("get_prev_location_smart: file_space->start < prev_location=%llu (in 512-bytes sectors), offset=%llu\n",
+	  (long long unsigned)(prev_location/512),
+	  (long long unsigned)(*offset/512));
+#endif
+      offset_skipped_header=0;
       return ;
-    size+=file_space->end - file_space->start + 1;
+    }
     *current_search_space=file_space;
     *offset=file_space->start;
   }
