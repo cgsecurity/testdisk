@@ -63,8 +63,8 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
        file_recovery->file_stat->file_hint==&file_hint_ext2_fs &&
        file_recovery->calculated_file_size==(uint64_t)le32(sb->s_blocks_count)*(EXT2_MIN_BLOCK_SIZE<<le32(sb->s_log_block_size)))
   {
-    header_ignored(file_recovery_new);
-    return 0;
+    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+      return 0;
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ext2_fs.extension;

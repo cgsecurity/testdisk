@@ -125,8 +125,8 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
       file_recovery->file_stat->file_hint==&file_hint_indd &&
       file_recovery->file_size <= 8192)
   {
-    header_ignored(file_recovery_new);
-    return 0;
+    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+      return 0;
   }
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP

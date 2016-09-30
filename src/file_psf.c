@@ -46,8 +46,8 @@ static int header_check_psf(const unsigned char *buffer, const unsigned int buff
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_psf)
   {
-    header_ignored(file_recovery_new);
-    return 0;
+    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+      return 0;
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_psf.extension;

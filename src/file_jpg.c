@@ -389,8 +389,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     jpg_get_size(buffer, buffer_size, &height, &width);
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
-      header_ignored(file_recovery_new);
-      return 0;
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
     }
     if(file_recovery->file_stat->file_hint==&file_hint_doc &&
       strstr(file_recovery->filename, ".albm")!=NULL)
@@ -407,28 +407,28 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	log_info("jpg %llu %llu\n",
 	    (long long unsigned)file_recovery->calculated_file_size,
 	    (long long unsigned)file_recovery->file_size);
-	header_ignored(file_recovery_new);
-	return 0;
+	if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	  return 0;
       }
       /* Don't recover the thumb instead of the jpg itself */
       if(file_recovery->file_size <= 4096 &&
 	  buffer[3]==0xe0 &&
 	  width>0 && width<200 && height>0 && height<200)
       {
-	header_ignored(file_recovery_new);
-	return 0;
+	if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	  return 0;
       }
       /* Some JPG have two APP1 markers, avoid to dicard the first one */
       if( buffer[3]==0xe1	&&
 	  memcmp(&buffer[6], "http://ns.adobe.com/xap/", 24)==0)
       {
-	header_ignored(file_recovery_new);
-	return 0;
+	if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	  return 0;
       }
       if(file_recovery->file_check==&file_check_mpo)
       {
-	header_ignored(file_recovery_new);
-	return 0;
+	if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	  return 0;
       }
     }
     /* Don't extract jpg inside AVI */
@@ -450,8 +450,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if( file_recovery->file_stat->file_hint==&file_hint_rw2 &&
       file_recovery->file_size <= 8192)
     {
-      header_ignored(file_recovery_new);
-      return 0;
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
     }
     if(buffer[3]==0xdb)	/* DQT */
     {

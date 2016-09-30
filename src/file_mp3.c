@@ -175,8 +175,8 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
 	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
     {
-      header_ignored(file_recovery_new);
-      return 0;
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
     }
   }
   while(potential_frame_offset+1 < buffer_size &&
