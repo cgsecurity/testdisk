@@ -519,7 +519,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'u':
 	case 'U':
 	  {
-	    partition_t *partition=current_element->part;
+	    const partition_t *partition=current_element->part;
 	    if(partition->sb_offset!=0 && partition->sb_size>0)
 	    {
 	      io_redir_add_redir(disk_car,
@@ -548,7 +548,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	case 'l':
 	case 'L':
 	  {
-	    partition_t *partition=current_element->part;
+	    const partition_t *partition=current_element->part;
 	    if(partition->sb_offset!=0 && partition->sb_size>0)
 	    {
 	      io_redir_add_redir(disk_car,
@@ -570,7 +570,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	    if(is_linux(current_element->part))
 	    {
 	      list_part_t *list_sb=search_superblock(disk_car,current_element->part,verbose,dump_ind,1);
-	      interface_superblock(disk_car,list_sb,current_cmd);
+	      interface_superblock(disk_car, list_sb, current_cmd);
 	      part_free_list(list_sb);
 	    }
 	    if(is_hfs(current_element->part) || is_hfsp(current_element->part))
