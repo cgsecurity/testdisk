@@ -171,7 +171,18 @@ void xml_printf(const char *fmt,...)
 
 void xml_out2s(const char *tag, const char *value)
 {
-  xml_printf("<%s>%s</%s>\n", tag, value, tag);
+  if(xml_handle==NULL)
+    return;
+  xml_spaces();
+  fprintf(xml_handle, "<%s>", tag);
+  for(;*value!='\0'; value++)
+  {
+    if(*value=='&')
+      fputs("&amp;", xml_handle);
+    else
+      putc(*value, xml_handle);
+  }
+  fprintf(xml_handle, "</%s>\n", tag);
 }
 
 void xml_out2i(const char *tag, const uint64_t value)
