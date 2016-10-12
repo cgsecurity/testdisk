@@ -148,8 +148,8 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   unsigned char *buffer_file=(unsigned char *)MALLOC(cluster_size);
   cluster = file->st_ino;
   new_file=(char *)MALLOC(1024);
-  snprintf(new_file, 1024, "%s.%u/inode_%u", recup_dir, dir_num, inode_num);
 #ifdef HAVE_MKDIR
+  snprintf(new_file, 1024, "%s.%u/inode_%u", recup_dir, dir_num, inode_num);
 #ifdef __MINGW32__
   mkdir(new_file);
 #else
