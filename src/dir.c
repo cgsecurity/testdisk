@@ -41,10 +41,14 @@
 #ifdef HAVE_IO_H
 #include <io.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include "common.h"
 #include "dir.h"
 #include "log.h"
 #include "log_part.h"
+#define MAX_DIR_NBR 256
 
 const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -265,10 +269,23 @@ unsigned int delete_list_file(file_info_t *file_info)
   return nbr;
 }
 
+static int is_inode_valid(const file_info_t *current_file, const unsigned int dir_nbr, const unsigned long int *inode_known)
+{
+  const unsigned long int new_inode=current_file->st_ino;
+  unsigned int i;
+  if(new_inode<2)
+    return 0;
+  if(strcmp(current_file->name, "..")==0)
+    return 0;
+  for(i=0; i<dir_nbr; i++)
+    if(new_inode==inode_known[i]) /* Avoid loop */
+      return 0;
+  return 1;
+}
+
 static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
 {
   struct td_list_head *file_walker = NULL;
-#define MAX_DIR_NBR 256
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
@@ -285,30 +302,16 @@ static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partitio
   td_list_for_each(file_walker, &dir_list.list)
   {
     const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
-    if(LINUX_S_ISDIR(current_file->st_mode)!=0)
+    if(LINUX_S_ISDIR(current_file->st_mode)!=0 &&
+	is_inode_valid(current_file, dir_nbr, inode_known)>0 &&
+	strlen(dir_data->current_directory)+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
     {
-      const unsigned long int new_inode=current_file->st_ino;
-      unsigned int new_inode_ok=1;
-      unsigned int i;
-      if(new_inode<2)
-	new_inode_ok=0;
-      for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
-	if(new_inode==inode_known[i]) /* Avoid loop */
-	  new_inode_ok=0;
-      if(strcmp(current_file->name, "..")==0)
-	  new_inode_ok=0;
-      if(new_inode_ok>0)
-      {
-	if(strlen(dir_data->current_directory)+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
-	{
-	  if(strcmp(dir_data->current_directory,"/"))
-	    strcat(dir_data->current_directory,"/");
-	  strcat(dir_data->current_directory,current_file->name);
-	  dir_whole_partition_log_aux(disk, partition, dir_data, new_inode);
-	  /* restore current_directory name */
-	  dir_data->current_directory[current_directory_namelength]='\0';
-	}
-      }
+      if(strcmp(dir_data->current_directory,"/"))
+	strcat(dir_data->current_directory,"/");
+      strcat(dir_data->current_directory,current_file->name);
+      dir_whole_partition_log_aux(disk, partition, dir_data, current_file->st_ino);
+      /* restore current_directory name */
+      dir_data->current_directory[current_directory_namelength]='\0';
     }
   }
   delete_list_file(&dir_list);
