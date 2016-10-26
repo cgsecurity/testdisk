@@ -325,6 +325,67 @@ int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data
   return dir_whole_partition_log_aux(disk, partition, dir_data, inode);
 }
 
+static int dir_whole_partition_copy_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, unsigned int *copy_ok, unsigned int *copy_bad)
+{
+  struct td_list_head *file_walker = NULL;
+  static unsigned int dir_nbr=0;
+  static unsigned long int inode_known[MAX_DIR_NBR];
+  const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
+  file_info_t dir_list;
+  TD_INIT_LIST_HEAD(&dir_list.list);
+  if(dir_nbr==MAX_DIR_NBR)
+    return 1;	/* subdirectories depth is too high => Back */
+  dir_data->get_dir(disk, partition, dir_data, inode, &dir_list);
+  /* Not perfect for FAT32 root cluster */
+  inode_known[dir_nbr++]=inode;
+  td_list_for_each(file_walker, &dir_list.list)
+  {
+    const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
+    if(strlen(dir_data->current_directory) + 1 + strlen(current_file->name) <
+	sizeof(dir_data->current_directory)-1)
+    {
+      if(strcmp(dir_data->current_directory,"/"))
+	strcat(dir_data->current_directory,"/");
+      strcat(dir_data->current_directory,current_file->name);
+      if(LINUX_S_ISDIR(current_file->st_mode)!=0)
+      {
+	if(is_inode_valid(current_file, dir_nbr, inode_known)>0)
+	{
+	  dir_whole_partition_copy_aux(disk, partition, dir_data, current_file->st_ino, copy_ok, copy_bad);
+	}
+      }
+      else if(LINUX_S_ISREG(current_file->st_mode)!=0)
+      {
+	if(dir_data->copy_file(disk, partition, dir_data, current_file) == 0)
+	  (*copy_ok)++;
+	else
+	  (*copy_bad)++;
+      }
+    }
+    /* restore current_directory name */
+    dir_data->current_directory[current_directory_namelength]='\0';
+  }
+  delete_list_file(&dir_list);
+  dir_nbr--;
+  return 0;
+}
+
+void dir_whole_partition_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
+{
+  unsigned int copy_ok=0;
+  unsigned int copy_bad=0;
+  char *dst_directory=(char *)MALLOC(4096);
+  dst_directory[0]='.';
+  dst_directory[1]='\0';
+#ifdef HAVE_GETCWD
+  if(getcwd(dst_directory, 4096)==NULL)
+    return ;
+#endif
+  dir_data->local_dir=dst_directory;
+  dir_whole_partition_copy_aux(disk, partition, dir_data, inode, &copy_ok, &copy_bad);
+  log_info("Copy done! %u ok, %u failed", copy_ok, copy_bad);
+}
+
 int filesort(const struct td_list_head *a, const struct td_list_head *b)
 {
   const file_info_t *file_a=td_list_entry_const(a, const file_info_t, list);

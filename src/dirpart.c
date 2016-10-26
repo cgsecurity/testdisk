@@ -166,6 +166,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
     case DIR_PART_OK:
       {
 	int recursive=0;
+	int copy_files=0;
 	if(*current_cmd!=NULL)
 	{
 	  int do_continue;
@@ -186,6 +187,12 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
 	      dir_data.param|=FLAG_LIST_PATHNAME;
 	      do_continue=1;
 	    }
+	    else if(strncmp(*current_cmd, "filecopy", 8)==0)
+	    {
+	      (*current_cmd)+=8;
+	      copy_files=1;
+	      do_continue=1;
+	    }
 	  } while(do_continue==1);
 	}
 	if(recursive>0)
@@ -204,6 +211,8 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
 	  }
 #endif
 	}
+	if(copy_files>0)
+	  dir_whole_partition_copy(disk,partition,&dir_data,dir_data.current_inode);
 	dir_data.close(&dir_data);
       }
       break;
