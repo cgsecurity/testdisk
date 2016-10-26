@@ -43,7 +43,7 @@ void aff_copy(WINDOW *window);
 void aff_copy_short(WINDOW *window);
 void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
 void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
-unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
+uint64_t ask_number(const uint64_t val_cur, const uint64_t val_min, const uint64_t val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 int ask_YN(WINDOW *window);
 int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
 int check_enter_key_or_s(WINDOW *window);

@@ -198,18 +198,25 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
 #define PATH_DRIVE_LENGTH 9
 #endif
 
-unsigned long long int ask_number_cli(char **current_cmd, const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...)
+uint64_t atouint64(const char *nptr)
+{
+  uint64_t tmp=0;
+  while(*nptr >='0' && *nptr <= '9')
+  {
+    tmp = tmp * 10 + *nptr - '0';
+    nptr++;
+  }
+  return tmp;
+}
+
+uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64_t val_min, const uint64_t val_max, const char * _format, ...)
 {
   if(*current_cmd!=NULL)
   {
-    unsigned long int tmp_val;
+    uint64_t tmp_val;
     while(*current_cmd[0]==',')
       (*current_cmd)++;
-#ifdef HAVE_ATOLL
-    tmp_val = atoll(*current_cmd);
-#else
-    tmp_val = atol(*current_cmd);
-#endif
+    tmp_val = atouint64(*current_cmd);
     while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
       (*current_cmd)++;
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
@@ -222,7 +229,7 @@ unsigned long long int ask_number_cli(char **current_cmd, const unsigned long lo
       vsnprintf(res,sizeof(res),_format,ap);
       log_error("%s", res);
       if(val_min!=val_max)
-	log_error("(%llu-%llu) :",val_min,val_max);
+	log_error("(%llu-%llu) :", (long long unsigned)val_min, (long long unsigned)val_max);
       log_error("Invalid value\n");
       va_end(ap);
     }

@@ -535,7 +535,7 @@ int wmenuSimple(WINDOW *window,const struct MenuItem *menuItems, const unsigned 
 
 /* End of command menu support code */
 
-unsigned long long int ask_number(const unsigned long long int val_cur, const unsigned long long int val_min, const unsigned long long int val_max, const char * _format, ...)
+uint64_t ask_number(const uint64_t val_cur, const uint64_t val_min, const uint64_t val_max, const char * _format, ...)
 {
   char res[200];
   char res2[200];
@@ -545,22 +545,17 @@ unsigned long long int ask_number(const unsigned long long int val_cur, const un
   va_start(ap,_format);
   vsnprintf(res,sizeof(res),_format,ap);
   if(val_min!=val_max)
-    snprintf(res2,sizeof(res2),"(%llu-%llu) :",val_min,val_max);
+    snprintf(res2,sizeof(res2),"(%llu-%llu) :", (long long unsigned)val_min, (long long unsigned)val_max);
   else
     res2[0]='\0';
   va_end(ap);
   waddstr(stdscr, res);
   waddstr(stdscr, res2);
   wclrtoeol(stdscr);
-  sprintf(def, "%llu", val_cur);
+  sprintf(def, "%llu", (long long unsigned)val_cur);
   if (get_string(stdscr, response, sizeof(response), def) > 0)
   {
-    unsigned long int tmp_val;
-#ifdef HAVE_ATOLL
-    tmp_val = atoll(response);
-#else
-    tmp_val = atol(response);
-#endif
+    const uint64_t tmp_val = atouint64(response);
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
       return tmp_val;
   }
