@@ -58,6 +58,7 @@ static void register_header_check_dwg(file_stat_t *file_stat)
   static const unsigned char dwg_header_21[11]= {'A', 'C', '1', '0', '2', '1', 0x00, 0x00, 0x00, 0x00, 0x00};
   static const unsigned char dwg_header_23[11]= {'A', 'C', '1', '0', '2', '3', 0x00, 0x00, 0x00, 0x00, 0x00};
   static const unsigned char dwg_header_24[11]= {'A', 'C', '1', '0', '2', '4', 0x00, 0x00, 0x00, 0x00, 0x00};
+  static const unsigned char dwg_header_27[11]= {'A', 'C', '1', '0', '2', '7', 0x00, 0x00, 0x00, 0x00, 0x00};
   register_header_check(0, dwg_header_12,sizeof(dwg_header_12), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_13,sizeof(dwg_header_13), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_14,sizeof(dwg_header_14), &header_check_dwg, file_stat);
@@ -66,4 +67,5 @@ static void register_header_check_dwg(file_stat_t *file_stat)
   register_header_check(0, dwg_header_21,sizeof(dwg_header_21), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_23,sizeof(dwg_header_23), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_24,sizeof(dwg_header_24), &header_check_dwg, file_stat);
+  register_header_check(0, dwg_header_27,sizeof(dwg_header_27), &header_check_dwg, file_stat);
 }
