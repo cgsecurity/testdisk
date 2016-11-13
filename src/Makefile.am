@@ -383,14 +383,14 @@ small: $(sbin_PROGRAMS) $(bin_PROGRAMS)
 extras: $(EXTRA_PROGRAMS)
 
 moc_qphotorec.cpp: qphotorec.h
-	$(AM_V_GEN) $(MOC) $< -o $@
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $< -o $@
 
 rcc_qphotorec.cpp: qphotorec.qrc
-	$(AM_V_GEN) $(RCC) $< -o $@ -name qphotorec
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(RCC) $< -o $@ -name qphotorec
 
 rcc_qphotorec_locale.cpp: qphotorec_locale.qrc $(QT_QM)
 	$(LN_S) $< $(@D) || exit 0
-	$(AM_V_GEN) $(RCC) $(@D)/$(<F) -o $@ -name qphotorec_locale
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(RCC) $(@D)/$(<F) -o $@ -name qphotorec_locale
 
 Android.mk: Makefile.am
 	androgenizer \
@@ -411,4 +411,4 @@ Android.mk: Makefile.am
 
 %.qm: %.ts
 	$(MKDIR_P) $(@D)
-	$(AM_V_GEN) $(LRELEASE) -silent $< -qm $@
+	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(LRELEASE) -silent $< -qm $@

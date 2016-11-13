@@ -898,6 +898,7 @@ AC_CHECK_FUNCS([reiserfs_fs_open_fast])
 LIBS="$OLDLIBS"
 AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
+export QT_SELECT=qt5
 if test "$use_qt" = "true";
 then
   PKG_CHECK_MODULES(QTGUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
@@ -989,6 +990,7 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(MOC)
 AC_SUBST(LRELEASE)
+AC_SUBST(QT_SELECT)
 AC_SUBST(fidentify_LDADD)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
