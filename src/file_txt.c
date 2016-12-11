@@ -114,6 +114,9 @@ static const txt_header_t fasttxt_headers[] = {
   { "#!/bin/bash", 					11, "sh"},
   { "#!/bin/ksh",					10, "sh"},
   { "#!/bin/sh",					 9, "sh"},
+  { "#! /bin/bash", 					12, "sh"},
+  { "#! /bin/ksh",					11, "sh"},
+  { "#! /bin/sh",					10, "sh"},
   /* Opera Hotlist bookmark/contact list/notes */
   { "Opera Hotlist version 2.0",			25, "adr"},
   /* Microsoft VB Class module */
@@ -127,6 +130,7 @@ static const txt_header_t fasttxt_headers[] = {
   { "TABLE\r\n0,1\r\n",					12, "dif"},
   /* Designer, a Photobook Designer Software */
   { "vSg4q7j8GLrtf",					13, "dp"},
+  { "-----BEGIN DSA PRIVATE KEY-----",			31, "dsa"},
   /* EMKA IOX file */
   { "1\t\t\t\t\tthis file\t", 				16,
 #ifdef DJGPP
@@ -143,6 +147,7 @@ static const txt_header_t fasttxt_headers[] = {
    * http://en.wikipedia.org/wiki/JAD_%28file_format%29 */
   { "MIDlet-1:",					 9, "jad"},
   { "{\"title\":\"\",\"id\":1,\"dateAdded\":",		31, "json"},
+  { "-----BEGIN RSA PRIVATE KEY-----",			31, "key"},
   /* Lyx http://www.lyx.org */
   { "#LyX 1.", 						 7, "lyx"},
   { "#LyX 2.", 						 7, "lyx"},
@@ -160,8 +165,12 @@ static const txt_header_t fasttxt_headers[] = {
   { "-- phpMyAdmin SQL Dump",				22, "sql"},
   { "--\n-- PostgreSQL database cluster dump",		38, "sql"},
   { "--\r\n-- PostgreSQL database cluster dump",	39, "sql"},
+  { "---- BEGIN SSH2 PUBLIC KEY ----",			31, "ppk"},
+  { "PuTTY-User-Key-File-2:",				22, "ppk"},
   /* PTGui,  panoramic stitching software */
   { "# ptGui project file",				20, "pts"},
+  { "ssh-dss AAAAB3",					14, "pub"},
+  { "ssh-rsa AAAAB3",					14, "pub"},
   /* Quantum GIS  */
   { "<!DOCTYPE qgis ",					15, "qgs"},
   /* Real Media  */
