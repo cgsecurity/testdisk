@@ -50,7 +50,7 @@ int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct 
       partition->part_offset + exfat_cluster_to_offset(exfat_header, cluster));
 }
 
-static void set_EXFAT_info(partition_t *partition, const struct exfat_super_block*exfat_header)
+static void set_exFAT_info(partition_t *partition, const struct exfat_super_block*exfat_header)
 {
   partition->upart_type=UP_EXFAT;
   partition->blocksize=1<<(exfat_header->block_per_clus_bits + exfat_header->blocksize_bits);
@@ -61,7 +61,7 @@ static void set_EXFAT_info(partition_t *partition, const struct exfat_super_bloc
     snprintf(partition->info, sizeof(partition->info), "exFAT found using backup sector, blocksize=%u", partition->blocksize);
 }
 
-int check_EXFAT(disk_t *disk, partition_t *partition)
+int check_exFAT(disk_t *disk, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(EXFAT_BS_SIZE);
   if(disk->pread(disk, buffer, EXFAT_BS_SIZE, partition->part_offset) != EXFAT_BS_SIZE)
@@ -69,17 +69,17 @@ int check_EXFAT(disk_t *disk, partition_t *partition)
     free(buffer);
     return 1;
   }
-  if(test_EXFAT((struct exfat_super_block*)buffer)!=0)
+  if(test_exFAT((struct exfat_super_block*)buffer)!=0)
   {
     free(buffer);
     return 1;
   }
-  set_EXFAT_info(partition, (struct exfat_super_block*)buffer);
+  set_exFAT_info(partition, (struct exfat_super_block*)buffer);
   free(buffer);
   return 0;
 }
 
-int test_EXFAT(const struct exfat_super_block *exfat_header)
+int test_exFAT(const struct exfat_super_block *exfat_header)
 {
   if(le16(exfat_header->signature)!=0xAA55)
     return 1;
@@ -88,17 +88,17 @@ int test_EXFAT(const struct exfat_super_block *exfat_header)
   return 0;
 }
 
-int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition)
+int recover_exFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition)
 {
-  if(test_EXFAT(exfat_header)!=0)
+  if(test_exFAT(exfat_header)!=0)
     return 1;
   partition->sborg_offset=0;
   partition->sb_size=12 << exfat_header->blocksize_bits;
   partition->part_type_i386=P_EXFAT;
   partition->part_type_gpt=GPT_ENT_TYPE_MS_BASIC_DATA;
   partition->part_size=(uint64_t)le64(exfat_header->nr_sectors) * disk->sector_size;
-#ifdef DEBUG_EXFAT
-  log_info("recover_EXFAT:\n");
+#ifdef DEBUG_exFAT
+  log_info("recover_exFAT:\n");
   log_info("start_sector=%llu\n", (long long unsigned)le64(exfat_header->start_sector));
   log_info("blocksize=%u\n", (12<<exfat_header->blocksize_bits));
   log_info("part_offset=%llu\n", partition->part_offset);
@@ -110,6 +110,6 @@ int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_head
     partition->sb_offset=12 << exfat_header->blocksize_bits;
     partition->part_offset-=partition->sb_offset;
   }
-  set_EXFAT_info(partition, exfat_header);
+  set_exFAT_info(partition, exfat_header);
   return 0;
 }

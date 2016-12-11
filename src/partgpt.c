@@ -457,7 +457,7 @@ static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition
   {
     ret=check_FAT(disk,partition,verbose);
     if(ret!=0)
-      ret=check_EXFAT(disk, partition);
+      ret=check_exFAT(disk, partition);
     if(ret!=0)
       ret=check_NTFS(disk,partition,verbose,0);
     if(ret!=0)

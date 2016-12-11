@@ -251,7 +251,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   if(res<=0)
   { /* Search exFAT backup */
     partition->part_offset = 12 * disk->sector_size;
-    res=search_EXFAT_backup(buffer_disk, disk, partition);
+    res=search_exFAT_backup(buffer_disk, disk, partition);
   }
   if(res<=0)
   { /* Search NTFS backup */
@@ -357,7 +357,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_EXTENDED:
       break;
     case UP_EXFAT:
-      ret=check_EXFAT(disk_car, partition);
+      ret=check_exFAT(disk_car, partition);
       break;
     case UP_FAT12:
     case UP_FAT16:

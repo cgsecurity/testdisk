@@ -124,7 +124,7 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, c
 	screen_buffer_add("Bad: can't read exFAT boot record.\n");
 	memset(buffer_bs,0,size_bs);
       }
-      else if(test_EXFAT((const struct exfat_super_block*)buffer_bs)==0)
+      else if(test_exFAT((const struct exfat_super_block*)buffer_bs)==0)
       {
 	screen_buffer_add("exFAT OK\n");
 	opt_O=1;
@@ -138,7 +138,7 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, c
 	screen_buffer_add("Bad: can't read exFAT backup boot record.\n");
 	memset(buffer_backup_bs,0,size_bs);
       }
-      else if(test_EXFAT((const struct exfat_super_block*)buffer_backup_bs)==0)
+      else if(test_exFAT((const struct exfat_super_block*)buffer_backup_bs)==0)
       {
 	screen_buffer_add("exFAT OK\n");
 	opt_B=1;

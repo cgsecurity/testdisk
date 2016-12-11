@@ -94,9 +94,9 @@ struct exfat_alloc_bitmap_entry
 
 uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster);
 int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster);
-int check_EXFAT(disk_t *disk, partition_t *partition);
-int recover_EXFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition);
-int test_EXFAT(const struct exfat_super_block *exfat_header);
+int check_exFAT(disk_t *disk, partition_t *partition);
+int recover_exFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition);
+int test_exFAT(const struct exfat_super_block *exfat_header);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -1597,10 +1597,10 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
       ret=check_NTFS(disk_car,partition,verbose,0);
       if(ret!=0)
       {
-	ret=check_EXFAT(disk_car, partition);
+	ret=check_exFAT(disk_car, partition);
       }
       if(ret!=0)
-      { screen_buffer_add("Invalid NTFS or EXFAT boot\n"); }
+      { screen_buffer_add("Invalid NTFS or exFAT boot\n"); }
       break;
     case P_OPENBSD:
       ret=check_BSD(disk_car,partition,verbose,OPENBSD_MAXPARTITIONS);

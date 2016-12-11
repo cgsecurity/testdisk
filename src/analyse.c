@@ -100,7 +100,7 @@ int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
   return 0;
 }
 
-int search_EXFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partition)
+int search_exFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partition)
 {
   if(disk->pread(disk, buffer, DEFAULT_SECTOR_SIZE, partition->part_offset) != DEFAULT_SECTOR_SIZE)
     return -1;
@@ -108,7 +108,7 @@ int search_EXFAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partit
     const struct exfat_super_block *exfat_header=(const struct exfat_super_block *)buffer;
     /* EXFAT recovery using backup sector */
     if(le16(exfat_header->signature)==0xAA55 &&
-	recover_EXFAT(disk, exfat_header, partition)==0)
+	recover_exFAT(disk, exfat_header, partition)==0)
     {
       /* part_offset has already been updated if found using backup sector */
       return 1;
@@ -171,7 +171,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
       recover_FAT(disk, fat_header, partition, verbose, dump_ind, 0)==0)
     return 1;
   if(le16(exfat_header->signature)==0xAA55 &&
-      recover_EXFAT(disk, exfat_header, partition)==0)
+      recover_exFAT(disk, exfat_header, partition)==0)
     return 1;
   if(le16(fat_header->marker)==0xAA55 &&
       recover_HPFS(disk, fat_header, partition, verbose)==0)
