@@ -69,11 +69,13 @@ static unsigned int getue32(const unsigned char *buffer, const unsigned int buff
 static int header_check_bpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int buf_ptr = 6;
-  // get image width, and throw it away
-  const unsigned int width = getue32(buffer, buffer_size, &buf_ptr);
-  // get image height, and throw it away
-  const unsigned int height = getue32(buffer, buffer_size, &buf_ptr);
+  // get image width
+  const unsigned int picture_width = getue32(buffer, buffer_size, &buf_ptr);
+  // get image height
+  const unsigned int picture_height = getue32(buffer, buffer_size, &buf_ptr);
   unsigned int size = getue32(buffer, buffer_size, &buf_ptr);
+  if(picture_width==0 || picture_height==0)
+    return 0;
   if (size == 0) {
     size = MAX_BPG_SIZE;
   } else {
