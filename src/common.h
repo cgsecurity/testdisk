@@ -468,10 +468,10 @@ time_t td_ntfs2utc (int64_t ntfstime);
 #define le24(x) ((((x) & 0x000000ffUL) << 16) | \
     ((x) & 0x0000ff00UL)        | \
     (((x) & 0x00ff0000UL) >> 16))
-#define le32(x)  ((((x)&0xff000000L)>>24)                | \
-    (((x)&0x00ff0000L)>>8)                  | \
-    (((x)&0x0000ff00L)<<8)                  | \
-    (((x)&0x000000ffL)<<24))
+#define le32(x)  ((((x)&0xff000000UL)>>24)                | \
+    (((x)&0x00ff0000UL)>>8)                  | \
+    (((x)&0x0000ff00UL)<<8)                  | \
+    (((x)&0x000000ffUL)<<24))
 #define be32(x)  (x)
 #define le64(x)  ((((x)&0xff00000000000000LL)>>56)       | \
     (((x)&0x00ff000000000000LL)>>40)        | \
