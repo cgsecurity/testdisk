@@ -241,6 +241,7 @@ file_C			= filegen.c \
 			  file_png.c \
 			  file_pnm.c \
 			  file_prc.c \
+			  file_prd.c \
 			  file_prt.c \
 			  file_ps.c \
 			  file_psb.c \
