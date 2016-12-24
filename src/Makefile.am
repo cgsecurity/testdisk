@@ -159,6 +159,7 @@ file_C			= filegen.c \
 			  file_hdr.c \
 			  file_hds.c \
 			  file_hfsp.c \
+			  file_hm.c \
 			  file_hr9.c \
 			  file_http.c \
 			  file_ibd.c \
