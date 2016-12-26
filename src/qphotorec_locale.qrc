@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="/">
+<file>lang/qphotorec.ca.qm</file>
 <file>lang/qphotorec.es.qm</file>
 <file>lang/qphotorec.fr.qm</file>
 <file>lang/qphotorec.it.qm</file>

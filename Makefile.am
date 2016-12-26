@@ -19,6 +19,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_ph
 	src/gnome/go-previous.png \
 	src/gnome/help-about.png \
 	src/gnome/image-x-generic.png \
+	src/lang/qphotorec.ca.ts \
 	src/lang/qphotorec.es.ts \
 	src/lang/qphotorec.fr.ts \
 	src/lang/qphotorec.it.ts \
