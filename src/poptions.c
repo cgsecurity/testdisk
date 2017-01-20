@@ -78,6 +78,12 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     {
       options->lowmem=1;
     }
+    /* report_only */
+    else if(strncmp(*current_cmd,"report_only",11)==0)
+    {
+      (*current_cmd)+=11;
+      options->report_only=1;
+    }
     else
     {
       interface_options_photorec_log(options);
@@ -91,9 +97,10 @@ void interface_options_photorec_log(const struct ph_options *options)
   /* write new options to log file */
   log_info("New options :\n Paranoid : %s\n", options->paranoid?"Yes":"No");
   log_info(" Brute force : %s\n", ((options->paranoid)>1?"Yes":"No"));
-  log_info(" Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n",
+  log_info(" Keep corrupted files : %s\n ext2/ext3 mode : %s\n Expert mode : %s\n Low memory : %s\n Report only : %s\n",
       options->keep_corrupted_file?"Yes":"No",
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",
-      options->lowmem?"Yes":"No");
+      options->lowmem?"Yes":"No",
+      options->report_only?"Yes":"No");
 }

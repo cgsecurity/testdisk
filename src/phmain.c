@@ -159,7 +159,8 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=array_file_enable
+    .list_file_format=array_file_enable,
+    .report_only=0
   };
   struct ph_param params;
   params.recup_dir=NULL;
