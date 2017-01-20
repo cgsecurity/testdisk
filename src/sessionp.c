@@ -253,6 +253,8 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
       fprintf(f_session, "expert,");
     if(options->lowmem>0)
       fprintf(f_session, "lowmem,");
+    if(options->report_only>0)
+      fprintf(f_session, "report_only,");
     /* Save options - End */
     if(params->carve_free_space_only>0)
       fprintf(f_session,"freespace,");

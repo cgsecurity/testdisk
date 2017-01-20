@@ -38,6 +38,7 @@ struct ph_options
 {
   int paranoid;
   int keep_corrupted_file;
+  int report_only;
   unsigned int mode_ext2;
   unsigned int expert;
   unsigned int lowmem;

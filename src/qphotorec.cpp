@@ -115,6 +115,7 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   options->mode_ext2=0;
   options->expert=0;
   options->lowmem=0;
+  options->report_only=0;
   options->verbose=0;
   options->list_file_format=list_file_enable;
   reset_list_file_enable(options->list_file_format);
