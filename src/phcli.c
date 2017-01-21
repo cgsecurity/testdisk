@@ -174,6 +174,8 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
     {
       params->cmd_run+=7;
       interface_options_photorec_cli(options, &params->cmd_run);
+      /* So we get it downstream in file_finish_*. */
+      params->report_only=options->report_only;
     }
     else if(strncmp(params->cmd_run,"fileopt",7)==0)
     {
