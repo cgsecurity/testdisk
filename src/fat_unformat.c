@@ -215,7 +215,6 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
   const unsigned int cluster_size=params->blocksize;
   const unsigned int read_size=(cluster_size>65536?cluster_size:65536);
   alloc_data_t *current_search_space;
-  file_recovery_t file_recovery;
   disk_t *disk=params->disk;
   const partition_t *partition=params->partition;
   const unsigned long int no_of_cluster=(partition->part_size - start_data) / cluster_size;
@@ -224,8 +223,6 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
 #ifdef HAVE_NCURSES
   aff_copy(stdscr);
 #endif
-  reset_file_recovery(&file_recovery);
-  file_recovery.blocksize=cluster_size;
   start_time=time(NULL);
   previous_time=start_time;
   current_search_space=td_list_last_entry(&list_search_space->list, alloc_data_t, list);
