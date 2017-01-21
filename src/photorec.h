@@ -52,6 +52,7 @@ struct ph_param
   char *cmd_run;
   disk_t *disk;
   partition_t *partition;
+  int report_only;
   unsigned int carve_free_space_only;
   unsigned int blocksize;
   unsigned int pass;
