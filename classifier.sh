@@ -19,7 +19,7 @@ for i in `find . -type f`; do
 ## It the dir does not exist, create it in ../
     if [ ! -d "../$classdir" ]
      then
-	 mkdir "../$classtdir"
+	 mkdir "../$classdir"
     fi
        
 ## If the names of dir class (parent) and type (subdir) are the same, do not create subdirs 
