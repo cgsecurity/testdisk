@@ -16,8 +16,12 @@ for i in `find . -type f`; do
      then
 	 mkdir "../$parentdir"
        fi
+       
+   if [ "$typedir" == "$parentdir"]
+   	mv -i $i ../$parentdir/
+	fi
 
-    if [[ $typedir == "$parentdir"* ]]
+if [[ $typedir == "$parentdir"* ]]
     then
 	if [ ! -d "../$parentdir/$typedir" ]
 	then
