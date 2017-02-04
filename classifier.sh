@@ -15,13 +15,14 @@ for i in `find . -type f`; do
     if [ ! -d "../$parentdir" ]
      then
 	 mkdir "../$parentdir"
-       fi
+    fi
        
    if [ "$typedir" == "$parentdir"]
+    then 
    	mv -i $i ../$parentdir/
-	fi
+    fi
 
-if [[ $typedir == "$parentdir"* ]]
+   if [[ $typedir == "$parentdir"* ]]
     then
 	if [ ! -d "../$parentdir/$typedir" ]
 	then
