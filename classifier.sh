@@ -28,7 +28,7 @@ for i in `find . -type f`; do
     then 
    	mv -i $i ../$classdir/
     fi
-## Create subdirs and and move all archives of its appropriate class and type.
+## Create subdirs and move all archives of its appropriate class and type.
    if [[ $typedir == "$classdir"* ]]
     then
 	if [ ! -d "../$classdir/$typedir" ]
