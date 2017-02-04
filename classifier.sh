@@ -9,7 +9,12 @@
 
 for i in `find . -type f`; do
     classdir=`file $i | awk '{gsub("/" , "-"); gsub("," , ""); print $2}'`;
-    typedir=`file $i | awk 'BEGIN {OFS="-";} {gsub("/" , "-"); gsub("," , ""); if($6) print $2,$3,$4,$5,$6; else if($5) print $2,$3,$4,$5; else if($4) print $2,$3,$4; else if($3) print $2,$3; else print $2}'`;
+    typedir=`file $i | awk 'BEGIN {OFS="-";} {gsub("/" , "-"); gsub("," , ""); \
+    if($6) print $2,$3,$4,$5,$6; \
+    else if($5) print $2,$3,$4,$5; \
+    else if($4) print $2,$3,$4; \
+    else if($3) print $2,$3; \
+    else print $2}'`;
 
 ## It the dir does not exist, create it in ../
     if [ ! -d "../$classdir" ]
