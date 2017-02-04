@@ -1,5 +1,5 @@
 ## pvaldes 2017-01-27
-## This script examine the content of each file recovered by photorec and will put it in a directory 
+## This script examines the content of each file recovered by photorec and will move it into a directory 
 ## with other files of the same type, making much easier to find what we are looking for. 
 
 ## i.e. All Phyton scripts in recup_dirXXX will be automatically moved to subdirectories in a new dir named Python/, 
