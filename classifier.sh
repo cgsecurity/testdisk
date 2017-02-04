@@ -24,7 +24,7 @@ for i in `find . -type f`; do
        
 ## If the names of dir class (parent) and type (subdir) are the same, do not create subdirs 
 ## and move files directly to the directory class
-   if [ "$typedir" == "$classdir"]
+   if [ "$typedir" == "$classdir" ]
     then 
    	mv -i $i ../$classdir/
     fi
