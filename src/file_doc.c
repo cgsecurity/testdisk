@@ -987,7 +987,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		/* HP Photosmart Photo Printing Album */
 		if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
 		  ext="albm";
-		/* Lotus Approch */
+		/* Lotus Approach */
 		else if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
 		  ext="apr";
 		break;
