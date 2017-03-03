@@ -1108,30 +1108,10 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   if(file_recovery->file_stat!=NULL)
   {
-    if(file_recovery->file_stat->file_hint == &file_hint_doc)
-    {
-      return 0;
-    }
-    else if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
+    if(file_recovery->file_stat->file_hint == &file_hint_fasttxt ||
 	file_recovery->file_stat->file_hint == &file_hint_txt)
     {
       if(strstr(file_recovery->filename,".html")==NULL)
-	return 0;
-    }
-    else if(file_recovery->file_stat->file_hint == &file_hint_jpg)
-    {
-      /* Don't search text at the beginning of JPG */
-      if(file_recovery->file_size < file_recovery->min_filesize)
-	return 0;
-      /* Text should not be found in JPEG */
-      if(td_memmem(buffer, buffer_size_test, "8BIM", 4)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "adobe", 5)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "exif:", 5)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "<rdf:", 5)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "<?xpacket", 9)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "<dict>", 6)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)!=NULL ||
-	  td_memmem(buffer, buffer_size_test, "[camera info]", 13)!=NULL)
 	return 0;
     }
     else
