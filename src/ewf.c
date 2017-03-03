@@ -191,7 +191,11 @@ disk_t *fewf_init(const char *device, const int mode)
 	  data->handle,
 	  filenames,
 	  num_files,
+#ifdef LIBEWF_OPEN_READ_WRITE
 	  LIBEWF_OPEN_READ_WRITE,
+#else
+	  LIBEWF_OPEN_READ | LIBEWF_OPEN_WRITE,
+#endif
 	  &ewf_error) != 1 )
     {
       char buffer[4096];
@@ -431,12 +435,21 @@ static int fewf_pread(disk_t *disk, void *buffer, const unsigned int count, cons
   struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
   int64_t taille;
 #if defined( HAVE_LIBEWF_V2_API )
+#if defined( HAVE_LIBEWF_HANDLE_READ_BUFFER_AT_OFFSET )
+  taille = libewf_handle_read_buffer_at_offset(
+            data->handle,
+            buffer,
+            count,
+            offset,
+            NULL );
+#else
   taille = libewf_handle_read_random(
             data->handle,
             buffer,
             count,
             offset,
             NULL );
+#endif
 #else
   taille=libewf_read_random(data->handle, buffer, count, offset);
 #endif
@@ -462,12 +475,21 @@ static int fewf_pwrite(disk_t *disk, const void *buffer, const unsigned int coun
   struct info_fewf_struct *data=(struct info_fewf_struct *)disk->data;
   int64_t taille;
 #if defined( HAVE_LIBEWF_V2_API )
+#if defined( HAVE_LIBEWF_HANDLE_WRITE_BUFFER_AT_OFFSET )
+  taille = libewf_handle_write_buffer_at_offset(
+            data->handle,
+            buffer,
+            count,
+            offset,
+            NULL );
+#else
   taille = libewf_handle_write_random(
             data->handle,
             buffer,
             count,
             offset,
             NULL );
+#endif
 #else
   taille=libewf_write_random(data->handle, buffer, count, offset);
 #endif
