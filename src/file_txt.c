@@ -209,6 +209,8 @@ static const txt_header_t fasttxt_headers[] = {
   { "Model {", 7, "mdl"},
   /* Windows folder settings for file explorer */
   { "[.ShellClassInfo]",				17, "Desktop.ini" },
+  /* Fotobook */
+  { "<fotobook ",					10, "mcf"}, 
   {NULL, 0, NULL}
 };
 
