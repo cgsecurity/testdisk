@@ -313,7 +313,7 @@ static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
     return((cluster&0xffffff8)==(unsigned)FAT32_EOC);
 }
 
-#define NBR_CLUSTER_MAX 30
+#define NBR_ENTRIES_MAX 65536
 static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list)
 {
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
@@ -346,20 +346,21 @@ static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *d
   }
   {
     const unsigned int cluster_size=fat_header->sectors_per_cluster * fat_sector_size(fat_header);
-    unsigned char *buffer_dir=(unsigned char *)MALLOC(cluster_size*NBR_CLUSTER_MAX);
+    unsigned char *buffer_dir=(unsigned char *)MALLOC(32*NBR_ENTRIES_MAX);
     unsigned int nbr_cluster;
+    const unsigned int nbr_cluster_max=32*NBR_ENTRIES_MAX/cluster_size;
     int stop=0;
     uint64_t start_fat1,start_data,part_size;
     unsigned long int no_of_cluster,fat_length;
     fat_method_t fat_meth=FAT_FOLLOW_CLUSTER;
-    memset(buffer_dir,0,cluster_size*NBR_CLUSTER_MAX);
+    memset(buffer_dir,0,32*NBR_ENTRIES_MAX);
     fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
     part_size=(fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect));
     start_fat1=le16(fat_header->reserved);
     start_data=start_fat1+fat_header->fats*fat_length+(get_dir_entries(fat_header)*32+disk_car->sector_size-1)/disk_car->sector_size;
     no_of_cluster=(part_size-start_data)/fat_header->sectors_per_cluster;
     nbr_cluster=0;
-    while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<NBR_CLUSTER_MAX && stop==0)
+    while(!is_EOC(cluster, partition->upart_type) && cluster>=2 && nbr_cluster<nbr_cluster_max && stop==0)
     {
       const uint64_t start=partition->part_offset+(uint64_t)(start_data+(cluster-2)*fat_header->sectors_per_cluster)*fat_sector_size(fat_header);
 //      if(dir_data->verbose>0)
