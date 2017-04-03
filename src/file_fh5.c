@@ -67,7 +67,7 @@ static int header_check_fh5(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->min_filesize=4096;
   file_recovery_new->calculated_file_size=be32(fh5_buffer->datalen);
   file_recovery_new->extension=file_hint_fh5.extension;
-  file_recovery_new->file_check=file_check_fh5;
+  file_recovery_new->file_check=&file_check_fh5;
   //    log_debug("header_check_fh5: Guessed length : %u\n", fh5_file_size);
   return 1;
 }

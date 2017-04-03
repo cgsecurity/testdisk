@@ -60,7 +60,7 @@ static void io_redir_clean(disk_t *clean);
 
 int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsigned int size, const uint64_t new_offset, const void *mem)
 {
-  if(disk_car->pread!=io_redir_pread)
+  if(disk_car->pread!=&io_redir_pread)
   {
     struct info_io_redir*data=(struct info_io_redir*)MALLOC(sizeof(*data));
     disk_t *old_disk_car=(disk_t *)MALLOC(sizeof(*old_disk_car));
@@ -78,8 +78,8 @@ int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsign
     disk_car->data=data;
     disk_car->description=old_disk_car->description;
     disk_car->pwrite=old_disk_car->pwrite;
-    disk_car->pread=io_redir_pread;
-    disk_car->clean=io_redir_clean;
+    disk_car->pread=&io_redir_pread;
+    disk_car->clean=&io_redir_clean;
   }
   {
     struct info_io_redir *data=(struct info_io_redir *)disk_car->data;
@@ -114,7 +114,7 @@ int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsign
 
 int io_redir_del_redir(disk_t *disk_car, uint64_t org_offset)
 {
-  if(disk_car->pread!=io_redir_pread)
+  if(disk_car->pread!=&io_redir_pread)
   {
     log_critical("io_redir_del_redir: BUG, no redirection present.\n");
     return 1;

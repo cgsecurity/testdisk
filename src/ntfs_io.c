@@ -168,15 +168,15 @@ static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
  * Device operations for working with unix style devices and files.
  */
 struct ntfs_device_operations ntfs_device_testdisk_io_ops = {
-	.open		= ntfs_device_testdisk_io_open,
-	.close		= ntfs_device_testdisk_io_close,
-	.seek		= ntfs_device_testdisk_io_seek,
-	.read		= ntfs_device_testdisk_io_read,
-	.write		= ntfs_device_testdisk_io_write,
-	.pread		= ntfs_device_testdisk_io_pread,
-	.pwrite		= ntfs_device_testdisk_io_pwrite,
-	.sync		= ntfs_device_testdisk_io_sync,
-	.stat		= ntfs_device_testdisk_io_stat,
-	.ioctl		= ntfs_device_testdisk_io_ioctl,
+	.open		= &ntfs_device_testdisk_io_open,
+	.close		= &ntfs_device_testdisk_io_close,
+	.seek		= &ntfs_device_testdisk_io_seek,
+	.read		= &ntfs_device_testdisk_io_read,
+	.write		= &ntfs_device_testdisk_io_write,
+	.pread		= &ntfs_device_testdisk_io_pread,
+	.pwrite		= &ntfs_device_testdisk_io_pwrite,
+	.sync		= &ntfs_device_testdisk_io_sync,
+	.stat		= &ntfs_device_testdisk_io_stat,
+	.ioctl		= &ntfs_device_testdisk_io_ioctl,
 };
 #endif

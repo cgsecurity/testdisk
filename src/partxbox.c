@@ -68,21 +68,21 @@ arch_fnct_t arch_xbox=
   .part_name="XBox",
   .part_name_option="partition_xbox",
   .msg_part_type="                P=Primary  D=Deleted",
-  .read_part=read_part_xbox,
-  .write_part=write_part_xbox,
-  .init_part_order=init_part_order_xbox,
+  .read_part=&read_part_xbox,
+  .write_part=&write_part_xbox,
+  .init_part_order=&init_part_order_xbox,
   .get_geometry_from_mbr=NULL,
-  .check_part=check_part_xbox,
+  .check_part=&check_part_xbox,
   .write_MBR_code=NULL,
-  .set_prev_status=set_next_status_xbox,
-  .set_next_status=set_next_status_xbox,
-  .test_structure=test_structure_xbox,
-  .get_part_type=get_part_type_xbox,
-  .set_part_type=set_part_type_xbox,
-  .init_structure=init_structure_xbox,
+  .set_prev_status=&set_next_status_xbox,
+  .set_next_status=&set_next_status_xbox,
+  .test_structure=&test_structure_xbox,
+  .get_part_type=&get_part_type_xbox,
+  .set_part_type=&set_part_type_xbox,
+  .init_structure=&init_structure_xbox,
   .erase_list_part=NULL,
-  .get_partition_typename=get_partition_typename_xbox,
-  .is_part_known=is_part_known_xbox
+  .get_partition_typename=&get_partition_typename_xbox,
+  .is_part_known=&is_part_known_xbox
 };
 
 static unsigned int get_part_type_xbox(const partition_t *partition)

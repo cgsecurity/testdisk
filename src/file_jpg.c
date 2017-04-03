@@ -768,11 +768,11 @@ static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile, uint64_t o
   }
 
   src = (my_source_mgr *) cinfo->src;
-  src->pub.init_source = jpg_init_source;
-  src->pub.fill_input_buffer = jpg_fill_input_buffer;
-  src->pub.skip_input_data = jpg_skip_input_data;
-  src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
-  src->pub.term_source = jpg_term_source;
+  src->pub.init_source = &jpg_init_source;
+  src->pub.fill_input_buffer = &jpg_fill_input_buffer;
+  src->pub.skip_input_data = &jpg_skip_input_data;
+  src->pub.resync_to_restart = &jpeg_resync_to_restart; /* use default method */
+  src->pub.term_source = &jpg_term_source;
   src->pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
   src->pub.next_input_byte = NULL; /* until buffer loaded */
   src->infile = infile;
@@ -873,8 +873,8 @@ static uint64_t jpg_xy_to_offset(FILE *infile, const unsigned int x, const unsig
       x, y, (long unsigned)offset_rel1, (long unsigned)offset_rel2);
 #endif
   jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
-  jerr.pub.output_message = my_output_message;
-  jerr.pub.error_exit = my_error_exit;
+  jerr.pub.output_message = &my_output_message;
+  jerr.pub.error_exit = &my_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer))
   {
@@ -1147,9 +1147,9 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
   jpeg_session.offset=offset;
   jpeg_session.blocksize=blocksize;
   jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
-  jerr.pub.output_message = my_output_message;
-  jerr.pub.error_exit = my_error_exit;
-  jerr.pub.emit_message= my_emit_message;
+  jerr.pub.output_message = &my_output_message;
+  jerr.pub.error_exit = &my_error_exit;
+  jerr.pub.emit_message= &my_emit_message;
 #ifdef DEBUG_JPEG
   jerr.pub.trace_level= 3;
 #endif

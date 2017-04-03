@@ -57,7 +57,7 @@ static int header_check_rar(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=70;
   if((buffer[0xa] & MHD_PASSWORD)==0)
-    file_recovery_new->file_check=file_check_rar;
+    file_recovery_new->file_check=&file_check_rar;
   file_recovery_new->extension=file_hint_rar.extension;
   return 1;
 }

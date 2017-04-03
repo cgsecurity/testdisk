@@ -50,7 +50,7 @@ static int header_check_hr9(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hr9.extension;
-  file_recovery_new->file_check=file_check_hr9;
+  file_recovery_new->file_check=&file_check_hr9;
   return 1;
 }
 

@@ -1531,17 +1531,17 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
   data->handle=hd_h;
   data->mode=mode;
   disk_car->data=data;
-  disk_car->description=file_description;
-  disk_car->description_short=file_description_short;
-  disk_car->pread=file_pread;
-  disk_car->pwrite=((mode&O_RDWR)==O_RDWR?file_pwrite:file_nopwrite);
-  disk_car->sync=file_sync;
+  disk_car->description=&file_description;
+  disk_car->description_short=&file_description_short;
+  disk_car->pread=&file_pread;
+  disk_car->pwrite=((mode&O_RDWR)==O_RDWR?&file_pwrite:&file_nopwrite);
+  disk_car->sync=&file_sync;
   disk_car->access_mode=((mode&O_RDWR)==O_RDWR?TESTDISK_O_RDWR:TESTDISK_O_RDONLY);
 #ifdef O_DIRECT
   if((mode&O_DIRECT)==O_DIRECT)
     disk_car->access_mode|=TESTDISK_O_DIRECT;
 #endif
-  disk_car->clean=file_clean;
+  disk_car->clean=&file_clean;
   if(fstat(hd_h,&stat_rec)>=0)
   {
     if(S_ISREG(stat_rec.st_mode) && stat_rec.st_size > 0)

@@ -333,11 +333,11 @@ dir_partition_t dir_partition_exfat_init(disk_t *disk, const partition_t *partit
   dir_data->param=FLAG_LIST_DELETED;
   dir_data->verbose=verbose;
   dir_data->capabilities=CAPA_LIST_DELETED;
-  dir_data->copy_file=exfat_copy;
-  dir_data->close=dir_partition_exfat_close;
+  dir_data->copy_file=&exfat_copy;
+  dir_data->close=&dir_partition_exfat_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
-  dir_data->get_dir=exfat_dir;
+  dir_data->get_dir=&exfat_dir;
   return DIR_PART_OK;
 }
 

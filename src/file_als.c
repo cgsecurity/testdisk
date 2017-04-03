@@ -61,7 +61,7 @@ static int header_check_als(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_als.extension;
-  file_recovery_new->file_check=file_check_als;
+  file_recovery_new->file_check=&file_check_als;
   return 1;
 }
 

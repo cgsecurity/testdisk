@@ -525,8 +525,8 @@ dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *par
     dir_data->param=FLAG_LIST_ADS;
     dir_data->verbose=verbose;
     dir_data->capabilities=CAPA_LIST_ADS;
-    dir_data->get_dir=ntfs_dir;
-    dir_data->copy_file=ntfs_copy;
+    dir_data->get_dir=&ntfs_dir;
+    dir_data->copy_file=&ntfs_copy;
     dir_data->close=&dir_partition_ntfs_close;
     dir_data->local_dir=NULL;
     dir_data->private_dir_data=ls;

@@ -468,11 +468,11 @@ dir_partition_t dir_partition_fat_init(disk_t *disk_car, const partition_t *part
     dir_data->param|=FLAG_LIST_MASK16;
   dir_data->verbose=verbose;
   dir_data->capabilities=CAPA_LIST_DELETED;
-  dir_data->copy_file=fat_copy;
-  dir_data->close=dir_partition_fat_close;
+  dir_data->copy_file=&fat_copy;
+  dir_data->close=&dir_partition_fat_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;
-  dir_data->get_dir=fat_dir;
+  dir_data->get_dir=&fat_dir;
   return DIR_PART_OK;
 }
 

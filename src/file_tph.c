@@ -58,7 +58,7 @@ static int header_check_tph(const unsigned char *buffer, const unsigned int buff
   if(!isprint(buffer[20]) || !isprint(buffer[21]) || !isprint(buffer[22]) || !isprint(buffer[23]))
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=file_check_tph;
+  file_recovery_new->file_check=&file_check_tph;
   file_recovery_new->extension=file_hint_tph.extension;
   return 1;
 }

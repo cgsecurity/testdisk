@@ -148,21 +148,21 @@ arch_fnct_t arch_none=
   .part_name="None",
   .part_name_option="partition_none",
   .msg_part_type=NULL,
-  .read_part=read_part_none,
+  .read_part=&read_part_none,
   .write_part=NULL,
-  .init_part_order=init_part_order_none,
-  .get_geometry_from_mbr=get_geometry_from_nonembr,
-  .check_part=check_part_none,
+  .init_part_order=&init_part_order_none,
+  .get_geometry_from_mbr=&get_geometry_from_nonembr,
+  .check_part=&check_part_none,
   .write_MBR_code=NULL,
-  .set_prev_status=set_next_status_none,
-  .set_next_status=set_next_status_none,
-  .test_structure=test_structure_none,
-  .get_part_type=get_part_type_none,
-  .set_part_type=set_part_type_none,
-  .init_structure=init_structure_none,
+  .set_prev_status=&set_next_status_none,
+  .set_next_status=&set_next_status_none,
+  .test_structure=&test_structure_none,
+  .get_part_type=&get_part_type_none,
+  .set_part_type=&set_part_type_none,
+  .init_structure=&init_structure_none,
   .erase_list_part=NULL,
-  .get_partition_typename=get_partition_typename_none,
-  .is_part_known=is_part_known_none
+  .get_partition_typename=&get_partition_typename_none,
+  .is_part_known=&is_part_known_none
 };
 
 static unsigned int get_part_type_none(const partition_t *partition)

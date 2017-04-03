@@ -58,7 +58,7 @@ static int header_check_frm(const unsigned char *buffer, const unsigned int buff
   if(!isprint(buffer[14]) || !isprint(buffer[15]) || !isprint(buffer[16]) || !isprint(buffer[17]))
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=file_check_frm;
+  file_recovery_new->file_check=&file_check_frm;
   file_recovery_new->extension=file_hint_frm.extension;
   return 1;
 }

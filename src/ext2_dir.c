@@ -74,21 +74,21 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
 static struct struct_io_manager my_struct_manager = {
         .magic = EXT2_ET_MAGIC_IO_MANAGER,
         .name ="TestDisk I/O Manager",
-        .open = my_open,
-        .close = my_close,
-        .set_blksize = my_set_blksize,
-        .read_blk = my_read_blk,
-        .write_blk= my_write_blk,
-        .flush = my_flush,
+        .open = &my_open,
+        .close = &my_close,
+        .set_blksize = &my_set_blksize,
+        .read_blk = &my_read_blk,
+        .write_blk= &my_write_blk,
+        .flush = &my_flush,
 	.write_byte= NULL,
 #ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_SET_OPTION
 	.set_option= NULL,
 #endif
 #ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_READ_BLK64
-	.read_blk64=my_read_blk64,
+	.read_blk64=&my_read_blk64,
 #endif
 #ifdef HAVE_STRUCT_STRUCT_IO_MANAGER_WRITE_BLK64
-	.write_blk64=my_write_blk64,
+	.write_blk64=&my_write_blk64,
 #endif
 };
 static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
@@ -379,8 +379,8 @@ dir_partition_t dir_partition_ext2_init(disk_t *disk_car, const partition_t *par
   dir_data->param=FLAG_LIST_DELETED;
   dir_data->verbose=verbose;
   dir_data->capabilities=CAPA_LIST_DELETED;
-  dir_data->get_dir=ext2_dir;
-  dir_data->copy_file=ext2_copy;
+  dir_data->get_dir=&ext2_dir;
+  dir_data->copy_file=&ext2_copy;
   dir_data->close=&dir_partition_ext2_close;
   dir_data->local_dir=NULL;
   dir_data->private_dir_data=ls;

@@ -87,7 +87,7 @@ static int header_check_spf(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_spf.extension;
-  file_recovery_new->file_check=file_check_spf;
+  file_recovery_new->file_check=&file_check_spf;
   return 1;
 }
 

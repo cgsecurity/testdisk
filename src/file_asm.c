@@ -59,7 +59,7 @@ static int header_check_asm(const unsigned char *buffer, const unsigned int buff
   if(!isprint(buffer[16]) || !isprint(buffer[17]) || !isprint(buffer[18]) || !isprint(buffer[19]))
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=file_check_asm;
+  file_recovery_new->file_check=&file_check_asm;
   file_recovery_new->extension=file_hint_asm.extension;
   return 1;
 }
