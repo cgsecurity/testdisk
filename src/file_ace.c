@@ -59,6 +59,35 @@ struct header_ace {
 } __attribute__ ((gcc_struct, __packed__));
 
 typedef struct header_ace ace_header_t;
+#define BUF_SIZE 4096
+
+static int check_ace_crc(FILE *handle, const unsigned int len, const unsigned int crc32_low)
+{
+  unsigned char buffer[BUF_SIZE];
+  uint32_t crc32=0xFFFFFFFF;
+  unsigned int remaining=len;
+  while (remaining>0)
+  {
+    const unsigned int count = ((remaining>BUF_SIZE) ? BUF_SIZE : remaining);
+    if(fread(buffer, 1, count, handle) != count)
+    {
+#ifdef DEBUG_ACE
+      log_trace("file_ace: truncated file\n");
+#endif
+      return 1;
+    }
+    crc32=get_crc32(buffer, count, crc32);
+    remaining -= count;
+  }
+  if (crc32_low != (crc32&0xFFFF))
+  {
+#ifdef DEBUG_ACE
+    log_trace("file_ace: bad CRC: %04X vs %04X\n", crc32_low, crc32&0xFFFF);
+#endif
+    return 1;
+  }
+  return 0;
+}
 
 static void file_check_ace(file_recovery_t *file_recovery)
 {
@@ -84,13 +113,6 @@ static void file_check_ace(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return ;
     }
-    if(my_fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0)
-    {
-      file_recovery->offset_error=file_recovery->file_size;
-      file_recovery->file_size=0;
-      return ;
-    }
-
 #ifdef DEBUG_ACE
     log_trace("file_ace: Block header at 0x%08lx: CRC16=0x%04X size=%u type=%u"
         " flags=0x%04X addsize=%u\n",
@@ -124,37 +146,14 @@ static void file_check_ace(file_recovery_t *file_recovery)
       return ;
     }
 
+    if(my_fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0 ||
+	check_ace_crc(file_recovery->handle, le16(h.size), le16(h.crc16)) != 0)
     {
-      /* Header hardly ever bigger than a filename */
-#define BUF_SIZE 4096
-      unsigned char buffer[BUF_SIZE];
-      unsigned int len=le16(h.size);
-      uint32_t crc32=0xFFFFFFFF;
-      while (len>0)
-      {
-        const unsigned int count = ((len>BUF_SIZE) ? BUF_SIZE : len);
-        if(fread(buffer, 1, count, file_recovery->handle) != count)
-        {
-#ifdef DEBUG_ACE
-          log_trace("file_ace: truncated file\n");
-#endif
-	  file_recovery->offset_error=file_recovery->file_size;
-	  file_recovery->file_size=0;
-          return ;
-        }
-        crc32=get_crc32(buffer, count, crc32);
-	len -= count;
-      }
-      if (le16(h.crc16) != (crc32&0xFFFF))
-      {
-#ifdef DEBUG_ACE
-        log_trace("file_ace: bad CRC32: %04X vs %04X\n", le16(h.crc16), crc32);
-#endif
-	file_recovery->offset_error=file_recovery->file_size;
-	file_recovery->file_size=0;
-        return ;
-      }
+      file_recovery->offset_error=file_recovery->file_size;
+      file_recovery->file_size=0;
+      return ;
     }
+
     /* Add its header size */
     file_recovery->file_size += 2U + 2 + le16(h.size);	/* +2: CRC16, +2: size */
     /* If addsize flag, add complementary size */
