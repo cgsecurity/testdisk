@@ -202,6 +202,11 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
 #ifdef HAVE_NCURSES
 	  dir_partition_aff(disk, partition, &dir_data, dir_data.current_inode, current_cmd);
 #else
+	  if(dir_data.verbose>0)
+	  {
+	    log_info("\ndir_partition inode=%lu\n", dir_data.current_inode);
+	    log_partition(disk, partition);
+	  }
 	  {
 	    file_info_t dir_list;
 	    TD_INIT_LIST_HEAD(&dir_list.list);

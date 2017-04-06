@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #endif
 #include <ctype.h>
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "lang.h"
@@ -188,16 +189,312 @@ int is_part_linux(const partition_t *partition)
   return 0;
 }
 
+#ifdef HAVE_NCURSES
+static void interface_adv_ncurses(disk_t *disk, const int rewrite, list_part_t *list_part, list_part_t *current_element, const int offset)
+{
+  list_part_t *element;
+  int i;
+  if(rewrite!=0)
+  {
+    aff_copy(stdscr);
+    wmove(stdscr,4,0);
+    wprintw(stdscr,"%s",disk->description(disk));
+    if(list_part!=NULL)
+      mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
+  }
+  for(i=0,element=list_part; element!=NULL && i<offset+INTER_ADV;element=element->next,i++)
+  {
+    if(i<offset)
+      continue;
+    wmove(stdscr,7+i-offset,0);
+    wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
+    if(element==current_element)
+    {
+      wattrset(stdscr, A_REVERSE);
+      waddstr(stdscr, ">");
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk,element->part);
+      wattroff(stdscr, A_REVERSE);
+    } else
+    {
+      waddstr(stdscr, " ");
+      aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk,element->part);
+    }
+  }
+  wmove(stdscr,7+INTER_ADV,5);
+  wclrtoeol(stdscr);
+  if(element!=NULL)
+    wprintw(stdscr, "Next");
+  if(current_element==NULL)
+  {
+    wmove(stdscr,7,0);
+    wattrset(stdscr, A_REVERSE);
+    wprintw(stdscr,"No partition available.");
+    wattroff(stdscr, A_REVERSE);
+  }
+}
+#endif
+
+static int adv_string_to_command(char**current_cmd, list_part_t **current_element, list_part_t *list_part)
+{
+  int keep_asking;
+  int command='q';
+  do
+  {
+    keep_asking=0;
+    while(*current_cmd[0]==',')
+      (*current_cmd)++;
+    if(strncmp(*current_cmd,"type",4)==0)
+    {
+      (*current_cmd)+=4;
+      command='t';
+    }
+    else if(strncmp(*current_cmd,"addpart",7)==0)
+    {
+      (*current_cmd)+=7;
+      command='a';
+    }
+    else if(strncmp(*current_cmd,"boot",4)==0)
+    {
+      (*current_cmd)+=4;
+      command='b';
+    }
+    else if(strncmp(*current_cmd,"copy",4)==0)
+    {
+      (*current_cmd)+=4;
+      command='c';
+    }
+    else if(strncmp(*current_cmd,"list",4)==0)
+    {
+      (*current_cmd)+=4;
+      command='l';
+    }
+    else if(strncmp(*current_cmd,"undelete",8)==0)
+    {
+      (*current_cmd)+=8;
+      command='u';
+    }
+    else if(strncmp(*current_cmd,"superblock",10)==0)
+    {
+      (*current_cmd)+=10;
+      command='s';
+    }
+    else if(isdigit(*current_cmd[0]))
+    {
+      list_part_t *element;
+      const unsigned int order= atoi(*current_cmd);
+      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+	(*current_cmd)++;
+      for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
+      if(element!=NULL)
+      {
+	*current_element=element;
+	keep_asking=1;
+      }
+    }
+  } while(keep_asking>0);
+  return command;
+}
+
+#ifdef HAVE_NCURSES
+static const char *adv_get_boot_description(const partition_t *partition)
+{
+  assert(partition!=NULL);
+  if(is_part_linux(partition))
+  {
+    return "Locate ext2/ext3/ext4 backup superblock";
+  }
+  else if(is_part_hfs(partition) || is_part_hfsp(partition))
+  {
+    return "Locate HFS/HFS+ backup volume header";
+  }
+  else if(is_linux(partition))
+  {
+    return "Locate ext2/ext3/ext4 backup superblock";
+  }
+  else if(is_hfs(partition) || is_hfsp(partition))
+  {
+    return "Locate HFS/HFS+ backup volume header";
+  }
+  return "Boot sector recovery";
+}
+
+static const char *adv_get_options_for_partition(const partition_t *partition)
+{
+  if(is_part_fat(partition))
+  {
+    return "tubcq";
+  }
+  else if(is_part_ntfs(partition))
+    return "tlubcq";
+  else if(is_part_linux(partition))
+  {
+    if(partition->upart_type==UP_EXT2)
+      return "tuscq";
+    else
+      return "tlscq";
+  }
+  else if(is_part_hfs(partition) || is_part_hfsp(partition))
+  {
+    return "tscq";
+  }
+  else if(is_fat(partition))
+    return "tubcq";
+  else if(is_ntfs(partition))
+    return "tlubcq";
+  else if(is_exfat(partition))
+    return "tlubcq";
+  else if(is_linux(partition))
+  {
+    if(partition->upart_type==UP_EXT2)
+      return "tluscq";
+    else
+      return "tlscq";
+  }
+  else if(is_hfs(partition) || is_hfsp(partition))
+  {
+    return "tscq";
+  }
+  return "tcq";
+}
+#endif
+
+static int adv_menu_boot_selected(disk_t *disk, partition_t *partition, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd)
+{
+  if(is_part_fat32(partition))
+  {
+    fat32_boot_sector(disk, partition, verbose, dump_ind, expert,current_cmd);
+    return 1;
+  }
+  else if(is_part_fat12(partition) || is_part_fat16(partition))
+  {
+    fat1x_boot_sector(disk, partition, verbose, dump_ind,expert,current_cmd);
+    return 1;
+  }
+  else if(is_part_ntfs(partition))
+  {
+    if(partition->upart_type==UP_EXFAT)
+      exFAT_boot_sector(disk, partition, verbose, current_cmd);
+    else
+      ntfs_boot_sector(disk, partition, verbose, expert, current_cmd);
+    return 1;
+  }
+  else if(partition->upart_type==UP_FAT32)
+  {
+    fat32_boot_sector(disk, partition, verbose, dump_ind, expert,current_cmd);
+    return 1;
+  }
+  else if(partition->upart_type==UP_FAT12 || partition->upart_type==UP_FAT16)
+  {
+    fat1x_boot_sector(disk, partition, verbose, dump_ind,expert,current_cmd);
+    return 1;
+  }
+  else if(partition->upart_type==UP_NTFS)
+  {
+    ntfs_boot_sector(disk, partition, verbose, expert, current_cmd);
+    return 1;
+  }
+  else if(partition->upart_type==UP_EXFAT)
+  {
+    exFAT_boot_sector(disk, partition, verbose, current_cmd);
+    return 1;
+  }
+  return 0;
+}
+
+static void adv_menu_image_selected(disk_t *disk, partition_t *partition, char **current_cmd)
+{
+  char *dst_path;
+#ifdef HAVE_NCURSES
+  if(*current_cmd!=NULL)
+    dst_path=get_default_location();
+  else
+  {
+    char msg[256];
+    snprintf(msg, sizeof(msg),
+	"Please select where to store the file image.dd (%u MB), an image of the partition",
+	(unsigned int)(partition->part_size/1000/1000));
+    dst_path=ask_location(msg, "", NULL);
+  }
+#else
+  dst_path=get_default_location();
+#endif
+  if(dst_path!=NULL)
+  {
+    char *filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
+    strcpy(filename, dst_path);
+    strcat(filename, "/");
+    strcat(filename, DEFAULT_IMAGE_NAME);
+    disk_image(disk, partition, filename);
+    free(filename);
+    free(dst_path);
+  }
+}
+
+static void adv_menu_undelete_selected(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd)
+{
+  if(partition->sb_offset!=0 && partition->sb_size>0)
+  {
+    io_redir_add_redir(disk,
+	partition->part_offset+partition->sborg_offset,
+	partition->sb_size,
+	partition->part_offset+partition->sb_offset,
+	NULL);
+    if(partition->upart_type==UP_NTFS ||
+	(is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
+      ntfs_undelete_part(disk, partition, verbose, current_cmd);
+    else
+      dir_partition(disk, partition, 0, current_cmd);
+    io_redir_del_redir(disk, partition->part_offset+partition->sborg_offset);
+  }
+  else
+  {
+    if(partition->upart_type==UP_NTFS ||
+	(is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
+      ntfs_undelete_part(disk, partition, verbose, current_cmd);
+    else
+      dir_partition(disk, partition, 0, current_cmd);
+  }
+}
+
+static void adv_menu_list_selected(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd)
+{
+  if(partition->sb_offset!=0 && partition->sb_size>0)
+  {
+    io_redir_add_redir(disk,
+	partition->part_offset+partition->sborg_offset,
+	partition->sb_size,
+	partition->part_offset+partition->sb_offset,
+	NULL);
+    dir_partition(disk,partition,verbose, current_cmd);
+    io_redir_del_redir(disk, partition->part_offset+partition->sborg_offset);
+  }
+  else
+    dir_partition(disk,partition,verbose, current_cmd);
+}
+
+static void adv_menu_superblock_selected(disk_t *disk, partition_t *partition, const int verbose,const int dump_ind, char**current_cmd)
+{
+  if(is_linux(partition))
+  {
+    list_part_t *list_sb=search_superblock(disk,partition,verbose,dump_ind,1);
+    interface_superblock(disk, list_sb, current_cmd);
+    part_free_list(list_sb);
+  }
+  if(is_hfs(partition) || is_hfsp(partition))
+  {
+    HFS_HFSP_boot_sector(disk, partition, verbose, current_cmd);
+  }
+}
+
 void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd)
 {
+  int current_element_num=0;
 #ifdef HAVE_NCURSES
   int offset=0;
-  int current_element_num=0;
-  int old_LINES=LINES;
+  int old_LINES;
 #endif
   int rewrite=1;
   unsigned int menu=0;
-  list_part_t *element;
   list_part_t *list_part;
   list_part_t *current_element;
   log_info("\nInterface Advanced\n");
@@ -206,7 +503,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   log_all_partitions(disk_car, list_part);
   while(1)
   {
-    const char *options;
+    int command;
+#ifdef HAVE_NCURSES
     static struct MenuItem menuAdv[]=
     {
       {'t',"Type","Change type, this setting will not be saved on disk"},
@@ -219,160 +517,29 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {'q',"Quit","Return to main menu"},
       {0,NULL,NULL}
     };
-    int command;
-#ifdef HAVE_NCURSES
-    int i;
-    if(old_LINES!=LINES)
-    {
-      old_LINES=LINES;
-      rewrite=1;
-    }
-    if(rewrite!=0)
-    {
-      aff_copy(stdscr);
-      wmove(stdscr,4,0);
-      wprintw(stdscr,"%s",disk_car->description(disk_car));
-      if(list_part!=NULL)
-	mvwaddstr(stdscr,6,0,msg_PART_HEADER_LONG);
-      rewrite=0;
-    }
-    for(i=0,element=list_part; element!=NULL && i<offset+INTER_ADV;element=element->next,i++)
-    {
-      if(i<offset)
-	continue;
-      wmove(stdscr,7+i-offset,0);
-      wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
-      if(element==current_element)
-      {
-	wattrset(stdscr, A_REVERSE);
-	waddstr(stdscr, ">");
-	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
-	wattroff(stdscr, A_REVERSE);
-      } else
-      {
-	waddstr(stdscr, " ");
-	aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,element->part);
-      }
-    }
-    wmove(stdscr,7+INTER_ADV,5);
-    wclrtoeol(stdscr);
-    if(element!=NULL)
-      wprintw(stdscr, "Next");
+    const char *options;
+    old_LINES=LINES;
+    interface_adv_ncurses(disk_car, rewrite || (old_LINES!=LINES), list_part, current_element, offset);
 #endif
+    rewrite=0;
     if(current_element==NULL)
     {
-      options="q";
 #ifdef HAVE_NCURSES
-      wmove(stdscr,7,0);
-      wattrset(stdscr, A_REVERSE);
-      wprintw(stdscr,"No partition available.");
-      wattroff(stdscr, A_REVERSE);
+      options="q";
 #endif
     }
     else
     {
-      const partition_t *partition=current_element->part;
-      if(menu==0 && (disk_car->arch!=&arch_none || partition->upart_type!=UP_UNK))
+      if(menu==0 && (disk_car->arch!=&arch_none || current_element->part->upart_type!=UP_UNK))
 	menu=1;
-      if(is_part_fat(partition))
-      {
-	options="tubcq";
-	menu=(partition->upart_type==UP_UNK?1:4);
-      }
-      else if(is_part_ntfs(partition))
-	options="tlubcq";
-      else if(is_part_linux(partition))
-      {
-	if(partition->upart_type==UP_EXT2)
-	  options="tuscq";
-	else
-	  options="tlscq";
-	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
-      }
-      else if(is_part_hfs(partition) || is_part_hfsp(partition))
-      {
-	options="tscq";
-	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
-      }
-      else if(is_fat(partition))
-	options="tubcq";
-      else if(is_ntfs(partition))
-	options="tlubcq";
-      else if(is_exfat(partition))
-	options="tlubcq";
-      else if(is_linux(partition))
-      {
-	if(partition->upart_type==UP_EXT2)
-	  options="tluscq";
-	else
-	  options="tlscq";
-	menuAdv[2].desc="Locate ext2/ext3/ext4 backup superblock";
-      }
-      else if(is_hfs(partition) || is_hfsp(partition))
-      {
-	options="tscq";
-	menuAdv[2].desc="Locate HFS/HFS+ backup volume header";
-      }
-      else
-	options="tcq";
+#ifdef HAVE_NCURSES
+      options=adv_get_options_for_partition(current_element->part);
+      menuAdv[2].desc=adv_get_boot_description(current_element->part);
+#endif
     }
     if(*current_cmd!=NULL)
     {
-      int keep_asking;
-      command='q';
-      do
-      {
-	keep_asking=0;
-	while(*current_cmd[0]==',')
-	  (*current_cmd)++;
-	if(strncmp(*current_cmd,"type",4)==0)
-	{
-	  (*current_cmd)+=4;
-	  command='t';
-	}
-	else if(strncmp(*current_cmd,"addpart",7)==0)
-	{
-	  (*current_cmd)+=7;
-	  command='a';
-	}
-	else if(strncmp(*current_cmd,"boot",4)==0)
-	{
-	  (*current_cmd)+=4;
-	  command='b';
-	}
-	else if(strncmp(*current_cmd,"copy",4)==0)
-	{
-	  (*current_cmd)+=4;
-	  command='c';
-	}
-	else if(strncmp(*current_cmd,"list",4)==0)
-	{
-	  (*current_cmd)+=4;
-	  command='l';
-	}
-	else if(strncmp(*current_cmd,"undelete",8)==0)
-	{
-	  (*current_cmd)+=8;
-	  command='u';
-	}
-	else if(strncmp(*current_cmd,"superblock",10)==0)
-	{
-	  (*current_cmd)+=10;
-	  command='s';
-	}
-	else if(isdigit(*current_cmd[0]))
-	{
-	  const unsigned int order= atoi(*current_cmd);
-	  while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	    (*current_cmd)++;
-	  for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
-	  if(element!=NULL)
-	  {
-	    current_element=element;
-	    keep_asking=1;
-	  }
-	}
-      } while(keep_asking>0);
+      command=adv_string_to_command(current_cmd, &current_element, list_part);
     }
     else
     {
@@ -389,29 +556,30 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       case 'Q':
 	part_free_list(list_part);
 	return;
-#ifdef HAVE_NCURSES
       case 'a':
       case 'A':
 	if(disk_car->arch!=&arch_none)
 	{
 	  if(*current_cmd!=NULL)
 	    list_part=add_partition_cli(disk_car, list_part, current_cmd);
+#ifdef HAVE_NCURSES
 	  else
 	    list_part=add_partition_ncurses(disk_car, list_part);
+#endif
 	  current_element=list_part;
 	  rewrite=1;
 	}
 	break;
-#endif
     }
-#ifdef HAVE_NCURSES
     if(current_element!=NULL)
     {
       switch(command)
       {
 	case 'p':
 	case 'P':
+#ifdef KEY_UP
 	case KEY_UP:
+#endif
 	  if(current_element->prev!=NULL)
 	  {
 	    current_element=current_element->prev;
@@ -420,180 +588,80 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  break;
 	case 'n':
 	case 'N':
+#ifdef KEY_DOWN
 	case KEY_DOWN:
+#endif
 	  if(current_element->next!=NULL)
 	  {
 	    current_element=current_element->next;
 	    current_element_num++;
 	  }
 	  break;
+#ifdef KEY_PPAGE
 	case KEY_PPAGE:
-	  for(i=0;i<INTER_ADV-1 && current_element->prev!=NULL;i++)
 	  {
-	    current_element=current_element->prev;
-	    current_element_num--;
+	    int i;
+	    for(i=0;i<INTER_ADV-1 && current_element->prev!=NULL;i++)
+	    {
+	      current_element=current_element->prev;
+	      current_element_num--;
+	    }
 	  }
 	  break;
+#endif
+#ifdef KEY_NPAGE
 	case KEY_NPAGE:
-	  for(i=0;i<INTER_ADV-1 && current_element->next!=NULL;i++)
 	  {
-	    current_element=current_element->next;
-	    current_element_num++;
+	    int i;
+	    for(i=0;i<INTER_ADV-1 && current_element->next!=NULL;i++)
+	    {
+	      current_element=current_element->next;
+	      current_element_num++;
+	    }
 	  }
 	  break;
+#endif
 	case 'b':
 	case 'B':
-	  {
-	    partition_t *partition=current_element->part;
-	    if(is_part_fat32(partition))
-	    {
-	      fat32_boot_sector(disk_car, partition, verbose, dump_ind, expert,current_cmd);
-	      rewrite=1;
-	    }
-	    else if(is_part_fat12(partition) || is_part_fat16(partition))
-	    {
-	      fat1x_boot_sector(disk_car, partition, verbose, dump_ind,expert,current_cmd);
-	      rewrite=1;
-	    }
-	    else if(is_part_ntfs(partition))
-	    {
-	      if(partition->upart_type==UP_EXFAT)
-		exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
-	      else
-		ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
-	      rewrite=1;
-	    }
-	    else if(partition->upart_type==UP_FAT32)
-	    {
-	      fat32_boot_sector(disk_car, partition, verbose, dump_ind, expert,current_cmd);
-	      rewrite=1;
-	    }
-	    else if(partition->upart_type==UP_FAT12 || partition->upart_type==UP_FAT16)
-	    {
-	      fat1x_boot_sector(disk_car, partition, verbose, dump_ind,expert,current_cmd);
-	      rewrite=1;
-	    }
-	    else if(partition->upart_type==UP_NTFS)
-	    {
-	      ntfs_boot_sector(disk_car, partition, verbose, expert, current_cmd);
-	      rewrite=1;
-	    }
-	    else if(partition->upart_type==UP_EXFAT)
-	    {
-	      exFAT_boot_sector(disk_car, partition, verbose, current_cmd);
-	      rewrite=1;
-	    }
-	  }
+	  rewrite=adv_menu_boot_selected(disk_car, current_element->part, verbose, dump_ind, expert, current_cmd);
 	  break;
 	case 'c':
 	case 'C':
-	  {
-	    char *dst_path;
-#ifdef HAVE_NCURSES
-	    if(*current_cmd!=NULL)
-	      dst_path=get_default_location();
-	    else
-	    {
-	      char msg[256];
-	      snprintf(msg, sizeof(msg),
-		  "Please select where to store the file image.dd (%u MB), an image of the partition",
-		  (unsigned int)(current_element->part->part_size/1000/1000));
-	      dst_path=ask_location(msg, "", NULL);
-	    }
-#else
-	    dst_path=get_default_location();
-#endif
-	    if(dst_path!=NULL)
-	    {
-	      char *filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
-	      strcpy(filename, dst_path);
-	      strcat(filename, "/");
-	      strcat(filename, DEFAULT_IMAGE_NAME);
-	      disk_image(disk_car, current_element->part, filename);
-	      free(filename);
-	      free(dst_path);
-	    }
-	  }
+	  adv_menu_image_selected(disk_car, current_element->part, current_cmd);
 	  rewrite=1;
 	  break;
 	case 'u':
 	case 'U':
-	  {
-	    const partition_t *partition=current_element->part;
-	    if(partition->sb_offset!=0 && partition->sb_size>0)
-	    {
-	      io_redir_add_redir(disk_car,
-		  partition->part_offset+partition->sborg_offset,
-		  partition->sb_size,
-		  partition->part_offset+partition->sb_offset,
-		  NULL);
-	      if(partition->upart_type==UP_NTFS ||
-		  (is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
-		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
-	      else
-		dir_partition(disk_car, partition, 0, current_cmd);
-	      io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
-	    }
-	    else
-	    {
-	      if(partition->upart_type==UP_NTFS ||
-		  (is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
-		ntfs_undelete_part(disk_car, partition, verbose, current_cmd);
-	      else
-		dir_partition(disk_car, partition, 0, current_cmd);
-	    }
-	  }
+	  adv_menu_undelete_selected(disk_car, current_element->part, verbose, current_cmd);
 	  rewrite=1;
 	  break;
 	case 'l':
 	case 'L':
-	  {
-	    const partition_t *partition=current_element->part;
-	    if(partition->sb_offset!=0 && partition->sb_size>0)
-	    {
-	      io_redir_add_redir(disk_car,
-		  partition->part_offset+partition->sborg_offset,
-		  partition->sb_size,
-		  partition->part_offset+partition->sb_offset,
-		  NULL);
-	      dir_partition(disk_car,partition,verbose, current_cmd);
-	      io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
-	    }
-	    else
-	      dir_partition(disk_car,partition,verbose, current_cmd);
-	  }
+	  adv_menu_list_selected(disk_car, current_element->part, verbose, current_cmd);
 	  rewrite=1;
 	  break;
 	case 's':
 	case 'S':
-	  {
-	    if(is_linux(current_element->part))
-	    {
-	      list_part_t *list_sb=search_superblock(disk_car,current_element->part,verbose,dump_ind,1);
-	      interface_superblock(disk_car, list_sb, current_cmd);
-	      part_free_list(list_sb);
-	    }
-	    if(is_hfs(current_element->part) || is_hfsp(current_element->part))
-	    {
-	      HFS_HFSP_boot_sector(disk_car, current_element->part, verbose, current_cmd);
-	    }
-	    rewrite=1;
-	  }
+	  adv_menu_superblock_selected(disk_car, current_element->part, verbose, dump_ind, current_cmd);
+	  rewrite=1;
 	  break;
 	case 't':
 	case 'T':
 	  if(*current_cmd!=NULL)
 	    change_part_type_cli(disk_car, current_element->part, current_cmd);
+#ifdef HAVE_NCURSES
 	  else
 	    change_part_type_ncurses(disk_car, current_element->part);
+#endif
 	  rewrite=1;
 	  break;
       }
+#ifdef HAVE_NCURSES
       if(current_element_num<offset)
 	offset=current_element_num;
       if(current_element_num>=offset+INTER_ADV)
 	offset=current_element_num-INTER_ADV+1;
-    }
 #endif
+    }
   }
 }
