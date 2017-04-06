@@ -181,7 +181,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
    *  1: back
    *  other: new cluster
    * */
-  int car='A';
+  int car;
   int quit=0;
   int offset=0;
   int pos_num=0;

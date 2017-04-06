@@ -81,7 +81,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 {
   unsigned char *buffer_bs;
   unsigned char *buffer_backup_bs;
-  const char *options="DRC";
 #ifdef HAVE_NCURSES
   const struct MenuItem menu_fat32[]=
   {
@@ -101,6 +100,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   buffer_backup_bs=(unsigned char*)MALLOC(3*disk_car->sector_size);
   while(1)
   {
+    const char *options;
     unsigned int menu=0;
     int command;
     screen_buffer_reset();
@@ -108,7 +108,6 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       int opt_over=0;
       int opt_B=0;
       int opt_O=0;
-      options="DRC";
 #ifdef HAVE_NCURSES
       aff_copy(stdscr);
       wmove(stdscr,4,0);
@@ -186,6 +185,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
       screen_buffer_add("any data; even if the partition is not bootable.\n");
       if(opt_over!=0)
       {
+//	assert(opt_B>0 || opt_O>0);
 	if(opt_B!=0 && opt_O!=0)
 	  options="DOBRL";
 	else if(opt_B!=0)
@@ -194,7 +194,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	  menu=5;
 	  options="DBRL";
 	}
-	else if(opt_O!=0)
+	else
 	{
 	  menu=4;
 	  options="DORL";

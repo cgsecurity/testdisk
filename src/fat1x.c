@@ -77,7 +77,6 @@ static void dump_fat1x(disk_t *disk_car, partition_t *partition, const unsigned 
 int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char **current_cmd)
 {
   unsigned char *buffer_bs;
-  const char *options="DR";
 #ifdef HAVE_NCURSES
   const struct MenuItem menu_fat1x[]=
   {
@@ -95,6 +94,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
   buffer_bs=(unsigned char*)MALLOC(FAT1x_BOOT_SECTOR_SIZE);
   while(1)
   {
+    const char *options;
 #ifdef HAVE_NCURSES
     unsigned int menu=3;
 #endif

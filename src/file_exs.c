@@ -59,7 +59,7 @@ static int header_check_exs(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_exs.extension;
-  file_recovery_new->file_rename=file_rename_exs;
+  file_recovery_new->file_rename=&file_rename_exs;
   return 1;
 }
 

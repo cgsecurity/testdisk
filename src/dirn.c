@@ -603,7 +603,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
   while(1)
   {
     const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
-    long int new_inode=-1;	/* Quit */
+    long int new_inode;
     file_info_t dir_list;
     TD_INIT_LIST_HEAD(&dir_list.list);
     /* Not perfect for FAT32 root cluster */
