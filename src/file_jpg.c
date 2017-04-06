@@ -270,13 +270,25 @@ static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset
   return max_offset;
 }
 
+static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const unsigned int size)
+{
+  if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
+  {
+    return check_mpo_le(mpo, offset, size);
+  }
+  else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
+  {
+    return check_mpo_be(mpo, offset, size);
+  }
+  return 0;
+}
+
 static void file_check_mpo(file_recovery_t *fr)
 {
   unsigned char buffer[512];
   uint64_t offset=0;
   unsigned int size=0;
   size_t nbytes;
-  const unsigned char *mpo;
   {
     /* Check the first jpg */
     const uint64_t fs=fr->file_size;
@@ -315,21 +327,10 @@ static void file_check_mpo(file_recovery_t *fr)
     fr->file_size=0;
     return ;
   }
-  offset+=8;
-  size-=8;
-  mpo=buffer+8;
-  if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
   {
-    const uint64_t max_offset=check_mpo_le(mpo, offset, size);
+    const uint64_t max_offset=check_mpo(buffer+8, offset+8, size-8);
     fr->file_size=(max_offset > fr->file_size ? 0 : max_offset);
   }
-  else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
-  {
-    const uint64_t max_offset=check_mpo_be(mpo, offset, size);
-    fr->file_size=(max_offset > fr->file_size ? 0 : max_offset);
-  }
-  else
-    fr->file_size=0;
 }
 
 static int is_marker_valid(const unsigned int marker)
@@ -1214,9 +1215,9 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
   }
   jpeg_session.handle=file_recovery->handle;
   jpeg_session.cinfo.err = jpeg_std_error(&jerr.pub);
-  jerr.pub.output_message = my_output_message;
-  jerr.pub.error_exit = my_error_exit;
-  jerr.pub.emit_message= my_emit_message;
+  jerr.pub.output_message = &my_output_message;
+  jerr.pub.error_exit = &my_error_exit;
+  jerr.pub.emit_message= &my_emit_message;
 #ifdef DEBUG_JPEG
   jerr.pub.trace_level= 3;
 #endif
@@ -1825,7 +1826,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	    buffer[i+4]=='M' && buffer[i+5]=='P' && buffer[i+6]=='F' && buffer[i+7]==0)
 	{
 	  unsigned int size_test=size;
-	  if(i + 2 + size_test >= buffer_size)
+	  if(i + 2 + size >= buffer_size)
 	  {
 	    size_test=buffer_size-i-2;
 	  }
@@ -1837,17 +1838,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  if(size>12)
 	  {
 	    const uint64_t offset=file_recovery->calculated_file_size-(2+size)+8;
-	    const unsigned char *mpo=buffer+i+8;
-	    uint64_t calculated_file_size=0;
-	    size_test-=8;
-	    if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
-	    {
-	      calculated_file_size=check_mpo_le(mpo, offset, size-8);
-	    }
-	    else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
-	    {
-	      calculated_file_size=check_mpo_be(mpo, offset, size-8);
-	    }
+	    const uint64_t calculated_file_size=check_mpo(buffer+i+8, offset, size_test-8);
 	    if(calculated_file_size > 0)
 	    {
 	      /* Multi-picture format */
