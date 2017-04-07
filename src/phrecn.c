@@ -253,10 +253,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       params->status=STATUS_EXT2_ON_BF;
       params->cmd_run+=17;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_on_save_everything",33)==0)
+    else if(strncmp(params->cmd_run,"status=ext2_on_save_everything",30)==0)
     {
       params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
-      params->cmd_run+=33;
+      params->cmd_run+=30;
     }
     else if(strncmp(params->cmd_run,"status=ext2_on",14)==0)
     {
@@ -268,10 +268,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       params->status=STATUS_EXT2_OFF_BF;
       params->cmd_run+=18;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_off_save_everything",34)==0)
+    else if(strncmp(params->cmd_run,"status=ext2_off_save_everything",31)==0)
     {
       params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
-      params->cmd_run+=34;
+      params->cmd_run+=31;
     }
     else if(strncmp(params->cmd_run,"status=ext2_off",15)==0)
     {
