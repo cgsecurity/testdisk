@@ -339,9 +339,7 @@ static const char *adv_get_options_for_partition(const partition_t *partition)
   }
   else if(is_fat(partition))
     return "tubcq";
-  else if(is_ntfs(partition))
-    return "tlubcq";
-  else if(is_exfat(partition))
+  else if(is_ntfs(partition) || is_exfat(partition))
     return "tlubcq";
   else if(is_linux(partition))
   {
