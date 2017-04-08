@@ -71,24 +71,14 @@ static int header_check_dpx(const unsigned char *buffer, const unsigned int buff
   const struct header_dpx *dpx=(const struct header_dpx *)buffer;
   if(memcmp(dpx->vers, ver10, sizeof(ver10))==0)
   {
-    struct tm tm_time;
     if(be32(dpx->file_size) < 19)
       return 0;
-    memset(&tm_time, 0, sizeof(tm_time));
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_dpx.extension;
     file_recovery_new->calculated_file_size=be32(dpx->file_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
-    tm_time.tm_sec=(dpx->create_time[17]-'0')*10+(dpx->create_time[18]-'0');      /* seconds 0-59 */
-    tm_time.tm_min=(dpx->create_time[14]-'0')*10+(dpx->create_time[15]-'0');      /* minutes 0-59 */
-    tm_time.tm_hour=(dpx->create_time[11]-'0')*10+(dpx->create_time[12]-'0');      /* hours   0-23*/
-    tm_time.tm_mday=(dpx->create_time[8]-'0')*10+(dpx->create_time[9]-'0');	/* day of the month 1-31 */
-    tm_time.tm_mon=(dpx->create_time[5]-'0')*10+(dpx->create_time[6]-'0')-1;	/* month 0-11 */
-    tm_time.tm_year=(dpx->create_time[0]-'0')*1000+(dpx->create_time[1]-'0')*100+
-      (dpx->create_time[2]-'0')*10+(dpx->create_time[3]-'0')-1900;        	/* year */
-    tm_time.tm_isdst = -1;		/* unknown daylight saving time */
-    file_recovery_new->time=mktime(&tm_time);
+    file_recovery_new->time=get_time_from_YYYY_MM_DD_HH_MM_SS(dpx->create_time);
     return 1;
   }
   return 0;

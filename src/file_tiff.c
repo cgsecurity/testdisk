@@ -286,7 +286,6 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
 {
   const char *potential_error=NULL;
   const char *date_asc;
-  struct tm tm_time;
   /* DateTimeOriginal */
   date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x9003, &potential_error);
   /* DateTimeDigitalized*/
@@ -296,18 +295,7 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
     date_asc=find_tag_from_tiff_header(tiff, tiff_size, 0x132, &potential_error);
   if(date_asc==NULL || date_asc < (const char *)tiff || &date_asc[18] >= (const char *)tiff + tiff_size)
     return (time_t)0;
-  if(memcmp(date_asc, "0000", 4)==0)
-    return (time_t)0;
-  memset(&tm_time, 0, sizeof(tm_time));
-  tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
-  tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
-  tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
-  tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month 1-31 */
-  tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
-  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
-    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
-  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
-  return mktime(&tm_time);
+  return get_time_from_YYYY_MM_DD_HH_MM_SS(date_asc);
 }
 
 static int header_check_tiff_be_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)

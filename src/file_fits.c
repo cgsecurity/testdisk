@@ -95,23 +95,13 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
     {
       /*	  CREA_DAT= '2007-08-29T16:22:09' */
       /*	             0123456789012345678  */
-      const unsigned char *date_asc;
+      const char *date_asc;
       unsigned int j;
-      for(j=0,date_asc=&buffer[i];j<80 && *date_asc!='\'';j++,date_asc++);
+      for(j=0,date_asc=(const char *)&buffer[i];j<80 && *date_asc!='\'';j++,date_asc++);
       if(j<60 && *date_asc=='\'')
       {
-	struct tm tm_time;
-	memset(&tm_time, 0, sizeof(tm_time));
 	date_asc++;
-	tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
-	tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
-	tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
-	tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month 1-31 */
-	tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
-	tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
-	  (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
-	tm_time.tm_isdst = -1;	/* unknown daylight saving time */
-	file_recovery->time=mktime(&tm_time);
+	file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(date_asc);
       }
     }
   }

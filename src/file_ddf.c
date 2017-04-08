@@ -81,21 +81,12 @@ struct MasterHeader
 
 static int header_check_aux(const unsigned char *buffer, file_recovery_t *file_recovery_new)
 {
+  const char *date_asc=(const char *)&buffer[0x3f];
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ddf.extension;
-  if(buffer[0x43]=='-' && buffer[0x46]=='-' && buffer[0x49]=='_')
+  if(date_asc[4]=='-' && date_asc[7]=='-' && date_asc[10]=='_')
   {
-    struct tm tm_time;
-    memset(&tm_time, 0, sizeof(tm_time));
-    tm_time.tm_sec=(buffer[0x4e]-'0')*10+(buffer[0x4f]-'0');      /* seconds 0-59 */
-    tm_time.tm_min=(buffer[0x4c]-'0')*10+(buffer[0x4d]-'0');      /* minutes 0-59 */
-    tm_time.tm_hour=(buffer[0x4a]-'0')*10+(buffer[0x4b]-'0');      /* hours   0-23*/
-    tm_time.tm_mday=(buffer[0x47]-'0')*10+(buffer[0x48]-'0');	/* day of the month 1-31 */
-    tm_time.tm_mon=(buffer[0x44]-'0')*10+(buffer[0x45]-'0')-1;	/* month 0-11 */
-    tm_time.tm_year=(buffer[0x3f]-'0')*1000+(buffer[0x40]-'0')*100+
-      (buffer[0x41]-'0')*10+(buffer[0x42]-'0')-1900;        	/* year */
-    tm_time.tm_isdst = -1;		/* unknown daylight saving time */
-    file_recovery_new->time=mktime(&tm_time);
+    file_recovery_new->time=get_time_from_YYYY_MM_DD_HHMMSS(date_asc);
   }
   return 1;
 }

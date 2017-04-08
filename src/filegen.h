@@ -138,6 +138,10 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
 void header_ignored(const file_recovery_t *file_recovery_new);
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new);
 int my_fseek(FILE *stream, off_t offset, int whence);
+time_t get_time_from_YYMMDDHHMMSS(const char *date_asc);
+time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const char *date_asc);
+time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc);
+time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

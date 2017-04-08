@@ -57,8 +57,7 @@ const file_hint_t file_hint_ds2= {
 
 static int header_check_ds2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  struct tm tm_time;
-  const unsigned char *date_asc=&buffer[0x26];
+  const char *date_asc=(const char *)&buffer[0x26];
   unsigned int i;
   for(i=0; i<24; i++)
     if(!isdigit(date_asc[i]))
@@ -66,17 +65,7 @@ static int header_check_ds2(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ds2.extension;
   file_recovery_new->min_filesize=0x200;
-  memset(&tm_time, 0, sizeof(tm_time));
-  tm_time.tm_sec=(date_asc[10]-'0')*10+(date_asc[11]-'0');	/* seconds 0-59 */
-  tm_time.tm_min=(date_asc[8]-'0')*10+(date_asc[9]-'0');      /* minutes 0-59 */
-  tm_time.tm_hour=(date_asc[6]-'0')*10+(date_asc[7]-'0');     /* hours   0-23*/
-  tm_time.tm_mday=(date_asc[4]-'0')*10+(date_asc[5]-'0');	/* day of the month 1-31 */
-  tm_time.tm_mon=(date_asc[2]-'0')*10+(date_asc[3]-'0')-1;	/* month 1-12 */
-  tm_time.tm_year=(date_asc[0]-'0')*10+(date_asc[1]-'0');        	/* year */
-  if(tm_time.tm_year<80)
-    tm_time.tm_year+=100;	/* year 2000 - 2079 */
-  tm_time.tm_isdst = -1;	/* unknown daylight saving time */
-  file_recovery_new->time=mktime(&tm_time);
+  file_recovery_new->time=get_time_from_YYMMDDHHMMSS(date_asc);
   return 1;
 }
 

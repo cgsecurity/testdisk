@@ -32,6 +32,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
@@ -703,4 +706,69 @@ int my_fseek(FILE *stream, off_t offset, int whence)
   }
 #endif
  return fseek(stream, offset, whence);
+}
+
+time_t get_time_from_YYMMDDHHMMSS(const char *date_asc)
+{
+  struct tm tm_time;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[10]-'0')*10+(date_asc[11]-'0');	/* seconds 0-59 */
+  tm_time.tm_min=(date_asc[8]-'0')*10+(date_asc[9]-'0');      /* minutes 0-59 */
+  tm_time.tm_hour=(date_asc[6]-'0')*10+(date_asc[7]-'0');     /* hours   0-23*/
+  tm_time.tm_mday=(date_asc[4]-'0')*10+(date_asc[5]-'0');	/* day of the month 1-31 */
+  tm_time.tm_mon=(date_asc[2]-'0')*10+(date_asc[3]-'0')-1;	/* month 1-12 */
+  tm_time.tm_year=(date_asc[0]-'0')*10+(date_asc[1]-'0');        	/* year */
+  if(tm_time.tm_year<80)
+    tm_time.tm_year+=100;	/* year 2000 - 2079 */
+  tm_time.tm_isdst = -1;	/* unknown daylight saving time */
+  return mktime(&tm_time);
+}
+
+time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const char *date_asc)
+{
+  struct tm tm_time;
+  if(memcmp(date_asc, "0000", 4)==0)
+    return (time_t)0;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
+  tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
+  tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
+  tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month 1-31 */
+  tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
+  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
+  return mktime(&tm_time);
+}
+
+time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc)
+{
+  struct tm tm_time;
+  if(memcmp(date_asc, "0000", 4)==0)
+    return (time_t)0;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[15]-'0')*10+(date_asc[16]-'0');      /* seconds 0-59 */
+  tm_time.tm_min=(date_asc[13]-'0')*10+(date_asc[14]-'0');      /* minutes 0-59 */
+  tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
+  tm_time.tm_mday=(date_asc[8]-'0')*10+(date_asc[9]-'0');	/* day of the month 1-31 */
+  tm_time.tm_mon=(date_asc[5]-'0')*10+(date_asc[6]-'0')-1;	/* month 0-11 */
+  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;        	/* year */
+  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
+  return mktime(&tm_time);
+}
+
+time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc)
+{
+  struct tm tm_time;
+  memset(&tm_time, 0, sizeof(tm_time));
+  tm_time.tm_sec=(date_asc[13]-'0')*10+(date_asc[14]-'0');      /* seconds 0-59 */
+  tm_time.tm_min=(date_asc[11]-'0')*10+(date_asc[12]-'0');      /* minutes 0-59 */
+  tm_time.tm_hour=(date_asc[9]-'0')*10+(date_asc[10]-'0');      /* hours   0-23*/
+  tm_time.tm_mday=(date_asc[6]-'0')*10+(date_asc[7]-'0');	/* day of the month 1-31 */
+  tm_time.tm_mon=(date_asc[4]-'0')*10+(date_asc[5]-'0')-1;	/* month 0-11 */
+  tm_time.tm_year=(date_asc[0]-'0')*1000+(date_asc[1]-'0')*100+
+    (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;		/* year */
+  tm_time.tm_isdst = -1;		/* unknown daylight saving time */
+  return mktime(&tm_time);
 }
