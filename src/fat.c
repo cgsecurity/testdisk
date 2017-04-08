@@ -58,26 +58,6 @@ static int is_fat12(const partition_t *partition);
 static int is_fat16(const partition_t *partition);
 static int is_fat32(const partition_t *partition);
 
-#define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
-#define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG)
-#define ATTR_RO      1  /* read-only */
-#define ATTR_HIDDEN  2  /* hidden */
-#define ATTR_SYS     4  /* system */
-#define ATTR_VOLUME  8  /* volume label */
-#define ATTR_DIR     16 /* directory */
-#define ATTR_ARCH    32 /* archived */
-
-#define ATTR_NONE    0 /* no attribute bits */
-#define ATTR_UNUSED  (ATTR_VOLUME | ATTR_ARCH | ATTR_SYS | ATTR_HIDDEN)
-	/* attribute bits that are copied "as is" */
-#define ATTR_EXT     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
-#define ATTR_EXT_MASK     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME | ATTR_DIR | ATTR_ARCH)
-	/* bits that are used by the Windows 95/Windows NT extended FAT */
-#define FAT12_BAD	0x0FF7
-#define FAT12_EOC	0x0FF8
-#define FAT16_BAD	0xFFF7
-#define FAT16_EOC	0xFFF8
-
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
 {
   log_info("sector_size  %u\n", fat_sector_size(fh1));
