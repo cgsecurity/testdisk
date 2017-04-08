@@ -299,6 +299,8 @@ file_C			= filegen.c \
 			  file_tg.c \
 			  file_tib.c \
 			  file_tiff.c \
+			  file_tiff_be.c \
+			  file_tiff_le.c \
 			  file_tivo.c \
 			  file_torrent.c \
 			  file_tph.c \

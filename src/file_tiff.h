@@ -69,6 +69,17 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
 const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error);
 void file_check_tiff(file_recovery_t *file_recovery);
 
+const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
+uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
+int header_check_tiff_be_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+int header_check_tiff_le_new(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+unsigned int tiff_type2size(const unsigned int type);
+#ifdef DEBUG_TIFF
+const char *tag_name(unsigned int tag);
+#endif
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
