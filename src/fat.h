@@ -86,7 +86,8 @@ struct fat_fsinfo {
 } __attribute__ ((gcc_struct, __packed__));
 
 struct msdos_dir_entry {
-	int8_t	name[8],ext[3];		/* 00 name and extension */
+	int8_t	name[8];		/* 00 name and extension */
+	int8_t  ext[3];
 	uint8_t	attr;			/* 0B attribute bits */
 	uint8_t    lcase;		/* 0C Case for base and extension */
 	uint8_t	        ctime_ms;	/* 0D Creation time, milliseconds */

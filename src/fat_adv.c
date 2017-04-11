@@ -591,7 +591,8 @@ static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned sho
       (((unix_date/3600) % 24) << 11));
   day = unix_date/86400-3652;
   year = day/365;
-  if ((year+3)/4+365*year > day) year--;
+  if ((year+3)/4+365*year > day)
+    year--;
   day -= (year+3)/4+365*year;
   if (day == 59 && !(year & 3)) {
     nl_day = day;
@@ -600,7 +601,8 @@ static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned sho
   else {
     nl_day = (year & 3) || day <= 59 ? day : day-1;
     for (month = 1; month < 12; month++)
-      if (day_n[month] > nl_day) break;
+      if (day_n[month] > nl_day)
+	break;
   }
   *msdate = le16(nl_day-day_n[month-1]+1+(month << 5)+(year << 9));
 }
@@ -609,7 +611,9 @@ static int file2entry(struct msdos_dir_entry *de, const file_info_t *current_fil
 {
   unsigned int i,j;
   /* Name */
-  for(i=0;(i<8)&&(current_file->name[i]!='.')&&(current_file->name[i]!='\0');i++)
+  for(i=0;
+      i<8 && current_file->name[i]!='.' && current_file->name[i]!='\0';
+      i++)
   {
     de->name[i]=current_file->name[i];
   }
@@ -618,8 +622,12 @@ static int file2entry(struct msdos_dir_entry *de, const file_info_t *current_fil
     de->name[j]=' ';
   }
   /* Extension */
-  for(;(current_file->name[i]!='.')&&(current_file->name[i]!='\0');i++);
-  for(j=0;(j<3)&&(current_file->name[i]!='\0');j++)
+  for(;
+      current_file->name[i]!='.' && current_file->name[i]!='\0';
+      i++);
+  for(j=0;
+      j<3 && current_file->name[i]!='\0';
+      j++)
   {
     de->ext[j]=current_file->name[i];
   }
@@ -1708,11 +1716,17 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
     }
     switch(info_offset[offset_for_max_nbr].fat_type)
     {
-      case 12: upart_type=UP_FAT12; break;
-      case 16: upart_type=UP_FAT16; break;
-      case 32: upart_type=UP_FAT32; break;
+      case 12:
+	upart_type=UP_FAT12;
+	break;
+      case 16:
+	upart_type=UP_FAT16;
+	break;
+      case 32:
+	upart_type=UP_FAT32;
+	break;
     }
-    for(i=0;i<nbr_offset;i++)
+    for(i=0; i<nbr_offset; i++)
     {
       if(info_offset[i].fat_type==info_offset[offset_for_max_nbr].fat_type)
       {

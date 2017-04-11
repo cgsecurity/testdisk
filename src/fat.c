@@ -180,9 +180,12 @@ int check_FAT(disk_t *disk_car,partition_t *partition,const int verbose)
 
 static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition)
 {
-  uint64_t start_fat1,start_data,part_size;
-  unsigned long int no_of_cluster,fat_length;
-  const char*buffer=(const char*)fat_header;
+  uint64_t start_fat1;
+  uint64_t start_data;
+  uint64_t part_size;
+  unsigned long int no_of_cluster;
+  unsigned long int fat_length;
+  const char *buffer=(const char*)fat_header;
   partition->fsname[0]='\0';
   partition->blocksize=fat_sector_size(fat_header)* fat_header->sectors_per_cluster;
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
@@ -223,76 +226,87 @@ static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_hea
   }
 }
 
-unsigned int get_next_cluster(disk_t *disk_car,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster)
+static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
+{
+  unsigned int next_cluster;
+  unsigned long int offset_s;
+  unsigned long int offset_o;
+  unsigned char *buffer=(unsigned char*)MALLOC(2*disk_car->sector_size);
+  offset_s=(cluster+cluster/2)/disk_car->sector_size;
+  offset_o=(cluster+cluster/2)%disk_car->sector_size;
+  if((unsigned)disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
+	partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != 2 * disk_car->sector_size)
+  {
+    log_error("get_next_cluster_fat12 read error\n");
+    free(buffer);
+    return 0;
+  }
+  if((cluster&1)!=0)
+    next_cluster=le16((*((uint16_t*)&buffer[offset_o])))>>4;
+  else
+    next_cluster=le16(*((uint16_t*)&buffer[offset_o]))&0x0FFF;
+  free(buffer);
+  return next_cluster;
+}
+
+static unsigned int get_next_cluster_fat16(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
+{
+  unsigned int next_cluster;
+  unsigned long int offset_s;
+  unsigned long int offset_o;
+  unsigned char *buffer=(unsigned char*)MALLOC(disk->sector_size);
+  const uint16_t *p16=(const uint16_t*)buffer;
+  offset_s=cluster/(disk->sector_size/2);
+  offset_o=cluster%(disk->sector_size/2);
+  if((unsigned)disk->pread(disk, buffer, disk->sector_size,
+	partition->part_offset + (uint64_t)(offset + offset_s) * disk->sector_size) != disk->sector_size)
+  {
+    log_error("get_next_cluster_fat16 read error\n");
+    free(buffer);
+    return 0;
+  }
+  next_cluster=le16(p16[offset_o]);
+  free(buffer);
+  return next_cluster;
+}
+
+static unsigned int get_next_cluster_fat32(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
+{
+  unsigned int next_cluster;
+  unsigned long int offset_s;
+  unsigned long int offset_o;
+  unsigned char *buffer=(unsigned char*)MALLOC(disk->sector_size);
+  const uint32_t *p32=(const uint32_t*)buffer;
+  offset_s=cluster/(disk->sector_size/4);
+  offset_o=cluster%(disk->sector_size/4);
+  if((unsigned)disk->pread(disk, buffer, disk->sector_size,
+	partition->part_offset + (uint64_t)(offset + offset_s) * disk->sector_size) != disk->sector_size)
+  {
+    log_error("get_next_cluster_fat32 read error\n");
+    free(buffer);
+    return 0;
+  }
+  /* FAT32 used 28 bits, the 4 high bits are reserved
+   * 0x00000000: free cluster
+   * 0x0FFFFFF7: bad cluster
+   * 0x0FFFFFF8+: EOC End of cluster
+   * */
+  next_cluster=le32(p32[offset_o])&0xFFFFFFF;
+  free(buffer);
+  return next_cluster;
+}
+
+unsigned int get_next_cluster(disk_t *disk,const partition_t *partition, const upart_type_t upart_type,const int offset, const unsigned int cluster)
 {
   /* Offset can be offset to FAT1 or to FAT2 */
-  /* log_trace("get_next_cluster(upart_type=%u,offset=%u,cluster=%u\n",upart_type,offset,cluster); */
   switch(upart_type)
   {
     case UP_FAT12:
-      {
-	unsigned int next_cluster;
-	unsigned long int offset_s,offset_o;
-	unsigned char *buffer=(unsigned char*)MALLOC(2*disk_car->sector_size);
-        offset_s=(cluster+cluster/2)/disk_car->sector_size;
-        offset_o=(cluster+cluster/2)%disk_car->sector_size;
-        if((unsigned)disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
-	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != 2 * disk_car->sector_size)
-        {
-          log_error("get_next_cluster read error\n");
-	  free(buffer);
-	  return 0;
-        }
-        if((cluster&1)!=0)
-          next_cluster=le16((*((uint16_t*)&buffer[offset_o])))>>4;
-        else
-          next_cluster=le16(*((uint16_t*)&buffer[offset_o]))&0x0FFF;
-        free(buffer);
-        return next_cluster;
-      }
+      return get_next_cluster_fat12(disk, partition, offset, cluster);
     case UP_FAT16:
-      {
-	unsigned int next_cluster;
-	unsigned long int offset_s,offset_o;
-	unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
-        const uint16_t *p16=(const uint16_t*)buffer;
-        offset_s=cluster/(disk_car->sector_size/2);
-        offset_o=cluster%(disk_car->sector_size/2);
-        if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
-	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != disk_car->sector_size)
-        {
-          log_error("get_next_cluster read error\n");
-	  free(buffer);
-	  return 0;
-        }
-        next_cluster=le16(p16[offset_o]);
-        free(buffer);
-        return next_cluster;
-      }
+      return get_next_cluster_fat16(disk, partition, offset, cluster);
     case UP_FAT32:
-      {
-	unsigned int next_cluster;
-	unsigned long int offset_s,offset_o;
-	unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
-        const uint32_t *p32=(const uint32_t*)buffer;
-        offset_s=cluster/(disk_car->sector_size/4);
-        offset_o=cluster%(disk_car->sector_size/4);
-        if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
-	      partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != disk_car->sector_size)
-        {
-          log_error("get_next_cluster read error\n");
-	  free(buffer);
-	  return 0;
-        }
-        /* FAT32 used 28 bits, the 4 high bits are reserved
-         * 0x00000000: free cluster
-         * 0x0FFFFFF7: bad cluster
-         * 0x0FFFFFF8+: EOC End of cluster
-         * */
-        next_cluster=le32(p32[offset_o])&0xFFFFFFF;
-        free(buffer);
-        return next_cluster;
-      }
+      return get_next_cluster_fat32(disk, partition, offset, cluster);
     default:
       log_critical("fat.c get_next_cluster unknown fat type\n");
       return 0;
