@@ -74,9 +74,9 @@ unsigned int tiff_type2size(const unsigned int type)
     case 17:	/* TIFF_SLONG8	*/
     case 18:	/* TIFF_IFD8	*/
       return 8;
-    default:
 //    case 14:	/* TIFF_UNICODE	*/
 //    case 15:	/* TIFF_COMPLEX */
+    default:
       return 1;
   }
 }
@@ -166,21 +166,18 @@ static void register_header_check_tiff(file_stat_t *file_stat)
 void file_check_tiff(file_recovery_t *fr)
 {
   static uint64_t calculated_file_size=0;
-  unsigned char *buffer=(unsigned char *)MALLOC(8192);
-  const TIFFHeader *header=(const TIFFHeader *)buffer;
-  int data_read;
+  TIFFHeader header;
   calculated_file_size = 0;
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
-      (data_read=fread(buffer, 1, 8192, fr->handle)) < (int)sizeof(TIFFHeader))
+      fread(&header, sizeof(TIFFHeader), 1, fr->handle) != 1)
   {
-    free(buffer);
     fr->file_size=0;
     return;
   }
-  if(header->tiff_magic==TIFF_LITTLEENDIAN)
-    calculated_file_size=header_check_tiff_le(fr, le32(header->tiff_diroff), 0, 0);
-  else if(header->tiff_magic==TIFF_BIGENDIAN)
-    calculated_file_size=header_check_tiff_be(fr, be32(header->tiff_diroff), 0, 0);
+  if(header.tiff_magic==TIFF_LITTLEENDIAN)
+    calculated_file_size=header_check_tiff_le(fr, le32(header.tiff_diroff), 0, 0);
+  else if(header.tiff_magic==TIFF_BIGENDIAN)
+    calculated_file_size=header_check_tiff_be(fr, be32(header.tiff_diroff), 0, 0);
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu\n", (unsigned long long)calculated_file_size);
@@ -201,5 +198,4 @@ void file_check_tiff(file_recovery_t *fr)
       (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
       strcmp(fr->extension,"wdp")==0)
     fr->file_size=calculated_file_size;
-  free(buffer);
 }
