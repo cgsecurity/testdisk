@@ -231,11 +231,11 @@ static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *part
   unsigned int next_cluster;
   unsigned long int offset_s;
   unsigned long int offset_o;
-  unsigned char *buffer=(unsigned char*)MALLOC(2*disk_car->sector_size);
-  offset_s=(cluster+cluster/2)/disk_car->sector_size;
-  offset_o=(cluster+cluster/2)%disk_car->sector_size;
-  if((unsigned)disk_car->pread(disk_car, buffer, 2 * disk_car->sector_size,
-	partition->part_offset + (uint64_t)(offset + offset_s) * disk_car->sector_size) != 2 * disk_car->sector_size)
+  unsigned char *buffer=(unsigned char*)MALLOC(2*disk->sector_size);
+  offset_s=(cluster+cluster/2)/disk->sector_size;
+  offset_o=(cluster+cluster/2)%disk->sector_size;
+  if((unsigned)disk->pread(disk, buffer, 2 * disk->sector_size,
+	partition->part_offset + (uint64_t)(offset + offset_s) * disk->sector_size) != 2 * disk->sector_size)
   {
     log_error("get_next_cluster_fat12 read error\n");
     free(buffer);
@@ -429,8 +429,15 @@ static unsigned int get_prev_cluster(disk_t *disk_car,const partition_t *partiti
 
 int test_FAT(disk_t *disk_car, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
-  uint64_t start_fat1,start_fat2,start_rootdir,start_data,part_size,end_data;
-  unsigned long int no_of_cluster,fat_length,fat_length_calc;
+  uint64_t start_fat1;
+  uint64_t start_fat2;
+  uint64_t start_rootdir;
+  uint64_t start_data;
+  uint64_t part_size;
+  uint64_t end_data;
+  unsigned long int no_of_cluster;
+  unsigned long int fat_length;
+  unsigned long int fat_length_calc;
   const char *buffer=(const char*)fat_header;
   if(!(le16(fat_header->marker)==0xAA55
         && (fat_header->ignored[0]==0xeb || fat_header->ignored[0]==0xe9)
@@ -699,8 +706,10 @@ int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int
   return 0 if FATs match
   */
   unsigned int reste;
-  uint64_t hd_offset, hd_offset2;
-  unsigned char *buffer, *buffer2;
+  uint64_t hd_offset;
+  uint64_t hd_offset2;
+  unsigned char *buffer;
+  unsigned char *buffer2;
   buffer=(unsigned char *)MALLOC(16*disk->sector_size);
   buffer2=(unsigned char *)MALLOC(16*disk->sector_size);
   hd_offset=partition->part_offset+(uint64_t)sect_res*disk->sector_size;
