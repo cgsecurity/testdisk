@@ -64,6 +64,8 @@ static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
     keep_asking=0;
     while(*current_cmd[0]==',')
       (*current_cmd)++;
+    if(*current_cmd[0]=='\0')
+      return 0;
     if(strncmp(*current_cmd,"everything",10)==0)
     {
       int enable_status;
