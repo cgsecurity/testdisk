@@ -130,16 +130,9 @@ static int is_linux(const partition_t *partition)
 
 static int is_part_hfs(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
-  {
-    case P_HFS:
-      return 1;
-  }
-  switch(partition->part_type_mac)
-  {
-    case PMAC_HFS:
-      return 1;
-  }
+  if( partition->part_type_i386 == P_HFS ||
+      partition->part_type_mac  == PMAC_HFS)
+    return 1;
   if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
     return 1;
   return 0;
@@ -147,16 +140,9 @@ static int is_part_hfs(const partition_t *partition)
 
 static int is_part_hfsp(const partition_t *partition)
 {
-  switch(partition->part_type_i386)
-  {
-    case P_HFSP:
+  if( partition->part_type_i386 == P_HFSP ||
+      partition->part_type_mac  == PMAC_HFS )
       return 1;
-  }
-  switch(partition->part_type_mac)
-  {
-    case PMAC_HFS:
-      return 1;
-  }
   if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
     return 1;
   return 0;
@@ -164,28 +150,16 @@ static int is_part_hfsp(const partition_t *partition)
 
 int is_part_linux(const partition_t *partition)
 {
-  if(partition->arch==&arch_i386)
-  {
-    if(partition->part_type_i386==P_LINUX)
+  if(partition->arch==&arch_i386 && partition->part_type_i386==P_LINUX)
       return 1;
-  }
-  else if(partition->arch==&arch_sun)
-  {
-    if(partition->part_type_sun==PSUN_LINUX)
+  if(partition->arch==&arch_sun  && partition->part_type_sun==PSUN_LINUX)
       return 1;
-  }
-  else if(partition->arch==&arch_mac)
-  {
-    if(partition->part_type_mac==PMAC_LINUX)
+  if(partition->arch==&arch_mac  && partition->part_type_mac==PMAC_LINUX)
       return 1;
-  }
-  /*
-  else if(partition->arch==&arch_gpt)
-  {
-    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0)
+#if 0
+  if(partition->arch==&arch_gpt && guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0)
       return 1;
-  }
-  */
+#endif
   return 0;
 }
 
@@ -284,7 +258,9 @@ static int adv_string_to_command(char**current_cmd, list_part_t **current_elemen
       const unsigned int order= atoi(*current_cmd);
       while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
 	(*current_cmd)++;
-      for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
+      for(element=list_part;
+	  element!=NULL && element->part->order!=order;
+	  element=element->next);
       if(element!=NULL)
       {
 	*current_element=element;
