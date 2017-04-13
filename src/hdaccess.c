@@ -370,6 +370,8 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     list_disk=hd_glob_parse("/dev/dm-*", list_disk, verbose, testdisk_mode);
     /* Xen virtual disks */
     list_disk=hd_glob_parse("/dev/xvd?", list_disk, verbose, testdisk_mode);
+    /* Loop devices */
+    list_disk=hd_glob_parse("/dev/loop[0-9]*", list_disk, verbose, testdisk_mode);
 #endif
   }
 #elif defined(TARGET_SOLARIS)
@@ -1068,7 +1070,8 @@ static uint64_t compute_device_size(const int hd_h, const char *device, const in
 {
 #ifdef HAVE_PREAD
   /* This function can failed if there are bad sectors */
-  uint64_t min_offset, max_offset;
+  uint64_t min_offset;
+  uint64_t max_offset;
   char *buffer=(char *)MALLOC(sector_size);
   min_offset=0;
   max_offset=sector_size;
@@ -1442,32 +1445,22 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
        * read-only loop devices may be openend read-write,
        * use BKROGET to detect the problem
        */
-      if (ioctl(hd_h, BLKROGET, &readonly) >= 0)
+      if (ioctl(hd_h, BLKROGET, &readonly) >= 0 &&
+	  readonly>0)
       {
-        if(readonly>0)
-        {
-          try_readonly=1;
-          close(hd_h);
-	  hd_h = -1;
-        }
+	try_readonly=1;
+	close(hd_h);
+	hd_h = -1;
       }
 #endif
 #ifdef __HAIKU__
       device_geometry g;
-      int readonly;
-      /* If the device can be opened read-write, then
-       * check whether BKROGET says that it is read-only.
-       * read-only loop devices may be openend read-write,
-       * use BKROGET to detect the problem
-       */
-      if (ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g)) >= 0)
+      if (ioctl(hd_h, B_GET_GEOMETRY, &g, sizeof(g)) >= 0 &&
+        g.read_only>0)
       {
-        if(g.read_only>0)
-        {
-          try_readonly=1;
-          close(hd_h);
-	  hd_h = -1;
-        }
+	try_readonly=1;
+	close(hd_h);
+	hd_h = -1;
       }
 #endif
     }
@@ -1542,12 +1535,11 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
     disk_car->access_mode|=TESTDISK_O_DIRECT;
 #endif
   disk_car->clean=&file_clean;
-  if(fstat(hd_h,&stat_rec)>=0)
+  if(fstat(hd_h,&stat_rec)>=0 &&
+      S_ISREG(stat_rec.st_mode) &&
+      stat_rec.st_size > 0)
   {
-    if(S_ISREG(stat_rec.st_mode) && stat_rec.st_size > 0)
-    {
-      device_is_a_file=1;
-    }
+    device_is_a_file=1;
   }
 #ifndef DJGPP
   if(device_is_a_file==0)
