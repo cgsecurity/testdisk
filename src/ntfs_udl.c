@@ -1184,8 +1184,7 @@ static void scan_disk(ntfs_volume *vol, file_info_t *dir_list)
 done:
   log_info("\nFiles with potentially recoverable content: %u\n", results);
   free(buffer);
-  if (attr)
-    ntfs_attr_close(attr);
+  ntfs_attr_close(attr);
   td_list_sort(&dir_list->list, filesort);
 }
 
@@ -1736,13 +1735,11 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
   log_partition(disk_car,partition);
   screen_buffer_add("Support for this filesystem wasn't enabled during compilation.\n");
   screen_buffer_to_log();
+#ifdef HAVE_NCURSES
   if(*current_cmd==NULL)
   {
-#ifdef HAVE_NCURSES
     screen_buffer_display(window,"",NULL);
-#endif
   }
-#ifdef HAVE_NCURSES
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN

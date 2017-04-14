@@ -289,8 +289,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 
   result = 0;
   /* close the inode. */
-  if (ni)
-    ntfs_inode_close(ni);
+  ntfs_inode_close(ni);
 freefn:
   free (filename);
   return result;
