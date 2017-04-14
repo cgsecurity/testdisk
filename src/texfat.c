@@ -163,6 +163,7 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, char **current_cmd)
   unsigned char *buffer_backup_bs;
   int rescan=1;
   const int size_bs=12 * disk->sector_size;
+  const char *options;
 #ifdef HAVE_NCURSES
   const struct MenuItem menu_exFAT[]=
   {
@@ -179,7 +180,6 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, char **current_cmd)
   buffer_backup_bs=(unsigned char*)MALLOC(size_bs);
   while(1)
   {
-    const char *options;
     int command;
     screen_buffer_reset();
     if(rescan==1)
