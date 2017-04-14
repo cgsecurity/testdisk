@@ -347,7 +347,7 @@ static int adv_menu_boot_selected(disk_t *disk, partition_t *partition, const in
   else if(is_part_ntfs(partition))
   {
     if(partition->upart_type==UP_EXFAT)
-      exFAT_boot_sector(disk, partition, verbose, current_cmd);
+      exFAT_boot_sector(disk, partition, current_cmd);
     else
       ntfs_boot_sector(disk, partition, verbose, expert, current_cmd);
     return 1;
@@ -369,7 +369,7 @@ static int adv_menu_boot_selected(disk_t *disk, partition_t *partition, const in
   }
   else if(partition->upart_type==UP_EXFAT)
   {
-    exFAT_boot_sector(disk, partition, verbose, current_cmd);
+    exFAT_boot_sector(disk, partition, current_cmd);
     return 1;
   }
   return 0;

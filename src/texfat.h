@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-int exFAT_boot_sector(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd);
+int exFAT_boot_sector(disk_t *disk, partition_t *partition, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
