@@ -450,7 +450,7 @@ static void adv_menu_superblock_selected(disk_t *disk, partition_t *partition, c
 {
   if(is_linux(partition))
   {
-    list_part_t *list_sb=search_superblock(disk,partition,verbose,dump_ind,1);
+    list_part_t *list_sb=search_superblock(disk,partition,verbose,dump_ind);
     interface_superblock(disk, list_sb, current_cmd);
     part_free_list(list_sb);
   }

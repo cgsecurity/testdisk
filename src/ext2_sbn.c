@@ -75,7 +75,7 @@ static uint64_t next_sb(const uint64_t hd_offset_old)
   return hd_offset;
 }
 
-list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const int interface)
+list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(2*0x200);
   uint64_t hd_offset;
@@ -89,19 +89,16 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
   partition_t *new_partition=partition_new(disk_car->arch);
   log_trace("search_superblock\n");
 #ifdef HAVE_NCURSES
-  if(interface>0)
-  {
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
-    wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-    wmove(stdscr,22,0);
-    wattrset(stdscr, A_REVERSE);
-    waddstr(stdscr,"  Stop  ");
-    wattroff(stdscr, A_REVERSE);
-  }
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
+  mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
+  wmove(stdscr,6,0);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   for(hd_offset=0;
       hd_offset<partition->part_size && nbr_sb<10 && ind_stop==0;
@@ -109,7 +106,7 @@ list_part_t *search_superblock(disk_t *disk_car, partition_t *partition, const i
   {
 #ifdef HAVE_NCURSES
     const unsigned long int percent=hd_offset*100/partition->part_size;
-    if(interface>0 && percent!=old_percent)
+    if(percent!=old_percent)
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
