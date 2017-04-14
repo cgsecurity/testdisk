@@ -184,7 +184,7 @@ int fat1x_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	free(buffer_bs);
 	return 0;
       case 'R': /* R : rebuild boot sector */
-	rebuild_FAT_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
+	rebuild_FAT_BS(disk_car, partition, verbose, dump_ind, expert, current_cmd);
 	break;
       case 'D':
 	dump_fat1x(disk_car, partition, buffer_bs, current_cmd);

@@ -73,13 +73,13 @@ struct info_offset_struct
   unsigned int  fat_type;
 };
 
-static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface, const unsigned int expert, unsigned int *fats);
-static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface,unsigned int *nbr_offset,info_offset_t *info_offset, const unsigned int max_nbr_offset);
+static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition, const uint64_t max_offset, const int p_fat12, const int p_fat16, const int p_fat32, const int verbose, const int dump_ind, const unsigned int expert, unsigned int *fats);
+static int fat_find_type(disk_t *disk_car, const partition_t *partition, const uint64_t max_offset, const int p_fat12, const int p_fat16, const int p_fat32, const int verbose, const int dump_ind, unsigned int *nbr_offset, info_offset_t *info_offset, const unsigned int max_nbr_offset);
 
 static unsigned int fat_find_fat_start(const unsigned char *buffer,const int p_fat12, const int p_fat16, const int p_fat32,unsigned long int*fat_offset, const unsigned int sector_size);
 
-static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int sectors_per_cluster, const unsigned int fat_length,const int interface, const upart_type_t upart_type, const unsigned int fats, char **current_cmd);
-static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster, const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats);
+static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int sectors_per_cluster, const unsigned int fat_length, const upart_type_t upart_type, const unsigned int fats, char **current_cmd);
+static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster, const unsigned int reserved, const unsigned int fat_length, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats);
 static int write_FAT_boot_code_aux(unsigned char *buffer);
 static int find_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset,const int verbose);
 static int analyse_dir_entries(disk_t *disk_car,const partition_t *partition, const unsigned int offset, const int verbose);
@@ -317,7 +317,7 @@ static int is_root_cluster_candidat(const file_info_t *dir_list)
   return (!td_list_empty(&dir_list->list) && (&file2->list==&dir_list->list || file1->st_ino!=file2->st_ino));
 }
 
-static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster,const unsigned int reserved, const unsigned int fat_length, const int interface, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats)
+static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *partition,const unsigned int sectors_per_cluster, const unsigned long int no_of_cluster,const unsigned int reserved, const unsigned int fat_length, const int verbose, const unsigned int expert, const unsigned int first_free_cluster, const unsigned int fats)
 {
   unsigned long int root_cluster=0;
   const uint64_t start_data=reserved+fats*fat_length;
@@ -337,19 +337,16 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     TD_INIT_LIST_HEAD(&rootdir_list.list);
     buffer=(unsigned char *)MALLOC(cluster_size);
 #ifdef HAVE_NCURSES
-    if(interface)
-    {
-      wmove(stdscr,22,0);
-      wattrset(stdscr, A_REVERSE);
-      waddstr(stdscr,"  Stop  ");
-      wattroff(stdscr, A_REVERSE);
-    }
+    wmove(stdscr,22,0);
+    wattrset(stdscr, A_REVERSE);
+    waddstr(stdscr,"  Stop  ");
+    wattroff(stdscr, A_REVERSE);
 #endif
     for(root_cluster=2;(root_cluster<2+no_of_cluster)&&(ind_stop==0);root_cluster++)
     {
 #ifdef HAVE_NCURSES
       const unsigned long int percent=root_cluster*100/(2+no_of_cluster);
-      if(interface>0 && (root_cluster&0xfff)==0)
+      if((root_cluster&0xfff)==0)
       {
         wmove(stdscr,9,0);
         wclrtoeol(stdscr);
@@ -516,7 +513,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
                   test_date=dir_aff_log(NULL, &dir_list);
                 }
 #ifdef HAVE_NCURSES
-                if(interface>0 && interactive>0 && test_date>0)
+                if(interactive>0 && test_date>0)
                 {
                   switch(ask_root_directory(disk_car, partition, &dir_list, root_cluster))
                   {
@@ -557,7 +554,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
     {
       dir_aff_log(NULL, &rootdir_list);
 #ifdef HAVE_NCURSES
-      if(interface && expert>0)
+      if(expert>0)
       {
         if(ask_confirmation("Create a new root cluster with %u first-level directories (Expert only) (Y/N)",dir_nbr)!=0 && ask_confirmation("Write root cluster, confirm ? (Y/N)")!=0)
         {
@@ -1078,7 +1075,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     log_info("Don't write new boot!\n");
 }
 
-static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int sectors_per_cluster, const unsigned int fat_length,const int interface, const upart_type_t upart_type, const unsigned int fats, char **current_cmd)
+static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int reserved, const int verbose, const unsigned int dir_entries, const unsigned long int root_cluster, const unsigned int sectors_per_cluster, const unsigned int fat_length, const upart_type_t upart_type, const unsigned int fats, char **current_cmd)
 {
   unsigned char *orgboot;
   unsigned char *newboot;
@@ -1274,8 +1271,7 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   {
     log_info("Extrapolated boot sector and current boot sector are identical.\n");
   }
-  if(interface)
-    menu_write_fat_boot_sector(disk_car, partition, verbose, upart_type, orgboot, newboot, error, current_cmd);
+  menu_write_fat_boot_sector(disk_car, partition, verbose, upart_type, orgboot, newboot, error, current_cmd);
   free(orgboot);
   free(newboot);
 }
@@ -1576,7 +1572,7 @@ static unsigned int fat_find_fat_start(const unsigned char *buffer,const int p_f
   return 0;
 }
 
-static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface,unsigned int *nbr_offset,info_offset_t *info_offset, const unsigned int max_nbr_offset)
+static int fat_find_type(disk_t *disk_car, const partition_t *partition, const uint64_t max_offset, const int p_fat12, const int p_fat16, const int p_fat32, const int verbose, const int dump_ind, unsigned int *nbr_offset, info_offset_t *info_offset, const unsigned int max_nbr_offset)
 {
   uint64_t offset;
 #ifdef HAVE_NCURSES
@@ -1590,15 +1586,12 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
         (long unsigned)(max_offset/disk_car->sector_size), p_fat12, p_fat16, p_fat32, verbose, dump_ind);
   }
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-      wmove(stdscr,8,0);
-      wprintw(stdscr,"FAT : %s%s%s?\n",p_fat12?"12 ":"", p_fat16?"16 ":"", p_fat32?"32 ":"");
-      wmove(stdscr,22,0);
-      wattrset(stdscr, A_REVERSE);
-      waddstr(stdscr,"  Stop  ");
-      wattroff(stdscr, A_REVERSE);
-  }
+  wmove(stdscr,8,0);
+  wprintw(stdscr,"FAT : %s%s%s?\n",p_fat12?"12 ":"", p_fat16?"16 ":"", p_fat32?"32 ":"");
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   for(offset=disk_car->sector_size;
       offset<max_offset && !ind_stop;
@@ -1606,7 +1599,7 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
   {
 #ifdef HAVE_NCURSES
     const unsigned long int percent=offset*100/max_offset;
-    if(interface && (percent!=old_percent))
+    if(percent!=old_percent)
     {
       wmove(stdscr,8,30);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
@@ -1657,24 +1650,21 @@ static int fat_find_type(disk_t *disk_car,const partition_t *partition,const uin
     }
   }
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    wmove(stdscr,22,0);
-    wclrtoeol(stdscr);
-    wrefresh(stdscr);
-  }
+  wmove(stdscr,22,0);
+  wclrtoeol(stdscr);
+  wrefresh(stdscr);
 #endif
   free(buffer);
   return 0;
 }
 
-static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition,const uint64_t max_offset,const int p_fat12,const int p_fat16,const int p_fat32,const int verbose,const int dump_ind,const int interface, const unsigned int expert, unsigned int *fats)
+static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsigned int*fat_length, const partition_t *partition, const uint64_t max_offset, const int p_fat12, const int p_fat16, const int p_fat32, const int verbose, const int dump_ind, const unsigned int expert, unsigned int *fats)
 {
   unsigned int nbr_offset=0;
   unsigned int i;
   info_offset_t info_offset[0x400];
   upart_type_t upart_type=UP_UNK;
-  fat_find_type(disk_car, partition,max_offset,p_fat12,p_fat16,p_fat32,verbose,dump_ind,interface,&nbr_offset,&info_offset[0], 0x400);
+  fat_find_type(disk_car, partition, max_offset, p_fat12, p_fat16, p_fat32, verbose, dump_ind, &nbr_offset, &info_offset[0], 0x400);
   for(i=0;i<nbr_offset;i++)
   {
     const uint64_t end=partition->part_offset+(uint64_t)info_offset[i].offset*disk_car->sector_size;
@@ -1684,7 +1674,7 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
 	offset2sector(disk_car,end),
 	info_offset[i].nbr);
 #ifdef HAVE_NCURSES
-    if(dump_ind>0 && interface>0)
+    if(dump_ind>0)
     {
       unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
       if((unsigned)disk_car->pread(disk_car, &buffer, disk_car->sector_size, end) == disk_car->sector_size)
@@ -1807,7 +1797,7 @@ static upart_type_t fat_find_info(disk_t *disk_car,unsigned int*reserved, unsign
       log_info("first_fat %lu, second_fat %lu\n",info_offset[first_fat].offset, info_offset[second_fat].offset);
     }
   }
-  if(expert>0 && interface>0)
+  if(expert>0)
   {
 #ifdef HAVE_NCURSES
     return select_fat_info(info_offset,nbr_offset,reserved,fat_length,max_offset/disk_car->sector_size,fats);
@@ -1897,7 +1887,7 @@ static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsi
 }
 #endif
 
-int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface,const unsigned int expert, char**current_cmd)
+int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char**current_cmd)
 {
   unsigned long int max_offset;
   unsigned int fat_length=0;
@@ -1974,44 +1964,38 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
        log_debug("search_fat16(partition,max_offset=%d,p_fat12=%d,p_fat16=%d,p_fat32=%d,debug=%d,dump_ind=%d)\n",max_offset,p_fat12,p_fat16,p_fat32,verbose,dump_ind);
    */
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
-    wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-    wrefresh(stdscr);
-  }
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
+  mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
+  wmove(stdscr,6,0);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+  wrefresh(stdscr);
 #endif
-  upart_type=fat_find_info(disk_car,&reserved, &fat_length, partition,max_offset,p_fat12,p_fat16,p_fat32,verbose,dump_ind,interface,expert,&fats);
+  upart_type=fat_find_info(disk_car, &reserved, &fat_length, partition, max_offset, p_fat12, p_fat16, p_fat32, verbose, dump_ind, expert, &fats);
 #ifdef HAVE_NCURSES
-  if(interface)
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
+  mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
+  wmove(stdscr,6,0);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+  wmove(stdscr,8,0);
+  wclrtoeol(stdscr);
+  switch(upart_type)
   {
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
-    wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-    wmove(stdscr,8,0);
-    wclrtoeol(stdscr);
-    switch(upart_type)
-    {
-      case UP_FAT12:
-	waddstr(stdscr,"FAT : 12");
-	break;
-      case UP_FAT16:
-	waddstr(stdscr,"FAT : 16");
-	break;
-      case UP_FAT32:
-	waddstr(stdscr,"FAT : 32");
-	break;
-      default:
-	waddstr(stdscr,"No FAT found");
-	break;
-    }
+    case UP_FAT12:
+      waddstr(stdscr,"FAT : 12");
+      break;
+    case UP_FAT16:
+      waddstr(stdscr,"FAT : 16");
+      break;
+    case UP_FAT32:
+      waddstr(stdscr,"FAT : 32");
+      break;
+    default:
+      waddstr(stdscr,"No FAT found");
+      break;
   }
 #endif
   if(verbose>0)
@@ -2037,7 +2021,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       (fat_length==0)||(reserved==0))
   {
     uint64_t start_data=0;
-    if(find_sectors_per_cluster(disk_car, partition, verbose, dump_ind, interface, &sectors_per_cluster, &start_data, upart_type)==0)
+    if(find_sectors_per_cluster(disk_car, partition, verbose, dump_ind, &sectors_per_cluster, &start_data, upart_type)==0)
     {
       display_message("Can't find cluster size\n");
       return 0;
@@ -2100,12 +2084,9 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       log_info("fat_length %u\n",fat_length);
   }
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    if(fat_length==0)
-      waddstr(stdscr," Can't find FAT length\n");
-    wrefresh(stdscr);
-  }
+  if(fat_length==0)
+    waddstr(stdscr," Can't find FAT length\n");
+  wrefresh(stdscr);
 #endif
   if(upart_type && (fat_length>1))
   {
@@ -2196,7 +2177,7 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       /* Use first fat */
       fat32_free_info(disk_car,partition,reserved,data_size/sectors_per_cluster,&first_free_cluster,&free_cluster_count);
       /* FAT32 : Find root cluster */
-      root_cluster=fat32_find_root_cluster(disk_car,partition,sectors_per_cluster,data_size/sectors_per_cluster,reserved,fat_length,interface,verbose,expert,first_free_cluster,fats);
+      root_cluster=fat32_find_root_cluster(disk_car, partition, sectors_per_cluster, data_size/sectors_per_cluster, reserved, fat_length, verbose, expert, first_free_cluster, fats);
       if(expert>0)
       {
 #ifdef HAVE_NCURSES
@@ -2216,14 +2197,11 @@ int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, 
       }
     }
 #ifdef HAVE_NCURSES
-    if(interface)
-    {
-      wmove(stdscr,9,0);
-      wclrtoeol(stdscr);
-      wrefresh(stdscr);
-    }
+    wmove(stdscr,9,0);
+    wclrtoeol(stdscr);
+    wrefresh(stdscr);
 #endif
-    create_fat_boot_sector(disk_car,partition, reserved, verbose,dir_entries,root_cluster,sectors_per_cluster,fat_length,interface,upart_type,fats,current_cmd);
+    create_fat_boot_sector(disk_car, partition, reserved, verbose, dir_entries, root_cluster, sectors_per_cluster, fat_length, upart_type, fats, current_cmd);
     if(verbose)
     {
       log_info("\n");

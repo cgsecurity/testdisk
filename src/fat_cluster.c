@@ -42,7 +42,7 @@
 
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
-int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind,const int interface, unsigned int *sectors_per_cluster, uint64_t *offset_org, const upart_type_t upart_type)
+int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, unsigned int *sectors_per_cluster, uint64_t *offset_org, const upart_type_t upart_type)
 {
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];
@@ -51,13 +51,10 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
   int ind_stop=0;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    wmove(stdscr,22,0);
-    wattrset(stdscr, A_REVERSE);
-    waddstr(stdscr,"  Stop  ");
-    wattroff(stdscr, A_REVERSE);
-  }
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   /* 2 fats, maximum cluster size=128 */
   skip_offset=(uint64_t)((partition->part_size-32*disk_car->sector_size)/disk_car->sector_size/128*3/2/disk_car->sector_size*2)*disk_car->sector_size;
@@ -72,7 +69,7 @@ int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int
       offset+=disk_car->sector_size)
   {
 #ifdef HAVE_NCURSES
-    if(interface>0 && ((offset&(1024*disk_car->sector_size-1))==0))
+    if((offset&(1024*disk_car->sector_size-1))==0)
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);

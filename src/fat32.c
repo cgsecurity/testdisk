@@ -309,7 +309,7 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 	  dir_partition(disk_car, partition, 0,current_cmd);
 	break;
       case 'R': /* R : rebuild boot sector */
-	rebuild_FAT_BS(disk_car,partition,verbose,dump_ind,1,expert,current_cmd);
+	rebuild_FAT_BS(disk_car, partition, verbose, dump_ind, expert, current_cmd);
 	break;
     }
   }
