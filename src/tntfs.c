@@ -286,7 +286,7 @@ int ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int verbose
         repair_MFT(disk_car, partition, verbose, expert, current_cmd);
 	break;
       case 'R': /* R : rebuild boot sector */
-	rebuild_NTFS_BS(disk_car, partition, verbose, 1, expert, current_cmd);
+	rebuild_NTFS_BS(disk_car, partition, verbose, expert, current_cmd);
 	break;
       case 'D':
 	dump_NTFS(disk_car, partition, buffer_bs, buffer_backup_bs);

@@ -97,7 +97,31 @@ static void ntfs_dump(disk_t *disk_car, const partition_t *partition, const unsi
   }
 }
 
-static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, const int error, char **current_cmd)
+static void ntfs_write_boot_sector(disk_t *disk, partition_t *partition, const unsigned char *newboot)
+{
+  log_info("Write new boot!\n");
+  /* Reset information about backup boot sector */
+  partition->sb_offset=0;
+  /* Write boot sector and backup boot sector */
+  if(disk->pwrite(disk, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
+  {
+    display_message("Write error: Can't write new NTFS boot sector\n");
+  }
+  if(disk->pwrite(disk, newboot, NTFS_SECTOR_SIZE, partition->part_offset + partition->part_size - disk->sector_size) != NTFS_SECTOR_SIZE)
+  {
+    display_message("Write error: Can't write new NTFS backup boot sector\n");
+  }
+  disk->sync(disk);
+}
+
+static void ntfs_list(disk_t *disk, partition_t *partition,const unsigned char *newboot, char **current_cmd)
+{
+  io_redir_add_redir(disk,partition->part_offset,NTFS_SECTOR_SIZE,0,newboot);
+  dir_partition(disk, partition, 0, current_cmd);
+  io_redir_del_redir(disk,partition->part_offset);
+}
+
+static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, char **current_cmd)
 {
   const struct ntfs_boot_sector *org_ntfs_header=(const struct ntfs_boot_sector *)orgboot;
   const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector *)newboot;
@@ -107,8 +131,6 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     if(memcmp(newboot,orgboot,NTFS_SECTOR_SIZE)!=0)
     {
       log_ntfs2_info(ntfs_header, org_ntfs_header);
-      if(error)
-	log_error("Warning: Extrapolated boot sector has incorrect values.\n");
     }
     else
     {
@@ -119,9 +141,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     if(strncmp(*current_cmd,"list",4)==0)
     {
       (*current_cmd)+=4;
-      io_redir_add_redir(disk_car,partition->part_offset,NTFS_SECTOR_SIZE,0,newboot);
-      dir_partition(disk_car, partition, 0, current_cmd);
-      io_redir_del_redir(disk_car,partition->part_offset);
+      ntfs_list(disk_car, partition, newboot, current_cmd);
     }
     else if(strncmp(*current_cmd,"dump",4)==0)
     {
@@ -141,21 +161,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
 	|| ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0
 #endif
 	)
-      {
-	log_info("Write new boot!\n");
-	/* Reset information about backup boot sector */
-	partition->sb_offset=0;
-	/* Write boot sector and backup boot sector */
-	if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
-	{
-	  display_message("Write error: Can't write new NTFS boot sector\n");
-	}
-	if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_SECTOR_SIZE)
-	{
-	  display_message("Write error: Can't write new NTFS backup boot sector\n");
-	}
-        disk_car->sync(disk_car);
-      }
+	ntfs_write_boot_sector(disk_car, partition, newboot);
       return ;
     }
     else
@@ -167,7 +173,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
 }
 
 #ifdef HAVE_NCURSES
-static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, const int error, char **current_cmd)
+static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot)
 {
   const struct ntfs_boot_sector *org_ntfs_header=(const struct ntfs_boot_sector *)orgboot;
   const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector *)newboot;
@@ -179,9 +185,9 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     { 'Q',"Quit","Quit this section"},
     { 0, NULL, NULL }
   };
-  const char *options="DLQ";
   while(1)
   {
+    const char *options;
     int command;
     aff_copy(stdscr);
     wmove(stdscr,4,0);
@@ -196,11 +202,10 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
       ncurses_ntfs2_info(ntfs_header, org_ntfs_header);
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are different.\n");
       log_ntfs2_info(ntfs_header, org_ntfs_header);
-      if(error)
-	log_error("Warning: Extrapolated boot sector has incorrect values.\n");
     }
     else
     {
+      options="DLQ";
       log_ntfs_info(ntfs_header);
       ncurses_ntfs_info(ntfs_header);
       wprintw(stdscr,"Extrapolated boot sector and current boot sector are identical.\n");
@@ -210,52 +215,17 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
     {
       case 'w':
       case 'W':
-#ifdef HAVE_NCURSES
 	if(strchr(options,'W')!=NULL && ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0)
-	{
-	  log_info("Write new boot!\n");
-	  /* Reset information about backup boot sector */
-	  partition->sb_offset=0;
-	  /* Write boot sector and backup boot sector */
-	  if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
-	  {
-	    display_message("Write error: Can't write new NTFS boot sector\n");
-	  }
-	  if(disk_car->pwrite(disk_car, newboot, NTFS_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_SECTOR_SIZE)
-	  {
-	    display_message("Write error: Can't write new NTFS backup boot sector\n");
-	  }
-          disk_car->sync(disk_car);
-	}
-#endif
+	  ntfs_write_boot_sector(disk_car, partition, newboot);
 	return;
       case 'd':
       case 'D':
 	if(strchr(options,'D')!=NULL)
-	{
-	  WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
-	  keypad(window, TRUE); /* Need it to get arrow key */
-	  aff_copy(window);
-	  wmove(window,4,0);
-	  wprintw(window,"%s",disk_car->description(disk_car));
-	  wmove(window,5,0);
-	  aff_part(window,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-	  log_info("     Rebuild boot sector           Boot sector\n");
-	  mvwaddstr(window,6,0, "     Rebuild boot sector           Boot sector");
-	  dump2(window, newboot, orgboot, NTFS_SECTOR_SIZE);
-	  dump2_log(newboot, orgboot, NTFS_SECTOR_SIZE);
-	  delwin(window);
-	  (void) clearok(stdscr, TRUE);
-#ifdef HAVE_TOUCHWIN
-	  touchwin(stdscr);
-#endif
-	}
+	  ntfs_dump(disk_car, partition, orgboot, newboot, NULL);
 	break;
       case 'l':
       case 'L':
-	io_redir_add_redir(disk_car,partition->part_offset,NTFS_SECTOR_SIZE,0,newboot);
-	dir_partition(disk_car, partition, 0, current_cmd);
-	io_redir_del_redir(disk_car,partition->part_offset);
+	ntfs_list(disk_car, partition, newboot, NULL);
 	break;
       case 'q':
       case 'Q':
@@ -265,25 +235,12 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 }
 #endif
 
-static void menu_write_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, const int error, char **current_cmd)
-{
-  if(*current_cmd!=NULL)
-  {
-    menu_write_ntfs_boot_sector_cli(disk_car, partition, orgboot, newboot, error, current_cmd);
-    return;
-  }
-#ifdef HAVE_NCURSES
-  menu_write_ntfs_boot_sector_ncurses(disk_car, partition, orgboot, newboot, error, current_cmd);
-#endif
-}
-
-static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const int interface, const unsigned int cluster_size, const uint64_t mft_lcn, const uint64_t mftmirr_lcn, const uint32_t mft_record_size, const uint32_t index_block_size, char**current_cmd)
+static void create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int cluster_size, const uint64_t mft_lcn, const uint64_t mftmirr_lcn, const uint32_t mft_record_size, const uint32_t index_block_size, char**current_cmd)
 {
   unsigned char orgboot[NTFS_SECTOR_SIZE];
   unsigned char newboot[NTFS_SECTOR_SIZE];
   struct ntfs_boot_sector *org_ntfs_header=(struct ntfs_boot_sector *)&orgboot;
   struct ntfs_boot_sector *ntfs_header=(struct ntfs_boot_sector *)&newboot;
-  int error=0;
   if(disk_car->pread(disk_car, &orgboot, NTFS_SECTOR_SIZE, partition->part_offset) != NTFS_SECTOR_SIZE)
   {
     log_error("create_ntfs_boot_sector: Can't read boot sector.\n");
@@ -291,12 +248,8 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
   }
   if(cluster_size==0)
   {
-    error=1;
-  }
-  if(error)
-  {
     display_message("NTFS Bad extrapolation.\n");
-    return 1;
+    return ;
   }
   memcpy(&newboot,&orgboot,NTFS_SECTOR_SIZE);
   memcpy(ntfs_header->system_id,"NTFS    ",8);
@@ -350,12 +303,14 @@ static int create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, con
   {
     log_info("Extrapolated boot sector and current boot sector are identical.\n");
   }
-  /* */
-  if(interface)
-    menu_write_ntfs_boot_sector(disk_car, partition, orgboot, newboot, error, current_cmd);
-  else
-    log_info("Don't write new NTFS boot sector and backup boot sector!\n");
-  return 1;
+  if(*current_cmd!=NULL)
+  {
+    menu_write_ntfs_boot_sector_cli(disk_car, partition, orgboot, newboot, current_cmd);
+    return ;
+  }
+#ifdef HAVE_NCURSES
+  menu_write_ntfs_boot_sector_ncurses(disk_car, partition, orgboot, newboot);
+#endif
 }
 
 static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_t mft_sector, const int verbose, unsigned int *sectors_per_cluster, uint64_t *mft_lcn, uint64_t *mftmirr_lcn, unsigned int *mft_record_size)
@@ -456,7 +411,7 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
   return 3;
 }
 
-int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int interface, const unsigned int expert, char **current_cmd)
+int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int expert, char **current_cmd)
 {
   uint64_t sector;
   char buffer[8*DEFAULT_SECTOR_SIZE];
@@ -469,19 +424,16 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   unsigned int nbr_mft=0;
   log_info("rebuild_NTFS_BS\n");
 #ifdef HAVE_NCURSES
-  if(interface)
-  {
-    aff_copy(stdscr);
-    wmove(stdscr,4,0);
-    wprintw(stdscr,"%s",disk_car->description(disk_car));
-    mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
-    wmove(stdscr,6,0);
-    aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
-    wmove(stdscr,22,0);
-    wattrset(stdscr, A_REVERSE);
-    waddstr(stdscr,"  Stop  ");
-    wattroff(stdscr, A_REVERSE);
-  }
+  aff_copy(stdscr);
+  wmove(stdscr,4,0);
+  wprintw(stdscr,"%s",disk_car->description(disk_car));
+  mvwaddstr(stdscr,5,0,msg_PART_HEADER_LONG);
+  wmove(stdscr,6,0);
+  aff_part(stdscr,AFF_PART_ORDER|AFF_PART_STATUS,disk_car,partition);
+  wmove(stdscr,22,0);
+  wattrset(stdscr, A_REVERSE);
+  waddstr(stdscr,"  Stop  ");
+  wattroff(stdscr, A_REVERSE);
 #endif
   /* try to find MFT Backup first */
   for(sector=(partition->part_size/disk_car->sector_size/2-20>0?partition->part_size/disk_car->sector_size/2-20:1);
@@ -542,7 +494,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   for(sector=1;(sector<partition->part_size/disk_car->sector_size)&&(ind_stop==0);sector++)
   {
 #ifdef HAVE_NCURSES
-    if((interface!=0) &&(sector&0xffff)==0)
+    if((sector&0xffff)==0)
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
@@ -608,7 +560,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
   }
   /* Find partition location using MFT information */
   {
-    unsigned int i,j;
+    unsigned int i;
+    unsigned int j;
     int find_partition=0;
     for(i=0;i<nbr_mft;i++)
     {
@@ -640,7 +593,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     }
   }
 #ifdef HAVE_NCURSES
-  if(interface>0 && expert>0)
+  if(expert>0)
   {
     wmove(stdscr, INTER_NTFS_Y, INTER_NTFS_X);
     sectors_per_cluster=ask_number(sectors_per_cluster,0,512,"Sectors per cluster ");
@@ -678,7 +631,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     if(index_block_size%512!=0 || index_block_size==0)
       index_block_size=4096;
     log_info("ntfs_find_mft: index_block_size    %u\n",index_block_size);
-    create_ntfs_boot_sector(disk_car,partition, interface, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size,current_cmd);
+    create_ntfs_boot_sector(disk_car,partition, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size,current_cmd);
     /* TODO: ask if the user want to continue the search of MFT */
   }
   else

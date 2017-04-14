@@ -253,7 +253,7 @@ int test_NTFS(const disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,
 #define NTFS_GETU32(p)     (le32(*(const uint32_t*)(p)))
 #define NTFS_GETU64(p)     (le64(*(const uint64_t*)(p)))
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header);
-int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int interface, const unsigned int expert, char**current_cmd);
+int rebuild_NTFS_BS(disk_t *disk_car,partition_t *partition, const int verbose, const unsigned int expert, char**current_cmd);
 const ntfs_attribheader *ntfs_getattributeheaders(const ntfs_recordheader* record);
 const ntfs_attribheader* ntfs_findattribute(const ntfs_recordheader* record, uint32_t attrType, const char* end);
 const ntfs_attribheader* ntfs_nextattribute(const ntfs_attribheader* attrib, uint32_t attrType, const char* end);
