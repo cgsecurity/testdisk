@@ -262,49 +262,49 @@ int ntfs_boot_sector(disk_t *disk, partition_t *partition, const int verbose, co
       case 'O': /* O : copy original boot sector over backup boot */
 #ifdef HAVE_NCURSES
 	if(no_confirm == 1 || ask_confirmation("Copy original NTFS boot sector over backup boot, confirm ? (Y/N)")!=0)
+#endif
 	{
 	  log_info("copy original boot sector over backup boot\n");
-	  if(disk_car->pwrite(disk_car, buffer_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - disk_car->sector_size) != NTFS_BOOT_SECTOR_SIZE)
+	  if(disk->pwrite(disk, buffer_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset + partition->part_size - disk->sector_size) != NTFS_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite NTFS backup boot sector\n");
 	  }
-          disk_car->sync(disk_car);
+          disk->sync(disk);
 	}
-#endif
 	break;
       case 'B': /* B : copy backup boot sector over boot sector */
 #ifdef HAVE_NCURSES
 	if(no_confirm == 1 || ask_confirmation("Copy backup NTFS boot sector over boot sector, confirm ? (Y/N)")!=0)
+#endif
 	{
 	  log_info("copy backup boot sector over boot sector\n");
 	  /* Reset information about backup boot sector */
 	  partition->sb_offset=0;
-	  if(disk_car->pwrite(disk_car, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset) != NTFS_BOOT_SECTOR_SIZE)
+	  if(disk->pwrite(disk, buffer_backup_bs, NTFS_BOOT_SECTOR_SIZE, partition->part_offset) != NTFS_BOOT_SECTOR_SIZE)
 	  {
 	    display_message("Write error: Can't overwrite NTFS boot sector\n");
 	  }
-          disk_car->sync(disk_car);
+          disk->sync(disk);
 	}
-#endif
 	break;
       case 'L':
 	if(strchr(options,'O')==NULL && strchr(options,'B')!=NULL)
 	{
-	  io_redir_add_redir(disk_car,partition->part_offset,NTFS_BOOT_SECTOR_SIZE,0,buffer_backup_bs);
-	  dir_partition(disk_car, partition, 0,current_cmd);
-	  io_redir_del_redir(disk_car,partition->part_offset);
+	  io_redir_add_redir(disk,partition->part_offset,NTFS_BOOT_SECTOR_SIZE,0,buffer_backup_bs);
+	  dir_partition(disk, partition, 0,current_cmd);
+	  io_redir_del_redir(disk,partition->part_offset);
 	}
 	else
-	  dir_partition(disk_car, partition, 0,current_cmd);
+	  dir_partition(disk, partition, 0,current_cmd);
 	break;
       case 'M':
-        repair_MFT(disk_car, partition, verbose, expert, current_cmd);
+        repair_MFT(disk, partition, verbose, expert, current_cmd);
 	break;
       case 'R': /* R : rebuild boot sector */
-	rebuild_NTFS_BS(disk_car, partition, verbose, expert, current_cmd);
+	rebuild_NTFS_BS(disk, partition, verbose, expert, current_cmd);
 	break;
       case 'D':
-	dump_NTFS(disk_car, partition, buffer_bs, buffer_backup_bs);
+	dump_NTFS(disk, partition, buffer_bs, buffer_backup_bs);
 	break;
     }
   }
