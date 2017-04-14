@@ -1155,7 +1155,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     const char *ext=NULL;
     /* ind=~0: random
      * ind=~1: constant	*/
-    double ind=1;
+    double ind;
     unsigned int nbrf=0;
     unsigned int is_csv=1;
     char *str;
@@ -1240,7 +1240,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext="java";
 #endif
     }
-    else if((str=strstr(buffer_lower, "\nimport ("))!=NULL)
+    else if(strstr(buffer_lower, "\nimport (")!=NULL)
     {
       ext="go";
     }

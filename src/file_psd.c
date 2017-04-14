@@ -103,7 +103,7 @@ static data_check_t psd_skip_image_data(const unsigned char *buffer, const unsig
 
 static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+  if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
@@ -122,7 +122,7 @@ static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsig
 
 static data_check_t psd_skip_image_resources(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+  if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
@@ -146,7 +146,7 @@ static data_check_t psd_skip_color_mode(const unsigned char *buffer, const unsig
 #ifdef DEBUG_PSD
   log_info("psd_image_data_size_max %lu\n", (long unsigned)psd_image_data_size_max);
 #endif
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+  if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
