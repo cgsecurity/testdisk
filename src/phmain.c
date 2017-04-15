@@ -156,7 +156,7 @@ int main( int argc, char **argv )
   sigemptyset(&action.sa_mask);
   sigaddset(&action.sa_mask, SIGINT);
   sigaddset(&action.sa_mask, SIGHUP);
-  action.sa_handler  = sighup_hdlr;
+  action.sa_handler  = &sighup_hdlr;
   action.sa_flags = 0;
   if(sigaction(SIGINT, &action, NULL)==-1)
   {
