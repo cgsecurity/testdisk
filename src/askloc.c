@@ -79,7 +79,6 @@ char *get_default_location(void)
 }
 
 #ifdef HAVE_NCURSES
-extern const char *monstr[];
 
 #ifdef __MINGW32__
 #define SPATH_SEP "\\"
@@ -575,18 +574,7 @@ static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
 {
   char str[11];
   char datestr[80];
-  {
-    const struct tm *tm_p;
-    if(file_info->td_mtime!=0 && (tm_p= localtime(&file_info->td_mtime))!=NULL)
-    {
-      snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	  tm_p->tm_mday, monstr[tm_p->tm_mon],
-	  1900 + tm_p->tm_year, tm_p->tm_hour,
-	  tm_p->tm_min);
-    } else {
-      strncpy(datestr, "                 ",sizeof(datestr));
-    }
-  }
+  set_datestr((char *)&datestr, sizeof(datestr), file_info->td_mtime);
   mode_string(file_info->st_mode, str);
   wprintw(window, "%s %5u %5u ", 
       str, (unsigned int)file_info->st_uid, (unsigned int)file_info->st_gid);

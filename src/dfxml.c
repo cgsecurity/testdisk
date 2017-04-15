@@ -253,7 +253,8 @@ void xml_add_DFXML_creator(const char *package, const char *version)
   {
     char outstr[200];
     const time_t t = time(NULL);
-    const struct tm *tmp = localtime(&t);
+    struct tm tm_tmp;
+    const struct tm *tmp = localtime_r(&t,&tm_tmp);
     if (tmp != NULL &&
 	strftime(outstr, sizeof(outstr), "%Y-%m-%dT%H:%M:%S%z", tmp) != 0)
     {

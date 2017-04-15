@@ -74,6 +74,7 @@ struct dir_data
 #define	FILE_STATUS_MARKED	2
 #define	FILE_STATUS_ADS		4
 
+int set_datestr(char *datestr, size_t n, const time_t timev);
 int dir_aff_log(const dir_data_t *dir_data, const file_info_t*dir_list);
 int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
 unsigned int delete_list_file(file_info_t *list);

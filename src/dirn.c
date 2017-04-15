@@ -45,8 +45,6 @@
 #include "askloc.h"
 #include "setdate.h"
 
-extern const char *monstr[];
-
 static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
 static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad);
 
@@ -152,19 +150,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  else if((current_file->status&FILE_STATUS_DELETED)!=0)
 	    wbkgdset(window,' ' | COLOR_PAIR(1));
 	}
-	{
-	  const struct tm *tm_p;
-	  if(current_file->td_mtime!=0 && (tm_p = localtime(&current_file->td_mtime))!=NULL)
-	  {
-	    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-		tm_p->tm_mday, monstr[tm_p->tm_mon],
-		1900 + tm_p->tm_year, tm_p->tm_hour,
-		tm_p->tm_min);
-	    /* May have to use %d instead of %e */
-	  } else {
-	    strncpy(datestr, "                 ",sizeof(datestr));
-	  }
-	}
+	set_datestr((char *)&datestr, sizeof(datestr), current_file->td_mtime);
 	mode_string(current_file->st_mode, str);
 	wprintw(window, "%s %5u %5u ", 
 	    str, (unsigned int)current_file->st_uid, (unsigned int)current_file->st_gid);

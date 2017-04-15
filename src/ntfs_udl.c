@@ -110,8 +110,6 @@
 #include "askloc.h"
 #include "setdate.h"
 
-extern const char *monstr[];
-
 struct options {
 	char		*dest;		/* Save file to this directory */
 };
@@ -1265,19 +1263,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  waddstr(window, " ");
 	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
-	{
-	  const struct tm *tm_p;
-	  if(file_info->td_mtime!=0 && (tm_p=localtime(&file_info->td_mtime))!=NULL)
-	  {
-	    snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-		tm_p->tm_mday, monstr[tm_p->tm_mon],
-		1900 + tm_p->tm_year, tm_p->tm_hour,
-		tm_p->tm_min);
-	    /* May have to use %d instead of %e */
-	  } else {
-	    strncpy(datestr, "                 ",sizeof(datestr));
-	  }
-	}
+	set_date((char *)&datestr, sizeof(datestr), file_info->td_mtime);
 	if(COLS <= 1+17+1+9+1)
 	  wprintw(window, "%s", file_info->name);
 	else

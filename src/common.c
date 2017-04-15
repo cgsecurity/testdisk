@@ -166,6 +166,14 @@ char * strcasestr (const char *haystack, const char *needle)
   return NULL;
 }
 #endif
+
+#ifndef HAVE_LOCALTIME_R
+struct tm *localtime_r(const time_t *timep, struct tm *result)
+{
+  return localtime(timep);
+}
+#endif
+
 unsigned int up2power(const unsigned int number)
 {
   /* log_trace("up2power(%u)=>%u\n",number, (1<<up2power_aux(number-1))); */
@@ -239,7 +247,8 @@ int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
-  const struct  tm *tmptr = localtime(&t);
+  struct  tm tmp;
+  const struct  tm *tmptr = localtime_r(&t,&tmp);
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
   if(tmptr)
     secwest = -1 * tmptr->tm_gmtoff;

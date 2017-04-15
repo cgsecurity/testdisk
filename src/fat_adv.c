@@ -62,7 +62,6 @@
 #define INTER_FAT_ASK_Y	23
 #define INTER_FATBS_X		0
 #define INTER_FATBS_Y		22
-extern const char *monstr[];
 
 typedef struct info_offset_struct info_offset_t;
 
@@ -217,18 +216,7 @@ static int ask_root_directory(disk_t *disk_car, const partition_t *partition, co
       }
       else
 	waddstr(window, " ");
-      {
-	const struct tm *tm_p;
-	if(current_file->td_mtime!=0 && (tm_p=localtime(&current_file->td_mtime))!=NULL)
-	{
-	  snprintf(datestr, sizeof(datestr),"%2d-%s-%4d %02d:%02d",
-	      tm_p->tm_mday, monstr[tm_p->tm_mon],
-	      1900 + tm_p->tm_year, tm_p->tm_hour,
-	      tm_p->tm_min);
-	} else {
-	  strncpy(datestr, "                 ",sizeof(datestr));
-	}
-      }
+      set_datestr((char *)&datestr, sizeof(datestr), current_file->td_mtime);
       mode_string(current_file->st_mode, str);
       wprintw(window, "%s %3u %3u ", 
 	  str, (unsigned int)current_file->st_uid, (unsigned int)current_file->st_gid);

@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="August 2016"
+TESTDISKDATE="April 2017"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -872,7 +872,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([ atexit atoll chdir chmod delscreen dirname dup2 execv fdatasync fseeko fsync ftello ftruncate getcwd geteuid getpwuid libewf_handle_read_buffer_at_offset libewf_handle_write_buffer_at_offset lstat memalign memchr memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strcasecmp strcasestr strchr strdup strerror strncasecmp strptime strrchr strstr strtol strtoul strtoull touchwin uname utime vsnprintf wctomb ])
+AC_CHECK_FUNCS([ atexit atoll chdir chmod delscreen dirname dup2 execv fdatasync fseeko fsync ftello ftruncate getcwd geteuid getpwuid libewf_handle_read_buffer_at_offset libewf_handle_write_buffer_at_offset localtime_r lstat memalign memchr memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strcasecmp strcasestr strchr strdup strerror strncasecmp strptime strrchr strstr strtol strtoul strtoull touchwin uname utime vsnprintf wctomb ])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
