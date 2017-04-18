@@ -156,9 +156,13 @@ void mode_string (const unsigned int mode, char *str)
 int set_datestr(char *datestr, size_t n, const time_t timev)
 {
   int test_date=0;
-  struct tm tmp;
   const struct tm *tm_p;
+#if defined(__MINGW32__)
+  if(timev!=0 && (tm_p= localtime(&timev))!=NULL)
+#else
+  struct tm tmp;
   if(timev!=0 && (tm_p= localtime_r(&timev, &tmp))!=NULL)
+#endif
   {
     snprintf(datestr, n,"%2d-%s-%4d %02d:%02d",
 	tm_p->tm_mday, monstr[tm_p->tm_mon],

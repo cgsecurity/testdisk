@@ -496,7 +496,7 @@ int strncasecmp(const char * s1, const char * s2, size_t len);
 #ifndef HAVE_STRCASESTR
 char * strcasestr (const char *haystack, const char *needle);
 #endif
-#ifndef HAVE_LOCALTIME_R
+#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__)
 struct tm *localtime_r(const time_t *timep, struct tm *result);
 #endif
 /*

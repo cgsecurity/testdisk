@@ -167,7 +167,7 @@ char * strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
-#ifndef HAVE_LOCALTIME_R
+#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__)
 struct tm *localtime_r(const time_t *timep, struct tm *result)
 {
   return localtime(timep);
@@ -247,8 +247,12 @@ int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
+#if defined(__MINGW32__)
+  const struct  tm *tmptr = localtime(&t);
+#else
   struct  tm tmp;
   const struct  tm *tmptr = localtime_r(&t,&tmp);
+#endif
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
   if(tmptr)
     secwest = -1 * tmptr->tm_gmtoff;
