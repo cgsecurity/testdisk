@@ -48,6 +48,12 @@ static int header_check_myo(const unsigned char *buffer, const unsigned int buff
   const uint64_t size=(uint64_t)buffer[0]+(((uint64_t)buffer[1])<<8)+(((uint64_t)buffer[2])<<16)+(((uint64_t)buffer[3])<<24)+1;
   if(size < 0x9ce + 6)
     return 0;
+  if(file_recovery->file_stat!=NULL &&
+    file_recovery->file_stat->file_hint==&file_hint_myo)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_myo.extension;
   file_recovery_new->calculated_file_size=size;
