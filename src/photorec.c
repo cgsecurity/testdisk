@@ -907,14 +907,20 @@ static inline void file_block_remove_from_sp(alloc_data_t *list_search_space, al
     alloc_data_t *tmp;
     tmp=td_list_entry(search_walker, alloc_data_t, list);
     if(tmp->start <= *offset && *offset + blocksize <= tmp->end + 1)
-      return file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
+    {
+      file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
+      return;
+    }
   }
   td_list_for_each(search_walker, &list_search_space->list)
   {
     alloc_data_t *tmp;
     tmp=td_list_entry(search_walker, alloc_data_t, list);
     if(tmp->start <= *offset && *offset + blocksize <= tmp->end + 1)
-      return file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
+    {
+      file_block_remove_from_sp_aux(tmp, new_current_search_space, offset, blocksize);
+      return ;
+    }
   }
   log_critical("file_block_remove_from_sp(list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize) failed\n");
 }

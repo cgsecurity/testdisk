@@ -190,10 +190,15 @@ static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, co
 #ifdef HAVE_ICONV
 	char *outs;
 #endif
-	unsigned int i,j;
-	for(j=0; j<255 && current_file->name[j]!='\0'; j++);
+	unsigned int i;
+	unsigned int j;
+	for(j=0;
+	    j<255 && current_file->name[j]!='\0';
+	    j++);
 #ifdef HAVE_ICONV
-	for(i=2; i<32 && (buffer[offset+i]!=0 || buffer[offset+i+1]!=0); i+=2);
+	for(i=2;
+	    i<32 && (buffer[offset+i]!=0 || buffer[offset+i+1]!=0);
+	    i+=2);
 	i-=2;
 	outs=&current_file->name[j];
 	if(exfat_ucstoutf8(ls->cd, &buffer[offset+2], i, &outs, 512-j) < 0)

@@ -53,7 +53,9 @@ int change_arch_type_ncurses(disk_t *disk, const int verbose)
   /* arch_list must match the order from menuOptions */
   const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_humax, &arch_mac, &arch_none, &arch_sun, &arch_xbox, NULL};
   unsigned int menu;
-  for(menu=0;arch_list[menu]!=NULL && disk->arch!=arch_list[menu];menu++);
+  for(menu=0;
+      arch_list[menu]!=NULL && disk->arch!=arch_list[menu];
+      menu++);
   if(arch_list[menu]==NULL)
   {
     menu=0;
