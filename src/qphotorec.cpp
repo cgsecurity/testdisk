@@ -441,9 +441,12 @@ void QPhotorec::HDDlistWidget_updateUI()
       element_disk=element_disk->next, i++)
   {
     disk_t *disk=element_disk->disk;
+    QString description=disk->description_short(disk);
+    if(disk->serial_no!=NULL)
+      description += ", S/N:" + QString(disk->serial_no);
     HDDlistWidget->addItem(
 	QIcon::fromTheme("drive-harddisk", QIcon(":res/gnome/drive-harddisk.png")),
-	disk->description_short(disk));
+	description);
     if(disk==selected_disk)
       HDDlistWidget->setCurrentIndex(i);
   }
