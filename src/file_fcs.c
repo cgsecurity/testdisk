@@ -112,7 +112,7 @@ static int header_check_fcs(const unsigned char *buffer, const unsigned int buff
     analysis_end=ascii2int(fcs->analysis_end, 8);
     if(!(text_start<=text_end && data_start<=data_end && analysis_start<=analysis_end))
       return 0;
-    if(data_end==0 || analysis_end==0)
+    if((data_end==0 || analysis_end==0) && text_start < buffer_size)
     { /* Explore TEXT segment */
       unsigned int i;
       const char delimiter=buffer[text_start];
