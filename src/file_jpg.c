@@ -1055,8 +1055,15 @@ static unsigned int jpg_find_border(const unsigned int output_scanline, const un
 #define JPG_MAX_OFFSETS	10240
 
 /* FIXME: it doesn handle correctly when there is a few extra sectors */
-static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline, const unsigned int output_width, const unsigned int output_components, const unsigned char *frame, const unsigned int *offsets, const uint64_t offset, const unsigned int blocksize, const uint64_t checkpoint_offset)
+static uint64_t jpg_find_error(struct jpeg_session_struct *jpeg_session, const unsigned int *offsets, const uint64_t checkpoint_offset)
 {
+  FILE *handle                         = jpeg_session->handle;
+  const unsigned int output_scanline   = jpeg_session->cinfo.output_scanline;
+  const unsigned int output_width      = jpeg_session->output_width;
+  const unsigned int output_components = jpeg_session->output_components;
+  //const unsigned int blocksize         = jpeg_session->blocksize;
+  const unsigned char *frame           = jpeg_session->frame;
+  const uint64_t offset                = jpeg_session->offset;
   const unsigned int row_stride = output_width * output_components;
   unsigned int result=0;
   unsigned int result_max=0;
@@ -1067,6 +1074,8 @@ static uint64_t jpg_find_error(FILE *handle, const unsigned int output_scanline,
   unsigned int pos_new;
   unsigned int output_scanline_max;
   if(output_scanline/8 >= JPG_MAX_OFFSETS)
+    return 0;
+  if(jpeg_session->output_height < 10)
     return 0;
   output_scanline_max=jpg_find_border(output_scanline, output_width, output_components, frame);
   for(i = 0, pos_new= 8 * row_stride;
@@ -1166,7 +1175,7 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
     offset_error=jpeg_session.offset + src->file_size - src->pub.bytes_in_buffer;
     if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
     {
-      const uint64_t tmp=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, blocksize, checkpoint_offset);
+      const uint64_t tmp=jpg_find_error(&jpeg_session, &offsets[0], checkpoint_offset);
 //      log_info("jpg_check_thumb jpeg corrupted near   %llu\n", offset_error);
       if(tmp !=0 && offset_error > tmp)
 	offset_error=tmp;
@@ -1177,9 +1186,9 @@ static uint64_t jpg_check_thumb(FILE *infile, const uint64_t offset, const unsig
   }
   memset(offsets, 0, sizeof(offsets));
   jpeg_session_start(&jpeg_session);
-  jpeg_session.frame = (unsigned char*)MALLOC(jpeg_session.output_height * jpeg_session.row_stride);
+  jpeg_session.frame = (unsigned char*)MALLOC((jpeg_session.output_height+1) * jpeg_session.row_stride);
   /* 0x100/2=0x80, medium value */
-  memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * jpeg_session.cinfo.output_height);
+  memset(jpeg_session.frame, 0x80, jpeg_session.row_stride * (jpeg_session.cinfo.output_height+1));
   while (jpeg_session.cinfo.output_scanline < jpeg_session.cinfo.output_height)
   {
     JSAMPROW row_pointer[1];
@@ -1244,7 +1253,7 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
 #if 1
     if(jpeg_session.frame!=NULL && jpeg_session.flags!=0)
     {
-      const uint64_t offset_error=jpg_find_error(jpeg_session.handle, jpeg_session.cinfo.output_scanline, jpeg_session.output_width, jpeg_session.output_components, jpeg_session.frame, &offsets[0], jpeg_session.offset, jpeg_session.blocksize, file_recovery->checkpoint_offset);
+      const uint64_t offset_error=jpg_find_error(&jpeg_session, &offsets[0], file_recovery->checkpoint_offset);
       if(offset_error !=0 && file_recovery->offset_error > offset_error)
 	file_recovery->offset_error=offset_error;
 #ifdef DEBUG_JPEG
