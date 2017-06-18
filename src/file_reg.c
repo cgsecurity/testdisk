@@ -72,7 +72,7 @@ struct rgdb_block
 static int header_check_reg_9x(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct creg_file_header*header=(const struct creg_file_header*)buffer;
-  if(le32(header->rgdb_offset)+4 > buffer_size)
+  if(le32(header->rgdb_offset) > buffer_size - 4)
     return 0;
   {
     const struct rgdb_block*block=(const struct rgdb_block*)(buffer+le32(header->rgdb_offset));
