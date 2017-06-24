@@ -1370,7 +1370,7 @@ static void autoset_geometry(disk_t *disk, const unsigned char *buffer, const in
     geometry.bytes_per_sector=0;
     disk->arch->get_geometry_from_mbr(buffer, verbose, &geometry);
     disk->autodetect=1;
-    if(geometry.sectors_per_head > 0)
+    if(geometry.sectors_per_head > 0 && geometry.heads_per_cylinder > 0)
     {
       disk->geom.heads_per_cylinder=geometry.heads_per_cylinder;
       disk->geom.sectors_per_head=geometry.sectors_per_head;
