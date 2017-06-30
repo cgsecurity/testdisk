@@ -57,36 +57,53 @@ static inline uint64_t CHS_to_offset(const unsigned int C, const int H, const in
 static void update_location(void)
 {
   unsigned int i;
-  if(search_location_info[search_location_nbr].inc==0)
+  const search_location_t *src=&search_location_info[search_location_nbr];
+  if(src->inc==0)
   {
+    for(i=0; i<search_location_nbr; i++)
+    {
+      if(search_location_info[i].offset == src->offset)
+	return ;
+    }
     if(search_location_nbr < SEARCH_LOCATION_MAX)
       search_location_nbr++;
     return;
   }
   for(i=0; i<search_location_nbr; i++)
   {
-    if(search_location_info[i].offset==search_location_info[search_location_nbr].offset &&
-	search_location_info[i].inc >= search_location_info[search_location_nbr].inc &&
-	search_location_info[i].inc % search_location_info[search_location_nbr].inc==0)
+    search_location_t *cur=&search_location_info[i];
+    if(cur->offset == src->offset &&
+	cur->inc >= src->inc &&
+	cur->inc % src->inc==0)
     {
-      search_location_info[i].inc=search_location_info[search_location_nbr].inc;
+      cur->inc=src->inc;
       return ;
     }
-    if(search_location_info[i].offset==search_location_info[search_location_nbr].offset &&
-	search_location_info[search_location_nbr].inc >= search_location_info[i].inc &&
-	search_location_info[search_location_nbr].inc % search_location_info[i].inc==0)
-      return ;
-    if(search_location_info[i].inc==search_location_info[search_location_nbr].inc &&
-	search_location_info[i].offset >= search_location_info[search_location_nbr].offset &&
-	(search_location_info[i].offset - search_location_info[search_location_nbr].offset)%search_location_info[i].inc==0)
+    if(cur->inc == 0)
     {
-      search_location_info[i].offset=search_location_info[search_location_nbr].offset;
-      return ;
+      if(cur->offset == src->offset)
+      {
+	cur->inc = src->inc;
+	return ;
+      }
     }
-    if(search_location_info[i].inc==search_location_info[search_location_nbr].inc &&
-	search_location_info[search_location_nbr].offset >= search_location_info[i].offset &&
-	(search_location_info[search_location_nbr].offset - search_location_info[i].offset)%search_location_info[i].inc==0)
-      return ;
+    else
+    {
+      if(cur->offset == src->offset &&
+	  src->inc >= cur->inc && src->inc % cur->inc==0)
+	return ;
+      if(cur->inc==src->inc &&
+	  cur->offset >= src->offset &&
+	  (cur->offset - src->offset)%cur->inc==0)
+      {
+	cur->offset=src->offset;
+	return ;
+      }
+      if(cur->inc==src->inc &&
+	  src->offset >= cur->offset &&
+	  (src->offset - cur->offset)%cur->inc==0)
+	return ;
+    }
   }
   if(search_location_nbr < SEARCH_LOCATION_MAX)
     search_location_nbr++;
