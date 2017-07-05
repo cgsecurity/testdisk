@@ -47,6 +47,7 @@ static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, cons
 static list_part_t *init_part_order_humax(const disk_t *disk_car, list_part_t *list_part);
 static void set_next_status_humax(const disk_t *disk_car, partition_t *partition);
 static int test_structure_humax(list_part_t *list_part);
+static int is_part_known_humax(const partition_t *partition);
 static void init_structure_humax(const disk_t *disk_car,list_part_t *list_part, const int verbose);
 static const char *get_partition_typename_humax(const partition_t *partition);
 static unsigned int get_part_type_humax(const partition_t *partition);
@@ -91,8 +92,13 @@ arch_fnct_t arch_humax=
   .init_structure=&init_structure_humax,
   .erase_list_part=NULL,
   .get_partition_typename=&get_partition_typename_humax,
-  .is_part_known=NULL
+  .is_part_known=&is_part_known_humax
 };
+
+static int is_part_known_humax(const partition_t *partition)
+{
+  return (partition->part_type_humax != PHUMAX_PARTITION);
+}
 
 static unsigned int get_part_type_humax(const partition_t *partition)
 {
