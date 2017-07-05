@@ -324,10 +324,10 @@ static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_
     return 1;
   }
   *mft_record_size=le32(record->bytes_allocated);
-  if(*mft_record_size==0)
+  if(*mft_record_size < 42)
   {
     if(verbose>0)
-      log_warning("read_mft_info failed: mft_record_size=0\n");
+      log_warning("read_mft_info failed: mft_record_size < 42\n");
     return 2;
   }
   attr80=(const ntfs_attribnonresident *)ntfs_findattribute(record, 0x80, buffer+sizeof(buffer));
@@ -602,11 +602,11 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     wmove(stdscr, INTER_NTFS_Y, INTER_NTFS_X);
     mftmirr_lcn=ask_number(mftmirr_lcn,0,0,"MFTMIRR LCN ");
     wmove(stdscr, INTER_NTFS_Y, INTER_NTFS_X);
-    mft_record_size=ask_number(mft_record_size,0,4096," mft record size ");
+    mft_record_size=ask_number(mft_record_size,42,4096," mft record size ");
   }
 #endif
   /* TODO read_mft_info(partition,sector,*sectors_per_cluster,*mft_lcn,*mftmirr_lcn,*mft_record_size); */
-  if(sectors_per_cluster>0 && mft_record_size>0 && mft_record_size <= sizeof(buffer))
+  if(sectors_per_cluster>0 && mft_record_size>=42 && mft_record_size <= sizeof(buffer))
   {
     // 0x90 AT_INDEX_ROOT
     const ntfs_attribheader *attr90;

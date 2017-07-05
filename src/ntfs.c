@@ -311,12 +311,12 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
   /* Record 3 = $Volume */
   mft_pos+=3*mft_record_size;
 #ifdef NTFS_DEBUG
-  log_debug("NTFS MFT cluster = %lu\n",le64(ntfs_header->mft_lcn));
-  log_debug("NTFS cluster size =    %5u sectors\n",ntfs_header->sectors_per_cluster);
-  log_debug("NTFS MFT_record_size = %5u bytes\n",mft_record_size);
-  log_debug("NTFS sector size =     %5u bytes\n", ntfs_sector_size(ntfs_header));
+  log_info("NTFS MFT cluster = %lu\n",le64(ntfs_header->mft_lcn));
+  log_info("NTFS cluster size =    %5u sectors\n",ntfs_header->sectors_per_cluster);
+  log_info("NTFS MFT_record_size = %5u bytes\n",mft_record_size);
+  log_info("NTFS sector size =     %5u bytes\n", ntfs_sector_size(ntfs_header));
 #endif
-  if(mft_record_size==0)
+  if(mft_record_size < 42)
   {
     log_error("Invalid MFT record size or NTFS sector size\n");
     return;

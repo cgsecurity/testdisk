@@ -84,6 +84,14 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
   else
     mft_record_size=1<<(-ntfs_header->clusters_per_mft_record);
 
+  if(mft_record_size < 42)
+  {
+    display_message("Invalid NTFS MFT record size.\n");
+    log_error("Invalid NTFS MFT record size.\n");
+    free(ntfs_header);
+    return -1;
+  }
+
   cluster_size=ntfs_header->sectors_per_cluster * ntfs_sector_size(ntfs_header);
 
   mftmirr_size_bytes = td_max(cluster_size , 4 * mft_record_size);
