@@ -37,6 +37,7 @@ file_C			= filegen.c \
 			  file_acb.c \
 			  file_ace.c \
 			  file_ado.c \
+			  file_afdesign.c \
 			  file_ahn.c \
 			  file_aif.c \
 			  file_all.c \
