@@ -117,6 +117,7 @@ file_C			= filegen.c \
 			  file_ecryptfs.c \
 			  file_elf.c \
 			  file_emf.c \
+			  file_ess.c \
 			  file_evt.c \
 			  file_exe.c \
 			  file_exs.c \
