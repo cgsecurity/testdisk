@@ -220,7 +220,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
         return offset + i;
       }
     }
-    memcpy(buffer+read_size,buffer,footer_length-1);
+    memcpy(buffer+4096,buffer,footer_length-1);
   } while(offset>0);
   free(buffer);
   return 0;
