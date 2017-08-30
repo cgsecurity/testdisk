@@ -134,6 +134,7 @@ file_C			= filegen.c \
 			  file_fh5.c \
 			  file_filevault.c \
 			  file_fits.c \
+			  file_fit.c \
 			  file_flac.c \
 			  file_flp.c \
 			  file_flv.c \
