@@ -198,6 +198,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
 {
   unsigned char*buffer;
+  assert(footer_length < 4096);
   buffer=(unsigned char*)MALLOC(4096+footer_length-1);
   memset(buffer+4096,0,footer_length-1);
   do
