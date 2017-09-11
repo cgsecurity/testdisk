@@ -507,8 +507,11 @@ int header_check_tiff_le_new(const unsigned char *buffer, const unsigned int buf
   {
     const char *tag_make;
     tag_make=find_tag_from_tiff_header_le(header, buffer_size, TIFFTAG_MAKE, &potential_error);
-    if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+    if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 5)
     {
+      /* TODO
+       * sr2 if Sony::FileFormat begins by 1
+       * arw otherwise */
       if(strcmp(tag_make, "SONY")==0)
 	file_recovery_new->extension="sr2";
       else if(strncmp(tag_make, "SONY ",5)==0)

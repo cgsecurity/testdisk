@@ -38,6 +38,7 @@ extern "C" {
 #define TIFFTAG_KODAKIFD 		33424
 #define TIFFTAG_EXIFIFD                 34665
 #define EXIFTAG_MAKERNOTE		37500	/* Manufacturer notes */
+#define TIFFTAG_SONY_FILEFORMAT		0xb000
 #define TIFFTAG_IMAGEOFFSET		0xbcc0
 #define TIFFTAG_IMAGEBYTECOUNT		0xbcc1
 #define TIFFTAG_ALPHAOFFSET		0xbcc2
