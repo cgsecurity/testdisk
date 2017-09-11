@@ -849,6 +849,9 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension="xrns";
   else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
     file_recovery_new->extension="sh3d";
+  /* Apple Numbers */
+  else if(len==18 && memcmp(&buffer[30], "Index/Document.iwa", 18)==0)
+    file_recovery_new->extension="numbers";
   else
   {
     file_recovery_new->extension=file_hint_zip.extension;
