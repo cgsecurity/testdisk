@@ -167,6 +167,8 @@ static const txt_header_t fasttxt_headers[] = {
   { "--\r\n-- PostgreSQL database cluster dump",	39, "sql"},
   { "---- BEGIN SSH2 PUBLIC KEY ----",			31, "ppk"},
   { "PuTTY-User-Key-File-2:",				22, "ppk"},
+  { "-----BEGIN PGP PRIVATE KEY BLOCK-----",		37, "priv"},
+  { "-----BEGIN PGP PUBLIC KEY BLOCK-----",		36, "pub"},
   /* PTGui,  panoramic stitching software */
   { "# ptGui project file",				20, "pts"},
   { "ssh-dss AAAAB3",					14, "pub"},
@@ -717,6 +719,21 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
   return 1;
 }
 
+static void file_check_vbm(file_recovery_t *file_recovery)
+{
+  file_search_footer(file_recovery, "</BackupMeta>", 13, 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+}
+
+static int header_check_vbm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->extension="vbm";
+  file_recovery_new->file_check=&file_check_vbm;
+  return 1;
+}
+
 static void file_check_xml(file_recovery_t *file_recovery)
 {
   file_search_footer(file_recovery, ">", 1, 0);
@@ -808,6 +825,11 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
 #else
       file_recovery_new->extension="plist";
 #endif
+    }
+    else if(strncasecmp(tmp, "<gpx ", 5)==0)
+    {
+      /* GPS eXchange Format */
+      file_recovery_new->extension="gpx";
     }
     else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
     {
@@ -1423,6 +1445,8 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "solid ",		 6, &header_check_stl, file_stat);
   register_header_check(0, "<?xml version=",	14, &header_check_xml, file_stat);
   register_header_check(0, header_xml_utf8, sizeof(header_xml_utf8), &header_check_xml_utf8, file_stat);
+  /* Veeam Backup */
+  register_header_check(0, "<BackupMeta Version=",	20, &header_check_vbm, file_stat);
   /* TinyTag */
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
