@@ -127,7 +127,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
       log_riff_chunk(file_size, depth, &list_header);
 #endif
     }
-    file_size += 8 + le32(list_header.dwSize);
+    file_size += (uint64_t)8 + le32(list_header.dwSize);
     /* align to word boundary */
     file_size += (file_size&1);
   }
@@ -178,7 +178,7 @@ static data_check_t data_check_avi(const unsigned char *buffer, const unsigned i
     const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     const riff_chunk_header *chunk_header=(const riff_chunk_header*)&buffer[i];
     if(memcmp(&buffer[i], "RIFF", 4)==0 && memcmp(&buffer[i+8], "AVIX", 4)==0)
-      file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
+      file_recovery->calculated_file_size += (uint64_t)8 + le32(chunk_header->dwSize);
     else
       return DC_STOP;
   }
@@ -199,7 +199,7 @@ data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned i
 #endif
       return DC_STOP;
     }
-    file_recovery->calculated_file_size += 8 + le32(chunk_header->dwSize);
+    file_recovery->calculated_file_size += (uint64_t)8 + le32(chunk_header->dwSize);
 #ifdef DEBUG_RIFF
     log_info("data_check_avi_stream %llu\n", (long long unsigned)file_recovery->calculated_file_size);
 #endif

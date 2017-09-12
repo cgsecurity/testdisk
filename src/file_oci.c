@@ -69,7 +69,7 @@ static data_check_t data_check_oci(const unsigned char *buffer, const unsigned i
       (buffer[i+2]>='A' && buffer[i+2]<='Z') &&
       (buffer[i+3]>='A' && buffer[i+3]<='Z'))
     {
-      file_recovery->calculated_file_size+=atom_size+8;
+      file_recovery->calculated_file_size+=(uint64_t)8+atom_size;
     }
     else
     {

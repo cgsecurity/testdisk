@@ -82,7 +82,8 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
 	file_recovery->calculated_file_size+=4;
 	return DC_STOP;
       }
-      file_recovery->calculated_file_size+=4+11+datasize;
+      /* 4+11=15*/
+      file_recovery->calculated_file_size+=(uint64_t)15+datasize;
     }
     else
       return DC_ERROR;

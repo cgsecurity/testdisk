@@ -71,7 +71,7 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 
     if (fseek(fr->handle, data_size, SEEK_CUR) == -1)
       return -1;
-    fr->file_size += header_size+data_size;
+    fr->file_size += (uint64_t)header_size+data_size;
   }
   return 0;
 }
@@ -130,7 +130,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
         if (fseek(fr->handle, 36+size, SEEK_CUR) == -1)
           return -1;
 
-        fr->file_size += 40+size;
+        fr->file_size += (uint64_t)40+size;
       }
     }
     /* No sample, account for garbage */

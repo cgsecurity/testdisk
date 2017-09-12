@@ -65,7 +65,7 @@ static data_check_t data_check_flac_metadata(const unsigned char *buffer, const 
 #endif
     if((buffer[i]&0x7f)==0x7f)
 	return DC_ERROR;
-    file_recovery->calculated_file_size+=4+size;
+    file_recovery->calculated_file_size+=(uint64_t)4+size;
     if((buffer[i]&0x80)==0x80)
     {
       file_recovery->data_check=&data_check_flac_frame;

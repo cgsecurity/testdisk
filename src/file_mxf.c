@@ -81,22 +81,22 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
     switch(buffer[i+0x10])
     {
       case 0x81:
-	file_recovery->calculated_file_size+=0x14+buffer[i+0x11];
+	file_recovery->calculated_file_size+=(uint64_t)0x14+buffer[i+0x11];
 	break;
       case 0x82:
-	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<8)+buffer[i+0x12];
+	file_recovery->calculated_file_size+=(uint64_t)0x14+(buffer[i+0x11]<<8)+buffer[i+0x12];
 	break;
       case 0x83:
-	file_recovery->calculated_file_size+=0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
+	file_recovery->calculated_file_size+=(uint64_t)0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
 	break;
       case 0x84:
 	{
 	  const uint32_t *p32=(const uint32_t*)&buffer[i+0x11];
-	  file_recovery->calculated_file_size+=0x14 + le32(*p32);
+	  file_recovery->calculated_file_size+=(uint64_t)0x14 + le32(*p32);
 	}
 	break;
       default:
-	file_recovery->calculated_file_size+=0x14+buffer[i+0x10];
+	file_recovery->calculated_file_size+=(uint64_t)0x14+buffer[i+0x10];
 	break;
     }
   }

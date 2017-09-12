@@ -76,7 +76,7 @@ static void file_check_midi(file_recovery_t *file_recovery)
 	fread(&track, 8, 1, file_recovery->handle) != 1 ||
 	memcmp(&track.magic[0], "MTrk", 4)!=0)
       return ;
-    fs+=8+be32(track.len);
+    fs+=(uint64_t)8+be32(track.len);
   }
   if(fs_org < fs)
     return ;
@@ -96,7 +96,7 @@ static data_check_t data_check_midi(const unsigned char *buffer, const unsigned 
 #endif
     if(memcmp(&hdr->magic[0], "MTrk", 4)!=0)
       return DC_STOP;
-    file_recovery->calculated_file_size+=len+8;
+    file_recovery->calculated_file_size+=(uint64_t)8+len;
   }
   return DC_CONTINUE;
 }

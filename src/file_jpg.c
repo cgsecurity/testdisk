@@ -299,7 +299,7 @@ static void file_check_mpo(file_recovery_t *fr)
   }
   do
   {
-    offset+=2+size;
+    offset+=(uint64_t)2+size;
     if(my_fseek(fr->handle, offset, SEEK_SET) < 0)
     {
       fr->file_size=0;
@@ -1481,7 +1481,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 #ifdef DEBUG_JPEG
       log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
-      offset+=2+size;
+      offset+=(uint64_t)2+size;
       if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
 	file_recovery->offset_ok=i+1;
@@ -1813,7 +1813,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  (long long unsigned)file_recovery->calculated_file_size,
 	  (long long unsigned)file_recovery->calculated_file_size+2+size);
 #endif
-      file_recovery->calculated_file_size+=2+size;
+      file_recovery->calculated_file_size+=(uint64_t)2+size;
       if(buffer[i+1]==0xc0)	/* SOF0 */
       {
 	if(jpg_check_sof0(buffer, buffer_size, i)!=0)

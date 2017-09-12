@@ -155,7 +155,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
     }
 
     /* Add its header size */
-    file_recovery->file_size += 2U + 2 + le16(h.size);	/* +2: CRC16, +2: size */
+    file_recovery->file_size += (uint64_t)4 + le16(h.size);	/* +2: CRC16, +2: size */
     /* If addsize flag, add complementary size */
     if (le16(h.flags)&1)
     {

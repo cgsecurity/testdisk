@@ -63,7 +63,7 @@ static data_check_t data_check_blend4le(const unsigned char *buffer, const unsig
       file_recovery->calculated_file_size+=0x14;
       return DC_STOP;
     }
-    file_recovery->calculated_file_size+=0x14+len;
+    file_recovery->calculated_file_size+=(uint64_t)0x14+len;
   }
   return DC_CONTINUE;
 }
@@ -86,7 +86,7 @@ static data_check_t data_check_blend8le(const unsigned char *buffer, const unsig
       file_recovery->calculated_file_size+=0x18;
       return DC_STOP;
     }
-    file_recovery->calculated_file_size+=0x18+len;
+    file_recovery->calculated_file_size+=(uint64_t)0x18+len;
   }
   return DC_CONTINUE;
 }
@@ -109,7 +109,7 @@ static data_check_t data_check_blend4be(const unsigned char *buffer, const unsig
       file_recovery->calculated_file_size+=0x14;
       return DC_STOP;
     }
-    file_recovery->calculated_file_size+=0x14+len;
+    file_recovery->calculated_file_size+=(uint64_t)0x14+len;
   }
   return DC_CONTINUE;
 }
@@ -132,7 +132,7 @@ static data_check_t data_check_blend8be(const unsigned char *buffer, const unsig
       file_recovery->calculated_file_size+=0x18;
       return DC_STOP;
     }
-    file_recovery->calculated_file_size+=0x18+len;
+    file_recovery->calculated_file_size+=(uint64_t)0x18+len;
   }
   return DC_CONTINUE;
 }

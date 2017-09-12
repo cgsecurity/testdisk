@@ -115,7 +115,7 @@ static void file_check_png(file_recovery_t *fr)
       fr->file_size=0;
       return ;
     }
-    fr->file_size+=12 + be32(chunk->length);
+    fr->file_size+=(uint64_t)12 + be32(chunk->length);
     if(memcmp(&buffer[4], "IEND", 4)==0)
       return ;
   }
@@ -156,7 +156,7 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
     if(memcmp(&buffer[i+4], mng_footer, sizeof(mng_footer))==0)
     {
-      file_recovery->calculated_file_size+=12 + be32(chunk->length);
+      file_recovery->calculated_file_size+=(uint64_t)12 + be32(chunk->length);
       return DC_STOP;
     }
     if( !((isupper(buffer[i+4]) || islower(buffer[i+4])) &&
@@ -168,7 +168,7 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
       return DC_ERROR;
     }
     file_recovery->offset_ok=file_recovery->calculated_file_size+7;
-    file_recovery->calculated_file_size+=12 + be32(chunk->length);
+    file_recovery->calculated_file_size+=(uint64_t)12 + be32(chunk->length);
   }
   return DC_CONTINUE;
 }
@@ -182,7 +182,7 @@ static data_check_t data_check_png(const unsigned char *buffer, const unsigned i
     const struct png_chunk *chunk=(const struct png_chunk *)&buffer[i];
     if(memcmp(&buffer[i+4], "IEND", 4)==0)
     {
-      file_recovery->calculated_file_size+=12 + be32(chunk->length);
+      file_recovery->calculated_file_size+=(uint64_t)12 + be32(chunk->length);
       return DC_STOP;
     }
 // PNG chunk code
@@ -197,7 +197,7 @@ static data_check_t data_check_png(const unsigned char *buffer, const unsigned i
       return DC_ERROR;
     }
     file_recovery->offset_ok=file_recovery->calculated_file_size+7;
-    file_recovery->calculated_file_size+=12 + be32(chunk->length);
+    file_recovery->calculated_file_size+=(uint64_t)12 + be32(chunk->length);
   }
   return DC_CONTINUE;
 }

@@ -57,7 +57,7 @@ static data_check_t data_check_abr(const unsigned char *buffer, const unsigned i
     const struct abr_header *hdr=(const struct abr_header*)&buffer[i];
     if(memcmp(hdr->magic, "8BIM", 4)!=0)
       return DC_STOP;
-    file_recovery->calculated_file_size+=be32(hdr->size)+12;
+    file_recovery->calculated_file_size+=(uint64_t)12 + be32(hdr->size);
   }
   return DC_CONTINUE;
 }
@@ -71,7 +71,7 @@ static int header_check_abr(const unsigned char *buffer, const unsigned int buff
     const struct abr_header *h=(const struct abr_header*)&buffer[i];
     if(memcmp(h->magic, "8BIM", 4)!=0)
       return 0;
-    i+=be32(h->size)+12;
+    i+=(uint64_t)12 + be32(h->size);
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_abr.extension;

@@ -78,7 +78,7 @@ static data_check_t data_check_caf(const unsigned char *buffer, const unsigned i
     }
     if(chunk_size >= 0)
     {
-      file_recovery->calculated_file_size+=12+chunk_size;
+      file_recovery->calculated_file_size+=(uint64_t)12+chunk_size;
     }
     else
     {

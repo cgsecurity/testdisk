@@ -71,7 +71,7 @@ static data_check_t data_check_fs(const unsigned char *buffer, const unsigned in
 #ifdef DEBUG_FS
     log_info("0x%08llx len=%llu status=%c\n", (long long unsigned)file_recovery->calculated_file_size, (long long unsigned)len, hdr->status);
 #endif
-    file_recovery->calculated_file_size+=len+8;
+    file_recovery->calculated_file_size+=(uint64_t)8+len;
 #ifdef DEBUG_FS
     log_info("0x%08llx\n", (long long unsigned)file_recovery->calculated_file_size);
 #endif

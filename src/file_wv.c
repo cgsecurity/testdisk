@@ -89,7 +89,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
     const WavpackHeader *wv=(const WavpackHeader*)&buffer[i];
     if(memcmp(wv, wv_header, sizeof(wv_header))==0)
     {
-      file_recovery->calculated_file_size+=le32(wv->ckSize)+8;
+      file_recovery->calculated_file_size+=(uint64_t)8+le32(wv->ckSize);
     }
     else if(buffer[i]=='A' && buffer[i+1]=='P' && buffer[i+2]=='E' && buffer[i+3]=='T' && buffer[i+4]=='A' && buffer[i+5]=='G' && buffer[i+6]=='E' && buffer[i+7]=='X')
     { /* APE Tagv2 (APE Tagv1 has no header) http://wiki.hydrogenaudio.org/index.php?title=APE_Tags_Header */
