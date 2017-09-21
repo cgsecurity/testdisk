@@ -87,7 +87,7 @@ static int header_check_ra(const unsigned char *buffer, const unsigned int buffe
     const struct ra3_header *ra3=(const struct ra3_header *)buffer;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ra.extension;
-    file_recovery_new->calculated_file_size=8 + be16(ra3->header_size) + be32(ra3->data_size);
+    file_recovery_new->calculated_file_size=(uint64_t)8 + be16(ra3->header_size) + be32(ra3->data_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;
@@ -98,7 +98,7 @@ static int header_check_ra(const unsigned char *buffer, const unsigned int buffe
     const struct ra4_header *ra4=(const struct ra4_header *)buffer;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ra.extension;
-    file_recovery_new->calculated_file_size=40 + be16(ra4->header_size) + be32(ra4->data_size);
+    file_recovery_new->calculated_file_size=(uint64_t)40 + be16(ra4->header_size) + be32(ra4->data_size);
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
     return 1;

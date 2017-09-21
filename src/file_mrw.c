@@ -79,7 +79,7 @@ static int header_check_mrw(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mrw.extension;
-  file_recovery_new->calculated_file_size= be32(mrmhdr->size)+ 8 +
+  file_recovery_new->calculated_file_size= (uint64_t)be32(mrmhdr->size)+ 8 +
     ((uint64_t)be16(prd->ccd.x) * be16(prd->ccd.y) * prd->datasize + 8 - 1) / 8;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;

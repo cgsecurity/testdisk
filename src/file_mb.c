@@ -57,7 +57,7 @@ static int header_check_mb(const unsigned char *buffer, const unsigned int buffe
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mb.extension;
   file_recovery_new->min_filesize=16;
-  file_recovery_new->calculated_file_size=be32(hdr->size)+8;
+  file_recovery_new->calculated_file_size=(uint64_t)be32(hdr->size)+8;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;

@@ -63,7 +63,7 @@ static int header_check_flp(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_flp.extension;
-  file_recovery_new->calculated_file_size=le32(hdr->len2) + 0x16;
+  file_recovery_new->calculated_file_size=(uint64_t)le32(hdr->len2) + 0x16;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;

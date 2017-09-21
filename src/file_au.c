@@ -67,7 +67,7 @@ static int header_check_au(const unsigned char *buffer, const unsigned int buffe
       reset_file_recovery(file_recovery_new);
       file_recovery_new->min_filesize=111;
       file_recovery_new->extension=file_hint_au.extension;
-      file_recovery_new->calculated_file_size=be32(au->offset)+be32(au->size);
+      file_recovery_new->calculated_file_size=(uint64_t)be32(au->offset)+be32(au->size);
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
       return 1;
