@@ -245,6 +245,15 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
+      else if(memcmp(&buffer[i+8], "heic", 4)==0)
+      {
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension="heic";
+	file_recovery_new->data_check=&data_check_mov;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->calculated_file_size=i+atom_size;
+	return 1;
+      }
       else if(memcmp(&buffer[i+8], "jp2 ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
@@ -335,6 +344,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 	(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
 	(buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
 	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
+	(buffer[i+4]=='m' && buffer[i+5]=='e' && buffer[i+6]=='t' && buffer[i+7]=='a') ||
 	(buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
 	(buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
 	(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
