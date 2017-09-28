@@ -108,24 +108,30 @@ static int file_identify(const char *filename, const unsigned int check)
       if(file_recovery_new.file_stat!=NULL)
 	break;
     }
+    if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL &&
+	check > 0 && file_recovery_new.file_check!=NULL)
+    {
+      file_recovery_new.handle=file;
+      my_fseek(file_recovery_new.handle, 0, SEEK_END);
+#ifdef HAVE_FTELLO
+      file_recovery_new.file_size=ftello(file_recovery_new.handle);
+#else
+      file_recovery_new.file_size=ftell(file_recovery_new.handle);
+#endif
+      file_recovery_new.calculated_file_size=file_recovery_new.file_size;
+      (file_recovery_new.file_check)(&file_recovery_new);
+      if(file_recovery_new.file_size < file_recovery_new.min_filesize)
+	file_recovery_new.file_size=0;
+      if(file_recovery_new.file_size==0)
+	file_recovery_new.file_stat=NULL;
+    }
     if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
     {
       printf("%s: %s", filename,
 	  ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
 	   file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
       if(check > 0 && file_recovery_new.file_check!=NULL)
-      {
-	file_recovery_new.handle=file;
-	my_fseek(file_recovery_new.handle, 0, SEEK_END);
-#ifdef HAVE_FTELLO
-	file_recovery_new.file_size=ftello(file_recovery_new.handle);
-#else
-	file_recovery_new.file_size=ftell(file_recovery_new.handle);
-#endif
-	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
-	(file_recovery_new.file_check)(&file_recovery_new);
 	printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
-      }
       printf("\n");
     }
     else
