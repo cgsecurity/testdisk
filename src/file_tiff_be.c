@@ -276,6 +276,8 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
   uint64_t strip_bytecounts=0;
   uint64_t tile_offsets=0;
   uint64_t tile_bytecounts=0;
+  unsigned int tdir_tag_old=0;
+  unsigned int sorted_tag_error=0;
   const TIFFDirEntry *entry=(const TIFFDirEntry *)&buffer[2];
   const TIFFDirEntry *entry_strip_offsets=NULL;
   const TIFFDirEntry *entry_strip_bytecounts=NULL;
@@ -306,19 +308,26 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
     return -1;
   for(i=0;i<n;i++)
   {
+    const unsigned int tdir_tag=be16(entry->tdir_tag);
     const uint64_t val=(uint64_t)be32(entry->tdir_count) * tiff_type2size(be16(entry->tdir_type));
 #ifdef DEBUG_TIFF
     log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx) val=%lu\n",
 	i,
-	be16(entry->tdir_tag),
-	be16(entry->tdir_tag),
-	tag_name(be16(entry->tdir_tag)),
+	tdir_tag,
+	tdir_tag,
+	tag_name(tdir_tag),
 	be16(entry->tdir_type),
 	(long unsigned)be32(entry->tdir_count),
 	(long unsigned)be32(entry->tdir_offset),
 	(long unsigned)be32(entry->tdir_offset),
 	(long unsigned)val);
 #endif
+    if(tdir_tag_old > tdir_tag)
+    { /* Entries must be sorted by tag */
+      sorted_tag_error++;
+      if(sorted_tag_error > 1)
+	return -1;
+    }
     if(val>4)
     {
       const uint64_t new_offset=be32(entry->tdir_offset)+val;
@@ -330,7 +339,7 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
     if(be32(entry->tdir_count)==1 && val<=4)
     {
       const unsigned int tmp=tiff_be_read(&entry->tdir_offset, be16(entry->tdir_type));
-      switch(be16(entry->tdir_tag))
+      switch(tdir_tag)
       {
 	case TIFFTAG_ALPHABYTECOUNT:	alphabytecount=tmp;	break;
 	case TIFFTAG_ALPHAOFFSET:	alphaoffset=tmp;	break;
@@ -376,7 +385,7 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
     }
     else if(be32(entry->tdir_count) > 1)
     {
-      switch(be16(entry->tdir_tag))
+      switch(tdir_tag)
       {
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
@@ -424,6 +433,7 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
 	  break;
       }
     }
+    tdir_tag_old=tdir_tag;
     entry++;
   }
   if(alphabytecount > 0 && max_offset < alphaoffset + alphabytecount)
