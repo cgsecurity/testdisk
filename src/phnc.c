@@ -53,7 +53,7 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
   new_file_stats=(file_stat_t*)MALLOC(nbr*sizeof(file_stat_t));
   memcpy(new_file_stats, file_stats, nbr*sizeof(file_stat_t));
   qsort(new_file_stats, nbr, sizeof(file_stat_t), sorfile_stat_ts);
-  for(i=0; i<10 && i<nbr && new_file_stats[i].recovered>0; i++)
+  for(i=0; i<9 && i<nbr && new_file_stats[i].recovered>0; i++)
   {
     wmove(window,12+i,0);
     wclrtoeol(window);
@@ -66,7 +66,7 @@ void photorec_info(WINDOW *window, const file_stat_t *file_stats)
     others+=new_file_stats[i].recovered;
   if(others>0)
   {
-    wmove(window,12+10,0);
+    wmove(window,12+9,0);
     wclrtoeol(window);
     wprintw(window, "others: %u recovered\n", others);
   }
