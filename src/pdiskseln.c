@@ -278,7 +278,21 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
 #endif
       )
     {
-      /* yes */
+#ifdef HAVE_NCURSES
+      {
+	va_list ap;
+	int res;
+	WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
+	aff_copy(window);
+	mvwaddstr(window,5,0,"Resuming the recovery. Please wait...");
+	wrefresh(window);
+	delwin(window);
+	(void) clearok(stdscr, TRUE);
+#ifdef HAVE_TOUCHWIN
+	touchwin(stdscr);
+#endif
+      }
+#endif
       params->cmd_run=saved_cmd;
       params->cmd_device=saved_device;
     }
