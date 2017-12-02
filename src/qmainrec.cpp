@@ -60,7 +60,7 @@ static void display_help(void)
 
 static void display_version(void)
 {
-  printf("QPhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  printf("QPhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   printf("\n");
   printf("Version: %s\n", VERSION);
   printf("Compiler: %s\n", get_compiler());
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 #endif
   my_time=time(NULL);
   log_info("\n\n%s",ctime(&my_time));
-  log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());
 #ifdef RECORD_COMPILATION_DATE

@@ -187,7 +187,7 @@ static void display_help(void)
 
 static void display_version(void)
 {
-  printf("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  printf("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   printf("\n");
   printf("Version: %s\n", VERSION);
   printf("Compiler: %s\n", get_compiler());
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     log_info("\n\n");
     log_flush();
   }
-  log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   {
     /* Enable all file formats */
     file_enable_t *file_enable;

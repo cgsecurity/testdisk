@@ -68,6 +68,6 @@ Both are under GNU General Public License.
 
 Christophe GRENIER
 [grenier@cgsecurity.org](mailto:grenier@cgsecurity.org)
-[http://www.cgsecurity.org/](http://www.cgsecurity.org/)
+[https://www.cgsecurity.org/](https://www.cgsecurity.org/)
 
 [![Build Status](https://travis-ci.org/cgsecurity/testdisk.svg?branch=master)](https://travis-ci.org/cgsecurity/testdisk)

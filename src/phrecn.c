@@ -111,7 +111,7 @@ static void recovery_finished(disk_t *disk, const partition_t *partition, const 
 	wmove(stdscr, 12, 0);
 	wprintw(stdscr, "You are welcome to donate to support and encourage further development");
 	wmove(stdscr, 13, 0);
-	wprintw(stdscr, "http://www.cgsecurity.org/wiki/Donation");
+	wprintw(stdscr, "https://www.cgsecurity.org/wiki/Donation");
       }
       break;
     case PSTATUS_STOP:

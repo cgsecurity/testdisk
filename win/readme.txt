@@ -12,12 +12,12 @@ For Windows 64-bit without WoW64, use the Windows 64-bit version of TestDisk
 & PhotoRec.
 
 If you are using an older version of Windows, run the DOS version of TestDisk.
-You can download it from http://www.cgsecurity.org/wiki/TestDisk_Download
+You can download it from https://www.cgsecurity.org/wiki/TestDisk_Download
 
 TestDisk doesn't need to be installed, you only need to
 - extract the files
 - run testdisk_win.exe or photorec_win.exe
 
 TestDisk & PhotoRec documentation can be found online:
-- http://www.cgsecurity.org/wiki/TestDisk
-- http://www.cgsecurity.org/wiki/PhotoRec
+- https://www.cgsecurity.org/wiki/TestDisk
+- https://www.cgsecurity.org/wiki/PhotoRec

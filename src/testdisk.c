@@ -244,7 +244,7 @@ int main( int argc, char **argv )
     return -1;
   }
 #endif
-  printf("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
+  printf("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n",VERSION,TESTDISKDATE);
   for(i=1;i<argc;i++)
   {
     if((strcmp(argv[i],"/dump")==0) || (strcmp(argv[i],"-dump")==0))
@@ -405,7 +405,7 @@ int main( int argc, char **argv )
       log_info(" %s", argv[i]);
     log_info("\n\n");
   }
-  log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttp://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());
 #ifdef RECORD_COMPILATION_DATE

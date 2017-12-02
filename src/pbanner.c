@@ -44,6 +44,6 @@ void aff_copy(WINDOW *window)
   wmove(window,1,0);
   wprintw(window, "Christophe GRENIER <grenier@cgsecurity.org>");
   wmove(window,2,0);
-  wprintw(window, "http://www.cgsecurity.org");
+  wprintw(window, "https://www.cgsecurity.org");
 }
 #endif

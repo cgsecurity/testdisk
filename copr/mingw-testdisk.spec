@@ -9,8 +9,8 @@ Summary(fr.UTF8):	Outil pour vérifier et restaurer des partitions
 Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
 License:	GPLv2+
 Group:		Applications/System
-URL:		http://www.cgsecurity.org/wiki/TestDisk
-Source0:	http://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+URL:		https://www.cgsecurity.org/wiki/TestDisk
+Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
 
 BuildArch:	noarch
 BuildRequires: libtool autoconf automake

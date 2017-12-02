@@ -356,7 +356,7 @@ QWidget *QPhotorec::copyright(QWidget * qwparent)
 
   QLabel *t_copy=new QLabel(C_widget);
 
-  t_copy->setText( "PhotoRec " + QString(VERSION) + ", Data Recovery Utility, " + QString(TESTDISKDATE) + "<br>\nCopyright (C) Christophe GRENIER &lt;<a href=\"mailto:grenier@cgsecurity.org\">grenier@cgsecurity.org</a>&gt;<br>\n<a href=\"http://www.cgsecurity.org/\">http://www.cgsecurity.org</a>");
+  t_copy->setText( "PhotoRec " + QString(VERSION) + ", Data Recovery Utility, " + QString(TESTDISKDATE) + "<br>\nCopyright (C) Christophe GRENIER &lt;<a href=\"mailto:grenier@cgsecurity.org\">grenier@cgsecurity.org</a>&gt;<br>\n<a href=\"https://www.cgsecurity.org/\">https://www.cgsecurity.org</a>");
   t_copy->setTextFormat(Qt::RichText);
   t_copy->setTextInteractionFlags(Qt::TextBrowserInteraction);
   t_copy->setOpenExternalLinks(true);

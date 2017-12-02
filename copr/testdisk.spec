@@ -7,8 +7,8 @@ Version:	7.1
 Release:	0%{?dist}
 License:	GPLv2+
 Group:		Applications/System
-Source0:	http://www.cgsecurity.org/testdisk-%{version}.tar.bz2
-URL:		http://www.cgsecurity.org/wiki/TestDisk
+Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+URL:		https://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	libtool autoconf automake
 BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel

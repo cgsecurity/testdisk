@@ -11,11 +11,11 @@ Version:	@VERSION@
 Release:	1%{?dist}
 License:	GPLv2+
 Group:		Applications/System
-Source0:	http://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
+Source0:	https://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
 Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Patch0:		progsreiserfs-journal.patch
 Patch1:		progsreiserfs-file-read.patch
-URL:		http://www.cgsecurity.org/wiki/TestDisk
+URL:		https://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
 BuildRequires:	libewf-devel
