@@ -280,8 +280,6 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     {
 #ifdef HAVE_NCURSES
       {
-	va_list ap;
-	int res;
 	WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
 	aff_copy(window);
 	mvwaddstr(window,5,0,"Resuming the recovery. Please wait...");
@@ -301,6 +299,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
       free(saved_device);
       free(saved_cmd);
       free_list_search_space(&list_search_space);
+      rename("photorec.ses", "photorec.se2");
     }
   }
   if(params->cmd_device!=NULL && params->cmd_run!=NULL)
