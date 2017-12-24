@@ -156,10 +156,13 @@ int is_part_linux(const partition_t *partition)
       return 1;
   if(partition->arch==&arch_mac  && partition->part_type_mac==PMAC_LINUX)
       return 1;
-#if 0
-  if(partition->arch==&arch_gpt && guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0)
+  if(partition->arch==&arch_gpt &&
+      (
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0 ||
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_HOME)==0 ||
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_SRV)==0
+      ))
       return 1;
-#endif
   return 0;
 }
 
