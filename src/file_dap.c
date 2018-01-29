@@ -46,14 +46,31 @@ const file_hint_t file_hint_dap= {
 static int header_check_dap(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* Search for "Version Fichier\r\n*******" string */
-  const char dap_hdr_str[24] = {
+  const char dap_hdr_str_win[24] = {
     0x56, 0x65, 0x72, 0x73, 0x69, 0x6F, 0x6E, 0x20,
     0x46, 0x69, 0x63, 0x68, 0x69, 0x65, 0x72, 0x0D,
     0x0A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A
   };
+  /* Search for "Version Fichier\n********" string */
+  const char dap_hdr_str_unix[24] = {
+    0x56, 0x65, 0x72, 0x73, 0x69, 0x6F, 0x6E, 0x20,
+    0x46, 0x69, 0x63, 0x68, 0x69, 0x65, 0x72, 0x0A,
+    0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A
+  };
+  /* Search for "Version Fichier\r********" string */
+  const char dap_hdr_str_macos[24] = {
+    0x56, 0x65, 0x72, 0x73, 0x69, 0x6F, 0x6E, 0x20,
+    0x46, 0x69, 0x63, 0x68, 0x69, 0x65, 0x72, 0x0D,
+    0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A, 0x2A
+  };
+  // Remove warning for unused arguments
+  (void)file_recovery;
+  (void)safe_header_only;
   if(buffer_size<24)
     return 0;
-  if(memcmp(buffer, dap_hdr_str, 24)!=0)
+  if((memcmp(buffer, dap_hdr_str_win, 24)!=0)&&
+		  (memcmp(buffer, dap_hdr_str_unix, 24)!=0)&&
+		  (memcmp(buffer, dap_hdr_str_macos, 24)!=0))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dap.extension;
