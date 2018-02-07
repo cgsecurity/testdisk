@@ -734,6 +734,12 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static void file_check_gpx(file_recovery_t *file_recovery)
+{
+  file_search_footer(file_recovery, "</gpx>", 6, 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+}
+
 static void file_check_xml(file_recovery_t *file_recovery)
 {
   file_search_footer(file_recovery, ">", 1, 0);
@@ -830,6 +836,9 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     {
       /* GPS eXchange Format */
       file_recovery_new->extension="gpx";
+      file_recovery_new->file_check=&file_check_gpx;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
     {
