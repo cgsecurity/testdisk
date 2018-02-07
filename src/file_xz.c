@@ -52,6 +52,7 @@ static int header_check_xz(const unsigned char *buffer, const unsigned int buffe
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_xz.extension;
   file_recovery_new->file_check=&file_check_xz;
+  file_recovery_new->min_filesize=9;
   return 1;
 }
 
