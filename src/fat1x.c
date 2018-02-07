@@ -66,7 +66,7 @@ static void dump_fat1x(disk_t *disk_car, partition_t *partition, const unsigned 
 {
   log_info("Boot sector\n");
   dump_log(buffer_bs, FAT1x_BOOT_SECTOR_SIZE);
-  if(*current_cmd==NULL)
+  if(current_cmd==NULL || *current_cmd==NULL)
   {
 #ifdef HAVE_NCURSES
     dump_fat1x_ncurses(disk_car, partition, buffer_bs);

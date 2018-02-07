@@ -33,6 +33,7 @@
 #include <string.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
@@ -186,6 +187,7 @@ list_part_t *add_partition_humax_cli(disk_t *disk_car,list_part_t *list_part, ch
 {
   CHS_t start,end;
   partition_t *new_partition=partition_new(&arch_humax);
+  assert(current_cmd!=NULL);
   start.cylinder=0;
   start.head=0;
   start.sector=1;

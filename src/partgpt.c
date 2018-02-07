@@ -42,6 +42,7 @@
 #if defined(HAVE_SYS_UUID_H)
 #include <sys/uuid.h>
 #endif
+#include <assert.h>
 #include "common.h"
 #include "fnctdsk.h"
 #include "lang.h"
@@ -335,6 +336,7 @@ static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *lis
 
 list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
+  assert(current_cmd!=NULL);
   partition_t *new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-new_partition->part_offset;

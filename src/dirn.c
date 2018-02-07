@@ -596,7 +596,7 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
     inode_known[depth]=inode;
     dir_data->get_dir(disk, partition, dir_data, inode, &dir_list);
     dir_aff_log(dir_data, &dir_list);
-    if(*current_cmd!=NULL)
+    if(current_cmd!=NULL && *current_cmd!=NULL)
     {
       /* TODO: handle copy_files */
       dir_data->current_directory[current_directory_namelength]='\0';

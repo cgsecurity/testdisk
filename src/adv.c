@@ -215,6 +215,7 @@ static int adv_string_to_command(char**current_cmd, list_part_t **current_elemen
 {
   int keep_asking;
   int command='q';
+  assert(current_cmd!=NULL);
   do
   {
     keep_asking=0;
@@ -474,6 +475,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   unsigned int menu=0;
   list_part_t *list_part;
   list_part_t *current_element;
+  assert(current_cmd!=NULL);
   log_info("\nInterface Advanced\n");
   list_part=disk_car->arch->read_part(disk_car,verbose,0);
   current_element=list_part;

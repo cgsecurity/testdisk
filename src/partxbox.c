@@ -33,6 +33,7 @@
 #include <string.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
@@ -147,6 +148,7 @@ static list_part_t *init_part_order_xbox(const disk_t *disk_car, list_part_t *li
 list_part_t *add_partition_xbox_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
   partition_t *new_partition=partition_new(&arch_xbox);
+  assert(current_cmd!=NULL);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-disk_car->sector_size;
   while(*current_cmd[0]==',')

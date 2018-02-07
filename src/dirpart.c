@@ -122,7 +122,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
       log_partition(disk,partition);
       screen_buffer_add("Support for this filesystem hasn't been implemented.\n");
       screen_buffer_to_log();
-      if(*current_cmd==NULL)
+      if(current_cmd==NULL || *current_cmd==NULL)
       {
 #ifdef HAVE_NCURSES
 	screen_buffer_display(window,"",NULL);
@@ -139,7 +139,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
       log_partition(disk,partition);
       screen_buffer_add("Support for this filesystem wasn't enabled during compilation.\n");
       screen_buffer_to_log();
-      if(*current_cmd==NULL)
+      if(current_cmd==NULL || *current_cmd==NULL)
       {
 #ifdef HAVE_NCURSES
 	screen_buffer_display(window,"",NULL);
@@ -156,7 +156,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
       log_partition(disk,partition);
       screen_buffer_add("Can't open filesystem. Filesystem seems damaged.\n");
       screen_buffer_to_log();
-      if(*current_cmd==NULL)
+      if(current_cmd==NULL || *current_cmd==NULL)
       {
 #ifdef HAVE_NCURSES
 	screen_buffer_display(window,"",NULL);
@@ -167,7 +167,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
       {
 	int recursive=0;
 	int copy_files=0;
-	if(*current_cmd!=NULL)
+	if(current_cmd!=NULL && *current_cmd!=NULL)
 	{
 	  int do_continue;
 	  do
