@@ -30,6 +30,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
@@ -667,18 +668,19 @@ static const char *software_uni2ext(const unsigned int count, const unsigned cha
 static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned int dirLen, const char **ext, char **title, time_t *file_time)
 {
   unsigned int pos;
+  assert(dirLen >= 48 && dirLen<=1024*1024);
 #ifdef DEBUG_OLE
   dump_log(dataPt, dirLen);
 #endif
   if(dataPt[0]!=0xfe || dataPt[1]!=0xff)
     return ;
   pos=get32u(dataPt, 44);
+  if(pos > dirLen - 8)
+    return ;
   {
 //    unsigned int size;
     unsigned int numEntries;
     unsigned int i;
-    if(pos+8 > dirLen)
-      return ;
     numEntries=get32u(dataPt, pos+4);
 #ifdef DEBUG_OLE
     {
