@@ -1372,7 +1372,7 @@ struct sof_header
   unsigned char data[0];
 } __attribute__ ((gcc_struct, __packed__));
 
-static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i)
+static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i)
 {
   const struct sof_header *h=(const struct sof_header *)&buffer[i];
   if(i+4 > buffer_size)
