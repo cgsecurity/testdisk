@@ -27,6 +27,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <assert.h>
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
@@ -84,6 +85,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
   const uint32_t flags=le32(lnk_head->flags);
   unsigned int i=0x4c;		/* .LNK File Header */
   unsigned int len;
+  assert(buffer_size >= 0x4c);
   if(memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))!=0)
     return 0;
   if((flags&SCF_PIDL)!=0)
@@ -97,7 +99,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+4>=buffer_size)
+  if(i >= buffer_size - 4)
     return 0;
   if((flags&SCF_LOCATION)!=0)
   { /* File location info */
@@ -109,7 +111,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_DESCRIPTION)!=0)
   { /* Description string */
@@ -123,7 +125,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_RELATIVE)!=0)
   { /* Relative path */
@@ -137,7 +139,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_WORKDIR)!=0)
   { /* Working directory */
@@ -151,7 +153,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_ARGS)!=0)
   { /* Command line string */
@@ -165,7 +167,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_CUSTOMICON)!=0)
   { /* Icon filename string */
@@ -179,7 +181,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_PRODUCT)!=0)
   {
@@ -191,7 +193,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+2>=buffer_size)
+  if(i >= buffer_size - 2)
     return 0;
   if((flags&SCF_COMPONENT)!=0)
   {
@@ -203,7 +205,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i+4>=buffer_size)
+  if(i >= buffer_size - 4)
     return 0;
   /* Extra stuff */
   len=buffer[i] + (buffer[i+1]<<8) + (buffer[i+2]<<16) + (buffer[i+3]<<24);
