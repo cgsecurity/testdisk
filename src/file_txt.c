@@ -44,6 +44,7 @@
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_pdf;
+extern const file_hint_t file_hint_sld;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_zip;
 
@@ -777,6 +778,17 @@ static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int
   return 1;
 }
 
+static int header_check_xml_utf16(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* Avoid false positive with .sldprt */
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="xml";
+  return 1;
+}
+
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const char *tmp;
@@ -1454,6 +1466,7 @@ static void register_header_check_snz(file_stat_t *file_stat)
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
   static const unsigned char header_xml_utf8[17]	= {0xef, 0xbb, 0xbf, '<', '?', 'x', 'm', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '='};
+  static const unsigned char header_xml_utf16[30]	= {0xff, 0xfe, '<', 0, '?', 0, 'x', 0, 'm', 0, 'l', 0, ' ', 0, 'v', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, '=', 0};
   const txt_header_t *header=&fasttxt_headers[0];
   while(header->len > 0)
   {
@@ -1482,6 +1495,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "solid ",		 6, &header_check_stl, file_stat);
   register_header_check(0, "<?xml version=",	14, &header_check_xml, file_stat);
   register_header_check(0, header_xml_utf8, sizeof(header_xml_utf8), &header_check_xml_utf8, file_stat);
+  register_header_check(0, header_xml_utf16, sizeof(header_xml_utf16), &header_check_xml_utf16, file_stat);
   /* Veeam Backup */
   register_header_check(0, "<BackupMeta Version=",	20, &header_check_vbm, file_stat);
   /* TinyTag */
