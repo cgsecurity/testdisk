@@ -122,8 +122,7 @@ static int header_check_indd(const unsigned char *buffer, const unsigned int buf
   if(le32(hdr->fFilePages)==0)
     return 0;
   if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_indd &&
-      file_recovery->file_size <= 8192)
+      file_recovery->file_stat->file_hint==&file_hint_indd)
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)
       return 0;
