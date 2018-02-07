@@ -165,11 +165,12 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   }
   fr->file_size += sizeof(file);
 #ifdef DEBUG_ZIP
-  log_info("%u Comp=%u %u CRC32=0x%08X ",
+  log_info("%u Comp=%u %u CRC32=0x%08X extra_length=%u ",
       le32(file.compressed_size),
       le16(file.compression),
       le32(file.uncompressed_size),
-      le32(file.crc32));
+      le32(file.crc32),
+      le16(file.extra_length));
 #endif
   /* Avoid Jan  1  1980 files */
   if(le16(file.last_mod_time)!=0 || le16(file.last_mod_date)!=33)
@@ -301,6 +302,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       /* SMART Notebook */
       else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
 	*ext="notebook";
+      else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
+	*ext="apk";
       else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
 	*ext="mmap";
     }
@@ -350,8 +353,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #endif
     fr->file_size += len;
   }
-
-  expected_compressed_size=0;
+  expected_compressed_size=len;
   if (file.has_descriptor && (le16(file.compression)==8 || le16(file.compression)==9))
   {
     /* The fields crc-32, compressed size and uncompressed size
@@ -532,8 +534,9 @@ static int zip_parse_data_desc(file_recovery_t *fr)
   }
   fr->file_size += sizeof(desc);
 #ifdef DEBUG_ZIP
-  log_info("%u %u CRC32=0x%08X\n",
+  log_info("compressed_size=%u/%u uncompressed_size=%u CRC32=0x%08X\n",
       le32(desc.compressed_size),
+      expected_compressed_size,
       le32(desc.uncompressed_size),
       le32(desc.crc32));
 #endif
