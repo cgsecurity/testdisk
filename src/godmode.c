@@ -1408,6 +1408,7 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
       }
 #endif
     }
+    log_flush();
     do
     {
       list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
