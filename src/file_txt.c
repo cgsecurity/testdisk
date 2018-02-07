@@ -911,6 +911,33 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static void file_check_thunderbird(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size<file_recovery->calculated_file_size)
+  {
+    file_recovery->file_size=0;
+    return;
+  }
+  file_recovery->file_size=file_recovery->calculated_file_size;
+}
+
+static int header_check_thunderbird(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+      strcmp(file_recovery->extension,"mbox")==0)
+    return 0;
+  for(i=0; i<64; i++)
+    if(buffer[i]==0)
+      return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_thunderbird;
+  file_recovery_new->extension="mbox";
+  return 1;
+}
+
 static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
@@ -1440,6 +1467,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "<!DOCTYPE HTML",	14, &header_check_html, file_stat);
 //  register_header_check(0, "<html",		 5, &header_check_html, file_stat);
   register_header_check(0, "BEGIN:VCALENDAR",	15, &header_check_ics, file_stat);
+  register_header_check(0, "From - ",		 7, &header_check_thunderbird, file_stat);
   register_header_check(0, "From ",		 5, &header_check_mbox, file_stat);
   register_header_check(0, "Message-ID: ",	12, &header_check_mbox, file_stat);
   register_header_check(0, "MIME-Version:",	13, &header_check_mbox, file_stat);
