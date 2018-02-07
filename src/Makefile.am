@@ -213,6 +213,7 @@ file_C			= filegen.c \
 			  file_mpg.c \
 			  file_mpl.c \
 			  file_mrw.c \
+			  file_msa.c \
 			  file_mus.c \
 			  file_mxf.c \
 			  file_myo.c \
