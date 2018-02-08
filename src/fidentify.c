@@ -60,83 +60,79 @@ extern file_check_list_t file_check_list;
 
 static int file_identify(const char *filename, const unsigned int check)
 {
-  FILE *file;
-  unsigned char *buffer_start;
-  unsigned char *buffer_olddata;
-  unsigned char *buffer;
   const unsigned int blocksize=65536;
-  const unsigned int read_size=65536;
-  unsigned int buffer_size;
-  file_recovery_t file_recovery;
-  reset_file_recovery(&file_recovery);
-  file_recovery.blocksize=blocksize;
-  buffer_size=blocksize + READ_SIZE;
+  const unsigned int buffer_size=blocksize + READ_SIZE;
+  unsigned char *buffer_start;
+  unsigned char *buffer;
   buffer_start=(unsigned char *)MALLOC(buffer_size);
-  buffer_olddata=buffer_start;
-  buffer=buffer_olddata + blocksize;
-  file=fopen(filename, "rb");
-  if(file==NULL)
-  {
-    free(buffer_start);
-    return -1;
-  }
-  if(fread(buffer, 1, READ_SIZE, file)<=0)
-  {
-    fclose(file);
-    free(buffer_start);
-    return 0;
-  }
-  {
-    struct td_list_head *tmpl;
-    file_recovery_t file_recovery_new;
-    file_recovery_new.blocksize=blocksize;
-    file_recovery_new.file_stat=NULL;
-    td_list_for_each(tmpl, &file_check_list.list)
-    {
-      struct td_list_head *tmp;
-      const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
-      td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
-      {
-	const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
-	if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-	    file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
-	{
-	  file_recovery_new.file_stat=file_check->file_stat;
-	  break;
-	}
-      }
-      if(file_recovery_new.file_stat!=NULL)
-	break;
-    }
-    if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL &&
-	check > 0 && file_recovery_new.file_check!=NULL)
-    {
-      file_recovery_new.handle=file;
-      my_fseek(file_recovery_new.handle, 0, SEEK_END);
-#ifdef HAVE_FTELLO
-      file_recovery_new.file_size=ftello(file_recovery_new.handle);
-#else
-      file_recovery_new.file_size=ftell(file_recovery_new.handle);
+  buffer=buffer_start + blocksize;
+#ifdef __AFL_COMPILER
+  while(__AFL_LOOP(10000))
 #endif
-      file_recovery_new.calculated_file_size=file_recovery_new.file_size;
-      (file_recovery_new.file_check)(&file_recovery_new);
-      if(file_recovery_new.file_size < file_recovery_new.min_filesize)
-	file_recovery_new.file_size=0;
-      if(file_recovery_new.file_size==0)
-	file_recovery_new.file_stat=NULL;
-    }
-    if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
+  {
+    FILE *file;
+    file=fopen(filename, "rb");
+    if(file==NULL)
     {
-      printf("%s: %s", filename,
-	  ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
-	   file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
-      if(check > 0 && file_recovery_new.file_check!=NULL)
-	printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
-      printf("\n");
+      free(buffer_start);
+      return -1;
     }
-    else
+    if(fread(buffer, 1, READ_SIZE, file) >0)
     {
-      printf("%s: unknown\n", filename);
+      struct td_list_head *tmpl;
+      file_recovery_t file_recovery_new;
+      file_recovery_t file_recovery;
+      reset_file_recovery(&file_recovery);
+      file_recovery.blocksize=blocksize;
+      file_recovery_new.blocksize=blocksize;
+      file_recovery_new.file_stat=NULL;
+      td_list_for_each(tmpl, &file_check_list.list)
+      {
+	struct td_list_head *tmp;
+	const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
+	td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
+	{
+	  const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
+	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+	      file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
+	  {
+	    file_recovery_new.file_stat=file_check->file_stat;
+	    break;
+	  }
+	}
+	if(file_recovery_new.file_stat!=NULL)
+	  break;
+      }
+      if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL &&
+	  check > 0 && file_recovery_new.file_check!=NULL)
+      {
+	file_recovery_new.handle=file;
+	my_fseek(file_recovery_new.handle, 0, SEEK_END);
+#ifdef HAVE_FTELLO
+	file_recovery_new.file_size=ftello(file_recovery_new.handle);
+#else
+	file_recovery_new.file_size=ftell(file_recovery_new.handle);
+#endif
+	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
+	(file_recovery_new.file_check)(&file_recovery_new);
+	if(file_recovery_new.file_size < file_recovery_new.min_filesize)
+	  file_recovery_new.file_size=0;
+	if(file_recovery_new.file_size==0)
+	  file_recovery_new.file_stat=NULL;
+      }
+      if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
+      {
+	printf("%s: %s", filename,
+	    ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
+	     file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
+	if(check > 0 && file_recovery_new.file_check!=NULL)
+	  printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
+	printf("\n");
+      }
+      else
+      {
+	printf("%s: unknown\n", filename);
+      }
     }
     fclose(file);
   }
@@ -144,6 +140,7 @@ static int file_identify(const char *filename, const unsigned int check)
   return 0;
 }
 
+#ifndef __AFL_COMPILER
 static void file_identify_dir(const char *current_dir, const unsigned int check)
 {
   DIR *dir;
@@ -176,6 +173,7 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
   }
   closedir(dir);
 }
+#endif
 
 static void display_help(void)
 {
@@ -229,6 +227,7 @@ int main(int argc, char **argv)
       return 0;
     }
   }
+#ifndef __AFL_COMPILER
   log_handle=log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
   if(log_handle!=NULL)
   {
@@ -245,6 +244,7 @@ int main(int argc, char **argv)
     log_flush();
   }
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+#endif
   for(i=1; i<argc; i++)
   {
     file_enable_t *file_enable;
@@ -281,15 +281,19 @@ int main(int argc, char **argv)
 	if(stat(argv[i], &buf_stat)==0)
 #endif
 	{
-	  if(S_ISDIR(buf_stat.st_mode))
-	    file_identify_dir(argv[i], check);
-	  else if(S_ISREG(buf_stat.st_mode))
+	  if(S_ISREG(buf_stat.st_mode))
 	    file_identify(argv[i], check);
+#ifndef __AFL_COMPILER
+	  else if(S_ISDIR(buf_stat.st_mode))
+	    file_identify_dir(argv[i], check);
+#endif
 	}
     }
   }
+#ifndef __AFL_COMPILER
   if(scan_dir)
     file_identify_dir(".", check);
+#endif
   free_header_check();
   free(file_stats);
   log_close();
