@@ -179,10 +179,11 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
 
 static void display_help(void)
 {
-  printf("\nUsage: fidentify [--check] [directory]\n"\
+  printf("\nUsage: fidentify [--check] [+file_format] [directory|file]\n"\
       "       fidentify --version\n" \
       "\n" \
-      "fidentify determine the file type, the 'extension', by using the same database as PhotoRec.\n");
+      "fidentify determines the file type, the 'extension', by using the same database as PhotoRec.\n"
+      "By default, all known file formats are searched unless one is specifically enabled.");
 }
 
 static void display_version(void)
@@ -204,12 +205,13 @@ int main(int argc, char **argv)
   unsigned int check=0;
   FILE *log_handle=NULL;
   int log_errno=0;
-  int todo=1;
+  int enable_all_formats=1;
+  int scan_dir=1;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
   for(i=1; i<argc; i++)
   {
-    if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
+    if( strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
     {
       check++;
     }
@@ -243,6 +245,19 @@ int main(int argc, char **argv)
     log_flush();
   }
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  for(i=1; i<argc; i++)
+  {
+    file_enable_t *file_enable;
+    for(file_enable=list_file_enable;file_enable->file_hint!=NULL;file_enable++)
+      if(argv[i][0]=='+' &&
+	  file_enable->file_hint->extension!=NULL &&
+	  strcmp(file_enable->file_hint->extension,&argv[i][1])==0)
+      {
+	file_enable->enable=1;
+	enable_all_formats=0;
+      }
+  }
+  if(enable_all_formats)
   {
     /* Enable all file formats */
     file_enable_t *file_enable;
@@ -252,13 +267,14 @@ int main(int argc, char **argv)
   file_stats=init_file_stats(list_file_enable);
   for(i=1; i<argc; i++)
   {
-    if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
+    if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0 ||
+	argv[i][0]=='+')
     {
     }
     else
     {
       struct stat buf_stat;
-      todo=0;
+      scan_dir=0;
 #ifdef HAVE_LSTAT
       if(lstat(argv[i], &buf_stat)==0)
 #else
@@ -272,7 +288,7 @@ int main(int argc, char **argv)
 	}
     }
   }
-  if(todo)
+  if(scan_dir)
     file_identify_dir(".", check);
   free_header_check();
   free(file_stats);
