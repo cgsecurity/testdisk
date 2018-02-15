@@ -78,16 +78,12 @@ struct lnk_header_s {
 #define SCF_COMPONENT 	0x1000
 /* */
 
-
-static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int buffer_size)
 {
   const struct lnk_header_s* lnk_head=(const struct lnk_header_s*)buffer;
   const uint32_t flags=le32(lnk_head->flags);
   unsigned int i=0x4c;		/* .LNK File Header */
   unsigned int len;
-  assert(buffer_size >= 0x4c);
-  if(memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))!=0)
-    return 0;
   if((flags&SCF_PIDL)!=0)
   { /* The Shell Item Id List */
     len=buffer[i]+(buffer[i+1]<<8);
@@ -217,9 +213,21 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
 #ifdef DEBUG_LNK
   log_debug("LNK size %u (0x%04x)\n", i, i);
 #endif
+  return i;
+}
+
+static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int len;
+  assert(buffer_size >= 0x4c);
+  if(memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))!=0)
+    return 0;
+  len=lnk_get_size(buffer, buffer_size);
+  if(len == 0)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_lnk.extension;
-  file_recovery_new->calculated_file_size=i;
+  file_recovery_new->calculated_file_size=len;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   //    file_recovery_new->time=td_ntfs2utc(le64(lnk_head->ctime));
