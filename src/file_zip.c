@@ -336,6 +336,9 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   if(len==0xffffffff && le16(extra.tag)==1)
   {
     len = le64(extra.compressed_size);
+    /* Avoid endless loop */
+    if( fr->file_size + len < fr->file_size)
+      return -1;
   }
   if(krita>0)
     len=krita;
@@ -462,6 +465,9 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
   if (dir.end_size > 0)
   {
     const uint64_t len = le64(dir.end_size);
+    /* Avoid endless loop */
+    if( fr->file_size + len <= fr->file_size)
+      return -1;
     if (my_fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
