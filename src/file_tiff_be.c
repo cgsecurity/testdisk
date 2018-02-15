@@ -467,7 +467,7 @@ uint64_t header_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, c
   tiff_next_diroff=(const uint32_t *)entry;
   if(be32(*tiff_next_diroff) > 0)
   {
-    const uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth, count+1);
+    const uint64_t new_offset=header_check_tiff_be(fr, be32(*tiff_next_diroff), depth+1, count+1);
     if(new_offset != -1 && max_offset < new_offset)
       max_offset=new_offset;
   }
