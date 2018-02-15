@@ -306,6 +306,9 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
   /* RFC3625  The QCP File Format and Media Types for Speech Data */
   else if(memcmp(&buffer[8],"QLCM",4)==0)
     file_recovery_new->extension="qcp";
+  /* https://en.wikipedia.org/wiki/WebP */
+  else if(memcmp(&buffer[8],"WEBP",4)==0)
+    file_recovery_new->extension="webp";
   else
     file_recovery_new->extension="avi";
   return 1;
