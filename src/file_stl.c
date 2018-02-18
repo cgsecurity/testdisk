@@ -45,6 +45,7 @@ const file_hint_t file_hint_stl= {
 
 static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const uint64_t *fs_ptr=(const uint64_t *)&buffer[80];
   unsigned int i;
   /* STL Binary format
    * http://www.ennex.com/~fabbers/StL.asp	*/
@@ -56,8 +57,7 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_stl.extension;
-  file_recovery_new->calculated_file_size=80+4+50*
-    (uint64_t)(buffer[80]+(buffer[81]<<8)+(buffer[82]<<16)+(buffer[93]<<24));
+  file_recovery_new->calculated_file_size=80+4+50*le64(*fs_ptr);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
