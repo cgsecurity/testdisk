@@ -522,7 +522,7 @@ int header_check_tiff_le_new(const unsigned char *buffer, const unsigned int buf
       /* TODO
        * sr2 if Sony::FileFormat begins by 1
        * arw otherwise */
-      if(strcmp(tag_make, "SONY")==0)
+      if(memcmp(tag_make, "SONY", 5)==0)
 	file_recovery_new->extension="sr2";
       else if(strncmp(tag_make, "SONY ",5)==0)
 	file_recovery_new->extension="arw";

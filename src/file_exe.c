@@ -503,7 +503,7 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
     {
       if(le32(pe_section->SizeOfRawData)>0)
       {
-	if(strcmp((const char*)pe_section->Name, ".rsrc")==0)
+	if(memcmp((const char*)pe_section->Name, ".rsrc", 6)==0)
 	{
 	  file_exe_ressource(file,
 	      le32(pe_section->PointerToRawData),

@@ -499,12 +499,12 @@ int header_check_tiff_be_new(const unsigned char *buffer, const unsigned int buf
     tag_make=find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_MAKE, &potential_error);
     if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
     {
-      if(strcmp(tag_make, "PENTAX Corporation ")==0 ||
-	  strcmp(tag_make, "PENTAX             ")==0)
+      if( memcmp(tag_make, "PENTAX Corporation ", 20)==0 ||
+	  memcmp(tag_make, "PENTAX             ", 20)==0)
 	file_recovery_new->extension="pef";
-      else if(strcmp(tag_make, "NIKON CORPORATION")==0)
+      else if(memcmp(tag_make, "NIKON CORPORATION", 18)==0)
 	file_recovery_new->extension="nef";
-      else if(strcmp(tag_make, "Kodak")==0)
+      else if(memcmp(tag_make, "Kodak", 6)==0)
 	file_recovery_new->extension="dcr";
     }
   }
