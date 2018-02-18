@@ -94,60 +94,57 @@ static uint64_t ascii2int2(const unsigned char *string, const unsigned int max_l
 
 static int header_check_fcs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(buffer, fcs_signature, sizeof(fcs_signature))==0)
-  {
-    const struct fcs_header *fcs=(const struct fcs_header*)buffer;
-    uint64_t text_start;
-    uint64_t text_end;
-    uint64_t data_start;
-    uint64_t data_end;
-    uint64_t analysis_start;
-    uint64_t analysis_end;
-    uint64_t stext_end=0;
-    text_start=ascii2int(fcs->text_start, 8);
-    text_end=ascii2int(fcs->text_end, 8);
-    data_start=ascii2int(fcs->data_start, 8);
-    data_end=ascii2int(fcs->data_end, 8);
-    analysis_start=ascii2int(fcs->analysis_start, 8);
-    analysis_end=ascii2int(fcs->analysis_end, 8);
-    if(!(text_start<=text_end && data_start<=data_end && analysis_start<=analysis_end))
-      return 0;
-    if((data_end==0 || analysis_end==0) && text_start < buffer_size)
-    { /* Explore TEXT segment */
-      unsigned int i;
-      const char delimiter=buffer[text_start];
-      for(i=0;i<text_end && i<buffer_size;i++)
+  const struct fcs_header *fcs=(const struct fcs_header*)buffer;
+  uint64_t text_start;
+  uint64_t text_end;
+  uint64_t data_start;
+  uint64_t data_end;
+  uint64_t analysis_start;
+  uint64_t analysis_end;
+  uint64_t stext_end=0;
+  text_start=ascii2int(fcs->text_start, 8);
+  text_end=ascii2int(fcs->text_end, 8);
+  data_start=ascii2int(fcs->data_start, 8);
+  data_end=ascii2int(fcs->data_end, 8);
+  analysis_start=ascii2int(fcs->analysis_start, 8);
+  analysis_end=ascii2int(fcs->analysis_end, 8);
+  if(!(text_start<=text_end && data_start<=data_end && analysis_start<=analysis_end))
+    return 0;
+  if((data_end==0 || analysis_end==0) && text_start < buffer_size)
+  { /* Explore TEXT segment */
+    unsigned int i;
+    const char delimiter=buffer[text_start];
+    const unsigned int smallest=(buffer_size < text_end ? buffer_size : text_end);
+    for(i=0; i<smallest; i++)
+    {
+      if(buffer[i]==delimiter)
       {
-	if(buffer[i]==delimiter)
-	{
-	  if(i+1+8+1<text_end &&
-	      memcmp(buffer+i+1,"$ENDDATA",8)==0 && buffer[i+1+8]==delimiter)
-	    data_end=ascii2int2(&buffer[i+1+8+1], text_end-(i+1+8+1), delimiter);
-	  else if(i+1+9+1<text_end &&
-	      memcmp(buffer+i+1,"$ENDSTEXT",9)==0 && buffer[i+1+9]==delimiter)
-	    stext_end=ascii2int2(&buffer[i+1+9+1], text_end-(i+1+9+1), delimiter);
-	  else if(i+1+12+1<text_end &&
-	      memcmp(buffer+i+1,"$ENDANALYSIS",12)==0 && buffer[i+1+12]==delimiter)
-	    analysis_end=ascii2int2(&buffer[i+1+12+1], text_end-(i+1+12+1), delimiter);
-	}
+	if(i+1+8+1 < smallest &&
+	    memcmp(buffer+i+1,"$ENDDATA",8)==0 && buffer[i+1+8]==delimiter)
+	  data_end=ascii2int2(&buffer[i+1+8+1], smallest-(i+1+8+1), delimiter);
+	else if(i+1+9+1 < smallest &&
+	    memcmp(buffer+i+1,"$ENDSTEXT",9)==0 && buffer[i+1+9]==delimiter)
+	  stext_end=ascii2int2(&buffer[i+1+9+1], smallest-(i+1+9+1), delimiter);
+	else if(i+1+12+1 < smallest &&
+	    memcmp(buffer+i+1,"$ENDANALYSIS",12)==0 && buffer[i+1+12]==delimiter)
+	  analysis_end=ascii2int2(&buffer[i+1+12+1], smallest-(i+1+12+1), delimiter);
       }
     }
-#ifdef DEBUG_FCS
-    log_info("$ENDDATA %llu\n", (long long unsigned) data_end);
-    log_info("$ENDSTEXT %llu\n", (long long unsigned) stext_end);
-    log_info("$ENDANALYSIS %llu\n", (long long unsigned) analysis_end);
-#endif
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_fcs.extension;
-    file_recovery_new->min_filesize=58;
-    file_recovery_new->calculated_file_size=data_end+9;
-    if(file_recovery_new->calculated_file_size < analysis_end+9)
-      file_recovery_new->calculated_file_size=analysis_end+9;
-    if(file_recovery_new->calculated_file_size < stext_end+9)
-      file_recovery_new->calculated_file_size=stext_end+9;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
   }
-  return 0;
+#ifdef DEBUG_FCS
+  log_info("$ENDDATA %llu\n", (long long unsigned) data_end);
+  log_info("$ENDSTEXT %llu\n", (long long unsigned) stext_end);
+  log_info("$ENDANALYSIS %llu\n", (long long unsigned) analysis_end);
+#endif
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fcs.extension;
+  file_recovery_new->min_filesize=58;
+  file_recovery_new->calculated_file_size=data_end+9;
+  if(file_recovery_new->calculated_file_size < analysis_end+9)
+    file_recovery_new->calculated_file_size=analysis_end+9;
+  if(file_recovery_new->calculated_file_size < stext_end+9)
+    file_recovery_new->calculated_file_size=stext_end+9;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
