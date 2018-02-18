@@ -880,7 +880,9 @@ static int header_check_winzip(const unsigned char *buffer, const unsigned int b
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size)
 {
   unsigned int i;
-  for(i=0;i<haystack_size;i++)
+  if(haystack_size < needle_size)
+    return 0;
+  for(i=0; i <= haystack_size - needle_size; i++)
     if(memcmp(&haystack[i],needle,needle_size)==0)
       return (i+needle_size);
   return 0;

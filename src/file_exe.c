@@ -119,7 +119,10 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
       uint64_t sum=0;
       const struct pe_image_section_hdr *pe_image_section=(const struct pe_image_section_hdr*)
 	((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
-      for(i=0;i<le16(pe_hdr->NumberOfSections) && (const unsigned char*)pe_image_section < buffer+buffer_size;i++,pe_image_section++)
+      for(i=0;
+	  i<le16(pe_hdr->NumberOfSections) &&
+	  (const unsigned char*)(pe_image_section+1) <= buffer+buffer_size;
+	  i++,pe_image_section++)
       {
 	if(le32(pe_image_section->SizeOfRawData)>0)
 	{

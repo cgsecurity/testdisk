@@ -1349,7 +1349,7 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
       return 2;
     j++;
     for(l=0; l < 16; l++)
-      if(j < buffer_size)
+      if(j+l < buffer_size)
 	sum+=buffer[j+l];
     if(sum>255)
       return 2;

@@ -71,7 +71,7 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
   uint64_t naxis_size=1;
   unsigned int i=*i_pointer;
   /* Header is composed of 80 character fixed-length strings */
-  for(; i<buffer_size &&
+  for(; i+80 < buffer_size &&
       memcmp(&buffer[i], "END ", 4)!=0;
       i+=80)
   {

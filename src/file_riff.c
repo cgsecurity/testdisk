@@ -259,7 +259,7 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension="avi";
     /* Is it a raw avi stream with Data Binary chunks ? */
-    if(size + 4 < buffer_size &&
+    if(size < buffer_size - 4 &&
 	memcmp(&buffer[size - sizeof(list_movi)], &list_movi, sizeof(list_movi)) ==0 &&
 	buffer[size+2]=='d' &&
 	buffer[size+3]=='b')
