@@ -27,6 +27,7 @@
 #include <string.h>
 #endif
 #include <stdio.h>
+#include <assert.h>
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
@@ -65,8 +66,9 @@ static data_check_t data_check_abr(const unsigned char *buffer, const unsigned i
 static int header_check_abr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct abr_header *hdr=(const struct abr_header*)&buffer[4];
-  unsigned int i=4;
-  while(i + 12 < buffer_size && i + 12 < 512)
+  uint64_t i=4;
+  assert(buffer_size >= 12);
+  while(i < buffer_size - 12 && i < 512 - 12)
   {
     const struct abr_header *h=(const struct abr_header*)&buffer[i];
     if(memcmp(h->magic, "8BIM", 4)!=0)

@@ -178,7 +178,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
     if(le16(dos_hdr->bytes_in_last_block))
       coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
 
-    if(coff_offset+1 < buffer_size &&
+    if(coff_offset < buffer_size-1 &&
 	buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
     { /*  COFF_I386MAGIC */
       reset_file_recovery(file_recovery_new);

@@ -410,9 +410,9 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  uint64_t i=0;
   unsigned int packet_tag[16];
   unsigned int nbr=0;
-  unsigned int i=0;
   int partial_body_length=0;
   int stop=0;
   memset(packet_tag, 0, sizeof(packet_tag));

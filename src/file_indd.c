@@ -103,7 +103,7 @@ static void file_check_indd(file_recovery_t *file_recovery)
       return ;
     }
     /* header + data + trailer */
-    offset+=le32(hdr.fStreamLength)+2*sizeof(struct InDesignContigObjMarker);
+    offset+=(uint64_t)le32(hdr.fStreamLength)+2*sizeof(struct InDesignContigObjMarker);
   } while(offset < file_size_org);
   file_recovery->file_size=(offset+4096-1)/4096*4096;
   if(file_recovery->file_size>file_size_org)

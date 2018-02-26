@@ -65,8 +65,8 @@ struct dd_struct
 static void file_check_hdf(file_recovery_t *file_recovery)
 {
   uint64_t file_size=0;
-  unsigned int offset_old=4;
-  unsigned int offset=4;
+  uint64_t offset_old;
+  uint64_t offset=4;
   struct dd_struct *dd=(struct dd_struct *)MALLOC(sizeof(struct dd_struct)*65536);
   do
   {
@@ -96,8 +96,8 @@ static void file_check_hdf(file_recovery_t *file_recovery)
 	  be16(p->tag), be16(p->ref), be32(p->offset), be32(p->length));
 #endif
       if((unsigned)be32(p->offset)!=(unsigned)(-1) &&
-	file_size < (unsigned)be32(p->offset) + (unsigned)be32(p->length))
-	file_size = (unsigned)be32(p->offset) + (unsigned)be32(p->length);
+	file_size < (uint64_t)be32(p->offset) + (uint64_t)be32(p->length))
+	file_size = (uint64_t)be32(p->offset) + (uint64_t)be32(p->length);
     }
     offset_old=offset;
     offset=be32(ddh.next);

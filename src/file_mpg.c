@@ -42,7 +42,7 @@ const file_hint_t file_hint_mpg= {
   .register_header_check=&register_header_check_mpg
 };
 
-static int calculate_packet_size(const unsigned char *buffer)
+static unsigned int calculate_packet_size(const unsigned char *buffer)
 {
   /* http://dvd.sourceforge.net/dvdinfo/mpeghdrs.html */
   if(buffer[0]!=0 || buffer[1]!=0 || buffer[2]!=1)
