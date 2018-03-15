@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="February 2018"
+TESTDISKDATE="March 2018"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -623,7 +623,6 @@ if test "x$with_jpeg" != "xno"; then
       else
         photorec_LDADD="$photorec_LDADD ${jpeg_lib_a}"
         qphotorec_LDADD="$qphotorec_LDADD ${jpeg_lib_a}"
-        fidentify_LDADD="$fidentify_LDADD ${jpeg_lib_a}"
       fi
       have_jpeg=yes
       ],AC_MSG_WARN(No jpeg library detected))
@@ -830,7 +829,7 @@ if test "x$have_ewf" != "xyes"; then
   fi
 fi
 #-Wconversion -Wmissing-noreturn -ffunction-sections -Wl,--gc-sections -Wl,--print-gc-sections
-for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wunreachable-code
+for option in -Wdeclaration-after-statement -Wall -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wunreachable-code -Wvla
 do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
@@ -845,7 +844,7 @@ done
 unset option
 
 AC_LANG_PUSH([C++])
-for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC -Wvla
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $option"

@@ -910,11 +910,12 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
 
 int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
 {
-  unsigned char buffer[disk->sector_size];
-  if((unsigned)disk->pread(disk, &buffer, disk->sector_size, partition->part_offset) != disk->sector_size)
+  unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
+  if((unsigned)disk->pread(disk, buffer, disk->sector_size, partition->part_offset) != disk->sector_size)
   {
     screen_buffer_add("check_OS2MB: Read error\n");
     log_error("check_OS2MB: Read error\n");
+    free(buffer);
     return 1;
   }
   if(test_OS2MB(disk,(const struct fat_boot_sector *)buffer,partition,verbose,0)!=0)
@@ -924,9 +925,11 @@ int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
       log_info("\n\ntest_OS2MB()\n");
       log_partition(disk, partition);
     }
+    free(buffer);
     return 1;
   }
   partition->upart_type=UP_OS2MB;
+  free(buffer);
   return 0;
 }
 

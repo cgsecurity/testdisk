@@ -28,6 +28,9 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>     /* free */
+#endif
 #include "types.h"
 #include "common.h"
 #include "fat.h"
@@ -83,11 +86,12 @@ int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, pa
 
 int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
 {
-  unsigned char buffer[disk_car->sector_size];
-  if((unsigned)disk_car->pread(disk_car, &buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
+  unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, partition->part_offset) != disk_car->sector_size)
   {
     screen_buffer_add("check_HPFS: Read error\n");
     log_error("check_HPFS: Read error\n");
+    free(buffer);
     return 1;
   }
   if(test_HPFS(disk_car,(const struct fat_boot_sector *)buffer,partition,verbose,0)!=0)
@@ -97,10 +101,10 @@ int check_HPFS(disk_t *disk_car,partition_t *partition,const int verbose)
       log_info("\n\ntest_HPFS()\n");
       log_partition(disk_car,partition);
     }
+    free(buffer);
     return 1;
   }
   set_HPFS_info(partition);
+  free(buffer);
   return 0;
 }
-
-
