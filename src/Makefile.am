@@ -66,6 +66,7 @@ file_C			= filegen.c \
 			  file_bld.c \
 			  file_bmp.c \
 			  file_bpg.c \
+			  file_bvr.c \
 			  file_bz2.c \
 			  file_c4d.c \
 			  file_cab.c \
