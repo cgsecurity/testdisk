@@ -177,7 +177,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.a
     struct utsname Ver;
     if(uname(&Ver)==0)
     {
-      static char buffer[100] = {0x00};
+      static char buffer[512] = {0x00};
       snprintf(buffer, sizeof(buffer) - 1, "%s, kernel %s (%s) %s",
 	  Ver.sysname, Ver.release, Ver.version, Ver.machine);
       return buffer;

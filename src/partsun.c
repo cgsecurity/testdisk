@@ -219,8 +219,9 @@ static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *lis
 list_part_t *add_partition_sun_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
   CHS_t start,end;
+  partition_t *new_partition;
   assert(current_cmd!=NULL);
-  partition_t *new_partition=partition_new(&arch_sun);
+  new_partition=partition_new(&arch_sun);
   start.cylinder=0;
   start.head=0;
   start.sector=1;

@@ -105,7 +105,7 @@ int recover_exFAT(const disk_t *disk, const struct exfat_super_block *exfat_head
 #endif
   if((le64(exfat_header->start_sector) * disk ->sector_size +
       (12 << exfat_header->blocksize_bits) == partition->part_offset) ||
-    (disk->arch==&arch_none && (12 << exfat_header->blocksize_bits) == partition->part_offset))
+    (disk->arch==&arch_none && ((uint64_t)12 << exfat_header->blocksize_bits) == partition->part_offset))
   {
     partition->sb_offset=12 << exfat_header->blocksize_bits;
     partition->part_offset-=partition->sb_offset;

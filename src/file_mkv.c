@@ -153,7 +153,7 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
       return 0;
     segment_data_offset=segment_offset+sizeof(EBML_Segment)+len;
     /* Check if size is unkown */
-    if(segment_size == (1LL << (7 * len)) - 1)
+    if(segment_size == (1ULL << (7 * len)) - 1)
       segment_size=0;
 #ifdef DEBUG_MKV
     log_info("segment_data_offset %llu\n", (long long unsigned) segment_data_offset);

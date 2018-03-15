@@ -376,33 +376,33 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   for(i=0;i<4;i++)
   {
     const struct partition_dos *p=pt_offset(buffer,i);
-    status_type_t status=STATUS_PRIM;
+    status_type_t status;
     switch(p->sys_ind)
     {
-      case P_NO_OS:
-	break;
       case P_EXTENDX:
       case P_EXTENDED:
       case P_LINUXEXTENDX:
 	status=STATUS_EXT;
-	/* don't put a break */
-      default:
-	{
-	  int insert_error=0;
-	  partition_t *new_partition=partition_new(&arch_i386);
-	  i386_entry2partition(disk_car, (uint64_t)0, new_partition, p, status,i+1,verbose,saveheader);
-	  if(verbose>1)
-	    log_dos_entry(p);
-	  aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
-	  if(new_partition->errcode!=BAD_NOERR)
-	  {
-	    screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
-	  }
-	  new_list_part=insert_new_partition(new_list_part,new_partition, 0, &insert_error);
-	  if(insert_error>0)
-	    free(new_partition);
-	}
 	break;
+      default:
+	status=STATUS_PRIM;
+	break;
+    }
+    if(p->sys_ind != P_NO_OS)
+    {
+      int insert_error=0;
+      partition_t *new_partition=partition_new(&arch_i386);
+      i386_entry2partition(disk_car, (uint64_t)0, new_partition, p, status,i+1,verbose,saveheader);
+      if(verbose>1)
+	log_dos_entry(p);
+      aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
+      if(new_partition->errcode!=BAD_NOERR)
+      {
+	screen_buffer_add("%s\n",errmsg_i386_entry2partition(new_partition->errcode));
+      }
+      new_list_part=insert_new_partition(new_list_part,new_partition, 0, &insert_error);
+      if(insert_error>0)
+	free(new_partition);
     }
   }
   test_MBR_data(new_list_part);
@@ -422,9 +422,10 @@ static void test_MBR_data(list_part_t *list_part)
     const partition_t *partition=element->part;
     switch(partition->status)
     {
-      case STATUS_PRIM_BOOT:
-	nb_boot++;
       case STATUS_PRIM:
+      case STATUS_PRIM_BOOT:
+	if(partition->status == STATUS_PRIM_BOOT)
+	  nb_boot++;
 	switch(partition->part_type_i386)
 	{
 	  case P_12FAT:
@@ -1195,6 +1196,9 @@ static int test_structure_i386(list_part_t *list_part)
       case STATUS_PRIM_BOOT:
 	if(nbr_prim_boot++)
 	  return 1;
+	nbr_prim++;
+	first_log=NULL;
+	break;
       case STATUS_PRIM:
 	nbr_prim++;
 	first_log=NULL;
