@@ -111,6 +111,7 @@ FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
 {
   char*filename;
   char *path;
+  FILE *handle;
   path = getenv("HOME");
   if(path == NULL)
     return log_open(default_filename, mode, errsv);
@@ -118,9 +119,9 @@ FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
   strcpy(filename, path);
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_open(filename, mode, errsv);
+  handle=log_open(filename, mode, errsv);
   free(filename);
-  return log_handle;
+  return handle;
 }
 #endif
 
