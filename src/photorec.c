@@ -448,7 +448,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
 
 void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset)
 {
-  struct td_list_head *search_walker = NULL;
+  struct td_list_head *search_walker;
   struct td_list_head *search_walker_prev = NULL;
   log_info("blocksize=%u, offset=%u\n", blocksize, (unsigned int)(offset%blocksize));
   /* Align end of last range (round up) */
