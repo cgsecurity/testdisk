@@ -675,7 +675,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
         int res=0;
         partition->part_size=(uint64_t)0;
         partition->part_offset=search_location;
-        if(res<=0 && test_nbr==0)
+        if(test_nbr==0)
         {
           if(search_now_raid>0 || fast_mode>1)
           { /* Search Linux software RAID */
