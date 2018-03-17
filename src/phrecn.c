@@ -590,7 +590,7 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
     wmove(stdscr,5,4);
     if(offset>0)
       wprintw(stdscr,"Previous");
-    for(i=offset;files_enable[i].file_hint!=NULL && i<offset+INTER_FSELECT;i++)
+    for(i=offset; i<offset+INTER_FSELECT && files_enable[i].file_hint!=NULL; i++)
     {
       wmove(stdscr,6+i-offset,0);
       wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
