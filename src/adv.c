@@ -459,7 +459,6 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   int current_element_num=0;
 #ifdef HAVE_NCURSES
   int offset=0;
-  int old_LINES;
 #endif
   int rewrite=1;
   unsigned int menu=0;
@@ -487,8 +486,8 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
       {0,NULL,NULL}
     };
     const char *options;
-    old_LINES=LINES;
-    interface_adv_ncurses(disk_car, rewrite || (old_LINES!=LINES), list_part, current_element, offset);
+    int old_LINES=LINES;
+    interface_adv_ncurses(disk_car, rewrite, list_part, current_element, offset);
 #endif
     rewrite=0;
     if(current_element==NULL)
@@ -632,5 +631,9 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	offset=current_element_num-INTER_ADV+1;
 #endif
     }
+#ifdef HAVE_NCURSES
+    if(old_LINES!=LINES)
+      rewrite=1;
+#endif
   }
 }
