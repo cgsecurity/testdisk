@@ -623,6 +623,7 @@ if test "x$with_jpeg" != "xno"; then
       else
         photorec_LDADD="$photorec_LDADD ${jpeg_lib_a}"
         qphotorec_LDADD="$qphotorec_LDADD ${jpeg_lib_a}"
+        fidentify_LDADD="$fidentify_LDADD ${jpeg_lib_a}"
       fi
       have_jpeg=yes
       ],AC_MSG_WARN(No jpeg library detected))
