@@ -372,7 +372,10 @@ void dir_whole_partition_copy(disk_t *disk, const partition_t *partition, dir_da
   dst_directory[1]='\0';
 #ifdef HAVE_GETCWD
   if(getcwd(dst_directory, 4096)==NULL)
+  {
+    free(dst_directory);
     return ;
+  }
 #endif
   dir_data->local_dir=dst_directory;
   dir_whole_partition_copy_aux(disk, partition, dir_data, inode, &copy_ok, &copy_bad);
