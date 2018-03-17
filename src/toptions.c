@@ -25,6 +25,7 @@
  
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -81,41 +82,35 @@ static void interface_options_ncurses(int *dump_ind, int *align, unsigned int *e
 
 void interface_options(int *dump_ind, int *align, unsigned int *expert, char**current_cmd)
 {
+  assert(current_cmd!=NULL);
   if(*current_cmd!=NULL)
   {
     int keep_asking=1;
     do
     {
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"dump",4)==0)
+      skip_comma_in_command(current_cmd);
+      if(check_command(current_cmd,"dump",4)==0)
       {
-	(*current_cmd)+=4;
 	*dump_ind=1;
       }
-      else if(strncmp(*current_cmd,"nodump",6)==0)
+      else if(check_command(current_cmd,"nodump",6)==0)
       {
-	(*current_cmd)+=6;
 	*dump_ind=0;
       }
-      else if(strncmp(*current_cmd,"align",5)==0)
+      else if(check_command(current_cmd,"align",5)==0)
       {
-	(*current_cmd)+=5;
 	*align=1;
       }
-      else if(strncmp(*current_cmd,"noalign",7)==0)
+      else if(check_command(current_cmd,"noalign",7)==0)
       {
-	(*current_cmd)+=7;
 	*align=0;
       }
-      else if(strncmp(*current_cmd,"expert",6)==0)
+      else if(check_command(current_cmd,"expert",6)==0)
       {
-	(*current_cmd)+=6;
 	*expert=1;
       }
-      else if(strncmp(*current_cmd,"noexpert",8)==0)
+      else if(check_command(current_cmd,"noexpert",8)==0)
       {
-	(*current_cmd)+=6;
 	*expert=0;
       }
       else

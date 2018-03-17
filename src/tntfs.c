@@ -74,38 +74,31 @@ static void dump_NTFS(disk_t *disk_car, const partition_t *partition, const unsi
 
 static int ntfs_boot_sector_command(char **current_cmd, const char *options)
 {
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
-  if(strncmp(*current_cmd,"rebuildbs",9)==0)
+  skip_comma_in_command(current_cmd);
+  if(check_command(current_cmd,"rebuildbs",9)==0)
   {
-    (*current_cmd)+=9;
     return 'R';
   }
-  else if(strncmp(*current_cmd,"dump",4)==0)
+  else if(check_command(current_cmd,"dump",4)==0)
   {
-    (*current_cmd)+=4;
     return 'D';
   }
-  else if(strncmp(*current_cmd,"list",4)==0)
+  else if(check_command(current_cmd,"list",4)==0)
   {
-    (*current_cmd)+=4;
     return 'L';
   }
-  else if(strncmp(*current_cmd,"originalntfs",12)==0)
+  else if(check_command(current_cmd,"originalntfs",12)==0)
   {
-    (*current_cmd)+=12;
     if(strchr(options,'O')!=NULL)
       return 'O';
   }
-  else if(strncmp(*current_cmd,"backupntfs",10)==0)
+  else if(check_command(current_cmd,"backupntfs",10)==0)
   {
-    (*current_cmd)+=10;
     if(strchr(options,'B')!=NULL)
       return 'B';
   }
-  else if(strncmp(*current_cmd,"repairmft",9)==0)
+  else if(check_command(current_cmd,"repairmft",9)==0)
   {
-    (*current_cmd)+=9;
     if(strchr(options,'M')!=NULL)
       return 'M';
   }
@@ -114,11 +107,9 @@ static int ntfs_boot_sector_command(char **current_cmd, const char *options)
 
 static int is_no_confirm_command(char **current_cmd)
 {
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
-  if(strncmp(*current_cmd,"noconfirm",9)==0)
+  skip_comma_in_command(current_cmd);
+  if(check_command(current_cmd,"noconfirm",9)==0)
   {
-    (*current_cmd)+=9;
     return 1;
   }
   return 0;

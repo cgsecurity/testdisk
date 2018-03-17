@@ -341,14 +341,12 @@ list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char
   new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-new_partition->part_offset;
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
   while(1)
   {
-    if(strncmp(*current_cmd,"s,",2)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"s,",2)==0)
     {
       uint64_t part_offset;
-      (*current_cmd)+=2;
       part_offset=new_partition->part_offset;
       new_partition->part_offset=(uint64_t)ask_number_cli(
           current_cmd,
@@ -359,9 +357,8 @@ list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char
         (uint64_t)disk_car->sector_size;
       new_partition->part_size=new_partition->part_size + part_offset - new_partition->part_offset;
     }
-    else if(strncmp(*current_cmd,"S,",2)==0)
+    else if(check_command(current_cmd,"S,",2)==0)
     {
-      (*current_cmd)+=2;
       new_partition->part_size=(uint64_t)ask_number_cli(
           current_cmd,
           (new_partition->part_offset+new_partition->part_size-1)/disk_car->sector_size,
@@ -371,9 +368,8 @@ list_part_t *add_partition_gpt_cli(disk_t *disk_car,list_part_t *list_part, char
         (uint64_t)disk_car->sector_size +
         disk_car->sector_size - new_partition->part_offset;
     }
-    else if(strncmp(*current_cmd,"T,",2)==0)
+    else if(check_command(current_cmd,"T,",2)==0)
     {
-      (*current_cmd)+=2;
       change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if(new_partition->part_size>0 && guid_cmp(new_partition->part_type_gpt, GPT_ENT_TYPE_UNUSED)!=0)

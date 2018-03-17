@@ -173,23 +173,19 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
 	  do
 	  {
 	    do_continue=0;
-	    while(*current_cmd[0]==',')
-	      (*current_cmd)++;
-	    if(strncmp(*current_cmd,"recursive",9)==0)
+	    skip_comma_in_command(current_cmd);
+	    if(check_command(current_cmd,"recursive",9)==0)
 	    {
-	      (*current_cmd)+=9;
 	      recursive=1;
 	      do_continue=1;
 	    }
-	    else if(strncmp(*current_cmd,"fullpathname",12)==0)
+	    else if(check_command(current_cmd,"fullpathname",12)==0)
 	    {
-	      (*current_cmd)+=12;
 	      dir_data.param|=FLAG_LIST_PATHNAME;
 	      do_continue=1;
 	    }
-	    else if(strncmp(*current_cmd, "filecopy", 8)==0)
+	    else if(check_command(current_cmd, "filecopy", 8)==0)
 	    {
-	      (*current_cmd)+=8;
 	      copy_files=1;
 	      do_continue=1;
 	    }

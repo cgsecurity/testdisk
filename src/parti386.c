@@ -1234,49 +1234,41 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
   while(1)
   {
-    if(strncmp(*current_cmd,"c,",2)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"c,",2)==0)
     {
-      (*current_cmd)+=2;
       start.cylinder=ask_number_cli(current_cmd, start.cylinder,
 	  0, disk_car->geom.cylinders-1, "Enter the starting cylinder ");
     }
-    else if(strncmp(*current_cmd,"h,",2)==0)
+    else if(check_command(current_cmd,"h,",2)==0)
     {
-      (*current_cmd)+=2;
       start.head=ask_number_cli(current_cmd, start.head,
 	  0, disk_car->geom.heads_per_cylinder-1, "Enter the starting head ");
     }
-    else if(strncmp(*current_cmd,"s,",2)==0)
+    else if(check_command(current_cmd,"s,",2)==0)
     {
-      (*current_cmd)+=2;
       start.sector=ask_number_cli(current_cmd, start.sector,
 	  1, disk_car->geom.sectors_per_head, "Enter the starting sector ");
     }
-    else if(strncmp(*current_cmd,"C,",2)==0)
+    else if(check_command(current_cmd,"C,",2)==0)
     {
-      (*current_cmd)+=2;
       end.cylinder=ask_number_cli(current_cmd, end.cylinder,
 	  start.cylinder, disk_car->geom.cylinders-1, "Enter the ending cylinder ");
     }
-    else if(strncmp(*current_cmd,"H,",2)==0)
+    else if(check_command(current_cmd,"H,",2)==0)
     {
-      (*current_cmd)+=2;
       end.head=ask_number_cli(current_cmd, end.head,
 	  0, disk_car->geom.heads_per_cylinder-1, "Enter the ending head ");
     }
-    else if(strncmp(*current_cmd,"S,",2)==0)
+    else if(check_command(current_cmd,"S,",2)==0)
     {
-      (*current_cmd)+=2;
       end.sector=ask_number_cli(current_cmd, end.sector,
 	  1, disk_car->geom.sectors_per_head-1, "Enter the ending sector ");
     }
-    else if(strncmp(*current_cmd,"T,",2)==0)
+    else if(check_command(current_cmd,"T,",2)==0)
     {
-      (*current_cmd)+=2;
       change_part_type_cli(disk_car,new_partition,current_cmd);
     }
     else if((CHS2offset(disk_car,&end)>new_partition->part_offset) &&

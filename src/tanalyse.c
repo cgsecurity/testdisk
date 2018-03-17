@@ -76,11 +76,9 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
   command='Q';
   if(*current_cmd!=NULL)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"backup",6)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"backup",6)==0)
     {
-      (*current_cmd)+=6;
       if(list_part!=NULL)
 	command='B';
     }

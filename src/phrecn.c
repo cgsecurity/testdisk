@@ -236,47 +236,38 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   params_reset(params, options);
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
-    while(params->cmd_run[0]==',')
-      params->cmd_run++;
-    if(strncmp(params->cmd_run,"status=unformat",15)==0)
+    skip_comma_in_command(&params->cmd_run);
+    if(check_command(&params->cmd_run,"status=unformat",15)==0)
     {
       params->status=STATUS_UNFORMAT;
-      params->cmd_run+=15;
     }
-    else if(strncmp(params->cmd_run,"status=find_offset",18)==0)
+    else if(check_command(&params->cmd_run,"status=find_offset",18)==0)
     {
       params->status=STATUS_FIND_OFFSET;
-      params->cmd_run+=18;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_on_bf",17)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_on_bf",17)==0)
     {
       params->status=STATUS_EXT2_ON_BF;
-      params->cmd_run+=17;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_on_save_everything",30)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_on_save_everything",30)==0)
     {
       params->status=STATUS_EXT2_ON_SAVE_EVERYTHING;
-      params->cmd_run+=30;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_on",14)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_on",14)==0)
     {
       params->status=STATUS_EXT2_ON;
-      params->cmd_run+=14;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_off_bf",18)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_off_bf",18)==0)
     {
       params->status=STATUS_EXT2_OFF_BF;
-      params->cmd_run+=18;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_off_save_everything",31)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_off_save_everything",31)==0)
     {
       params->status=STATUS_EXT2_OFF_SAVE_EVERYTHING;
-      params->cmd_run+=31;
     }
-    else if(strncmp(params->cmd_run,"status=ext2_off",15)==0)
+    else if(check_command(&params->cmd_run,"status=ext2_off",15)==0)
     {
       params->status=STATUS_EXT2_OFF;
-      params->cmd_run+=15;
     }
   }
   else

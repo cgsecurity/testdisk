@@ -286,3 +286,28 @@ time_t td_ntfs2utc (int64_t ntfstime)
 {
   return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
 }
+
+int check_command(char **current_cmd, const char *cmd, size_t n)
+{
+  const int res=strncmp(*current_cmd, cmd, n);
+  if(res==0)
+    (*current_cmd)+=n;
+  return res;
+}
+
+void skip_comma_in_command(char **current_cmd)
+{
+  while(*current_cmd[0]==',')
+    (*current_cmd)++;
+}
+
+uint64_t get_int_from_command(char **current_cmd)
+{
+  uint64_t tmp=0;
+  while(*current_cmd[0] >='0' && *current_cmd[0] <= '9')
+  {
+    tmp = tmp * 10 + *current_cmd[0] - '0';
+    (*current_cmd)++;
+  }
+  return tmp;
+}

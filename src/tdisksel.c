@@ -241,8 +241,7 @@ static int testdisk_disk_selection_cli(int verbose,int dump_ind, const list_disk
   }
   if(*current_cmd!=NULL)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
     {
       disk_t *disk=current_disk->disk;
       autodetect_arch(disk, NULL);

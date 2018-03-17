@@ -82,14 +82,10 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
   log_info("Current geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
   while (done==0)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"C,",2)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"C,",2)==0)
     {
-      (*current_cmd)+=2;
-      tmp_val = atol(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      tmp_val = get_int_from_command(current_cmd);
       if (tmp_val > 0)
       {
 	disk_car->geom.cylinders = tmp_val;
@@ -100,12 +96,9 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       else
 	log_error("Illegal cylinders value\n");
     }
-    else if(strncmp(*current_cmd,"H,",2)==0)
+    else if(check_command(current_cmd,"H,",2)==0)
     {
-      (*current_cmd)+=2;
-      tmp_val = atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      tmp_val = get_int_from_command(current_cmd);
       if (tmp_val > 0 && tmp_val <= MAX_HEADS)
       {
 	disk_car->geom.heads_per_cylinder = tmp_val;
@@ -117,12 +110,9 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       else
 	log_error("Illegal heads value\n");
     }
-    else if(strncmp(*current_cmd,"S,",2)==0)
+    else if(check_command(current_cmd,"S,",2)==0)
     {
-      (*current_cmd)+=2;
-      tmp_val = atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      tmp_val = get_int_from_command(current_cmd);
       /* SUN partition can have more than 63 sectors */
       if (tmp_val > 0) {
 	disk_car->geom.sectors_per_head = tmp_val;
@@ -133,12 +123,9 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
       } else
 	log_error("Illegal sectors value\n");
     }
-    else if(strncmp(*current_cmd,"N,",2)==0)
+    else if(check_command(current_cmd,"N,",2)==0)
     {
-      (*current_cmd)+=2;
-      tmp_val = atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      tmp_val = get_int_from_command(current_cmd);
       if(change_sector_size(disk_car, cyl_modified, tmp_val))
 	  log_error("Illegal sector size\n");
       else

@@ -471,11 +471,9 @@ int main( int argc, char **argv )
     int command='Q';
     if(cmd_run!=NULL)
     {
-      while(cmd_run[0]==',')
-	(cmd_run)++;
-      if(strncmp(cmd_run,"list",4)==0)
+      skip_comma_in_command(&cmd_run);
+      if(check_command(&cmd_run,"list",4)==0)
       {
-	(cmd_run)+=4;
 	command='L';
       }
       else if(cmd_run[0]!='\0')

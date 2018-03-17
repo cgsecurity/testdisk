@@ -115,9 +115,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   }
   if(params->cmd_run!=NULL)
   {
-    while(params->cmd_run[0]==',')
-      params->cmd_run++;
-    if(strncmp(params->cmd_run,"inter",5)==0)
+    skip_comma_in_command(&params->cmd_run);
+    if(check_command(&params->cmd_run,"inter",5)==0)
     {   /* Start interactive mode */
       params->cmd_run=NULL;
     }

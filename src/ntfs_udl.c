@@ -1617,11 +1617,9 @@ static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, d
   log_list_file(disk_car, partition, dir_data, dir_list);
   if(*current_cmd!=NULL)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"allundelete",11)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"allundelete",11)==0)
     {
-      (*current_cmd)+=11;
       ntfs_undelete_cli(dir_data, dir_list);
     }
     return;	/* Quit */

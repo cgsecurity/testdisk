@@ -748,8 +748,7 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
   else if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     offset=0;
-    while(*params->cmd_run==',')
-      params->cmd_run++;
+    skip_comma_in_command(&params->cmd_run);
     while(*params->cmd_run >= '0' && *params->cmd_run <= '9')
     {
       offset=offset * 10 + (*params->cmd_run - '0');

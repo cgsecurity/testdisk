@@ -219,49 +219,39 @@ static int adv_string_to_command(char**current_cmd, list_part_t **current_elemen
   do
   {
     keep_asking=0;
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"type",4)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"type",4)==0)
     {
-      (*current_cmd)+=4;
       command='t';
     }
-    else if(strncmp(*current_cmd,"addpart",7)==0)
+    else if(check_command(current_cmd,"addpart",7)==0)
     {
-      (*current_cmd)+=7;
       command='a';
     }
-    else if(strncmp(*current_cmd,"boot",4)==0)
+    else if(check_command(current_cmd,"boot",4)==0)
     {
-      (*current_cmd)+=4;
       command='b';
     }
-    else if(strncmp(*current_cmd,"copy",4)==0)
+    else if(check_command(current_cmd,"copy",4)==0)
     {
-      (*current_cmd)+=4;
       command='c';
     }
-    else if(strncmp(*current_cmd,"list",4)==0)
+    else if(check_command(current_cmd,"list",4)==0)
     {
-      (*current_cmd)+=4;
       command='l';
     }
-    else if(strncmp(*current_cmd,"undelete",8)==0)
+    else if(check_command(current_cmd,"undelete",8)==0)
     {
-      (*current_cmd)+=8;
       command='u';
     }
-    else if(strncmp(*current_cmd,"superblock",10)==0)
+    else if(check_command(current_cmd,"superblock",10)==0)
     {
-      (*current_cmd)+=10;
       command='s';
     }
     else if(isdigit(*current_cmd[0]))
     {
       list_part_t *element;
-      const unsigned int order= atoi(*current_cmd);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      const unsigned int order= get_int_from_command(current_cmd);
       for(element=list_part;
 	  element!=NULL && element->part->order!=order;
 	  element=element->next);

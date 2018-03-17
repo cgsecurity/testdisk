@@ -136,26 +136,21 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     {
       log_ntfs_info(ntfs_header);
     }
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"list",4)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"list",4)==0)
     {
-      (*current_cmd)+=4;
       ntfs_list(disk_car, partition, newboot, current_cmd);
     }
-    else if(strncmp(*current_cmd,"dump",4)==0)
+    else if(check_command(current_cmd,"dump",4)==0)
     {
-      (*current_cmd)+=4;
       ntfs_dump(disk_car, partition, orgboot, newboot, current_cmd);
     }
-    else if(strncmp(*current_cmd,"noconfirm,",10)==0)
+    else if(check_command(current_cmd,"noconfirm,",10)==0)
     {
-      (*current_cmd)+=10;
       no_confirm=1;
     }
-    else if(strncmp(*current_cmd,"write",5)==0)
+    else if(check_command(current_cmd,"write",5)==0)
     {
-      (*current_cmd)+=5;
       if(no_confirm!=0
 #ifdef HAVE_NCURSES
 	|| ask_confirmation("Write new NTFS boot sector, confirm ? (Y/N)")!=0

@@ -214,11 +214,8 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
   if(*current_cmd!=NULL)
   {
     uint64_t tmp_val;
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    tmp_val = atouint64(*current_cmd);
-    while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
+    tmp_val = get_int_from_command(current_cmd);
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
       return tmp_val;
     else

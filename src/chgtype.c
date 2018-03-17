@@ -37,6 +37,14 @@
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_none;
 
+static int get_hex_from_command(char **current_cmd)
+{
+  const int tmp=strtol(*current_cmd, NULL, 16);
+  while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
+    (*current_cmd)++;
+  return tmp;
+}
+
 void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **current_cmd)
 {
   assert(current_cmd!=NULL);
@@ -48,12 +56,9 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
   if(partition->arch==&arch_gpt)
   {
     partition->arch=&arch_none;
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
     {
-      int tmp_val= strtol(*current_cmd, NULL, 16);
-      while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-	(*current_cmd)++;
+      const int tmp_val=get_hex_from_command(current_cmd);
       partition->arch->set_part_type(partition,tmp_val);
     }
     log_info("Change partition type:\n");
@@ -63,12 +68,9 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
   }
   if(partition->arch->set_part_type==NULL)
     return ;
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
+  skip_comma_in_command(current_cmd);
   {
-    int tmp_val= strtol(*current_cmd, NULL, 16);
-    while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
-      (*current_cmd)++;
+    const int tmp_val=get_hex_from_command(current_cmd);
     partition->arch->set_part_type(partition,tmp_val);
   }
   log_info("Change partition type:\n");

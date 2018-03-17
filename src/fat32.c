@@ -212,39 +212,32 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
     if(*current_cmd!=NULL)
     {
       command=0;
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"rebuildbs",9)==0)
+      skip_comma_in_command(current_cmd);
+      if(check_command(current_cmd,"rebuildbs",9)==0)
       {
-	(*current_cmd)+=9;
 	command='R';
       }
-      else if(strncmp(*current_cmd,"dump",4)==0)
+      else if(check_command(current_cmd,"dump",4)==0)
       {
-	(*current_cmd)+=4;
 	command='D';
       }
-      else if(strncmp(*current_cmd,"list",4)==0)
+      else if(check_command(current_cmd,"list",4)==0)
       {
-	(*current_cmd)+=4;
 	if(strchr(options,'L')!=NULL)
 	  command='L';
       }
-      else if(strncmp(*current_cmd,"repairfat",9)==0)
+      else if(check_command(current_cmd,"repairfat",9)==0)
       {
-	(*current_cmd)+=9;
 	if(strchr(options,'C')!=NULL)
 	  command='C';
       }
-      else if(strncmp(*current_cmd,"originalfat",11)==0)
+      else if(check_command(current_cmd,"originalfat",11)==0)
       {
-	(*current_cmd)+=11;
 	if(strchr(options,'O')!=NULL)
 	    command='O';
       }
-      else if(strncmp(*current_cmd,"backupfat",9)==0)
+      else if(check_command(current_cmd,"backupfat",9)==0)
       {
-	(*current_cmd)+=9;
 	if(strchr(options,'B')!=NULL)
 	    command='B';
       }

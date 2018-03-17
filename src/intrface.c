@@ -80,11 +80,9 @@ void interface_list(disk_t *disk, const int verbose, const int saveheader, const
 static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, const int verbose, char **current_cmd)
 {
   const list_part_t *pos=list_part;
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
-  if(strncmp(*current_cmd,"list",4)==0)
+  skip_comma_in_command(current_cmd);
+  if(check_command(current_cmd,"list",4)==0)
   {
-    (*current_cmd)+=4;
     if(pos!=NULL)
     {
       const partition_t *partition=pos->part;

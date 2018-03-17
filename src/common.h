@@ -523,6 +523,9 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
         (void) (&_x == &_y);            \
         _x > _y ? _x : _y; })
 
+int check_command(char **current_cmd, const char *cmd, size_t n);
+void skip_comma_in_command(char **current_cmd);
+uint64_t get_int_from_command(char **current_cmd);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

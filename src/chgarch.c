@@ -58,18 +58,15 @@ int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd)
   {
     int i;
     keep_asking=0;
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
     for(i=0;arch_list[i]!=NULL;i++)
-      if(strncmp(*current_cmd, arch_list[i]->part_name_option, strlen(arch_list[i]->part_name_option))==0)
+      if(check_command(current_cmd, arch_list[i]->part_name_option, strlen(arch_list[i]->part_name_option))==0)
       {
-	(*current_cmd)+=strlen(arch_list[i]->part_name_option);
 	disk->arch=arch_list[i];
 	keep_asking=1;
       }
-    if(strncmp(*current_cmd, "ask_type", 8)==0)
+    if(check_command(current_cmd, "ask_type", 8)==0)
     {
-      (*current_cmd)+=8;
       return 1;
     }
   } while(keep_asking>0);

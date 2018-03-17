@@ -115,7 +115,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   {
     pfstatus_t file_recovered=PFSTATUS_BAD;
     uint64_t old_offset=offset;
-    int res=DC_SCAN;
+    data_check_t res=DC_SCAN;
 #ifdef DEBUG
     log_debug("sector %llu\n",
         (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size));

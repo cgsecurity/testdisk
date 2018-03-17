@@ -40,51 +40,42 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     return ;
   while(1)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
     /* paranoid, longer option first */
-    if(strncmp(*current_cmd,"paranoid_no",11)==0)
+    if(check_command(current_cmd,"paranoid_no",11)==0)
     {
-      (*current_cmd)+=11;
       options->paranoid=0;
     }
-    else if(strncmp(*current_cmd,"paranoid_bf",11)==0)
+    else if(check_command(current_cmd,"paranoid_bf",11)==0)
     {
-      (*current_cmd)+=11;
       options->paranoid=2;
     }
-    else if(strncmp(*current_cmd,"paranoid",8)==0)
+    else if(check_command(current_cmd,"paranoid",8)==0)
     {
-      (*current_cmd)+=8;
       options->paranoid=1;
     }
     /* keep_corrupted_file */
-    else if(strncmp(*current_cmd,"keep_corrupted_file_no",22)==0)
+    else if(check_command(current_cmd,"keep_corrupted_file_no",22)==0)
     {
-      (*current_cmd)+=22;
       options->keep_corrupted_file=0;
     }
-    else if(strncmp(*current_cmd,"keep_corrupted_file",19)==0)
+    else if(check_command(current_cmd,"keep_corrupted_file",19)==0)
     {
-      (*current_cmd)+=19;
       options->keep_corrupted_file=1;
     }
     /* mode_ext2 */
-    else if(strncmp(*current_cmd,"mode_ext2",9)==0)
+    else if(check_command(current_cmd,"mode_ext2",9)==0)
     {
-      (*current_cmd)+=9;
       options->mode_ext2=1;
     }
     /* expert */
-    else if(strncmp(*current_cmd,"expert",6)==0)
+    else if(check_command(current_cmd,"expert",6)==0)
     {
-      (*current_cmd)+=6;
       options->expert=1;
     }
     /* lowmem */
-    else if(strncmp(*current_cmd,"lowmem",6)==0)
+    else if(check_command(current_cmd,"lowmem",6)==0)
     {
-      (*current_cmd)+=6;
       options->lowmem=1;
     }
     else

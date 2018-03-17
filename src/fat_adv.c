@@ -967,28 +967,23 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
     if(*current_cmd!=NULL)
     {
       command='Q';
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"list",4)==0)
+      skip_comma_in_command(current_cmd);
+      if(check_command(current_cmd,"list",4)==0)
       {
-	(*current_cmd)+=4;
 	command='L';
       }
-      else if(strncmp(*current_cmd,"dump",4)==0)
+      else if(check_command(current_cmd,"dump",4)==0)
       {
-	(*current_cmd)+=4;
 	command='D';
       }
-      else if(strncmp(*current_cmd,"noconfirm",9)==0)
+      else if(check_command(current_cmd,"noconfirm",9)==0)
       {
 	command=0;	/* do nothing */
 	no_confirm=1;
-	(*current_cmd)+=9;
       }
-      else if(strncmp(*current_cmd,"write",5)==0)
+      else if(check_command(current_cmd,"write",5)==0)
       {
 	command='W';
-	(*current_cmd)+=5;
       }
     }
     else

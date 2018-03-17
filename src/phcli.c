@@ -62,25 +62,20 @@ static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
   {
     file_enable_t *file_enable;
     keep_asking=0;
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
+    skip_comma_in_command(current_cmd);
     if(*current_cmd[0]=='\0')
       return 0;
-    if(strncmp(*current_cmd,"everything",10)==0)
+    if(check_command(current_cmd,"everything",10)==0)
     {
       int enable_status;
       keep_asking=1;
-      (*current_cmd)+=10;
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"enable",6)==0)
+      skip_comma_in_command(current_cmd);
+      if(check_command(current_cmd,"enable",6)==0)
       {
-	(*current_cmd)+=6;
 	enable_status=1;
       }
-      else if(strncmp(*current_cmd,"disable",7)==0)
+      else if(check_command(current_cmd,"disable",7)==0)
       {
-	(*current_cmd)+=7;
 	enable_status=0;
       }
       else
@@ -100,20 +95,16 @@ static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
       {
 	if(file_enable->file_hint->extension!=NULL &&
 	    strlen(file_enable->file_hint->extension)==cmd_length &&
-	    memcmp(file_enable->file_hint->extension,*current_cmd,cmd_length)==0)
+	    check_command(current_cmd, file_enable->file_hint->extension, cmd_length)==0)
 	{
 	  keep_asking=1;
-	  (*current_cmd)+=cmd_length;
-	  while(*current_cmd[0]==',')
-	    (*current_cmd)++;
-	  if(strncmp(*current_cmd,"enable",6)==0)
+	  skip_comma_in_command(current_cmd);
+	  if(check_command(current_cmd,"enable",6)==0)
 	  {
-	    (*current_cmd)+=6;
 	    file_enable->enable=1;
 	  }
-	  else if(strncmp(*current_cmd,"disable",7)==0)
+	  else if(check_command(current_cmd,"disable",7)==0)
 	  {
-	    (*current_cmd)+=7;
 	    file_enable->enable=0;
 	  }
 	  else
@@ -135,13 +126,11 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
   params->partition=(list_part->next!=NULL ? list_part->next->part : list_part->part);
   while(1)
   {
-    while(params->cmd_run[0]==',')
-      params->cmd_run++;
+    skip_comma_in_command(&params->cmd_run);
     if(params->cmd_run[0]=='\0')
       return 0;
-    if(strncmp(params->cmd_run,"search",6)==0)
+    if(check_command(&params->cmd_run,"search",6)==0)
     {
-      params->cmd_run+=6;
       if(mode_init_space==INIT_SPACE_EXT2_GROUP)
       {
 	params->blocksize=ext2_fix_group(list_search_space, params->disk, params->partition);
@@ -172,52 +161,41 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
 	params->blocksize=user_blocksize;
       return 1;
     }
-    else if(strncmp(params->cmd_run,"options",7)==0)
+    else if(check_command(&params->cmd_run,"options",7)==0)
     {
-      params->cmd_run+=7;
       interface_options_photorec_cli(options, &params->cmd_run);
     }
-    else if(strncmp(params->cmd_run,"fileopt",7)==0)
+    else if(check_command(&params->cmd_run,"fileopt",7)==0)
     {
-      params->cmd_run+=7;
       if(file_select_cli(options->list_file_format, &params->cmd_run) < 0)
 	return -1;
     }
-    else if(strncmp(params->cmd_run,"blocksize,",10)==0)
+    else if(check_command(&params->cmd_run,"blocksize,",10)==0)
     {
-      params->cmd_run+=10;
-      user_blocksize=atoi(params->cmd_run);
-      while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
-	params->cmd_run++;
+      user_blocksize=get_int_from_command(&params->cmd_run);
     }
-    else if(strncmp(params->cmd_run,"geometry,",9)==0)
+    else if(check_command(&params->cmd_run,"geometry,",9)==0)
     {
-      params->cmd_run+=9;
       change_geometry_cli(params->disk, &params->cmd_run);
     }
-    else if(strncmp(params->cmd_run,"inter",5)==0)
+    else if(check_command(&params->cmd_run,"inter",5)==0)
     {	/* Start interactive mode */
       params->cmd_run=NULL;
       return 0;
     }
-    else if(strncmp(params->cmd_run,"wholespace",10)==0)
+    else if(check_command(&params->cmd_run,"wholespace",10)==0)
     {
-      params->cmd_run+=10;
       params->carve_free_space_only=0;
     }
-    else if(strncmp(params->cmd_run,"freespace",9)==0)
+    else if(check_command(&params->cmd_run,"freespace",9)==0)
     {
-      params->cmd_run+=9;
       params->carve_free_space_only=1;
     }
-    else if(strncmp(params->cmd_run,"ext2_group,",11)==0)
+    else if(check_command(&params->cmd_run,"ext2_group,",11)==0)
     {
       unsigned int groupnr;
-      params->cmd_run+=11;
       options->mode_ext2=1;
-      groupnr=atoi(params->cmd_run);
-      while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
-	params->cmd_run++;
+      groupnr=get_int_from_command(&params->cmd_run);
       if(mode_init_space==INIT_SPACE_WHOLE)
 	mode_init_space=INIT_SPACE_EXT2_GROUP;
       if(mode_init_space==INIT_SPACE_EXT2_GROUP)
@@ -233,14 +211,11 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
 	  free(new_free_space);
       }
     }
-    else if(strncmp(params->cmd_run,"ext2_inode,",11)==0)
+    else if(check_command(&params->cmd_run,"ext2_inode,",11)==0)
     {
       unsigned int inodenr;
-      params->cmd_run+=11;
       options->mode_ext2=1;
-      inodenr=atoi(params->cmd_run);
-      while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
-	params->cmd_run++;
+      inodenr=get_int_from_command(&params->cmd_run);
       if(mode_init_space==INIT_SPACE_WHOLE)
 	mode_init_space=INIT_SPACE_EXT2_INODE;
       if(mode_init_space==INIT_SPACE_EXT2_INODE)
@@ -259,9 +234,7 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
     else if(isdigit(params->cmd_run[0]))
     {
       list_part_t *element;
-      const unsigned int order= atoi(params->cmd_run);
-      while(params->cmd_run[0]!=',' && params->cmd_run[0]!='\0')
-	params->cmd_run++;
+      const unsigned int order=get_int_from_command(&params->cmd_run);
       for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
       if(element!=NULL)
 	params->partition=element->part;

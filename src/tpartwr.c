@@ -75,11 +75,9 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
     screen_buffer_to_log();
     if(*current_cmd!=NULL)
     {
-      while(*current_cmd[0]==',')
-	(*current_cmd)++;
-      if(strncmp(*current_cmd,"search",6)==0)
+      skip_comma_in_command(current_cmd);
+      if(check_command(current_cmd,"search",6)==0)
       {
-	(*current_cmd)+=6;
 	command='S';
       }
     }
@@ -98,23 +96,19 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
       do
       {
 	command='Q';
-	while(*current_cmd[0]==',')
-	  (*current_cmd)++;
-	if(strncmp(*current_cmd,"search",6)==0)
+	skip_comma_in_command(current_cmd);
+	if(check_command(current_cmd,"search",6)==0)
 	{
-	  (*current_cmd)+=6;
 	  if(can_search_deeper)
 	    command='S';
 	}
-	else if(strncmp(*current_cmd,"noconfirm",9)==0)
+	else if(check_command(current_cmd,"noconfirm",9)==0)
 	{
 	  command=0;	/* do nothing */
 	  (*no_confirm)=1;
-	  (*current_cmd)+=9;
 	}
-	else if(strncmp(*current_cmd,"write",5)==0)
+	else if(check_command(current_cmd,"write",5)==0)
 	{
-	  (*current_cmd)+=5;
 	  if(disk_car->arch->write_part!=NULL)
 	    command='W';
 	}

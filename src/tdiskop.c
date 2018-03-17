@@ -59,41 +59,32 @@ static int menu_disk_cli(disk_t *disk_car, const int verbose,int dump_ind, const
   unsigned int expert=0;
   while(1)
   {
-    while(*current_cmd[0]==',')
-      (*current_cmd)++;
-    if(strncmp(*current_cmd,"analyze",7)==0 || strncmp(*current_cmd,"analyse",7)==0)
+    skip_comma_in_command(current_cmd);
+    if(check_command(current_cmd,"analyze",7)==0 || check_command(current_cmd,"analyse",7)==0)
     {
-      (*current_cmd)+=7;
-      {
-	list_part_t *list_part;
-	list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
-	interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
-	part_free_list(list_part);
-      }
+      list_part_t *list_part;
+      list_part=interface_analyse(disk_car, verbose, saveheader, current_cmd);
+      interface_recovery(disk_car, list_part, verbose, dump_ind, align, ask_part_order, expert, current_cmd);
+      part_free_list(list_part);
     }
-    else if(strncmp(*current_cmd,"geometry,",9)==0)
+    else if(check_command(current_cmd,"geometry,",9)==0)
     {
-      (*current_cmd)+=9;
       change_geometry_cli(disk_car, current_cmd);
     }
-    else if(strncmp(*current_cmd,"advanced",8)==0)
+    else if(check_command(current_cmd,"advanced",8)==0)
     {
-      (*current_cmd)+=8;
       interface_adv(disk_car, verbose, dump_ind, expert,current_cmd);
     }
-    else if(strncmp(*current_cmd,"options,",8)==0)
+    else if(check_command(current_cmd,"options,",8)==0)
     {
-      (*current_cmd)+=8;
       interface_options(&dump_ind, &align, &expert,current_cmd);
     }
-    else if(strncmp(*current_cmd,"delete",6)==0)
+    else if(check_command(current_cmd,"delete",6)==0)
     {
-      (*current_cmd)+=6;
       write_clean_table(disk_car);
     }
-    else if(strncmp(*current_cmd,"mbr_code",8)==0)
+    else if(check_command(current_cmd,"mbr_code",8)==0)
     {
-      (*current_cmd)+=8;
       write_MBR_code(disk_car);
     }
     else

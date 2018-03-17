@@ -75,22 +75,18 @@ static void exFAT_dump(disk_t *disk, const partition_t *partition, const unsigne
 
 static int exFAT_boot_sector_command(char **current_cmd, const char *options)
 {
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
-  if(strncmp(*current_cmd,"dump",4)==0)
+  skip_comma_in_command(current_cmd);
+  if(check_command(current_cmd,"dump",4)==0)
   {
-    (*current_cmd)+=4;
     return 'D';
   }
-  else if(strncmp(*current_cmd,"originalexFAT",13)==0)
+  else if(check_command(current_cmd,"originalexFAT",13)==0)
   {
-    (*current_cmd)+=13;
     if(strchr(options,'O')!=NULL)
       return 'O';
   }
-  else if(strncmp(*current_cmd,"backupexFAT",11)==0)
+  else if(check_command(current_cmd,"backupexFAT",11)==0)
   {
-    (*current_cmd)+=11;
     if(strchr(options,'B')!=NULL)
       return 'B';
   }

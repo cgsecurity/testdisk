@@ -76,22 +76,18 @@ static void hfs_dump(disk_t *disk_car, const partition_t *partition, const unsig
 
 static int HFS_HFSP_boot_sector_command(char **current_cmd, const char *options)
 {
-  while(*current_cmd[0]==',')
-    (*current_cmd)++;
-  if(strncmp(*current_cmd,"dump",4)==0)
+  skip_comma_in_command(current_cmd);
+  if(check_command(current_cmd,"dump",4)==0)
   {
-    (*current_cmd)+=4;
     return 'D';
   }
-  else if(strncmp(*current_cmd,"originalhfsp",11)==0)
+  else if(check_command(current_cmd,"originalhfsp",11)==0)
   {
-    (*current_cmd)+=11;
     if(strchr(options,'O')!=NULL)
       return 'O';
   }
-  else if(strncmp(*current_cmd,"backuphfsp",9)==0)
+  else if(check_command(current_cmd,"backuphfsp",9)==0)
   {
-    (*current_cmd)+=9;
     if(strchr(options,'B')!=NULL)
       return 'B';
   }
