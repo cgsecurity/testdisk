@@ -25,6 +25,7 @@ extern "C" {
 
 int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_space);
 int session_save(alloc_data_t *list_free_space, struct ph_param *params, const struct ph_options *options);
+time_t regular_session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options, time_t current_time);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

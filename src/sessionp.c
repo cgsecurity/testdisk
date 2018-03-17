@@ -317,3 +317,13 @@ int session_save(alloc_data_t *list_free_space, struct ph_param *params,  const 
   fclose(f_session);
   return 0;
 }
+
+time_t regular_session_save(alloc_data_t *list_free_space, struct ph_param *params,  const struct ph_options *options, time_t current_time)
+{
+  time_t new_time;
+  /* Save current progress */
+  session_save(list_free_space, params, options);
+  new_time=time(NULL);
+  /* If it takes more then 30s to save the session, save every 15 minutes instead of every 5 minutes */
+  return new_time+(current_time+30<new_time?15:5)*60;
+}

@@ -65,44 +65,8 @@
 #include "file_found.h"
 #include "psearch.h"
 #include "qphotorec.h"
-
+#include "photorec_check_header.h"
 #define READ_SIZE 1024*512
-extern const file_hint_t file_hint_tar;
-extern const file_hint_t file_hint_dir;
-extern file_check_list_t file_check_list;
-
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-/* Live antivirus protection may open file as soon as they are created by *
- * PhotoRec. PhotoRec will not be able to overwrite a file as long as the *
- * antivirus is scanning it, so let's wait a little bit if the creation   *
- * failed. */
-
-#ifndef HAVE_SLEEP
-#define sleep(x) Sleep((x)*1000)
-#endif
-
-static FILE *fopen_with_retry(const char *path, const char *mode)
-{
-  FILE *handle;
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-#ifdef __MINGW32__
-  Sleep(1000);
-#else
-  sleep(1);
-#endif
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-#ifdef __MINGW32__
-  Sleep(2000);
-#else
-  sleep(2);
-#endif
-  if((handle=fopen(path, mode))!=NULL)
-    return handle;
-  return NULL;
-}
-#endif
 
 pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 {
@@ -132,7 +96,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
   previous_time=start_time;
   next_checkpoint=start_time+5*60;
   memset(buffer_olddata,0,blocksize);
-  current_search_space=td_list_entry(list_search_space->list.next, alloc_data_t, list);
+  current_search_space=td_list_first_entry(&list_search_space->list, alloc_data_t, list);
   offset=set_search_start(params, &current_search_space, list_search_space);
   if(options->verbose > 0)
     info_list_search_space(list_search_space, current_search_space, params->disk->sector_size, 0, options->verbose);
@@ -143,11 +107,12 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	(unsigned long long)((params->partition->part_size-1)/params->disk->sector_size));
   }
   params->disk->pread(params->disk, buffer, READ_SIZE, offset);
+  header_ignored(NULL);
   while(current_search_space!=list_search_space)
   {
-    data_check_t res=DC_SCAN;
-    int file_recovered=0;
+    pfstatus_t file_recovered=PFSTATUS_BAD;
     uint64_t old_offset=offset;
+    data_check_t res=DC_SCAN;
 #ifdef DEBUG
     log_debug("sector %llu\n",
         (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size));
@@ -161,98 +126,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
       exit(1);
     }
 #endif
-    {
-      file_recovery_t file_recovery_new;
-      file_recovery_new.blocksize=blocksize;
-      if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
-          header_check_tar(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
-      { /* Currently saving a tar, do not check the data for know header */
-        if(options->verbose > 1)
-        {
-          log_verbose("Currently saving a tar file, sector %lu.\n",
-              (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size));
-        }
-      }
-      else
-      {
-	struct td_list_head *tmpl;
-        file_recovery_new.file_stat=NULL;
-	td_list_for_each(tmpl, &file_check_list.list)
-	{
-	  struct td_list_head *tmp;
-	  const file_check_list_t *tmp2=td_list_entry(tmpl, file_check_list_t, list);
-	  td_list_for_each(tmp, &tmp2->file_checks[buffer[tmp2->offset]].list)
-	  {
-	    const file_check_t *file_check=td_list_entry(tmp, file_check_t, list);
-	    if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-		file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
-	    {
-	      file_recovery_new.file_stat=file_check->file_stat;
-	      break;
-	    }
-	  }
-	  if(file_recovery_new.file_stat!=NULL)
-	    break;
-	}
-        if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL)
-        {
-	  file_recovery_new.location.start=offset;
-	  if(file_recovery.file_stat!=NULL)
-	  {
-	    if(options->verbose > 1)
-	      log_trace("A known header has been found, recovery of the previous file is finished\n");
-	    file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
-	    if(options->lowmem > 0)
-	      forget(list_search_space,current_search_space);
-	  }
-          if(file_recovered==0)
-          {
-	    file_recovery_cpy(&file_recovery, &file_recovery_new);
-            if(options->verbose > 1)
-            {
-              log_info("%s header found at sector %lu\n",
-                  ((file_recovery.extension!=NULL && file_recovery.extension[0]!='\0')?
-                   file_recovery.extension:file_recovery.file_stat->file_hint->description),
-                  (unsigned long)((file_recovery.location.start-params->partition->part_offset)/params->disk->sector_size));
-              log_info("file_recovery.location.start=%lu\n",
-                  (unsigned long)(file_recovery.location.start/params->disk->sector_size));
-            }
-
-            if(file_recovery.file_stat->file_hint==&file_hint_dir && options->verbose > 0)
-            { /* FAT directory found, list the file */
-	      file_info_t dir_list;
-	      TD_INIT_LIST_HEAD(&dir_list.list);
-	      dir_fat_aux(buffer, read_size, 0, &dir_list);
-	      if(!td_list_empty(&dir_list.list))
-              {
-		log_info("Sector %lu\n",
-		    (unsigned long)(file_recovery.location.start/params->disk->sector_size));
-		dir_aff_log(NULL, &dir_list);
-                delete_list_file(&dir_list);
-              }
-            }
-          }
-        }
-      }
-      if(file_recovery.file_stat!=NULL && file_recovery.handle==NULL)
-      {
-	set_filename(&file_recovery, params);
-        if(file_recovery.file_stat->file_hint->recover==1)
-        {
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-          file_recovery.handle=fopen_with_retry(file_recovery.filename,"w+b");
-#else
-          file_recovery.handle=fopen(file_recovery.filename,"w+b");
-#endif
-          if(!file_recovery.handle)
-          { 
-            log_critical("Cannot create file %s: %s\n", file_recovery.filename, strerror(errno));
-            ind_stop=PSTATUS_EACCES;
-	    params->offset=offset;
-          }
-        }
-      }
-    }
+    ind_stop=photorec_check_header(&file_recovery, params, options, list_search_space, buffer, &file_recovered, offset);
     if(file_recovery.file_stat!=NULL)
     {
     /* try to skip ext2/ext3 indirect block */
@@ -319,6 +193,8 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
       }
       if(res==DC_STOP || res==DC_ERROR)
       {
+	if(res==DC_ERROR)
+	  file_recovery.file_size=0;
 	file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
 	if(options->lowmem > 0)
 	  forget(list_search_space,current_search_space);
@@ -327,9 +203,11 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
     if(ind_stop!=PSTATUS_OK)
     {
       log_info("PhotoRec has been stopped\n");
-      current_search_space=list_search_space;
+      file_recovery_aborted(&file_recovery, params, list_search_space);
+      free(buffer_start);
+      return ind_stop;
     }
-    else if(file_recovered==PFSTATUS_BAD)
+    if(file_recovered==PFSTATUS_BAD)
     {
       if(res==DC_SCAN)
       {
@@ -360,16 +238,18 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
       log_trace("End of media\n");
 #endif
       file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
+      if(file_recovered!=PFSTATUS_BAD)
+	get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
       if(options->lowmem > 0)
 	forget(list_search_space,current_search_space);
     }
     buffer_olddata+=blocksize;
     buffer+=blocksize;
-    if(file_recovered==1 ||
+    if(file_recovered!=PFSTATUS_BAD ||
         old_offset+blocksize!=offset ||
         buffer+read_size>buffer_start+buffer_size)
     {
-      if(file_recovered==1)
+      if(file_recovered!=PFSTATUS_BAD)
         memset(buffer_start,0,blocksize);
       else
         memcpy(buffer_start,buffer_olddata,blocksize);
@@ -391,18 +271,16 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
         {
           previous_time=current_time;
 	  QCoreApplication::processEvents();
+	  params->offset=offset;
 	  if(stop_the_recovery)
-	    ind_stop=PSTATUS_STOP;
-	  if(file_recovery.file_stat!=NULL)
-	    params->offset=file_recovery.location.start;
-	  else
-	    params->offset=offset;
-	  if(current_time >= next_checkpoint)
 	  {
-	    /* Save current progress */
-	    session_save(list_search_space, params, options);
-	    next_checkpoint=current_time+5*60;
+	    log_info("QPhotoRec has been stopped\n");
+	    file_recovery_aborted(&file_recovery, params, list_search_space);
+	    free(buffer_start);
+	    return PSTATUS_STOP;
 	  }
+	  if(current_time >= next_checkpoint)
+	    next_checkpoint=regular_session_save(list_search_space, params, options, current_time);
         }
       }
     }

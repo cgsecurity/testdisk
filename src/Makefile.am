@@ -360,7 +360,7 @@ photorec_C		= photorec.c phcfg.c addpart.c chgarch.c dir.c exfatp.c ext2grp.c ex
 photorec_H		= photorec.h phcfg.h addpart.h chgarch.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h phcli.h poptions.h sessionp.h setdate.h dfxml.h
 
 photorec_ncurses_C	= addpartn.c askloc.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phnc.c phrecn.c ppartseln.c psearchn.c
-photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h
+photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h photorec_check_header.h
 
 QT_TS = \
   lang/qphotorec.ca.ts \
@@ -375,7 +375,7 @@ photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(
 
 photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphotorec_locale.qrc qphbs.cpp qpsearch.cpp psearch.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c $(QT_TS)
+qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphotorec_locale.qrc qphbs.cpp qpsearch.cpp photorec_check_header.h psearch.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c $(QT_TS)
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp rcc_qphotorec_locale.cpp
 
