@@ -89,7 +89,7 @@ static void ntfs_dump(disk_t *disk_car, const partition_t *partition, const unsi
 {
   log_info("     Rebuild Boot sector           Boot sector\n");
   dump2_log(newboot, orgboot, NTFS_SECTOR_SIZE);
-  if(*current_cmd==NULL)
+  if(current_cmd==NULL || *current_cmd==NULL)
   {
 #ifdef HAVE_NCURSES
     ntfs_dump_ncurses(disk_car, partition, orgboot, newboot);
