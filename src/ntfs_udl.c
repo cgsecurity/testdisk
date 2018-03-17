@@ -816,7 +816,7 @@ static int open_file(const char *pathname)
 {
   int fh;
   fh=open(pathname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  if(fh>=0 || errno!=ENOENT)
+  if(fh != -1 || errno!=ENOENT)
     return fh;
   mkdir_local_for_file(pathname);
   return open(pathname, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
