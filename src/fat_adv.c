@@ -436,47 +436,49 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
             {
               unsigned long int new_root_cluster;
               unsigned long int tmp=root_cluster;
-              int back=0;	/* To avoid an endless loop... */
+              int back;	/* To avoid an endless loop... */
               /* Il faut ajouter un parcours arriere de la FAT 
                * car on localise le dernier cluster du root_cluster */
               if(verbose>0)
                 log_verbose("cluster %lu, etat=%d, found=%u,nb_subdir=%d,nb_subdir_ok=%d\n",
 		    root_cluster, etat, found, nb_subdir, nb_subdir_ok);
-              do
-              {
-                new_root_cluster=tmp;
-                tmp=fat32_get_prev_cluster(disk_car,partition,reserved,new_root_cluster,no_of_cluster);
-                if(verbose>0)
-                  log_verbose("prev cluster(%lu)=>%lu\n",new_root_cluster,tmp);
-                if(tmp)
-                {
-                  /* Check cluster number */
-                  if((tmp<2) || (tmp>=2+no_of_cluster))
-                  {
-                    log_error("bad cluster number\n");
-                    free(buffer);
-                    return new_root_cluster;
-                  }
-                  /* Read the cluster */
-                  if((unsigned)disk_car->pread(disk_car, buffer, cluster_size,
-			partition->part_offset + (start_data + (uint64_t)(tmp - 2) * sectors_per_cluster) * disk_car->sector_size) != cluster_size)
-                  {
-                    log_critical("cluster can't be read\n");
-                    free(buffer);
-                    return new_root_cluster;
-                  }
-                  /* Check if this cluster is a directory structure. FAT can be damaged */
-                  for(i=0;i<cluster_size/32;i++)
-                  {
-                    if(check_FAT_dir_entry(&buffer[i*0x20],i)!=1)
-                    {
-                      log_error("cluster data is not a directory structure\n");
-                      free(buffer);
-                      return new_root_cluster;
-                    }
-                  }
-                }
-              } while(tmp && (++back<10));
+	      for(back=0; back<10; back++)
+	      {
+		new_root_cluster=tmp;
+		tmp=fat32_get_prev_cluster(disk_car,partition,reserved,new_root_cluster,no_of_cluster);
+		if(verbose>0)
+		  log_verbose("prev cluster(%lu)=>%lu\n",new_root_cluster,tmp);
+		if(tmp==0)
+		{
+		  free(buffer);
+		  return new_root_cluster;
+		}
+		/* Check cluster number */
+		if((tmp<2) || (tmp>=2+no_of_cluster))
+		{
+		  log_error("bad cluster number\n");
+		  free(buffer);
+		  return new_root_cluster;
+		}
+		/* Read the cluster */
+		if((unsigned)disk_car->pread(disk_car, buffer, cluster_size,
+		      partition->part_offset + (start_data + (uint64_t)(tmp - 2) * sectors_per_cluster) * disk_car->sector_size) != cluster_size)
+		{
+		  log_critical("cluster can't be read\n");
+		  free(buffer);
+		  return new_root_cluster;
+		}
+		/* Check if this cluster is a directory structure. FAT can be damaged */
+		for(i=0;i<cluster_size/32;i++)
+		{
+		  if(check_FAT_dir_entry(&buffer[i*0x20],i)!=1)
+		  {
+		    log_error("cluster data is not a directory structure\n");
+		    free(buffer);
+		    return new_root_cluster;
+		  }
+		}
+	      }
               free(buffer);
               return new_root_cluster;
             }
