@@ -367,9 +367,7 @@ static void get_parent_name(struct filename* name, ntfs_volume* vol)
 static int get_filenames(struct ufile *file, ntfs_volume* vol)
 {
 	ATTR_RECORD *rec;
-	FILE_NAME_ATTR *attr;
 	ntfs_attr_search_ctx *ctx;
-	struct filename *name;
 	int count = 0;
 	int space = 4;
 
@@ -381,6 +379,8 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
 		return -1;
 
 	while ((rec = find_attribute(AT_FILE_NAME, ctx))) {
+		struct filename *name;
+		FILE_NAME_ATTR *attr;
 		/* We know this will always be resident. */
 		attr = (FILE_NAME_ATTR *) ((char *) rec + le16_to_cpu(rec->value_offset));
 
@@ -450,7 +450,6 @@ static int get_data(struct ufile *file, ntfs_volume *vol)
 	ATTR_RECORD *rec;
 	ntfs_attr_search_ctx *ctx;
 	int count = 0;
-	struct data *data;
 
 	if (!file)
 		return -1;
@@ -460,6 +459,7 @@ static int get_data(struct ufile *file, ntfs_volume *vol)
 		return -1;
 
 	while ((rec = find_attribute(AT_DATA, ctx))) {
+		struct data *data;
 		data = (struct data *)calloc(1, sizeof(*data));
 		if (!data) {
 			log_error("ERROR: Couldn't allocate memory in get_data().\n");
