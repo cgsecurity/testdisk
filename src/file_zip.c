@@ -273,6 +273,9 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	  *ext="kmz";
 	else if(len==4 && memcmp(filename, "Home", 4)==0)
 	  sh3d=1;
+	/* Celtx, Screenwriting & Media Pre-production file */
+	else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
+	  *ext="celtx";
       }
       else if(file_nbr==1 && sh3d==1)
       {
@@ -828,6 +831,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension="odt";
     else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
       file_recovery_new->extension="odg";
+    else if(compressed_size==45 && memcmp(&buffer[38],"application/vnd.adobe.sparkler.project+dcxucf",45)==0)
+      file_recovery_new->extension="xd";
     else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
       file_recovery_new->extension="ods";
     else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
