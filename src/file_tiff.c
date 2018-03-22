@@ -74,8 +74,10 @@ unsigned int tiff_type2size(const unsigned int type)
     case 17:	/* TIFF_SLONG8	*/
     case 18:	/* TIFF_IFD8	*/
       return 8;
-//    case 14:	/* TIFF_UNICODE	*/
-//    case 15:	/* TIFF_COMPLEX */
+#if 0
+    case 14:	/* TIFF_UNICODE	*/
+    case 15:	/* TIFF_COMPLEX */
+#endif
     default:
       return 1;
   }
