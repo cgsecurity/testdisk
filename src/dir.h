@@ -76,7 +76,7 @@ struct dir_data
 
 int set_datestr(char *datestr, size_t n, const time_t timev);
 int dir_aff_log(const dir_data_t *dir_data, const file_info_t*dir_list);
-int log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
+void log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
 unsigned int delete_list_file(file_info_t *list);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);
 void dir_whole_partition_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);

@@ -155,27 +155,32 @@ void mode_string (const unsigned int mode, char *str)
 
 int set_datestr(char *datestr, size_t n, const time_t timev)
 {
-  int test_date=0;
   const struct tm *tm_p;
-#if defined(__MINGW32__)
-  if(timev!=0 && (tm_p= localtime(&timev))!=NULL)
-#else
+#if ! defined(__MINGW32__)
   struct tm tmp;
-  if(timev!=0 && (tm_p= localtime_r(&timev, &tmp))!=NULL)
 #endif
+  if(timev==0)
   {
-    snprintf(datestr, n,"%2d-%s-%4d %02d:%02d",
-	tm_p->tm_mday, monstr[tm_p->tm_mon],
-	1900 + tm_p->tm_year, tm_p->tm_hour,
-	tm_p->tm_min);
-    if(1900+tm_p->tm_year>=2000 && 1900+tm_p->tm_year<=2014)
-    {
-      test_date=1;
-    }
-  } else {
     strncpy(datestr, "                 ", n);
+    return 0;
   }
-  return test_date;
+#if defined(__MINGW32__)
+  tm_p=localtime(&timev);
+#else
+  tm_p=localtime_r(&timev, &tmp);
+#endif
+  if(tm_p==NULL)
+  {
+    strncpy(datestr, "                 ", n);
+    return 0;
+  }
+  snprintf(datestr, n,"%2d-%s-%4d %02d:%02d",
+      tm_p->tm_mday, monstr[tm_p->tm_mon],
+      1900 + tm_p->tm_year, tm_p->tm_hour,
+      tm_p->tm_min);
+  if(1900+tm_p->tm_year>=2000)
+    return 1;
+  return 0;
 }
 
 int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
@@ -216,9 +221,8 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
   return test_date;
 }
 
-int log_list_file(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
+void log_list_file(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
 {
-  int test_date=0;
   struct td_list_head *tmp;
   log_partition(disk, partition);
   if(dir_data!=NULL)
@@ -234,7 +238,7 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
       log_info("X");
     else
       log_info(" ");
-    test_date=set_datestr((char *)&datestr, sizeof(datestr), current_file->td_mtime);
+    set_datestr((char *)&datestr, sizeof(datestr), current_file->td_mtime);
     mode_string(current_file->st_mode, str);
     log_info("%7lu ",(unsigned long int)current_file->st_ino);
     log_info("%s %5u %5u ", 
@@ -242,7 +246,6 @@ int log_list_file(const disk_t *disk, const partition_t *partition, const dir_da
     log_info("%9llu", (long long unsigned int)current_file->st_size);
     log_info(" %s %s\n", datestr, current_file->name);
   }
-  return test_date;
 }
 
 unsigned int delete_list_file(file_info_t *file_info)
