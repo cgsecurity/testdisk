@@ -62,8 +62,27 @@ static int header_check_rar(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static void file_check_rar5(file_recovery_t *file_recovery)
+{
+  static const unsigned char rar5_footer[8]={0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00 }; //RAR5 footer
+  file_search_footer(file_recovery, rar5_footer, sizeof(rar5_footer), 0);
+}
+
+static int header_check_rar5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=70;
+  if((buffer[0xa] & MHD_PASSWORD)==0)
+    file_recovery_new->file_check=&file_check_rar5;
+  file_recovery_new->extension=file_hint_rar.extension;
+  return 1;
+}
+
 static void register_header_check_rar(file_stat_t *file_stat)
 {
   static const unsigned char rar_header[7]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00 };
   register_header_check(0, rar_header,sizeof(rar_header), &header_check_rar, file_stat);
+  static const unsigned char rar5_header[8]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00 }; //RAR5 header
+  register_header_check(0, rar5_header,sizeof(rar5_header), &header_check_rar5, file_stat);
+  
 }
