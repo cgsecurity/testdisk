@@ -36,7 +36,6 @@
 #include "file_gz.h"
 
 static void register_header_check_gz(file_stat_t *file_stat);
-static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_rename_gz(file_recovery_t *file_recovery);
 extern const file_hint_t file_hint_doc;
 
@@ -59,7 +58,6 @@ struct gzip_header
   uint8_t  os;
 } __attribute__ ((gcc_struct, __packed__));
 
-static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
 /* flags:
    bit 0   FTEXT
    bit 1   FHCRC
@@ -76,9 +74,38 @@ static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
 #define GZ_FNAME	8
 #define GZ_FCOMMENT     0x10
 
-static void register_header_check_gz(file_stat_t *file_stat)
+static void file_check_bgzf(file_recovery_t *file_recovery)
 {
-  register_header_check(0, gz_header_magic,sizeof(gz_header_magic), &header_check_gz, file_stat);
+}
+
+static int header_check_bgzf(const unsigned char *buffer, const unsigned char *buffer_uncompr, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
+{
+  const struct gzip_header *gz=(const struct gzip_header *)buffer;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->min_filesize=22;
+  file_recovery_new->time=le32(gz->mtime);
+  file_recovery_new->file_rename=&file_rename_gz;
+  file_recovery_new->file_check=&file_check_bgzf;
+  if(memcmp(buffer_uncompr, "BAI\1", 4)==0)
+  {
+    /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
+    file_recovery_new->extension="bai";
+    return 1;
+  }
+  if(memcmp(buffer_uncompr, "BAM\1", 4)==0)
+  {
+    /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
+    file_recovery_new->extension="bam";
+    return 1;
+  }
+  if(memcmp(buffer_uncompr, "CSI\1", 4)==0)
+  {
+    /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
+    file_recovery_new->extension="csi";
+    return 1;
+  }
+  file_recovery_new->extension=file_hint_gz.extension;
+  return 1;
 }
 
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -86,6 +113,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   unsigned int off=10;
   const unsigned int flags=buffer[3];
   const struct gzip_header *gz=(const struct gzip_header *)buffer;
+  int bgzf=0;
   /* gzip file format:
    * a 10-byte header, containing a magic number, a version number and a timestamp
    * optional extra headers, such as the original file name,
@@ -106,6 +134,8 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   {
     off+=2;
     off+=buffer[10]|(buffer[11]<<8);
+    if(buffer[12]=='B' && buffer[13]=='C' && buffer[14]==2 && buffer[15]==0)
+      bgzf=1;
   }
   if((flags&GZ_FNAME)!=0)
   {
@@ -132,6 +162,11 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)
       return 0;
+  }
+  if(file_recovery->file_check==&file_check_bgzf)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
   }
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {
@@ -173,6 +208,10 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     if(d_stream.total_out < 16)
       return 0;
     buffer_uncompr[d_stream.total_out]='\0';
+    if(bgzf!=0)
+    {
+      return header_check_bgzf(buffer, buffer_uncompr, d_stream.total_out, file_recovery_new);
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->min_filesize=22;
     file_recovery_new->time=le32(gz->mtime);
@@ -290,4 +329,10 @@ const char*td_zlib_version(void)
 #else
   return "none";
 #endif
+}
+
+static void register_header_check_gz(file_stat_t *file_stat)
+{
+  static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
+  register_header_check(0, gz_header_magic,sizeof(gz_header_magic), &header_check_gz, file_stat);
 }
