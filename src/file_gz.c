@@ -104,7 +104,7 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
     file_recovery_new->extension="csi";
     return 1;
   }
-  file_recovery_new->extension=file_hint_gz.extension;
+  file_recovery_new->extension="bgz";
   return 1;
 }
 
