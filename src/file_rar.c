@@ -32,8 +32,10 @@
 
 
 static void register_header_check_rar(file_stat_t *file_stat);
-static int header_check_rar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_rar(file_recovery_t *file_recovery);
+static int header_check_rar15fmt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_check_rar15fmt(file_recovery_t *file_recovery);
+static int header_check_rar50fmt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+static void file_check_rar50fmt(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_rar= {
   .extension="rar",	/* What is the correct extension ? */
@@ -44,11 +46,11 @@ const file_hint_t file_hint_rar= {
   .register_header_check=&register_header_check_rar
 };
 
-rar15fmt_header[7]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00 };
-rar50fmt_header[8]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00 };
+static const unsigned char rar15fmt_header[7]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00 };
+static const unsigned char rar50fmt_header[8]={0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00 };
 
-rar15fmt_footer[7]={0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00 };
-rar50fmt_footer[8]={0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00 };
+static const unsigned char rar15fmt_footer[7]={0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00 };
+static const unsigned char rar50fmt_footer[8]={0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00 };
 
 #define  MHD_PASSWORD       0x0080U
 
@@ -86,5 +88,4 @@ static void register_header_check_rar(file_stat_t *file_stat)
 {
   register_header_check(0, rar15fmt_header,sizeof(rar15fmt_header), &header_check_rar15fmt, file_stat);
   register_header_check(0, rar50fmt_header,sizeof(rar50fmt_header), &header_check_rar50fmt, file_stat);
-  
 }
