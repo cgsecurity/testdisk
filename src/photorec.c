@@ -706,16 +706,16 @@ void set_filename(file_recovery_t *file_recovery, struct ph_param *params)
   if(file_recovery->extension==NULL || file_recovery->extension[0]=='\0')
   {
     snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,
-	"%s.%u/%c%07u", params->recup_dir,
+	"%s.%u/%c%07lu", params->recup_dir,
 	params->dir_num, (broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start - params->partition->part_offset)/ params->disk->sector_size));
+	(unsigned long int)((file_recovery->location.start - params->partition->part_offset)/ params->disk->sector_size));
   }
   else
   {
     snprintf(file_recovery->filename,sizeof(file_recovery->filename)-1,
-	"%s.%u/%c%07u.%s", params->recup_dir,
+	"%s.%u/%c%07lu.%s", params->recup_dir,
 	params->dir_num, (broken?'b':'f'),
-	(unsigned int)((file_recovery->location.start - params->partition->part_offset) / params->disk->sector_size), file_recovery->extension);
+	(unsigned long int)((file_recovery->location.start - params->partition->part_offset) / params->disk->sector_size), file_recovery->extension);
   }
 }
 

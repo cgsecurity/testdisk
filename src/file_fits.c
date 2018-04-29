@@ -116,7 +116,7 @@ static data_check_t data_check_fits(const unsigned char *buffer, const unsigned 
   {
     unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
     if(memcmp(&buffer[i], "XTENSION", 8)!=0)
-    break;
+      break;
     {
       const unsigned int i_org=i;
       const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery, &i);

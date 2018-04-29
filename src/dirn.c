@@ -49,6 +49,7 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
 static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad);
 
 #define INTER_DIR (LINES-25+15)
+#define MAX_DIR_NBR 256
 
 static int copy_progress(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad)
 {
@@ -577,7 +578,6 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 
 static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char**current_cmd)
 {
-#define MAX_DIR_NBR 256
   static unsigned long int inode_known[MAX_DIR_NBR];
   if(depth==MAX_DIR_NBR)
     return 1;	/* subdirectories depth is too high => Back */
