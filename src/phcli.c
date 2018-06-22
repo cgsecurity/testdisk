@@ -88,32 +88,39 @@ static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
     }
     else
     {
+      const char *extension=*current_cmd;
       unsigned int cmd_length=0;
-      while((*current_cmd)[cmd_length]!='\0' && (*current_cmd)[cmd_length]!=',')
+      unsigned int tmp;
+      unsigned int enable;
+      while(extension[cmd_length]!='\0' && extension[cmd_length]!=',')
 	cmd_length++;
+      tmp=cmd_length;
+      while(extension[tmp]==',')
+	tmp++;
+      if(strncmp(&extension[tmp], "enable", 6) == 0)
+      {
+	enable=1;
+	tmp+=6;
+      }
+      else if(strncmp(&extension[tmp], "disable", 7) == 0)
+      {
+	enable=0;
+	tmp+=7;
+      }
+      else
+	return 0;
       for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
       {
 	if(file_enable->file_hint->extension!=NULL &&
 	    strlen(file_enable->file_hint->extension)==cmd_length &&
-	    check_command(current_cmd, file_enable->file_hint->extension, cmd_length)==0)
+	    strncmp(extension, file_enable->file_hint->extension, cmd_length)==0)
 	{
 	  keep_asking=1;
-	  skip_comma_in_command(current_cmd);
-	  if(check_command(current_cmd,"enable",6)==0)
-	  {
-	    file_enable->enable=1;
-	  }
-	  else if(check_command(current_cmd,"disable",7)==0)
-	  {
-	    file_enable->enable=0;
-	  }
-	  else
-	  {
-	    log_critical("Syntax error %s\n",*current_cmd);
-	    return -1;
-	  }
+	  file_enable->enable=enable;
 	}
       }
+      if(keep_asking > 0)
+	(*current_cmd)+=tmp;
     }
   } while(keep_asking>0);
   return 0;
