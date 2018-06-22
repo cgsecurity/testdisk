@@ -182,7 +182,7 @@ void file_check_tiff(file_recovery_t *fr)
     calculated_file_size=header_check_tiff_be(fr, be32(header.tiff_diroff), 0, 0);
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
-  log_info("TIFF Estimated %llu\n", (unsigned long long)calculated_file_size);
+  log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
 #endif
   if(fr->file_size < calculated_file_size || calculated_file_size==0)
     fr->file_size=0;

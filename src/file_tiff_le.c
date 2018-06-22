@@ -326,7 +326,7 @@ uint64_t header_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, c
     if(tdir_tag_old > tdir_tag)
     { /* Entries must be sorted by tag, some SR2 file doesn't respected this rule */
       sorted_tag_error++;
-      if(sorted_tag_error > 1)
+      if(sorted_tag_error > 1 && strcmp(fr->extension,"sr2")!=0)
 	return -1;
     }
     if(val>4)
