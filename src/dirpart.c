@@ -50,14 +50,14 @@
 #include "log.h"
 #include "log_part.h"
 
-static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *partition, const int verbose, dir_data_t *dir_data)
+static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *partition, const int verbose, const int expert, dir_data_t *dir_data)
 {
   dir_partition_t res=DIR_PART_ENOIMP;
   if(is_part_fat(partition))
     res=dir_partition_fat_init(disk, partition, dir_data, verbose);
   else if(is_part_ntfs(partition))
   {
-    res=dir_partition_ntfs_init(disk, partition, dir_data, verbose);
+    res=dir_partition_ntfs_init(disk, partition, dir_data, verbose, expert);
     if(res!=DIR_PART_OK)
       res=dir_partition_exfat_init(disk, partition, dir_data, verbose);
   }
@@ -84,7 +84,7 @@ static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *parti
     case UP_RFS3:
       return dir_partition_reiser_init(disk, partition, dir_data, verbose);
     case UP_NTFS:
-      return dir_partition_ntfs_init(disk, partition, dir_data, verbose);
+      return dir_partition_ntfs_init(disk, partition, dir_data, verbose, expert);
     case UP_EXFAT:
       return dir_partition_exfat_init(disk, partition, dir_data, verbose);
     default:
@@ -92,7 +92,7 @@ static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *parti
   }
 }
 
-dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const int verbose, char **current_cmd)
+dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const int verbose, const int expert, char **current_cmd)
 {
   dir_data_t dir_data;
 #ifdef HAVE_NCURSES
@@ -101,7 +101,7 @@ dir_partition_t dir_partition(disk_t *disk, const partition_t *partition, const 
   dir_partition_t res;
   fflush(stderr);
   dir_data.local_dir=NULL;
-  res=dir_partition_init(disk, partition, verbose, &dir_data);
+  res=dir_partition_init(disk, partition, verbose, expert, &dir_data);
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;

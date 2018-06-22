@@ -282,11 +282,11 @@ int ntfs_boot_sector(disk_t *disk, partition_t *partition, const int verbose, co
 	if(strchr(options,'O')==NULL && strchr(options,'B')!=NULL)
 	{
 	  io_redir_add_redir(disk,partition->part_offset,NTFS_BOOT_SECTOR_SIZE,0,buffer_backup_bs);
-	  dir_partition(disk, partition, 0,current_cmd);
+	  dir_partition(disk, partition, 0, expert, current_cmd);
 	  io_redir_del_redir(disk,partition->part_offset);
 	}
 	else
-	  dir_partition(disk, partition, 0,current_cmd);
+	  dir_partition(disk, partition, 0, expert, current_cmd);
 	break;
       case 'M':
         repair_MFT(disk, partition, verbose, expert, current_cmd);

@@ -34,6 +34,7 @@ extern "C" {
 #define FLAG_LIST_MASK16	4
 #define FLAG_LIST_PATHNAME	8
 #define FLAG_LIST_ADS		16
+#define FLAG_LIST_SYSTEM	32
 /* capabilities */
 #define CAPA_LIST_DELETED	1
 #define CAPA_LIST_ADS		2

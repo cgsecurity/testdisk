@@ -114,14 +114,14 @@ static void ntfs_write_boot_sector(disk_t *disk, partition_t *partition, const u
   disk->sync(disk);
 }
 
-static void ntfs_list(disk_t *disk, partition_t *partition,const unsigned char *newboot, char **current_cmd)
+static void ntfs_list(disk_t *disk, partition_t *partition, const unsigned char *newboot, char **current_cmd, const int expert)
 {
   io_redir_add_redir(disk,partition->part_offset,NTFS_SECTOR_SIZE,0,newboot);
-  dir_partition(disk, partition, 0, current_cmd);
+  dir_partition(disk, partition, 0, expert, current_cmd);
   io_redir_del_redir(disk,partition->part_offset);
 }
 
-static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, char **current_cmd)
+static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, char **current_cmd, const int expert)
 {
   const struct ntfs_boot_sector *org_ntfs_header=(const struct ntfs_boot_sector *)orgboot;
   const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector *)newboot;
@@ -139,7 +139,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
     skip_comma_in_command(current_cmd);
     if(check_command(current_cmd,"list",4)==0)
     {
-      ntfs_list(disk_car, partition, newboot, current_cmd);
+      ntfs_list(disk_car, partition, newboot, current_cmd, expert);
     }
     else if(check_command(current_cmd,"dump",4)==0)
     {
@@ -168,7 +168,7 @@ static void menu_write_ntfs_boot_sector_cli(disk_t *disk_car, partition_t *parti
 }
 
 #ifdef HAVE_NCURSES
-static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot)
+static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot, const int expert)
 {
   const struct ntfs_boot_sector *org_ntfs_header=(const struct ntfs_boot_sector *)orgboot;
   const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector *)newboot;
@@ -220,7 +220,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 	break;
       case 'l':
       case 'L':
-	ntfs_list(disk_car, partition, newboot, NULL);
+	ntfs_list(disk_car, partition, newboot, NULL, expert);
 	break;
       case 'q':
       case 'Q':
@@ -230,7 +230,7 @@ static void menu_write_ntfs_boot_sector_ncurses(disk_t *disk_car, partition_t *p
 }
 #endif
 
-static void create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int cluster_size, const uint64_t mft_lcn, const uint64_t mftmirr_lcn, const uint32_t mft_record_size, const uint32_t index_block_size, char**current_cmd)
+static void create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, const unsigned int cluster_size, const uint64_t mft_lcn, const uint64_t mftmirr_lcn, const uint32_t mft_record_size, const uint32_t index_block_size, const int expert, char**current_cmd)
 {
   unsigned char orgboot[NTFS_SECTOR_SIZE];
   unsigned char newboot[NTFS_SECTOR_SIZE];
@@ -300,11 +300,11 @@ static void create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, co
   }
   if(*current_cmd!=NULL)
   {
-    menu_write_ntfs_boot_sector_cli(disk_car, partition, orgboot, newboot, current_cmd);
+    menu_write_ntfs_boot_sector_cli(disk_car, partition, orgboot, newboot, current_cmd, expert);
     return ;
   }
 #ifdef HAVE_NCURSES
-  menu_write_ntfs_boot_sector_ncurses(disk_car, partition, orgboot, newboot);
+  menu_write_ntfs_boot_sector_ncurses(disk_car, partition, orgboot, newboot, expert);
 #endif
 }
 
@@ -626,7 +626,7 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     if(index_block_size%512!=0 || index_block_size==0)
       index_block_size=4096;
     log_info("ntfs_find_mft: index_block_size    %u\n",index_block_size);
-    create_ntfs_boot_sector(disk_car,partition, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size,current_cmd);
+    create_ntfs_boot_sector(disk_car,partition, sectors_per_cluster*disk_car->sector_size, mft_lcn, mftmirr_lcn, mft_record_size, index_block_size, expert, current_cmd);
     /* TODO: ask if the user want to continue the search of MFT */
   }
   else

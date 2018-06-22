@@ -1014,7 +1014,7 @@ static void menu_write_fat_boot_sector(disk_t *disk_car, partition_t *partition,
 	  const upart_type_t old_upart_type=upart_type;
 	  partition->upart_type=upart_type;
 	  io_redir_add_redir(disk_car,partition->part_offset,3*disk_car->sector_size,0,newboot);
-	  dir_partition(disk_car, partition, verbose, current_cmd);
+	  dir_partition(disk_car, partition, verbose, 0, current_cmd);
 	  io_redir_del_redir(disk_car,partition->part_offset);
 	  partition->upart_type=old_upart_type;
 	}

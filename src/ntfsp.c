@@ -60,7 +60,7 @@
 unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space)
 {
   dir_data_t dir_data;
-  switch(dir_partition_ntfs_init(disk_car,partition,&dir_data,0))
+  switch(dir_partition_ntfs_init(disk_car, partition, &dir_data, 0, 0))
   {
     case DIR_PART_ENOIMP:
     case DIR_PART_ENOSYS:

@@ -1635,7 +1635,7 @@ int ntfs_undelete_part(disk_t *disk_car, const partition_t *partition, const int
 #ifdef HAVE_NCURSES
   WINDOW *window;
 #endif
-  dir_partition_t res=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+  dir_partition_t res=dir_partition_ntfs_init(disk_car, partition, &dir_data, verbose, 0);
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */
   dir_data.display=window;

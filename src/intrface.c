@@ -87,7 +87,7 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
     {
       const partition_t *partition=pos->part;
       if(partition->sb_offset==0 || partition->sb_size==0)
-        dir_partition(disk_car,partition,verbose, current_cmd);
+        dir_partition(disk_car, partition, verbose, 0, current_cmd);
       else
       {
         io_redir_add_redir(disk_car,
@@ -95,7 +95,7 @@ static list_part_t *ask_structure_cli(disk_t *disk_car,list_part_t *list_part, c
             partition->sb_size,
             partition->part_offset+partition->sb_offset,
             NULL);
-        dir_partition(disk_car,partition,verbose, current_cmd);
+        dir_partition(disk_car, partition, verbose, 0, current_cmd);
         io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
       }
     }
@@ -363,7 +363,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
           const partition_t *partition=pos->part;
 	  char *current_cmd=NULL;
           if(partition->sb_offset==0 || partition->sb_size==0)
-            dir_partition(disk_car,partition,verbose, &current_cmd);
+            dir_partition(disk_car, partition, verbose, 0, &current_cmd);
           else
           {
             io_redir_add_redir(disk_car,
@@ -371,7 +371,7 @@ static list_part_t *ask_structure_ncurses(disk_t *disk_car,list_part_t *list_par
                 partition->sb_size,
                 partition->part_offset+partition->sb_offset,
                 NULL);
-            dir_partition(disk_car,partition,verbose, &current_cmd);
+            dir_partition(disk_car, partition, verbose, 0, &current_cmd);
             io_redir_del_redir(disk_car, partition->part_offset+partition->sborg_offset);
           }
 	  rewrite=1;

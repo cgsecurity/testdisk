@@ -197,7 +197,8 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
 #endif
 
   result = 0;					/* These are successful */
-  if (MREF(mref) < FILE_first_user && filename[0] == '$')	/* Hide system file */
+  if ((ls->dir_data->param & FLAG_LIST_SYSTEM)!=FLAG_LIST_SYSTEM &&
+      MREF(mref) < FILE_first_user && filename[0] == '$')	/* Hide system file */
       goto freefn;
   result = -1;				/* Everything else is bad */
 
@@ -460,7 +461,7 @@ static void dir_partition_ntfs_close(dir_data_t *dir_data)
 }
 #endif
 
-dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose)
+dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose, const int expert)
 {
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
   struct ntfs_device *dev;
@@ -522,6 +523,8 @@ dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *par
     strncpy(dir_data->current_directory,"/",sizeof(dir_data->current_directory));
     dir_data->current_inode=FILE_root;
     dir_data->param=FLAG_LIST_ADS;
+    if(expert!=0)
+      dir_data->param|=FLAG_LIST_SYSTEM;
     dir_data->verbose=verbose;
     dir_data->capabilities=CAPA_LIST_ADS;
     dir_data->get_dir=&ntfs_dir;

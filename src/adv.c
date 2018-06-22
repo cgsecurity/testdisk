@@ -411,7 +411,7 @@ static void adv_menu_undelete_selected(disk_t *disk, partition_t *partition, con
 	(is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
       ntfs_undelete_part(disk, partition, verbose, current_cmd);
     else
-      dir_partition(disk, partition, 0, current_cmd);
+      dir_partition(disk, partition, 0, 0, current_cmd);
     io_redir_del_redir(disk, partition->part_offset+partition->sborg_offset);
   }
   else
@@ -420,11 +420,11 @@ static void adv_menu_undelete_selected(disk_t *disk, partition_t *partition, con
 	(is_part_ntfs(partition) && partition->upart_type!=UP_EXFAT))
       ntfs_undelete_part(disk, partition, verbose, current_cmd);
     else
-      dir_partition(disk, partition, 0, current_cmd);
+      dir_partition(disk, partition, 0, 0, current_cmd);
   }
 }
 
-static void adv_menu_list_selected(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd)
+static void adv_menu_list_selected(disk_t *disk, partition_t *partition, const int verbose, const int expert, char **current_cmd)
 {
   if(partition->sb_offset!=0 && partition->sb_size>0)
   {
@@ -433,11 +433,11 @@ static void adv_menu_list_selected(disk_t *disk, partition_t *partition, const i
 	partition->sb_size,
 	partition->part_offset+partition->sb_offset,
 	NULL);
-    dir_partition(disk,partition,verbose, current_cmd);
+    dir_partition(disk,partition, verbose, expert, current_cmd);
     io_redir_del_redir(disk, partition->part_offset+partition->sborg_offset);
   }
   else
-    dir_partition(disk,partition,verbose, current_cmd);
+    dir_partition(disk, partition, verbose, expert, current_cmd);
 }
 
 static void adv_menu_superblock_selected(disk_t *disk, partition_t *partition, const int verbose,const int dump_ind, char**current_cmd)
@@ -605,7 +605,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
 	  break;
 	case 'l':
 	case 'L':
-	  adv_menu_list_selected(disk_car, current_element->part, verbose, current_cmd);
+	  adv_menu_list_selected(disk_car, current_element->part, verbose, expert, current_cmd);
 	  rewrite=1;
 	  break;
 	case 's':

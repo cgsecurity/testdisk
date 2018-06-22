@@ -167,7 +167,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     dir_data_t dir_data;
     /* Use MFT */
     io_redir_add_redir(disk_car, mftmirr_pos, mftmirr_size_bytes, 0, buffer_mft);
-    res1=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+    res1=dir_partition_ntfs_init(disk_car, partition, &dir_data, verbose, 0);
     if(res1==DIR_PART_ENOSYS)
     {
 	display_message("Can't determine which MFT is correct, ntfslib is missing.\n");
@@ -195,7 +195,7 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
     io_redir_del_redir(disk_car,mftmirr_pos);
     /* Use MFT mirror */
     io_redir_add_redir(disk_car, mft_pos, mftmirr_size_bytes, 0, buffer_mftmirr);
-    res2=dir_partition_ntfs_init(disk_car,partition,&dir_data,verbose);
+    res2=dir_partition_ntfs_init(disk_car, partition, &dir_data, verbose, 0);
     if(res2==DIR_PART_OK)
     {
       file_info_t dir_list;
