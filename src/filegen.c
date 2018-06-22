@@ -429,7 +429,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
 	  bad++;
 	  break;
 	default:
-	  if(isprint(*src) && !isspace(*src))
+	  if(isprint(*src) && !isspace(*src) && !ispunct(*src) && !iscntrl(*src))
 	  {
 	    *dst++ = *src;
 	    ok++;
@@ -542,7 +542,7 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
 	  bad++;
 	  break;
 	default:
-	  if(isprint(*src) && !isspace(*src))
+	  if(isprint(*src) && !isspace(*src) && !ispunct(*src) && !iscntrl(*src))
 	  {
 	    *dst++ = *src;
 	    ok++;
