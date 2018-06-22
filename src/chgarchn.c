@@ -70,7 +70,7 @@ int change_arch_type_ncurses(disk_t *disk, const int verbose)
       { 'I', arch_i386.part_name, "Intel/PC partition" },
       { 'G', arch_gpt.part_name, "EFI GPT partition map (Mac i386, some x86_64...)" },
       { 'H', arch_humax.part_name, "Humax partition table" },
-      { 'M', arch_mac.part_name, "Apple partition map" },
+      { 'M', arch_mac.part_name, "Apple partition map (legacy)" },
       { 'N', arch_none.part_name, "Non partitioned media" },
       { 'S', arch_sun.part_name, "Sun Solaris partition"},
       { 'X', arch_xbox.part_name, "XBox partition"},
