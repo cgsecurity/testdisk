@@ -240,6 +240,7 @@ file_C			= filegen.c \
 			  file_pds.c \
 			  file_pf.c \
 			  file_pfx.c \
+			  file_pgdump.c \
 			  file_plist.c \
 			  file_plr.c \
 			  file_plt.c \
