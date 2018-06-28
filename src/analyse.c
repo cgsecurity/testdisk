@@ -38,6 +38,8 @@
 #include "ext2.h"
 #include "fat.h"
 #include "fatx.h"
+#include "f2fs_fs.h"
+#include "f2fs.h"
 #include "gfs2.h"
 #include "hfs.h"
 #include "hfsp.h"
@@ -262,9 +264,11 @@ int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partit
   const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)(buffer+0x400);
   const struct hfsp_vh *vh=(const struct hfsp_vh *)(buffer+0x400);
   const struct ext2_super_block *sb=(const struct ext2_super_block*)(buffer+0x400);
+  const struct f2fs_super_block *sb_f2fs=(const struct f2fs_super_block *)(buffer+0x400);
 //  assert(sizeof(struct ext2_super_block)<=1024);
 //  assert(sizeof(hfs_mdb_t)<=1024);
 //  assert(sizeof(struct hfsp_vh)<=1024);
+//  assert(sizeof(struct f2fs_super_block)==3072);
   if(verbose>2)
   {
     log_trace("search_type_2 lba=%lu\n",
@@ -278,6 +282,9 @@ int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partit
     return 1;
   if((be16(vh->version)==4 || be16(vh->version)==5) &&
       recover_HFSP(disk, vh, partition, verbose, dump_ind, 0)==0)
+    return 1;
+  if(sb_f2fs->magic == le32(F2FS_SUPER_MAGIC) &&
+      recover_f2fs(disk, sb_f2fs, partition)==0)
     return 1;
   return 0;
 }
@@ -357,13 +364,13 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
   }
   if(disk->pread(disk, buffer, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) != 11 * DEFAULT_SECTOR_SIZE)
     return -1;
-  buffer=buffer+0x400;
   {
-    const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)buffer;
-    const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)buffer;
-    const struct ufs_super_block *ufs=(const struct ufs_super_block *)buffer;
-    const struct btrfs_super_block *btrfs=(const struct btrfs_super_block*)buffer;
-    const struct gfs2_sb *gfs2=(const struct gfs2_sb *)buffer;
+    const unsigned char *buffer_1024=buffer+0x400;
+    const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)buffer_1024;
+    const struct reiser4_master_sb *rfs4=(const struct reiser4_master_sb *)buffer_1024;
+    const struct ufs_super_block *ufs=(const struct ufs_super_block *)buffer_1024;
+    const struct btrfs_super_block *btrfs=(const struct btrfs_super_block*)buffer_1024;
+    const struct gfs2_sb *gfs2=(const struct gfs2_sb *)buffer_1024;
     /* 64k offset */
     /* Test ReiserFS */
     if((memcmp(rfs->s_magic,"ReIs",4) == 0 ||
@@ -412,6 +419,7 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose)
       check_xfs(disk, partition, verbose)==0 ||
       check_LUKS(disk, partition)==0 ||
       check_btrfs(disk, partition)==0 ||
+      check_f2fs(disk, partition)==0 ||
       check_gfs2(disk, partition)==0 ||
       check_ZFS(disk, partition)==0)
     return 0;

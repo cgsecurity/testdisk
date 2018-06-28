@@ -48,6 +48,8 @@
 #include "fat.h"
 #include "fat_common.h"
 #include "fatx.h"
+#include "f2fs_fs.h"
+#include "f2fs.h"
 #include "iso9660.h"
 #include "iso.h"
 #include "gfs2.h"
@@ -99,6 +101,7 @@ static const struct systypes none_sys_types[] = {
   {UP_FAT16,	"FAT16"},
   {UP_FAT32,	"FAT32"},
   {UP_FREEBSD,	"FreeBSD"},
+  {UP_F2FS,	"f2fs"},
   {UP_GFS2,	"GFS2"},
   {UP_HFS,	"HFS"},
   {UP_HFSP,	"HFS+"},
@@ -369,6 +372,9 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
       break;
     case UP_FREEBSD:
       ret=check_BSD(disk_car,partition,verbose,BSD_MAXPARTITIONS);
+      break;
+    case UP_F2FS:
+      ret=check_f2fs(disk_car, partition);
       break;
     case UP_GFS2:
       ret=check_gfs2(disk_car, partition);
