@@ -901,8 +901,27 @@ AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 export QT_SELECT=qt5
 if test "$use_qt" = "true";
 then
-  PKG_CHECK_MODULES(QTGUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
-  PKG_CHECK_MODULES(QTWIDGETS, [Qt5Widgets  >= 5.0.0],,use_qt=false)
+  PKG_CHECK_MODULES(QT5GUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
+  PKG_CHECK_MODULES(QT5WIDGETS, [Qt5Widgets  >= 5.0.0],,use_qt=false)
+  AC_MSG_CHECKING([whether Qt5 is using --std=c++14])
+  qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++14"`
+  if test "x$qt_config" != "x" ;
+  then
+    AC_MSG_RESULT([[yes]])
+    CXXFLAGS="$CXXFLAGS --std=c++14"
+  else
+    AC_MSG_RESULT([[no]])
+    AC_MSG_CHECKING([whether Qt5 is using --std=c++11])
+    qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++11"`
+    if test "x$qt_config" != "x" ;
+    then
+      AC_MSG_RESULT([[yes]])
+      CXXFLAGS="$CXXFLAGS --std=c++11"
+    else
+      AC_MSG_RESULT([[no]])
+    fi
+  fi
+
   AC_CHECK_TOOLS(MOC,[moc-qt5 moc],)
   if test x$MOC = x ; then
 	AC_MSG_WARN(Could not find a moc-qt5 or moc tool in your PATH.)
@@ -918,8 +937,8 @@ then
 	AC_MSG_WARN(Could not find a lrelease-qt5 or lrelease tool in your PATH.)
 	use_qt=false
   fi
-  qphotorec_LDADD="$qphotorec_LDADD $QTGUI_LIBS $QTWIDGETS_LIBS"
-  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QTGUI_CFLAGS $QTWIDGETS_CFLAGS"
+  qphotorec_LDADD="$qphotorec_LDADD $QT5GUI_LIBS $QT5WIDGETS_LIBS"
+  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT5GUI_CFLAGS $QT5WIDGETS_CFLAGS"
 fi
 AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 if test "$win_target" = yes;
