@@ -52,6 +52,20 @@ struct swf_header
   uint32_t size;
 } __attribute__ ((gcc_struct, __packed__));
 
+struct swfz_header
+{
+  char magic[3];
+  unsigned char version;
+  uint32_t scriptLen;
+  uint32_t compressedLen;
+  uint8_t  LZMA_props[5];
+} __attribute__ ((gcc_struct, __packed__));
+// followed by LZMA data  and 6 bytes for LZMA end marker
+// scriptLen is the uncompressed length of the SWF data. Includes 4 bytes SWF header and
+// 4 bytes for scriptLen it
+// compressedLen does not include header (4+4+4 bytes) or lzma props (5 bytes)
+// compressedLen does include LZMA end marker (6 bytes)
+
 static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigned int nbit)
 {
   int res=0;
@@ -175,8 +189,22 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static int header_check_swfz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct swfz_header *hdr=(const struct swfz_header *)buffer;
+  if(hdr->version < 11 || le32(hdr->compressedLen) < 6)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_swf.extension;
+  file_recovery_new->calculated_file_size=(uint64_t)4+4+4+5+le32(hdr->compressedLen);
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size_max;
+  return 1;
+}
+
 static void register_header_check_swf(file_stat_t *file_stat)
 {
   register_header_check(0, "CWS", 3, &header_check_swfc, file_stat);
   register_header_check(0, "FWS", 3, &header_check_swf, file_stat);
+  register_header_check(0, "ZWS", 3, &header_check_swfz, file_stat);
 }
