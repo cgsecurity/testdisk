@@ -111,7 +111,6 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %files
-%defattr(644,root,root,755)
 %doc AUTHORS COPYING ChangeLog NEWS README.md THANKS
 %attr(755,root,root) %{_bindir}/fidentify
 %attr(755,root,root) %{_bindir}/photorec

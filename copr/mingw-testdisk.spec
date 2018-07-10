@@ -130,7 +130,6 @@ rm -rf $RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT
 
 %files -n mingw32-testdisk
-%defattr(644,root,root,755)
 %{mingw32_docdir}/testdisk/AUTHORS
 %{mingw32_docdir}/testdisk/ChangeLog
 %{mingw32_docdir}/testdisk/NEWS
@@ -154,7 +153,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{mingw32_bindir}/*-testdisk.exe
 
 %files -n mingw64-testdisk
-%defattr(644,root,root,755)
 %{mingw64_docdir}/testdisk/AUTHORS
 %{mingw64_docdir}/testdisk/ChangeLog
 %{mingw64_docdir}/testdisk/NEWS

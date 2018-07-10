@@ -125,7 +125,6 @@ rm -rf $RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT
 
 %files -n cygwin32-testdisk
-%defattr(644,root,root,755)
 %{cygwin32_docdir}/testdisk/AUTHORS
 %{cygwin32_docdir}/testdisk/ChangeLog
 %{cygwin32_docdir}/testdisk/NEWS
@@ -143,7 +142,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{cygwin32_bindir}/*-testdisk.exe
 
 %files -n cygwin64-testdisk
-%defattr(644,root,root,755)
 %{cygwin64_docdir}/testdisk/AUTHORS
 %{cygwin64_docdir}/testdisk/ChangeLog
 %{cygwin64_docdir}/testdisk/NEWS
