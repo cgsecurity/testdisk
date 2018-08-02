@@ -1409,14 +1409,15 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 #endif
     }
     log_flush();
+#ifdef HAVE_NCURSES
     do
     {
       list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
-    } while(fast_mode!=0 && list_part!=NULL && is_structure_empty(list_part)
-#ifdef HAVE_NCURSES
-	&& ask_confirmation("Discard the results, confirm ? (Y/N)")==0
+    } while(list_part!=NULL && is_structure_empty(list_part) &&
+	ask_confirmation("Discard the results, confirm ? (Y/N)")==0);
+#else
+    list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
 #endif
-    );
     if(disk_car->arch->test_structure(list_part)==0)
     {
       int do_again=0;
