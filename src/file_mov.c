@@ -273,6 +273,18 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->calculated_file_size=i+atom_size;
 	return 1;
       }
+      else if(memcmp(&buffer[i+8], "crx ", 4)==0)
+      {
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension="cr3";
+	file_recovery_new->file_rename=&file_rename_mov;
+	if(file_recovery->blocksize < 16)
+	  return 1;
+	file_recovery_new->data_check=&data_check_mov;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->calculated_file_size=i+atom_size;
+	return 1;
+      }
     }
     if(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='a' && buffer[i+7]=='t')
     {
