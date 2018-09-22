@@ -46,6 +46,7 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
     { 'P', "Previous",""},
     { 'N', "Next","" },
     { 'Q', "Quit","Return to main menu"},
+    { 'R', "Return", "Return to partition selection"},
     { 'S', "Deeper Search","Try to find more partitions"},
     { 'W', "Write","Write partition structure to disk"},
     { 'E', "Extd Part","Maximize/Minimize extended partition"},
@@ -118,7 +119,8 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
     else
     {
       char options[10];
-      options[0]=0;
+      options[0]='R';
+      options[1]=0;
       if(can_search_deeper)
 	strcat(options,"S");
       if(disk_car->arch->write_part!=NULL)
@@ -139,5 +141,3 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
   }
   return command;
 }
-
-

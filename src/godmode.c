@@ -60,12 +60,10 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
-static list_part_t *reduce_structure(list_part_t *list_part);
 static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
 static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
 #ifdef HAVE_NCURSES
 static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part_bad);
-static void warning_geometry_ncurses(disk_t *disk_car, const unsigned int recommanded_heads_per_cylinder);
 static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
 #define ANALYSE_X	0
 #define ANALYSE_Y	5
@@ -1106,27 +1104,22 @@ static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part)
 }
 #endif
 
-static list_part_t *reduce_structure(list_part_t *list_part)
+static list_part_t *reduce_structure(const list_part_t *list_part_org)
 {
-  list_part_t *element=list_part;
-  list_part_t *prev=NULL;
-  while(element)
+
+  const list_part_t *element;
+  list_part_t *list_part=NULL;
+  for(element=list_part_org; element!=NULL; element=element->next)
   {
-    list_part_t *next=element->next;
-    if(element->part->status==STATUS_DELETED)
+    if(element->part->status!=STATUS_DELETED)
     {
-      if(prev==NULL)
-	list_part=next;
-      else
-	prev->next=next;
-      if(next!=NULL)
-	next->prev=prev;
-      free(element->part);
-      free(element);
+      int insert_error=0;
+      partition_t *new_partition=partition_new(NULL);
+      dup_partition_t(new_partition, element->part);
+      list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+      if(insert_error>0)
+	free(new_partition);
     }
-    else
-      prev=element;
-    element=next;
   }
   return list_part;
 }
@@ -1337,18 +1330,142 @@ static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int 
   return 0;
 }
 
-static int is_structure_empty(const list_part_t *list_part)
+static void warning_geometry(const list_part_t *list_part, disk_t *disk, const int verbose, char **current_cmd)
 {
-  const list_part_t *element;
-  for(element=list_part; element!=NULL; element=element->next)
-  {
-    if(element->part->status!=STATUS_DELETED)
-      return 0;
+  if(list_part!=NULL && (disk->arch==&arch_i386 || disk->arch==&arch_sun))
+  { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
+    const unsigned int heads_per_cylinder=get_geometry_from_list_part(disk, list_part, verbose);
+    if(disk->geom.heads_per_cylinder!=heads_per_cylinder)
+    {
+      log_warning("Warning: the current number of heads per cylinder is %u but the correct value may be %u.\n",
+	  disk->geom.heads_per_cylinder, heads_per_cylinder);
+#ifdef HAVE_NCURSES
+      if(*current_cmd==NULL)
+      {
+	warning_geometry_ncurses(disk, heads_per_cylinder);
+      }
+#endif
+    }
   }
-  return 1;
 }
 
-int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd)
+static int ask_write_partition_table(const list_part_t *list_part_org, disk_t *disk_car, const int verbose, const int dump_ind, const int ask_part_order, const unsigned int expert, char **current_cmd, unsigned int *menu, int *fast_mode)
+{
+  int res_interface_write;
+  int do_again=0;
+  int max_ext=0;
+  int can_ask_minmax_ext=0;
+  int no_confirm=0;
+  list_part_t *list_part;
+  list_part=reduce_structure(list_part_org);
+  /* sort list_part */
+  list_part=sort_partition_list(list_part);
+  /* Create PC/Intel Extended partition */
+  /* if(disk_car->arch==&arch_i386) */
+  {
+    list_part_t *parts;
+    uint64_t partext_offset=0;
+    uint64_t partext_size=0;
+    list_part=add_ext_part_i386(disk_car, list_part, !max_ext, verbose);
+    for(parts=list_part;parts!=NULL;parts=parts->next)
+      if(parts->part->status==STATUS_EXT)
+      {
+	partext_offset=parts->part->part_offset;
+	partext_size=parts->part->part_size;
+      }
+    if(partext_offset>0)
+    {
+      list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
+      for(parts=list_part;parts!=NULL;parts=parts->next)
+	if(parts->part->status==STATUS_EXT)
+	{
+	  if(partext_offset!=parts->part->part_offset || partext_size!=parts->part->part_size)
+	    can_ask_minmax_ext=1;
+	}
+    }
+  }
+  list_part=disk_car->arch->init_part_order(disk_car,list_part);
+  if(ask_part_order!=0)
+  {
+    /* Demande l'ordre des entrees dans le MBR */
+#ifdef HAVE_NCURSES
+    ask_mbr_order_i386(disk_car,list_part);
+#endif
+    /* Demande l'ordre des partitions etendues */
+  }
+  do
+  {
+    do_again=0;
+    res_interface_write=interface_write(disk_car,list_part,((*fast_mode)<1),can_ask_minmax_ext, &no_confirm, current_cmd, menu);
+    switch(res_interface_write)
+    {
+      case 'W':
+	if(disk_car->arch == &arch_mac)
+	{
+#ifdef HAVE_NCURSES
+	  write_part_mac_warning_ncurses();
+#endif
+	}
+	else if(disk_car->arch == &arch_sun)
+	{
+#ifdef HAVE_NCURSES
+	  not_implemented("write_part_sun");
+#endif
+	}
+	else if(disk_car->arch == &arch_xbox)
+	{
+#ifdef HAVE_NCURSES
+	  not_implemented("write_part_xbox");
+#endif
+	}
+	else if(disk_car->arch->write_part!=NULL)
+	{
+	  if(no_confirm!=0
+#ifdef HAVE_NCURSES
+	      || ask_confirmation("Write partition table, confirm ? (Y/N)")!=0
+#endif
+	    )
+	  {
+	    log_info("write!\n");
+	    if(disk_car->arch->write_part(disk_car, list_part, RW, verbose))
+	    {
+	      display_message(msg_PART_WR_ERR);
+	    }
+	    else
+	    {
+	      use_backup(disk_car,list_part,verbose,dump_ind,expert,current_cmd);
+	      if(no_confirm==0)
+		display_message("You will have to reboot for the change to take effect.\n");
+	    }
+	  }
+	  else
+	    log_info("Don't write, no confirmation\n");
+	}
+	break;
+      case 0:
+	if(disk_car->arch->write_part!=NULL)
+	{
+	  log_info("simulate write!\n");
+	  disk_car->arch->write_part(disk_car, list_part, RO, verbose);
+	}
+	break;
+      case 'S':
+	if((*fast_mode) < 2)
+	  (*fast_mode)++;
+	break;
+      case 'E':
+	max_ext=!max_ext;
+	list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
+	do_again=1;
+	break;
+    }
+  }
+  while(do_again==1);
+  part_free_list(list_part);
+  return res_interface_write;
+}
+
+int interface_recovery(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd)
 {
   int res_interface_write;
   int fast_mode=0;
@@ -1358,30 +1475,15 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
     const list_part_t *element;
     unsigned int menu=0;
     if(fast_mode==0)
-      menu=3;	/* Search! */
+      menu=4;	/* Search! */
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
     wmove(stdscr,4,0);
     wprintw(stdscr,"%s",disk_car->description(disk_car));
     wmove(stdscr,5,0);
 #endif
-    res_interface_write=0;
     list_part=search_part(disk_car, list_part_org, verbose, dump_ind, fast_mode, current_cmd);
-    if(list_part!=NULL && (disk_car->arch==&arch_i386 || disk_car->arch==&arch_sun))
-    { /* Correct disk geometry is necessary for successfull Intel and Sun partition recovery */
-      const unsigned int heads_per_cylinder=get_geometry_from_list_part(disk_car, list_part, verbose);
-      if(disk_car->geom.heads_per_cylinder!=heads_per_cylinder)
-      {
-	log_warning("Warning: the current number of heads per cylinder is %u but the correct value may be %u.\n",
-	    disk_car->geom.heads_per_cylinder, heads_per_cylinder);
-#ifdef HAVE_NCURSES
-	if(*current_cmd==NULL)
-	{
-	  warning_geometry_ncurses(disk_car, heads_per_cylinder);
-	}
-#endif
-      }
-    }
+    warning_geometry(list_part, disk_car, verbose, current_cmd);
     align_structure(list_part, disk_car, align);
 
     disk_car->arch->init_structure(disk_car,list_part,verbose);
@@ -1409,130 +1511,19 @@ int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, cons
 #endif
     }
     log_flush();
-#ifdef HAVE_NCURSES
     do
     {
       list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
-    } while(list_part!=NULL && is_structure_empty(list_part) &&
-	ask_confirmation("Discard the results, confirm ? (Y/N)")==0);
-#else
-    list_part=ask_structure(disk_car,list_part,verbose,current_cmd);
-#endif
-    if(disk_car->arch->test_structure(list_part)==0)
-    {
-      int do_again=0;
-      int max_ext=0;
-      int can_ask_minmax_ext=0;
-      int no_confirm=0;
-      list_part=reduce_structure(list_part);
-      /* sort list_part */
-      list_part=sort_partition_list(list_part);
-      /* Create PC/Intel Extended partition */
-      /* if(disk_car->arch==&arch_i386) */
+      if(disk_car->arch->test_structure(list_part)==0)
       {
-	list_part_t *parts;
-	uint64_t partext_offset=0;
-	uint64_t partext_size=0;
-	list_part=add_ext_part_i386(disk_car, list_part, !max_ext, verbose);
-	for(parts=list_part;parts!=NULL;parts=parts->next)
-	  if(parts->part->status==STATUS_EXT)
-	  {
-	    partext_offset=parts->part->part_offset;
-	    partext_size=parts->part->part_size;
-	  }
-	if(partext_offset>0)
-	{
-	  list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
-	  for(parts=list_part;parts!=NULL;parts=parts->next)
-	    if(parts->part->status==STATUS_EXT)
-	    {
-	      if(partext_offset!=parts->part->part_offset || partext_size!=parts->part->part_size)
-		can_ask_minmax_ext=1;
-	    }
-	}
+	res_interface_write=ask_write_partition_table(list_part, disk_car, verbose, dump_ind, ask_part_order, expert, current_cmd, &menu, &fast_mode);
       }
-      list_part=disk_car->arch->init_part_order(disk_car,list_part);
-      if(ask_part_order!=0)
+      else
       {
-	/* Demande l'ordre des entrees dans le MBR */
-#ifdef HAVE_NCURSES
-	ask_mbr_order_i386(disk_car,list_part);
-#endif
-	/* Demande l'ordre des partitions etendues */
+	display_message("Invalid partition structure.\n");
+	res_interface_write=0;
       }
-      do
-      {
-	do_again=0;
-	res_interface_write=interface_write(disk_car,list_part,(fast_mode<1),can_ask_minmax_ext, &no_confirm, current_cmd,&menu);
-	switch(res_interface_write)
-	{
-	  case 'W':
-	    if(disk_car->arch == &arch_mac)
-	    {
-#ifdef HAVE_NCURSES
-	      write_part_mac_warning_ncurses();
-#endif
-	    }
-	    else if(disk_car->arch == &arch_sun)
-	    {
-#ifdef HAVE_NCURSES
-	      not_implemented("write_part_sun");
-#endif
-	    }
-	    else if(disk_car->arch == &arch_xbox)
-	    {
-#ifdef HAVE_NCURSES
-	      not_implemented("write_part_xbox");
-#endif
-	    }
-	    else if(disk_car->arch->write_part!=NULL)
-	    {
-	      if(no_confirm!=0
-#ifdef HAVE_NCURSES
-		  || ask_confirmation("Write partition table, confirm ? (Y/N)")!=0
-#endif
-		)
-	      {
-		log_info("write!\n");
-		if(disk_car->arch->write_part(disk_car, list_part, RW, verbose))
-		{
-		  display_message(msg_PART_WR_ERR);
-		}
-		else
-		{
-		  use_backup(disk_car,list_part,verbose,dump_ind,expert,current_cmd);
-		  if(no_confirm==0)
-		    display_message("You will have to reboot for the change to take effect.\n");
-		}
-	      }
-	      else
-		log_info("Don't write, no confirmation\n");
-	    }
-	    break;
-	  case 0:
-	    if(disk_car->arch->write_part!=NULL)
-	    {
-	      log_info("simulate write!\n");
-	      disk_car->arch->write_part(disk_car, list_part, RO, verbose);
-	    }
-	    break;
-	  case 'S':
-	    if(fast_mode<2)
-	      fast_mode++;
-	    break;
-	  case 'E':
-	    max_ext=!max_ext;
-	    list_part=add_ext_part_i386(disk_car, list_part, max_ext, verbose);
-	    do_again=1;
-	    break;
-	}
-      }
-      while(do_again==1);
-    }
-    else
-    {
-      display_message("Invalid partition structure.\n");
-    }
+    } while(res_interface_write == 'R');
     part_free_list(list_part);
   } while(res_interface_write=='S');
   return 0;
