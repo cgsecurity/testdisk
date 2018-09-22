@@ -40,7 +40,7 @@ struct exfat_super_block {
 	unsigned char   xxxx01;                 /* ??? (0x00 or any value (?)) */
 	unsigned char   xxxx02;                 /* ??? (0x01 or 0x00 (?)) */
 	uint16_t  	state;                  /* state of this volume */
-	unsigned char   blocksize_bits;         /* bits of block size */
+	unsigned char   blocksize_bits;         /* 0x6c bits of block size */
 	unsigned char   block_per_clus_bits;    /* bits of blocks per cluster */
 	unsigned char   number_of_fats;
 	unsigned char   drive_select;           /* Used by INT 13 */

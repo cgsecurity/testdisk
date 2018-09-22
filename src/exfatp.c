@@ -67,7 +67,7 @@ unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition,
     unsigned char *buffer;
     unsigned int i;
     unsigned int cluster_bitmap;
-    const uint64_t start_exfat1=le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
+    const uint64_t start_exfat1=(uint64_t)le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
     uint64_t start_free=0;
     uint64_t end_free=0;
     if(disk->pread(disk, buffer_rootdir, 1 << cluster_shift, start) != (1<<cluster_shift))

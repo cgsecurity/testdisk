@@ -107,15 +107,15 @@ static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned 
 #define ATTR_DIR     16 /* directory */
 #define ATTR_ARCH    32 /* archived */
 
-static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *partition, const int offset, const unsigned int cluster)
+static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *partition, const uint64_t offset, const unsigned int cluster)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(disk_car->sector_size);
   unsigned int next_cluster;
   const uint32_t *p32=(const uint32_t*)buffer;
-  const unsigned long int offset_s=cluster/(disk_car->sector_size/4);
-  const unsigned long int offset_o=cluster%(disk_car->sector_size/4);
+  const uint64_t offset_s=cluster / (disk_car->sector_size/4);
+  const uint64_t offset_o=cluster % (disk_car->sector_size/4);
   if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size,
-	partition->part_offset + offset + (uint64_t)offset_s * disk_car->sector_size) != disk_car->sector_size)
+	partition->part_offset + offset + offset_s * disk_car->sector_size) != disk_car->sector_size)
   {
     log_error("exfat_get_next_cluster read error\n");
     free(buffer);
@@ -234,7 +234,7 @@ static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir
   const unsigned int total_clusters=le32(exfat_header->total_clusters);
   exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
   int stop=0;
-  const uint64_t start_exfat1=le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
+  const uint64_t start_exfat1=(uint64_t)le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
   if(first_cluster<2)
     cluster=le32(exfat_header->rootdir_clusnr);
   else
@@ -368,7 +368,8 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
   unsigned int cluster;
   uint64_t file_size=file->st_size;
   exfat_method_t exfat_meth=exFAT_FOLLOW_CLUSTER;
-  uint64_t start_exfat1,clus_blocknr;
+  uint64_t start_exfat1;
+  unsigned long int clus_blocknr;
   unsigned long int total_clusters;
   f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
   if(!f_out)
@@ -379,7 +380,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     return -1;
   }
   cluster = file->st_ino;
-  start_exfat1=le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
+  start_exfat1=(uint64_t)le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
   clus_blocknr=le32(exfat_header->clus_blocknr);
   total_clusters=le32(exfat_header->total_clusters);
   log_trace("exfat_copy dst=%s first_cluster=%u (%llu) size=%lu\n", new_file,
