@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="June 2018"
+TESTDISKDATE="September 2018"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -548,7 +548,8 @@ if test "x$with_ncurses" != "xno"; then
 
  if test "${ncurses_lib}" = "ncursesw"; then
   AC_CHECK_LIB(tinfow,keypad, [ tinfo_lib="tinfow" ])
- else
+ fi
+ if test -z "${tinfo_lib}"; then
   AC_CHECK_LIB(tinfo,keypad, [ tinfo_lib="tinfo" ])
  fi
  if test "${tinfo_lib}" != ""; then
@@ -914,7 +915,19 @@ then
   if test "x$qt_config" != "x" ;
   then
     AC_MSG_RESULT([[yes]])
-    CXXFLAGS="$CXXFLAGS --std=c++14"
+    AC_LANG_PUSH([C++])
+    option="--std=c++14"
+    SAVE_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS $option"
+    AC_MSG_CHECKING([whether g++ understands $option])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	[has_option=yes],
+	[has_option=no; CXXFLAGS="$SAVE_CXXFLAGS"])
+    AC_MSG_RESULT($has_option)
+    unset has_option
+    unset SAVE_CXXFLAGS
+    unset option
+    AC_LANG_POP([C++])
   else
     AC_MSG_RESULT([[no]])
     AC_MSG_CHECKING([whether Qt5 is using --std=c++11])
@@ -922,7 +935,19 @@ then
     if test "x$qt_config" != "x" ;
     then
       AC_MSG_RESULT([[yes]])
-      CXXFLAGS="$CXXFLAGS --std=c++11"
+      AC_LANG_PUSH([C++])
+      option="--std=c++11"
+      SAVE_CXXFLAGS="$CXXFLAGS"
+      CXXFLAGS="$CXXFLAGS $option"
+      AC_MSG_CHECKING([whether g++ understands $option])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	  [has_option=yes],
+	  [has_option=no; CXXFLAGS="$SAVE_CXXFLAGS"])
+      AC_MSG_RESULT($has_option)
+      unset has_option
+      unset SAVE_CXXFLAGS
+      unset option
+      AC_LANG_POP([C++])
     else
       AC_MSG_RESULT([[no]])
     fi
