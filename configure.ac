@@ -545,20 +545,26 @@ if test "x$with_ncurses" != "xno"; then
    testdisk_LDADD="$testdisk_LDADD -l${ncurses_lib}"
    photorec_LDADD="$photorec_LDADD -l${ncurses_lib}"
  fi
-  AC_CHECK_LIB(tinfo,keypad,[
-      AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
-# if lib${ncurses_lib}.a is present, try to use libtinfo.a
- if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a";
- then
-   if test -e "${ncurses_lib_dir}/libtinfo.a"; then
-     testdisk_LDADD="$testdisk_LDADD ${ncurses_lib_dir}/libtinfo.a"
-     photorec_LDADD="$photorec_LDADD ${ncurses_lib_dir}/libtinfo.a"
-   fi
+
+ if test "${ncurses_lib}" = "ncursesw"; then
+  AC_CHECK_LIB(tinfow,keypad, [ tinfo_lib="tinfow" ])
  else
-   testdisk_LDADD="$testdisk_LDADD -ltinfo"
-   photorec_LDADD="$photorec_LDADD -ltinfo"
+  AC_CHECK_LIB(tinfo,keypad, [ tinfo_lib="tinfo" ])
  fi
-      ])
+ if test "${tinfo_lib}" != ""; then
+      AC_DEFINE([HAVE_TINFO],1,[Define to 1 if you have the tinfo library (-ltinfo).])
+   # if lib${ncurses_lib}.a is present, try to use libtinfo.a
+   if test "${ncurses_lib_dir}" != "" -a -e "${ncurses_lib_dir}/lib${ncurses_lib}.a";
+   then
+     if test -e "${ncurses_lib_dir}/lib${tinfo_lib}.a"; then
+       testdisk_LDADD="$testdisk_LDADD ${ncurses_lib_dir}/lib${tinfo_lib}.a"
+       photorec_LDADD="$photorec_LDADD ${ncurses_lib_dir}/lib${tinfo_lib}.a"
+     fi
+   else
+     testdisk_LDADD="$testdisk_LDADD -l${tinfo_lib}"
+     photorec_LDADD="$photorec_LDADD -l${tinfo_lib}"
+   fi
+ fi
   if test "$use_ncmouse" = "true";
   then
     ac_save_LIBS="$LIBS"
