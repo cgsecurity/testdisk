@@ -276,6 +276,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 	/* Celtx, Screenwriting & Media Pre-production file */
 	else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
 	  *ext="celtx";
+	else if(len==13 && memcmp(filename, "document.json", 13)==0)
+	  *ext="sketch";
       }
       else if(file_nbr==1 && sh3d==1)
       {
