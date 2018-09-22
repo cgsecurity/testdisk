@@ -61,6 +61,17 @@ struct png_chunk
   /* data is followed by uint32_t crc; */
 } __attribute__ ((gcc_struct, __packed__));
 
+struct png_ihdr
+{
+  uint32_t width;
+  uint32_t height;
+  uint8_t  bit_depth;
+  uint8_t  color_type;
+  uint8_t  compression;
+  uint8_t  filter;
+  uint8_t  interlace;
+} __attribute__ ((gcc_struct, __packed__));
+
 static int header_check_jng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if( !((isupper(buffer[8+4]) || islower(buffer[8+4])) &&
@@ -97,6 +108,33 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+/* png_check_ihdr: return 1 if valid */
+static int png_check_ihdr(const struct png_ihdr *ihdr)
+{
+  if(be32(ihdr->width)==0 || be32(ihdr->height)==0)
+    return 0;
+  switch(ihdr->color_type)
+  {
+    case 0:	/* Greyscale */
+      if(ihdr->bit_depth!=1 && ihdr->bit_depth!=2 && ihdr->bit_depth!=4 && ihdr->bit_depth!=8 && ihdr->bit_depth!=16)
+	return 0;
+      break;
+    case 3:	/* Indexed-colour*/
+      if(ihdr->bit_depth!=1 && ihdr->bit_depth!=2 && ihdr->bit_depth!=4 && ihdr->bit_depth!=8)
+	return 0;
+      break;
+    case 2:	/* Truecolour */
+    case 4:	/* Greyscale with alpha */
+    case 6:	/* Truecolour with alpha */
+      if(ihdr->bit_depth!=8 && ihdr->bit_depth!=16)
+	return 0;
+      break;
+    default:
+      return 0;
+  }
+  return 1;
+}
+
 static void file_check_png(file_recovery_t *fr)
 {
   if(fr->file_size<fr->calculated_file_size)
@@ -118,6 +156,16 @@ static void file_check_png(file_recovery_t *fr)
     fr->file_size+=(uint64_t)12 + be32(chunk->length);
     if(memcmp(&buffer[4], "IEND", 4)==0)
       return ;
+    if(memcmp(&buffer[4], "IHDR", 4) == 0)
+    {
+      struct png_ihdr ihdr;
+      if(fread(&ihdr, sizeof(ihdr), 1, fr->handle) != 1 ||
+	  png_check_ihdr(&ihdr)==0)
+      {
+	fr->file_size=0;
+	return ;
+      }
+    }
   }
 }
 
@@ -127,6 +175,9 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
 	(isupper(buffer[8+5]) || islower(buffer[8+5])) &&
 	(isupper(buffer[8+6]) || islower(buffer[8+6])) &&
 	(isupper(buffer[8+7]) || islower(buffer[8+7]))))
+    return 0;
+  if(memcmp(&buffer[8+4], "IHDR", 4) == 0 &&
+      png_check_ihdr((const struct png_ihdr *)&buffer[16])==0)
     return 0;
   /* SolidWorks files contains a png */
   if(file_recovery->file_stat!=NULL &&
