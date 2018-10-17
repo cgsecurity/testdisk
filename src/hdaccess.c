@@ -374,6 +374,8 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     list_disk=hd_glob_parse("/dev/xvd?", list_disk, verbose, testdisk_mode);
     /* Loop devices */
     list_disk=hd_glob_parse("/dev/loop[0-9]*", list_disk, verbose, testdisk_mode);
+    /* NVME */
+    list_disk=hd_glob_parse("/dev/nvme[0-9]n[0-9]", list_disk, verbose, testdisk_mode);
 #endif
   }
 #elif defined(TARGET_SOLARIS)
