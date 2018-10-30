@@ -235,6 +235,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       file_recovery_new->extension="als";
       return 1;
     }
+    if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<PremiereData", 0x34)==0)
+    {
+      /* Adobe Premiere */
+      file_recovery_new->extension="prproj";
+      return 1;
+    }
     if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
     {
       file_recovery_new->extension="kmy";
