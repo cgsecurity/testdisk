@@ -138,6 +138,17 @@ static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const
   return find_sectors_per_cluster_aux(sector_cluster,nbr_subdir,sectors_per_cluster,offset_org,verbose,partition->part_size/disk->sector_size, UP_UNK);
 }
 
+static void strip_fn(char *fn)
+{
+  unsigned int i;
+  for(i=0; fn[i]!='\0'; i++);
+  while(i>0 && (fn[i-1]==' ' || fn[i-1]=='.'))
+    i--;
+  if(i==0 && (fn[0]==' ' || fn[0]=='.'))
+    fn[i++]='_';
+  fn[i]='\0';
+}
+
 static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_info_t *file)
 {
   char *new_file;	
@@ -158,12 +169,14 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
 #endif
   snprintf(new_file, 1024, "%s.%u/inode_%u/%s", recup_dir, dir_num, inode_num,
       file->name);
+  strip_fn(new_file);
   if((f_out=fopen(new_file, "rb"))!=NULL)
   {
     fclose(f_out);
     snprintf(new_file, 1024, "%s.%u/inode_%u/f%07u-%s", recup_dir, dir_num, inode_num,
 	(unsigned int)((start_data - partition->part_offset + (uint64_t)(cluster-2)*cluster_size)/disk->sector_size),
 	file->name);
+    strip_fn(new_file);
   }
   log_info("fat_copy_file %s\n", new_file);
   f_out=fopen(new_file, "wb");

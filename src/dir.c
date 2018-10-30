@@ -477,6 +477,17 @@ int set_mode(const char *pathname, unsigned int mode)
 #endif
 }
 
+static void strip_fn(char *fn)
+{
+  unsigned int i;
+  for(i=0;fn[i]!='\0';i++);
+  while(i>0 && (fn[i-1]==' '||fn[i-1]=='.'))
+    i--;
+  if(i==0 && (fn[i]==' '||fn[i]=='.'))
+    fn[i++]='_';
+  fn[i]='\0';
+}
+
 #ifdef DJGPP
 static inline unsigned char convert_char_dos(unsigned char car)
 {
@@ -742,6 +753,7 @@ FILE *fopen_local(char **localfilename, const char *localroot, const char *filen
   memcpy(dst, localroot, l1);
   memcpy(dst+l1, filename, l2+1);
   *localfilename=dst;
+  strip_fn(dst);
   f_out=fopen(dst,"wb");
   if(f_out)
     return f_out;
