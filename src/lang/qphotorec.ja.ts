@@ -1,4 +1,4 @@
-<?xml version="1.0" ?><!DOCTYPE TS><TS language="it" version="2.1">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="ja" version="2.1">
 <context>
     <name>QPhotorec</name>
     <message>
@@ -10,17 +10,17 @@
         <location filename="src/qphotorec.cpp" line="156"/>
         <location filename="src/qphotorec.cpp" line="518"/>
         <source>Please select a destination to save the recovered files to.</source>
-        <translation>Scegliere la destinazione in cui si desidera salvare i documenti recuperati.</translation>
+        <translation>復元したファイルの保存先を選択してください。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="170"/>
         <source>Please select a raw file</source>
-        <translation>Selezionare un documento raw</translation>
+        <translation>元のファイルを選択してください。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="172"/>
         <source>Raw Files (*.dd *.raw *.img)</source>
-        <translation>Documenti raw (*.dd *.raw *.img)</translation>
+        <translation>元ファイル (*.dd *.raw *.img)</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="259"/>
@@ -30,12 +30,12 @@
     <message>
         <location filename="src/qphotorec.cpp" line="261"/>
         <source>Unknown</source>
-        <translation>Sconosciuto</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="377"/>
         <source>No harddisk found</source>
-        <translation>Non è stato trovato alcun disco</translation>
+        <translation>ハードディスクが見つかりませんでした</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="379"/>
@@ -43,82 +43,80 @@
 You need to be administrator to use this program.
 Under Win9x, use the DOS version instead.
 Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</source>
-        <translation>Non è stato trovato alcun disco
-Si deve disporre di privilegi d&apos;amministratore per usare questo programma.
-Con Win9x, usare piuttosto la versione DOS. 
-Con Vista o superiore, selezionare questo programma, cliccare con il destro del mouse e scegliere &quot;Esegui come amministratore&quot;.</translation>
+        <translation>ハードディスクが見つかりませんでした。
+このプログラムを使用するには管理者権限が必要です。
+Win9x では代わりにDOS版を使ってください。
+Vista以降ではこのプログラムを選び、右クリックして「管理者として実行」を選んでください。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="388"/>
         <source>No harddisk found
 You need to be root to use PhotoRec.</source>
-        <translation>Non è stato trovato alcun disco
-Si deve disporre di privilegi di root per usare PhotoRec.</translation>
+        <translation>ハードディスクが見つかりませんでした。
+PhotoRecを使うにはrootユーザになる必要があります。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="393"/>
         <source>No Disk!</source>
-        <translation>Nessun Disco!</translation>
+        <translation>ディスクがありません！</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="452"/>
         <source>Add a raw disk image...</source>
-        <translation>Aggiungere un&apos;immagine raw del disco...</translation>
+        <translation>復元元ディスクイメージを追加</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="458"/>
         <source>PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation>PhotoRec è un software libero e viene fornito ASSOLUTAMENTE SENZA ALCUNA GARANZIA.</translation>
+        <translation>PhotoRecは無料のソフトウェアで、一切の保証はありません。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="459"/>
         <source>Please select a media to recover from</source>
-        <translation>Selezionare un supporto dal quale eseguire l&apos;operazione di recupero</translation>
+        <translation>復元元のメディアを選択してください</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="462"/>
         <source>Disk capacity must be correctly detected for a successful recovery.
 If a disk listed above has an incorrect size, check HD jumper settings and BIOS
 detection, and install the latest OS patches and disk drivers.</source>
-        <translation>Per un ripristino corretto, la capacità del disco deve essere precisa.
-Se un disco nell&apos;elenco ha una dimensione errata, controllare le impostazioni di HD jumper e BIOS 
-detection, e installare gli aggiornamenti del sistema operativo e i driver del disco.
-</translation>
+        <translation>正しく復元するには正しいディスク容量が検知される必要があります。
+上に列挙されたディスクに正しくない容量が表示されていたら、ハードディスクのジャンパ設定とBIOSで検知されている内容を確認し、最新のOSパッチとディスクドライバをインストールしてください。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="469"/>
         <source>Flags</source>
-        <translation>Flag</translation>
+        <translation>フラグ</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="470"/>
         <source>Type</source>
-        <translation>Tipo</translation>
+        <translation>タイプ</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="471"/>
         <source>File System</source>
-        <translation>File System</translation>
+        <translation>ファイルシステム</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="472"/>
         <source>Size</source>
-        <translation>Dimensione</translation>
+        <translation>サイズ</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="473"/>
         <source>Label</source>
-        <translation>Etichetta</translation>
+        <translation>ラベル</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="488"/>
         <source>File System type</source>
-        <translation>Tipo di File System</translation>
+        <translation>ファイルシステムの種類</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="489"/>
         <source>ext2/ext3/ext4 filesystem</source>
-        <translation>File system ext2/ext3/ext4</translation>
+        <translation>ext2/ext3/ext4 ファイルシステム</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="490"/>
@@ -128,98 +126,98 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
     <message>
         <location filename="src/qphotorec.cpp" line="494"/>
         <source>Free: Scan for file from unallocated space only</source>
-        <translation>Libero: ricerca di documenti unicamente nello spazio non allocato</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="495"/>
         <source>Whole: Extract files from whole partition</source>
-        <translation>Completo: Estrazione dei documenti da tutta la partizione</translation>
+        <translation>すべて: すべてのパーティションからファイルを抽出する</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="522"/>
         <source>&amp;Browse</source>
-        <translation>&amp;Naviga</translation>
+        <translation>&amp;参照</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="538"/>
         <source>&amp;Search</source>
-        <translation>&amp;Cerca</translation>
+        <translation>&amp;検索</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="541"/>
         <source>&amp;About</source>
-        <translation>&amp;Info</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="542"/>
         <source>&amp;File Formats</source>
-        <translation>&amp;Formati dei file</translation>
+        <translation>&amp;ファイルフォーマット</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="642"/>
         <source>Destination:</source>
-        <translation>Destinazione:</translation>
+        <translation>復元先</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="647"/>
         <source>Recovery completed</source>
-        <translation>Recupero terminato</translation>
+        <translation>復元完了</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="652"/>
         <source>Bruteforce %1 sectors remaining (test %2)</source>
-        <translation>Esaustiva %1 settori rimanenti (test %2)</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="660"/>
         <source>Pass %1 - Reading sector %2/%3</source>
-        <translation>Iterazione %1 - Lettura del settore %2/%3</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="665"/>
         <source>%1/10 headers found</source>
-        <translation>%1/10 intestazioni trovate</translation>
+        <translation>%1/10 ヘッダーが見つかりました</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="667"/>
         <source>%1 files found</source>
-        <translation>%1 documenti trovati</translation>
+        <translation>%1 個のファイルが見つかりました。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="540"/>
         <location filename="src/qphotorec.cpp" line="762"/>
         <source>&amp;Quit</source>
-        <translation>&amp;Uscire</translation>
+        <translation>&amp;終了</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
         <source>File familly</source>
-        <translation>famiglia dei file</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="751"/>
         <source>Number of files recovered</source>
-        <translation>numero dei file recuperati</translation>
+        <translation>復元したファイルの数</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="834"/>
         <source>QPhotoRec: Failed to create file!</source>
-        <translation>QPhotoRec: Impossibile creare il file!</translation>
+        <translation>QPhotoRec: ファイル作成に失敗しました!</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="835"/>
         <source>Failed to create file! Please choose another destination</source>
-        <translation>Impossibile creare il file! Selezionare un&apos;altra destinazione</translation>
+        <translation>ファイルの作成に失敗しました! 別の保存先を選んでください。</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="854"/>
         <source>QPhotoRec: Not enough space!</source>
-        <translation>QPhotoRec: Spazio insufficiente!</translation>
+        <translation>QPhotoRec: 十分な空き容量がありません!</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="855"/>
         <source>There is not enough space left! Please free disk space and/or choose another destination</source>
-        <translation>Spazio disponibile insufficiente. Liberare spazio su disco e/o scegliere un&apos;altra destinazione</translation>
+        <translation>十分な空き容量がありません! ディスクの空き容量を増やすかまたは別の復元先を指定してください</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="924"/>
@@ -228,31 +226,27 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
-        <translation>QPhotoRec è un software libero: può essere distribuito e/o modificato entro i termini della licenza GNU General Public License come pubblicata dalla Free Software Foundation, sia nella versione 2 della Licenza che, a propria scelta, in versioni successive.
-
-QPhotoRec viene distribuito con la speranza che possa essere utile ma SENZA ALCUNA GARANZIA DI NESSUN TIPO, senza nemmeno la garanzia implicita di commerciabilità o idoneità per un particolare scopo. Vedere i dettagli della licenza per ulteriori chiarimenti.
-
-Una copia della GNU General Public License è distribuita con QPhotoRec. In caso contrario se ne può ottenere una all&apos;indirizzo &lt;http://www.gnu.org/licenses/&gt;.</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="925"/>
         <source>QPhotoRec: About</source>
-        <translation>QPhotoRec: A proposito</translation>
+        <translation type="unfinished"/>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="954"/>
         <source>File Formats</source>
-        <translation>Formati dei file</translation>
+        <translation>ファイルフォーマット</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="957"/>
         <source>&amp;Reset</source>
-        <translation>&amp;Resettare</translation>
+        <translation>&amp;リセット</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="958"/>
         <source>Res&amp;tore</source>
-        <translation>Ripri&amp;stinare</translation>
+        <translation type="unfinished"/>
     </message>
 </context>
 </TS>
