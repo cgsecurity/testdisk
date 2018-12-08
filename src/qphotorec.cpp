@@ -750,7 +750,7 @@ void QPhotorec::qphotorec_search_setupUI()
   progressWidget2->setLayout(progressWidgetLayout2);
 
   QStringList oLabel;
-  oLabel.append(tr("File familly"));
+  oLabel.append(tr("File family"));
   oLabel.append(tr("Number of files recovered"));
 
   filestatsWidget=new QTableWidget();

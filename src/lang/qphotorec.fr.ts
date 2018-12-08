@@ -191,7 +191,7 @@ Si un disque listé ci dessus a une taille incorrecte, vérifier le paramétrage
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation>Familles de fichier</translation>
     </message>
     <message>

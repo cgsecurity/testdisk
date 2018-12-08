@@ -193,7 +193,7 @@ detection, e installare gli aggiornamenti del sistema operativo e i driver del d
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation type="unfinished"/>
     </message>
     <message>
