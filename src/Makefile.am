@@ -237,6 +237,7 @@ file_C			= filegen.c \
 			  file_pcb.c \
 			  file_pct.c \
 			  file_pcx.c \
+			  file_pdb.c \
 			  file_pdf.c \
 			  file_pds.c \
 			  file_pf.c \

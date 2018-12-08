@@ -240,6 +240,7 @@ extern const file_hint_t file_hint_pcap;
 extern const file_hint_t file_hint_pcb;
 extern const file_hint_t file_hint_pct;
 extern const file_hint_t file_hint_pcx;
+extern const file_hint_t file_hint_pdb;
 extern const file_hint_t file_hint_pdf;
 extern const file_hint_t file_hint_pds;
 extern const file_hint_t file_hint_pf;
@@ -574,6 +575,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_pcb  },
   { .enable=0, .file_hint=&file_hint_pct  },
   { .enable=0, .file_hint=&file_hint_pcx  },
+  { .enable=0, .file_hint=&file_hint_pdb  },
   { .enable=0, .file_hint=&file_hint_pdf  },
   { .enable=0, .file_hint=&file_hint_pds  },
   { .enable=0, .file_hint=&file_hint_pf   },
