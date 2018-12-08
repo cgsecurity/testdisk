@@ -192,7 +192,7 @@ detecar, e instalar o ultimo patch do SO e drivers do disco.</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation>Familia do arquivo</translation>
     </message>
     <message>
