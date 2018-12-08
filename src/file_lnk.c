@@ -208,6 +208,9 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
 #ifdef DEBUG_LNK
   log_debug("LNK extra stuff at 0x%04x=%04x\n", i, len);
 #endif
+  /* Discard too big files */
+  if(len >= 0x10000000)
+    return 0;
   i+=4;
   i+=len;
 #ifdef DEBUG_LNK
@@ -223,7 +226,7 @@ static int header_check_lnk(const unsigned char *buffer, const unsigned int buff
   if(memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))!=0)
     return 0;
   len=lnk_get_size(buffer, buffer_size);
-  if(len == 0)
+  if(len < 0x4c || len > 1048576)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_lnk.extension;
