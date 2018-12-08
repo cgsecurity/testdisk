@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.1-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="September 2018"
+TESTDISKDATE="December 2018"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -1030,10 +1030,10 @@ then
 fi
 
 photorecf_LDADD=$photorec_LDADD
+fuzzerfidentify_LDADD="-fsanitize=fuzzer $fidentify_LDADD"
 CFLAGS="$CFLAGS $coverage_flags"
 CXXFLAGS="$CXXFLAGS $coverage_flags"
 CPPFLAGS="$CPPFLAGS $coverage_flags"
-
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
@@ -1042,6 +1042,7 @@ AC_SUBST(MOC)
 AC_SUBST(LRELEASE)
 AC_SUBST(QT_SELECT)
 AC_SUBST(fidentify_LDADD)
+AC_SUBST(fuzzerfidentify_LDADD)
 AC_SUBST(testdisk_LDADD)
 AC_SUBST(photorec_LDADD)
 AC_SUBST(photorecf_LDADD)
