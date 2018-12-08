@@ -526,6 +526,8 @@ int header_check_tiff_le_new(const unsigned char *buffer, const unsigned int buf
 	file_recovery_new->extension="sr2";
       else if(strncmp(tag_make, "SONY ",5)==0)
 	file_recovery_new->extension="arw";
+      else if(memcmp(tag_make, "NIKON CORPORATION", 18)==0)
+	file_recovery_new->extension="nef";
     }
   }
   file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
