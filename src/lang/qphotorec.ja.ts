@@ -191,7 +191,7 @@ detection, and install the latest OS patches and disk drivers.</source>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation type="unfinished"/>
     </message>
     <message>

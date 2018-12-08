@@ -192,7 +192,7 @@ Eğer aşağıdaki listedeki bir disk yanlış boyutta belirlenmişse disk jumpe
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation>Dosya ailesi</translation>
     </message>
     <message>

@@ -192,7 +192,7 @@ detecció a la BIOS, i instal·leu la última versió dels controladors del disc
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="750"/>
-        <source>File familly</source>
+        <source>File family</source>
         <translation>Família de fitxers</translation>
     </message>
     <message>
