@@ -38,13 +38,14 @@
 #include "log.h"
 #include "memmem.h"
 #include "setdate.h"
+#include "file_doc.h"
 
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_rename_doc(file_recovery_t *file_recovery);
-static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header);
-static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries);
+static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset);
+static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries, const uint64_t offset);
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
@@ -67,7 +68,7 @@ const char WilcomDesignInformationDDD[56]=
   'D', '\0', 'D', '\0', 'D', '\0', '\0', '\0'
 };
 
-static void file_check_doc(file_recovery_t *file_recovery)
+void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 {
   unsigned char buffer_header[512];
   uint64_t doc_file_size;
@@ -76,9 +77,9 @@ static void file_check_doc(file_recovery_t *file_recovery)
   unsigned int freesect_count=0;
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   const uint64_t doc_file_size_org=file_recovery->file_size;
-  file_recovery->file_size=0;
+  file_recovery->file_size=offset;
   /*reads first sector including OLE header */
-  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
+  if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, file_recovery->handle) != 1)
     return ;
 #ifdef DEBUG_OLE
@@ -92,7 +93,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
       le32(header->num_extra_FAT_blocks)>50 ||
       le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
     return ;
-  if((fat=OLE_load_FAT(file_recovery->handle, header))==NULL)
+  if((fat=OLE_load_FAT(file_recovery->handle, header, offset))==NULL)
   {
 #ifdef DEBUG_OLE
     log_info("OLE_load_FAT failed\n");
@@ -104,11 +105,12 @@ static void file_check_doc(file_recovery_t *file_recovery)
       i>0 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
-  doc_file_size=((1+(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
+  doc_file_size=offset + ((1+(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
   if(doc_file_size > doc_file_size_org)
   {
 #ifdef DEBUG_OLE
-    log_info("doc_file_size=(1+(%u<<%u)/4-%u)<<%u\n",
+    log_info("doc_file_size=%llu + (1+(%u<<%u)/4-%u)<<%u\n",
+	(unsigned long long)offset,
 	le32(header->num_FAT_blocks), le16(header->uSectorShift),
 	freesect_count, le16(header->uSectorShift));
     log_info("doc_file_size %llu > doc_file_size_org %llu\n",
@@ -143,7 +145,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	free(fat);
 	return ;
       }
-      if(my_fseek(file_recovery->handle, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
+      if(my_fseek(file_recovery->handle, offset + ((1+block)<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
 #ifdef DEBUG_OLE
 	log_info("fseek failed\n");
@@ -168,7 +170,8 @@ static void file_check_doc(file_recovery_t *file_recovery)
 	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
 	    sid++,dir_entry++)
 	{
-	    if(le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
+	    if(offset +
+		le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
 		((le32(dir_entry->size) >= le32(header->miniSectorCutoff)
 		  && le32(dir_entry->start_block) > fat_entries) ||
 		 le32(dir_entry->size) > doc_file_size))
@@ -187,6 +190,11 @@ static void file_check_doc(file_recovery_t *file_recovery)
   }
   free(fat);
   file_recovery->file_size=doc_file_size;
+}
+
+static void file_check_doc(file_recovery_t *file_recovery)
+{
+  file_check_doc_aux(file_recovery, 0);
 }
 
 static const char *ole_get_file_extension(const unsigned char *buffer, const unsigned int buffer_size)
@@ -489,7 +497,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
+static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset)
 {
   uint32_t *fat;
   uint32_t *dif;
@@ -504,7 +512,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;
 	i++, block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)]))
     {
-      if(my_fseek(IN, (1+block)<<le16(header->uSectorShift), SEEK_SET) < 0)
+      if(my_fseek(IN, offset + ((1+block)<<le16(header->uSectorShift)), SEEK_SET) < 0)
       {
 	free(dif);
 	return NULL;
@@ -525,7 +533,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 	j<le32(header->num_FAT_blocks);
 	j++, data+=(1<<le16(header->uSectorShift)))
     {
-      if(my_fseek(IN, (1+le32(dif[j]))<<le16(header->uSectorShift), SEEK_SET)<0)
+      if(my_fseek(IN, offset + ((1+le32(dif[j]))<<le16(header->uSectorShift)), SEEK_SET)<0)
       {
 	free(dif);
 	free(fat);
@@ -545,7 +553,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header)
 
 static void *OLE_read_stream(FILE *IN,
     const uint32_t *fat, const unsigned int fat_entries, const unsigned int uSectorShift,
-    const unsigned int block_start, const unsigned int len)
+    const unsigned int block_start, const unsigned int len, const uint64_t offset)
 {
   unsigned char *dataPt;
   unsigned int block;
@@ -560,7 +568,7 @@ static void *OLE_read_stream(FILE *IN,
       free(dataPt);
       return NULL;
     }
-    if(my_fseek(IN, (1+block)<<uSectorShift, SEEK_SET)<0)
+    if(my_fseek(IN, offset + ((1+block)<<uSectorShift), SEEK_SET)<0)
     {
       free(dataPt);
       return NULL;
@@ -574,7 +582,7 @@ static void *OLE_read_stream(FILE *IN,
   return dataPt;
 }
 
-static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries)
+static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries, const uint64_t offset)
 {
   unsigned char*minifat_pos;
   uint32_t *minifat;
@@ -587,7 +595,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   block=le32(header->MiniFat_block);
   for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
   {
-    if(my_fseek(IN, ((uint64_t)1+block) << le16(header->uSectorShift), SEEK_SET) < 0)
+    if(my_fseek(IN, offset + (((uint64_t)1+block) << le16(header->uSectorShift)), SEEK_SET) < 0)
     {
       free(minifat);
       return NULL;
@@ -794,7 +802,8 @@ static void *OLE_read_ministream(unsigned char *ministream,
 
 static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned int fat_entries,
     const struct OLE_HDR *header, const unsigned int ministream_block, const unsigned int ministream_size,
-    const unsigned int block, const unsigned int len, const char **ext, char **title, time_t *file_time)
+    const unsigned int block, const unsigned int len, const char **ext, char **title, time_t *file_time,
+    const uint64_t offset)
 {
   unsigned char *summary=NULL;
   if(len < 48 || len>1024*1024)
@@ -806,11 +815,11 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
       const unsigned int mini_fat_entries=(le32(header->csectMiniFat) << le16(header->uSectorShift)) / 4;
       uint32_t *minifat;
       unsigned char *ministream;
-      if((minifat=OLE_load_MiniFAT(file, header, fat, fat_entries))==NULL)
+      if((minifat=OLE_load_MiniFAT(file, header, fat, fat_entries, offset))==NULL)
 	return ;
       ministream=(unsigned char *)OLE_read_stream(file,
 	  fat, fat_entries, le16(header->uSectorShift),
-	  ministream_block, ministream_size);
+	  ministream_block, ministream_size, offset);
       if(ministream != NULL)
       {
 	summary=(unsigned char*)OLE_read_ministream(ministream,
@@ -824,7 +833,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
   else
     summary=(unsigned char *)OLE_read_stream(file,
 	fat, fat_entries, le16(header->uSectorShift),
-	block, len);
+	block, len, offset);
   if(summary!=NULL)
   {
     OLE_parse_summary_aux(summary, len, ext, title, file_time);
@@ -864,7 +873,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     fclose(file);
     return ;
   }
-  if((fat=OLE_load_FAT(file, header))==NULL)
+  if((fat=OLE_load_FAT(file, header, 0))==NULL)
   {
     fclose(file);
     return ;
@@ -1039,7 +1048,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		  OLE_parse_summary(file, fat, fat_entries, header,
 		      ministream_block, ministream_size,
 		      le32(dir_entry->start_block), le32(dir_entry->size),
-		      &ext, &title, &file_time);
+		      &ext, &title, &file_time, 0);
 		}
 		else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
 		  ext="ppt";
