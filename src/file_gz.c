@@ -241,6 +241,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       file_recovery_new->extension="prproj";
       return 1;
     }
+    if(memcmp(buffer_uncompr, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<gnc-v2", 47)==0)
+    {
+      /* GnuCash, http://gnucash.org/ */
+      file_recovery_new->extension="gnucash";
+      return 1;
+    }
     if(strstr((const char*)&buffer_uncompr, "<!DOCTYPE KMYMONEY-FILE>")!=NULL)
     {
       file_recovery_new->extension="kmy";
