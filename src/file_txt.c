@@ -1090,7 +1090,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
-    /* Dos/Windows bath */
+    /* Dos/Windows batch */
     file_recovery_new->extension="bat";
     return 1;
   }
@@ -1209,7 +1209,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
-    /* Dos/Windows bath */
+    /* Dos/Windows batch */
     file_recovery_new->extension="bat";
     return 1;
   }
