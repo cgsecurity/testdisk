@@ -81,6 +81,10 @@ AC_ARG_WITH(jpeg-includes,
 AC_ARG_WITH([ntfs],
     AS_HELP_STRING([--without-ntfs],[disabled use of the ntfs library (default is NO)]))
 
+AC_ARG_WITH([coverity-fix],
+    AS_HELP_STRING([--with-coverity-fix],[Enable a coverity bug workaround]),
+    [CFLAGS="${CFLAGS} -D_Float128=__uint128_t -D_Float32x=int -D_Float32=int -D_Float64x=long -D_Float64=long"])
+
 AC_ARG_WITH(ntfs-lib,
     AS_HELP_STRING([--with-ntfs-lib=DIR],[location of the ntfs library]),
     [ ntfs_lib_a="${withval}/libntfs.a"
