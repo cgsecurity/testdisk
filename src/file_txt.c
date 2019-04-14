@@ -771,10 +771,31 @@ static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsig
 
 static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const char *tmp;
+  /* buffer may not be null-terminated */
+  char *buf=(char *)MALLOC(buffer_size+1);
+  memcpy(buf, buffer, buffer_size);
+  buf[buffer_size]='\0';
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_xml_utf8;
-  file_recovery_new->extension="xml";
+  file_recovery_new->extension=NULL;
+  tmp=strchr(buf,'<');
+  while(tmp!=NULL && file_recovery_new->extension==NULL)
+  {
+    if(strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
+    {
+      /* Grasshopper archive */
+      file_recovery_new->extension="ghx";
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
+  }
+  if(file_recovery_new->extension==NULL)
+  {
+    file_recovery_new->extension="xml";
+  }
   file_recovery_new->file_check=&file_check_xml;
+  free(buf);
   return 1;
 }
 
