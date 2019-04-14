@@ -78,6 +78,7 @@ static const char *get_gpt_typename(const efi_guid_t part_type_gpt);
 
 const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_EFI, 			"EFI System"		},
+  { GPT_ENT_TYPE_EBP, 			"Extended Boot"		},
   { GPT_ENT_TYPE_MBR,			"MBR"			},
   { GPT_ENT_TYPE_FREEBSD,		"FreeBSD"		},
   { GPT_ENT_TYPE_FREEBSD_SWAP,		"FreeBSD Swap"		},
@@ -90,6 +91,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_MS_LDM_METADATA,	"MS LDM MetaData"	},
   { GPT_ENT_TYPE_MS_LDM_DATA,		"MS LDM Data"		},
   { GPT_ENT_TYPE_MS_RECOVERY,		"Windows Recovery Env"  },
+//  { GPT_ENT_TYPE_LINUX_DATA
   { GPT_ENT_TYPE_LINUX_RAID,		"Linux Raid"		},
   { GPT_ENT_TYPE_LINUX_SWAP,		"Linux Swap"		},
   { GPT_ENT_TYPE_LINUX_LVM,		"Linux LVM"		},
@@ -99,6 +101,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_LINUX_DATA,		"Linux filesys. data"	},
   { GPT_ENT_TYPE_HPUX_DATA,		"HPUX Data"		},
   { GPT_ENT_TYPE_HPUX_SERVICE,		"HPUX Service"		},
+  { GPT_ENT_TYPE_MAC_AFS,		"Apple APFS"		},
   { GPT_ENT_TYPE_MAC_HFS,		"Mac HFS"		},
   { GPT_ENT_TYPE_MAC_UFS,		"Mac UFS"		},
   { GPT_ENT_TYPE_MAC_RAID,		"Mac Raid"		},
@@ -511,6 +514,18 @@ static const char *get_gpt_typename(const efi_guid_t part_type_gpt)
   for(i=0; gpt_sys_types[i].name!=NULL; i++)
     if(guid_cmp(gpt_sys_types[i].part_type, part_type_gpt)==0)
       return gpt_sys_types[i].name;
+  log_info("%8x %04x %04x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+      part_type_gpt.time_low,
+      part_type_gpt.time_mid,
+      part_type_gpt.time_hi_and_version,
+      part_type_gpt.clock_seq_hi_and_reserved,
+      part_type_gpt.clock_seq_low,
+      part_type_gpt.node[0],
+      part_type_gpt.node[1],
+      part_type_gpt.node[2],
+      part_type_gpt.node[3],
+      part_type_gpt.node[4],
+      part_type_gpt.node[5]);
   return NULL;
 }
 

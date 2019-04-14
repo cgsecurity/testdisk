@@ -199,6 +199,7 @@ static const struct systypes i386_sys_types[] = {
   {0xe1,		"SpeedStor FAT12 ext"},
   {0xe3,		"DOS RO"},
   {0xe4,		"SpeedStor FAT16 ext"},
+  {0xea,		"Boot (BLS)"},
   {P_BEOS,		"BeFS"},
   {0xee,		"EFI GPT"},          /* Intel EFI GUID Partition Table */
   {0xef,		"EFI (FAT-12/16/32)"},/* Intel EFI System Partition */
