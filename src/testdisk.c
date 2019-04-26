@@ -43,9 +43,7 @@
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
 #include "intrfn.h"
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
