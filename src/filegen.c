@@ -597,6 +597,12 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
 
 static uint64_t offset_skipped_header=0;
 
+void header_ignored_cond_reset(uint64_t start, uint64_t end)
+{
+  if(start <= offset_skipped_header && offset_skipped_header <= end)
+    offset_skipped_header=0;
+}
+
 /* 0: file_recovery is bad *
  * 1: file_recovery is ok  */
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)

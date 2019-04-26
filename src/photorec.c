@@ -510,6 +510,7 @@ void file_block_free(alloc_list_t *list_allocation)
   {
     alloc_list_t *allocated_space;
     allocated_space=td_list_entry(tmp, alloc_list_t, list);
+    header_ignored_cond_reset(allocated_space->start, allocated_space->end);
     free_list_allocation_end=allocated_space->end;
     td_list_del(tmp);
     free(allocated_space);
