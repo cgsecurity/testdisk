@@ -613,7 +613,9 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   if(file_recovery->handle==NULL)
   {
     if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+    {
       offset_skipped_header=file_recovery_new->location.start;
+    }
     return 0;
   }
 
@@ -626,15 +628,17 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
 #endif
   assert(offset >= 0);
   file_recovery->file_check(&fr_test);
-  if(fr_test.file_size>0)
-    return 1;
   if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
   {
     log_error("BUG in header_ignored_adv: my_fseek() failed\n");
     return 1;
   }
+  if(fr_test.file_size>0)
+    return 1;
   if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+  {
     offset_skipped_header=file_recovery_new->location.start;
+  }
   return 0;
 }
 
