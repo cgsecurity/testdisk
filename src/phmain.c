@@ -182,6 +182,10 @@ int main( int argc, char **argv )
       }
       logfile=argv[++i];
     }
+    else if((strcmp(argv[i],"/nolog")==0) ||(strcmp(argv[i],"-nolog")==0))
+    {
+      create_log=TD_LOG_NONE;
+    }
     else if((strcmp(argv[i],"/log")==0) ||(strcmp(argv[i],"-log")==0))
     {
       if(create_log==TD_LOG_NONE)
@@ -387,7 +391,7 @@ int main( int argc, char **argv )
     printf("PhotoRec will try to restart itself using the sudo command to get\n");
     printf("root (superuser) privileges.\n");
     printf("\n");
-    run_sudo(argc, argv);
+    run_sudo(argc, argv, create_log);
   }
 #endif
   delete_list_disk(list_disk);

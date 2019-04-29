@@ -23,7 +23,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void run_sudo(int argc, char **argv);
+void run_sudo(const int argc, char **argv, const int create_log);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

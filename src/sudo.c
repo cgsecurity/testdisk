@@ -38,16 +38,28 @@
 #include "types.h"
 #include "common.h"
 #include "sudo.h"
+#include "log.h"
 
-void run_sudo(int argc, char **argv)
+void run_sudo(const int argc, char **argv, const int create_log)
 {
-  int i;
   char **argv2;
-  argv2 = (char **)MALLOC(sizeof(char *) * (argc + 2));
-  argv2[0]=strdup(SUDO_BIN);
-  for (i=0; i <  argc; i++)
-    argv2[i+1] = argv[i];
-  argv2[i+1]=NULL;
+  if(argc==1)
+  {
+    argv2 = (char **)MALLOC(sizeof(char *) * 4);
+    argv2[0] = strdup(SUDO_BIN);
+    argv2[1] = argv[0];
+    argv2[2] = strdup(create_log==TD_LOG_NONE?"/nolog":"/debug");
+    argv2[3] = NULL;
+  }
+  else
+  {
+    int i;
+    argv2 = (char **)MALLOC(sizeof(char *) * (argc + 2));
+    argv2[0]=strdup(SUDO_BIN);
+    for (i=0; i <  argc; i++)
+      argv2[i+1] = argv[i];
+    argv2[i+1]=NULL;
+  }
   printf("sudo may ask your user password, it doesn't ask for the root password.\n");
   printf("Usually there is no echo or '*' displayed when you type your password.\n");
   printf("\n");
