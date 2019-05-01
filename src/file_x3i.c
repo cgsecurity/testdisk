@@ -45,6 +45,7 @@ static int header_check_x3i(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_x3i.extension;
+  file_recovery_new->min_filesize=1024;
   return 1;
 }
 

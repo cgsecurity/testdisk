@@ -31,6 +31,7 @@
 #include "filegen.h"
 #include "common.h"
 
+extern const file_hint_t file_hint_x3i;
 static void register_header_check_x3f(file_stat_t *file_stat);
 static int header_check_x3f(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
@@ -63,8 +64,15 @@ static int header_check_x3f(const unsigned char *buffer, const unsigned int buff
     return 0;
   if(rotation!=0 && rotation!=90 && rotation!=180 && rotation!=270)
     return 0;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_x3i &&
+      safe_header_only==0)
+  {
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_x3f.extension;
+  file_recovery_new->min_filesize=1024;
   return 1;
 }
 
