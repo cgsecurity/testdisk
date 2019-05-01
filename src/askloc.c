@@ -99,7 +99,7 @@ char *get_default_location(void)
 
 static void set_parent_directory(char *dst_directory);
 static void dir_aff_entry(WINDOW *window, file_info_t *file_info);
-static int aff_txt(int line, WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 3, 4)));
+static int aff_txt(const int line, WINDOW *window, const char *_format, ...) __attribute__ ((format (printf, 3, 4)));
 
 #if defined(DJGPP) || defined(__OS2__)
 void get_dos_drive_list(struct td_list_head *list);
@@ -229,7 +229,7 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 	  break;
 	/* hide filename beginning by '.' except '.' and '..' */
 	if(dir_entrie->d_name[0]=='.' &&
-	    !dir_entrie->d_name[1]=='\0' &&
+	    !(dir_entrie->d_name[1]=='\0') &&
 	    !(dir_entrie->d_name[1]=='.' && dir_entrie->d_name[2]=='\0'))
 	  continue;
         if(strlen(dst_directory) + 1 + strlen(dir_entrie->d_name) + 1 <= sizeof(current_file)
@@ -519,7 +519,6 @@ char *ask_location(const char*msg, const char *src_dir, const char *dst_org)
 		file_info=td_list_entry(current_file, file_info_t, list);
 		if(current_file!=&dir_list.list &&
 		  (LINUX_S_ISDIR(file_info->st_mode) || LINUX_S_ISLNK(file_info->st_mode)))
-		if(current_file!=&dir_list.list)
 		{
 		  if(strcmp(file_info->name, ".")==0)
 		  {
@@ -583,13 +582,14 @@ static void dir_aff_entry(WINDOW *window, file_info_t *file_info)
   wprintw(window, " %s %s", datestr, file_info->name);
 }
 
-static int aff_txt(int line, WINDOW *window, const char *_format, ...)
+static int aff_txt(const int line, WINDOW *window, const char *_format, ...)
 {
+  int next_line;
   va_list ap;
   va_start(ap,_format);
-  line=vaff_txt(line, window, _format, ap);
+  next_line=vaff_txt(line, window, _format, ap);
   va_end(ap);
-  return line;
+  return next_line;
 }
 #endif
 
