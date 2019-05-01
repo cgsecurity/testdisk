@@ -184,7 +184,7 @@ int test_NTFS(const disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header,
   return 0;
 }
 
-const ntfs_attribheader *ntfs_getattributeheaders(const ntfs_recordheader* record)
+static const ntfs_attribheader *ntfs_getattributeheaders(const ntfs_recordheader* record)
 {
   const char* location = (const char*)record;
   if(le32(record->magic)!=NTFS_Magic ||
@@ -225,10 +225,12 @@ const ntfs_attribheader* ntfs_findattribute(const ntfs_recordheader* record, uin
   return ntfs_searchattribute(attrib, attrType, end, 0);
 }
 
-const ntfs_attribheader* ntfs_nextattribute(const ntfs_attribheader* attrib, uint32_t attrType, const char* end)
+#if 0
+static const ntfs_attribheader* ntfs_nextattribute(const ntfs_attribheader* attrib, uint32_t attrType, const char* end)
 {
   return ntfs_searchattribute(attrib, attrType, end, 1);
 }
+#endif
 
 const char* ntfs_getattributedata(const ntfs_attribresident* attrib, const char* end)
 {
