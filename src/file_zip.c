@@ -307,6 +307,9 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       /* SMART Notebook */
       else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
 	*ext="notebook";
+      /* Apple Numbers */
+      else if(len==18 && memcmp(filename, "Index/Document.iwa", 18)==0)
+	*ext="numbers";
       else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
 	*ext="apk";
       else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
