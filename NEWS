@@ -1,5 +1,43 @@
 Current news
-== 7.1-WIP ==
+== 7.1 ==
+== General Improvements ==
+* It should be possible to reproduce, byte for byte, every build of testdisk package in Debian https://wiki.debian.org/ReproducibleBuilds
+* Windows: Identify again the device model (Regression present in 7.0 version)
+
+== TestDisk ==
+=== Improvements ===
+* Ask confirmation when user quits the list of partitions found by TestDisk
+=== Bug fixes ===
+* Various fix for Scripted run
+
+== PhotoRec & QPhotoRec ==
+=== Improvements ===
+* Log the correct filenames in photorec.log file
+* Reduced false positives for tar
+* Fix recovery of mobius camera videos.
+* Fix recovery of progressive jpeg
+* Extract the filesize from sqlite header when available
+* Recover more fragmented files
+
+Extract of the new file formats recovered by PhotoRec:
+* .aes: Synology AES key files
+* .axp: Pinnacle Studio
+* .bdm: AVHCD index
+* .cpi: AVCHD Clip Information
+* .DS_Store: Apple Desktop Services Store
+* .dvr: RT60
+* .gi: Roxio Creator
+* .gpx: Guitar Pro 6
+* .gp4: Guitar Pro 4
+* .iam/.ipt Autodesk Inventor part
+* .icns: Apple Icon Image
+* .jsonlz4: Mozilla bookmarks
+* .lyx LyX 2.X
+* .mpl: AVHCD playlist
+* .tg Tux Guitar 1.2
+* .vdj: VirtualDJ
+* .wee: weecast
+* .xar: XAR Archive
 
 == 7.0 ==
 
@@ -98,14 +136,14 @@ New file formats:
 
 
 == 6.13 ==
-Fix UAC manifests for Windows, so users don't need to use right-click "Run As Administrator" 
+Fix UAC manifests for Windows, so users don't need to use right-click "Run As Administrator"
 
 TestDisk
 - Fix image creation, image.dd file wasn't created (Regression introduced in 6.12)
 - Detect Vmware VMFS partition
 - Locate lost GFS2 partition but not yet the size
 - Log HDD serial number and firmware revision
-- List NTFS Alternate Data Streams (ADS) 
+- List NTFS Alternate Data Streams (ADS)
 
 PhotoRec
 - Session recovery restarts at the previous location
@@ -113,13 +151,13 @@ PhotoRec
 - Better JPG recovery, there should be less cases where thumbnails were recovered instead of the picture itself.
 - Handle large avi files using "AVIX" or mov files using 64-bit chunk size.
 - Rename recovered pdf using the title (not perfect)
-- Major cleanup of PhotoRec core code 
+- Major cleanup of PhotoRec core code
 
 6.12
 fidentify, a little utility sharing PhotoRec signature database, is now build by default. It identifies the type of data contained in a file and reports the extension as seen by PhotoRec. It is similar to the Unix file command. Add compatibility with
 - libewf 20110312
 - ncurses 5.8
-- ntfs-3g 
+- ntfs-3g
 Fix detection of Encase 6 .ewf files
 
 TestDisk
@@ -127,14 +165,14 @@ TestDisk
 - Better HPA/DCO detection: handle the case where native_max is null.
 - Image Creation is now faster than previous version when there are bad sectors
 - List and copy (experimental) files from exFAT filesystem
-- Improved NTFS undelete interface 
+- Improved NTFS undelete interface
 
 PhotoRec
 - PhotoRec checks for EFBIG (file too large) error when writing files. It's usefull to avoid erronous message about "no free space available" when recovering to a FAT filesystem.
 - Recover files from exFAT unallocated space
 - Use doc/xls/ppt title to name recovered Office document, use first filename in zip archive...
 - Possibility to add your own extension/custom signature to PhotoRec
-- Generated a report.xml file using Digital Forensics XML 
+- Generated a report.xml file using Digital Forensics XML
 
 6.11
 TestDisk & PhotoRec 6.11 should use less CPU.
@@ -174,7 +212,7 @@ MacBook and Mac Pro.
 be enabled for at least MacOSX, so users won't have to go into a command line.
 - Improved Windows disk support, most internal USB card reader should now work.
 - Disk model (ie. ATA ST3120026AS, _NEC DVD_RW ND-4550A...) are now reported
-under Linux. 
+under Linux.
 
 TestDisk
 - New file system support has been added: encrypted LUKS, Mac HFSX, Linux Raid
@@ -243,13 +281,13 @@ InDesign .indd, Matroska .mkv, MP3 with ID3 header, MS cabinet archive
 .cab, MSOffice "Open" XML .docx, .pptx, .xlsx, MS executable (PE), MS
 Windows Metafile .wmf, NJStar .njx, Quickbooks .qbb and .qbw, Real Audio
 .rm, registry config file .reg, RPM package .rpm, Windows registry header
-detection and Event Log .evt 
+detection and Event Log .evt
 
 6.6
 General Improvements
 - Encase Expert Witness Compression Format is now supported, so Computer
 Forensic Experts can use TestDisk and PhotoRec more easily.
-- Under new Vista OS, harddisks are now being reported again. 
+- Under new Vista OS, harddisks are now being reported again.
 TestDisk
 - If LBA48 support seems missing (HD bigger than 130 GB not supported by
 the OS), TestDisk will warn the user. This problem is common when a user
@@ -258,7 +296,7 @@ reinstalls his OS and forgets to install the latest service patches.
 some filesystem corruption has occurred; more importantly, it will allow
 the user to copy whatever file data it can as well.
 - FAT: Improved heuristics to find the first FAT area during boot sector
-rebuild. 
+rebuild.
 PhotoRec
 - A new method for handling fragmented data is now used, making recovery
 more reliable and faster.
@@ -269,7 +307,7 @@ efficient.
 - New file formats have been added: .3g2 (Mov video family), .aif Apple
 Audio, .all .cpr Cubase Song, .blend Blender, .cam Casio QV Digital Camera
 Image, .flac Free Lossless Audio Codec, .mdf Microsoft SQL, .swf
-Macromedia Flash and .vcf VCard (not confused with .txt anymore) 
+Macromedia Flash and .vcf VCard (not confused with .txt anymore)
 
 6.5
 TestDisk
@@ -282,7 +320,7 @@ partition to a selected directory.
 PhotoRec
 - New file formats have been added: AppleWorks .cwk, DIF Digital Video .dv,
 DjVu .djv, Finale .mus, Incredimail .imm, .imb, iTunes mhbd, MIDI .mid,
-MS Backup, Real Media .rm & .ram, Reason .rns, ruby .rb, .xml 
+MS Backup, Real Media .rm & .ram, Reason .rns, ruby .rb, .xml
 - File size detection for .bmp, .pdf, .gif, Office document has been improved.
 - A endless loop bug and a memory leak have been fixed.
 - The I/O cache engine now caches read failure, it will speedup some recovery.
@@ -430,7 +468,7 @@ New features:
 - can rebuild NTFS boot sector
 - can recover JFS partition
 - some advanced FAT32 functions have been added (Expert mode only)
-                                                                                                                             
+
 Improvements:
 - Can align partition to cylinder boundary or to head boundary.
 - Doesn't abort while writing partitions if read failed.

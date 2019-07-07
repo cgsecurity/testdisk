@@ -57,10 +57,16 @@ case "$crosscompile_target" in
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
+  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
+	VER_LIBNTFS3G="2014.2.15"
+	VER_NTFSPROGS=
+	VER_E2FSPROGS="1.42.8"
+  ;;
   *)
 	VER_LIBNTFS3G="2014.2.15"
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
+	VER_LIBEWF=
   ;;
 esac
 prefix=/usr/$crosscompile_target

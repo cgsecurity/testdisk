@@ -1,5 +1,8 @@
 %{?cygwin_package_header}
 
+#% define is_wip 1
+%{?is_wip:%define ver_wip -WIP}
+
 Name:		cygwin-testdisk
 Version:	7.1
 Release:	0%{?dist}
@@ -10,7 +13,7 @@ Summary(ru_RU.UTF8): Программа для проверки и восста�
 License:	GPLv2+
 Group:		Applications/System
 URL:		https://www.cgsecurity.org/wiki/TestDisk
-Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+Source0:	https://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
 
 BuildArch:	noarch
 BuildRequires:	libtool autoconf automake
@@ -111,7 +114,7 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?cygwin_debug_package}
 
 %prep
-%setup -q -n cygwin-testdisk-%{version}
+%setup -q -n testdisk-%{version}%{?ver_wip}
 
 %build
 autoreconf -vif -I config -W all
