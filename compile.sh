@@ -36,6 +36,7 @@ else
 fi
 case "$crosscompile_target" in
   "")
+	VER_LIBEWF=
   ;;
   *-msdosdjgpp)
 	VER_LIBNTFS3G="2014.2.15"

@@ -1,10 +1,10 @@
 %{?cygwin_package_header}
 
-#% define is_wip 1
+%define is_wip 1
 %{?is_wip:%define ver_wip -WIP}
 
 Name:		cygwin-testdisk
-Version:	7.1
+Version:	7.2
 Release:	0%{?dist}
 Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje

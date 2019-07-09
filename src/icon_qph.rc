@@ -4,8 +4,8 @@ app                      ICON    DISCARDABLE     "../icons/photorec.ico"
 1 24 "../win/qphotorec_win.exe.manifest"
 
 1 VERSIONINFO
-FILEVERSION 7, 1, 0, 0
-PRODUCTVERSION 7, 1, 0, 0
+FILEVERSION 7, 2, 0, 0
+PRODUCTVERSION 7, 2, 0, 0
 FILEFLAGSMASK 0x3f
 FILEOS 0x4
 FILETYPE 0x1
@@ -20,8 +20,8 @@ BEGIN
       VALUE "InternalName",	"PhotoRec"
       VALUE "OriginalFilename", "qphotorec_win.exe"
       VALUE "Comments",		"Signature based file recovery utility"
-      VALUE "FileVersion",	"7.1"
-      VALUE "ProductVersion",	"7.1"
+      VALUE "FileVersion",	"7.2"
+      VALUE "ProductVersion",	"7.2"
       VALUE "LegalCopyright",	"Copyright (C) 1998-2019 Christophe GRENIER, et al."
     END
   END
