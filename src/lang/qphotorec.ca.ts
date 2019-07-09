@@ -8,7 +8,7 @@
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="156"/>
-        <location filename="src/qphotorec.cpp" line="518"/>
+        <location filename="src/qphotorec.cpp" line="521"/>
         <source>Please select a destination to save the recovered files to.</source>
         <translation>Seleccioneu la destinació on guardar els fitxers recuperats.</translation>
     </message>
@@ -61,22 +61,22 @@ Heu de ser usuari root per utilitzar el PhotoRec.</translation>
         <translation>No hi ha disc</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="452"/>
+        <location filename="src/qphotorec.cpp" line="455"/>
         <source>Add a raw disk image...</source>
         <translation>Afegeix una imatge de disc en brut...</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="458"/>
+        <location filename="src/qphotorec.cpp" line="461"/>
         <source>PhotoRec is free software, and comes with ABSOLUTELY NO WARRANTY.</source>
         <translation>El PhotoRec és programari lliure i ve SENSE CAP TIPUS DE GARANTIA.</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="459"/>
+        <location filename="src/qphotorec.cpp" line="462"/>
         <source>Please select a media to recover from</source>
         <translation>Seleccioneu un mitjà des d&apos;on recuperar</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="462"/>
+        <location filename="src/qphotorec.cpp" line="465"/>
         <source>Disk capacity must be correctly detected for a successful recovery.
 If a disk listed above has an incorrect size, check HD jumper settings and BIOS
 detection, and install the latest OS patches and disk drivers.</source>
@@ -85,143 +85,143 @@ Si algun dels discs llistats a sobre té una mida incorrecta, comproveu la confi
 detecció a la BIOS, i instal·leu la última versió dels controladors del disc.</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="469"/>
+        <location filename="src/qphotorec.cpp" line="472"/>
         <source>Flags</source>
         <translation>Indicadors</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="470"/>
+        <location filename="src/qphotorec.cpp" line="473"/>
         <source>Type</source>
         <translation>Tipus</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="471"/>
+        <location filename="src/qphotorec.cpp" line="474"/>
         <source>File System</source>
         <translation>Sistema de fitxers</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="472"/>
+        <location filename="src/qphotorec.cpp" line="475"/>
         <source>Size</source>
         <translation>Mida</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="473"/>
+        <location filename="src/qphotorec.cpp" line="476"/>
         <source>Label</source>
         <translation>Etiqueta</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="488"/>
+        <location filename="src/qphotorec.cpp" line="491"/>
         <source>File System type</source>
         <translation>Tipus de sistema de fitxers</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="489"/>
+        <location filename="src/qphotorec.cpp" line="492"/>
         <source>ext2/ext3/ext4 filesystem</source>
         <translation>sistema de fitxers ext2/ext3/ext4 </translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="490"/>
+        <location filename="src/qphotorec.cpp" line="493"/>
         <source>FAT/NTFS/HFS+/ReiserFS/...</source>
         <translation>FAT/NTFS/HFS+/ReiserFS/...</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="494"/>
+        <location filename="src/qphotorec.cpp" line="497"/>
         <source>Free: Scan for file from unallocated space only</source>
         <translation>Lliure: Explora només l&apos;espai no assignat</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="495"/>
+        <location filename="src/qphotorec.cpp" line="498"/>
         <source>Whole: Extract files from whole partition</source>
         <translation>Sencer: Extreu fitxers de la partició sencera</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="522"/>
+        <location filename="src/qphotorec.cpp" line="525"/>
         <source>&amp;Browse</source>
         <translation>&amp;Navega</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="538"/>
+        <location filename="src/qphotorec.cpp" line="541"/>
         <source>&amp;Search</source>
         <translation>&amp;Cerca</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="541"/>
+        <location filename="src/qphotorec.cpp" line="544"/>
         <source>&amp;About</source>
         <translation>&amp;Quant a</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="542"/>
+        <location filename="src/qphotorec.cpp" line="545"/>
         <source>&amp;File Formats</source>
         <translation>&amp;Format dels fitxers</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="642"/>
+        <location filename="src/qphotorec.cpp" line="645"/>
         <source>Destination:</source>
         <translation>Destinació:</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="647"/>
+        <location filename="src/qphotorec.cpp" line="650"/>
         <source>Recovery completed</source>
         <translation>Recuperació completada</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="652"/>
+        <location filename="src/qphotorec.cpp" line="655"/>
         <source>Bruteforce %1 sectors remaining (test %2)</source>
         <translation>Força bruta %1 sectors restants (test %2)</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="660"/>
+        <location filename="src/qphotorec.cpp" line="663"/>
         <source>Pass %1 - Reading sector %2/%3</source>
         <translation>Passa %1 - Llegint sector %2/%3</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="665"/>
+        <location filename="src/qphotorec.cpp" line="668"/>
         <source>%1/10 headers found</source>
         <translation>%1/10 capçaleres trobades</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="667"/>
+        <location filename="src/qphotorec.cpp" line="670"/>
         <source>%1 files found</source>
         <translation>%1 fitxers trobats</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="540"/>
-        <location filename="src/qphotorec.cpp" line="762"/>
-        <source>&amp;Quit</source>
-        <translation>&amp;Surt</translation>
-    </message>
-    <message>
-        <location filename="src/qphotorec.cpp" line="750"/>
+        <location filename="src/qphotorec.cpp" line="753"/>
         <source>File family</source>
         <translation>Família de fitxers</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="751"/>
+        <location filename="src/qphotorec.cpp" line="543"/>
+        <location filename="src/qphotorec.cpp" line="765"/>
+        <source>&amp;Quit</source>
+        <translation>&amp;Surt</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="754"/>
         <source>Number of files recovered</source>
         <translation>Nombre de fitxers recuperats</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="834"/>
+        <location filename="src/qphotorec.cpp" line="837"/>
         <source>QPhotoRec: Failed to create file!</source>
         <translation>QPhotoRec: No s&apos;ha pogut crear el fitxer</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="835"/>
+        <location filename="src/qphotorec.cpp" line="838"/>
         <source>Failed to create file! Please choose another destination</source>
         <translation>No s&apos;ha pogut crear el fitxer. Trieu una altra destinació</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="854"/>
+        <location filename="src/qphotorec.cpp" line="857"/>
         <source>QPhotoRec: Not enough space!</source>
         <translation>QPhotoRec: No hi ha espai suficient</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="855"/>
+        <location filename="src/qphotorec.cpp" line="858"/>
         <source>There is not enough space left! Please free disk space and/or choose another destination</source>
         <translation>No hi ha prou espai disponible. Heu d&apos;alliberar espai de disc i/o escollir una altra destinació</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="924"/>
+        <location filename="src/qphotorec.cpp" line="927"/>
         <source>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
 
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
@@ -234,22 +234,22 @@ El QPhotoRec es distribueix amb l&apos;esperança que serà útil, però SENSE C
 Hauríeu d&apos;haver rebut una còpia de la Llicència Pública General GNU juntament amb el QPhotoRec. En cas contrari, consulteu &lt;http://www.gnu.org/licenses/&gt;.</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="925"/>
+        <location filename="src/qphotorec.cpp" line="928"/>
         <source>QPhotoRec: About</source>
         <translation>QPhotoRec: Quant a</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="954"/>
+        <location filename="src/qphotorec.cpp" line="957"/>
         <source>File Formats</source>
         <translation>Formats de fitxer</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="957"/>
+        <location filename="src/qphotorec.cpp" line="960"/>
         <source>&amp;Reset</source>
         <translation>&amp;Reinicialitzar</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="958"/>
+        <location filename="src/qphotorec.cpp" line="961"/>
         <source>Res&amp;tore</source>
         <translation>
 Res&amp;taura</translation>

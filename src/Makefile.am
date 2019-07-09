@@ -370,6 +370,7 @@ photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_clu
 
 QT_TS = \
   lang/qphotorec.ca.ts \
+  lang/qphotorec.cs.ts \
   lang/qphotorec.es.ts \
   lang/qphotorec.fr.ts \
   lang/qphotorec.it.ts \
