@@ -118,6 +118,11 @@ static const txt_header_t fasttxt_headers[] = {
   { "#! /bin/bash", 					12, "sh"},
   { "#! /bin/ksh",					11, "sh"},
   { "#! /bin/sh",					10, "sh"},
+  { "#!/usr/bin/env groovy",				21, "groovy"},
+  { "#!/usr/bin/env perl",				21, "pl"},
+  { "#!/usr/bin/env php",				19, "php"},
+  { "#!/usr/bin/env python",				21, "py"},
+  { "#!/usr/bin/env ruby",				20, "rb"},
   /* Opera Hotlist bookmark/contact list/notes */
   { "Opera Hotlist version 2.0",			25, "adr"},
   /* Microsoft VB Class module */
@@ -1156,6 +1161,15 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     res=(const unsigned char *)memchr(haystack,'\n',ll);
     if(res!=NULL)
       ll=res-haystack;
+    if(td_memmem(haystack, ll, "groovy", 6) != NULL)
+    {
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->data_check=&data_check_txt;
+      file_recovery_new->file_check=&file_check_size;
+      /* Groovy script */
+      file_recovery_new->extension="groovy";
+      return 1;
+    }
     if(td_memmem(haystack, ll, "perl", 4) != NULL)
     {
       reset_file_recovery(file_recovery_new);
@@ -1163,6 +1177,15 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->file_check=&file_check_size;
       /* Perl script */
       file_recovery_new->extension="pl";
+      return 1;
+    }
+    if(td_memmem(haystack, ll, "php", 3) != NULL)
+    {
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->data_check=&data_check_txt;
+      file_recovery_new->file_check=&file_check_size;
+      /* PHP script */
+      file_recovery_new->extension="php";
       return 1;
     }
     if(td_memmem(haystack, ll, "python", 6) != NULL)
