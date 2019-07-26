@@ -602,7 +602,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	old_cylinder=start.cylinder;
 	wmove(stdscr,ANALYSE_Y,ANALYSE_X);
 	wclrtoeol(stdscr);
-	wprintw(stdscr,"Analyse cylinder %5u/%u: %02u%%",
+	wprintw(stdscr, "Analyse cylinder %5lu/%lu: %02u%%",
 	    start.cylinder, disk_car->geom.cylinders-1,
 	    (unsigned int)(search_location*100/disk_car->disk_size));
 	wrefresh(stdscr);
@@ -846,7 +846,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 #ifdef HAVE_NCURSES
 	  wmove(stdscr,ANALYSE_Y+1,ANALYSE_X);
 	  wclrtoeol(stdscr);
-	  wprintw(stdscr,msg_READ_ERROR_AT, start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
+	  wprintw(stdscr, "Read error at %lu/%u/%u (lba=%lu)\n", start.cylinder,start.head,start.sector,(unsigned long)(partition->part_offset/disk_car->sector_size));
 #endif
 	  /* Stop reading after the end of the disk */
 	  if(search_location >= disk_car->disk_real_size)
