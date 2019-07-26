@@ -10,7 +10,6 @@ Name:		@PACKAGE@
 Version:	@VERSION@
 Release:	1%{?dist}
 License:	GPLv2+
-Group:		Applications/System
 Source0:	https://www.cgsecurity.org/testdisk-%{version}%{?ver_wip}.tar.bz2
 Source1:	progsreiserfs-%ver_progsreiserfs.tar.gz
 Patch0:		progsreiserfs-journal.patch
@@ -62,7 +61,6 @@ PhotoRec is a signature based file recovery utility. It handles more than
 
 %package -n qphotorec
 Summary:	Signature based file carver. Recover lost files
-Group:		Applications/System
 
 %description -n qphotorec
 QPhotoRec is a Qt version of PhotoRec. It is a signature based file recovery
@@ -111,10 +109,11 @@ fi
 /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
 %files
-%doc AUTHORS COPYING ChangeLog NEWS README.md THANKS
-%attr(755,root,root) %{_bindir}/fidentify
-%attr(755,root,root) %{_bindir}/photorec
-%attr(755,root,root) %{_bindir}/testdisk
+%doc AUTHORS ChangeLog NEWS README.md THANKS
+%license COPYING
+%{_bindir}/fidentify
+%{_bindir}/photorec
+%{_bindir}/testdisk
 %{_mandir}/man8/fidentify.8*
 %{_mandir}/man8/photorec.8*
 %{_mandir}/man8/testdisk.8*
@@ -123,7 +122,7 @@ fi
 %{_mandir}/zh_CN/man8/testdisk.8*
 
 %files -n qphotorec
-%attr(755,root,root) %{_bindir}/qphotorec
+%{_bindir}/qphotorec
 %{_mandir}/man8/qphotorec.8*
 %{_mandir}/zh_CN/man8/qphotorec.8*
 %{_datadir}/applications/qphotorec.desktop
