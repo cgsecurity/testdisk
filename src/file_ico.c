@@ -33,7 +33,6 @@
 #include "log.h"
 
 static void register_header_check_ico(file_stat_t *file_stat);
-static int header_check_ico(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ico= {
   .extension="ico",
@@ -53,20 +52,6 @@ static const unsigned char header_ico6[6]=	{0x00 , 0x00, 0x01, 0x00, 0x06, 0x00}
 static const unsigned char header_ico7[6]=	{0x00 , 0x00, 0x01, 0x00, 0x07, 0x00};
 static const unsigned char header_ico8[6]=	{0x00 , 0x00, 0x01, 0x00, 0x08, 0x00};
 static const unsigned char header_ico9[6]=	{0x00 , 0x00, 0x01, 0x00, 0x09, 0x00};
-
-
-static void register_header_check_ico(file_stat_t *file_stat)
-{
-  register_header_check(0, header_ico1, sizeof(header_ico1), &header_check_ico, file_stat);
-  register_header_check(0, header_ico2, sizeof(header_ico2), &header_check_ico, file_stat);
-  register_header_check(0, header_ico3, sizeof(header_ico3), &header_check_ico, file_stat);
-  register_header_check(0, header_ico4, sizeof(header_ico4), &header_check_ico, file_stat);
-  register_header_check(0, header_ico5, sizeof(header_ico5), &header_check_ico, file_stat);
-  register_header_check(0, header_ico6, sizeof(header_ico6), &header_check_ico, file_stat);
-  register_header_check(0, header_ico7, sizeof(header_ico7), &header_check_ico, file_stat);
-  register_header_check(0, header_ico8, sizeof(header_ico8), &header_check_ico, file_stat);
-  register_header_check(0, header_ico9, sizeof(header_ico9), &header_check_ico, file_stat);
-}
 
 /*
  * http://en.wikipedia.org/wiki/ICO_(icon_image_file_format)
@@ -103,7 +88,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
   if(le16(ico->reserved)!=0 || le16(ico->type)!=1 || le16(ico->count)==0)
     return 0;
   for(i=0, ico_dir=(const struct ico_directory*)(ico+1);
-      i<le16(ico->count);
+      (const unsigned char *)(ico_dir+1) <= buffer+buffer_size && i<le16(ico->count);
       i++, ico_dir++)
   {
 #ifdef DEBUG_ICO
@@ -156,4 +141,17 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
+}
+
+static void register_header_check_ico(file_stat_t *file_stat)
+{
+  register_header_check(0, header_ico1, sizeof(header_ico1), &header_check_ico, file_stat);
+  register_header_check(0, header_ico2, sizeof(header_ico2), &header_check_ico, file_stat);
+  register_header_check(0, header_ico3, sizeof(header_ico3), &header_check_ico, file_stat);
+  register_header_check(0, header_ico4, sizeof(header_ico4), &header_check_ico, file_stat);
+  register_header_check(0, header_ico5, sizeof(header_ico5), &header_check_ico, file_stat);
+  register_header_check(0, header_ico6, sizeof(header_ico6), &header_check_ico, file_stat);
+  register_header_check(0, header_ico7, sizeof(header_ico7), &header_check_ico, file_stat);
+  register_header_check(0, header_ico8, sizeof(header_ico8), &header_check_ico, file_stat);
+  register_header_check(0, header_ico9, sizeof(header_ico9), &header_check_ico, file_stat);
 }
