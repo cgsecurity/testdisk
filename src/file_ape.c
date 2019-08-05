@@ -31,7 +31,6 @@
 #include "common.h"
 
 static void register_header_check_ape(file_stat_t *file_stat);
-static int header_check_ape(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ape= {
   .extension="ape",
@@ -106,7 +105,6 @@ static int header_check_ape(const unsigned char *buffer, const unsigned int buff
   if(le16(ape->nVersion)>=3980)
   {
     const struct APE_DESCRIPTOR *descr=(const struct APE_DESCRIPTOR*)buffer;
-    const struct APE_HEADER *apeh=(const struct APE_HEADER*)&buffer[le32(descr->nDescriptorBytes)];
     if(le32(descr->nDescriptorBytes) < sizeof(struct APE_DESCRIPTOR))
       return 0;
     if(le32(descr->nHeaderDataBytes) > 0 && le32(descr->nHeaderDataBytes) < sizeof(struct APE_HEADER))
@@ -115,8 +113,11 @@ static int header_check_ape(const unsigned char *buffer, const unsigned int buff
       return 0;
     if(le32(descr->nDescriptorBytes) + sizeof(struct APE_HEADER) >= buffer_size)
       return 0;
-    if(le16(apeh->nChannels)<1 || le16(apeh->nChannels)>2)
-      return 0;
+    {
+      const struct APE_HEADER *apeh=(const struct APE_HEADER*)&buffer[le32(descr->nDescriptorBytes)];
+      if(le16(apeh->nChannels)<1 || le16(apeh->nChannels)>2)
+	return 0;
+    }
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_ape.extension;
     return 1;
