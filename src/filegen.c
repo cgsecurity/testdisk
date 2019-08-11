@@ -98,12 +98,12 @@ void register_header_check(const unsigned int offset, const void *value, const u
 
 static void index_header_check_aux(file_check_t *file_check_new)
 {
-  struct td_list_head *tmp;
-  td_list_for_each(tmp, &file_check_list.list)
+  if(file_check_new->length>0)
   {
-    file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
-    if(file_check_new->length>0)
+    struct td_list_head *tmp;
+    td_list_for_each(tmp, &file_check_list.list)
     {
+      file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
       if(pos->offset >= file_check_new->offset &&
 	  pos->offset < file_check_new->offset+file_check_new->length)
       {
