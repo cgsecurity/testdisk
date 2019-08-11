@@ -42,7 +42,6 @@
 #include "log.h"
 
 static void register_header_check_sig(file_stat_t *file_stat);
-static int header_check_sig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sig= {
   .extension="custom",
@@ -60,14 +59,45 @@ const file_hint_t file_hint_sig= {
 typedef struct signature_s signature_t;
 struct signature_s
 {
+  struct td_list_head list;
   const char *extension;
   unsigned char *sig;
   unsigned int sig_size;
   unsigned int offset;
-  signature_t *next;
 };
 
-static signature_t *signatures=NULL;
+static signature_t signatures={
+  .list = TD_LIST_HEAD_INIT(signatures.list)
+};
+
+static int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
+{
+  const signature_t *sig_a=td_list_entry_const(a, const signature_t, list);
+  const signature_t *sig_b=td_list_entry_const(b, const signature_t, list);
+  int res;
+  if(sig_a->sig_size==0 && sig_b->sig_size!=0)
+    return -1;
+  if(sig_a->sig_size!=0 && sig_b->sig_size==0)
+    return 1;
+  res=sig_a->offset-sig_b->offset;
+  if(res!=0)
+    return res;
+  if(sig_a->sig_size<=sig_b->sig_size)
+  {
+    res=memcmp(sig_a->sig,sig_b->sig, sig_a->sig_size);
+    if(res!=0)
+      return res;
+    return 1;
+  }
+  else
+  {
+    res=memcmp(sig_a->sig,sig_b->sig, sig_b->sig_size);
+    if(res!=0)
+      return res;
+    return -1;
+  }
+}
+
 static void signature_insert(const char *extension, unsigned int offset, unsigned char *sig, unsigned int sig_size)
 {
   /* FIXME: small memory leak */
@@ -76,15 +106,15 @@ static void signature_insert(const char *extension, unsigned int offset, unsigne
   newsig->sig=sig;
   newsig->sig_size=sig_size;
   newsig->offset=offset;
-  newsig->next=signatures;
-  signatures=newsig;
+  td_list_add_sorted(&newsig->list, &signatures.list, signature_cmp);
 }
 
 static int header_check_sig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  signature_t *sig;
-  for(sig=signatures; sig!=NULL; sig=sig->next)
+  struct td_list_head *pos;
+  td_list_for_each(pos, &signatures.list)
   {
+    const signature_t *sig = td_list_entry(pos, signature_t, list);
     if(memcmp(&buffer[sig->offset], sig->sig, sig->sig_size)==0)
     {
       reset_file_recovery(file_recovery_new);
@@ -179,11 +209,11 @@ static char *str_uint(char *src, unsigned int *resptr)
     *resptr=res;
     return src;
   }
-
 }
 
 static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 {
+  const unsigned int signatures_empty=td_list_empty(&signatures.list);
   while(*pos!='\0')
   {
     /* skip comments */
@@ -371,7 +401,8 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 	log_info("register a signature for %s\n", extension);
 	memcpy(signature, tmp, signature_size);
 	register_header_check(offset, signature, signature_size, &header_check_sig, file_stat);
-	signature_insert(extension, offset, signature, signature_size);
+	if(signatures_empty)
+	  signature_insert(extension, offset, signature, signature_size);
       }
       else
       {
@@ -416,5 +447,3 @@ static void register_header_check_sig(file_stat_t *file_stat)
   }
   free(buffer);
 }
-
-
