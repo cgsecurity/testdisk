@@ -3,7 +3,7 @@ Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
 Summary(fr.UTF8):	Outil pour vérifier et restaurer des partitions
 Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
 Name:		testdisk
-Version:	7.1
+Version:	7.2
 Release:	0%{?dist}
 License:	GPLv2+
 Group:		Applications/System
