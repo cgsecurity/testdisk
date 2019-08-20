@@ -42,7 +42,7 @@ const file_hint_t file_hint_raf= {
   .register_header_check=&register_header_check_raf
 };
 
-/* Documentation source: http://libopenraw.freedesktop.org/wiki/Fuji_RAF/ */
+/* Documentation source: https://libopenraw.pages.freedesktop.org/formats/raf/ */
 struct header_raf
 {
   char magic[16];
@@ -83,16 +83,8 @@ static int header_check_raf(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_raf.extension;
   file_recovery_new->calculated_file_size=size;
-  if(raf->dir_version[0]=='0' && raf->dir_version[1]=='1')
-  {
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-  }
-  else
-  {
-    /* The size is bigger than calculated_file_size */
-    file_recovery_new->file_check=&file_check_size_min;
-  }
+  /* The size is bigger than calculated_file_size */
+  file_recovery_new->file_check=&file_check_size_min;
   return 1;
 }
 
