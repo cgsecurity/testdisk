@@ -33,6 +33,7 @@
 #include <time.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include <assert.h>
 #include <stdio.h>
 #include "types.h"
 #include "common.h"
@@ -119,10 +120,10 @@ static const txt_header_t fasttxt_headers[] = {
   { "#! /bin/ksh",					11, "sh"},
   { "#! /bin/sh",					10, "sh"},
   { "#!/usr/bin/env groovy",				21, "groovy"},
-  { "#!/usr/bin/env perl",				21, "pl"},
-  { "#!/usr/bin/env php",				19, "php"},
+  { "#!/usr/bin/env perl",				19, "pl"},
+  { "#!/usr/bin/env php",				18, "php"},
   { "#!/usr/bin/env python",				21, "py"},
-  { "#!/usr/bin/env ruby",				20, "rb"},
+  { "#!/usr/bin/env ruby",				19, "rb"},
   /* Opera Hotlist bookmark/contact list/notes */
   { "Opera Hotlist version 2.0",			25, "adr"},
   /* Microsoft VB Class module */
@@ -1514,6 +1515,7 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   const txt_header_t *header=&fasttxt_headers[0];
   while(header->len > 0)
   {
+    assert(strlen(header->string) == header->len);
     register_header_check(0, header->string, header->len, &header_check_fasttxt, file_stat);
     header++;
   }
