@@ -38,8 +38,7 @@
 #include <uuid.h>
 #elif defined(HAVE_UUID_UUID_H)
 #include <uuid/uuid.h>
-#endif
-#if defined(HAVE_SYS_UUID_H)
+#elif defined(HAVE_SYS_UUID_H)
 #include <sys/uuid.h>
 #endif
 #include <assert.h>
