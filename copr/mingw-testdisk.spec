@@ -27,6 +27,7 @@ BuildRequires:	mingw32-ntfsprogs
 BuildRequires:	mingw32-openssl
 BuildRequires:	mingw32-pdcurses
 BuildRequires:	mingw32-qt5-qtbase-devel
+BuildRequires:	mingw32-qt5-qttools-tools
 BuildRequires:	mingw32-win-iconv
 BuildRequires:	mingw32-zlib
 
@@ -41,6 +42,7 @@ BuildRequires:	mingw64-ntfsprogs
 BuildRequires:	mingw64-openssl
 BuildRequires:	mingw64-pdcurses
 BuildRequires:	mingw64-qt5-qtbase-devel
+BuildRequires:	mingw64-qt5-qttools-tools
 BuildRequires:	mingw64-win-iconv
 BuildRequires:	mingw64-zlib
 
