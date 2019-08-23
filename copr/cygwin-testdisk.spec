@@ -111,7 +111,7 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?cygwin_debug_package}
 
 %prep
-%setup -q -n testdisk-%{version}
+%setup -q
 
 %build
 autoreconf -vif -I config -W all
