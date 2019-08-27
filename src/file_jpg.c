@@ -1449,7 +1449,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   {
     unsigned int offset;
     file_recovery->offset_error=0;
-    for(offset=file_recovery->blocksize; offset < nbytes && file_recovery->offset_error==0; offset+=file_recovery->blocksize)
+    for(offset=file_recovery->blocksize; offset + 30 < nbytes && file_recovery->offset_error==0; offset+=file_recovery->blocksize)
     {
       if(buffer[offset]==0xff && buffer[offset+1]==0xd8 && buffer[offset+2]==0xff &&
 	((buffer[offset+3]==0xe1 && memcmp(&buffer[offset+6], "http://ns.adobe.com/xap/", 24)!=0)
