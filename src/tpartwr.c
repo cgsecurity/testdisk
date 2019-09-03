@@ -84,9 +84,14 @@ int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search
     }
     else
     {
+      char options[10];
+      options[0]='R';
+      options[1]=0;
+      if(can_search_deeper)
+	strcat(options,"S");
       log_flush();
 #ifdef HAVE_NCURSES
-      command=screen_buffer_display_ext(stdscr,(can_search_deeper?"S":""),menuWrite,menu);
+      command=screen_buffer_display_ext(stdscr, options, menuWrite,menu);
 #endif
     }
   }
