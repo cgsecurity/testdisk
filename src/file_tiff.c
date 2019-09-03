@@ -184,7 +184,7 @@ void file_check_tiff(file_recovery_t *fr)
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
 #endif
-  if(fr->file_size < calculated_file_size || calculated_file_size==0)
+  if(fr->file_size < calculated_file_size || calculated_file_size==0 || calculated_file_size==TIFF_ERROR)
     fr->file_size=0;
     /* PhotoRec isn't yet capable to find the correct filesize for
      * Sony arw and dng,

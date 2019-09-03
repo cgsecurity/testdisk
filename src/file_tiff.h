@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define TIFF_ERROR 0xffffffffffffffff
 
 #define TIFF_BIGENDIAN          	0x4d4d
 #define TIFF_LITTLEENDIAN       	0x4949
