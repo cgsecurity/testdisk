@@ -50,6 +50,8 @@ const file_hint_t file_hint_tiff= {
   .register_header_check=&register_header_check_tiff
 };
 
+/* @ ensures \result == 1 || \result == 2 || \result == 4 || \result == 8;
+ */
 unsigned int tiff_type2size(const unsigned int type)
 {
   switch(type)
@@ -134,6 +136,8 @@ const char *tag_name(unsigned int tag)
 
 const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error)
 {
+  if(tiff_size < sizeof(TIFFHeader))
+    return NULL;
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
     return find_tag_from_tiff_header_be(tiff, tiff_size, tag, potential_error);
   else if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
@@ -161,8 +165,8 @@ static void register_header_check_tiff(file_stat_t *file_stat)
 {
   static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
   static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
-  register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff_be_new, file_stat);
-  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le_new, file_stat);
+  register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff_be, file_stat);
+  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le, file_stat);
 }
 
 void file_check_tiff(file_recovery_t *fr)
@@ -177,9 +181,9 @@ void file_check_tiff(file_recovery_t *fr)
     return;
   }
   if(header.tiff_magic==TIFF_LITTLEENDIAN)
-    calculated_file_size=header_check_tiff_le(fr, le32(header.tiff_diroff), 0, 0);
+    calculated_file_size=file_check_tiff_le(fr, le32(header.tiff_diroff), 0, 0);
   else if(header.tiff_magic==TIFF_BIGENDIAN)
-    calculated_file_size=header_check_tiff_be(fr, be32(header.tiff_diroff), 0, 0);
+    calculated_file_size=file_check_tiff_be(fr, be32(header.tiff_diroff), 0, 0);
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
