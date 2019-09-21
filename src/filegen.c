@@ -317,7 +317,6 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->file_size=0;
   file_recovery->location.list.prev=&file_recovery->location.list;
   file_recovery->location.list.next=&file_recovery->location.list;
-  file_recovery->location.start=0;
   file_recovery->location.end=0;
   file_recovery->location.data=0;
   file_recovery->extension=NULL;
@@ -330,7 +329,6 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->offset_ok=0;
   file_recovery->checkpoint_status=0;
   file_recovery->checkpoint_offset=0;
-//  file_recovery->blocksize=512;
   file_recovery->flags=0;
   file_recovery->extra=0;
 }
@@ -618,7 +616,7 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   }
   if(file_recovery->handle==NULL)
   {
-    if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+    if(file_recovery_new->location.start < offset_skipped_header || offset_skipped_header==0)
     {
       offset_skipped_header=file_recovery_new->location.start;
     }
@@ -641,7 +639,7 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   }
   if(fr_test.file_size>0)
     return 1;
-  if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+  if(file_recovery_new->location.start < offset_skipped_header || offset_skipped_header==0)
   {
     offset_skipped_header=file_recovery_new->location.start;
   }
@@ -655,7 +653,7 @@ void header_ignored(const file_recovery_t *file_recovery_new)
     offset_skipped_header=0;
     return ;
   }
-  if(file_recovery_new->location.start==0 || offset_skipped_header==0)
+  if(file_recovery_new->location.start < offset_skipped_header || offset_skipped_header==0)
     offset_skipped_header=file_recovery_new->location.start;
 }
 
@@ -679,7 +677,7 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
     if(file_space->start < prev_location)
       break;
   }
-#ifdef DEBUG_HEADER_CHECK
+#ifdef DEBUG_PREV_LOCATION
   log_info("get_prev_location_smart: reset offset_skipped_header=%llu, offset=%llu\n",
       (long long unsigned)(offset_skipped_header/512),
       (long long unsigned)(*offset/512));
@@ -692,17 +690,18 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
       offset_skipped_header=0;
       return;
     }
+    *current_search_space=file_space;
     if(file_space->start < prev_location || file_space->start < offset_skipped_header)
     {
-#ifdef DEBUG_HEADER_CHECK
+#ifdef DEBUG_PREV_LOCATION
       log_info("get_prev_location_smart: file_space->start < prev_location=%llu (in 512-bytes sectors), offset=%llu\n",
 	  (long long unsigned)(prev_location/512),
 	  (long long unsigned)(*offset/512));
 #endif
+      *offset=offset_skipped_header;
       offset_skipped_header=0;
       return ;
     }
-    *current_search_space=file_space;
     *offset=file_space->start;
   }
 }

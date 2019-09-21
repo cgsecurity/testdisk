@@ -97,7 +97,6 @@ static pstatus_t photorec_header_found(file_recovery_t *file_recovery_new, file_
   *file_recovered=PFSTATUS_BAD;
   if(file_recovery_new->file_stat==NULL || file_recovery_new->file_stat->file_hint==NULL)
     return PSTATUS_OK;
-  file_recovery_new->location.start=offset;
   if(file_recovery->file_stat!=NULL)
   {
     if(options->verbose > 1)
@@ -132,6 +131,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery_new;
   file_recovery_new.blocksize=blocksize;
+  file_recovery_new.location.start=offset;
   if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar &&
       header_check_tar(buffer-0x200,0x200, 0, file_recovery, &file_recovery_new))
   { /* Currently saving a tar, do not check the data for know header */

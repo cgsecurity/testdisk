@@ -170,6 +170,7 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	  file_recovery_t file_recovery_new;
 //	  memset(&file_recovery_new, 0, sizeof(file_recovery_t));
 	  file_recovery_new.blocksize=blocksize;
+	  file_recovery_new.location.start=offset;
 	  file_recovery_new.file_stat=NULL;
 	  td_list_for_each(tmpl, &file_check_list.list)
 	  {
@@ -190,7 +191,6 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	  }
 	  if(file_recovery_new.file_stat!=NULL)
 	  {
-	    file_recovery_new.location.start=offset;
 	    if(options->verbose>0)
 	    {
 	      log_info("%s header found at sector %lu\n",
