@@ -77,21 +77,25 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
   unsigned int freesect_count=0;
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
   const uint64_t doc_file_size_org=file_recovery->file_size;
+  unsigned int uSectorShift;
+  unsigned int num_FAT_blocks;
   file_recovery->file_size=offset;
   /*reads first sector including OLE header */
   if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, file_recovery->handle) != 1)
     return ;
+  uSectorShift=le16(header->uSectorShift);
+  num_FAT_blocks=le32(header->num_FAT_blocks);
 #ifdef DEBUG_OLE
   log_info("file_check_doc %s\n", file_recovery->filename);
-  log_trace("sector size          %u\n",1<<le16(header->uSectorShift));
-  log_trace("num_FAT_blocks       %u\n",le32(header->num_FAT_blocks));
+  log_trace("sector size          %u\n",1<<uSectorShift);
+  log_trace("num_FAT_blocks       %u\n",num_FAT_blocks);
   log_trace("num_extra_FAT_blocks %u\n",le32(header->num_extra_FAT_blocks));
 #endif
   /* Sanity check */
-  if(le32(header->num_FAT_blocks)==0 ||
+  if(num_FAT_blocks==0 ||
       le32(header->num_extra_FAT_blocks)>50 ||
-      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+      num_FAT_blocks>109+le32(header->num_extra_FAT_blocks)*((1<<uSectorShift)/4-1))
     return ;
   if((fat=OLE_load_FAT(file_recovery->handle, header, offset))==NULL)
   {
@@ -101,18 +105,18 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
     return ;
   }
   /* Search how many entries are not used at the end of the FAT */
-  for(i=(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-1;
+  for(i=(num_FAT_blocks<<uSectorShift)/4-1;
       i>0 && le32(fat[i])==0xFFFFFFFF;
       i--)
     freesect_count++;
-  doc_file_size=offset + ((1+(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4-freesect_count)<<le16(header->uSectorShift));
+  doc_file_size=offset + ((1+(num_FAT_blocks<<uSectorShift)/4-freesect_count)<<uSectorShift);
   if(doc_file_size > doc_file_size_org)
   {
 #ifdef DEBUG_OLE
     log_info("doc_file_size=%llu + (1+(%u<<%u)/4-%u)<<%u\n",
 	(unsigned long long)offset,
-	le32(header->num_FAT_blocks), le16(header->uSectorShift),
-	freesect_count, le16(header->uSectorShift));
+	num_FAT_blocks, uSectorShift,
+	freesect_count, uSectorShift);
     log_info("doc_file_size %llu > doc_file_size_org %llu\n",
     (unsigned long long)doc_file_size, (unsigned long long)doc_file_size_org);
 #endif
@@ -124,9 +128,9 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 #endif
   {
     unsigned int block;
-    const unsigned int fat_entries=(le32(header->num_FAT_blocks)==0 ?
+    const unsigned int fat_entries=(num_FAT_blocks==0 ?
 	109:
-	(le32(header->num_FAT_blocks)<<le16(header->uSectorShift))/4);
+	(num_FAT_blocks<<uSectorShift)/4);
 #ifdef DEBUG_OLE
     log_info("root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
@@ -145,7 +149,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	free(fat);
 	return ;
       }
-      if(my_fseek(file_recovery->handle, offset + ((1+block)<<le16(header->uSectorShift)), SEEK_SET)<0)
+      if(my_fseek(file_recovery->handle, offset + ((1+block)<<uSectorShift), SEEK_SET)<0)
       {
 #ifdef DEBUG_OLE
 	log_info("fseek failed\n");
@@ -153,8 +157,8 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	free(fat);
 	return ;
       }
-      dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
-      if(fread(dir_entries, (1<<le16(header->uSectorShift)), 1, file_recovery->handle)!=1)
+      dir_entries=(struct OLE_DIR *)MALLOC(1<<uSectorShift);
+      if(fread(dir_entries, (1<<uSectorShift), 1, file_recovery->handle)!=1)
       {
 #ifdef DEBUG_OLE
 	log_info("fread failed\n");
@@ -167,7 +171,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	unsigned int sid;
 	struct OLE_DIR *dir_entry;
 	for(sid=0, dir_entry=dir_entries;
-	    sid<(1<<le16(header->uSectorShift))/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
+	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
 	    sid++,dir_entry++)
 	{
 	    if(offset +
@@ -415,7 +419,7 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
      */
   if(le32(header->num_FAT_blocks)==0 ||
       le32(header->num_extra_FAT_blocks)>50 ||
-      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->file_check=&file_check_doc;
@@ -868,7 +872,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   /* Sanity check */
   if(le32(header->num_FAT_blocks)==0 ||
       le32(header->num_extra_FAT_blocks)>50 ||
-      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))-1))
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1))
   {
     fclose(file);
     return ;
