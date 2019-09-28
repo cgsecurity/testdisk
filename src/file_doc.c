@@ -923,6 +923,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
       {
 	unsigned int sid;
 	const struct OLE_DIR *dir_entry=dir_entries;
+	int is_db=0;
 	if(i==0)
 	{
 	  ministream_block=le32(dir_entry->start_block);
@@ -956,6 +957,12 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 #endif
 	    switch(le16(dir_entry->namsiz))
 	    {
+	      case 4:
+		if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
+		  is_db++;
+		if(sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+		  is_db++;
+		break;
 	      case 10:
 		if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
 		  ext="qdf-backup";
@@ -974,6 +981,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		/* Windows Sticky Notes */
 		else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0\0\0", 16)==0)
 		  ext="snt";
+		else if(sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
+		  is_db++;
 		break;
 	      case 18:
 		/* MS Excel
@@ -1026,6 +1035,9 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	      case 32:
 		if(memcmp(dir_entry->name, "m\0a\0n\0i\0f\0e\0s\0t\0.\0c\0a\0m\0x\0m\0l\0\0\0",32)==0)
 		  ext="camrec";
+	    /* Revit */
+		else if(memcmp(dir_entry->name, "R\0e\0v\0i\0t\0P\0r\0e\0v\0i\0e\0w\0004\0.\0000\0\0", 32)==0)
+		  ext="rvt";
 		break;
 	      case 34:
 		if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
@@ -1086,6 +1098,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 #endif
 	  }
 	}
+	if(ext==NULL && is_db==2)
+	  ext="db";
       }
       free(dir_entries);
     }
