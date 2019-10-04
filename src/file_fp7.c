@@ -54,7 +54,7 @@ static int header_check_fp7(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->min_filesize=4096;
   file_recovery_new->file_check=&file_check_fp7;
   if(memcmp(&buffer[0x21e], "Pro 12", 6)==0)
-    file_recovery_new->extension="fp12";
+    file_recovery_new->extension="fmp12";
   else
     file_recovery_new->extension=file_hint_fp7.extension;
   return 1;
