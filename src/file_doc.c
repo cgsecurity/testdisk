@@ -39,10 +39,12 @@
 #include "memmem.h"
 #include "setdate.h"
 #include "file_doc.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static void register_header_check_doc(file_stat_t *file_stat);
 static void file_check_doc(file_recovery_t *file_recovery);
-static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_rename_doc(file_recovery_t *file_recovery);
 static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset);
 static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries, const uint64_t offset);
@@ -67,6 +69,30 @@ const char WilcomDesignInformationDDD[56]=
   't', '\0', 'i', '\0', 'o', '\0', 'n', '\0',
   'D', '\0', 'D', '\0', 'D', '\0', '\0', '\0'
 };
+
+/*@
+  @ requires \valid(IN);
+  @ requires (9 == uSectorShift) || (12 == uSectorShift);
+  @ requires \valid( buf + (0 .. (1<<uSectorShift)-1));
+  @ ensures \result == -1 || \result == 0;
+  @*/
+static int OLE_read_block(FILE *IN, unsigned char *buf, const unsigned int uSectorShift, const unsigned int block, const uint64_t offset)
+{
+  if(block==0xFFFFFFFF || block==0xFFFFFFFE)
+    return -1;
+  if(my_fseek(IN, offset + ((uint64_t)(1+block)<<uSectorShift), SEEK_SET) < 0)
+  {
+    return -1;
+  }
+  if(fread(buf, 1<<uSectorShift, 1, IN)!=1)
+  {
+    return -1;
+  }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)buf, 1<<uSectorShift);
+#endif
+  return 0;
+}
 
 static const char *ole_get_file_extension(const unsigned char *buffer, const unsigned int buffer_size)
 {
@@ -338,19 +364,11 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	free(fat);
 	return ;
       }
-      if(my_fseek(file_recovery->handle, offset + ((1+block)<<uSectorShift), SEEK_SET)<0)
-      {
-#ifdef DEBUG_OLE
-	log_info("fseek failed\n");
-#endif
-	free(fat);
-	return ;
-      }
       dir_entries=(struct OLE_DIR *)MALLOC(1<<uSectorShift);
-      if(fread(dir_entries, (1<<uSectorShift), 1, file_recovery->handle)!=1)
+      if(OLE_read_block(file_recovery->handle, (unsigned char *)dir_entries, uSectorShift, block, offset)<0)
       {
 #ifdef DEBUG_OLE
-	log_info("fread failed\n");
+	log_info("OLE_read_block failed\n");
 #endif
 	free(dir_entries);
 	free(fat);
@@ -516,12 +534,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
 	i<le32(header->num_extra_FAT_blocks) && block!=0xFFFFFFFF && block!=0xFFFFFFFE;
 	i++, block=le32(dif[109+i*(((1<<le16(header->uSectorShift))/4)-1)]))
     {
-      if(my_fseek(IN, offset + ((1+block)<<le16(header->uSectorShift)), SEEK_SET) < 0)
-      {
-	free(dif);
-	return NULL;
-      }
-      if(fread(data, 1<<le16(header->uSectorShift), 1, IN)!=1)
+      if(OLE_read_block(IN, data, le16(header->uSectorShift), block, offset) < 0)
       {
 	free(dif);
 	return NULL;
@@ -537,13 +550,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
 	j<le32(header->num_FAT_blocks);
 	j++, data+=(1<<le16(header->uSectorShift)))
     {
-      if(my_fseek(IN, offset + ((1+le32(dif[j]))<<le16(header->uSectorShift)), SEEK_SET)<0)
-      {
-	free(dif);
-	free(fat);
-	return NULL;
-      }
-      if(fread(data, (1<<le16(header->uSectorShift)), 1, IN)!=1)
+      if(OLE_read_block(IN, data, le16(header->uSectorShift), le32(dif[j]), offset)<0)
       {
 	free(dif);
 	free(fat);
@@ -572,12 +579,7 @@ static void *OLE_read_stream(FILE *IN,
       free(dataPt);
       return NULL;
     }
-    if(my_fseek(IN, offset + ((1+block)<<uSectorShift), SEEK_SET)<0)
-    {
-      free(dataPt);
-      return NULL;
-    }
-    if(fread(&dataPt[size_read], (1<<uSectorShift), 1, IN)!=1)
+    if(OLE_read_block(IN, &dataPt[size_read], uSectorShift, block, offset)<0)
     {
       free(dataPt);
       return NULL;
@@ -599,12 +601,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   block=le32(header->MiniFat_block);
   for(i=0; i < le32(header->csectMiniFat) && block < fat_entries; i++)
   {
-    if(my_fseek(IN, offset + (((uint64_t)1+block) << le16(header->uSectorShift)), SEEK_SET) < 0)
-    {
-      free(minifat);
-      return NULL;
-    }
-    if(fread(minifat_pos, 1 << le16(header->uSectorShift), 1, IN) != 1)
+    if(OLE_read_block(IN, offset + (((uint64_t)1+block) << le16(header->uSectorShift)), le16(header->uSectorShift), block, offset)<0)
     {
       free(minifat);
       return NULL;
@@ -900,15 +897,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	block=le32(fat[block]), i++)
     {
       struct OLE_DIR *dir_entries;
-      if(my_fseek(file, (1+block)<<le16(header->uSectorShift), SEEK_SET)<0)
-      {
-	free(fat);
-	fclose(file);
-	free(title);
-	return ;
-      }
       dir_entries=(struct OLE_DIR *)MALLOC(1<<le16(header->uSectorShift));
-      if(fread(dir_entries, 1<<le16(header->uSectorShift), 1, file)!=1)
+      if(OLE_read_block(file, (unsigned char *)dir_entries, le16(header->uSectorShift), block, 0)<0)
       {
 	free(fat);
 	free(dir_entries);
