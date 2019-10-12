@@ -137,26 +137,31 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
       return NULL;
     {
       unsigned int sid;
-      const struct OLE_DIR *dir_entry;
+      const struct OLE_DIR *dir_entries=(const struct OLE_DIR *)&buffer[offset_root_dir];
       const char *ext=NULL;
       int is_db=0;
-      for(sid=0,dir_entry=(const struct OLE_DIR *)&buffer[offset_root_dir];
-	  sid<512/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
-	  sid++,dir_entry++)
+      for(sid=0;
+	  sid<512/sizeof(struct OLE_DIR);
+	  sid++)
       {
+	const struct OLE_DIR *dir_entry=&dir_entries[sid];
+	if(dir_entry->type==NO_ENTRY)
+	  break;
 #ifdef DEBUG_OLE
-	unsigned int j;
-	for(j=0;j<64 && j<le16(dir_entry->namsiz) && dir_entry->name[j]!='\0';j+=2)
 	{
-	  log_info("%c",dir_entry->name[j]);
+	  unsigned int j;
+	  for(j=0;j<64 && j<le16(dir_entry->namsiz) && dir_entry->name[j]!='\0';j+=2)
+	  {
+	    log_info("%c",dir_entry->name[j]);
+	  }
+	  for(;j<64;j+=2)
+	    log_info(" ");
+	  log_info(" namsiz=%u type %u", le16(dir_entry->namsiz), dir_entry->type);
+	  log_info(" Flags=%s", (dir_entry->bflags==0?"Red  ":"Black"));
+	  log_info(" sector %u (%u bytes)\n",
+	      (unsigned int)le32(dir_entry->start_block),
+	      (unsigned int)le32(dir_entry->size));
 	}
-	for(;j<64;j+=2)
-	  log_info(" ");
-	log_info(" namsiz=%u type %u", le16(dir_entry->namsiz), dir_entry->type);
-	log_info(" Flags=%s", (dir_entry->bflags==0?"Red  ":"Black"));
-	log_info(" sector %u (%u bytes)\n",
-	    (unsigned int)le32(dir_entry->start_block),
-	    (unsigned int)le32(dir_entry->size));
 #endif
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 	  is_db++;
@@ -378,11 +383,14 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
       {
 	unsigned int sid;
 	struct OLE_DIR *dir_entry;
-	for(sid=0, dir_entry=dir_entries;
-	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR) && dir_entry->type!=NO_ENTRY;
-	    sid++,dir_entry++)
+	for(sid=0;
+	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
+	    sid++)
 	{
-	    if(offset +
+	  const struct OLE_DIR *dir_entry=&dir_entries[sid];
+	  if(dir_entry->type==NO_ENTRY)
+	    break;
+	  if(offset +
 		le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
 		((le32(dir_entry->size) >= le32(header->miniSectorCutoff)
 		  && le32(dir_entry->start_block) > fat_entries) ||
