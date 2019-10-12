@@ -133,8 +133,23 @@ void register_header_check(const unsigned int offset, const void *value, const u
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
 file_stat_t * init_file_stats(file_enable_t *files_enable);
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @*/
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @*/
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
+
 void header_ignored_cond_reset(uint64_t start, uint64_t end);
 void header_ignored(const file_recovery_t *file_recovery_new);
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new);

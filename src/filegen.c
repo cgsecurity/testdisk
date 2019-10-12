@@ -366,6 +366,72 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   return file_stats;
 }
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((const char*)&file_recovery->filename);
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @*/
+static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext, const int append_original_ext)
+{
+  /* new_filename is large enough to avoid a buffer overflow */
+  char *new_filename;
+  const char *src=file_recovery->filename;
+  const char *ext=NULL;
+  char *dst;
+  char *directory_sep;
+  int len;
+  len=strlen(src)+1;
+  if(new_ext!=NULL)
+    len+=strlen(new_ext);
+  new_filename=(char*)MALLOC(len);
+  dst=new_filename;
+  directory_sep=new_filename;
+  while(*src!='\0')
+  {
+    if(*src=='/')
+    {
+      directory_sep=dst;
+      ext=NULL;
+    }
+    if(*src=='.')
+      ext=src;
+    *dst++ = *src++;
+  }
+  *dst='\0';
+  dst=directory_sep;
+  while(*dst!='.' && *dst!='\0')
+    dst++;
+  /* Add extension */
+  if(new_ext!=NULL)
+  {
+    src=new_ext;
+    *dst++ = '.';
+    while(*src!='\0')
+      *dst++ = *src++;
+  }
+  else if(append_original_ext>0)
+  {
+    if(ext!=NULL)
+    {
+      while(*ext!='\0')
+	*dst++ = *ext++;
+    }
+  }
+  *dst='\0';
+  if(rename(file_recovery->filename, new_filename)<0)
+  {
+    /* Rename has failed */
+    free(new_filename);
+    return -1;
+  }
+  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  {
+    strcpy(file_recovery->filename, new_filename);
+  }
+  free(new_filename);
+  return 0;
+}
+
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
@@ -473,12 +539,65 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
     if(buffer==NULL)
       return -1;
     /* Try without the original filename */
-    return file_rename(file_recovery, NULL, 0, 0, new_ext, append_original_ext);
+    return file_rename_aux(file_recovery, new_ext, append_original_ext);
   }
   if(strlen(new_filename)<sizeof(file_recovery->filename))
   {
     strcpy(file_recovery->filename, new_filename);
   }
+  free(new_filename);
+  return 0;
+}
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((const char*)&file_recovery->filename);
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @*/
+static int file_rename_unicode_aux(file_recovery_t *file_recovery, const char *new_ext, const int append_original_ext)
+{
+  char *new_filename;
+  const char *src=file_recovery->filename;
+  const char *ext=src;
+  char *dst;
+  char *directory_sep;
+  unsigned int len=strlen(file_recovery->filename)+1;
+  /*@ assert len < sizeof(file_recovery->filename); */
+  if(new_ext!=NULL)
+    len+=strlen(new_ext);
+  if(len > sizeof(file_recovery->filename))
+    return -1;
+  new_filename=(char*)MALLOC(len);
+  strcpy(new_filename, (char *)&file_recovery->filename);
+  directory_sep=strrchr(file_recovery->filename, '/');
+  ext=strrchr(file_recovery->filename, '.');
+  /*@ assert directory_sep != \null; */
+#if 1
+  dst=directory_sep;
+  while(*dst!='.' && *dst!='\0')
+    dst++;
+  /* Add extension */
+  if(new_ext!=NULL)
+  {
+    src=new_ext;
+    *dst++ = '.';
+    while(*src!='\0')
+      *dst++ = *src++;
+  }
+  else if(append_original_ext>0)
+  {
+    while(*ext!='\0')
+      *dst++ = *ext++;
+  }
+  *dst='\0';
+#endif
+  if(rename(file_recovery->filename, new_filename)<0)
+  {
+    /* Rename has failed */
+    free(new_filename);
+    return -1;
+  }
+  strcpy(file_recovery->filename, new_filename);
   free(new_filename);
   return 0;
 }
@@ -583,7 +702,7 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
     if(buffer==NULL)
       return -1;
     /* Try without the original filename */
-    return file_rename_unicode(file_recovery, NULL, 0, 0, new_ext, append_original_ext);
+    return file_rename_unicode_aux(file_recovery, new_ext, append_original_ext);
   }
   if(strlen(new_filename)<sizeof(file_recovery->filename))
   {
