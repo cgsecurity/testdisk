@@ -438,7 +438,13 @@ struct my_data_struct
   uint64_t offset;
 };
 
+/*@
+  @ requires size > 0;
+  @ ensures \valid(((char *)\result)+(0..size-1));
+  @ ensures zero_initialization: \subset(((char *)\result)[0..size-1], {0});
+  @*/
 void *MALLOC(size_t size);
+
 unsigned int up2power(const unsigned int number);
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
