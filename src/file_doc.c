@@ -164,10 +164,10 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	}
 #endif
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
-	  is_db++;
-	else if(sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
+	  is_db=1;
+	else if(is_db==1 && sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
 	      memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0", 14)==0))
-	  is_db++;
+	  is_db=2;
 	switch(le16(dir_entry->namsiz))
 	{
 	  case 10:
@@ -382,7 +382,6 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
       }
       {
 	unsigned int sid;
-	struct OLE_DIR *dir_entry;
 	for(sid=0;
 	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
 	    sid++)
@@ -963,9 +962,9 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	    {
 	      case 4:
 		if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
-		  is_db++;
-		if(sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
-		  is_db++;
+		  is_db=1;
+		if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+		  is_db=2;
 		break;
 	      case 10:
 		if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
@@ -985,8 +984,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		/* Windows Sticky Notes */
 		else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0\0\0", 16)==0)
 		  ext="snt";
-		else if(sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
-		  is_db++;
+		else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
+		  is_db=2;
 		break;
 	      case 18:
 		/* MS Excel
