@@ -8,7 +8,7 @@ FRAMA_C_FLAGS=-machdep x86_64 \
 	  -warn-unsigned-overflow \
 	  -rte \
 	  -eva \
-	  -eva-slevel 1 \
+	  -eva-slevel 6 \
 	  -eva-warn-undefined-pointer-comparison none \
 	  -eva-ignore-recursive-calls \
 	  -then \
@@ -80,9 +80,17 @@ extras:
 extrasstatic:
 	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)" extras
 
+session_tiff_le.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c src/common.c src/filegen.c src/log.c
+	gcc -W -Wall -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
+
 session_id3.framac: src/file_mp3.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_id3 -DHAVE_CONFIG_H -O -o demo -I. $^
 	frama-c $^ -cpp-extra-args="-DMAIN_id3 -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
+
+session_doc.framac: src/file_doc.c src/common.c src/filegen.c src/log.c src/setdate.c
+	gcc -W -Wall -DMAIN_doc -DHAVE_CONFIG_H -O -o demo -I. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
 
 session_%.framac: src/file_%.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_$* -DHAVE_CONFIG_H -O -o demo -I. $^
