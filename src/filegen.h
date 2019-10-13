@@ -119,19 +119,122 @@ typedef struct
 #define NL_BARECR       (1 << 2)
 
 void free_header_check(void);
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
+
+/*@
+  @ requires \valid(handle);
+  @ requires footer_length > 0;
+  @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @*/
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length);
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires footer_length > 0;
+  @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @*/
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires footer_length > 0;
+  @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @*/
 void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
+
+/*@
+  @ requires \valid(list_search_space);
+  @*/
 void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
+
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ assigns \nothing;
+  @ ensures \result == DC_STOP || \result == DC_CONTINUE;
+  @*/
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
 void file_check_size(file_recovery_t *file_recovery);
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
 void file_check_size_min(file_recovery_t *file_recovery);
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
 void file_check_size_max(file_recovery_t *file_recovery);
+
+/*@
+  requires \valid(file_recovery);
+  ensures file_recovery->filename[0]=='\0';
+  ensures file_recovery->time==0;
+  ensures file_recovery->file_stat==\null;
+  ensures file_recovery->handle==\null;
+  ensures file_recovery->file_size==0;
+  ensures file_recovery->location.list.prev==&file_recovery->location.list;
+  ensures file_recovery->location.list.next==&file_recovery->location.list;
+  ensures file_recovery->location.end==0;
+  ensures file_recovery->location.data==0;
+  ensures file_recovery->extension==\null;
+  ensures file_recovery->min_filesize==0;
+  ensures file_recovery->calculated_file_size==0;
+  ensures file_recovery->data_check==\null;
+  ensures file_recovery->file_check==\null;
+  ensures file_recovery->file_rename==\null;
+  ensures file_recovery->offset_error==0;
+  ensures file_recovery->offset_ok==0;
+  ensures file_recovery->checkpoint_status==0;
+  ensures file_recovery->checkpoint_offset==0;
+  ensures file_recovery->flags==0;
+  ensures file_recovery->extra==0;
+  assigns file_recovery->filename[0];
+  assigns file_recovery->time;
+  assigns file_recovery->file_stat;
+  assigns file_recovery->handle;
+  assigns file_recovery->file_size;
+  assigns file_recovery->location.list.prev;
+  assigns file_recovery->location.list.next;
+  assigns file_recovery->location.end;
+  assigns file_recovery->location.data;
+  assigns file_recovery->extension;
+  assigns file_recovery->min_filesize;
+  assigns file_recovery->calculated_file_size;
+  assigns file_recovery->data_check;
+  assigns file_recovery->file_check;
+  assigns file_recovery->file_rename;
+  assigns file_recovery->offset_error;
+  assigns file_recovery->offset_ok;
+  assigns file_recovery->checkpoint_status;
+  assigns file_recovery->checkpoint_offset;
+  assigns file_recovery->flags;
+  assigns file_recovery->extra;
+*/
 void reset_file_recovery(file_recovery_t *file_recovery);
+
+/*@
+  @ requires length > 0;
+  @ requires \valid_read((char *)value+(0..length-1));
+  @ requires \valid_function(header_check);
+  @ requires \valid(file_stat);
+  @*/
 void register_header_check(const unsigned int offset, const void *value, const unsigned int length, int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
   file_stat_t *file_stat);
+
+/*@
+  @ requires \valid(files_enable);
+  @*/
 file_stat_t * init_file_stats(file_enable_t *files_enable);
 
 /*@
@@ -151,12 +254,48 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
 void header_ignored_cond_reset(uint64_t start, uint64_t end);
+
+/*@
+  @ requires file_recovery_new==\null || \valid_read(file_recovery_new);
+  @*/
 void header_ignored(const file_recovery_t *file_recovery_new);
+
+/*@
+  @ requires \valid_read(file_recovery);
+  @ requires \valid_read(file_recovery_new);
+  @ requires \initialized(&file_recovery->file_check);
+  @ requires \initialized(&file_recovery->handle);
+  @ ensures \result == 0 || \result == 1;
+  @*/
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new);
+
+/*@
+  requires valid_stream: \valid(stream);
+  requires whence_enum: whence == SEEK_SET || whence == SEEK_CUR || whence == SEEK_END;
+  assigns *stream \from *stream, indirect:offset, indirect:whence;
+  assigns \result, __fc_errno \from indirect:*stream, indirect:offset,
+                                    indirect:whence;
+*/
 int my_fseek(FILE *stream, off_t offset, int whence);
+
+/*@
+  @ requires \valid_read(date_asc + (0 .. 11));
+  @*/
 time_t get_time_from_YYMMDDHHMMSS(const char *date_asc);
+
+/*@
+  @ requires \valid_read(date_asc + (0 .. 18));
+  @*/
 time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const char *date_asc);
+
+/*@
+  @ requires \valid_read(date_asc + (0 .. 16));
+  @*/
 time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc);
+
+/*@
+  @ requires \valid_read(date_asc + (0 .. 14));
+  @*/
 time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc);
 
 #ifdef __cplusplus

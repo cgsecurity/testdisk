@@ -60,8 +60,10 @@ struct bmp_header
   @ requires buffer_size >= 18;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bmp.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 65);
@@ -112,6 +114,7 @@ static void register_header_check_bmp(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
+  const char *fn = "recup_dir.1/f0000000.bmp";
   unsigned char buffer[BLOCKSIZE];
   int res;
   file_recovery_t file_recovery_new;
@@ -124,6 +127,7 @@ int main()
 #endif
 
   reset_file_recovery(&file_recovery);
+  /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
   file_recovery_new.blocksize=BLOCKSIZE;
   file_recovery_new.data_check=NULL;
@@ -137,19 +141,20 @@ int main()
   file_stats.file_hint=&file_hint_bmp;
   file_stats.not_recovered=0;
   file_stats.recovered=0;
-  file_hint_bmp.register_header_check(&file_stats);
+  register_header_check_bmp(&file_stats);
   if(header_check_bmp(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
-  memcpy(file_recovery_new.filename, "demo", 5);
+  /*@ assert valid_read_string(fn); */
+  strcpy(file_recovery_new.filename, fn);
+  file_recovery_new.file_stat=&file_stats;
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
   /*@ assert file_recovery_new.extension == file_hint_bmp.extension; */
   /*@ assert file_recovery_new.calculated_file_size >= 65; */
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.min_filesize == 65;	*/
   /*@ assert file_recovery_new.file_check == &file_check_size; */
   /*@ assert file_recovery_new.data_check == &data_check_size; */
-  file_recovery_new.file_stat=&file_stats;
   /*@ assert file_recovery_new.file_stat->file_hint!=NULL; */
-  if(file_recovery_new.data_check!=NULL)
   {
     unsigned char big_buffer[2*BLOCKSIZE];
     data_check_t res_data_check=DC_CONTINUE;
@@ -158,7 +163,7 @@ int main()
     /*@ assert file_recovery_new.data_check == &data_check_size; */
     /*@ assert file_recovery_new.file_size == 0; */;
     /*@ assert file_recovery_new.file_size <= file_recovery_new.calculated_file_size; */;
-    res_data_check=file_recovery_new.data_check(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+    res_data_check=data_check_size(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
     file_recovery_new.file_size+=BLOCKSIZE;
     if(res_data_check == DC_CONTINUE)
     {
@@ -166,7 +171,7 @@ int main()
 #if defined(__FRAMAC__)
       Frama_C_make_unknown((char *)big_buffer + BLOCKSIZE, BLOCKSIZE);
 #endif
-      file_recovery_new.data_check(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+      data_check_size(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
     }
   }
   {
@@ -179,21 +184,16 @@ int main()
 #if defined(__FRAMAC__)
     Frama_C_make_unknown((char *)buffer, BLOCKSIZE);
 #endif
+    /*@ assert valid_read_string((char *)file_recovery_new.filename); */
     header_check_bmp(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
   }
-  if(file_recovery_new.file_check!=NULL)
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  file_recovery_new.handle=fopen(fn, "rb");
+  /*@ assert file_recovery_new.file_check == &file_check_size; */
+  if(file_recovery_new.handle!=NULL)
   {
-    file_recovery_new.handle=fopen("demo", "rb");
-    if(file_recovery_new.handle!=NULL)
-    {
-      (file_recovery_new.file_check)(&file_recovery_new);
-      fclose(file_recovery_new.handle);
-    }
-  }
-  if(file_recovery_new.file_rename!=NULL)
-  {
-    /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
-    (file_recovery_new.file_rename)(&file_recovery_new);
+    file_check_size(&file_recovery_new);
+    fclose(file_recovery_new.handle);
   }
   return 0;
 }
