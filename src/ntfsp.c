@@ -37,6 +37,7 @@
 #include "common.h"
 #include "list.h"
 #include "filegen.h"
+#include "photorec.h"
 #ifdef HAVE_LIBNTFS
 #include <ntfs/attrib.h>
 #endif

@@ -237,7 +237,12 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
 }
 
 #if 0
-void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
+/*@
+  @ requires \valid(file_recovery);
+  @ requires footer_length > 0;
+  @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @*/
+static void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
 {
   const unsigned int read_size=4096;
   unsigned char*buffer;

@@ -140,18 +140,6 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires footer_length > 0;
-  @ requires \valid_read((char *)footer+(0..footer_length-1));
-  @*/
-void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length);
-
-/*@
-  @ requires \valid(list_search_space);
-  @*/
-void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
-
-/*@
   @ requires buffer_size > 0;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);

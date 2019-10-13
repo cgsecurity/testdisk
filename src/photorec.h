@@ -93,6 +93,12 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
 void file_block_free(alloc_list_t *list_allocation);
 void file_block_append(file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize, const unsigned int data);
 void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize,  alloc_data_t **new_current_search_space, uint64_t *offset, unsigned char *buffer);
+
+/*@
+  @ requires \valid(list_search_space);
+  @*/
+void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end);
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

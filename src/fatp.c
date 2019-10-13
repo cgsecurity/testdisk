@@ -31,6 +31,7 @@
 #include "common.h"
 #include "list.h"
 #include "filegen.h"
+#include "photorec.h"
 #include "fatp.h"
 #include "fat.h"
 #include "fat_common.h"

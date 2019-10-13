@@ -33,6 +33,7 @@
 #include "common.h"
 #include "list.h"
 #include "filegen.h"
+#include "photorec.h"
 #include "intrf.h"
 #include "dir.h"
 #ifdef HAVE_EXT2FS_EXT2_FS_H

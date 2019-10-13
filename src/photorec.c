@@ -85,6 +85,11 @@ void del_search_space(alloc_data_t *list_search_space, const uint64_t start, con
   update_search_space_aux(list_search_space, start, end, NULL, NULL);
 }
 
+/*@
+  @ requires \valid(list_search_space);
+  @ requires new_current_search_space == \null || \valid(*new_current_search_space);
+  @ requires offset == \null || \valid(*offset);
+  @*/
 static void update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
   struct td_list_head *search_walker = NULL;

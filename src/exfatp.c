@@ -31,6 +31,7 @@
 #include "common.h"
 #include "list.h"
 #include "filegen.h"
+#include "photorec.h"
 #include "exfatp.h"
 #include "exfat.h"
 #include "log.h"
