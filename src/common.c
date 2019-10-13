@@ -247,7 +247,7 @@ int date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__FRAMAC__)
   const struct  tm *tmptr = localtime(&t);
 #else
   struct  tm tmp;

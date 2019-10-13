@@ -38,7 +38,6 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-#include "photorec.h"
 #include "log.h"
 
 static  file_check_t file_check_plist={
@@ -748,7 +747,7 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   }
 
   memcpy(&fr_test, file_recovery, sizeof(fr_test));
-#ifdef HAVE_FTELLO
+#if defined(HAVE_FTELLO) && !defined(__FRAMAC__)
   if((offset=ftello(file_recovery->handle)) < 0)
     offset=ftell(file_recovery->handle);
 #else
@@ -832,7 +831,7 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
 
 int my_fseek(FILE *stream, off_t offset, int whence)
 {
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__) && !defined(__ARM_EABI__)
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__) && !defined(__ARM_EABI__) && !defined(__FRAMAC__)
   {
     int res;
     if((res=fseeko(stream, offset, whence))>=0)
