@@ -1430,6 +1430,9 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     file_rename(file_recovery, NULL, 0, 0, ext, 1);
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_doc(file_stat_t *file_stat)
 {
   static const unsigned char doc_header[]= { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
@@ -1440,7 +1443,7 @@ static void register_header_check_doc(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
-  const char *fn = "recup_dir.1/f0000000.doc";
+  const char fn[] = "recup_dir.1/f0000000.doc";
   unsigned char buffer[BLOCKSIZE];
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
@@ -1474,8 +1477,8 @@ int main()
 #ifdef __FRAMAC__
   file_recovery_new.file_size = 512*Frama_C_interval(1, 1000);
 #endif
-  /*@ assert valid_read_string(fn); */
-  strcpy(file_recovery_new.filename, fn);
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
   /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
   file_recovery_new.file_stat=&file_stats;

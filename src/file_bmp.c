@@ -105,6 +105,9 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_bmp(file_stat_t *file_stat)
 {
   register_header_check(0, bmp_header,sizeof(bmp_header), &header_check_bmp, file_stat);
@@ -114,7 +117,7 @@ static void register_header_check_bmp(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
-  const char *fn = "recup_dir.1/f0000000.bmp";
+  const char fn[] = "recup_dir.1/f0000000.bmp";
   unsigned char buffer[BLOCKSIZE];
   int res;
   file_recovery_t file_recovery_new;
@@ -144,8 +147,8 @@ int main()
   register_header_check_bmp(&file_stats);
   if(header_check_bmp(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
-  /*@ assert valid_read_string(fn); */
-  strcpy(file_recovery_new.filename, fn);
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
   file_recovery_new.file_stat=&file_stats;
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
   /*@ assert file_recovery_new.extension == file_hint_bmp.extension; */
