@@ -105,6 +105,9 @@ static int header_check_pf(const unsigned char *buffer, const unsigned int buffe
   return 1;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_pf(file_stat_t *file_stat)
 {
   static const unsigned char pf_header[7] = {0x00, 0x00, 0x00, 'S', 'C', 'C', 'A'};
@@ -115,7 +118,7 @@ static void register_header_check_pf(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
-  const char *fn = "recup_dir.1/f0000000.pf";
+  const char fn[] = "recup_dir.1/f0000000.pf";
   unsigned char buffer[BLOCKSIZE];
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
@@ -143,8 +146,8 @@ int main()
   register_header_check_pf(&file_stats);
   if(header_check_pf(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
-  /*@ assert valid_read_string(fn); */
-  strcpy(file_recovery_new.filename, fn);
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.extension == file_hint_pf.extension; */
   /*@ assert file_recovery_new.file_rename==&file_rename_pf; */
