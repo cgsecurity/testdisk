@@ -124,6 +124,7 @@ static const unsigned int bit_rate_table[4][4][16]=
   @ requires \valid_read(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_mp3.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size > 0);
@@ -171,6 +172,7 @@ static int header_check_id3(const unsigned char *buffer, const unsigned int buff
   @ requires \valid_read(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_mp3.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size > 0);
@@ -610,6 +612,9 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
   return(size);
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_mp3(file_stat_t *file_stat)
 {
   static const unsigned char mpeg1_L3_header1[2]= {0xFF, 0xFA};
@@ -635,6 +640,7 @@ static void register_header_check_mp3(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
+  const char fn[] = "recup_dir.1/f0000000.mp3";
   unsigned char buffer[BLOCKSIZE];
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
@@ -662,15 +668,15 @@ int main()
   file_hint_mp3.register_header_check(&file_stats);
   if(header_check_id3(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new) != 1)
     return 0;
-  memcpy(file_recovery_new.filename, "demo", 5);
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
+  file_recovery_new.file_stat=&file_stats;
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
   /*@ assert file_recovery_new.extension == file_hint_mp3.extension;	*/
   /*@ assert file_recovery_new.calculated_file_size > 0; */
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.min_filesize == 287;	*/
   /*@ assert file_recovery_new.data_check == &data_check_id3; */
-  file_recovery_new.file_stat=&file_stats;
-  if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL &&
-    file_recovery_new.data_check!=NULL)
   {
     unsigned char big_buffer[2*BLOCKSIZE];
     data_check_t res_data_check=DC_CONTINUE;
@@ -706,7 +712,7 @@ int main()
   }
   if(file_recovery_new.file_check!=NULL)
   {
-    file_recovery_new.handle=fopen("demo", "rb");
+    file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
     {
       (file_recovery_new.file_check)(&file_recovery_new);
@@ -724,6 +730,7 @@ int main()
 #define BLOCKSIZE 65536u
 int main()
 {
+  const char fn[] = "recup_dir.1/f0000000.mp3";
   unsigned char buffer[BLOCKSIZE];
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
@@ -751,7 +758,8 @@ int main()
   file_hint_mp3.register_header_check(&file_stats);
   if(header_check_mp3(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
-  memcpy(file_recovery_new.filename, "demo", 5);
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.min_filesize == 287;	*/
   /*@ assert file_recovery_new.extension == file_hint_mp3.extension;	*/
@@ -793,7 +801,8 @@ int main()
   }
   if(file_recovery_new.file_check!=NULL)
   {
-    file_recovery_new.handle=fopen("demo", "rb");
+    /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+    file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
     {
       (file_recovery_new.file_check)(&file_recovery_new);
