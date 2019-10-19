@@ -211,7 +211,7 @@ void file_check_size_max(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
 
 /*@
-  @ requires length > 0;
+  @ requires 0 < length <= 4096;
   @ requires \valid_read((char *)value+(0..length-1));
   @ requires \valid_function(header_check);
   @ requires \valid(file_stat);

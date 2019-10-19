@@ -65,7 +65,7 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   res=memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
   if(res!=0)
     return res;
-  return fc_b->length-fc_a->length;
+  return (int)fc_b->length-(int)fc_a->length;
 }
 
 static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
@@ -439,6 +439,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext, 
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
+  /* TODO: make the code from frama-c friendly */
+#ifndef __FRAMAC__
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
   const char *src=file_recovery->filename;
@@ -550,6 +552,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
     strcpy(file_recovery->filename, new_filename);
   }
   free(new_filename);
+#endif
   return 0;
 }
 
@@ -609,6 +612,8 @@ static int file_rename_unicode_aux(file_recovery_t *file_recovery, const char *n
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
+  /* TODO: make the code from frama-c friendly */
+#ifndef __FRAMAC__
   /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
   const char *src=file_recovery->filename;
@@ -713,6 +718,7 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
     strcpy(file_recovery->filename, new_filename);
   }
   free(new_filename);
+#endif
   return 0;
 }
 
