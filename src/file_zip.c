@@ -465,7 +465,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #ifdef DEBUG_ZIP
     log_trace("Searched footer, got length %lli\n", (long long int)pos);
 #endif
-    if (pos < 0 || pos > 0x7fffffffffffffff)
+    if (pos < 0)
       return -1;
     if (pos > 0)
     {
