@@ -60,6 +60,7 @@ static const unsigned char exe_header[2]  = {'M','Z'};
   @ requires \valid_read(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_exe.extension || file_recovery_new->extension == extension_dll);
   @*/
@@ -497,13 +498,61 @@ static void PEVersion(FILE *file, const unsigned int offset, const unsigned int 
     return ;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown(&buffer, sizeof(buffer));
+  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
 #endif
   if(parse_VS_VERSIONINFO(file_recovery, (const char *)&buffer, length, OriginalFilename, sizeof(OriginalFilename), 0)==0)
   {
     return;
   }
   parse_VS_VERSIONINFO(file_recovery, buffer, length, InternalName, sizeof(InternalName), 1);
+}
+
+/*@
+  @ requires \valid(file);
+  @ requires base <= 0x7fffffff;
+  @ requires \valid_read(pe_sections);
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read(rsrc_entry);
+  @*/
+static int pe_resource_language_aux(FILE *file, const unsigned int base, const struct pe_image_section_hdr *pe_sections, const unsigned int nbr_sections, file_recovery_t *file_recovery, const struct rsrc_entries_s *rsrc_entry)
+{
+  struct rsrc_offlen buffer;
+  uint32_t off;
+  unsigned int len;
+  unsigned int j;
+#ifdef DEBUG_EXE
+  log_info("resource lang=%u, %x, offset %u\n",
+      le32(rsrc_entry->Type),
+      le32(rsrc_entry->Pos),
+      base + (le32(rsrc_entry->Pos) & 0x7fffffff));
+#endif
+  if(fseek(file, base + (le32(rsrc_entry->Pos) & 0x7fffffff), SEEK_SET)<0)
+  {
+    return -1;
+  }
+  if(fread(&buffer, 1, sizeof(buffer), file) != sizeof(buffer))
+  {
+    return -1;
+  }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
+  off=le32(buffer.off);
+  len=le32(buffer.len);
+  /*TODO: loop invariant 0 <= j <= nbr_sections; */
+  for(j=0; j<nbr_sections; j++)
+  {
+    const struct pe_image_section_hdr *pe_section=&pe_sections[j];
+    const uint32_t virt_addr_start=le32(pe_section->VirtualAddress);
+    const uint64_t virt_addr_end=(uint64_t)virt_addr_start + le32(pe_section->SizeOfRawData);
+    if(virt_addr_end <= 0xffffffff && virt_addr_start <= off && off < virt_addr_end && (uint64_t)off - virt_addr_start + base <=0xffffffff)
+    {
+      PEVersion(file, off - virt_addr_start + base, len, file_recovery);
+      return 0;
+    }
+  }
+  return 1;
 }
 
 /*@
@@ -555,51 +604,12 @@ static void pe_resource_language(FILE *file, const unsigned int base, const unsi
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)rsrc_entries, count * sizeof(struct rsrc_entries_s));
 #endif
-  /*@
-    @ loop invariant 0 <= i <= count;
-    @ loop variant count - i;
-    @*/
   for(i=0; i<count; i++)
   {
     const struct rsrc_entries_s *rsrc_entry=&rsrc_entries[i];
-#ifdef DEBUG_EXE
-    log_info("resource lang=%u, %x, offset %u\n",
-	le32(rsrc_entry->Type),
-	le32(rsrc_entry->Pos),
-	base + (le32(rsrc_entry->Pos) & 0x7fffffff));
-#endif
+    int res=pe_resource_language_aux(file, base, pe_sections, nbr_sections, file_recovery, rsrc_entry);
+    if(res <= 0)
     {
-      struct rsrc_offlen buffer;
-      uint64_t off;
-      unsigned int len;
-      unsigned int j;
-      if(fseek(file, base + (le32(rsrc_entry->Pos) & 0x7fffffff), SEEK_SET)<0)
-      {
-	free(rsrc_entries);
-	return ;
-      }
-      if(fread(&buffer, 1, sizeof(buffer), file) != sizeof(buffer))
-      {
-	free(rsrc_entries);
-	return ;
-      }
-#if defined(__FRAMAC__)
-      Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
-#endif
-      off=le32(buffer.off);
-      len=le32(buffer.len);
-      /*TODO: loop invariant 0 <= j <= nbr_sections; */
-      for(j=0; j<nbr_sections; j++)
-      {
-	const struct pe_image_section_hdr *pe_section=&pe_sections[j];
-	if(le32(pe_section->VirtualAddress) <= off
-	    && off < (uint64_t)le32(pe_section->VirtualAddress) + le32(pe_section->SizeOfRawData))
-	{
-	  PEVersion(file, off - le32(pe_section->VirtualAddress) + base, len, file_recovery);
-	  free(rsrc_entries);
-	  return ;
-	}
-      }
       free(rsrc_entries);
       return ;
     }
@@ -877,6 +887,7 @@ static void register_header_check_exe(file_stat_t *file_stat)
 #define BLOCKSIZE 65536u
 int main()
 {
+  const char fn[] = "recup_dir.1/f0000000.exe";
   unsigned char buffer[BLOCKSIZE];
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
@@ -904,7 +915,9 @@ int main()
   file_hint_exe.register_header_check(&file_stats);
   if(header_check_exe(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
-  strcpy(file_recovery_new.filename, "recup_dir.1/f0000000.exe");
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
+  /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.extension == file_hint_exe.extension || file_recovery_new.extension == extension_dll;	*/
   file_recovery_new.file_stat=&file_stats;
@@ -941,7 +954,7 @@ int main()
   }
   if(file_recovery_new.file_check!=NULL)
   {
-    file_recovery_new.handle=fopen("demo", "rb");
+    file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
     {
       (file_recovery_new.file_check)(&file_recovery_new);
