@@ -251,6 +251,7 @@ void header_ignored(const file_recovery_t *file_recovery_new);
 /*@
   @ requires \valid_read(file_recovery);
   @ requires \valid_read(file_recovery_new);
+  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ requires \initialized(&file_recovery->file_check);
   @ requires \initialized(&file_recovery->handle);
   @ ensures \result == 0 || \result == 1;

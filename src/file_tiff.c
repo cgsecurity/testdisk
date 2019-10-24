@@ -38,6 +38,9 @@
 #include "common.h"
 #include "file_tiff.h"
 #include "log.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static void register_header_check_tiff(file_stat_t *file_stat);
 
@@ -138,10 +141,14 @@ const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int
 {
   if(tiff_size < sizeof(TIFFHeader))
     return NULL;
+#ifndef MAIN_tiff_le
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
     return find_tag_from_tiff_header_be(tiff, tiff_size, tag, potential_error);
-  else if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
+#endif
+#ifndef MAIN_tiff_be
+  if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
     return find_tag_from_tiff_header_le(tiff, tiff_size, tag, potential_error);
+#endif
   return NULL;
 }
 
@@ -165,43 +172,10 @@ static void register_header_check_tiff(file_stat_t *file_stat)
 {
   static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
   static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
+#ifndef MAIN_tiff_le
   register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff_be, file_stat);
-  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le, file_stat);
-}
-
-void file_check_tiff(file_recovery_t *fr)
-{
-  static uint64_t calculated_file_size=0;
-  TIFFHeader header;
-  calculated_file_size = 0;
-  if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
-      fread(&header, sizeof(TIFFHeader), 1, fr->handle) != 1)
-  {
-    fr->file_size=0;
-    return;
-  }
-  if(header.tiff_magic==TIFF_LITTLEENDIAN)
-    calculated_file_size=file_check_tiff_le(fr, le32(header.tiff_diroff), 0, 0);
-  else if(header.tiff_magic==TIFF_BIGENDIAN)
-    calculated_file_size=file_check_tiff_be(fr, be32(header.tiff_diroff), 0, 0);
-#ifdef DEBUG_TIFF
-  log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
-  log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
 #endif
-  if(fr->file_size < calculated_file_size || calculated_file_size==0 || calculated_file_size==TIFF_ERROR)
-    fr->file_size=0;
-    /* PhotoRec isn't yet capable to find the correct filesize for
-     * Sony arw and dng,
-     * Panasonic raw/rw2,
-     * Minolta tif
-     * Sony sr2
-     * so don't truncate them */
-  else if(strcmp(fr->extension,"cr2")==0 ||
-      strcmp(fr->extension,"dcr")==0 ||
-      strcmp(fr->extension,"nef")==0 ||
-      strcmp(fr->extension,"orf")==0 ||
-      strcmp(fr->extension,"pef")==0 ||
-      (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
-      strcmp(fr->extension,"wdp")==0)
-    fr->file_size=calculated_file_size;
+#ifndef MAIN_tiff_be
+  register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le, file_stat);
+#endif
 }

@@ -42,8 +42,16 @@
 #include "__fc_builtin.h"
 #endif
 
+#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
 extern const file_hint_t file_hint_jpg;
+#endif
+extern const file_hint_t file_hint_tiff;
+static const char *extension_dcr="dcr";
+static const char *extension_dng="dng";
+static const char *extension_nef="nef";
+static const char *extension_pef="pef";
 
+#ifndef MAIN_tiff_le
 /*@
   @ requires \valid_read((const unsigned char*)tiff+(0..tiff_size-1));
   @ requires \valid(potential_error);
@@ -143,14 +151,22 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
       be16(entry_strip_bytecounts->tdir_type)!=4)
     return TIFF_ERROR;
   /*@ assert 0 < nbr <= 2048; */
+#ifdef __FRAMAC__
+  offsetp=(uint32_t *)MALLOC(2048*sizeof(*offsetp));
+#else
   offsetp=(uint32_t *)MALLOC(nbr*sizeof(*offsetp));
+#endif
   if(fseek(handle, be32(entry_strip_offsets->tdir_offset), SEEK_SET) < 0 ||
       fread(offsetp, sizeof(*offsetp), nbr, handle) != nbr)
   {
     free(offsetp);
     return TIFF_ERROR;
   }
+#ifdef __FRAMAC__
+  sizep=(uint32_t *)MALLOC(2048*sizeof(*sizep));
+#else
   sizep=(uint32_t *)MALLOC(nbr*sizeof(*sizep));
+#endif
   if(fseek(handle, be32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
       fread(sizep, sizeof(*sizep), nbr, handle) != nbr)
   {
@@ -158,9 +174,13 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
     free(sizep);
     return TIFF_ERROR;
   }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)offsetp, nbr*sizeof(*offsetp));
+  Frama_C_make_unknown((char *)sizep, nbr*sizeof(*sizep));
+#endif
   for(i=0; i<nbr; i++)
   {
-    const uint64_t tmp=be32(offsetp[i]) + be32(sizep[i]);
+    const uint64_t tmp=(uint64_t)be32(offsetp[i]) + be32(sizep[i]);
     if(max_offset < tmp)
       max_offset=tmp;
   }
@@ -217,6 +237,9 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
     return TIFF_ERROR;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)buffer, sizeof(buffer));
+#endif
   /*@ assert 2 <= data_read <= sizeof(buffer); */
   if( memcmp(buffer, sign_nikon1, sizeof(sign_nikon1))==0 ||
       memcmp(buffer, sign_nikon2, sizeof(sign_nikon2))==0 ||
@@ -289,7 +312,15 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
 }
 #endif
 
-uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
+#ifndef MAIN_tiff_le
+/*@
+  @ requires \valid(fr);
+  @ requires \valid(fr->handle);
+  @ requires \valid_read(&fr->extension);
+  @ requires valid_read_string(fr->extension);
+  @
+ */
+static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
 {
   unsigned char buffer[8192];
   unsigned int i,n;
@@ -313,7 +344,7 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
   const TIFFDirEntry *entry_tile_offsets=NULL;
   const TIFFDirEntry *entry_tile_bytecounts=NULL;
 #ifdef DEBUG_TIFF
-  log_info("file_check_tiff_be(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
+  log_info("file_check_tiff_be_aux(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
 #endif
   if(depth>4)
     return TIFF_ERROR;
@@ -334,13 +365,13 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
   /*@ assert 2 <= data_read <= sizeof(buffer); */
   n=(buffer[0]<<8)+buffer[1];
 #ifdef DEBUG_TIFF
-  log_info("file_check_tiff_be(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
+  log_info("file_check_tiff_be_aux(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
   if(n==0)
     return TIFF_ERROR;
   /*@ assert sizeof(TIFFDirEntry)==12; */
   /*@
-    @ loop invariant 0 <= i <=n && i < (data_read-2)/12;
+    @ loop invariant 0 <= i <=n && i <= (data_read-2)/12;
     @ loop variant n-i;
     @*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
@@ -348,8 +379,9 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
     const TIFFDirEntry *entry=&entries[i];
     /*@ assert 0 <= i < n; */
     /*@ assert \valid_read(entry); */
+    const unsigned int tdir_count=be32(entry->tdir_count);
     const unsigned int tdir_tag=be16(entry->tdir_tag);
-    const uint64_t val=(uint64_t)be32(entry->tdir_count) * tiff_type2size(be16(entry->tdir_type));
+    const uint64_t val=(uint64_t)tdir_count * tiff_type2size(be16(entry->tdir_type));
 #ifdef DEBUG_TIFF
     log_info("%u tag=%u(0x%x) %s type=%u count=%lu offset=%lu(0x%lx) val=%lu\n",
 	i,
@@ -357,7 +389,7 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 	tdir_tag,
 	tag_name(tdir_tag),
 	be16(entry->tdir_type),
-	(long unsigned)be32(entry->tdir_count),
+	(long unsigned)tdir_count,
 	(long unsigned)be32(entry->tdir_offset),
 	(long unsigned)be32(entry->tdir_offset),
 	(long unsigned)val);
@@ -379,7 +411,7 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
-    if(be32(entry->tdir_count)==1 && val<=4)
+    if(tdir_count==1 && val<=4)
     {
       const unsigned int tmp=tiff_be_read(&entry->tdir_offset, be16(entry->tdir_type));
       switch(tdir_tag)
@@ -396,22 +428,26 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 	case TIFFTAG_TILEOFFSETS:	tile_offsets=tmp;	break;
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
+#ifndef __FRAMAC__
 	  {
-	    const uint64_t new_offset=file_check_tiff_be(fr, tmp, depth+1, 0);
+	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
+#endif
 	  break;
 	case TIFFTAG_SUBIFD:
+#ifndef __FRAMAC__
 	  {
-	    const uint64_t new_offset=file_check_tiff_be(fr, tmp, depth+1, 0);
+	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
+#endif
 	  break;
 #ifdef ENABLE_TIFF_MAKERNOTE
 	case EXIFTAG_MAKERNOTE:
@@ -426,9 +462,9 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 #endif
       }
     }
-    else if(be32(entry->tdir_count) > 1)
+    else if(tdir_count > 1)
     {
-      /*@ assert le32(entry->tdir_count) > 1; */
+      /*@ assert tdir_count > 1; */
       switch(tdir_tag)
       {
 	case TIFFTAG_EXIFIFD:
@@ -436,7 +472,7 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 	case TIFFTAG_SUBIFD:
 	  if(be16(entry->tdir_type)==4)
 	  {
-	    const unsigned int nbr=(be32(entry->tdir_count)<32?be32(entry->tdir_count):32);
+	    const unsigned int nbr=(tdir_count<32?tdir_count:32);
 	    /*@ assert 2 <= nbr <= 32; */
 	    uint32_t subifd_offsetp[32];
 	    unsigned int j;
@@ -451,13 +487,14 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 #if defined(__FRAMAC__)
 	    Frama_C_make_unknown((char *)&subifd_offsetp, sizeof(subifd_offsetp));
 #endif
+#ifndef __FRAMAC__
 	    /*@
 	      @ loop invariant 0 <= j <= nbr <=32;
 	      @ loop variant nbr-j;
 	      @*/
 	    for(j=0; j<nbr; j++)
 	    {
-	      const uint64_t new_offset=file_check_tiff_be(fr, be32(subifd_offsetp[j]), depth+1, 0);
+	      const uint64_t new_offset=file_check_tiff_be_aux(fr, be32(subifd_offsetp[j]), depth+1, 0);
 	      if(new_offset==TIFF_ERROR)
 	      {
 		return TIFF_ERROR;
@@ -465,6 +502,7 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
 	    }
+#endif
 	  }
 	  break;
 	case TIFFTAG_STRIPOFFSETS:
@@ -511,38 +549,94 @@ uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, con
     if(max_offset < tmp)
       max_offset=tmp;
   }
+#ifndef __FRAMAC__
   if ( 2 + n*12 + 4 <= (unsigned int)data_read)
   {
     /*@ assert n <= (data_read - 6) /12; */
     const uint32_t *tiff_next_diroff=(const uint32_t *)&entries[n];
     if(be32(*tiff_next_diroff) > 0)
     {
-      const uint64_t new_offset=file_check_tiff_be(fr, be32(*tiff_next_diroff), depth+1, count+1);
+      const uint64_t new_offset=file_check_tiff_be_aux(fr, be32(*tiff_next_diroff), depth+1, count+1);
       if(new_offset != TIFF_ERROR && max_offset < new_offset)
 	max_offset=new_offset;
     }
   }
+#endif
   return max_offset;
 }
 
+/*@
+  @ requires \valid(fr);
+  @ requires \valid(fr->handle);
+  @ requires \valid_read(&fr->extension);
+  @ requires valid_read_string(fr->extension);
+  @*/
+static void file_check_tiff_be(file_recovery_t *fr)
+{
+  static uint64_t calculated_file_size=0;
+  TIFFHeader header;
+  calculated_file_size = 0;
+  if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
+      fread(&header, sizeof(TIFFHeader), 1, fr->handle) != 1)
+  {
+    fr->file_size=0;
+    return;
+  }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&header, sizeof(TIFFHeader));
+#endif
+  if(header.tiff_magic==TIFF_BIGENDIAN)
+    calculated_file_size=file_check_tiff_be_aux(fr, be32(header.tiff_diroff), 0, 0);
+#ifdef DEBUG_TIFF
+  log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
+  log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
+#endif
+  if(fr->file_size < calculated_file_size || calculated_file_size==0 || calculated_file_size==TIFF_ERROR)
+    fr->file_size=0;
+    /* PhotoRec isn't yet capable to find the correct filesize for
+     * Sony arw and dng,
+     * Panasonic raw/rw2,
+     * Minolta tif
+     * Sony sr2
+     * so don't truncate them */
+  else if(strcmp(fr->extension,"cr2")==0 ||
+      strcmp(fr->extension,"dcr")==0 ||
+      strcmp(fr->extension,"nef")==0 ||
+      strcmp(fr->extension,"orf")==0 ||
+      strcmp(fr->extension,"pef")==0 ||
+      (strcmp(fr->extension,"tif")==0 && calculated_file_size>1024*1024*1024) ||
+      strcmp(fr->extension,"wdp")==0)
+    fr->file_size=calculated_file_size;
+}
+#endif
+
+/*@
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_tiff.extension ||
+				file_recovery_new->extension == extension_dcr ||
+				file_recovery_new->extension == extension_dng ||
+				file_recovery_new->extension == extension_nef ||
+				file_recovery_new->extension == extension_pef);
+  @*/
 int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const char *potential_error=NULL;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
   if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
+#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)
       return 0;
   }
+#endif
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension="tif";
+  file_recovery_new->extension=file_hint_tiff.extension;
   if(find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
   {
     /* Adobe Digital Negative, ie. PENTAX K-30 */
-    file_recovery_new->extension="dng";
+    file_recovery_new->extension=extension_dng;
   }
   else
   {
@@ -552,14 +646,15 @@ int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_
     {
       if( memcmp(tag_make, "PENTAX Corporation ", 20)==0 ||
 	  memcmp(tag_make, "PENTAX             ", 20)==0)
-	file_recovery_new->extension="pef";
+	file_recovery_new->extension=extension_pef;
       else if(memcmp(tag_make, "NIKON CORPORATION", 18)==0)
-	file_recovery_new->extension="nef";
+	file_recovery_new->extension=extension_nef;
       else if(memcmp(tag_make, "Kodak", 6)==0)
-	file_recovery_new->extension="dcr";
+	file_recovery_new->extension=extension_dcr;
     }
   }
   file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
-  file_recovery_new->file_check=&file_check_tiff;
+  file_recovery_new->file_check=&file_check_tiff_be;
   return 1;
 }
+#endif

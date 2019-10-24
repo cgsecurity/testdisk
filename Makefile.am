@@ -80,6 +80,10 @@ extras:
 extrasstatic:
 	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)" extras
 
+session_tiff_be.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c src/common.c src/filegen.c src/log.c
+	gcc -W -Wall -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
+
 session_tiff_le.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I. $^
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
@@ -98,5 +102,8 @@ session_%.framac: src/file_%.c src/common.c src/filegen.c src/log.c
 
 frama-c-%: session_%.framac
 	frama-c-gui -load $^
+
+cppcheck:
+	cppcheck --quiet --enable=all -DHAVE_CONFIG_H -I$(builddir) -I/usr/include $(srcdir)/src
 
 DISTCLEANFILES = *~ core

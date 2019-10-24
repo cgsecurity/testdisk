@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #define TIFF_ERROR 0xffffffffffffffffull
 
 #define TIFF_BIGENDIAN          	0x4d4d
@@ -78,18 +79,7 @@ time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff
   @*/
 const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error);
 
-/*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @*/
-void file_check_tiff(file_recovery_t *file_recovery);
-
-/*@
-  @ requires tiff_size >= sizeof(TIFFHeader);
-  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
-  @ requires \valid(potential_error);
-  @*/
-const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+#ifndef MAIN_tiff_be
 /*@
   @ requires tiff_size >= sizeof(TIFFHeader);
   @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
@@ -101,31 +91,45 @@ const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned 
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
-  @ requires \initialized(&fr->extension);
-  @
- */
-uint64_t file_check_tiff_be(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
+  @ requires valid_read_string(fr->extension);
+  @*/
+void file_check_tiff_le(file_recovery_t *fr);
 
 /*@
-  @ requires \valid(fr);
-  @ requires \valid(fr->handle);
-  @ requires \valid_read(&fr->extension);
-  @ requires \initialized(&fr->extension);
-  @
- */
-uint64_t file_check_tiff_le(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
-
-/*@
+  @ requires buffer_size >= 15;
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @
- */
-int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-
-/*@
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @
- */
+  @ requires \valid_read(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_le);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
+  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
+  @*/
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+#endif
+
+#ifndef MAIN_tiff_le
+/*@
+  @ requires tiff_size >= sizeof(TIFFHeader);
+  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
+  @ requires \valid(potential_error);
+  @*/
+const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+
+/*@
+  @ requires buffer_size >= 15;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_be);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
+  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
+  @*/
+int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
+#endif
 
 unsigned int tiff_type2size(const unsigned int type);
 #ifdef DEBUG_TIFF
