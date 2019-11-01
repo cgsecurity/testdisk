@@ -120,7 +120,7 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_m2ts &&
       (file_recovery->data_check==&data_check_ts_192 ||
-       file_recovery->blocksize < 5))
+       file_recovery_new->blocksize < 5))
   {
     header_ignored(file_recovery_new);
     return 0;

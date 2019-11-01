@@ -912,7 +912,7 @@ int main()
   file_stats.file_hint=&file_hint_exe;
   file_stats.not_recovered=0;
   file_stats.recovered=0;
-  file_hint_exe.register_header_check(&file_stats);
+  register_header_check_exe(&file_stats);
   if(header_check_exe(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
   /*@ assert valid_read_string((char *)&fn); */

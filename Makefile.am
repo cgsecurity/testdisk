@@ -80,6 +80,18 @@ extras:
 extrasstatic:
 	$(MAKE) LDFLAGS="$(LDFLAGS) -static" LIBS="$(PTHREAD_LIBS) $(LIBS)" CFLAGS="$(PTHREAD_CFLAGS) $(CFLAGS)" CXXFLAGS="$(PTHREAD_CFLAGS) $(CXXFLAGS)" extras
 
+session_doc.framac: src/file_doc.c src/common.c src/filegen.c src/log.c src/setdate.c
+	gcc -W -Wall -DMAIN_doc -DHAVE_CONFIG_H -O -o demo -I. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
+
+session_id3.framac: src/file_mp3.c src/common.c src/filegen.c src/log.c
+	gcc -W -Wall -DMAIN_id3 -DHAVE_CONFIG_H -O -o demo -I. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_id3 -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
+
+session_jpg.framac: src/file_jpg.c src/common.c src/filegen.c src/log.c src/suspend_no.c src/setdate.c
+	gcc -W -Wall -DMAIN_jpg -DHAVE_CONFIG_H -O -o demo -I. $^ -ljpeg
+	frama-c $^ -cpp-extra-args="-DMAIN_jpg -DHAVE_CONFIG_H -D__x86_64__ -I/usr/include -I $(frama-c -print-path)/libc" $(FRAMA_C_FLAGS) -save $@
+
 session_tiff_be.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I. $^
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
@@ -87,14 +99,6 @@ session_tiff_be.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c sr
 session_tiff_le.framac: src/file_tiff.c src/file_tiff_be.c src/file_tiff_le.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I. $^
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
-
-session_id3.framac: src/file_mp3.c src/common.c src/filegen.c src/log.c
-	gcc -W -Wall -DMAIN_id3 -DHAVE_CONFIG_H -O -o demo -I. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_id3 -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
-
-session_doc.framac: src/file_doc.c src/common.c src/filegen.c src/log.c src/setdate.c
-	gcc -W -Wall -DMAIN_doc -DHAVE_CONFIG_H -O -o demo -I. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -D__x86_64__" $(FRAMA_C_FLAGS) -save $@
 
 session_%.framac: src/file_%.c src/common.c src/filegen.c src/log.c
 	gcc -W -Wall -DMAIN_$* -DHAVE_CONFIG_H -O -o demo -I. $^

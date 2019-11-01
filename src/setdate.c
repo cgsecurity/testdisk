@@ -49,10 +49,12 @@ int set_date(const char *pathname, time_t actime, time_t modtime)
     return -1;
   ut.actime  = actime;
   ut.modtime = modtime;
+#ifndef __FRAMAC__
   if (utime(pathname, &ut)) {
     log_error("ERROR: Couldn't set the file's date and time for %s\n", pathname);
     return -1;
   }
+#endif
 #endif
   return 0;
 }
