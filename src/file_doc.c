@@ -44,10 +44,6 @@
 #endif
 
 static void register_header_check_doc(file_stat_t *file_stat);
-static void file_check_doc(file_recovery_t *file_recovery);
-static void file_rename_doc(file_recovery_t *file_recovery);
-static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset);
-static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries, const uint64_t offset);
 
 const file_hint_t file_hint_doc= {
   .extension="doc",
@@ -58,6 +54,45 @@ const file_hint_t file_hint_doc= {
   .register_header_check=&register_header_check_doc
 };
 
+static const char *extension_albm="albm";
+static const char *extension_amb="amb";
+static const char *extension_apr="apr";
+static const char *extension_camrec="camrec";
+static const char *extension_db="db";
+static const char *extension_dgn="dgn";
+static const char *extension_emb="emb";
+static const char *extension_et="et";
+static const char *extension_fla="fla";
+static const char *extension_ipt="ipt";
+static const char *extension_jnb="jnb";
+static const char *extension_max="max";
+static const char *extension_mdb="mdb";
+static const char *extension_mws="mws";
+static const char *extension_msg="msg";
+static const char *extension_p65="p65";
+static const char *extension_ppt="ppt";
+static const char *extension_psmodel="psmodel";
+static const char *extension_pub="pub";
+static const char *extension_qbb="qbb";
+static const char *extension_qdf_backup="qdf-backup";
+static const char *extension_qpw="qpw";
+static const char *extension_rvt="rvt";
+static const char *extension_sda="sda";
+static const char *extension_sdc="sdc";
+static const char *extension_sdd="sdd";
+static const char *extension_sdw="sdw";
+#ifdef DJGPP
+static const char *extension_sldprt="sld";
+#else
+static const char *extension_sldprt="sldprt";
+#endif
+static const char *extension_snt="snt";
+static const char *extension_tcw="tcw";
+static const char *extension_vsd="vsd";
+static const char *extension_wps="wps";
+static const char *extension_xlr="xlr";
+static const char *extension_xls="xls";
+static const char *extension_wdb="wdb";
 
 const char WilcomDesignInformationDDD[56]=
 {
@@ -76,58 +111,150 @@ const char WilcomDesignInformationDDD[56]=
   @ requires \valid( buf + (0 .. (1<<uSectorShift)-1));
   @ ensures \result == -1 || \result == 0;
   @*/
+/* TODO: ensures \result == 0 ==> \initialized(buf + (0 .. (1<<uSectorShift)-1)); */
 static int OLE_read_block(FILE *IN, unsigned char *buf, const unsigned int uSectorShift, const unsigned int block, const uint64_t offset)
 {
+  const size_t size=1<<uSectorShift;
   if(block==0xFFFFFFFF || block==0xFFFFFFFE)
     return -1;
   if(my_fseek(IN, offset + ((uint64_t)(1+block)<<uSectorShift), SEEK_SET) < 0)
   {
     return -1;
   }
-  if(fread(buf, 1<<uSectorShift, 1, IN)!=1)
+  if(fread(buf, size, 1, IN)!=1)
   {
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)buf, 1<<uSectorShift);
+  Frama_C_make_unknown((char *)buf, size);
 #endif
+  /* TODO: assert \initialized((char *)buf + (0 .. size-1)); */
   return 0;
 }
 
 /*@
-  @ requires buffer_size >= sizeof(struct OLE_HDR);
-  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ requires \valid_read(dir_entry);
+  @ ensures \result == \null || valid_read_string(\result);
   @*/
-static const char *ole_get_file_extension(const unsigned char *buffer, const unsigned int buffer_size)
+static const char *entry2ext(const struct OLE_DIR *dir_entry)
 {
-  const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
-  const uint32_t *fat;
+  switch(le16(dir_entry->namsiz))
+  {
+    case 10:
+      if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
+	return extension_qdf_backup;
+      break;
+    case 12:
+      /* 3ds max */
+      if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
+	return extension_max;
+      /* Licom AlphaCAM */
+      else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
+	return extension_amb;
+      break;
+    case 18:
+      /* Microsoft Works .wps */
+      if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0\0\0",18)==0)
+	return extension_wps;
+      break;
+    case 20:
+      /* Page Maker */
+      if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0\0\0", 20)==0)
+	return extension_p65;
+      break;
+    case 22:
+      /* SigmaPlot .jnb */
+      if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0\0", 22)==0)
+	return extension_jnb;
+      /* Autodesk Inventor part ipt or iam file */
+      if(memcmp(dir_entry->name, "R\0S\0e\0S\0t\0o\0r\0a\0g\0e\0\0\0", 22)==0)
+	return extension_ipt;
+      break;
+    case 24:
+      /* HP Photosmart Photo Printing Album */
+      if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
+	return extension_albm;
+      /* Lotus Approch */
+      if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
+	return extension_apr;
+      break;
+    case 28:
+      /* Microsoft Works Spreadsheet or Chart */
+      if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0\0\0",28)==0)
+	return extension_xlr;
+      /* Visio */
+      else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",28)==0)
+	return extension_vsd;
+      /* SolidWorks */
+      else if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0\0\0",28)==0)
+	return extension_sldprt;
+      break;
+    case 32:
+      if(memcmp(dir_entry->name, "m\0a\0n\0i\0f\0e\0s\0t\0.\0c\0a\0m\0x\0m\0l\0\0\0",32)==0)
+	return extension_camrec;
+      /* Revit */
+      if(memcmp(dir_entry->name, "R\0e\0v\0i\0t\0P\0r\0e\0v\0i\0e\0w\0004\0.\0000\0\0", 32)==0)
+	return extension_rvt;
+      break;
+    case 34:
+      if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
+	return extension_sdc;
+      break;
+    case 36:
+      if(memcmp(dir_entry->name, "f\0i\0l\0e\0_\0C\0O\0M\0P\0A\0N\0Y\0_\0F\0I\0L\0E\0\0\0", 36)==0)
+	return extension_qbb;
+      break;
+    case 38:
+      /* Quattro Pro spreadsheet */
+      if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0\0\0", 38)==0)
+	return extension_qpw;
+      else if(memcmp(dir_entry->name, "S\0t\0a\0r\0W\0r\0i\0t\0e\0r\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 38)==0)
+	return extension_sdw;
+      break;
+    case 40:
+      if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
+	return extension_ppt;
+      /* Outlook */
+      else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0\0\0",40)==0)
+	return extension_msg;
+      break;
+    case 46:
+      if(memcmp(dir_entry->name,
+	    "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0\0\0", 46)==0)
+      {
+	return extension_sldprt;
+      }
+      break;
+    case 56:
+      /* Wilcom ES Software */
+      if(memcmp(dir_entry->name, WilcomDesignInformationDDD, 56)==0)
+	return extension_emb;
+      break;
+  }
+  return NULL;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(struct OLE_HDR);
+  @ requires \valid_read((char *)header + (0 .. buffer_size-1));
+  @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
+  @ requires le32(header->num_FAT_blocks)>0;
+  @ requires 0 <= le32(header->num_extra_FAT_blocks) <= 50;
+  @ ensures \result == \null || valid_read_string(\result);
+  @*/
+static const char *ole_get_file_extension(const struct OLE_HDR *header, const unsigned int buffer_size)
+{
+  const unsigned char *buffer=(const unsigned char *)header;
   unsigned int fat_entries;
   unsigned int block;
   unsigned int i;
-  /*@ assert 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift); */
-  /*@ assert le32(header->num_FAT_blocks)>0; */
   const unsigned int uSectorShift=le16(header->uSectorShift);
+  unsigned int fat_size;
   if(buffer_size<512)
     return NULL;
   /*@ assert buffer_size >= 512; */
-  {
-    const uint32_t *fati=(const uint32_t *)(header+1);
-    const uint64_t fat_offset=((uint64_t)1+le32(fati[0])) << uSectorShift;
-    unsigned int fat_size;
-    if(fat_offset > buffer_size)
-      return NULL;
-    /*@ assert 0 < fat_offset <= buffer_size; */
-    fat=(const uint32_t *)&buffer[fat_offset];
-    fat_size=(le32(header->num_FAT_blocks) << uSectorShift);
-    if(fat_offset + fat_size > buffer_size)
-    {
-      /*@ assert fat_offset + fat_size <= buffer_size; */
-      fat_size=buffer_size - fat_offset;
-    }
-    fat_entries=fat_size>>2;
-    /*@ assert \valid_read(fat + (0 .. fat_entries-1)); */
-  }
+  fat_size=(le32(header->num_FAT_blocks) << uSectorShift);
+  fat_entries=fat_size/4;
   /* FFFFFFFE = ENDOFCHAIN
    * Use a loop count i to avoid endless loop */
 #ifdef DEBUG_OLE
@@ -135,7 +262,7 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 #endif
   for(block=le32(header->root_start_block), i=0;
       block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
-      block=le32(fat[block]), i++)
+      i++)
   {
     const uint64_t offset_root_dir=((uint64_t)1+block)<<uSectorShift;
 #ifdef DEBUG_OLE
@@ -174,6 +301,12 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	      (unsigned int)le32(dir_entry->size));
 	}
 #endif
+	{
+	  const char *tmp=entry2ext(dir_entry);
+	  /*@ assert tmp == \null || valid_read_string(tmp); */
+	  if(tmp!=NULL)
+	    return tmp;
+	}
 	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 	  is_db=1;
 	else if(is_db==1 && sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
@@ -181,117 +314,44 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 	  is_db=2;
 	switch(le16(dir_entry->namsiz))
 	{
-	  case 10:
-	    if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
-	      return "qdf-backup";
-	    break;
-	  case 12:
-	    /* 3ds max */
-	    if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
-	      return "max";
-	    /* Licom AlphaCAM */
-	    else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
-	      return "amb";
-	    break;
 	  case 18:
 	    /* MS Excel
 	     * Note: Microsoft Works Spreadsheet contains the same signature */
 	    if(memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0\0\0",18)==0)
-	      ext="xls";
-	    /* Microsoft Works .wps */
-	    else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0\0\0",18)==0)
-	      return "wps";
-	    break;
-	  case 20:
-	    /* Page Maker */
-	    if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0\0\0", 20)==0)
-	      return "p65";
-	    break;
-	  case 22:
-	    /* SigmaPlot .jnb */
-	    if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0\0", 22)==0)
-	      return "jnb";
-	    /* Autodesk Inventor part ipt or iam file */
-	    if(memcmp(dir_entry->name, "R\0S\0e\0S\0t\0o\0r\0a\0g\0e\0\0\0", 22)==0)
-	      return "ipt";
-	    break;
-	  case 24:
-	    /* HP Photosmart Photo Printing Album */
-	    if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
-	      return "albm";
-	    /* Lotus Approch */
-	    if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
-	      return "apr";
-	    break;
-	  case 28:
-	    /* Microsoft Works Spreadsheet or Chart */
-	    if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0\0\0",28)==0)
-	      return "xlr";
-	    /* Visio */
-	    else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",28)==0)
-	      return "vsd";
-	/* SolidWorks */
-	    else if(memcmp(&dir_entry->name,"s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0\0\0",28)==0)
-	    {
-#ifdef DJGPP
-	      return "sld";
-#else
-	      return "sldprt";
-#endif
-	    }
-	    break;
-	  case 32:
-	    /* Revit */
-	    if(memcmp(dir_entry->name, "R\0e\0v\0i\0t\0P\0r\0e\0v\0i\0e\0w\0004\0.\0000\0\0", 32)==0)
-	      return "rvt";
-	    break;
-	  case 34:
-	    if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
-	      return "sdc";
+	      ext=extension_xls;
 	    break;
 	  case 36:
+	    /* sda=StarDraw, sdd=StarImpress */
 	    if(memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
-	      return "sda";
-	    break;
-	  case 38:
-	    /* Quattro Pro spreadsheet */
-	    if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0\0\0", 38)==0)
-	      return "qpw";
-	    else if(memcmp(dir_entry->name, "S\0t\0a\0r\0W\0r\0i\0t\0e\0r\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 38)==0)
-	      return "sdw";
-	    break;
-	  case 40:
-	    if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
-	      return "ppt";
-	    /* Outlook */
-	    else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0\0\0",40)==0)
-	      return "msg";
-	    break;
-	  case 46:
-	    if(memcmp(dir_entry->name,
-		  "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0\0\0", 46)==0)
-	    {
-#ifdef DJGPP
-	      return "sld";
-#else
-	      return "sldprt";
-#endif
-	    }
-	    break;
-	  case 56:
-	    /* Wilcom ES Software */
-	    if(memcmp(dir_entry->name, WilcomDesignInformationDDD, 56)==0)
-	      return "emb";
+	      return extension_sda;
 	    break;
 	}
 	if(sid==1 && memcmp(&dir_entry->name, "D\0g\0n", 6)==0)
-	  return "dgn";
+	  return extension_dgn;
       }
       if(ext!=NULL)
+      {
+	/*@ assert ext == extension_xls; */
 	return ext;
+      }
       /* Thumbs.db */
       if(is_db==2)
-	return "db";
+	return extension_db;
+    }
+    {
+      const uint32_t *fati=(const uint32_t *)(header+1);
+      const uint64_t fat_offset=((uint64_t)1+le32(fati[0])) << uSectorShift;
+      unsigned int fat_test_size;
+      const uint32_t *val32_ptr;
+      if(fat_offset >= buffer_size)
+	return NULL;
+      /*@ assert 0 < fat_offset < buffer_size; */
+      fat_test_size=fat_offset+block*4;
+      if(fat_test_size + 4 > buffer_size)
+	return NULL;
+      /*@ assert fat_test_size + 4 <= buffer_size; */
+      val32_ptr=(const uint32_t *)&buffer[fat_test_size];
+      block=le32(*val32_ptr);
     }
   }
 #ifdef DEBUG_OLE
@@ -299,6 +359,71 @@ static const char *ole_get_file_extension(const unsigned char *buffer, const uns
 #endif
   return NULL;
 }
+
+/*@
+  @ requires \valid(IN);
+  @ requires \valid_read(header);
+  @ requires le32(header->num_FAT_blocks) > 0;
+  @ requires 0 <= le32(header->num_extra_FAT_blocks)<= 50;
+  @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
+  @ requires le32(header->num_FAT_blocks) <= 109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1);
+  @ ensures \result==\null || \valid_read((const char *)\result + ( 0 .. (le32(header->num_FAT_blocks)<<le16(header->uSectorShift))-1));
+  @*/
+static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset)
+{
+  uint32_t *fat;
+  uint32_t *dif;
+  const unsigned int uSectorShift=le16(header->uSectorShift);
+  const unsigned int num_FAT_blocks=le32(header->num_FAT_blocks);
+  /*@ assert uSectorShift == le16(header->uSectorShift); */
+  /*@ assert num_FAT_blocks==le32(header->num_FAT_blocks); */
+  /*@ assert num_FAT_blocks <= 109+le32(header->num_extra_FAT_blocks)*((1<<uSectorShift)/4-1); */
+  const unsigned int dif_size=109*4+(le32(header->num_extra_FAT_blocks)<<uSectorShift);
+  /*@ assert 109*4 <= dif_size <= 109*4+(50<<12); */
+#ifdef __FRAMAC__
+  dif=(uint32_t*)MALLOC(109*4+(50<<12));
+#else
+  dif=(uint32_t*)MALLOC(dif_size);
+#endif
+  /*@ assert \valid((char *)dif+(0..dif_size-1)); */
+  memcpy(dif,(header+1),109*4);
+  if(le32(header->num_extra_FAT_blocks)>0)
+  { /* Load DIF*/
+    unsigned long int i;
+    for(i=0; i<le32(header->num_extra_FAT_blocks); i++)
+    {
+      const unsigned int block=(i==0 ? le32(header->FAT_next_block) : le32(dif[109+i*(((1<<uSectorShift)/4)-1)]));
+      unsigned char *data=(unsigned char*)&dif[109]+i*((1<<uSectorShift)-4);
+      if(OLE_read_block(IN, data, uSectorShift, block, offset) < 0)
+      {
+	free(dif);
+	return NULL;
+      }
+    }
+  }
+#ifdef __FRAMAC__
+  /*@ assert (109+50*((1<<12)/4-1))<<12 >= num_FAT_blocks<<uSectorShift; */
+  fat=(uint32_t*)MALLOC((109+50*((1<<12)/4-1))<<12);
+#else
+  fat=(uint32_t*)MALLOC(num_FAT_blocks<<uSectorShift);
+#endif
+  /*@ assert \valid((char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1)); */
+  { /* Load FAT */
+    unsigned int j;
+    for(j=0; j<num_FAT_blocks; j++)
+    {
+      if(OLE_read_block(IN, (unsigned char*)fat + (j<<uSectorShift), uSectorShift, le32(dif[j]), offset)<0)
+      {
+	free(dif);
+	free(fat);
+	return NULL;
+      }
+    }
+  }
+  free(dif);
+  return fat;
+}
+
 
 /*@
   @ requires \valid(file_recovery);
@@ -466,196 +591,6 @@ static void file_check_doc(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires buffer_size >= sizeof(struct OLE_HDR);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_doc);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_doc);
-  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
-  @*/
-static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /*@ assert file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename); */
-  const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
-  /* Check for Little Endian */
-  if(le16(header->uByteOrder)!=0xFFFE)
-    return 0;
-  if(le16(header->uDllVersion)!=3 && le16(header->uDllVersion)!=4)
-    return 0;
-  if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
-    return 0;
-  if(le16(header->uMiniSectorShift)!=6)
-    return 0;
-  if(le16(header->uDllVersion)==3 && le16(header->uSectorShift)!=9)
-    return 0;
-  /* max and qbb file have uSectorShift=12 */
-  if(le16(header->uDllVersion)==4 && le16(header->uSectorShift)!=12)
-    return 0;
-  if(le16(header->uDllVersion)==3 && le32(header->csectDir)!=0)
-    return 0;
-  /* max file have csectDir=1
-   * qbb file have csectDir=4 */
-  if(le16(header->uDllVersion)==4 && le32(header->csectDir)==0)
-    return 0;
-  /*
-     num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
-     maximum file size is 512+(num_FAT_blocks*128)*512, about 1.6GB
-     */
-  if(le32(header->num_FAT_blocks)==0 ||
-      le32(header->num_extra_FAT_blocks)>50 ||
-      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1))
-    return 0;
-  /*@ assert file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename); */
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=&file_check_doc;
-  file_recovery_new->file_rename=&file_rename_doc;
-  file_recovery_new->extension=ole_get_file_extension(buffer, buffer_size);
-  if(file_recovery_new->extension!=NULL)
-  {
-    if(strcmp(file_recovery_new->extension,"sda")==0)
-    {
-      if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
-	file_recovery_new->extension="sdd";
-    }
-    else if(strcmp(file_recovery_new->extension,"wps")==0)
-    {
-      /* Distinguish between MS Works .wps and MS Publisher .pub */
-      if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-	file_recovery_new->extension="pub";
-    }
-    return 1;
-  }
-  if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
-  {
-    file_recovery_new->extension="doc";
-  }
-  else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
-  {
-    file_recovery_new->extension="sda";
-  }
-  else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
-  {
-    file_recovery_new->extension="sdc";
-  }
-  else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
-  {
-    file_recovery_new->extension="sdd";
-  }
-  else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
-      td_memmem(buffer,buffer_size,"Book",4)!=NULL ||
-      td_memmem(buffer,buffer_size,"Workbook",8)!=NULL ||
-      td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
-  {
-    file_recovery_new->extension="xls";
-  }
-  else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
-  {
-    file_recovery_new->extension="ppt";
-  }
-  else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
-  {
-    file_recovery_new->extension="mdb";
-  }
-  else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
-  {
-    file_recovery_new->extension="vsd";
-  }
-  else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
-  {
-    file_recovery_new->extension="sdw";
-  }
-  else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
-  {	/* Flash Project File */
-    file_recovery_new->extension="fla";
-  }
-  else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
-  { /* Publisher */
-    file_recovery_new->extension="pub";
-  }
-  else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
-      || td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
-  { /* Microsoft Works .wdb */
-    file_recovery_new->extension="wdb";
-  }
-  else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
-  { /* MetaStock */
-    file_recovery_new->extension="mws";
-  }
-  else
-    file_recovery_new->extension=file_hint_doc.extension;
-  return 1;
-}
-
-/*@
-  @ requires \valid(IN);
-  @ requires \valid_read(header);
-  @ requires le32(header->num_FAT_blocks) > 0;
-  @ requires 0 <= le32(header->num_extra_FAT_blocks)<= 50;
-  @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
-  @ requires le32(header->num_FAT_blocks) <= 109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1);
-  @ ensures \result==\null || \valid_read((const char *)\result + ( 0 .. (le32(header->num_FAT_blocks)<<le16(header->uSectorShift))-1));
-  @*/
-static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset)
-{
-  uint32_t *fat;
-  uint32_t *dif;
-  const unsigned int uSectorShift=le16(header->uSectorShift);
-  const unsigned int num_FAT_blocks=le32(header->num_FAT_blocks);
-  /*@ assert uSectorShift == le16(header->uSectorShift); */
-  /*@ assert num_FAT_blocks==le32(header->num_FAT_blocks); */
-  /*@ assert num_FAT_blocks <= 109+le32(header->num_extra_FAT_blocks)*((1<<uSectorShift)/4-1); */
-  const unsigned int dif_size=109*4+(le32(header->num_extra_FAT_blocks)<<uSectorShift);
-  /*@ assert 109*4 <= dif_size <= 109*4+(50<<12); */
-#ifdef __FRAMAC__
-  dif=(uint32_t*)MALLOC(109*4+(50<<12));
-#else
-  dif=(uint32_t*)MALLOC(dif_size);
-#endif
-  /*@ assert \valid((char *)dif+(0..dif_size-1)); */
-  memcpy(dif,(header+1),109*4);
-  if(le32(header->num_extra_FAT_blocks)>0)
-  { /* Load DIF*/
-    unsigned long int i;
-    for(i=0; i<le32(header->num_extra_FAT_blocks); i++)
-    {
-      const unsigned int block=(i==0 ? le32(header->FAT_next_block) : le32(dif[109+i*(((1<<uSectorShift)/4)-1)]));
-      unsigned char *data=(unsigned char*)&dif[109]+i*((1<<uSectorShift)-4);
-      if(OLE_read_block(IN, data, uSectorShift, block, offset) < 0)
-      {
-	free(dif);
-	return NULL;
-      }
-    }
-  }
-#ifdef __FRAMAC__
-  /*@ assert (109+50*((1<<12)/4-1))<<12 >= num_FAT_blocks<<uSectorShift; */
-  fat=(uint32_t*)MALLOC((109+50*((1<<12)/4-1))<<12);
-#else
-  fat=(uint32_t*)MALLOC(num_FAT_blocks<<uSectorShift);
-#endif
-  /*@ assert \valid((char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1)); */
-  { /* Load FAT */
-    unsigned int j;
-    for(j=0; j<num_FAT_blocks; j++)
-    {
-      if(OLE_read_block(IN, (unsigned char*)fat + (j<<uSectorShift), uSectorShift, le32(dif[j]), offset)<0)
-      {
-	free(dif);
-	free(fat);
-	return NULL;
-      }
-    }
-  }
-  free(dif);
-  return fat;
-}
-
-/*@
   @ requires \valid(IN);
   @ requires \valid_read(fat + (0 .. fat_entries-1));
   @ requires 9 == uSectorShift || 12 == uSectorShift;
@@ -738,6 +673,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
 
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 4 - 1));
+  @ requires \initialized((char *)buffer + (offset .. offset + 4 - 1));
   @*/
 static uint32_t get32u(const void *buffer, const unsigned int offset)
 {
@@ -747,6 +683,7 @@ static uint32_t get32u(const void *buffer, const unsigned int offset)
 
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 8 - 1));
+  @ requires \initialized((char *)buffer + (offset .. offset + 8 - 1));
   @*/
 static uint64_t get64u(const void *buffer, const unsigned int offset)
 {
@@ -759,60 +696,79 @@ static uint64_t get64u(const void *buffer, const unsigned int offset)
   @ requires *ext == \null || valid_read_string(*ext);
   @ requires count > 0;
   @ requires \valid_read(software + (0 .. count-1));
-  @ ensures *ext == \null || valid_read_string(*ext);
+  @ requires \initialized(software + (0 .. count-1));
+  @ ensures *ext != \null || valid_read_string(*ext);
   @*/
-static void software2ext(const char **ext, const unsigned int count, const unsigned char *software)
+static void software2ext(const char **ext, const unsigned char *software, const unsigned int count)
 {
   if(count>=12 && memcmp(software, "MicroStation", 12)==0)
   {
-    *ext="dgn";
+    *ext=extension_dgn;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
   if(count>=14 && memcmp(software, "Microsoft Word", 14)==0)
   {
-    *ext="doc";
+    *ext=file_hint_doc.extension;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
   if(count>=15 && memcmp(software, "Microsoft Excel", 15)==0)
   {
     if(*ext==NULL || strcmp(*ext,"sldprt")!=0)
-      *ext="xls";
+    {
+      *ext=extension_xls;
+      /*@ assert valid_read_string(*ext); */
+    }
     return;
   }
   if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
   {
-    *ext="ppt";
+    *ext=extension_ppt;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
   if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
   {
-    *ext="doc";
+    *ext=file_hint_doc.extension;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
   if(count==21 && memcmp(software, "TurboCAD for Windows", 21)==0)
   {
-    *ext="tcw";
+    *ext=extension_tcw;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
   if(count==22 && memcmp(software, "TurboCAD pour Windows", 22)==0)
   {
-    *ext="tcw";
+    *ext=extension_tcw;
+    /*@ assert valid_read_string(*ext); */
     return;
   }
+  /*@ assert *ext != \null || valid_read_string(*ext); */
   return ;
 }
 
 /*@
   @ requires count > 0;
   @ requires \valid_read(software + (0 .. 2*count-1));
+  @ requires \initialized(software + (0 .. 2*count-1));
+  @ ensures \result == \null || \result == extension_et || \result == extension_psmodel;
   @ ensures \result == \null || valid_read_string(\result);
   @*/
-static const char *software_uni2ext(const unsigned int count, const unsigned char *software)
+static const char *software_uni2ext(const unsigned char *software, const unsigned int count)
 {
   if(count>=15 && memcmp(software, "M\0i\0c\0r\0o\0s\0o\0f\0t\0 \0E\0x\0c\0e\0l\0", 30)==0)
-    return "et";
+  {
+    /*@ assert valid_read_string(extension_et); */
+    return extension_et;
+  }
   if(count>=17 && memcmp(software, "D\0e\0l\0c\0a\0m\0 \0P\0o\0w\0e\0r\0S\0H\0A\0P\0E\0", 34)==0)
-    return "psmodel";
+  {
+    /*@ assert valid_read_string(extension_psmodel); */
+    return extension_psmodel;
+  }
   return NULL;
 }
 
@@ -825,13 +781,200 @@ struct summary_entry
 /*@
   @ requires 8 <= size <= 1024*1024;
   @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \initialized(buffer+ (0 .. size-1));
+  @ requires \valid(ext);
+  @ requires *ext == \null || valid_read_string(*ext);
+  @ ensures  *ext == \null || valid_read_string(*ext);
+  @*/
+static void OLE_parse_software_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, const char **ext)
+{
+  if(offset >= size - 8)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    return ;
+  }
+  /*@ assert offset < size - 8; */
+  {
+    const unsigned int count=get32u(buffer, offset + 4);
+    const unsigned int offset_soft=offset + 8;
+    /*@ assert offset_soft == offset + 8; */
+    if(count == 0 || count > size)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      return ;
+    }
+    /*@ assert 0 < count <= size; */
+    if(offset_soft + count > size)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      return ;
+    }
+    /*@ assert offset_soft + count <= size; */
+#ifdef DEBUG_OLE
+    {
+      unsigned int j;
+      log_info("Software ");
+      for(j=0; j<count; j++)
+      {
+	log_info("%c", buffer[offset_soft + j]);
+      }
+      log_info("\n");
+    }
+#endif
+#ifndef MAIN_doc
+    software2ext(ext, &buffer[offset_soft], count);
+#endif
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+}
+
+/*@
+  @ requires 8 <= size <= 1024*1024;
+  @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \initialized(buffer+ (0 .. size-1));
+  @ requires \valid(ext);
+  @ requires *ext == \null || valid_read_string(*ext);
+  @ ensures  *ext == \null || valid_read_string(*ext);
+  @*/
+static void OLE_parse_uni_software_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, const char **ext)
+{
+  if(offset >= size - 8)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    return ;
+  }
+  /*@ assert offset < size - 8; */
+  {
+    const unsigned int offset8=offset + 8;
+    /*@ assert offset8 < size; */
+    const unsigned int count=get32u(buffer, offset + 4);
+    unsigned int count2;
+    if(count == 0 || count > size/2)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      return ;
+    }
+    /*@ assert 0 < count <= size/2; */
+    count2=2*count;
+    /*@ assert 0 < count2 <= size; */
+    if(count2 > size - offset8)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      return ;
+    }
+    /*@ assert count2 <= size - offset8; */
+    /*@ assert \valid_read(buffer + (0 .. size - 1)) && \initialized(buffer + (0 .. size - 1)); */
+    /*@ assert \valid_read(buffer + (0 .. offset8 + count2 - 1)); */
+#ifdef DEBUG_OLE
+    unsigned int j;
+    log_info("Software ");
+    for(j=0; j < 2 * count; j+=2)
+    {
+      log_info("%c", buffer[offset + 8 + j]);
+    }
+    log_info("\n");
+#endif
+#ifndef __FRAMAC__
+    /*@ assert \initialized(buffer + (0 .. offset8 + count2 - 1)); */
+    *ext=software_uni2ext(&buffer[offset8], count);
+#endif
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+}
+
+/*@
+  @ requires 8 <= size <= 1024*1024;
+  @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \initialized(buffer+ (0 .. size-1));
+  @ requires \valid(title);
+  @ requires *title == \null || valid_read_string(*title);
+  @ ensures  *title == \null || valid_read_string(*title);
+  @*/
+static void OLE_parse_title_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, char **title)
+{
+  if(offset + 8 > size)
+  {
+    /*@ assert *title == \null || valid_read_string(*title); */
+    return ;
+  }
+  /*@ assert offset + 8 <= size; */
+  {
+    /*@ assert \valid_read(buffer + (0 .. size - 1)); */
+    const unsigned int count=get32u(buffer, offset + 4);
+    const unsigned int offset_tmp=offset + 8;
+    char *tmp;
+    if(count <= 1 || count > size)
+    {
+      /*@ assert *title == \null || valid_read_string(*title); */
+      return ;
+    }
+    /*@ assert 1 < count <= size; */
+    if(offset_tmp + count > size)
+    {
+      /*@ assert *title == \null || valid_read_string(*title); */
+      return ;
+    }
+    /*@ assert offset_tmp + count <= size; */
+#ifndef MAIN_doc
+    tmp=(char*)MALLOC(count+1);
+    /*@ assert \valid_read(buffer + (0 .. size - 1)); */
+    /*@ assert offset_tmp + count <= size; */
+    /*@ assert \valid_read(buffer + (0 .. offset_tmp + count - 1)); */
+    /*@ assert \valid_read((char*)buffer + (0 .. offset_tmp + count - 1)); */
+    /*@ assert \valid_read((buffer + offset_tmp) + (0 .. count - 1)); */
+    /*@ assert \valid_read((buffer + offset_tmp) + (1 .. count - 1)); */
+    /*@ assert \valid_read(((char*)(buffer+offset_tmp))+(0..count-1)); */
+    /*@ assert \valid_read(((char*)(buffer+offset_tmp))+(1..count-1)); */
+    /*@ assert \valid_read((char*)(buffer + offset_tmp)); */
+    /*@ assert \valid_read((char*)(buffer + offset_tmp)) && \valid_read(((char*)(buffer+offset_tmp))+(1..count-1)); */
+    /*@ assert valid_read_or_empty((void const *)(buffer + offset_tmp), count); */
+    memcpy(tmp, &buffer[offset_tmp], count);
+    tmp[count]='\0';
+    /*@ assert valid_read_string(tmp); */
+#ifdef DEBUG_OLE
+    log_info("Title %s\n", tmp);
+#endif
+    *title=tmp;
+    /*@ assert valid_read_string(*title); */
+#endif
+  }
+  /*@ assert *title == \null || valid_read_string(*title); */
+}
+/*@
+  @ requires 8 <= size <= 1024*1024;
+  @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \initialized(buffer+ (0 .. size-1));
+  @ requires \valid(file_time);
+  @*/
+static void OLE_parse_filetime_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, time_t *file_time)
+{
+  uint64_t tmp;
+  if(offset + 12 > size)
+  {
+    return ;
+  }
+  /*@ assert offset + 12 <= size; */
+  tmp=get64u(buffer, offset + 4);
+  tmp/=10000000;
+  if(tmp > (uint64_t)134774 * 24 * 3600)
+  {
+    tmp -= (uint64_t)134774 * 24 * 3600;
+    *file_time=tmp;
+  }
+}
+
+/*@
+  @ requires 8 <= size <= 1024*1024;
+  @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(ext);
   @ requires \valid(title);
   @ requires \valid(file_time);
   @ requires *title == \null || valid_read_string(*title);
   @ requires *ext == \null || valid_read_string(*ext);
-  @ ensures *ext == \null || valid_read_string(*ext);
-  @ ensures *title == \null || valid_read_string(*title);
+  @ ensures  *ext == \null || valid_read_string(*ext);
+  @ ensures  *title == \null || valid_read_string(*title);
   @*/
 static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned int size, const char **ext, char **title, time_t *file_time)
 {
@@ -841,31 +984,49 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
 #ifdef DEBUG_OLE
   log_info("Property Info %u entries - %u bytes\n", numEntries, size);
 #endif
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
   if(numEntries == 0 || numEntries > 1024*1024)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
     return ;
+  }
   /*@ assert 0 < numEntries <= 1024*1024; */
   if(8 + numEntries * 8 > size)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
     return ;
+  }
   /*@ assert 8 + numEntries * 8 <= size; */
   /*@ assert numEntries * 8 <= size - 8; */
   /*@ assert numEntries < size/8; */
   if((const unsigned char *)&entries[numEntries] > &buffer[size])
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
     return ;
-  /*TODO assert (const unsigned char *)&entries[numEntries] <= &buffer[size]; */
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
   /*@ assert \valid_read(buffer  + (0 .. size - 1)); */
   /*@ assert \valid_read((buffer+8)  + (8 .. size - 8 - 1)); */
-  /*TODO assert \valid_read((char *)entries + (0 .. size - 8 - 1)); */
-  /*TODO assert \valid_read(entries + (0 .. numEntries-1)); */
   /*@
+    @ loop invariant *ext == \null || valid_read_string(*ext);
+    @ loop invariant *title == \null || valid_read_string(*title);
     @ loop invariant 0 <= i <= numEntries;
     @ loop variant numEntries-i;
     @*/
   for(i=0; i<numEntries; i++)
   {
-    //    const struct summary_entry *entry=&entries[i];
     const unsigned int entry_offset=8+8*i;
     if(entry_offset + 8 > size)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      /*@ assert *title == \null || valid_read_string(*title); */
       return ;
+    }
     /*@ assert entry_offset + 8 <= size; */
     {
       const struct summary_entry *entry=(const struct summary_entry *)&buffer[entry_offset];
@@ -873,7 +1034,11 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
       const unsigned int offset=le32(entry->offset);
       unsigned int type;
       if(offset >= size - 4)
+      {
+	/*@ assert *ext == \null || valid_read_string(*ext); */
+	/*@ assert *title == \null || valid_read_string(*title); */
 	return ;
+      }
       /*@ assert offset < size - 4; */
       /*@ assert \valid_read(buffer + (0 .. offset + 4 - 1)); */
       type=get32u(buffer, offset);
@@ -884,119 +1049,38 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
       /* tag: Software, type: VT_LPSTR */
       if(tag==0x12 && type==30)
       {
-	if(offset >= size - 8)
-	  return ;
-	/*@ assert offset < size - 8; */
-	{
-	  const unsigned int count=get32u(buffer, offset + 4);
-	  const unsigned int offset_soft=offset + 8;
-	  /*@ assert offset_soft == offset + 8; */
-	  if(count > size)
-	    return ;
-	  /*@ assert count <= size; */
-	  if(offset_soft + count > size)
-	    return ;
-	  /*@ assert offset_soft + count <= size; */
-	  if(count > 0)
-	  {
-	    /*@ assert count > 0; */
-#ifdef DEBUG_OLE
-	    unsigned int j;
-	    log_info("Software ");
-	    for(j=0; j<count; j++)
-	    {
-	      log_info("%c", buffer[offset_soft + j]);
-	    }
-	    log_info("\n");
-#endif
-	    software2ext(ext, count, &buffer[offset_soft]);
-	  }
-	}
+	OLE_parse_software_entry(buffer, size, offset, ext);
+	/*@ assert *ext == \null || valid_read_string(*ext); */
       }
       /* tag: Software, type: VT_LPWSTR */
       if(tag==0x12 && type==31)
       {
-	if(offset >= size - 8)
-	  return ;
-	/*@ assert offset < size - 8; */
-	{
-	  const unsigned int count=get32u(buffer, offset + 4);
-	  if(count > size)
-	    return ;
-	  /*@ assert count <= size; */
-	  if(offset + 8 + 2 * count > size)
-	    return ;
-	  /*@ assert offset + 8 + 2 * count <= size; */
-	  if(count > 0)
-	  {
-	    /*@ assert count > 0; */
-#ifdef DEBUG_OLE
-	    unsigned int j;
-	    log_info("Software ");
-	    for(j=0; j < 2 * count; j+=2)
-	    {
-	      log_info("%c", buffer[offset + 8 + j]);
-	    }
-	    log_info("\n");
-#endif
-	    *ext=software_uni2ext(count, &buffer[offset + 8]);
-	  }
-	}
+	OLE_parse_uni_software_entry(buffer, size, offset, ext);
+	/*@ assert *ext == \null || valid_read_string(*ext); */
       }
       /* tag: title, type: VT_LPSTR */
       if(tag==0x02 && type==30 && *title==NULL)
       {
-	if(offset + 8 > size)
-	  return ;
-	/*@ assert offset + 8 <= size; */
-	{
-	  /*@ assert \valid_read(buffer + (0 .. size - 1)); */
-	  const unsigned int count=get32u(buffer, offset + 4);
-	  const unsigned int offset_tmp=offset + 8;
-	  if(count > size)
-	    return ;
-	  /*@ assert count <= size; */
-	  if(offset_tmp + count > size)
-	    return ;
-	  /*@ assert offset_tmp + count <= size; */
-	  if(count > 0)
-	  {
-	    /*@ assert count > 0; */
-	    char *tmp;
-	    /*@ assert \valid_read(buffer + (0 .. size - 1)); */
-	    /*@ assert \valid_read(buffer + (0 .. offset_tmp + count - 1)); */
-	    tmp=(char*)MALLOC(count+1);
-	    memcpy(tmp, &buffer[offset_tmp], count);
-	    tmp[count]='\0';
-#ifdef DEBUG_OLE
-	    log_info("Title %s\n", tmp);
-#endif
-	    *title=tmp;
-	  }
-	}
+	OLE_parse_title_entry(buffer, size, offset, title);
+	/*@ assert *title == \null || valid_read_string(*title); */
       }
       /* ModifyDate, type=VT_FILETIME */
       if(tag==0x0d && type==64)
       {
-	uint64_t tmp;
-	if(offset + 12 > size)
-	  return ;
-	/*@ assert offset + 12 <= size; */
-	tmp=get64u(buffer, offset + 4);
-	tmp/=10000000;
-	if(tmp > (uint64_t)134774 * 24 * 3600)
-	{
-	  tmp -= (uint64_t)134774 * 24 * 3600;
-	  *file_time=tmp;
-	}
+	OLE_parse_filetime_entry(buffer, size, offset, file_time);
       }
     }
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
   }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
 }
 
 /*@
   @ requires 48 <= dirLen <= 1024*1024;
   @ requires \valid_read(dataPt + (0 .. dirLen-1));
+  @ requires \initialized(dataPt + (0 .. dirLen-1));
   @ requires \valid(ext);
   @ requires \valid(title);
   @ requires \valid(file_time);
@@ -1009,29 +1093,44 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
 {
   unsigned int pos;
   assert(dirLen >= 48 && dirLen<=1024*1024);
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
 #ifdef DEBUG_OLE
   dump_log(dataPt, dirLen);
 #endif
-#ifndef __FRAMAC__
   if(dataPt[0]!=0xfe || dataPt[1]!=0xff)
     return ;
-#endif
   pos=get32u(dataPt, 44);
   if(pos > dirLen - 8)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
     return ;
+  }
   /*@ assert pos <= dirLen - 8; */
   {
     /* PropertySet */
     const unsigned int size=get32u(dataPt, pos);
     if(size <= 8 || size > dirLen || pos + size > dirLen)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      /*@ assert *title == \null || valid_read_string(*title); */
       return ;
-    /*@ assert 8 < size <= dirLen <=1024*1024; */
+    }
+    /*@ assert 8 < size; */
+    /*@ assert size <= dirLen; */
+    /*@ assert dirLen <=1024*1024; */
     /*@ assert \valid_read(dataPt + (0 .. dirLen-1)); */
     /*@ assert pos + size <= dirLen; */
     /*@ assert \valid_read(dataPt + (0 .. pos+size-1)); */
-    /*TODO assert \valid_read(&dataPt[pos] + (0 .. 1024*1024-1-pos)); */
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
+#ifndef __FRAMAC__
     OLE_parse_PropertySet(&dataPt[pos], size, ext, title, file_time);
+#endif
   }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
 }
 
 /*@
@@ -1055,20 +1154,25 @@ static void *OLE_read_ministream(unsigned char *ministream,
 #endif
   for(mblock=miniblock_start, size_read=0;
       size_read < len;
-      mblock=le32(minifat[mblock]), size_read+=(1<<uMiniSectorShift))
+      size_read+=(1<<uMiniSectorShift))
   {
     if(mblock >= minifat_entries)
     {
       free(dataPt);
       return NULL;
     }
+    /* TODO assert mblock < minifat_entries; */
     if((mblock+1)> ministream_size>>uMiniSectorShift)
     {
       free(dataPt);
       return NULL;
     }
-    /*TODO assert \valid_read(ministream + (0 .. (mblock<<uMiniSectorShift) + (1<<uMiniSectorShift) -1)); */
     memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
+#ifdef __FRAMAC__
+    mblock=Frama_C_interval(0, minifat_entries);
+#else
+    mblock=le32(minifat[mblock]);
+#endif
   }
   return dataPt;
 }
@@ -1095,21 +1199,37 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
   const unsigned int uSectorShift=le16(header->uSectorShift);
   unsigned char *summary=NULL;
   if(len < 48 || len>1024*1024)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert *title == \null || valid_read_string(*title); */
     return ;
+  }
   /*@ assert 48 <= len <= 1024*1024; */
   if(len < le32(header->miniSectorCutoff))
   {
     if(le32(header->csectMiniFat)==0 || ministream_size == 0)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      /*@ assert *title == \null || valid_read_string(*title); */
       return ;
+    }
     if(ministream_size > 1024*1024 || le32(header->csectMiniFat) > 2048)
+    {
+      /*@ assert *ext == \null || valid_read_string(*ext); */
+      /*@ assert *title == \null || valid_read_string(*title); */
       return ;
+    }
     /*@ assert 0 < le32(header->csectMiniFat) <= 2048; */
     {
       const unsigned int mini_fat_entries=(le32(header->csectMiniFat) << uSectorShift) / 4;
       uint32_t *minifat;
       unsigned char *ministream;
       if((minifat=OLE_load_MiniFAT(file, header, fat, fat_entries, offset))==NULL)
+      {
+	/*@ assert *ext == \null || valid_read_string(*ext); */
+	/*@ assert *title == \null || valid_read_string(*title); */
 	return ;
+      }
       ministream=(unsigned char *)OLE_read_stream(file,
 	  fat, fat_entries, uSectorShift,
 	  ministream_block, ministream_size, offset);
@@ -1127,11 +1247,26 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
     summary=(unsigned char *)OLE_read_stream(file,
 	fat, fat_entries, uSectorShift,
 	block, len, offset);
+#if defined(__FRAMAC__)
+  {
+    free(summary);
+    summary=MALLOC(4096);
+    Frama_C_make_unknown((char *)summary, 4096);
+    /*@ assert \initialized((char *)summary + (0 .. 4096 - 1)); */
+//    OLE_parse_summary_aux(summary, 4096, ext, title, file_time);
+    /*@ assert *title == \null || valid_read_string(*title); */
+    OLE_parse_PropertySet(summary, 4096, ext, title, file_time);
+    free(summary);
+  }
+#else
   if(summary!=NULL)
   {
     OLE_parse_summary_aux(summary, len, ext, title, file_time);
     free(summary);
   }
+#endif
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert *title == \null || valid_read_string(*title); */
 }
 
 /*@
@@ -1151,7 +1286,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   unsigned int uSectorShift;
   unsigned int num_FAT_blocks;
   if(strstr(file_recovery->filename, ".sdd")!=NULL)
-    ext="sdd";
+    ext=extension_sdd;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
 #ifdef DEBUG_OLE
@@ -1268,6 +1403,13 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		(unsigned int)le32(dir_entry->start_block),
 		(unsigned int)le32(dir_entry->size));
 #endif
+	    {
+	      const char *tmp=entry2ext(dir_entry);
+	      /*@ assert tmp == \null || valid_read_string(tmp); */
+	      if(tmp!=NULL)
+		ext=tmp;
+	      /*@ assert ext == \null || valid_read_string(ext); */
+	    }
 	    switch(le16(dir_entry->namsiz))
 	    {
 	      case 4:
@@ -1276,24 +1418,12 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
 		  is_db=2;
 		break;
-	      case 10:
-		if(memcmp(dir_entry->name, ".\0Q\0D\0F\0\0\0",10)==0)
-		  ext="qdf-backup";
-		break;
-	      case 12:
-		/* 3ds max */
-		if(memcmp(dir_entry->name, "S\0c\0e\0n\0e\0\0\0",12)==0)
-		  ext="max";
-		/* Licom AlphaCAM */
-		else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
-		  ext="amb";
-		break;
 	      case 16:
 		if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0\0\0", 16)==0)
-		  ext="psmodel";
+		  ext=extension_psmodel;
 		/* Windows Sticky Notes */
 		else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0\0\0", 16)==0)
-		  ext="snt";
+		  ext=extension_snt;
 		else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
 		  is_db=2;
 		break;
@@ -1302,74 +1432,13 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		 * Note: Microsoft Works Spreadsheet contains the same signature */
 		if(ext==NULL &&
 		    memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0\0\0",18)==0)
-		  ext="xls";
-		/* Microsoft Works .wps */
-		else if(memcmp(dir_entry->name,"C\0O\0N\0T\0E\0N\0T\0S\0\0\0",18)==0)
-		  ext="wps";
-		break;
-	      case 20:
-		/* Page Maker */
-		if(memcmp(&dir_entry->name, "P\0a\0g\0e\0M\0a\0k\0e\0r\0\0\0", 20)==0)
-		  ext="p65";
-		break;
-	      case 22:
-		/* SigmaPlot .jnb */
-		if(memcmp(dir_entry->name, "J\0N\0B\0V\0e\0r\0s\0i\0o\0n\0\0\0", 22)==0)
-		  ext="jnb";
-		/* Autodesk Inventor part ipt or iam file */
-		if(memcmp(dir_entry->name, "R\0S\0e\0S\0t\0o\0r\0a\0g\0e\0\0\0", 22)==0)
-		  ext="ipt";
-		break;
-	      case 24:
-		/* HP Photosmart Photo Printing Album */
-		if(memcmp(dir_entry->name,"I\0m\0a\0g\0e\0s\0S\0t\0o\0r\0e\0\0\0",24)==0)
-		  ext="albm";
-		/* Lotus Approach */
-		else if(memcmp(dir_entry->name,"A\0p\0p\0r\0o\0a\0c\0h\0D\0o\0c\0\0\0",24)==0)
-		  ext="apr";
-		break;
-	      case 28:
-		/* Microsoft Works Spreadsheet or Chart */
-		if(memcmp(dir_entry->name,"W\0k\0s\0S\0S\0W\0o\0r\0k\0B\0o\0o\0k\0\0\0",28)==0)
-		  ext="xlr";
-		/* Visio */
-		else if(memcmp(dir_entry->name,"V\0i\0s\0i\0o\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",28)==0)
-		  ext="vsd";
-		/* SolidWorks */
-		else if(memcmp(&dir_entry->name, "s\0w\0X\0m\0l\0C\0o\0n\0t\0e\0n\0t\0s\0\0\0", 28)==0)
-		{
-#ifdef DJGPP
-		  ext="sld";
-#else
-		  ext="sldprt";
-#endif
-		}
-		break;
-	      case 32:
-		if(memcmp(dir_entry->name, "m\0a\0n\0i\0f\0e\0s\0t\0.\0c\0a\0m\0x\0m\0l\0\0\0",32)==0)
-		  ext="camrec";
-	    /* Revit */
-		else if(memcmp(dir_entry->name, "R\0e\0v\0i\0t\0P\0r\0e\0v\0i\0e\0w\0004\0.\0000\0\0", 32)==0)
-		  ext="rvt";
-		break;
-	      case 34:
-		if(memcmp(dir_entry->name, "S\0t\0a\0r\0C\0a\0l\0c\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0",34)==0)
-		  ext="sdc";
+		  ext=extension_xls;
 		break;
 	      case 36:
 		/* sda=StarDraw, sdd=StarImpress */
-		if((ext==NULL || strcmp(ext,"sdd")!=0) &&
+		if(ext!=extension_sdd &&
 		    memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
-		  ext="sda";
-		else if(memcmp(dir_entry->name, "f\0i\0l\0e\0_\0C\0O\0M\0P\0A\0N\0Y\0_\0F\0I\0L\0E\0\0\0", 36)==0)
-		    ext="qbb";
-		break;
-	      case 38:
-		/* Quattro Pro spreadsheet */
-		if(memcmp(dir_entry->name, "N\0a\0t\0i\0v\0e\0C\0o\0n\0t\0e\0n\0t\0_\0M\0A\0I\0N\0\0\0", 38)==0)
-		  ext="qpw";
-		else if(memcmp(dir_entry->name, "S\0t\0a\0r\0W\0r\0i\0t\0e\0r\0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 38)==0)
-		  ext="sdw";
+		  ext=extension_sda;
 		break;
 	      case 40:
 		if(memcmp(dir_entry->name, SummaryInformation, 40)==0)
@@ -1379,32 +1448,11 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		      le32(dir_entry->start_block), le32(dir_entry->size),
 		      &ext, &title, &file_time, 0);
 		}
-		else if(memcmp(dir_entry->name,"P\0o\0w\0e\0r\0P\0o\0i\0n\0t\0 \0D\0o\0c\0u\0m\0e\0n\0t\0\0\0", 40)==0)
-		  ext="ppt";
-		/* Outlook */
-		else if(memcmp(dir_entry->name,"_\0_\0n\0a\0m\0e\0i\0d\0_\0v\0e\0r\0s\0i\0o\0n\0001\0.\0000\0\0\0",40)==0)
-		  ext="msg";
-		break;
-	      case 46:
-		if(memcmp(dir_entry->name,
-		      "I\0S\0o\0l\0i\0d\0W\0o\0r\0k\0s\0I\0n\0f\0o\0r\0m\0a\0t\0i\0o\0n\0\0\0", 46)==0)
-		{
-#ifdef DJGPP
-		  ext="sld";
-#else
-		  ext="sldprt";
-#endif
-		}
-		break;
-	      case 56:
-		/* Wilcom ES Software */
-		if(memcmp(dir_entry->name, WilcomDesignInformationDDD, 56)==0)
-		  ext="emb";
 		break;
 	    }
 	    if(sid==1 && le16(dir_entry->namsiz) >=6 &&
 		memcmp(dir_entry->name, "D\0g\0n", 6)==0)
-	      ext="dgn";
+	      ext=extension_dgn;
 #ifdef DEBUG_OLE
 	    if(ext!=NULL)
 	      log_info("Found %s %u\n", ext, le16(dir_entry->namsiz));
@@ -1412,7 +1460,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	  }
 	}
 	if(ext==NULL && is_db==2)
-	  ext="db";
+	  ext=extension_db;
       }
       free(dir_entries);
     }
@@ -1428,6 +1476,136 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   }
   else
     file_rename(file_recovery, NULL, 0, 0, ext, 1);
+}
+
+/*@
+  @ requires buffer_size >= sizeof(struct OLE_HDR);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_doc);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_doc);
+  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
+  @*/
+static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /*@ assert file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename); */
+  const struct OLE_HDR *header=(const struct OLE_HDR *)buffer;
+  /* Check for Little Endian */
+  if(le16(header->uByteOrder)!=0xFFFE)
+    return 0;
+  if(le16(header->uDllVersion)!=3 && le16(header->uDllVersion)!=4)
+    return 0;
+  if(le16(header->reserved)!=0 || le32(header->reserved1)!=0)
+    return 0;
+  if(le16(header->uMiniSectorShift)!=6)
+    return 0;
+  if(le16(header->uDllVersion)==3 && le16(header->uSectorShift)!=9)
+    return 0;
+  /* max and qbb file have uSectorShift=12 */
+  if(le16(header->uDllVersion)==4 && le16(header->uSectorShift)!=12)
+    return 0;
+  if(le16(header->uDllVersion)==3 && le32(header->csectDir)!=0)
+    return 0;
+  /* max file have csectDir=1
+   * qbb file have csectDir=4 */
+  if(le16(header->uDllVersion)==4 && le32(header->csectDir)==0)
+    return 0;
+  /*
+     num_FAT_blocks=109+num_extra_FAT_blocks*(512-1);
+     maximum file size is 512+(num_FAT_blocks*128)*512, about 1.6GB
+     */
+  if(le32(header->num_FAT_blocks)==0 ||
+      le32(header->num_extra_FAT_blocks)>50 ||
+      le32(header->num_FAT_blocks)>109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1))
+    return 0;
+  /*@ assert file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename); */
+  /*@ assert le32(header->num_FAT_blocks) <= 109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1); */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->file_check=&file_check_doc;
+  file_recovery_new->file_rename=&file_rename_doc;
+  file_recovery_new->extension=ole_get_file_extension(header, buffer_size);
+  if(file_recovery_new->extension!=NULL)
+  {
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    if(strcmp(file_recovery_new->extension,"sda")==0)
+    {
+      if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+	file_recovery_new->extension=extension_sdd;
+    }
+    else if(strcmp(file_recovery_new->extension,"wps")==0)
+    {
+      /* Distinguish between MS Works .wps and MS Publisher .pub */
+      if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+	file_recovery_new->extension=extension_pub;
+    }
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    return 1;
+  }
+  if(td_memmem(buffer,buffer_size,"WordDocument",12)!=NULL)
+  {
+    file_recovery_new->extension=file_hint_doc.extension;
+  }
+  else if(td_memmem(buffer,buffer_size,"StarDraw",8)!=NULL)
+  {
+    file_recovery_new->extension=extension_sda;
+  }
+  else if(td_memmem(buffer,buffer_size,"StarCalc",8)!=NULL)
+  {
+    file_recovery_new->extension=extension_sdc;
+  }
+  else if(td_memmem(buffer,buffer_size,"StarImpress",11)!=NULL)
+  {
+    file_recovery_new->extension=extension_sdd;
+  }
+  else if(td_memmem(buffer,buffer_size,"Worksheet",9)!=NULL ||
+      td_memmem(buffer,buffer_size,"Book",4)!=NULL ||
+      td_memmem(buffer,buffer_size,"Workbook",8)!=NULL ||
+      td_memmem(buffer,buffer_size,"Calc",4)!=NULL)
+  {
+    file_recovery_new->extension=extension_xls;
+  }
+  else if(td_memmem(buffer,buffer_size,"Power",5)!=NULL)
+  {
+    file_recovery_new->extension=extension_ppt;
+  }
+  else if(td_memmem(buffer,buffer_size,"AccessObjSiteData",17)!=NULL)
+  {
+    file_recovery_new->extension=extension_mdb;
+  }
+  else if(td_memmem(buffer,buffer_size,"Visio",5)!=NULL)
+  {
+    file_recovery_new->extension=extension_vsd;
+  }
+  else if(td_memmem(buffer,buffer_size,"SfxDocument",11)!=NULL)
+  {
+    file_recovery_new->extension=extension_sdw;
+  }
+  else if(td_memmem(buffer,buffer_size,"CPicPage",8)!=NULL)
+  {	/* Flash Project File */
+    file_recovery_new->extension=extension_fla;
+  }
+  else if(td_memmem(buffer,buffer_size,"Microsoft Publisher",19)!=NULL)
+  { /* Publisher */
+    file_recovery_new->extension=extension_pub;
+  }
+  else if(td_memmem(buffer, buffer_size, "Microsoft Works Database", 24)!=NULL
+      || td_memmem( buffer, buffer_size, "MSWorksDBDoc", 12)!=NULL)
+  { /* Microsoft Works .wdb */
+    file_recovery_new->extension=extension_wdb;
+  }
+  else if(td_memmem(buffer,buffer_size,"MetaStock",9)!=NULL)
+  { /* MetaStock */
+    file_recovery_new->extension=extension_mws;
+  }
+  else
+    file_recovery_new->extension=file_hint_doc.extension;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  return 1;
 }
 
 /*@
