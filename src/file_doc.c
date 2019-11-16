@@ -307,13 +307,23 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
 	  if(tmp!=NULL)
 	    return tmp;
 	}
-	if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
-	  is_db=1;
-	else if(is_db==1 && sid==2 && (memcmp(&dir_entry->name, "2\0\0\0", 4)==0 ||
-	      memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0", 14)==0))
-	  is_db=2;
 	switch(le16(dir_entry->namsiz))
 	{
+	  case 4:
+	    if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
+	      is_db=1;
+	    else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+	      is_db=2;
+	    break;
+	  case 16:
+	    if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0\0\0", 16)==0)
+	      ext=extension_psmodel;
+	    /* Windows Sticky Notes */
+	    else if(sid==1 && memcmp(dir_entry->name, "V\0e\0r\0s\0i\0o\0n\0\0\0", 16)==0)
+	      ext=extension_snt;
+	    else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
+	      is_db=2;
+	    break;
 	  case 18:
 	    /* MS Excel
 	     * Note: Microsoft Works Spreadsheet contains the same signature */
@@ -331,7 +341,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
       }
       if(ext!=NULL)
       {
-	/*@ assert ext == extension_xls; */
+	/*@ assert ext == extension_xls || ext == extension_psmodel || ext == extension_snt; */
 	return ext;
       }
       /* Thumbs.db */
@@ -428,6 +438,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ ensures \valid(file_recovery->handle);
   @*/
 void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 {
@@ -584,6 +595,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ ensures \valid(file_recovery->handle);
   @*/
 static void file_check_doc(file_recovery_t *file_recovery)
 {
@@ -1415,7 +1427,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	      case 4:
 		if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 		  is_db=1;
-		if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
+		else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
 		  is_db=2;
 		break;
 	      case 16:
@@ -1485,11 +1497,15 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_doc, buffer, file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_doc);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_doc);
-  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
   @*/
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -1652,6 +1668,8 @@ int main()
   /*@ assert file_recovery_new.file_size == 0;	*/
   /*@ assert file_recovery_new.file_check == &file_check_doc; */
   /*@ assert file_recovery_new.file_rename == &file_rename_doc; */
+  /*@ assert valid_read_string(file_recovery_new.extension); */
+  /*@ assert \separated(&file_recovery_new, file_recovery_new.extension); */
 #ifdef __FRAMAC__
   file_recovery_new.file_size = 512*Frama_C_interval(1, 1000);
 #endif
