@@ -42,8 +42,10 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 extern const file_hint_t file_hint_raf;
+#endif
+#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
 extern const file_hint_t file_hint_jpg;
 #endif
 extern const file_hint_t file_hint_tiff;
@@ -59,6 +61,7 @@ static const char *extension_sr2="sr2";
   @ requires \valid_read((const unsigned char*)tiff+(0..tiff_size-1));
   @ requires \valid(potential_error);
   @ requires \valid_read(hdr);
+  @ requires \separated(potential_error, \union(tiff, hdr));
   @
  */
 static const char *find_tag_from_tiff_header_le_aux(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error, const struct ifd_header *hdr)
@@ -72,10 +75,14 @@ static const char *find_tag_from_tiff_header_le_aux(const TIFFHeader *tiff, cons
     return NULL;
   /*@ assert \valid_read(hdr); */
   nbr_fields=le16(hdr->nbr_fields);
+  /*@
+    @ loop assigns i, *potential_error, tmp;
+    @*/
   for(i=0, tmp=&hdr->ifd;
       i < nbr_fields && (const char*)(tmp+1) <= (const char*)tiff+tiff_size;
       i++, tmp++)
   {
+    /*@ assert \valid_read(tmp); */
     if(le16(tmp->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const char*)&tmp->tdir_type+1))
     {
       *potential_error = (const char*)&tmp->tdir_type+1;
@@ -91,11 +98,18 @@ const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned 
   const struct ifd_header *ifd0;
   const struct ifd_header *exififd;
   const uint32_t *tiff_next_diroff;
+  unsigned int tiff_diroff;
   if(tiff_size < sizeof(TIFFHeader))
     return NULL;
-  if(tiff_size < le32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
+  /*@ assert tiff_size >= sizeof(TIFFHeader); */
+  /*@ assert \valid_read(tiff); */
+  tiff_diroff=le32(tiff->tiff_diroff);
+  if(tiff_diroff >= tiff_size)
     return NULL;
-  ifd0=(const struct ifd_header *)((const char*)tiff + le32(tiff->tiff_diroff));
+  /*@ assert tiff_diroff < tiff_size; */
+  if(tiff_size < tiff_diroff+sizeof(struct ifd_header))
+    return NULL;
+  ifd0=(const struct ifd_header *)((const char*)tiff + tiff_diroff);
   /* Bound checking */
   if((const char *)ifd0 <= (const char *)tiff ||
       (const char *)(ifd0 + 1) > (const char *)tiff + tiff_size)
@@ -143,13 +157,16 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
   const unsigned int nbr=(le32(entry_strip_offsets->tdir_count)<2048?
       le32(entry_strip_offsets->tdir_count):
       2048);
+  /*@ assert nbr <= 2048; */
   unsigned int i;
   uint32_t *offsetp;
   uint32_t *sizep;
   uint64_t max_offset=0;
-  if(le32(entry_strip_offsets->tdir_count) != le32(entry_strip_bytecounts->tdir_count))
+  /* le32() isn't required to compare the 2 values */
+  if(entry_strip_offsets->tdir_count != entry_strip_bytecounts->tdir_count)
     return TIFF_ERROR;
-  if(le32(entry_strip_offsets->tdir_count)==0 ||
+  /*@ assert entry_strip_offsets->tdir_count == entry_strip_bytecounts->tdir_count; */
+  if(nbr==0 ||
       le16(entry_strip_offsets->tdir_type)!=4 ||
       le16(entry_strip_bytecounts->tdir_type)!=4)
     return TIFF_ERROR;
@@ -321,6 +338,9 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
+  @ requires \separated(&errno, fr);
+  @ ensures \valid(fr->handle);
+  @ ensures valid_read_string(fr->extension);
   @
  */
 static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
@@ -435,6 +455,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 #ifndef __FRAMAC__
 	  {
 	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr->handle); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
@@ -453,6 +474,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	  else
 	  {
 	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr->handle); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
@@ -560,6 +582,9 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
     if(max_offset < tmp)
       max_offset=tmp;
   }
+  if(data_read < 6)
+    return max_offset;
+  /*@ assert data_read >= 6; */
 #ifndef __FRAMAC__
   if ( 2 + n*12 + 4 <= (unsigned int)data_read)
   {
@@ -592,6 +617,7 @@ void file_check_tiff_le(file_recovery_t *fr)
 #endif
   if(header.tiff_magic==TIFF_LITTLEENDIAN)
     calculated_file_size=file_check_tiff_le_aux(fr, le32(header.tiff_diroff), 0, 0);
+  /*@ assert \valid(fr->handle); */
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
@@ -632,7 +658,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
     return 0;
   /* Avoid a false positiv with some RAF files */
   if(file_recovery->file_stat!=NULL &&
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
     file_recovery->file_stat->file_hint==&file_hint_raf &&
 #endif
     memcmp(buffer, raf_fp, 15)==0)
@@ -640,7 +666,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
     header_ignored(file_recovery_new);
     return 0;
   }
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
@@ -675,7 +701,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
 	file_recovery_new->extension=extension_nef;
     }
   }
-  file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
+  file_recovery_new->time=get_date_from_tiff_header(buffer, buffer_size);
   file_recovery_new->file_check=&file_check_tiff_le;
   return 1;
 }

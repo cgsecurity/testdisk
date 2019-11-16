@@ -493,7 +493,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  unsigned int tiff_size=2+(buffer[i+2]<<8)+buffer[i+3]-0x0A;
 	  if(buffer_size - (i+0x0A) < tiff_size)
 	    tiff_size=buffer_size - (i+0x0A);
-	  jpg_time=get_date_from_tiff_header((const TIFFHeader*)&buffer[i+0x0A], tiff_size);
+	  jpg_time=get_date_from_tiff_header(&buffer[i+0x0A], tiff_size);
 	}
       }
       else if(buffer[i+1]==0xc4)
@@ -1494,13 +1494,14 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	{
 	  const char *potential_error=NULL;
 	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
+	  const unsigned char *tiff_buffer=&buffer[i+0x0A];
 	  unsigned int tiff_size=2+size-0x0A;
 	  const char *thumb_data=NULL;
 	  const char *ifbytecount=NULL;
 	  if(nbytes - (i+0x0A) < tiff_size)
 	    tiff_size=nbytes - (i+0x0A);
 	  if(file_recovery->time==0)
-	    file_recovery->time=get_date_from_tiff_header(tiff, tiff_size);
+	    file_recovery->time=get_date_from_tiff_header(tiff_buffer, tiff_size);
 	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
 	  if(thumb_data!=NULL)
 	  {

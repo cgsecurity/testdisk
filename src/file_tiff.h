@@ -70,12 +70,13 @@ struct ifd_header {
 
 /*@
   @ requires tiff_size >= sizeof(TIFFHeader);
-  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
+  @ requires \valid_read(buffer+(0..buffer_size-1));
   @*/
-time_t get_date_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size);
+time_t get_date_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size);
 
 /*@
   @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
+  @ requires \separated(potential_error, tiff);
   @*/
 const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error);
 
@@ -84,6 +85,7 @@ const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int
   @ requires tiff_size >= sizeof(TIFFHeader);
   @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
   @ requires \valid(potential_error);
+  @ requires \separated(potential_error, tiff);
   @*/
 const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
 
@@ -92,6 +94,8 @@ const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned 
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
+  @ ensures \valid(fr->handle);
+  @ ensures valid_read_string(fr->extension);
   @*/
 void file_check_tiff_le(file_recovery_t *fr);
 
@@ -114,9 +118,12 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
   @ requires tiff_size >= sizeof(TIFFHeader);
   @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
   @ requires \valid(potential_error);
+  @ requires \separated(potential_error, tiff);
   @*/
 const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+#endif
 
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 /*@
   @ requires buffer_size >= 15;
   @ requires \valid_read(buffer+(0..buffer_size-1));
@@ -124,7 +131,6 @@ const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned 
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_be);
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
   @*/

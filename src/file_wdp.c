@@ -51,7 +51,7 @@ static int header_check_wdp(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension="wdp";
-  file_recovery_new->time=get_date_from_tiff_header((const TIFFHeader *)buffer, buffer_size);
+  file_recovery_new->time=get_date_from_tiff_header(buffer, buffer_size);
   file_recovery_new->file_check=&file_check_tiff_le;
   return 1;
 }

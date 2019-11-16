@@ -611,6 +611,7 @@ static void file_check_tiff_be(file_recovery_t *fr)
 #endif
 
 /*@
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_be);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_tiff.extension ||
 				file_recovery_new->extension == extension_dcr ||
 				file_recovery_new->extension == extension_dng ||
@@ -653,7 +654,7 @@ int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_
 	file_recovery_new->extension=extension_dcr;
     }
   }
-  file_recovery_new->time=get_date_from_tiff_header(header, buffer_size);
+  file_recovery_new->time=get_date_from_tiff_header(buffer, buffer_size);
   file_recovery_new->file_check=&file_check_tiff_be;
   return 1;
 }

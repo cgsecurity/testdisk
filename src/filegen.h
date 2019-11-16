@@ -249,9 +249,9 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end);
 void header_ignored(const file_recovery_t *file_recovery_new);
 
 /*@
+  @ requires separation: \separated(file_recovery, file_recovery_new, &errno);
   @ requires \valid_read(file_recovery);
   @ requires \valid_read(file_recovery_new);
-  @ requires separation: \separated(file_recovery, file_recovery_new);
   @ requires \initialized(&file_recovery->file_check);
   @ requires \initialized(&file_recovery->handle);
   @ ensures \result == 0 || \result == 1;
@@ -261,8 +261,9 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
 /*@
   requires valid_stream: \valid(stream);
   requires whence_enum: whence == SEEK_SET || whence == SEEK_CUR || whence == SEEK_END;
+  requires \separated(&errno, stream);
   assigns *stream \from *stream, indirect:offset, indirect:whence;
-  assigns \result, __fc_errno \from indirect:*stream, indirect:offset,
+  assigns \result, errno \from indirect:*stream, indirect:offset,
                                     indirect:whence;
 */
 int my_fseek(FILE *stream, off_t offset, int whence);
@@ -275,7 +276,7 @@ time_t get_time_from_YYMMDDHHMMSS(const char *date_asc);
 /*@
   @ requires \valid_read(date_asc + (0 .. 18));
   @*/
-time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const char *date_asc);
+time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const unsigned char *date_asc);
 
 /*@
   @ requires \valid_read(date_asc + (0 .. 16));

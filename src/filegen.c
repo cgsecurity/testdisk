@@ -863,7 +863,7 @@ time_t get_time_from_YYMMDDHHMMSS(const char *date_asc)
   return mktime(&tm_time);
 }
 
-time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const char *date_asc)
+time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const unsigned char *date_asc)
 {
   struct tm tm_time;
   if(memcmp(date_asc, "0000", 4)==0)
