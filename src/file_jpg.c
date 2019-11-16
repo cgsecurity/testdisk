@@ -1493,20 +1493,18 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	if(i+0x0A < nbytes && 2+size > 0x0A)
 	{
 	  const char *potential_error=NULL;
-	  const TIFFHeader *tiff=(const TIFFHeader*)&buffer[i+0x0A];
 	  const unsigned char *tiff_buffer=&buffer[i+0x0A];
 	  unsigned int tiff_size=2+size-0x0A;
-	  const char *thumb_data=NULL;
-	  const char *ifbytecount=NULL;
+	  unsigned int thumb_size=0;
 	  if(nbytes - (i+0x0A) < tiff_size)
 	    tiff_size=nbytes - (i+0x0A);
 	  if(file_recovery->time==0)
 	    file_recovery->time=get_date_from_tiff_header(tiff_buffer, tiff_size);
-	  thumb_data=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
-	  if(thumb_data!=NULL)
+	  thumb_offset=find_tag_from_tiff_header(tiff_buffer, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
+	  if(thumb_offset!=0)
 	  {
-	    thumb_offset=thumb_data-(const char*)buffer;
-	    ifbytecount=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
+	    thumb_offset+=i+0x0A;
+	    thumb_size=find_tag_from_tiff_header(tiff_buffer, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
 	  }
 	  if(potential_error!=NULL)
 	  {
@@ -1515,9 +1513,8 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	  }
 	  if(file_recovery->offset_ok<i)
 	    file_recovery->offset_ok=i;
-	  if(thumb_data!=NULL && ifbytecount!=NULL)
+	  if(thumb_offset!=0 && thumb_size!=0)
 	  {
-	    const unsigned int thumb_size=ifbytecount-(const char*)tiff;
 	    if(thumb_offset < nbytes - 1)
 	    {
 	      unsigned int j=thumb_offset+2;
@@ -1606,7 +1603,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 		  *(sep+1)='t';
 		  if((out=fopen(thumbname,"wb"))!=NULL)
 		  {
-		    if(fwrite(thumb_data, thumb_size, 1, out) < 1)
+		    if(fwrite(&buffer[thumb_offset], thumb_size, 1, out) < 1)
 		    {
 		      log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
 		    }

@@ -137,38 +137,49 @@ const char *tag_name(unsigned int tag)
 }
 #endif
 
-const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error)
+unsigned int find_tag_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size, const unsigned int tag, const char **potential_error)
 {
-  if(tiff_size < sizeof(TIFFHeader))
-    return NULL;
+  const TIFFHeader *tiff=(const TIFFHeader *)buffer;
+  if(buffer_size < sizeof(TIFFHeader))
+    return 0;
 #ifndef MAIN_tiff_le
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
-    return find_tag_from_tiff_header_be(tiff, tiff_size, tag, potential_error);
+  {
+    const unsigned char *tmp=(const unsigned char *)find_tag_from_tiff_header_be(tiff, buffer_size, tag, potential_error);
+    if(tmp==NULL)
+      return 0;
+    return tmp-buffer;
+  }
 #endif
 #ifndef MAIN_tiff_be
   if(tiff->tiff_magic==TIFF_LITTLEENDIAN)
-    return find_tag_from_tiff_header_le(tiff, tiff_size, tag, potential_error);
+  {
+    const unsigned char *tmp=(const unsigned char *)find_tag_from_tiff_header_le(tiff, buffer_size, tag, potential_error);
+    if(tmp==NULL)
+      return 0;
+    return tmp-buffer;
+  }
 #endif
-  return NULL;
+  return 0;
 }
 
 time_t get_date_from_tiff_header(const unsigned char *buffer, const unsigned int buffer_size)
 {
   const char *potential_error=NULL;
-  const unsigned char *date_asc;
+  unsigned int date_asc;
   if(buffer_size < sizeof(TIFFHeader) || buffer_size < 19)
     return (time_t)0;
   /*@ assert buffer_size >= sizeof(TIFFHeader); */
   /* DateTimeOriginal */
-  date_asc=(const unsigned char *)find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, 0x9003, &potential_error);
+  date_asc=find_tag_from_tiff_header(buffer, buffer_size, 0x9003, &potential_error);
   /* DateTimeDigitalized*/
-  if(date_asc==NULL || date_asc < buffer || &date_asc[18] >= buffer + buffer_size)
-    date_asc=(const unsigned char *)find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, 0x9004, &potential_error);
-  if(date_asc==NULL || date_asc < buffer || &date_asc[18] >= buffer + buffer_size)
-    date_asc=(const unsigned char *)find_tag_from_tiff_header((const TIFFHeader *)buffer, buffer_size, 0x132, &potential_error);
-  if(date_asc==NULL || date_asc < buffer || &date_asc[18] >= buffer + buffer_size)
+  if(date_asc==0 || date_asc >=  buffer_size - 19)
+    date_asc=find_tag_from_tiff_header(buffer, buffer_size, 0x9004, &potential_error);
+  if(date_asc==0 || date_asc >=  buffer_size - 19)
+    date_asc=find_tag_from_tiff_header(buffer, buffer_size, 0x132, &potential_error);
+  if(date_asc==0 || date_asc >=  buffer_size - 19)
     return (time_t)0;
-  return get_time_from_YYYY_MM_DD_HH_MM_SS(date_asc);
+  return get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[date_asc]);
 }
 
 static void register_header_check_tiff(file_stat_t *file_stat)

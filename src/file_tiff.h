@@ -69,16 +69,16 @@ struct ifd_header {
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires tiff_size >= sizeof(TIFFHeader);
+  @ requires buffer_size >= sizeof(TIFFHeader);
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @*/
 time_t get_date_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size);
 
 /*@
-  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
-  @ requires \separated(potential_error, tiff);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \separated(potential_error, buffer);
   @*/
-const char *find_tag_from_tiff_header(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char **potential_error);
+unsigned int find_tag_from_tiff_header(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int tag, const char **potential_error);
 
 #ifndef MAIN_tiff_be
 /*@
