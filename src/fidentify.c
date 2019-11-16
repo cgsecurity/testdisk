@@ -57,8 +57,10 @@ extern file_enable_t list_file_enable[];
 extern file_check_list_t file_check_list;
 
 #define READ_SIZE 1024*512
+#define OPT_CHECK 1
+#define OPT_TIME  2
 
-static int file_identify(const char *filename, const unsigned int check)
+static int file_identify(const char *filename, const unsigned int options)
 {
   const unsigned int blocksize=65536;
   const unsigned int buffer_size=blocksize + READ_SIZE;
@@ -103,8 +105,11 @@ static int file_identify(const char *filename, const unsigned int check)
 	if(file_recovery_new.file_stat!=NULL)
 	  break;
       }
-      if(file_recovery_new.file_stat!=NULL && file_recovery_new.file_stat->file_hint!=NULL &&
-	  check > 0 && file_recovery_new.file_check!=NULL)
+      if(file_recovery_new.file_stat!=NULL &&
+	  file_recovery_new.file_stat->file_hint!=NULL &&
+	  file_recovery_new.file_check!=NULL &&
+	  ((options&OPT_CHECK)!=0 || ((options&OPT_TIME)!=0 && file_recovery_new.time==0))
+	)
       {
 	file_recovery_new.handle=file;
 	my_fseek(file_recovery_new.handle, 0, SEEK_END);
@@ -125,8 +130,10 @@ static int file_identify(const char *filename, const unsigned int check)
 	printf("%s: %s", filename,
 	    ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
 	     file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
-	if(check > 0 && file_recovery_new.file_check!=NULL)
+	if((options&OPT_CHECK)!=0 && file_recovery_new.file_check!=NULL)
 	  printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
+	if((options&OPT_TIME)!=0 && file_recovery_new.time!=0)
+	  printf(" time=%llu", (long long unsigned)file_recovery_new.time);
 	printf("\n");
       }
       else
@@ -141,7 +148,7 @@ static int file_identify(const char *filename, const unsigned int check)
 }
 
 #ifndef __AFL_COMPILER
-static void file_identify_dir(const char *current_dir, const unsigned int check)
+static void file_identify_dir(const char *current_dir, const unsigned int options)
 {
   DIR *dir;
   struct dirent *entry;
@@ -164,9 +171,9 @@ static void file_identify_dir(const char *current_dir, const unsigned int check)
 #endif
 	{
 	  if(S_ISDIR(buf_stat.st_mode))
-	    file_identify_dir(current_file, check);
+	    file_identify_dir(current_file, options);
 	  else if(S_ISREG(buf_stat.st_mode))
-	    file_identify(current_file, check);
+	    file_identify(current_file, options);
 	}
       free(current_file);
     }
@@ -200,7 +207,7 @@ static void display_version(void)
 int main(int argc, char **argv)
 {
   int i;
-  unsigned int check=0;
+  unsigned int options=0;
   FILE *log_handle=NULL;
   int log_errno=0;
   int enable_all_formats=1;
@@ -211,7 +218,11 @@ int main(int argc, char **argv)
   {
     if( strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
     {
-      check++;
+      options|=OPT_CHECK;
+    }
+    if( strcmp(argv[i], "/time")==0 || strcmp(argv[i], "-time")==0 || strcmp(argv[i], "--time")==0)
+    {
+      options|=OPT_TIME;
     }
     else if(strcmp(argv[i],"/help")==0 || strcmp(argv[i],"-help")==0 || strcmp(argv[i],"--help")==0 ||
       strcmp(argv[i],"/h")==0 || strcmp(argv[i],"-h")==0 ||
@@ -268,6 +279,7 @@ int main(int argc, char **argv)
   for(i=1; i<argc; i++)
   {
     if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0 ||
+	strcmp(argv[i], "/time")==0 || strcmp(argv[i], "-time")==0 || strcmp(argv[i], "--time")==0 ||
 	argv[i][0]=='+')
     {
     }
@@ -282,17 +294,17 @@ int main(int argc, char **argv)
 #endif
 	{
 	  if(S_ISREG(buf_stat.st_mode))
-	    file_identify(argv[i], check);
+	    file_identify(argv[i], options);
 #ifndef __AFL_COMPILER
 	  else if(S_ISDIR(buf_stat.st_mode))
-	    file_identify_dir(argv[i], check);
+	    file_identify_dir(argv[i], options);
 #endif
 	}
     }
   }
 #ifndef __AFL_COMPILER
   if(scan_dir)
-    file_identify_dir(".", check);
+    file_identify_dir(".", options);
 #endif
   free_header_check();
   free(file_stats);
