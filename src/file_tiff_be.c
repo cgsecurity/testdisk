@@ -42,7 +42,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
+#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
 extern const file_hint_t file_hint_jpg;
 #endif
 extern const file_hint_t file_hint_tiff;
@@ -53,83 +53,132 @@ static const char *extension_pef="pef";
 
 #ifndef MAIN_tiff_le
 /*@
-  @ requires \valid_read((const unsigned char*)tiff+(0..tiff_size-1));
+  @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
-  @ requires \valid_read(hdr);
+  @ requires \separated(potential_error, buffer+(..));
   @
  */
-static const char *find_tag_from_tiff_header_be_aux(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error, const struct ifd_header *hdr)
+static unsigned int find_tag_from_tiff_header_be_aux(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error, const unsigned int offset_hdr)
 {
-  const TIFFDirEntry *tmp;
+  const unsigned char *ptr_hdr;
+  const struct ifd_header *hdr;
   unsigned int i;
   unsigned int nbr_fields;
-  /* Bound checking */
-  if((const char*)(hdr) <= (const char*)tiff ||
-      (const char*)(hdr+1) > (const char*)tiff+tiff_size)
-    return NULL;
+  if(sizeof(struct ifd_header) > tiff_size)
+    return 0;
+  /*@ assert tiff_size >= sizeof(struct ifd_header); */
+  if(offset_hdr > tiff_size - sizeof(struct ifd_header))
+    return 0;
+  /*@ assert offset_hdr + sizeof(struct ifd_header) <= tiff_size; */
+  ptr_hdr=&buffer[offset_hdr];
+  /*@ assert \valid_read(ptr_hdr + (0 .. sizeof(struct ifd_header)-1)); */
+  hdr=(const struct ifd_header *)ptr_hdr;
   /*@ assert \valid_read(hdr); */
   nbr_fields=be16(hdr->nbr_fields);
-  for(i=0, tmp=&hdr->ifd;
-      i < nbr_fields && (const char*)(tmp+1) <= (const char*)tiff+tiff_size;
-      i++, tmp++)
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  /*@
+    @ loop assigns i, *potential_error;
+    @ loop variant nbr_fields - i;
+    @*/
+  for(i=0; i < nbr_fields; i++)
   {
-    if(be16(tmp->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const char*)&tmp->tdir_type+1))
+    /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+    const unsigned int offset_entry=offset_hdr + 2 + i * sizeof(TIFFDirEntry);
+    const unsigned char *ptr_entry;
+    const TIFFDirEntry *tmp;
+    if(offset_entry + sizeof(TIFFDirEntry) > tiff_size)
+      return 0;
+    /*@ assert offset_entry + sizeof(TIFFDirEntry) <= tiff_size; */
+    /*X assert \valid_read(buffer + (0 .. offset_entry + sizeof(TIFFDirEntry)-1)); */
+    /*X assert \valid_read((buffer + offset_entry) + (0 .. sizeof(TIFFDirEntry)-1)); */
+    ptr_entry=buffer + offset_entry;
+    /*@ assert \valid_read(ptr_entry + (0 .. sizeof(TIFFDirEntry)-1)); */
+    tmp=(const TIFFDirEntry *)ptr_entry;
+    /*@ assert \valid_read(tmp); */
+    if(be16(tmp->tdir_type) > 18 && (*potential_error==NULL || *potential_error > (const unsigned char*)&tmp->tdir_type))
     {
-      *potential_error = (const char*)&tmp->tdir_type+1;
+      *potential_error = (const unsigned char*)&tmp->tdir_type;
     }
     if(be16(tmp->tdir_tag)==tag)
-      return (const char*)tiff+be32(tmp->tdir_offset);
-  }
-  return NULL;
-}
-
-const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error)
-{
-  const struct ifd_header *ifd0;
-  const struct ifd_header *exififd;
-  const uint32_t *tiff_next_diroff;
-  if(tiff_size < sizeof(TIFFHeader))
-    return NULL;
-  if(tiff_size < be32(tiff->tiff_diroff)+sizeof(TIFFDirEntry))
-    return NULL;
-  ifd0=(const struct ifd_header *)((const char*)tiff + be32(tiff->tiff_diroff));
-  /* Bound checking */
-  if((const char *)ifd0 <= (const char *)tiff ||
-      (const char *)(ifd0 + 1) > (const char *)tiff + tiff_size)
-    return NULL;
-  /*@ assert \valid_read(ifd0); */
-  {
-    const char *tmp=find_tag_from_tiff_header_be_aux(tiff, tiff_size, tag, potential_error, ifd0);
-    if(tmp)
-      return tmp;
-  }
-  exififd=(const struct ifd_header *)find_tag_from_tiff_header_be_aux(tiff, tiff_size, TIFFTAG_EXIFIFD, potential_error, ifd0);
-  if((const char *)exififd > (const char *)tiff &&
-      (const char *)(exififd + 1) <= (const char *)tiff + tiff_size)
-  {
-    /* Exif */
-    /*@ assert \valid_read(exififd); */
-    const char *tmp=find_tag_from_tiff_header_be_aux(tiff, tiff_size, tag, potential_error, exififd);
-    if(tmp)
-      return tmp;
-  }
-  tiff_next_diroff=(const uint32_t *)(&ifd0->ifd + be16(ifd0->nbr_fields));
-  if( (const char *)tiff_next_diroff > (const char *)tiff &&
-      (const char *)(tiff_next_diroff + 1) <= (const char*)tiff + tiff_size &&
-      be32(*tiff_next_diroff)>0)
-  {
-    /* IFD1 */
-    const struct ifd_header *ifd1=(const struct ifd_header*)((const char *)tiff+be32(*tiff_next_diroff));
-    if((const char *)ifd1 > (const char *)tiff &&
-	(const char *)(ifd1 + 1) <= (const char *)tiff + tiff_size)
     {
-      /*@ assert \valid_read(ifd1); */
-      return find_tag_from_tiff_header_be_aux(tiff, tiff_size, tag, potential_error, ifd1);
+      /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+      return be32(tmp->tdir_offset);
     }
   }
-  return NULL;
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  return 0;
 }
 
+unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error)
+{
+  /*@ assert tiff_size >= sizeof(TIFFHeader); */
+  /*@ assert tiff_size >= sizeof(struct ifd_header); */
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  const TIFFHeader *tiff=(const TIFFHeader *)buffer;
+  unsigned int offset_ifd0;
+  unsigned int offset_exififd;
+  unsigned int offset_ptr_offset_ifd1;
+  /*@ assert \valid_read(tiff); */
+  offset_ifd0=be32(tiff->tiff_diroff);
+  if(offset_ifd0 >= tiff_size)
+    return 0;
+  /*@ assert offset_ifd0 < tiff_size; */
+  if(offset_ifd0 > tiff_size - sizeof(struct ifd_header))
+    return 0;
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  /*@ assert offset_ifd0 + sizeof(struct ifd_header) <= tiff_size; */
+  /*@ assert \valid_read(buffer+(0..offset_ifd0 + sizeof(struct ifd_header)-1)); */
+  {
+    const unsigned int tmp=find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd0);
+    /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+    if(tmp)
+      return tmp;
+  }
+  offset_exififd=find_tag_from_tiff_header_be_aux(buffer, tiff_size, TIFFTAG_EXIFIFD, potential_error, offset_ifd0);
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  if(offset_exififd <= tiff_size - sizeof(struct ifd_header))
+  {
+    /* Exif */
+    const unsigned int tmp=find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_exififd);
+    /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+    if(tmp)
+      return tmp;
+  }
+  {
+    const unsigned char *ptr_ifd0;
+    const struct ifd_header *ifd0;
+    ptr_ifd0=buffer+offset_ifd0;
+    /*@ assert \valid_read(ptr_ifd0 + (0 .. sizeof(struct ifd_header)-1)); */
+    ifd0=(const struct ifd_header *)ptr_ifd0;
+    /*@ assert \valid_read(ifd0); */
+    offset_ptr_offset_ifd1=offset_ifd0+2+be16(ifd0->nbr_fields);
+  }
+#ifndef MAIN_jpg
+  if(offset_ptr_offset_ifd1 > tiff_size-4)
+    return 0;
+  /*@ assert offset_ptr_offset_ifd1 + 4 <= tiff_size; */
+  {
+    /* IFD1 */
+    /*@ assert \valid_read(buffer + (0 .. offset_ptr_offset_ifd1 + 4 - 1)); */
+    const unsigned char *ptr_offset_ifd1=&buffer[offset_ptr_offset_ifd1];
+    /*@ assert \valid_read(ptr_offset_ifd1 + (0 .. 4 - 1)); */
+    const uint32_t *ptr32_offset_ifd1=(const uint32_t *)ptr_offset_ifd1;
+    /*@ assert \valid_read(ptr32_offset_ifd1); */
+    const unsigned int offset_ifd1=be32(*ptr32_offset_ifd1);
+    if(offset_ifd1 > 0 && offset_ifd1 <= tiff_size - sizeof(struct ifd_header))
+    {
+      const unsigned int tmp=find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd1);
+      /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+      if(tmp)
+	return tmp;
+    }
+  }
+#endif
+  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
+  return 0;
+}
+
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 /*@
   @ requires \valid(handle);
   @ requires \valid_read(entry_strip_offsets);
@@ -140,13 +189,16 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
   const unsigned int nbr=(be32(entry_strip_offsets->tdir_count)<2048?
       be32(entry_strip_offsets->tdir_count):
       2048);
+  /*@ assert nbr <= 2048; */
   unsigned int i;
   uint32_t *offsetp;
   uint32_t *sizep;
   uint64_t max_offset=0;
-  if(be32(entry_strip_offsets->tdir_count) != be32(entry_strip_bytecounts->tdir_count))
+  /* be32() isn't required to compare the 2 values */
+  if(entry_strip_offsets->tdir_count != entry_strip_bytecounts->tdir_count)
     return TIFF_ERROR;
-  if(be32(entry_strip_offsets->tdir_count)==0 ||
+  /*@ assert entry_strip_offsets->tdir_count == entry_strip_bytecounts->tdir_count; */
+  if(nbr==0 ||
       be16(entry_strip_offsets->tdir_type)!=4 ||
       be16(entry_strip_bytecounts->tdir_type)!=4)
     return TIFF_ERROR;
@@ -208,6 +260,7 @@ static unsigned int tiff_be_read(const void *val, const unsigned int type)
       return 0;
   }
 }
+#endif
 
 #ifdef ENABLE_TIFF_MAKERNOTE
 static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
@@ -311,13 +364,17 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
   return max_offset;
 }
 #endif
+#endif
 
-#ifndef MAIN_tiff_le
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
+  @ requires \separated(&errno, fr);
+  @ ensures \valid(fr->handle);
+  @ ensures valid_read_string(fr->extension);
   @
  */
 static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
@@ -370,10 +427,10 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   if(n==0)
     return TIFF_ERROR;
   /*@ assert sizeof(TIFFDirEntry)==12; */
-  /*@
-    @ loop invariant 0 <= i <=n && i <= (data_read-2)/12;
-    @ loop variant n-i;
-    @*/
+  /*X
+    X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
+    X loop variant n-i;
+    X*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {
     const TIFFDirEntry *entry=&entries[i];
@@ -431,6 +488,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 #ifndef __FRAMAC__
 	  {
 	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr->handle); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
@@ -442,6 +500,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 #ifndef __FRAMAC__
 	  {
 	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr->handle); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
@@ -495,6 +554,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	    for(j=0; j<nbr; j++)
 	    {
 	      const uint64_t new_offset=file_check_tiff_be_aux(fr, be32(subifd_offsetp[j]), depth+1, 0);
+	      /*@ assert \valid(fr->handle); */
 	      if(new_offset==TIFF_ERROR)
 	      {
 		return TIFF_ERROR;
@@ -549,6 +609,9 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
     if(max_offset < tmp)
       max_offset=tmp;
   }
+  if(data_read < 6)
+    return max_offset;
+  /*@ assert data_read >= 6; */
 #ifndef __FRAMAC__
   if ( 2 + n*12 + 4 <= (unsigned int)data_read)
   {
@@ -587,6 +650,7 @@ static void file_check_tiff_be(file_recovery_t *fr)
 #endif
   if(header.tiff_magic==TIFF_BIGENDIAN)
     calculated_file_size=file_check_tiff_be_aux(fr, be32(header.tiff_diroff), 0, 0);
+  /*@ assert \valid(fr->handle); */
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
   log_info("TIFF Estimated %llu %llx\n", (unsigned long long)calculated_file_size, (unsigned long long)calculated_file_size);
@@ -610,7 +674,9 @@ static void file_check_tiff_be(file_recovery_t *fr)
 }
 #endif
 
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 /*@
+  @ requires separation: \separated(&file_hint_tiff, buffer+(..), file_recovery, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_be);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_tiff.extension ||
 				file_recovery_new->extension == extension_dcr ||
@@ -620,11 +686,11 @@ static void file_check_tiff_be(file_recovery_t *fr)
   @*/
 int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char *potential_error=NULL;
+  const unsigned char *potential_error=NULL;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
   if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)
+#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
@@ -634,28 +700,102 @@ int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_
 #endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_tiff.extension;
-  if(find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=NULL)
+  if(find_tag_from_tiff_header_be(buffer, buffer_size, TIFFTAG_DNGVERSION, &potential_error)!=0)
   {
     /* Adobe Digital Negative, ie. PENTAX K-30 */
     file_recovery_new->extension=extension_dng;
   }
   else
   {
-    const char *tag_make;
-    tag_make=find_tag_from_tiff_header_be(header, buffer_size, TIFFTAG_MAKE, &potential_error);
-    if(tag_make!=NULL && tag_make >= (const char *)buffer && tag_make < (const char *)buffer + buffer_size - 20)
+    const unsigned int tag_make=find_tag_from_tiff_header_be(buffer, buffer_size, TIFFTAG_MAKE, &potential_error);
+    if(tag_make!=0 && tag_make < buffer_size - 20)
     {
-      if( memcmp(tag_make, "PENTAX Corporation ", 20)==0 ||
-	  memcmp(tag_make, "PENTAX             ", 20)==0)
+      if( memcmp(&buffer[tag_make], "PENTAX Corporation ", 20)==0 ||
+	  memcmp(&buffer[tag_make], "PENTAX             ", 20)==0)
 	file_recovery_new->extension=extension_pef;
-      else if(memcmp(tag_make, "NIKON CORPORATION", 18)==0)
+      else if(memcmp(&buffer[tag_make], "NIKON CORPORATION", 18)==0)
 	file_recovery_new->extension=extension_nef;
-      else if(memcmp(tag_make, "Kodak", 6)==0)
+      else if(memcmp(&buffer[tag_make], "Kodak", 6)==0)
 	file_recovery_new->extension=extension_dcr;
     }
   }
   file_recovery_new->time=get_date_from_tiff_header(buffer, buffer_size);
   file_recovery_new->file_check=&file_check_tiff_be;
   return 1;
+}
+#endif
+
+#if defined(MAIN_tiff_be)
+#define BLOCKSIZE 65536u
+int main()
+{
+  const char fn[] = "recup_dir.1/f0000000.tif";
+  unsigned char buffer[BLOCKSIZE];
+  int res;
+  file_recovery_t file_recovery_new;
+  file_recovery_t file_recovery;
+  file_stat_t file_stats;
+
+  /*@ assert \valid(buffer + (0 .. (BLOCKSIZE - 1))); */
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)buffer, BLOCKSIZE);
+#endif
+
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=BLOCKSIZE;
+  file_recovery_new.blocksize=BLOCKSIZE;
+  file_recovery_new.data_check=NULL;
+  file_recovery_new.extension=NULL;
+  file_recovery_new.file_stat=NULL;
+  file_recovery_new.file_check=NULL;
+  file_recovery_new.file_rename=NULL;
+  file_recovery_new.calculated_file_size=0;
+  file_recovery_new.file_size=0;
+  file_recovery_new.location.start=0;
+
+  file_stats.file_hint=&file_hint_tiff;
+  file_stats.not_recovered=0;
+  file_stats.recovered=0;
+  file_hint_tiff.register_header_check(&file_stats);
+  if(header_check_tiff_be(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
+    return 0;
+  /*@ assert file_recovery_new.file_check == &file_check_tiff_be; */
+  /*@ assert valid_read_string(file_recovery_new.extension); */
+  /*@ assert (file_recovery_new.extension == file_hint_tiff.extension ||
+    file_recovery_new.extension == extension_dcr ||
+    file_recovery_new.extension == extension_dng ||
+    file_recovery_new.extension == extension_nef ||
+    file_recovery_new.extension == extension_pef); */
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
+  /*@ assert valid_read_string(file_recovery_new.extension); */
+  file_recovery_new.file_stat=&file_stats;
+  /*@ assert valid_read_string(file_recovery_new.extension); */
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  /*@ assert file_recovery_new.data_check == \null; */
+  /*@ assert file_recovery_new.file_stat->file_hint!=NULL; */
+  {
+    /*@ assert valid_read_string(file_recovery_new.extension); */
+    file_recovery_t file_recovery_new2;
+    file_recovery_new2.blocksize=BLOCKSIZE;
+    file_recovery_new2.file_stat=NULL;
+    file_recovery_new2.file_check=NULL;
+    file_recovery_new2.location.start=BLOCKSIZE;
+    file_recovery_new.handle=NULL;	/* In theory should be not null */
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown((char *)buffer, BLOCKSIZE);
+#endif
+    header_check_tiff_be(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
+  }
+  /*@ assert file_recovery_new.file_check == &file_check_tiff_be; */
+  {
+    file_recovery_new.handle=fopen(fn, "rb");
+    if(file_recovery_new.handle!=NULL)
+    {
+      file_check_tiff_be(&file_recovery_new);
+      fclose(file_recovery_new.handle);
+    }
+  }
+  return 0;
 }
 #endif

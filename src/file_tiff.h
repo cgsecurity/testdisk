@@ -71,24 +71,30 @@ struct ifd_header {
 /*@
   @ requires buffer_size >= sizeof(TIFFHeader);
   @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ ensures \valid_read(buffer+(0..buffer_size-1));
   @*/
 time_t get_date_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size);
 
 /*@
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \separated(potential_error, buffer);
+  @ ensures \valid_read(buffer+(0..buffer_size-1));
   @*/
-unsigned int find_tag_from_tiff_header(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int tag, const char **potential_error);
+unsigned int find_tag_from_tiff_header(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int tag, const unsigned char **potential_error);
 
-#ifndef MAIN_tiff_be
+#if !defined(MAIN_tiff_be)
 /*@
   @ requires tiff_size >= sizeof(TIFFHeader);
-  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
+  @ requires tiff_size >= sizeof(struct ifd_header);
+  @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
-  @ requires \separated(potential_error, tiff);
+  @ requires \separated(potential_error, buffer);
+  @ ensures \valid_read(buffer+(0..tiff_size-1));
   @*/
-const char *find_tag_from_tiff_header_le(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);
+#endif
 
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
@@ -113,14 +119,16 @@ void file_check_tiff_le(file_recovery_t *fr);
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
 
-#ifndef MAIN_tiff_le
+#if !defined(MAIN_tiff_le)
 /*@
   @ requires tiff_size >= sizeof(TIFFHeader);
-  @ requires \valid_read((const unsigned char *)tiff+(0..tiff_size-1));
+  @ requires tiff_size >= sizeof(struct ifd_header);
+  @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
-  @ requires \separated(potential_error, tiff);
+  @ requires \separated(potential_error, buffer);
+  @ ensures \valid_read(buffer+(0..tiff_size-1));
   @*/
-const char *find_tag_from_tiff_header_be(const TIFFHeader *tiff, const unsigned int tiff_size, const unsigned int tag, const char**potential_error);
+unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);
 #endif
 
 #if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
