@@ -117,7 +117,6 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
   const TIFFHeader *tiff=(const TIFFHeader *)buffer;
   unsigned int offset_ifd0;
   unsigned int offset_exififd;
-  unsigned int offset_ptr_offset_ifd1;
   /*@ assert \valid_read(tiff); */
   offset_ifd0=be32(tiff->tiff_diroff);
   if(offset_ifd0 >= tiff_size)
@@ -144,36 +143,6 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
     if(tmp)
       return tmp;
   }
-  {
-    const unsigned char *ptr_ifd0;
-    const struct ifd_header *ifd0;
-    ptr_ifd0=buffer+offset_ifd0;
-    /*@ assert \valid_read(ptr_ifd0 + (0 .. sizeof(struct ifd_header)-1)); */
-    ifd0=(const struct ifd_header *)ptr_ifd0;
-    /*@ assert \valid_read(ifd0); */
-    offset_ptr_offset_ifd1=offset_ifd0+2+be16(ifd0->nbr_fields);
-  }
-#ifndef MAIN_jpg
-  if(offset_ptr_offset_ifd1 > tiff_size-4)
-    return 0;
-  /*@ assert offset_ptr_offset_ifd1 + 4 <= tiff_size; */
-  {
-    /* IFD1 */
-    /*@ assert \valid_read(buffer + (0 .. offset_ptr_offset_ifd1 + 4 - 1)); */
-    const unsigned char *ptr_offset_ifd1=&buffer[offset_ptr_offset_ifd1];
-    /*@ assert \valid_read(ptr_offset_ifd1 + (0 .. 4 - 1)); */
-    const uint32_t *ptr32_offset_ifd1=(const uint32_t *)ptr_offset_ifd1;
-    /*@ assert \valid_read(ptr32_offset_ifd1); */
-    const unsigned int offset_ifd1=be32(*ptr32_offset_ifd1);
-    if(offset_ifd1 > 0 && offset_ifd1 <= tiff_size - sizeof(struct ifd_header))
-    {
-      const unsigned int tmp=find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd1);
-      /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
-      if(tmp)
-	return tmp;
-    }
-  }
-#endif
   /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
   return 0;
 }
