@@ -262,6 +262,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
   data_read=fread(buffer, 1, sizeof(buffer), in);
   if(data_read<2)
     return TIFF_ERROR;
+  /*@ assert data_read >= 2; */
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)buffer, sizeof(buffer));
 #endif
@@ -339,16 +340,55 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
 #endif
 
 #if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
+static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
+
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
   @ requires \separated(&errno, fr);
+  @ requires \valid_read(buffer + (0 .. buffer_size - 1));
+  @ ensures \valid(fr);
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
-  @
- */
+  @*/
+static uint64_t file_check_tiff_le_aux_next(file_recovery_t *fr, const unsigned int depth, const unsigned int count, const unsigned char *buffer, const unsigned int buffer_size, const unsigned int offset_ptr_offset)
+{
+  if(buffer_size < 4)
+    return 0;
+  /*@ assert buffer_size >= 4; */
+  if(offset_ptr_offset > buffer_size-4)
+    return 0;
+  {
+    /*@ assert offset_ptr_offset <= buffer_size - 4; */
+    /*@ assert offset_ptr_offset + 4 <= buffer_size; */
+    /*@ assert \valid_read(buffer + (0 .. offset_ptr_offset + 4 - 1)); */
+    const unsigned char *ptr_offset=&buffer[offset_ptr_offset];
+    /*@ assert \valid_read(ptr_offset + (0 .. 4 - 1)); */
+    const uint32_t *ptr32_offset=(const uint32_t *)ptr_offset;
+    /*@ assert \valid_read(ptr32_offset); */
+    const unsigned int next_diroff=le32(*ptr32_offset);
+    if(next_diroff == 0)
+      return 0;
+    /*@ assert \valid(fr); */
+    /*@ assert \valid(fr->handle); */
+    /*@ assert \valid_read(&fr->extension); */
+    /*@ assert valid_read_string(fr->extension); */
+    return file_check_tiff_le_aux(fr, next_diroff, depth+1, count+1);
+  }
+}
+
+/*@
+  @ requires \valid(fr);
+  @ requires \valid(fr->handle);
+  @ requires \valid_read(&fr->extension);
+  @ requires valid_read_string(fr->extension);
+  @ requires \separated(&errno, fr);
+  @ ensures \valid(fr);
+  @ ensures \valid(fr->handle);
+  @ ensures valid_read_string(fr->extension);
+  @*/
 static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
 {
   unsigned char buffer[8192];
@@ -372,6 +412,9 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
   const TIFFDirEntry *entry_strip_bytecounts=NULL;
   const TIFFDirEntry *entry_tile_offsets=NULL;
   const TIFFDirEntry *entry_tile_bytecounts=NULL;
+  /*@ assert \valid(fr->handle); */
+  /*@ assert \valid_read(&fr->extension); */
+  /*@ assert valid_read_string(fr->extension); */
 #ifdef DEBUG_TIFF
   log_info("file_check_tiff_le_aux(fr, %lu, %u, %u)\n", (long unsigned)tiff_diroff, depth, count);
 #endif
@@ -398,6 +441,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 #endif
   if(n==0)
     return TIFF_ERROR;
+  /*@ assert 0 < n <= 65535; */
   /*@ assert sizeof(TIFFDirEntry)==12; */
   /*X
     X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
@@ -405,6 +449,10 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
     X*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {
+    /*@ assert \valid(fr); */
+    /*@ assert \valid(fr->handle); */
+    /*@ assert \valid_read(&fr->extension); */
+    /*@ assert valid_read_string(fr->extension); */
     const TIFFDirEntry *entry=&entries[i];
     /*@ assert 0 <= i < n; */
     /*@ assert \valid_read(entry); */
@@ -458,16 +506,21 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	case TIFFTAG_TILEOFFSETS:	tile_offsets=tmp;	break;
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
-#ifndef __FRAMAC__
 	  {
-	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr); */
 	    /*@ assert \valid(fr->handle); */
+	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_read_string(fr->extension); */
+	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr); */
+	    /*@ assert \valid(fr->handle); */
+	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_read_string(fr->extension); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
-#endif
 	  break;
 	case TIFFTAG_SUBIFD:
 	  if(fr->extension == extension_arw)
@@ -476,17 +529,22 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	    if(max_offset < tmp)
 	      max_offset=tmp;
 	  }
-#ifndef __FRAMAC__
 	  else
 	  {
-	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr); */
 	    /*@ assert \valid(fr->handle); */
+	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_read_string(fr->extension); */
+	    const uint64_t new_offset=file_check_tiff_le_aux(fr, tmp, depth+1, 0);
+	    /*@ assert \valid(fr); */
+	    /*@ assert \valid(fr->handle); */
+	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_read_string(fr->extension); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
 	    if(max_offset < new_offset)
 	      max_offset=new_offset;
 	  }
-#endif
 	  break;
 #ifdef ENABLE_TIFF_MAKERNOTE
 	case EXIFTAG_MAKERNOTE:
@@ -526,15 +584,21 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 #if defined(__FRAMAC__)
 	    Frama_C_make_unknown((char *)&subifd_offsetp, sizeof(subifd_offsetp));
 #endif
-#ifndef __FRAMAC__
-	    /*@
-	      @ loop invariant 0 <= j <= nbr <=32;
-	      @ loop variant nbr-j;
-	      @*/
+	    /*X
+	      X loop invariant 0 <= j <= nbr <=32;
+	      X loop variant nbr-j;
+	      X*/
 	    for(j=0; j<nbr; j++)
 	    {
-	      const uint64_t new_offset=file_check_tiff_le_aux(fr, le32(subifd_offsetp[j]), depth+1, 0);
+	      /*@ assert \valid(fr); */
 	      /*@ assert \valid(fr->handle); */
+	      /*@ assert \valid_read(&fr->extension); */
+	      /*@ assert valid_read_string(fr->extension); */
+	      const uint64_t new_offset=file_check_tiff_le_aux(fr, le32(subifd_offsetp[j]), depth+1, 0);
+	      /*@ assert \valid(fr); */
+	      /*@ assert \valid(fr->handle); */
+	      /*@ assert \valid_read(&fr->extension); */
+	      /*@ assert valid_read_string(fr->extension); */
 	      if(new_offset==TIFF_ERROR)
 	      {
 		return TIFF_ERROR;
@@ -542,7 +606,6 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	      if(max_offset < new_offset)
 		max_offset = new_offset;
 	    }
-#endif
 	  }
 	  break;
 	case TIFFTAG_STRIPOFFSETS:
@@ -589,22 +652,16 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
     if(max_offset < tmp)
       max_offset=tmp;
   }
-  if(data_read < 6)
-    return max_offset;
-  /*@ assert data_read >= 6; */
-#ifndef __FRAMAC__
-  if ( 2 + n*12 + 4 <= (unsigned int)data_read)
   {
-    /*@ assert n <= (data_read - 6) /12; */
-    const uint32_t *tiff_next_diroff=(const uint32_t *)&entries[n];
-    if(le32(*tiff_next_diroff) > 0)
-    {
-      const uint64_t new_offset=file_check_tiff_le_aux(fr, le32(*tiff_next_diroff), depth+1, count+1);
-      if(new_offset != TIFF_ERROR && max_offset < new_offset)
-	max_offset=new_offset;
-    }
+    const unsigned int offset_ptr_offset=2+12*n;
+    const uint64_t new_offset=file_check_tiff_le_aux_next(fr, depth, count, buffer, data_read, offset_ptr_offset);
+    /*@ assert \valid(fr); */
+    /*@ assert \valid(fr->handle); */
+    /*@ assert \valid_read(&fr->extension); */
+    /*@ assert valid_read_string(fr->extension); */
+    if(new_offset != TIFF_ERROR && max_offset < new_offset)
+      max_offset=new_offset;
   }
-#endif
   return max_offset;
 }
 

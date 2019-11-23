@@ -288,7 +288,6 @@ static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset
   @*/
 static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const unsigned int size)
 {
-#ifndef MAIN_jpg
   if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
   {
     return check_mpo_le(mpo, offset, size);
@@ -297,13 +296,13 @@ static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const
   {
     return check_mpo_be(mpo, offset, size);
   }
-#endif
   return 0;
 }
 
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires valid_read_string((char *)&fr->filename);
   @ requires \initialized(&fr->time);
   @*/
 static void file_check_mpo(file_recovery_t *fr)
@@ -402,8 +401,36 @@ static int is_marker_valid(const unsigned int marker)
 }
 
 /*@
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @*/
+static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i, const unsigned int size)
+{ /* APP1 Exif information */
+  const unsigned int tiff_offset=i+2+8;
+  if(tiff_offset < buffer_size && size > 8)
+  {
+    /*@ assert tiff_offset < buffer_size; */
+    /*@ assert size > 8; */
+    unsigned int tiff_size=size-0x08;
+    if(buffer_size - tiff_offset < tiff_size)
+    {
+      tiff_size=buffer_size - tiff_offset;
+      /*@ assert tiff_offset + tiff_size == buffer_size; */
+    }
+    else
+    {
+      /*@ assert tiff_offset + tiff_size <= buffer_size; */
+    }
+    /*@ assert tiff_offset + tiff_size <= buffer_size; */
+    return get_date_from_tiff_header(&buffer[tiff_offset], tiff_size);
+  }
+  return 0;
+}
+
+
+/*@
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)&file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ ensures \result == 0 || \result == 1;
@@ -530,22 +557,14 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   }
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {
+    const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i+1]==0xff)
       i++;
     else
     {
       if(buffer[i+1]==0xe1)
       { /* APP1 Exif information */
-        const unsigned int tmp=2+(buffer[i+2]<<8)+buffer[i+3];
-	if(i+0x0A < buffer_size && tmp > 0x0A)
-	{
-	  unsigned int tiff_size=tmp-0x0A;
-	  if(buffer_size - (i+0x0A) < tiff_size)
-	    tiff_size=buffer_size - (i+0x0A);
-#ifndef MAIN_jpg
-	  jpg_time=get_date_from_tiff_header(&buffer[i+0x0A], tiff_size);
-#endif
-	}
+	jpg_time=jpg_get_date(buffer, buffer_size, i, size);
       }
       else if(buffer[i+1]==0xc4)
       {
@@ -553,7 +572,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	if(jpg_check_dht(buffer, buffer_size, i, 2+(buffer[i+2]<<8)+buffer[i+3])!=0)
 	  return 0;
       }
-      i+=2+(buffer[i+2]<<8)+buffer[i+3];
+      i+=2+size;
     }
   }
   if(i+1 < file_recovery_new->blocksize && buffer[i+1]!=0xda)
@@ -572,8 +591,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-#ifndef MAIN_jpg
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && !defined(__FRAMAC__)
 struct my_error_mgr {
   struct jpeg_error_mgr pub;	/* "public" fields, must be the first field */
 
@@ -1378,7 +1396,6 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
   }
 }
 #endif
-#endif
 
 /*@
   @ requires i < buffer_size;
@@ -1461,6 +1478,7 @@ static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer
   @ requires \valid(file_recovery->handle);
   @ requires file_recovery->blocksize <= 1048576;
   @ requires file_recovery->offset_error <= (1<<63) - 1;
+  @ ensures \valid(file_recovery->handle);
   @*/
 static void jpg_search_marker(file_recovery_t *file_recovery)
 {
@@ -1498,6 +1516,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
       @ loop invariant offset + i >= offset_test;
       @ loop invariant offset_test >= file_recovery->offset_error;
       @ loop invariant 0 <= i < nbytes + file_recovery->blocksize;
+      @ loop assigns i,file_recovery->extra;
       @*/
     while(i+1<nbytes)
     {
@@ -1514,12 +1533,14 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
 	)
       {
 	file_recovery->extra=tmp - file_recovery->offset_error;
+#ifndef __FRAMAC__
 	if(file_recovery->extra % file_recovery->blocksize != 0)
 	{
 	  log_info("jpg_search_marker %s extra=%llu\n",
 	      file_recovery->filename,
 	      (long long unsigned)file_recovery->extra);
 	}
+#endif
 	return ;
       }
       i+=file_recovery->blocksize;
@@ -1533,6 +1554,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
   @ requires \valid(thumb_offset);
+  @ requires valid_read_string((char *)&file_recovery->filename);
   @ requires file_recovery->blocksize > 0;
   @ requires \valid_read(buffer + (0 .. nbytes-1));
   @ requires \initialized(&file_recovery->time);
@@ -1541,158 +1563,158 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
 static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int extract_thumb, const unsigned char *buffer, const unsigned int i, const unsigned int offset, const unsigned int size, const size_t nbytes, uint64_t *thumb_offset)
 { /* APP1 Exif information */
   const unsigned int tiff_offset=i+2+8;
-  if(tiff_offset < nbytes && size > 8)
+  const unsigned char *potential_error=NULL;
+  const unsigned char *thumb_data=NULL;
+  const unsigned char *tiff;
+  unsigned int thumb_size=0;
+  unsigned int tiff_size;
+  if(tiff_offset >= nbytes || size <= 8)
+    return 1;
+  /*@ assert tiff_offset < nbytes; */
+  /*@ assert size > 8; */
+  tiff_size=size-0x08;
+  if(nbytes - tiff_offset < tiff_size)
   {
-    /*@ assert tiff_offset < nbytes; */
-    /*@ assert size > 8; */
-    const unsigned char *potential_error=NULL;
-    unsigned int tiff_size=size-0x08;
-    const unsigned char *thumb_data=NULL;
-    unsigned int thumb_size=0;
-    if(nbytes - tiff_offset < tiff_size)
-    {
-      tiff_size=nbytes - tiff_offset;
-      /*@ assert tiff_offset + tiff_size == nbytes; */
-    }
-    else
-    {
-      /*@ assert tiff_offset + tiff_size <= nbytes; */
-    }
+    tiff_size=nbytes - tiff_offset;
+    /*@ assert tiff_offset + tiff_size == nbytes; */
+  }
+  else
+  {
     /*@ assert tiff_offset + tiff_size <= nbytes; */
-    if(tiff_size<sizeof(TIFFHeader))
-      return 1;
-    /*@ assert tiff_size >= sizeof(TIFFHeader); */
-    {
-      /*@ assert \valid_read(buffer + (0 .. tiff_offset+tiff_size-1)); */
-      /*@ assert \valid_read((buffer + tiff_offset) + (0 .. tiff_size-1)); */
-      const unsigned char *tiff=&buffer[tiff_offset];
-      /*@ assert \valid_read(tiff+ (0 .. tiff_size-1)); */
-      if(file_recovery->time==0)
-      {
-	/*@ assert \valid_read(tiff+ (0 .. tiff_size-1)); */
-	file_recovery->time=get_date_from_tiff_header(tiff, tiff_size);
-      }
-#ifndef __FRAMAC__
-      *thumb_offset=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
-      if(*thumb_offset!=0)
-      {
-	*thumb_offset+=tiff_offset;
-	thumb_data=buffer+ (*thumb_offset);
-	thumb_size=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
-      }
+  }
+  /*@ assert tiff_offset + tiff_size <= nbytes; */
+  if(tiff_size<sizeof(TIFFHeader))
+    return 1;
+  /*@ assert tiff_size >= sizeof(TIFFHeader); */
+  /*@ assert \valid_read(buffer + (0 .. tiff_offset+tiff_size-1)); */
+  /*@ assert \valid_read((buffer + tiff_offset) + (0 .. tiff_size-1)); */
+  tiff=&buffer[tiff_offset];
+  /*@ assert \valid_read(tiff+ (0 .. tiff_size-1)); */
+  if(file_recovery->time==0)
+  {
+    /*@ assert \valid_read(tiff+ (0 .. tiff_size-1)); */
+    file_recovery->time=get_date_from_tiff_header(tiff, tiff_size);
+  }
+  *thumb_offset=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFOFFSET, &potential_error);
+  if(*thumb_offset!=0)
+  {
+    *thumb_offset+=tiff_offset;
+    thumb_data=buffer+ (*thumb_offset);
+    thumb_size=find_tag_from_tiff_header(tiff, tiff_size, TIFFTAG_JPEGIFBYTECOUNT, &potential_error);
+  }
+  if(potential_error!=NULL)
+  {
+    file_recovery->offset_error=potential_error-buffer;
+    return 0;
+  }
+  if(file_recovery->offset_ok<i)
+    file_recovery->offset_ok=i;
+  if(thumb_data!=0 && thumb_size!=0 && *thumb_offset < nbytes - 1)
+  {
+    unsigned int j=*thumb_offset+2;
+    unsigned int thumb_sos_found=0;
+#ifdef DEBUG_JPEG
+    unsigned int j_old=j;
 #endif
-      if(potential_error!=NULL)
+    if(buffer[*thumb_offset]!=0xff)
+    {
+      file_recovery->offset_error=*thumb_offset;
+      jpg_search_marker(file_recovery);
+      return 0;
+    }
+    if(buffer[*thumb_offset+1]!=0xd8)
+    {
+      file_recovery->offset_error=*thumb_offset+1;
+      return 0;
+    }
+    while(j+4<nbytes && thumb_sos_found==0)
+    {
+      if(buffer[j]!=0xff)
       {
-	file_recovery->offset_error=potential_error-buffer;
+	file_recovery->offset_error=j;
+#ifdef DEBUG_JPEG
+	log_info("%s thumb no marker at 0x%x\n", file_recovery->filename, j);
+	log_error("%s Error between %u and %u\n", file_recovery->filename, j_old, j);
+#endif
+	jpg_search_marker(file_recovery);
 	return 0;
       }
-      if(file_recovery->offset_ok<i)
-	file_recovery->offset_ok=i;
-#ifndef MAIN_jpg
-      if(thumb_data!=0 && thumb_size!=0)
+      if(buffer[j+1]==0xff)
       {
-	if(*thumb_offset < nbytes - 1)
+	/* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
+	j++;
+	continue;
+      }
+#ifdef DEBUG_JPEG
+      log_info("%s thumb marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
+#endif
+      if(buffer[j+1]==0xda)	/* Thumb SOS: Start Of Scan */
+	thumb_sos_found=1;
+      else if(buffer[j+1]==0xc4)			/* DHT */
+      {
+	if(jpg_check_dht(buffer, nbytes, j, 2+(buffer[j+2]<<8)+buffer[j+3])!=0)
 	{
-	  unsigned int j=*thumb_offset+2;
-	  unsigned int thumb_sos_found=0;
+	  file_recovery->offset_error=j+2;
+	  return 0;
+	}
+      }
+      else if(buffer[j+1]==0xdb ||			/* DQT */
+	  buffer[j+1]==0xc0 ||			/* SOF0 */
+	  buffer[j+1]==0xdd)				/* DRI */
+      {
+      }
+      else if((buffer[j+1]>=0xc0 && buffer[j+1]<=0xcf) ||	/* SOF0 - SOF15 */
+	  (buffer[j+1]>=0xe0 && buffer[j+1]<=0xef) ||		/* APP0 - APP15 */
+	  buffer[j+1]==0xfe)					/* COM */
+      {
+	/* Unusual marker, bug ? */
+      }
+      else
+      {
+	log_info("%s thumb unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
+	file_recovery->offset_error=j;
+	return 0;
+      }
+      if(file_recovery->offset_ok<j)
+	file_recovery->offset_ok=j;
 #ifdef DEBUG_JPEG
-	  unsigned int j_old=j;
+      j_old=j;
 #endif
-	  if(buffer[*thumb_offset]!=0xff)
+      j+=2U+(buffer[j+2]<<8)+buffer[j+3];
+    }
+    if(thumb_sos_found>0 && extract_thumb>0
+	&& offset < nbytes && buffer[offset]==0xff)
+    {
+      char *thumbname;
+      /*@ assert valid_read_string((char *)&file_recovery->filename); */
+#ifndef __FRAMAC__
+      thumbname=strdup(file_recovery->filename);
+      if(thumbname!=NULL)
+      {
+	char *sep;
+	/*@ assert thumbname!=\null; */
+	/*@ assert valid_read_string(thumbname); */
+	sep=strrchr(thumbname,'/');
+	if(sep!=NULL && *(sep+1)=='f' && *thumb_offset+thumb_size < nbytes)
+	{
+	  FILE *out;
+	  *(sep+1)='t';
+	  if((out=fopen(thumbname,"wb"))!=NULL)
 	  {
-	    file_recovery->offset_error=*thumb_offset;
-	    jpg_search_marker(file_recovery);
-	    return 0;
+	    if(fwrite(&buffer[*thumb_offset], thumb_size, 1, out) < 1)
+	    {
+	      log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
+	    }
+	    fclose(out);
+	    if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+	      set_date(thumbname, file_recovery->time, file_recovery->time);
 	  }
-	  if(buffer[*thumb_offset+1]!=0xd8)
+	  else
 	  {
-	    file_recovery->offset_error=*thumb_offset+1;
-	    return 0;
-	  }
-	  while(j+4<nbytes && thumb_sos_found==0)
-	  {
-	    if(buffer[j]!=0xff)
-	    {
-	      file_recovery->offset_error=j;
-#ifdef DEBUG_JPEG
-	      log_info("%s thumb no marker at 0x%x\n", file_recovery->filename, j);
-	      log_error("%s Error between %u and %u\n", file_recovery->filename, j_old, j);
-#endif
-	      jpg_search_marker(file_recovery);
-	      return 0;
-	    }
-	    if(buffer[j+1]==0xff)
-	    {
-	      /* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
-	      j++;
-	      continue;
-	    }
-#ifdef DEBUG_JPEG
-	    log_info("%s thumb marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
-#endif
-	    if(buffer[j+1]==0xda)	/* Thumb SOS: Start Of Scan */
-	      thumb_sos_found=1;
-	    else if(buffer[j+1]==0xc4)			/* DHT */
-	    {
-	      if(jpg_check_dht(buffer, nbytes, j, 2+(buffer[j+2]<<8)+buffer[j+3])!=0)
-	      {
-		file_recovery->offset_error=j+2;
-		return 0;
-	      }
-	    }
-	    else if(buffer[j+1]==0xdb ||			/* DQT */
-		buffer[j+1]==0xc0 ||			/* SOF0 */
-		buffer[j+1]==0xdd)				/* DRI */
-	    {
-	    }
-	    else if((buffer[j+1]>=0xc0 && buffer[j+1]<=0xcf) ||	/* SOF0 - SOF15 */
-		(buffer[j+1]>=0xe0 && buffer[j+1]<=0xef) ||		/* APP0 - APP15 */
-		buffer[j+1]==0xfe)					/* COM */
-	    {
-	      /* Unusual marker, bug ? */
-	    }
-	    else
-	    {
-	      log_info("%s thumb unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
-	      file_recovery->offset_error=j;
-	      return 0;
-	    }
-	    if(file_recovery->offset_ok<j)
-	      file_recovery->offset_ok=j;
-#ifdef DEBUG_JPEG
-	    j_old=j;
-#endif
-	    j+=2U+(buffer[j+2]<<8)+buffer[j+3];
-	  }
-	  if(thumb_sos_found>0 && extract_thumb>0
-	      && offset < nbytes && buffer[offset]==0xff)
-	  {
-	    char *thumbname;
-	    char *sep;
-	    thumbname=strdup(file_recovery->filename);
-	    sep=strrchr(thumbname,'/');
-	    if(sep!=NULL && *(sep+1)=='f' && *thumb_offset+thumb_size < nbytes)
-	    {
-	      FILE *out;
-	      *(sep+1)='t';
-	      if((out=fopen(thumbname,"wb"))!=NULL)
-	      {
-		if(fwrite(&buffer[*thumb_offset], thumb_size, 1, out) < 1)
-		{
-		  log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
-		}
-		fclose(out);
-		if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
-		  set_date(thumbname, file_recovery->time, file_recovery->time);
-	      }
-	      else
-	      {
-		log_error("fopen %s failed\n", thumbname);
-	      }
-	    }
-	    free(thumbname);
+	    log_error("fopen %s failed\n", thumbname);
 	  }
 	}
+	free(thumbname);
       }
 #endif
     }
@@ -1705,6 +1727,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
   @ requires \valid(file_recovery->handle);
   @ requires file_recovery->blocksize > 0;
   @ requires \initialized(&file_recovery->time);
+  @ requires valid_read_string((char *)&file_recovery->filename);
  */
 static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsigned int extract_thumb)
 {
@@ -1740,7 +1763,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i]!=0xff)
     {
-#ifdef DEBUG_JPEG
+#if defined(DEBUG_JPEG) && !defined(__FRAMAC__)
       log_info("%s no marker at 0x%x\n", file_recovery->filename, i);
 #endif
       file_recovery->offset_error=i;
@@ -1753,7 +1776,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
       offset++;
       continue;
     }
-#ifdef DEBUG_JPEG
+#if defined(DEBUG_JPEG) && !defined(__FRAMAC__)
     log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
     offset+=(uint64_t)2+size;
@@ -1788,7 +1811,9 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     }
     else
     {
+#ifndef __FRAMAC__
       log_info("%s unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i+1);
+#endif
       file_recovery->offset_error=i+1;
       return thumb_offset;
     }
@@ -1804,6 +1829,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires valid_read_string((char *)&file_recovery->filename);
   @ requires \initialized(&file_recovery->time);
   @*/
 static void file_check_jpg(file_recovery_t *file_recovery)
@@ -1828,7 +1854,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #ifdef DEBUG_JPEG
   log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
 #endif
-#ifndef MAIN_jpg
+#ifndef __FRAMAC__
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   if(thumb_offset!=0 &&
       (file_recovery->checkpoint_status==0 || thumb_error!=0) &&
@@ -1857,7 +1883,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && ! defined(MAIN_jpg)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && ! defined(__FRAMAC__)
   jpg_check_picture(file_recovery);
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;

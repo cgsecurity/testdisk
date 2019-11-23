@@ -69,7 +69,6 @@ struct ifd_header {
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires buffer_size >= sizeof(TIFFHeader);
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ ensures \valid_read(buffer+(0..buffer_size-1));
   @*/

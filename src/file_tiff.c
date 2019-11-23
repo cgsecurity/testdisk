@@ -140,8 +140,11 @@ const char *tag_name(unsigned int tag)
 unsigned int find_tag_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size, const unsigned int tag, const unsigned char **potential_error)
 {
   const TIFFHeader *tiff=(const TIFFHeader *)buffer;
-  if(buffer_size < sizeof(TIFFHeader))
+  /*@ assert sizeof(TIFFHeader) <= sizeof(struct ifd_header); */
+  if(buffer_size < sizeof(struct ifd_header))
     return 0;
+  /*@ assert buffer_size >= sizeof(TIFFHeader); */
+  /*@ assert buffer_size >= sizeof(struct ifd_header); */
 #ifndef MAIN_tiff_le
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
     return find_tag_from_tiff_header_be(buffer, buffer_size, tag, potential_error);
@@ -159,9 +162,11 @@ time_t get_date_from_tiff_header(const unsigned char *buffer, const unsigned int
   unsigned int date_asc=0;
   time_t tmp;
   /*@ assert \valid_read(buffer+(0..buffer_size-1)); */
-  if(buffer_size < sizeof(TIFFHeader) || buffer_size < 19)
+  /*@ assert sizeof(TIFFHeader) <= sizeof(struct ifd_header); */
+  if(buffer_size < sizeof(struct ifd_header) || buffer_size < 19)
     return (time_t)0;
   /*@ assert buffer_size >= sizeof(TIFFHeader); */
+  /*@ assert buffer_size >= sizeof(struct ifd_header); */
   /* DateTimeOriginal */
   date_asc=find_tag_from_tiff_header(buffer, buffer_size, 0x9003, &potential_error);
   /* DateTimeDigitalized*/
