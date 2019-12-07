@@ -63,15 +63,42 @@ struct bmp_header
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_bmp, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns file_recovery_new->filename[0];
+  @ assigns file_recovery_new->time;
+  @ assigns file_recovery_new->file_stat;
+  @ assigns file_recovery_new->handle;
+  @ assigns file_recovery_new->file_size;
+  @ assigns file_recovery_new->location.list.prev;
+  @ assigns file_recovery_new->location.list.next;
+  @ assigns file_recovery_new->location.end;
+  @ assigns file_recovery_new->location.data;
+  @ assigns file_recovery_new->extension;
+  @ assigns file_recovery_new->min_filesize;
+  @ assigns file_recovery_new->calculated_file_size;
+  @ assigns file_recovery_new->data_check;
+  @ assigns file_recovery_new->file_check;
+  @ assigns file_recovery_new->file_rename;
+  @ assigns file_recovery_new->offset_error;
+  @ assigns file_recovery_new->offset_ok;
+  @ assigns file_recovery_new->checkpoint_status;
+  @ assigns file_recovery_new->checkpoint_offset;
+  @ assigns file_recovery_new->flags;
+  @ assigns file_recovery_new->extra;
   @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bmp.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 65);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 65);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures *buffer==\old(*buffer);
   @*/
+  /* TODO ensures *file_recovery==\old(*file_recovery); */
 static int header_check_bmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct bmp_header *bm=(const struct bmp_header *)buffer;
@@ -119,7 +146,6 @@ int main()
 {
   const char fn[] = "recup_dir.1/f0000000.bmp";
   unsigned char buffer[BLOCKSIZE];
-  int res;
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
   file_stat_t file_stats;
