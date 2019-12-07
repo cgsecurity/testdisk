@@ -60,6 +60,7 @@ struct pf_header
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_pf;
   @*/
 static void file_rename_pf(file_recovery_t *file_recovery)
 {
