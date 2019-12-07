@@ -659,6 +659,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
+  @ requires fr->file_check==&file_check_tiff_be;
   @*/
 static void file_check_tiff_be(file_recovery_t *fr)
 {

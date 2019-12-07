@@ -99,6 +99,7 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
   @ requires \valid(fr->handle);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
+  @ requires fr->file_check==&file_check_tiff_le;
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
   @*/
