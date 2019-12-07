@@ -22,6 +22,11 @@
 
  */
 
+/*@
+  @ requires \valid_read((const char *)haystack+(0..haystack_len-1));
+  @ requires \valid_read((const char *)needle+(0..needle_len-1));
+  @ assigns \nothing;
+  @*/
 static inline const void *td_memmem(const void *haystack, const unsigned int haystack_len, const void *needle, const unsigned int needle_len)
 {
   const char *begin;
@@ -37,6 +42,9 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
   if (haystack_len < needle_len)
     return NULL;
 
+  /*@
+    @ loop assigns begin;
+    @*/
   for (begin = (const char *) haystack; begin <= last_possible; ++begin)
     if (begin[0] == ((const char *) needle)[0] &&
         !memcmp ((const void *) &begin[1],

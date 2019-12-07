@@ -122,6 +122,7 @@ void free_header_check(void);
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
   @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
@@ -143,6 +144,7 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   @ requires buffer_size > 0;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check == &data_check_size;
   @ assigns \nothing;
   @ ensures \result == DC_STOP || \result == DC_CONTINUE;
   @*/
@@ -150,16 +152,19 @@ data_check_t data_check_size(const unsigned char *buffer, const unsigned int buf
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires file_recovery->file_check == &file_check_size;
   @*/
 void file_check_size(file_recovery_t *file_recovery);
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires file_recovery->file_check == &file_check_size_min;
   @*/
 void file_check_size_min(file_recovery_t *file_recovery);
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires file_recovery->file_check == &file_check_size_max;
   @*/
 void file_check_size_max(file_recovery_t *file_recovery);
 
@@ -211,6 +216,7 @@ void file_check_size_max(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
 
 /*@
+  @ requires offset < 0x80000000;
   @ requires 0 < length <= 4096;
   @ requires \valid_read((char *)value+(0..length-1));
   @ requires \valid_function(header_check);

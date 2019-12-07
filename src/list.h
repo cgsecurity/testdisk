@@ -59,6 +59,17 @@ struct td_list_head {
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(prev);
+  @ requires \valid(next);
+  @ requires separation: \separated(newe, \union(prev,next));
+  @ ensures next->prev == newe;
+  @ ensures newe->next == next;
+  @ ensures newe->prev == prev;
+  @ ensures prev->next == newe;
+  @ assigns next->prev,newe->next,newe->prev,prev->next;
+  @*/
 static inline void __td_list_add(struct td_list_head *newe,
 			      struct td_list_head *prev,
 			      struct td_list_head *next)
@@ -90,6 +101,16 @@ static inline void td_list_add(struct td_list_head *newe, struct td_list_head *h
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires separation: \separated(newe, head);
+  @ ensures head->prev == newe;
+  @ ensures newe->next == head;
+  @ ensures newe->prev == \old(head->prev);
+  @ ensures \old(head->prev)->next == newe;
+  @ assigns head->prev,newe->next,newe->prev,\old(head->prev)->next;
+  @*/
 static inline void td_list_add_tail(struct td_list_head *newe, struct td_list_head *head)
 {
 	__td_list_add(newe, head->prev, head);
@@ -372,6 +393,12 @@ static inline void td_list_splice_init(struct td_list_head *list,
 	td_list_entry((pos)->member.prev, typeof(*(pos)), member)
 
 
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires \valid_function(compar);
+  @ requires separation: \separated(newe, head);
+  @*/
 static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
     int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
 {
@@ -387,6 +414,12 @@ static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_
   td_list_add_tail(newe, head);
 }
 
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires \valid_function(compar);
+  @ requires separation: \separated(newe, head);
+  @*/
 static inline int td_list_add_sorted_uniq(struct td_list_head *newe, struct td_list_head *head,
     int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
 {

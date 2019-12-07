@@ -39,6 +39,9 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
@@ -50,11 +53,18 @@ file_check_list_t file_check_list={
 
 static unsigned int index_header_check(void);
 
+/*@
+  @ requires \valid_read(a);
+  @ requires \valid_read(b);
+  @*/
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const file_check_t *fc_a=td_list_entry_const(a, const file_check_t, list);
   const file_check_t *fc_b=td_list_entry_const(b, const file_check_t, list);
   int res;
+  unsigned int min_length;
+  /*@ assert \valid_read(fc_a); */
+  /*@ assert \valid_read(fc_b); */
   if(fc_a->length==0 && fc_b->length!=0)
     return -1;
   if(fc_a->length!=0 && fc_b->length==0)
@@ -62,7 +72,14 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   res=fc_a->offset-fc_b->offset;
   if(res!=0)
     return res;
-  res=memcmp(fc_a->value,fc_b->value, (fc_a->length<=fc_b->length?fc_a->length:fc_b->length));
+  /*@ assert \valid_read((char *)fc_a->value + (0 .. fc_a->length - 1)); */
+  /*@ assert \initialized((char *)fc_a->value + (0 .. fc_a->length - 1)); */
+#if 0
+  /*@ assert \valid_read((char *)fc_b->value + (0 .. fc_b->length - 1)); */
+  /*@ assert \initialized((char *)fc_b->value + (0 .. fc_b->length - 1)); */
+#endif
+  min_length=fc_a->length<=fc_b->length?fc_a->length:fc_b->length;
+  res=memcmp(fc_a->value,fc_b->value, min_length);
   if(res!=0)
     return res;
   return (int)fc_b->length-(int)fc_a->length;
@@ -95,10 +112,15 @@ void register_header_check(const unsigned int offset, const void *value, const u
   td_list_add_sorted(&file_check_new->list, &file_check_plist.list, file_check_cmp);
 }
 
+/*@
+  @ requires \valid(file_check_new);
+  @*/
 static void index_header_check_aux(file_check_t *file_check_new)
 {
   if(file_check_new->length>0)
   {
+    /*@ assert file_check_new->offset < 0x80000000; */
+    /*@ assert 0 < file_check_new->length <= 4096; */
     struct td_list_head *tmp;
     td_list_for_each(tmp, &file_check_list.list)
     {
@@ -186,6 +208,9 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
   if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
     return;
   taille=fread(buffer,1, 4096,file_recovery->handle);
+#ifdef __FRAMAC__
+  Frama_C_make_unknown((char *)&buffer, 4096);
+#endif
   if(taille > 0 && buffer[0]=='\n' && (nl_mode&NL_BARENL)==NL_BARENL)
     file_recovery->file_size++;
   else if(taille > 1 && buffer[0]=='\r' && buffer[1]=='\n' && (nl_mode&NL_CRLF)==NL_CRLF)
@@ -198,7 +223,13 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 {
   unsigned char*buffer;
   assert(footer_length < 4096);
-  buffer=(unsigned char*)MALLOC(4096+footer_length-1);
+  /*@ assert 0 < footer_length < 4096; */
+  /*
+   * 4096+footer_length-1: required size
+   * 4096+footer_length: to avoid a Frama-C warning when footer_length==1
+   * 8192: maximum size
+   * */
+  buffer=(unsigned char*)MALLOC(4096+footer_length);
   memset(buffer+4096,0,footer_length-1);
   do
   {
