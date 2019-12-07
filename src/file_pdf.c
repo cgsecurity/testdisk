@@ -250,11 +250,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	  {
 	    if(buffer[0]=='=' && (buffer[1]=='\'' || buffer[1]=='"'))
 	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const char *)&buffer[2]);
+	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[2]);
 	    }
 	    else if(buffer[0]=='>')
 	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const char *)&buffer[1]);
+	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[1]);
 	    }
 	  }
 	  free(buffer);
