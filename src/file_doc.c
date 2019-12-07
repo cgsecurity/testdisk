@@ -134,6 +134,7 @@ static int OLE_read_block(FILE *IN, unsigned char *buf, const unsigned int uSect
 
 /*@
   @ requires \valid_read(dir_entry);
+  @ requires \initialized(dir_entry);
   @ ensures \result == \null || valid_read_string(\result);
   @*/
 static const char *entry2ext(const struct OLE_DIR *dir_entry)
@@ -595,6 +596,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires file_recovery->file_check == &file_check_doc;
   @ ensures \valid(file_recovery->handle);
   @*/
 static void file_check_doc(file_recovery_t *file_recovery)
@@ -656,16 +658,19 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   unsigned int block;
   unsigned int i;
   const unsigned int uSectorShift=le16(header->uSectorShift);
-  if(le32(header->csectMiniFat)==0)
+  /*@ assert uSectorShift==9 || uSectorShift==12; */
+  const unsigned int csectMiniFat=le32(header->csectMiniFat);
+  if(csectMiniFat==0)
     return NULL;
-  /*@ assert le32(header->csectMiniFat)!=0; */
+  /*@ assert 0 < csectMiniFat; */
+  /*@ assert 0 < csectMiniFat <= 2048; */
 #ifdef __FRAMAC__
   minifat=(uint32_t*)MALLOC(2048 << 12);
 #else
-  minifat=(uint32_t*)MALLOC(le32(header->csectMiniFat) << uSectorShift);
+  minifat=(uint32_t*)MALLOC(csectMiniFat << uSectorShift);
 #endif
   block=le32(header->MiniFat_block);
-  for(i=0; i < le32(header->csectMiniFat); i++)
+  for(i=0; i < csectMiniFat; i++)
   {
     unsigned char*minifat_pos=(unsigned char*)minifat + (i << uSectorShift);
     if(block >= fat_entries)
@@ -686,6 +691,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 4 - 1));
   @ requires \initialized((char *)buffer + (offset .. offset + 4 - 1));
+  @ assigns \nothing;
   @*/
 static uint32_t get32u(const void *buffer, const unsigned int offset)
 {
@@ -696,6 +702,7 @@ static uint32_t get32u(const void *buffer, const unsigned int offset)
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 8 - 1));
   @ requires \initialized((char *)buffer + (offset .. offset + 8 - 1));
+  @ assigns \nothing;
   @*/
 static uint64_t get64u(const void *buffer, const unsigned int offset)
 {
@@ -708,78 +715,115 @@ static uint64_t get64u(const void *buffer, const unsigned int offset)
   @ requires *ext == \null || valid_read_string(*ext);
   @ requires count > 0;
   @ requires \valid_read(software + (0 .. count-1));
-  @ requires \initialized(software + (0 .. count-1));
-  @ ensures *ext != \null || valid_read_string(*ext);
+  @ ensures *ext == \null || valid_read_string(*ext);
+  @ assigns *ext;
   @*/
 static void software2ext(const char **ext, const unsigned char *software, const unsigned int count)
 {
-  if(count>=12 && memcmp(software, "MicroStation", 12)==0)
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  if(count>=12)
   {
-    *ext=extension_dgn;
-    /*@ assert valid_read_string(*ext); */
-    return;
-  }
-  if(count>=14 && memcmp(software, "Microsoft Word", 14)==0)
-  {
-    *ext=file_hint_doc.extension;
-    /*@ assert valid_read_string(*ext); */
-    return;
-  }
-  if(count>=15 && memcmp(software, "Microsoft Excel", 15)==0)
-  {
-    if(*ext==NULL || strcmp(*ext,"sldprt")!=0)
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "MicroStation", 12)==0)
     {
-      *ext=extension_xls;
+      *ext=extension_dgn;
       /*@ assert valid_read_string(*ext); */
+      return;
     }
-    return;
   }
-  if(count>=20 && memcmp(software, "Microsoft PowerPoint", 20)==0)
+  if(count>=14)
   {
-    *ext=extension_ppt;
-    /*@ assert valid_read_string(*ext); */
-    return;
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "Microsoft Word", 14)==0)
+    {
+      *ext=file_hint_doc.extension;
+      /*@ assert valid_read_string(*ext); */
+      return;
+    }
   }
-  if(count>=21 && memcmp(software, "Microsoft Office Word", 21)==0)
+  if(count>=15)
   {
-    *ext=file_hint_doc.extension;
-    /*@ assert valid_read_string(*ext); */
-    return;
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "Microsoft Excel", 15)==0)
+    {
+      if(*ext==NULL || strcmp(*ext,"sldprt")!=0)
+      {
+	*ext=extension_xls;
+	/*@ assert valid_read_string(*ext); */
+      }
+      return;
+    }
   }
-  if(count==21 && memcmp(software, "TurboCAD for Windows", 21)==0)
+  if(count>=20)
   {
-    *ext=extension_tcw;
-    /*@ assert valid_read_string(*ext); */
-    return;
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "Microsoft PowerPoint", 20)==0)
+    {
+      *ext=extension_ppt;
+      /*@ assert valid_read_string(*ext); */
+      return;
+    }
   }
-  if(count==22 && memcmp(software, "TurboCAD pour Windows", 22)==0)
+  if(count>=21)
   {
-    *ext=extension_tcw;
-    /*@ assert valid_read_string(*ext); */
-    return;
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "Microsoft Office Word", 21)==0)
+    {
+      *ext=file_hint_doc.extension;
+      /*@ assert valid_read_string(*ext); */
+      return;
+    }
   }
-  /*@ assert *ext != \null || valid_read_string(*ext); */
+  if(count==21)
+  {
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "TurboCAD for Windows", 21)==0)
+    {
+      *ext=extension_tcw;
+      /*@ assert valid_read_string(*ext); */
+      return;
+    }
+  }
+  if(count==22)
+  {
+    /*@ assert \valid_read(software + (0 .. count-1)); */
+    if(memcmp(software, "TurboCAD pour Windows", 22)==0)
+    {
+      *ext=extension_tcw;
+      /*@ assert valid_read_string(*ext); */
+      return;
+    }
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
   return ;
 }
 
 /*@
   @ requires count > 0;
   @ requires \valid_read(software + (0 .. 2*count-1));
-  @ requires \initialized(software + (0 .. 2*count-1));
   @ ensures \result == \null || \result == extension_et || \result == extension_psmodel;
   @ ensures \result == \null || valid_read_string(\result);
+  @ assigns \nothing;
   @*/
 static const char *software_uni2ext(const unsigned char *software, const unsigned int count)
 {
-  if(count>=15 && memcmp(software, "M\0i\0c\0r\0o\0s\0o\0f\0t\0 \0E\0x\0c\0e\0l\0", 30)==0)
+  if(count>=15)
   {
-    /*@ assert valid_read_string(extension_et); */
-    return extension_et;
+    /*@ assert \valid_read(software + (0 .. 2*count-1)); */
+    if(memcmp(software, "M\0i\0c\0r\0o\0s\0o\0f\0t\0 \0E\0x\0c\0e\0l\0", 30)==0)
+    {
+      /*@ assert valid_read_string(extension_et); */
+      return extension_et;
+    }
   }
-  if(count>=17 && memcmp(software, "D\0e\0l\0c\0a\0m\0 \0P\0o\0w\0e\0r\0S\0H\0A\0P\0E\0", 34)==0)
+  if(count>=17)
   {
-    /*@ assert valid_read_string(extension_psmodel); */
-    return extension_psmodel;
+    /*@ assert \valid_read(software + (0 .. 2*count-1)); */
+    if(memcmp(software, "D\0e\0l\0c\0a\0m\0 \0P\0o\0w\0e\0r\0S\0H\0A\0P\0E\0", 34)==0)
+    {
+      /*@ assert valid_read_string(extension_psmodel); */
+      return extension_psmodel;
+    }
   }
   return NULL;
 }
@@ -797,6 +841,7 @@ struct summary_entry
   @ requires \valid(ext);
   @ requires *ext == \null || valid_read_string(*ext);
   @ ensures  *ext == \null || valid_read_string(*ext);
+  @ assigns *ext;
   @*/
 static void OLE_parse_software_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, const char **ext)
 {
@@ -822,20 +867,25 @@ static void OLE_parse_software_entry(const unsigned char *buffer, const unsigned
       return ;
     }
     /*@ assert offset_soft + count <= size; */
+    /*@ assert count <= size - offset_soft; */
+    /*@ assert \valid_read(buffer + (0 .. size-1)); */
+    /*@ assert \valid_read(buffer + (0 .. offset_soft + count -1)); */
 #ifdef DEBUG_OLE
     {
       unsigned int j;
       log_info("Software ");
       for(j=0; j<count; j++)
       {
-	log_info("%c", buffer[offset_soft + j]);
+	/*@ assert 0 <= j < count; */
+	/*@ assert offset_soft + count <= size; */
+	const unsigned int tmp=offset_soft+j;
+	/*@ assert tmp < size; */
+	log_info("%c", buffer[tmp]);
       }
       log_info("\n");
     }
 #endif
-#ifndef MAIN_doc
     software2ext(ext, &buffer[offset_soft], count);
-#endif
     /*@ assert *ext == \null || valid_read_string(*ext); */
   }
   /*@ assert *ext == \null || valid_read_string(*ext); */
@@ -848,6 +898,7 @@ static void OLE_parse_software_entry(const unsigned char *buffer, const unsigned
   @ requires \valid(ext);
   @ requires *ext == \null || valid_read_string(*ext);
   @ ensures  *ext == \null || valid_read_string(*ext);
+  @ assigns *ext;
   @*/
 static void OLE_parse_uni_software_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, const char **ext)
 {
@@ -858,8 +909,8 @@ static void OLE_parse_uni_software_entry(const unsigned char *buffer, const unsi
   }
   /*@ assert offset < size - 8; */
   {
-    const unsigned int offset8=offset + 8;
-    /*@ assert offset8 < size; */
+    const unsigned int offset_soft=offset + 8;
+    /*@ assert offset_soft < size; */
     const unsigned int count=get32u(buffer, offset + 4);
     unsigned int count2;
     if(count == 0 || count > size/2)
@@ -870,27 +921,31 @@ static void OLE_parse_uni_software_entry(const unsigned char *buffer, const unsi
     /*@ assert 0 < count <= size/2; */
     count2=2*count;
     /*@ assert 0 < count2 <= size; */
-    if(count2 > size - offset8)
+    if(count2 > size - offset_soft)
     {
       /*@ assert *ext == \null || valid_read_string(*ext); */
       return ;
     }
-    /*@ assert count2 <= size - offset8; */
+    /*@ assert count2 <= size - offset_soft; */
+    /*@ assert offset_soft + count2 <= size; */
     /*@ assert \valid_read(buffer + (0 .. size - 1)) && \initialized(buffer + (0 .. size - 1)); */
-    /*@ assert \valid_read(buffer + (0 .. offset8 + count2 - 1)); */
+    /*@ assert \valid_read(buffer + (0 .. offset_soft + count2 - 1)); */
 #ifdef DEBUG_OLE
-    unsigned int j;
-    log_info("Software ");
-    for(j=0; j < 2 * count; j+=2)
     {
-      log_info("%c", buffer[offset + 8 + j]);
+      unsigned int j;
+      log_info("Software ");
+      for(j=0; j < count2; j+=2)
+      {
+	/*@ assert 0 <= j < count2; */
+	/*@ assert offset_soft + count2 <= size; */
+	const unsigned int tmp=offset_soft + j;
+	/*@ assert tmp < size; */
+	log_info("%c", buffer[tmp]);
+      }
+      log_info("\n");
     }
-    log_info("\n");
 #endif
-#ifndef __FRAMAC__
-    /*@ assert \initialized(buffer + (0 .. offset8 + count2 - 1)); */
-    *ext=software_uni2ext(&buffer[offset8], count);
-#endif
+    *ext=software_uni2ext(&buffer[offset_soft], count);
   }
   /*@ assert *ext == \null || valid_read_string(*ext); */
 }
@@ -898,66 +953,74 @@ static void OLE_parse_uni_software_entry(const unsigned char *buffer, const unsi
 /*@
   @ requires 8 <= size <= 1024*1024;
   @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \valid(title + (0 .. 1024-1));
+  @ requires valid_string(title);
   @ requires \initialized(buffer+ (0 .. size-1));
-  @ requires \valid(title);
-  @ requires *title == \null || valid_read_string(*title);
-  @ ensures  *title == \null || valid_read_string(*title);
+  @ ensures valid_string(title);
+  @ assigns *(title + (0 .. 1023));
   @*/
-static void OLE_parse_title_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, char **title)
+static void OLE_parse_title_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, char *title)
 {
   if(offset + 8 > size)
   {
-    /*@ assert *title == \null || valid_read_string(*title); */
-    return ;
+    return;
   }
   /*@ assert offset + 8 <= size; */
   {
     /*@ assert \valid_read(buffer + (0 .. size - 1)); */
     const unsigned int count=get32u(buffer, offset + 4);
     const unsigned int offset_tmp=offset + 8;
-    char *tmp;
+    const char *src=(const char *)buffer;
     if(count <= 1 || count > size)
     {
-      /*@ assert *title == \null || valid_read_string(*title); */
-      return ;
+      return;
     }
     /*@ assert 1 < count <= size; */
+    /*@ assert 1 < count <= 1024*1024; */
     if(offset_tmp + count > size)
     {
-      /*@ assert *title == \null || valid_read_string(*title); */
-      return ;
+      return;
     }
     /*@ assert offset_tmp + count <= size; */
-#ifndef MAIN_doc
-    tmp=(char*)MALLOC(count+1);
-    /*@ assert \valid_read(buffer + (0 .. size - 1)); */
+    /*@ assert \valid_read(src + (0 .. size - 1)); */
     /*@ assert offset_tmp + count <= size; */
-    /*@ assert \valid_read(buffer + (0 .. offset_tmp + count - 1)); */
-    /*@ assert \valid_read((char*)buffer + (0 .. offset_tmp + count - 1)); */
-    /*@ assert \valid_read((buffer + offset_tmp) + (0 .. count - 1)); */
-    /*@ assert \valid_read((buffer + offset_tmp) + (1 .. count - 1)); */
-    /*@ assert \valid_read(((char*)(buffer+offset_tmp))+(0..count-1)); */
-    /*@ assert \valid_read(((char*)(buffer+offset_tmp))+(1..count-1)); */
-    /*@ assert \valid_read((char*)(buffer + offset_tmp)); */
-    /*@ assert \valid_read((char*)(buffer + offset_tmp)) && \valid_read(((char*)(buffer+offset_tmp))+(1..count-1)); */
-    /*@ assert valid_read_or_empty((void const *)(buffer + offset_tmp), count); */
-    memcpy(tmp, &buffer[offset_tmp], count);
-    tmp[count]='\0';
-    /*@ assert valid_read_string(tmp); */
-#ifdef DEBUG_OLE
-    log_info("Title %s\n", tmp);
+    /*@ assert \valid_read(src + (0 .. offset_tmp + count - 1)); */
+    /*@ assert \valid_read((src + offset_tmp) + (0 .. count - 1)); */
+    /*@ assert \valid_read((src + offset_tmp) + (1 .. count - 1)); */
+    /*@ assert \valid_read((char*)src + (0 .. offset_tmp + count - 1)); */
+    /*@ assert \valid_read(((char*)(src+offset_tmp))+(0..count-1)); */
+    /*@ assert \valid_read(((char*)(src+offset_tmp))+(1..count-1)); */
+    /*@ assert \valid_read((char*)(src + offset_tmp)); */
+    /*@ assert \valid_read((char*)(src + offset_tmp)) && \valid_read(((char*)(src+offset_tmp))+(1..count-1)); */
+    /*@ assert valid_read_or_empty((void const *)(src + offset_tmp), count); */
+    /*@ assert valid_read_or_empty((void const *)(src + offset_tmp), count); */
+#ifndef __FRAMAC__
+    if(count < 1024)
+    {
+      memcpy(title, &src[offset_tmp], count);
+      title[count]='\0';
+      /*@ assert valid_string(title); */
+    }
+    else
+    {
+      memcpy(title, &src[offset_tmp], 1023);
+      title[1023]='\0';
+      /*@ assert valid_string(title); */
+    }
 #endif
-    *title=tmp;
-    /*@ assert valid_read_string(*title); */
+#ifdef DEBUG_OLE
+    log_info("Title %s\n", title);
 #endif
   }
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
 }
+
 /*@
   @ requires 8 <= size <= 1024*1024;
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(file_time);
+  @ assigns *file_time;
   @*/
 static void OLE_parse_filetime_entry(const unsigned char *buffer, const unsigned int size, const unsigned int offset, time_t *file_time)
 {
@@ -981,14 +1044,94 @@ static void OLE_parse_filetime_entry(const unsigned char *buffer, const unsigned
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(ext);
-  @ requires \valid(title);
+  @ requires \valid(title + (0 .. 1024-1));
   @ requires \valid(file_time);
-  @ requires *title == \null || valid_read_string(*title);
+  @ requires \valid_read(entry);
   @ requires *ext == \null || valid_read_string(*ext);
+  @ requires valid_string(title);
+  @ requires separation: \separated(buffer+(..), ext, title + ( 0 .. 1023), file_time);
   @ ensures  *ext == \null || valid_read_string(*ext);
-  @ ensures  *title == \null || valid_read_string(*title);
+  @ ensures  valid_string(title);
+  @ assigns *ext, *(title + (0..1023)), *file_time;
   @*/
-static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned int size, const char **ext, char **title, time_t *file_time)
+static void OLE_parse_PropertySet_entry(const unsigned char *buffer, const unsigned int size, const struct summary_entry *entry, const char **ext, char *title, time_t *file_time)
+{
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert valid_read_string(title); */
+  const unsigned int tag=le32(entry->tag);
+  const unsigned int offset=le32(entry->offset);
+  unsigned int type;
+  if(offset >= size - 4)
+  {
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
+    return;
+  }
+  /*@ assert offset < size - 4; */
+  /*@ assert \valid_read(buffer + (0 .. offset + 4 - 1)); */
+  type=get32u(buffer, offset);
+#ifdef DEBUG_OLE
+  log_info("entry 0x%x, tag 0x%x, offset 0x%x, offset + 4 0x%x, type 0x%x\n",
+      entry_offset, tag, offset, offset + 4, type);
+#endif
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert valid_string(title); */
+  /* tag: Software, type: VT_LPSTR */
+  if(tag==0x12 && type==30)
+  {
+    /*@ assert valid_string(title); */
+    OLE_parse_software_entry(buffer, size, offset, ext);
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
+    return;
+  }
+  /* tag: Software, type: VT_LPWSTR */
+  if(tag==0x12 && type==31)
+  {
+    /*@ assert valid_string(title); */
+    OLE_parse_uni_software_entry(buffer, size, offset, ext);
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
+    return;
+  }
+  /* tag: title, type: VT_LPSTR */
+  if(tag==0x02 && type==30 && title[0]=='\0')
+  {
+    OLE_parse_title_entry(buffer, size, offset, title);
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
+    return ;
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert valid_string(title); */
+  /* ModifyDate, type=VT_FILETIME */
+  if(tag==0x0d && type==64)
+  {
+    OLE_parse_filetime_entry(buffer, size, offset, file_time);
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
+    return;
+  }
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert valid_string(title); */
+  return;
+}
+
+/*@
+  @ requires 8 <= size <= 1024*1024;
+  @ requires \valid_read(buffer+ (0 .. size-1));
+  @ requires \valid(ext);
+  @ requires \valid(title + (0 .. 1024-1));
+  @ requires \valid(file_time);
+  @ requires valid_string(title);
+  @ requires *ext == \null || valid_read_string(*ext);
+  @ requires separation: \separated(buffer+(..), ext, title + (0 .. 1023), file_time);
+  @ ensures  *ext == \null || valid_read_string(*ext);
+  @ ensures  valid_string(title);
+  @*/
+/*X TODO assigns *ext, *(title + (0..1023)), *file_time; */
+/*X TODO requires \initialized(buffer+ (0 .. size-1)); */
+static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned int size, const char **ext, char *title, time_t *file_time)
 {
   const struct summary_entry *entries=(const struct summary_entry *)&buffer[8];
   const unsigned int numEntries=get32u(buffer, 4);
@@ -997,18 +1140,18 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
   log_info("Property Info %u entries - %u bytes\n", numEntries, size);
 #endif
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
   if(numEntries == 0 || numEntries > 1024*1024)
   {
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
     return ;
   }
   /*@ assert 0 < numEntries <= 1024*1024; */
   if(8 + numEntries * 8 > size)
   {
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
     return ;
   }
   /*@ assert 8 + numEntries * 8 <= size; */
@@ -1017,76 +1160,42 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
   if((const unsigned char *)&entries[numEntries] > &buffer[size])
   {
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
     return ;
   }
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
   /*@ assert \valid_read(buffer  + (0 .. size - 1)); */
   /*@ assert \valid_read((buffer+8)  + (8 .. size - 8 - 1)); */
   /*@
     @ loop invariant *ext == \null || valid_read_string(*ext);
-    @ loop invariant *title == \null || valid_read_string(*title);
+    @ loop invariant valid_string(title);
     @ loop invariant 0 <= i <= numEntries;
     @ loop variant numEntries-i;
     @*/
+  /*X TODO loop assigns *ext, *(title + (0..1023)), *file_time; */
   for(i=0; i<numEntries; i++)
   {
+    const struct summary_entry *entry;
     const unsigned int entry_offset=8+8*i;
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
     if(entry_offset + 8 > size)
     {
       /*@ assert *ext == \null || valid_read_string(*ext); */
-      /*@ assert *title == \null || valid_read_string(*title); */
+      /*@ assert valid_string(title); */
       return ;
     }
     /*@ assert entry_offset + 8 <= size; */
-    {
-      const struct summary_entry *entry=(const struct summary_entry *)&buffer[entry_offset];
-      const unsigned int tag=le32(entry->tag);
-      const unsigned int offset=le32(entry->offset);
-      unsigned int type;
-      if(offset >= size - 4)
-      {
-	/*@ assert *ext == \null || valid_read_string(*ext); */
-	/*@ assert *title == \null || valid_read_string(*title); */
-	return ;
-      }
-      /*@ assert offset < size - 4; */
-      /*@ assert \valid_read(buffer + (0 .. offset + 4 - 1)); */
-      type=get32u(buffer, offset);
-#ifdef DEBUG_OLE
-      log_info("entry 0x%x, tag 0x%x, offset 0x%x, offset + 4 0x%x, type 0x%x\n",
-	  entry, tag, offset, offset + 4, type);
-#endif
-      /* tag: Software, type: VT_LPSTR */
-      if(tag==0x12 && type==30)
-      {
-	OLE_parse_software_entry(buffer, size, offset, ext);
-	/*@ assert *ext == \null || valid_read_string(*ext); */
-      }
-      /* tag: Software, type: VT_LPWSTR */
-      if(tag==0x12 && type==31)
-      {
-	OLE_parse_uni_software_entry(buffer, size, offset, ext);
-	/*@ assert *ext == \null || valid_read_string(*ext); */
-      }
-      /* tag: title, type: VT_LPSTR */
-      if(tag==0x02 && type==30 && *title==NULL)
-      {
-	OLE_parse_title_entry(buffer, size, offset, title);
-	/*@ assert *title == \null || valid_read_string(*title); */
-      }
-      /* ModifyDate, type=VT_FILETIME */
-      if(tag==0x0d && type==64)
-      {
-	OLE_parse_filetime_entry(buffer, size, offset, file_time);
-      }
-    }
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
+    entry=(const struct summary_entry *)&buffer[entry_offset];
+    OLE_parse_PropertySet_entry(buffer, size, entry, ext, title, file_time);
+    /*@ assert *ext == \null || valid_read_string(*ext); */
+    /*@ assert valid_string(title); */
   }
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
 }
 
 /*@
@@ -1094,19 +1203,21 @@ static void OLE_parse_PropertySet(const unsigned char *buffer, const unsigned in
   @ requires \valid_read(dataPt + (0 .. dirLen-1));
   @ requires \initialized(dataPt + (0 .. dirLen-1));
   @ requires \valid(ext);
-  @ requires \valid(title);
+  @ requires \valid(title + (0 .. 1024-1));
   @ requires \valid(file_time);
-  @ requires *title == \null || valid_read_string(*title);
+  @ requires valid_string(title);
   @ requires *ext == \null || valid_read_string(*ext);
+  @ requires separation: \separated(dataPt+(..), ext, title + (0 .. 1023), file_time);
   @ ensures *ext == \null || valid_read_string(*ext);
-  @ ensures *title == \null || valid_read_string(*title);
+  @ ensures valid_string(title);
   @*/
-static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned int dirLen, const char **ext, char **title, time_t *file_time)
+/*X TODO assigns *ext, *(title + (0..1023)), *file_time; */
+static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned int dirLen, const char **ext, char *title, time_t *file_time)
 {
   unsigned int pos;
   assert(dirLen >= 48 && dirLen<=1024*1024);
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
 #ifdef DEBUG_OLE
   dump_log(dataPt, dirLen);
 #endif
@@ -1116,7 +1227,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
   if(pos > dirLen - 8)
   {
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
     return ;
   }
   /*@ assert pos <= dirLen - 8; */
@@ -1126,7 +1237,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
     if(size <= 8 || size > dirLen || pos + size > dirLen)
     {
       /*@ assert *ext == \null || valid_read_string(*ext); */
-      /*@ assert *title == \null || valid_read_string(*title); */
+      /*@ assert valid_string(title); */
       return ;
     }
     /*@ assert 8 < size; */
@@ -1135,14 +1246,15 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
     /*@ assert \valid_read(dataPt + (0 .. dirLen-1)); */
     /*@ assert pos + size <= dirLen; */
     /*@ assert \valid_read(dataPt + (0 .. pos+size-1)); */
+    /*@ assert \initialized(dataPt + (0 .. dirLen-1)); */
+    /*@ assert pos + size <= dirLen; */
+    /*X TODO assert \initialized(dataPt + (0 .. pos+size-1)); */
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
-#ifndef __FRAMAC__
+    /*@ assert valid_string(title); */
     OLE_parse_PropertySet(&dataPt[pos], size, ext, title, file_time);
-#endif
   }
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
 }
 
 /*@
@@ -1196,24 +1308,27 @@ static void *OLE_read_ministream(unsigned char *ministream,
   @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
   @ requires 6 == le16(header->uMiniSectorShift);
   @ requires \valid(ext);
-  @ requires \valid(title);
+  @ requires \valid(title + (0 .. 1024-1));
   @ requires \valid(file_time);
   @ requires *ext == \null || valid_read_string(*ext);
-  @ requires *title == \null || valid_read_string(*title);
+  @ requires valid_string(title);
+  @ requires separation: \separated(file,fat+(..), header, ext, title + (0 .. 1023), file_time);
   @ ensures *ext == \null || valid_read_string(*ext);
-  @ ensures *title == \null || valid_read_string(*title);
+  @ ensures valid_string(title);
   @*/
 static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned int fat_entries,
     const struct OLE_HDR *header, const unsigned int ministream_block, const unsigned int ministream_size,
-    const unsigned int block, const unsigned int len, const char **ext, char **title, time_t *file_time,
+    const unsigned int block, const unsigned int len, const char **ext, char *title, time_t *file_time,
     const uint64_t offset)
 {
   const unsigned int uSectorShift=le16(header->uSectorShift);
   unsigned char *summary=NULL;
+  /*@ assert *ext == \null || valid_read_string(*ext); */
+  /*@ assert valid_string(title); */
   if(len < 48 || len>1024*1024)
   {
     /*@ assert *ext == \null || valid_read_string(*ext); */
-    /*@ assert *title == \null || valid_read_string(*title); */
+    /*@ assert valid_string(title); */
     return ;
   }
   /*@ assert 48 <= len <= 1024*1024; */
@@ -1222,13 +1337,13 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
     if(le32(header->csectMiniFat)==0 || ministream_size == 0)
     {
       /*@ assert *ext == \null || valid_read_string(*ext); */
-      /*@ assert *title == \null || valid_read_string(*title); */
+      /*@ assert valid_string(title); */
       return ;
     }
     if(ministream_size > 1024*1024 || le32(header->csectMiniFat) > 2048)
     {
       /*@ assert *ext == \null || valid_read_string(*ext); */
-      /*@ assert *title == \null || valid_read_string(*title); */
+      /*@ assert valid_string(title); */
       return ;
     }
     /*@ assert 0 < le32(header->csectMiniFat) <= 2048; */
@@ -1239,7 +1354,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
       if((minifat=OLE_load_MiniFAT(file, header, fat, fat_entries, offset))==NULL)
       {
 	/*@ assert *ext == \null || valid_read_string(*ext); */
-	/*@ assert *title == \null || valid_read_string(*title); */
+	/*@ assert valid_string(title); */
 	return ;
       }
       ministream=(unsigned char *)OLE_read_stream(file,
@@ -1265,9 +1380,13 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
     summary=MALLOC(4096);
     Frama_C_make_unknown((char *)summary, 4096);
     /*@ assert \initialized((char *)summary + (0 .. 4096 - 1)); */
-//    OLE_parse_summary_aux(summary, 4096, ext, title, file_time);
-    /*@ assert *title == \null || valid_read_string(*title); */
+#if 0
+    OLE_parse_summary_aux(summary, 4096, ext, title, file_time);
+    /*@ assert valid_string(title); */
+#else
     OLE_parse_PropertySet(summary, 4096, ext, title, file_time);
+#endif
+    /*@ assert valid_string(title); */
     free(summary);
   }
 #else
@@ -1278,17 +1397,18 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
   }
 #endif
   /*@ assert *ext == \null || valid_read_string(*ext); */
-  /*@ assert *title == \null || valid_read_string(*title); */
+  /*@ assert valid_string(title); */
 }
 
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_doc;
   @*/
 static void file_rename_doc(file_recovery_t *file_recovery)
 {
   const char *ext=NULL;
-  char *title=NULL;
+  char title[1024];
   FILE *file;
   unsigned char buffer_header[512];
   uint32_t *fat;
@@ -1297,6 +1417,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   unsigned int fat_entries;
   unsigned int uSectorShift;
   unsigned int num_FAT_blocks;
+  title[0]='\0';
+  /*@ assert valid_string(&title[0]); */
   if(strstr(file_recovery->filename, ".sdd")!=NULL)
     ext=extension_sdd;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
@@ -1358,10 +1480,15 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 #ifdef DEBUG_OLE
     log_info("file_rename_doc root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
+#ifndef __FRAMAC__
     for(block=le32(header->root_start_block), i=0;
 	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
 	block=le32(fat[block]), i++)
+#else
+    block=le32(header->root_start_block), i=0;
+#endif
     {
+      /*@ assert valid_string(&title[0]); */
       struct OLE_DIR *dir_entries;
 #ifdef __FRAMAC__
       dir_entries=(struct OLE_DIR *)MALLOC(1<<12);
@@ -1373,12 +1500,12 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	free(fat);
 	free(dir_entries);
 	fclose(file);
-	free(title);
 	return ;
       }
 #ifdef DEBUG_OLE
       log_info("Root Directory block=%u (0x%x)\n", block, block);
 #endif
+      /*@ assert valid_string(&title[0]); */
       {
 	unsigned int sid;
 	int is_db=0;
@@ -1388,10 +1515,12 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	  ministream_block=le32(dir_entry->start_block);
 	  ministream_size=le32(dir_entry->size);
 	}
+	/*@ assert valid_string(&title[0]); */
 	for(sid=0;
 	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
 	    sid++)
 	{
+	  /*@ assert valid_string(&title[0]); */
 	  const struct OLE_DIR *dir_entry=&dir_entries[sid];
 	  if(dir_entry->type!=NO_ENTRY)
 	  {
@@ -1403,9 +1532,10 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	      'r', '\0', 'm', '\0', 'a', '\0', 't', '\0',
 	      'i', '\0', 'o', '\0', 'n', '\0', '\0', '\0'
 	    };
+	    const unsigned int namsiz=le16(dir_entry->namsiz);
 #ifdef DEBUG_OLE
 	    unsigned int j;
-	    for(j=0;j<64 && j<le16(dir_entry->namsiz) && dir_entry->name[j]!='\0';j+=2)
+	    for(j=0;j<64 && j<namsiz && dir_entry->name[j]!='\0';j+=2)
 	    {
 	      log_info("%c",dir_entry->name[j]);
 	    }
@@ -1422,13 +1552,15 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		ext=tmp;
 	      /*@ assert ext == \null || valid_read_string(ext); */
 	    }
-	    switch(le16(dir_entry->namsiz))
+	    /*@ assert valid_string(&title[0]); */
+	    switch(namsiz)
 	    {
 	      case 4:
 		if(sid==1 && memcmp(&dir_entry->name, "1\0\0\0", 4)==0)
 		  is_db=1;
 		else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "2\0\0\0", 4)==0)
 		  is_db=2;
+		/*@ assert valid_string(&title[0]); */
 		break;
 	      case 16:
 		if(sid==1 && memcmp(dir_entry->name, "d\0o\0c\0.\0d\0e\0t\0\0\0", 16)==0)
@@ -1438,6 +1570,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		  ext=extension_snt;
 		else if(is_db==1 && sid==2 && memcmp(&dir_entry->name, "C\0a\0t\0a\0l\0o\0g\0\0\0", 16)==0)
 		  is_db=2;
+		/*@ assert valid_string(&title[0]); */
 		break;
 	      case 18:
 		/* MS Excel
@@ -1445,36 +1578,50 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		if(ext==NULL &&
 		    memcmp(dir_entry->name, "W\0o\0r\0k\0b\0o\0o\0k\0\0\0",18)==0)
 		  ext=extension_xls;
+		/*@ assert valid_string(&title[0]); */
 		break;
 	      case 36:
 		/* sda=StarDraw, sdd=StarImpress */
 		if(ext!=extension_sdd &&
 		    memcmp(dir_entry->name, "S\0t\0a\0r\0D\0r\0a\0w\0D\0o\0c\0u\0m\0e\0n\0t\0003\0\0\0", 36)==0)
 		  ext=extension_sda;
+		/*@ assert valid_string(&title[0]); */
 		break;
 	      case 40:
 		if(memcmp(dir_entry->name, SummaryInformation, 40)==0)
 		{
+		  /*@ assert ext == \null || valid_read_string(ext); */
+		  /*@ assert valid_string(&title[0]); */
 		  OLE_parse_summary(file, fat, fat_entries, header,
 		      ministream_block, ministream_size,
 		      le32(dir_entry->start_block), le32(dir_entry->size),
-		      &ext, &title, &file_time, 0);
+		      &ext, &title[0], &file_time, 0);
+		  /*@ assert valid_string(&title[0]); */
+		  /*@ assert ext == \null || valid_read_string(ext); */
 		}
+		/*@ assert valid_string(&title[0]); */
+		break;
+	      default:
+		/*@ assert valid_string(&title[0]); */
 		break;
 	    }
-	    if(sid==1 && le16(dir_entry->namsiz) >=6 &&
+	    /*@ assert valid_string(&title[0]); */
+	    if(sid==1 && namsiz >=6 &&
 		memcmp(dir_entry->name, "D\0g\0n", 6)==0)
 	      ext=extension_dgn;
 #ifdef DEBUG_OLE
 	    if(ext!=NULL)
-	      log_info("Found %s %u\n", ext, le16(dir_entry->namsiz));
+	      log_info("Found %s %u\n", ext, namsiz);
 #endif
+	    /*@ assert valid_string(&title[0]); */
 	  }
+	  /*@ assert valid_string(&title[0]); */
 	}
 	if(ext==NULL && is_db==2)
 	  ext=extension_db;
       }
       free(dir_entries);
+      /*@ assert valid_string(&title[0]); */
     }
   }
   free(fat);
@@ -1483,8 +1630,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     set_date(file_recovery->filename, file_time, file_time);
   if(title!=NULL)
   {
-    file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, ext, 1);
-    free(title);
+    file_rename(file_recovery, &title, strlen((const char *)title), 0, ext, 1);
   }
   else
     file_rename(file_recovery, NULL, 0, 0, ext, 1);
@@ -1507,6 +1653,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
   @*/
+  // TODO ensures *buffer == \old(*buffer);
+  // TODO ensures *file_recovery == \old(*file_recovery);
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /*@ assert file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename); */
@@ -1677,6 +1825,7 @@ int main()
   memcpy(file_recovery_new.filename, fn, sizeof(fn));
   /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  /*X TODO assert valid_read_string(file_recovery_new.extension); */
   file_recovery_new.file_stat=&file_stats;
   if(file_recovery_new.file_stat!=NULL)
   {
