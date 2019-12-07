@@ -46,10 +46,7 @@
 extern const file_hint_t file_hint_doc;
 #endif
 static void register_header_check_zip(file_stat_t *file_stat);
-static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_zip(file_recovery_t *file_recovery);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
-static void file_rename_zip(file_recovery_t *file_recovery);
 static char first_filename[256];
 
 const file_hint_t file_hint_zip= {
@@ -242,7 +239,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	  return -1;
 	}
 #if defined(__FRAMAC__)
-	Frama_C_make_unknown(buffer, 128);
+	Frama_C_make_unknown((char *)buffer, 128);
 #endif
 	if (my_fseek(fr->handle, -to_read, SEEK_CUR) < 0)
 	{
@@ -336,6 +333,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   @ requires \valid(fr->handle);
   @ requires \valid(ext);
   @ requires fr->file_size < 0x8000000000000000 + 4;
+  @ requires \separated(fr, ext);
   @*/
 static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const unsigned int file_nbr)
 {
@@ -755,6 +753,7 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_check==&file_check_zip;
   @*/
 static void file_check_zip(file_recovery_t *fr)
 {
@@ -851,6 +850,7 @@ static void file_check_zip(file_recovery_t *fr)
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_zip;
   @*/
 static void file_rename_zip(file_recovery_t *file_recovery)
 {
@@ -969,7 +969,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_zip, file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 21);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_zip || file_recovery_new->file_check == \null);
@@ -1072,7 +1072,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_zip, file_recovery, file_recovery_new);
   @ ensures \result == 1;
   @ ensures file_recovery_new->file_check == &file_check_zip;
   @ ensures file_recovery_new->extension == file_hint_zip.extension;
