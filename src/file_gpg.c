@@ -87,6 +87,7 @@ static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
 
 /*@
   @ ensures 0 <= \result <= 0x3f;
+  @ assigns \nothing;
   @*/
 static unsigned int openpgp_packet_tag(const unsigned char buf)
 {
@@ -100,6 +101,7 @@ static unsigned int openpgp_packet_tag(const unsigned char buf)
   @ requires \valid(length_type);
   @ requires \valid(indeterminate_length);
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==3)|| (*length_type==5);
+  @ assigns *length_type, *indeterminate_length;
  */
 static unsigned int old_format_packet_length(const unsigned char *buf, unsigned int *length_type, int *indeterminate_length)
 {
@@ -130,6 +132,7 @@ static unsigned int old_format_packet_length(const unsigned char *buf, unsigned 
   @ requires \valid(partial_body_length);
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==5);
   @ ensures (*partial_body_length==0) || (*partial_body_length==1);
+  @ assigns *length_type, *partial_body_length;
  */
 static unsigned int new_format_packet_length(const unsigned char *buf, unsigned int *length_type, int *partial_body_length)
 {
@@ -172,6 +175,7 @@ static unsigned int new_format_packet_length(const unsigned char *buf, unsigned 
 
 /*@
   @ ensures \result == -1 || 0 <= \result <= 2048;
+  @ assigns \nothing;
   @*/
 static int is_valid_mpi(const uint16_t size)
 {
@@ -183,6 +187,7 @@ static int is_valid_mpi(const uint16_t size)
 
 /*@
   @ ensures \result == 0 || \result == 1;
+  @ assigns \nothing;
   @*/
 static int is_valid_pubkey_algo(const int algo)
 {
@@ -213,6 +218,7 @@ static int is_valid_pubkey_algo(const int algo)
 
 /*@
   @ ensures \result == 0 || \result == 1;
+  @ assigns \nothing;
   @*/
 static int is_valid_sym_algo(const int algo)
 {
@@ -249,6 +255,7 @@ static int is_valid_sym_algo(const int algo)
 
 /*@
   @ ensures \result == 0 || \result == 1;
+  @ assigns \nothing;
   @*/
 static int is_valid_S2K(const unsigned int algo)
 {
@@ -266,6 +273,7 @@ static int is_valid_S2K(const unsigned int algo)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires file_recovery->file_check == &file_check_gpg;
   @*/
 static void file_check_gpg(file_recovery_t *file_recovery)
 {
@@ -737,7 +745,6 @@ int main()
 {
   const char fn[] = "recup_dir.1/f0000000.gpg";
   unsigned char buffer[BLOCKSIZE];
-  int res;
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
   file_stat_t file_stats;
