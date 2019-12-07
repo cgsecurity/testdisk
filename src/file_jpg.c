@@ -305,6 +305,7 @@ static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const
   @ requires valid_read_string((char *)&fr->filename);
   @ requires \initialized(&fr->time);
   @*/
+/* TODO requires fr->file_check==&file_check_mpo; */
 static void file_check_mpo(file_recovery_t *fr)
 {
   unsigned char buffer[512];
@@ -1831,6 +1832,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   @ requires \valid(file_recovery->handle);
   @ requires valid_read_string((char *)&file_recovery->filename);
   @ requires \initialized(&file_recovery->time);
+  @ requires file_recovery->file_check == &file_check_mpo || file_recovery->file_check == &file_check_jpg;
   @*/
 static void file_check_jpg(file_recovery_t *file_recovery)
 {
@@ -1906,6 +1908,8 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
+  @ requires file_recovery->data_check == &data_check_jpg2;
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @*/
 static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -1974,6 +1978,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
   @ requires \valid(file_recovery);
   @ requires buffer_size >= 4;
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
+  @ requires file_recovery->data_check == &data_check_jpg;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @*/
 /* FIXME requires file_recovery->file_size == 0 || file_recovery->calculated_file_size >= file_recovery->file_size - 4; */
@@ -2175,7 +2180,11 @@ int main()
 #if defined(__FRAMAC__)
       Frama_C_make_unknown((char *)big_buffer + BLOCKSIZE, BLOCKSIZE);
 #endif
-      data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+      /*@ assert file_recovery_new.data_check == &data_check_jpg || file_recovery_new.data_check == &data_check_jpg2 || file_recovery_new.data_check == NULL; */
+      if(file_recovery_new.data_check == &data_check_jpg)
+	data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+      else if(file_recovery_new.data_check == &data_check_jpg2)
+	data_check_jpg2(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
     }
   }
   /*@ assert file_recovery_new.offset_ok == 0;	*/
