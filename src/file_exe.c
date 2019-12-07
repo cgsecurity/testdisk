@@ -60,7 +60,7 @@ static const unsigned char exe_header[2]  = {'M','Z'};
   @ requires \valid_read(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_exe, buffer+(..), file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_exe.extension || file_recovery_new->extension == extension_dll);
   @*/
@@ -285,6 +285,7 @@ static char InternalName[24]={
   @ requires needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
+  @ requires \separated(file_recovery, buffer+(..), needle+(..));
   @*/
 static int parse_String(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -322,6 +323,7 @@ static int parse_String(file_recovery_t *file_recovery, const char*buffer, const
   @ requires needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
+  @ requires \separated(file_recovery, buffer+(..), needle+(..));
   @*/
 static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -350,6 +352,7 @@ static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, 
   @ requires needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
+  @ requires \separated(file_recovery, buffer+(..), needle+(..));
   @*/
 static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -385,6 +388,7 @@ static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, 
   @ requires needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
+  @ requires \separated(file_recovery, buffer+(..), needle+(..));
   @*/
 static int parse_StringFileInfo(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -427,6 +431,8 @@ static int parse_StringFileInfo(file_recovery_t *file_recovery, const char*buffe
   @ requires needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
+  @ requires \separated(vs_version_info+(..), file_recovery, buffer+(..), needle+(..));
+  @ behavior types: requires \separated(vs_version_info+(..), \union(file_recovery, buffer+(..), needle+(..)));
   @*/
 static int parse_VS_VERSIONINFO(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -765,6 +771,7 @@ static void pe_resource_type(FILE *file, const unsigned int base, const unsigned
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_pe_exe;
   @*/
 static void file_rename_pe_exe(file_recovery_t *file_recovery)
 {
@@ -954,17 +961,19 @@ int main()
   }
   if(file_recovery_new.file_check!=NULL)
   {
+    /*@ assert file_recovery_new.file_check == &file_check_size; */
     file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
     {
-      (file_recovery_new.file_check)(&file_recovery_new);
+      file_check_size(&file_recovery_new);
       fclose(file_recovery_new.handle);
     }
   }
   if(file_recovery_new.file_rename!=NULL)
   {
     /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
-    (file_recovery_new.file_rename)(&file_recovery_new);
+    /*@ assert file_recovery_new.file_rename == &file_rename_pe_exe; */
+    file_rename_pe_exe(&file_recovery_new);
   }
   return 0;
 }
