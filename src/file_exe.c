@@ -301,12 +301,16 @@ static int parse_String(file_recovery_t *file_recovery, const char*buffer, const
   len=le16(PE_index->len);
   val_len=le16(PE_index->val_len);
   type=le16(PE_index->type);
+#ifdef DEBUG_EXE
   log_info("parse_String len=%u val_len=%u type=%u\n", len, val_len, type);
+#endif
   if(len > end)
     return -1;
   if(6 + 2 * val_len > len)
     return -1;
+#ifdef DEBUG_EXE
   dump_log(buffer, len);
+#endif
 //  type=1 => text
   if(6+needle_len < end && type==1 && memcmp(&buffer[6], needle, needle_len)==0)
   {
@@ -328,7 +332,9 @@ static int parse_String(file_recovery_t *file_recovery, const char*buffer, const
 static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
   unsigned int pos=0;
+#ifdef DEBUG_EXE
   log_info("parse_StringArray end=%u\n", end);
+#endif
   /*@
     @ loop variant end - pos;
     @*/
@@ -368,7 +374,9 @@ static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, 
   /*@ assert \valid_read(PE_index); */
   len=le16(PE_index->len);
   val_len=le16(PE_index->val_len);
+#ifdef DEBUG_EXE
   log_info("parse_StringTable len=%u val_len=%u type=%u\n", len, val_len, le16(PE_index->type));
+#endif
   if(len > end)
     return -1;
   /* szKey: language identifier + code page */
@@ -405,7 +413,9 @@ static int parse_StringFileInfo(file_recovery_t *file_recovery, const char*buffe
   /*@ assert \valid_read(PE_index); */
   len=le16(PE_index->len);
   val_len=le16(PE_index->val_len);
+#ifdef DEBUG_EXE
   log_info("parse_StringFileInfo len=%u val_len=%u type=%u\n", len, val_len, le16(PE_index->type));
+#endif
   if(len > end)
     return -1;
   if(6 + sizeof(StringFileInfo) > end)
@@ -450,7 +460,9 @@ static int parse_VS_VERSIONINFO(file_recovery_t *file_recovery, const char*buffe
   /*@ assert \valid_read(PE_index); */
   len=le16(PE_index->len);
   val_len=le16(PE_index->val_len);
+#ifdef DEBUG_EXE
   log_info("parse_VS_VERSIONINFO len=%u val_len=%u type=%u\n", len, val_len, le16(PE_index->type));
+#endif
   if(len==0 && val_len==0)
   {
     return -1;
@@ -494,7 +506,9 @@ static int parse_VS_VERSIONINFO(file_recovery_t *file_recovery, const char*buffe
 static void PEVersion(FILE *file, const unsigned int offset, const unsigned int length, file_recovery_t *file_recovery)
 {
   char buffer[1024*1024];
+#ifdef DEBUG_EXE
   log_info("PEVersion(file, %u, %u, file_recovery)\n", offset, length);
+#endif
   if(length==0 || length > 1024*1024)
     return;
   if(fseek(file, offset, SEEK_SET)<0)
@@ -592,7 +606,9 @@ static void pe_resource_language(FILE *file, const unsigned int base, const unsi
     idEntries =  buffer[14]+(buffer[15]<<8);
     count = nameEntries + idEntries;
   }
+#ifdef DEBUG_EXE
   log_info("pe_resource_language count=%u\n", count);
+#endif
   if(count==0 || count > 1024)
     return ;
   /*@ assert 0 < count <= 1024; */
