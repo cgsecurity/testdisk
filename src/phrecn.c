@@ -85,6 +85,7 @@
 #define DEFAULT_IMAGE_NAME "image_remaining.dd"
 
 extern file_check_list_t file_check_list;
+extern int need_to_stop;
 
 static int interface_cannot_create_file(void);
 
@@ -347,7 +348,8 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	break;
     }
     session_save(list_search_space, params, options);
-
+    if(need_to_stop!=0)
+      ind_stop=PSTATUS_STOP;
     switch(ind_stop)
     {
       case PSTATUS_ENOSPC:
@@ -400,7 +402,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	{
 	  log_flush();
 #ifdef HAVE_NCURSES
-	  if(ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
+	  if(need_to_stop!=0 || ask_confirmation("Answer Y to really Quit, N to resume the recovery")!=0)
 #endif
 	    params->status=STATUS_QUIT;
 	}

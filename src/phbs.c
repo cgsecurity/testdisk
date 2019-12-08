@@ -56,6 +56,7 @@
 #define READ_SIZE 1024*512
 extern const file_hint_t file_hint_tar;
 extern file_check_list_t file_check_list;
+extern int need_to_stop;
 
 static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
 {
@@ -203,6 +204,11 @@ pstatus_t photorec_find_blocksize(struct ph_param *params, const struct ph_optio
 	}
       }
 #endif
+      if(need_to_stop!=0)
+      {
+	log_info("PhotoRec has been stopped\n");
+	current_search_space=list_search_space;
+      }
     }
   } /* end while(current_search_space!=list_search_space) */
   free(buffer_start);

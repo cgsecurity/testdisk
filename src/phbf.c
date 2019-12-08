@@ -76,6 +76,7 @@
 #define READ_SIZE 1024*512
 extern file_check_list_t file_check_list;
 extern uint64_t free_list_allocation_end;
+extern int need_to_stop;
 
 typedef enum { BF_OK=0, BF_STOP=1, BF_EACCES=2, BF_ENOSPC=3, BF_FRAG_FOUND=4, BF_EOF=5, BF_ENOENT=6, BF_ERANGE=7} bf_status_t;
 
@@ -643,6 +644,8 @@ static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *fi
 	  ind_stop=photorec_progressbar(stdscr, testbf, params,
 	      file_recovery->location.start, current_time);
 #endif
+	  if(need_to_stop!=0)
+	    ind_stop=PSTATUS_STOP;
 	  if(ind_stop!=PSTATUS_OK)
 	  {
 	    file_recovery->flags=0;

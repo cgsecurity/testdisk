@@ -70,6 +70,7 @@
 #include "psearchn.h"
 #include "photorec_check_header.h"
 #define READ_SIZE 1024*512
+extern int need_to_stop;
 
 pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
@@ -282,6 +283,8 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #ifdef HAVE_NCURSES
           ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
 #endif
+	  if(need_to_stop!=0)
+	    ind_stop=PSTATUS_STOP;
 	  params->offset=offset;
 	  if(ind_stop!=PSTATUS_OK)
 	  {

@@ -77,6 +77,7 @@
 #include "pdiskseln.h"
 #include "dfxml.h"
 
+int need_to_stop=0;
 extern file_enable_t list_file_enable[];
 
 #ifdef HAVE_SIGACTION
@@ -87,12 +88,19 @@ static void sighup_hdlr(int sig)
 {
   if(sig == SIGINT)
     log_critical("SIGINT detected! PhotoRec has been killed.\n");
-  else
+  else if(sig == SIGHUP)
     log_critical("SIGHUP detected! PhotoRec has been killed.\n");
+  else
+    log_critical("SIGTERM detected! PhotoRec has been killed.\n");
   log_flush();
-  action.sa_handler=SIG_DFL;
-  sigaction(sig,&action,NULL);
-  kill(0, sig);
+  if(need_to_stop==1)
+  {
+    action.sa_handler=SIG_DFL;
+    sigaction(sig,&action,NULL);
+    kill(0, sig);
+    return ;
+  }
+  need_to_stop=1;
 }
 #endif
 
@@ -156,6 +164,7 @@ int main( int argc, char **argv )
   sigemptyset(&action.sa_mask);
   sigaddset(&action.sa_mask, SIGINT);
   sigaddset(&action.sa_mask, SIGHUP);
+  sigaddset(&action.sa_mask, SIGTERM);
   action.sa_handler  = &sighup_hdlr;
   action.sa_flags = 0;
   if(sigaction(SIGINT, &action, NULL)==-1)
@@ -164,6 +173,11 @@ int main( int argc, char **argv )
     return -1;
   }
   if(sigaction(SIGHUP, &action, NULL)==-1)
+  {
+    printf("Error on SIGACTION call\n");
+    return -1;
+  }
+  if(sigaction(SIGTERM, &action, NULL)==-1)
   {
     printf("Error on SIGACTION call\n");
     return -1;

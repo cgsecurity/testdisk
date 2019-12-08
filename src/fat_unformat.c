@@ -55,6 +55,8 @@
 #include "fat_common.h"
 #include <assert.h>
 
+extern int need_to_stop;
+
 #define READ_SIZE 4*1024*1024
 static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
 {
@@ -386,6 +388,13 @@ static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_optio
 	}
       }
 #endif
+      if(need_to_stop!=0)
+      {
+	log_info("PhotoRec has been stopped\n");
+	params->offset=offset;
+	offset = offset_end;
+	ind_stop=PSTATUS_STOP;
+      }
     }
   }
   free(buffer_start);
