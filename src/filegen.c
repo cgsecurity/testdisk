@@ -404,88 +404,81 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((const char*)&file_recovery->filename);
-  @ requires new_ext==\null || valid_read_string(new_ext);
+  @ requires valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
   @*/
-static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext, const int append_original_ext)
+static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
-  /* new_filename is large enough to avoid a buffer overflow */
-  char *new_filename;
-  const char *src=file_recovery->filename;
-  const char *ext=NULL;
+  char new_filename[sizeof(file_recovery->filename)];
   char *dst;
-  char *directory_sep;
-  int len;
-  len=strlen(src)+1;
-  if(new_ext!=NULL)
-    len+=strlen(new_ext);
-  new_filename=(char*)MALLOC(len);
-  dst=new_filename;
-  directory_sep=new_filename;
-  while(*src!='\0')
+  char *dst_dir_sep;
+  unsigned int len=strlen(file_recovery->filename)+1;
+  len+=strlen(new_ext);
+  /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  if(len > sizeof(file_recovery->filename))
   {
-    if(*src=='/')
-    {
-      directory_sep=dst;
-      ext=NULL;
-    }
-    if(*src=='.')
-      ext=src;
-    *dst++ = *src++;
+    return -1;
   }
-  *dst='\0';
-  dst=directory_sep;
+  /*@ assert len <= sizeof(file_recovery->filename); */
+  /*@ assert valid_read_string((char*)&file_recovery->filename); */
+  strcpy(new_filename, (char *)&file_recovery->filename);
+  dst_dir_sep=strrchr(new_filename, '/');
+#ifndef __FRAMAC__
+  /*@ assert valid_read_string(dst_dir_sep); */
+  dst=dst_dir_sep;
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add extension */
-  if(new_ext!=NULL)
   {
+    const char *src;
     src=new_ext;
     *dst++ = '.';
     while(*src!='\0')
       *dst++ = *src++;
+    *dst='\0';
   }
-  else if(append_original_ext>0)
+#endif
+  /*@ assert valid_read_string(&new_filename[0]); */
+  if(strlen(new_filename) >= sizeof(file_recovery->filename))
   {
-    if(ext!=NULL)
-    {
-      while(*ext!='\0')
-	*dst++ = *ext++;
-    }
-  }
-  *dst='\0';
-  if(rename(file_recovery->filename, new_filename)<0)
-  {
-    /* Rename has failed */
-    free(new_filename);
+    /*@ assert valid_read_string(&file_recovery->filename[0]); */
     return -1;
   }
-  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  /*@ assert valid_read_string(&new_filename[0]); */
+  if(rename(&file_recovery->filename[0], new_filename)<0)
   {
-    strcpy(file_recovery->filename, new_filename);
+    /* Rename has failed */
+    /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    return -1;
   }
-  free(new_filename);
+  /*@ assert valid_read_string(&new_filename[0]); */
+  strcpy(file_recovery->filename, new_filename);
+  /*@ assert valid_read_string(&file_recovery->filename[0]); */
   return 0;
 }
 
-/* The original filename begins at offset in buffer and is null terminated */
-int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires 0 <= offset < buffer_size;
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @*/
+static int _file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
-  /* TODO: make the code from frama-c friendly */
-#ifndef __FRAMAC__
-  /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
   const char *src=file_recovery->filename;
   const char *ext=NULL;
   char *dst;
   char *directory_sep;
   int len;
-  if(buffer_size<0)
-    return -1;
   len=strlen(src)+1;
-  if(offset < buffer_size && buffer!=NULL)
-    len+=buffer_size-offset+1;
+  /*@ assert offset < buffer_size; */
+  len+=buffer_size-offset+1;
   if(new_ext!=NULL)
     len+=strlen(new_ext);
+#ifndef __FRAMAC__
   new_filename=(char*)MALLOC(len);
   dst=new_filename;
   directory_sep=new_filename;
@@ -505,7 +498,6 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add original filename */
-  if(offset < buffer_size && buffer!=NULL)
   {
     char *dst_old=dst;
     int off;
@@ -569,112 +561,79 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
     }
   }
   *dst='\0';
-  if(rename(file_recovery->filename, new_filename)<0)
-  {
-    /* Rename has failed */
-    free(new_filename);
-    if(buffer==NULL)
-      return -1;
-    /* Try without the original filename */
-    return file_rename_aux(file_recovery, new_ext, append_original_ext);
-  }
-  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  /*@ assert valid_read_string(new_filename); */
+  /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  if(strlen(new_filename)<sizeof(file_recovery->filename) && rename(file_recovery->filename, new_filename)==0)
   {
     strcpy(file_recovery->filename, new_filename);
+    free(new_filename);
+    /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    return 0;
+
   }
   free(new_filename);
 #endif
-  return 0;
+  /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  return -1;
 }
 
 /*@
   @ requires \valid(file_recovery);
-  @ requires valid_read_string((const char*)&file_recovery->filename);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
   @*/
-static int file_rename_unicode_aux(file_recovery_t *file_recovery, const char *new_ext, const int append_original_ext)
+/* The original filename begins at offset in buffer and is null terminated */
+int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
-  char *new_filename;
-  const char *src=file_recovery->filename;
-  const char *ext=src;
-  char *dst;
-  char *directory_sep;
-  unsigned int len=strlen(file_recovery->filename)+1;
-  /*@ assert len < sizeof(file_recovery->filename); */
-  if(new_ext!=NULL)
-    len+=strlen(new_ext);
-  if(len > sizeof(file_recovery->filename))
-    return -1;
-  new_filename=(char*)MALLOC(len);
-  strcpy(new_filename, (char *)&file_recovery->filename);
-  directory_sep=strrchr(file_recovery->filename, '/');
-  ext=strrchr(file_recovery->filename, '.');
-  /*@ assert directory_sep != \null; */
-#if 1
-  dst=directory_sep;
-  while(*dst!='.' && *dst!='\0')
-    dst++;
-  /* Add extension */
-  if(new_ext!=NULL)
-  {
-    src=new_ext;
-    *dst++ = '.';
-    while(*src!='\0')
-      *dst++ = *src++;
-  }
-  else if(append_original_ext>0)
-  {
-    while(*ext!='\0')
-      *dst++ = *ext++;
-  }
-  *dst='\0';
-#endif
-  if(rename(file_recovery->filename, new_filename)<0)
-  {
-    /* Rename has failed */
-    free(new_filename);
-    return -1;
-  }
-  strcpy(file_recovery->filename, new_filename);
-  free(new_filename);
-  return 0;
+  if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
+      _file_rename(file_recovery, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
+    return 0;
+  if(new_ext==NULL)
+    return 0;
+  /* Try without the original filename */
+  return file_rename_aux(file_recovery, new_ext);
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
-int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires 0 <= offset < buffer_size;
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @*/
+static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
-  /* TODO: make the code from frama-c friendly */
-#ifndef __FRAMAC__
-  /* new_filename is large enough to avoid a buffer overflow */
   char *new_filename;
   const char *src=file_recovery->filename;
-  const char *ext=src;
+  const char *src_ext=src;
   char *dst;
-  char *directory_sep;
+  char *dst_dir_sep;
   int len=strlen(src)+1;
-  if(buffer_size<0)
-    return -1;
-  if(offset < buffer_size && buffer!=NULL)
-    len+=buffer_size-offset;
+  /*@ assert offset < buffer_size; */
+  len+=buffer_size-offset;
   if(new_ext!=NULL)
     len+=strlen(new_ext);
+#ifndef __FRAMAC__
   new_filename=(char*)MALLOC(len);
   dst=new_filename;
-  directory_sep=dst;
+  dst_dir_sep=dst;
   while(*src!='\0')
   {
     if(*src=='/')
-      directory_sep=dst;
+      dst_dir_sep=dst;
     if(*src=='.')
-      ext=src;
+      src_ext=src;
     *dst++ = *src++;
   }
   *dst='\0';
-  dst=directory_sep;
+  dst=dst_dir_sep;
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add original filename */
-  if(offset < buffer_size && buffer!=NULL)
   {
     char *dst_old=dst;
     int off;
@@ -729,28 +688,40 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
     while(*src!='\0')
       *dst++ = *src++;
   }
-  else if(append_original_ext>0)
+  else if(append_original_ext>0 && src_ext!=NULL)
   {
-    while(*ext!='\0')
-      *dst++ = *ext++;
+    while(*src_ext!='\0')
+      *dst++ = *src_ext++;
   }
   *dst='\0';
-  if(rename(file_recovery->filename, new_filename)<0)
-  {
-    /* Rename has failed */
-    free(new_filename);
-    if(buffer==NULL)
-      return -1;
-    /* Try without the original filename */
-    return file_rename_unicode_aux(file_recovery, new_ext, append_original_ext);
-  }
-  if(strlen(new_filename)<sizeof(file_recovery->filename))
+  if(strlen(new_filename)<sizeof(file_recovery->filename) && rename(file_recovery->filename, new_filename)==0)
   {
     strcpy(file_recovery->filename, new_filename);
+    free(new_filename);
+    /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    return 0;
   }
   free(new_filename);
 #endif
-  return 0;
+  /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  return -1;
+}
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @*/
+int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
+{
+  if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
+      _file_rename_unicode(file_recovery, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
+    return 0;
+  if(new_ext==NULL)
+    return 0;
+  return file_rename_aux(file_recovery, new_ext);
 }
 
 static uint64_t offset_skipped_header=0;
