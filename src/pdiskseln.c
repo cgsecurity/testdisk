@@ -267,14 +267,15 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
   static alloc_data_t list_search_space={
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
-  if(params->cmd_device==NULL)
+  const int resume_session=(params->cmd_device!=NULL && strcmp(params->cmd_device,"resume")==0);
+  if(params->cmd_device==NULL || resume_session!=0)
   {
     char *saved_device=NULL;
     char *saved_cmd=NULL;
     session_load(&saved_device, &saved_cmd,&list_search_space);
     if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list)
 #ifdef HAVE_NCURSES
-	&& ask_confirmation("Continue previous session ? (Y/N)")!=0
+	&& ( resume_session!=0 || ask_confirmation("Continue previous session ? (Y/N)")!=0)
 #endif
       )
     {

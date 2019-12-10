@@ -245,6 +245,10 @@ int main( int argc, char **argv )
     }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
+    else if(i+1 <= argc && strcmp(argv[i],"/cmd")==0 && strcmp(argv[i+1],"resume")==0)
+    {
+      params.cmd_device=argv[++i];
+    }
     else if(strcmp(argv[i],"/cmd")==0)
     {
       if(i+2>=argc)
