@@ -54,6 +54,7 @@
 #include "addpartn.h"
 #include "intrfn.h"
 
+extern int need_to_stop;
 extern const arch_fnct_t arch_none;
 
 #ifdef HAVE_NCURSES
@@ -137,7 +138,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
     current_element_num=0;
     current_element=list_part;
   }
-  while(done==0)
+  while(done==0 && need_to_stop==0)
   { /* ncurses interface */
     list_part_t *element;
     unsigned int i;

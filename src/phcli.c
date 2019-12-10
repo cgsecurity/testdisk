@@ -41,6 +41,7 @@
 #include "poptions.h"
 #include "phcli.h"
 
+extern int need_to_stop;
 typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 
 static int spacerange_cmp(const struct td_list_head *a, const struct td_list_head *b)
@@ -135,6 +136,8 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
   {
     skip_comma_in_command(&params->cmd_run);
     if(params->cmd_run[0]=='\0')
+      return 0;
+    if(need_to_stop!=0)
       return 0;
     if(check_command(&params->cmd_run,"search",6)==0)
     {
