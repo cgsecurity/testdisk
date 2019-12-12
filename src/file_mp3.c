@@ -299,19 +299,15 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       const unsigned int bit_rate_key	=(buffer[i+2]>>4)&0x0F;
       const unsigned int sampling_rate_key=(buffer[i+2]>>2)&0x03;
       const unsigned int padding	=(buffer[i+2]>>1)&0x01;
-      const unsigned int bit_rate	=bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key];
+      /*@ split mpeg_version; */
       const unsigned int sample_rate	=sample_rate_table[mpeg_version][sampling_rate_key];
+      /*@ assert sample_rate == 0 || 8000 <= sample_rate <= 48000; */
+      const unsigned int bit_rate	=bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key];
       unsigned int frameLengthInBytes=0;
-      /*
-      log_info("frame_offset=%u\n",i);
-      log_info("bit_rate=%u\n",bit_rate);
-      log_info("sample_rate=%u\n",sample_rate);
-      log_info("frameLengthInBytes=%u\n",frameLengthInBytes);
-      */
       if(sample_rate==0 || bit_rate==0 || mpeg_layer==MPEG_L1)
 	return DC_STOP;
-      /*@ assert 8 <= bit_rate <= 448; */
       /*@ assert 8000 <= sample_rate <= 48000; */
+      /*@ assert 0 < bit_rate <= 448; */
       if(mpeg_layer==MPEG_L3)
       {
 	if(mpeg_version==MPEG_V1)
@@ -325,7 +321,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
 	frameLengthInBytes = (12000 * bit_rate / sample_rate + padding)*4;
       if(frameLengthInBytes<3)
 	return DC_STOP;
-      /*@ assert 3 < frameLengthInBytes <= 8065; */
+      /*@ assert 3 <= frameLengthInBytes <= 8065; */
       file_recovery->calculated_file_size+=frameLengthInBytes;
       /*@ assert file_recovery->calculated_file_size > 0; */
     }
@@ -555,13 +551,14 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       const unsigned int bit_rate_key	=(buffer[potential_frame_offset+2]>>4)&0x0F;
       const unsigned int sampling_rate_key=(buffer[potential_frame_offset+2]>>2)&0x03;
       const unsigned int padding	=(buffer[potential_frame_offset+2]>>1)&0x01;
+      /*@ split mpeg_version; */
       const unsigned int bit_rate	=bit_rate_table[mpeg_version][mpeg_layer][bit_rate_key];
       const unsigned int sample_rate	=sample_rate_table[mpeg_version][sampling_rate_key];
       unsigned int frameLengthInBytes=0;
       if(sample_rate==0 || bit_rate==0 || mpeg_layer==MPEG_L1)
 	return 0;
-      /*@ assert 8 <= bit_rate <= 448; */
       /*@ assert 8000 <= sample_rate <= 48000; */
+      /*@ assert 0 < bit_rate <= 448; */
       if(mpeg_layer==MPEG_L3)
       {
 	if(mpeg_version==MPEG_V1)
@@ -577,9 +574,9 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       log_info("framesize: %u, layer: %u, bitrate: %u, padding: %u\n",
 	  frameLengthInBytes, 4-mpeg_layer, bit_rate, padding);
 #endif
-      if(frameLengthInBytes==0)
+      if(frameLengthInBytes<3)
 	return 0;
-      /*@ assert 0 < frameLengthInBytes <= 8065; */
+      /*@ assert 3 <= frameLengthInBytes <= 8065; */
       potential_frame_offset+=frameLengthInBytes;
       /*@ assert potential_frame_offset > 0; */
       nbr++;

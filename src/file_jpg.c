@@ -1401,6 +1401,7 @@ static void jpg_check_picture(file_recovery_t *file_recovery)
 /*@
   @ requires i < buffer_size;
   @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ assigns \nothing;
   @*/
 static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i, const unsigned int size)
 {
@@ -1409,6 +1410,7 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
   /* DHT should not be longer than 1088 bytes, 4*(1+16+255) */
   if(size<18)
     return 2;
+  /*@ loop assigns j; */
   while(j < buffer_size && j < i+size)
   {
     const unsigned int tc=buffer[j]>>4;
@@ -1422,6 +1424,12 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
     if(n > 3)
       return 2;
     j++;
+    /*@
+      @ loop invariant 0 <= l <= 16;
+      @ loop invariant sum <= l*255;
+      @ loop assigns l,sum;
+      @ loop variant 16-l;
+      @*/
     for(l=0; l < 16; l++)
       if(j+l < buffer_size)
 	sum+=buffer[j+l];
@@ -1486,43 +1494,46 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
   FILE* infile=file_recovery->handle;
   unsigned char buffer[40*8192];
   size_t nbytes;
-  uint64_t offset_test=file_recovery->offset_error;
+  const uint64_t offset_error=file_recovery->offset_error;
+  uint64_t offset_test=offset_error;
   uint64_t offset;
-  /*@ assert offset_test == file_recovery->offset_error; */
+  /*@ assert offset_test == offset_error; */
   if(file_recovery->blocksize==0)
     return ;
   offset=offset_test / file_recovery->blocksize * file_recovery->blocksize;
   if(my_fseek(infile, offset, SEEK_SET) < 0)
     return ;
-  /*@ assert offset_test == file_recovery->offset_error; */
+  /*@ assert offset_test == offset_error; */
   /*@
-    @ loop invariant offset_test >= file_recovery->offset_error;
+    @ loop invariant offset_test >= offset_error;
     @*/
   while((nbytes=fread(&buffer, 1, sizeof(buffer), infile))>0)
   {
     unsigned int i;
     /*@ assert 0 < nbytes <= sizeof(buffer); */
-    /*@ assert offset_test >= file_recovery->offset_error; */
 #if defined(__FRAMAC__)
     Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
     if(offset_test > 0x80000000)
       return ;
 #endif
+    /*@ assert offset_test >= offset_error; */
     offset=offset_test / file_recovery->blocksize * file_recovery->blocksize;
     i=offset_test % file_recovery->blocksize;
     /*@ assert offset + i == offset_test; */
     /*@ assert i == offset_test - offset; */
-    /*@ assert offset_test >= file_recovery->offset_error; */
+    /*@ assert offset_test >= offset_error; */
     /*@
       @ loop invariant offset + i >= offset_test;
-      @ loop invariant offset_test >= file_recovery->offset_error;
+      @ loop invariant offset_test >= offset_error;
       @ loop invariant 0 <= i < nbytes + file_recovery->blocksize;
       @ loop assigns i,file_recovery->extra;
       @*/
     while(i+1<nbytes)
     {
       const uint64_t tmp=offset + i;
+      /*@ assert tmp == offset + i; */
       /*@ assert tmp >= offset_test; */
+      /*@ assert offset_test >= offset_error; */
       if(buffer[i]==0xff &&
 	  (buffer[i+1]==0xd8 ||			/* SOI */
 	   buffer[i+1]==0xdb ||			/* DQT */
@@ -1533,7 +1544,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
 	   buffer[i+1]==0xfe)				/* COM */
 	)
       {
-	file_recovery->extra=tmp - file_recovery->offset_error;
+	file_recovery->extra=tmp - offset_error;
 #ifndef __FRAMAC__
 	if(file_recovery->extra % file_recovery->blocksize != 0)
 	{
@@ -2036,6 +2047,7 @@ data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  if( i + size <= buffer_size)
 	  {
 	    /*@ assert i + size <= buffer_size; */
+	    /*@ assert size <= buffer_size - i; */
 	    if(size >= 16)
 	    {
 	      /*@ assert 16 <= size; */

@@ -14,7 +14,7 @@ FRAMA_C_FLAGS=-machdep x86_64 \
 	  -then \
 	  -wp \
 	  -wp-dynamic \
-	  -wp-steps 100000 -wp-depth 100000 \
+	  -wp-steps 100000 \
 	  -wp-split -wp-literals \
 	  -wp-timeout 20 -pp-annot \
 	  -kernel-msg-key pp
