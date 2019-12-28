@@ -136,8 +136,9 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
     }
     else if(atom_size<8)
       return DC_STOP;
-    if(atom_size >= 0x80000000)
+    if(atom_size >= 0x800000000000)
       return DC_STOP;
+    /*@ assert 8 <= atom_size < 0x800000000000; */
 #ifdef DEBUG_MOV
     log_trace("file_mov.c: %s atom %c%c%c%c (0x%02x%02x%02x%02x) size %llu, calculated_file_size %llu\n",
 	file_recovery->filename,
@@ -238,9 +239,9 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
     else if(atom_size<8)
       return 0;
     /*@ assert 8 <= atom_size; */
-    if(atom_size >= 0x80000000)
+    if(atom_size >= 0x800000000000)
       return 0;
-    /*@ assert 8 <= atom_size < 0x80000000; */
+    /*@ assert 8 <= atom_size < 0x800000000000; */
     calculated_file_size=atom_size+i;
     /* check for commun atom type */
     if(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t')
