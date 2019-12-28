@@ -85,7 +85,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
 #else
   offset=ftell(handle);
 #endif
-  if(offset < 0)
+  if(offset <= 0)
   {
     fclose(handle);
     return;
