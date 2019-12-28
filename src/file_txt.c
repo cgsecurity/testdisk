@@ -110,7 +110,6 @@ static const char *extension_rb="rb";
 static const char *extension_rtf="rtf";
 static const char *extension_sla="sla";
 static const char *extension_smil="smil";
-static const char *extension_snz="snz";
 static const char *extension_stl="stl";
 static const char *extension_svg="svg";
 static const char *extension_ttd="ttd";
@@ -329,6 +328,68 @@ static int filtre(unsigned int car)
   return 0;
 }
 
+static int has_newline(const char *buffer, const unsigned int buffer_size)
+{
+  unsigned int i;
+  if(buffer_size < 512)
+    return 0;
+  for(i=0; i<512 && buffer[i]!='\0'; i++)
+  {
+    if(buffer[i]=='\n')
+      return 1;
+  }
+  /* A text file must contains several lines */
+  return 0;
+}
+
+static unsigned int is_csv(const char *buffer, const unsigned int buffer_size)
+{
+  unsigned int csv_per_line_current=0;
+  unsigned int csv_per_line=0;
+  unsigned int line_nbr=0;
+  unsigned int i;
+  for(i=0; i<buffer_size; i++)
+  {
+    if(buffer[i]==';')
+    {
+      csv_per_line_current++;
+    }
+    else if(buffer[i]=='\n')
+    {
+      if(line_nbr==0)
+      {
+	if(csv_per_line_current==0)
+	  return 0;
+	csv_per_line=csv_per_line_current;
+      }
+      if(csv_per_line_current!=csv_per_line)
+	return 0;
+      line_nbr++;
+      csv_per_line_current=0;
+    }
+  }
+  if(line_nbr<10)
+    return 0;
+  return 1;
+}
+
+static unsigned int is_fortran(const char *buffer)
+{
+  const char *str=buffer;
+  unsigned int nbrf=0;
+  /* Detect Fortran */
+  while((str=strstr(str, "\n      "))!=NULL)
+  {
+    nbrf++;
+    str++;
+  }
+  if(nbrf <= 10)
+    return 0;
+  if(strstr(buffer, "integer")==NULL)
+    return 0;
+  return 1;
+}
+
 static int is_ini(const char *buffer)
 {
   const char *src=buffer;
@@ -347,6 +408,23 @@ static int is_ini(const char *buffer)
       return 0;
     src++;
   }
+}
+
+static double is_random(const unsigned char *buffer, const unsigned int buffer_size)
+{
+  unsigned int stats[256];
+  unsigned int i;
+  double ind;
+  if(buffer_size < 2)
+    return 1;
+  memset(&stats, 0, sizeof(stats));
+  for(i=0; i<buffer_size; i++)
+    stats[buffer[i]]++;
+  ind=0;
+  for(i=0; i<256; i++)
+    if(stats[i]>0)
+      ind+=stats[i]*(stats[i]-1);
+  return ind/buffer_size/(buffer_size-1);
 }
 
 /* destination should have an extra byte available for null terminator
@@ -452,12 +530,17 @@ int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int 
       }
       p+=2;
     }
+    else if( 'A' <= *p && *p <='Z')
+    {
+      *q = *p-'A'+'a';
+      p++;
+    }
     else
     { /* Ascii UCS */
 #ifdef DEBUG_TXT
       log_info("UTF8 Ascii UCS 0x%02x\n", *p);
 #endif
-      *q = tolower(*p);
+      *q = *p;
       p++;
     }
     if (*q=='\0' || filtre(*q)==0)
@@ -546,23 +629,36 @@ static int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
 static data_check_t data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const char sign_html_end[]	= "</html>";
-  const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
-  unsigned int j;
-  for(j=(buffer_size/2>sizeof(sign_html_end)?buffer_size/2-sizeof(sign_html_end):0);
-      j+sizeof(sign_html_end)-1 < buffer_size;
-      j++)
+  if(buffer_size/2 > (sizeof(sign_html_end)-1))
   {
-    if(buffer[j]=='<' && strncasecmp((const char *)&buffer[j], sign_html_end, sizeof(sign_html_end)-1)==0)
+    unsigned int j;
+    /*@
+      @ loop assigns j, file_recovery->calculated_file_size;
+      @*/
+    for(j=buffer_size/2-(sizeof(sign_html_end)-1);
+	j+sizeof(sign_html_end)-1 < buffer_size;
+	j++)
     {
-      file_recovery->calculated_file_size+=j-buffer_size/2+sizeof(sign_html_end)-1;
-      return DC_STOP;
+      if(buffer[j]=='<' && strncasecmp((const char *)&buffer[j], sign_html_end, sizeof(sign_html_end)-1)==0)
+      {
+	j+=sizeof(sign_html_end)-1;
+	/*@ assert j >= buffer_size/2; */
+	/*@ loop assigns j; */
+	while(j < buffer_size && (buffer[j]=='\n' || buffer[j]=='\r'))
+	  j++;
+	file_recovery->calculated_file_size+=j-buffer_size/2;
+	return DC_STOP;
+      }
     }
   }
-  if(i<buffer_size/2)
   {
-    if(i>=10)
-      file_recovery->calculated_file_size=file_recovery->file_size+i;
-    return DC_STOP;
+    const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
+    if(i<buffer_size/2)
+    {
+      if(i>=10)
+	file_recovery->calculated_file_size=file_recovery->file_size+i;
+      return DC_STOP;
+    }
   }
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return DC_CONTINUE;
@@ -625,6 +721,7 @@ static void file_rename_fods(file_recovery_t *file_recovery)
     fclose(file);
     return ;
   }
+  fclose(file);
   buffer[lu]='\0';
   tmp=strchr(buffer,'<');
   while(tmp!=NULL)
@@ -636,13 +733,11 @@ static void file_rename_fods(file_recovery_t *file_recovery)
       if(tmp!=NULL)
 	*tmp='\0';
       file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, NULL, 1);
-      fclose(file);
       return ;
     }
     tmp++;
     tmp=strchr(tmp,'<');
   }
-  fclose(file);
 }
 
 static void file_rename_html(file_recovery_t *file_recovery)
@@ -658,13 +753,13 @@ static void file_rename_html(file_recovery_t *file_recovery)
     fclose(file);
     return ;
   }
+  fclose(file);
   buffer[lu]='\0';
   tmp=strchr(buffer,'<');
   while(tmp!=NULL)
   {
     if(strncasecmp(tmp, "</head", 5)==0)
     {
-      fclose(file);
       return ;
     }
     if(strncasecmp(tmp, "<title>", 7)==0)
@@ -674,13 +769,11 @@ static void file_rename_html(file_recovery_t *file_recovery)
       if(tmp!=NULL)
 	*tmp='\0';
       file_rename(file_recovery, (const unsigned char*)title, strlen(title), 0, NULL, 1);
-      fclose(file);
       return ;
     }
     tmp++;
     tmp=strchr(tmp,'<');
   }
-  fclose(file);
 }
 
 static void file_check_ers(file_recovery_t *file_recovery)
@@ -743,17 +836,18 @@ static void file_check_xml(file_recovery_t *file_recovery)
 
 static int header_check_dc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(buffer[0]=='0' && buffer[1]=='0')
-  { /*
-       TSCe Survey Controller DC v10.0
+  if(buffer_size < 2)
+    return 0;
+  if(buffer[0]!='0' || buffer[1]!='0')
+    return 0;
+  /*
+     TSCe Survey Controller DC v10.0
      */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->data_check=&data_check_txt;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension=extension_dc;
-    return 1;
-  }
-  return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension=extension_dc;
+  return 1;
 }
 
 static int header_check_ers(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -789,9 +883,11 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 
 static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  if(buffer_size < 15)
+    return 0;
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
+      file_recovery->extension==extension_mbox)
     return 0;
   if(buffer[14]==0)
     return 0;
@@ -808,6 +904,8 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
 {
   const char *date_asc;
   char *buffer2;
+  if(buffer_size < 22)
+    return 0;
   if(buffer[15]=='\0')
     return 0;
   reset_file_recovery(file_recovery_new);
@@ -863,9 +961,11 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
 static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
+  if(buffer_size < 200)
+    return 0;
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
+      file_recovery->extension==extension_mbox)
     return 0;
   for(i=0; i<64; i++)
     if(buffer[i]==0)
@@ -890,6 +990,8 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
 {
   unsigned int i;
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
+  if(buffer_size < 128)
+    return 0;
   for(i=0; i<128 && buffer[i]!=';' && buffer[i]!='\n'; i++);
   if(buffer[i]!=';')
     return 0;
@@ -914,6 +1016,8 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
 static int header_check_rtf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
+  if(buffer_size < 16)
+    return 0;
   for(i=0; i<16; i++)
     if(buffer[i]=='\0')
       return 0;
@@ -949,7 +1053,7 @@ static int header_check_snz(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension=extension_snz;
+  file_recovery_new->extension=file_hint_snz.extension;
   file_recovery_new->min_filesize=pos-buffer;
   return 1;
 }
@@ -982,9 +1086,11 @@ static int header_check_svg(const unsigned char *buffer, const unsigned int buff
 static int header_check_thunderbird(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
+  if(buffer_size < 64)
+    return 0;
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
+      file_recovery->extension == extension_mbox)
     return 0;
   for(i=0; i<64; i++)
     if(buffer[i]==0)
@@ -1013,6 +1119,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   static unsigned int buffer_lower_size=0;
   unsigned int l;
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
+  if(buffer_size < 512)
+    return 0;
   {
     unsigned int i;
     unsigned int tmp=0;
@@ -1023,7 +1131,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
        memcmp(buffer+i+1, "Received: from", 14)==0) &&
         !(file_recovery->file_stat!=NULL &&
           file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-          strcmp(file_recovery->extension,"mbox")==0))
+          file_recovery->extension==extension_mbox))
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->calculated_file_size=tmp+i+1;
@@ -1161,18 +1269,8 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   l=UTF2Lat((unsigned char*)buffer_lower, buffer, buffer_size_test);
   if(l<10)
     return 0;
-  {
-    unsigned int line_nbr=0;
-    unsigned int i;
-    for(i=0; i<512 && i<l; i++)
-    {
-      if(buffer[i]=='\n')
-	line_nbr++;
-    }
-    /* A text file must contains several lines */
-    if(line_nbr==0)
-      return 0;
-  }
+  if(has_newline(buffer_lower, buffer_size)==0)
+    return 0;
   if(strncasecmp((const char *)buffer, "rem ", 4)==0)
   {
     reset_file_recovery(file_recovery_new);
@@ -1192,59 +1290,11 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
   {
     const char *ext=NULL;
-    /* ind=~0: random
-     * ind=~1: constant	*/
-    double ind;
-    unsigned int nbrf=0;
-    unsigned int is_csv=1;
+    /* ind_random=~0: random
+     * ind_random=~1: constant	*/
+    double ind_random;
     char *str;
-    /* Detect Fortran */
-    {
-      str=buffer_lower;
-      while((str=strstr(str, "\n      "))!=NULL)
-      {
-	nbrf++;
-	str++;
-      }
-    }
-    /* Detect csv */
-    {
-      unsigned int csv_per_line_current=0;
-      unsigned int csv_per_line=0;
-      unsigned int line_nbr=0;
-      unsigned int i;
-      for(i=0;i<l && is_csv>0;i++)
-      {
-	if(buffer_lower[i]==';')
-	{
-	  csv_per_line_current++;
-	}
-	else if(buffer_lower[i]=='\n')
-	{
-	  if(line_nbr==0)
-	    csv_per_line=csv_per_line_current;
-	  if(csv_per_line_current!=csv_per_line)
-	    is_csv=0;
-	  line_nbr++;
-	  csv_per_line_current=0;
-	}
-      }
-      if(csv_per_line<1 || line_nbr<10)
-	is_csv=0;
-    }
-    /* if(l>1) */
-    {
-      unsigned int stats[256];
-      unsigned int i;
-      memset(&stats, 0, sizeof(stats));
-      for(i=0;i<l;i++)
-	stats[(unsigned char)buffer_lower[i]]++;
-      ind=0;
-      for(i=0;i<256;i++)
-	if(stats[i]>0)
-	  ind+=stats[i]*(stats[i]-1);
-      ind=ind/l/(l-1);
-    }
+    ind_random=is_random((const unsigned char *)buffer_lower, l);
     /* Windows Autorun */
     if(strstr(buffer_lower, "[autorun]")!=NULL)
       ext=extension_inf;
@@ -1255,7 +1305,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     else if(strstr(buffer_lower, "<?php")!=NULL)
       ext=extension_php;
     /* Comma separated values */
-    else if(is_csv>0)
+    else if(is_csv(buffer_lower, l)!=0)
       ext=extension_csv;
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, "\\begin{")!=NULL)
@@ -1295,7 +1345,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       ext=extension_java;
     }
     /* Fortran */
-    else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
+    else if(ind_random<0.9 && is_fortran(buffer_lower)!=0)
       ext=extension_f;
     /* LilyPond http://lilypond.org*/
     else if(strstr(buffer_lower, "\\score {")!=NULL)
@@ -1303,20 +1353,17 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     /* C header file */
     else if(strstr(buffer_lower, "/*")!=NULL && l>50)
       ext=extension_h;
-    else if(l<100 || ind<0.03 || ind>0.90)
+    else if(l<100 || ind_random<0.03 || ind_random>0.90)
       ext=NULL;
     /* JavaScript Object Notation  */
     else if(memcmp(buffer_lower, "{\"", 2)==0)
       ext=extension_json;
+    else if(strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL)
+      ext=extension_html;
     else
       ext=file_hint_txt.extension;
     if(ext==NULL)
       return 0;
-    if(strcmp(ext,"txt")==0 &&
-	(strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL))
-    {
-      ext=extension_html;
-    }
     if(file_recovery->file_stat!=NULL)
     {
       if(file_recovery->file_stat->file_hint == &file_hint_doc)
@@ -1324,7 +1371,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	unsigned int i;
 	unsigned int txt_nl=0;
 	/* file_recovery->filename is .doc */
-	if(ind>0.20)
+	if(ind_random>0.20)
 	  return 0;
 	/* Unix: \n (0xA)
 	 * Dos: \r\n (0xD 0xA)
@@ -1351,7 +1398,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       }
     }
     reset_file_recovery(file_recovery_new);
-    if(strcmp(ext, "html")==0)
+    if(ext==extension_html)
     {
       file_recovery_new->file_rename=&file_rename_html;
       file_recovery_new->data_check=&data_check_html;
@@ -1382,30 +1429,39 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
   buf[buffer_size]='\0';
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_xml;
   file_recovery_new->extension=NULL;
   tmp=strchr(buf,'<');
-  while(tmp!=NULL && file_recovery_new->extension==NULL)
+  while(tmp!=NULL)
   {
     if(strncasecmp(tmp, "<Grisbi>", 8)==0)
     {
       /* Grisbi - Personal Finance Manager XML data */
       file_recovery_new->extension=extension_gsb;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
     {
       /* GCstart, personal collections manager, http://www.gcstar.org/ */
       file_recovery_new->extension=extension_gcs;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<html", 5)==0)
     {
       file_recovery_new->data_check=&data_check_html;
       file_recovery_new->extension=extension_html;
       file_recovery_new->file_rename=&file_rename_html;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
     {
       /* QuickBook */
       file_recovery_new->extension=extension_fst;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<svg", 4)==0)
     {
@@ -1419,6 +1475,8 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     {
       /* Mac OS X property list */
       file_recovery_new->extension=extension_plist;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<gpx ", 5)==0)
     {
@@ -1433,16 +1491,22 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
       /* Adobe Premiere project  */
       file_recovery_new->data_check=NULL;
       file_recovery_new->extension=extension_prproj;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
     {
       /* Scribus XML file */
       file_recovery_new->extension=extension_sla;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<FictionBook", 12)==0)
     {
       /* FictionBook, see http://www.fictionbook.org */
       file_recovery_new->extension=extension_fb2;
+      free(buf);
+      return 1;
     }
     else if(strncasecmp(tmp, "<office:document", 16)==0)
     {
@@ -1450,16 +1514,14 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension=extension_fods;
       file_recovery_new->data_check=NULL;
       file_recovery_new->file_rename=&file_rename_fods;
+      free(buf);
+      return 1;
     }
     tmp++;
     tmp=strchr(tmp,'<');
   }
-  if(file_recovery_new->extension==NULL)
-  {
-    /* XML Extensible Markup Language */
-    file_recovery_new->extension=extension_xml;
-  }
-  file_recovery_new->file_check=&file_check_xml;
+  /* XML Extensible Markup Language */
+  file_recovery_new->extension=extension_xml;
   free(buf);
   return 1;
 }
@@ -1472,7 +1534,8 @@ static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int
   memcpy(buf, buffer, buffer_size);
   buf[buffer_size]='\0';
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_xml_utf8;
+  if(buffer_size >= 10)
+    file_recovery_new->data_check=&data_check_xml_utf8;
   file_recovery_new->extension=NULL;
   tmp=strchr(buf,'<');
   while(tmp!=NULL && file_recovery_new->extension==NULL)
@@ -1521,7 +1584,6 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=extension_xmp;
   return 1;
 }
-
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
