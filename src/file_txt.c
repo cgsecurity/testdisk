@@ -49,16 +49,9 @@ extern const file_hint_t file_hint_sld;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_zip;
 
-static inline int filtre(unsigned int car);
-
-static void register_header_check_txt(file_stat_t *file_stat);
-static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void register_header_check_fasttxt(file_stat_t *file_stat);
 static void register_header_check_snz(file_stat_t *file_stat);
-static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-#ifdef UTF16
-static int header_check_le16_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-#endif
+static void register_header_check_txt(file_stat_t *file_stat);
 
 const file_hint_t file_hint_snz= {
   .extension="snz",
@@ -88,21 +81,6 @@ const file_hint_t file_hint_txt= {
 };
 
 static unsigned char ascii_char[256];
-
-static void register_header_check_txt(file_stat_t *file_stat)
-{
-  unsigned int i;
-  for(i=0; i<256; i++)
-    ascii_char[i]=i;
-  for(i=0; i<256; i++)
-  {
-    if(filtre(i) || i==0xE2 || i==0xC2 || i==0xC3 || i==0xC5 || i==0xC6 || i==0xCB)
-      register_header_check(0, &ascii_char[i], 1, &header_check_txt, file_stat);
-  }
-#ifdef UTF16
-  register_header_check(1, &ascii_char[0], 1, &header_check_le16_txt, file_stat);
-#endif
-}
 
 typedef struct
 {
@@ -285,6 +263,26 @@ static int filtre(unsigned int car)
       (car >= 0x93 && car <= 0x98))
     return 1;
   return 0;
+}
+
+static int is_ini(const char *buffer)
+{
+  const char *src=buffer;
+  if(*src!='[')
+    return 0;
+  src++;
+  while(1)
+  {
+    if(*src==']')
+    {
+      if(src > buffer + 3)
+	return 1;
+      return 0;
+    }
+    if(!isalnum(*src) && *src!=' ')
+      return 0;
+    src++;
+  }
 }
 
 /* destination should have an extra byte available for null terminator
@@ -506,19 +504,6 @@ static data_check_t data_check_html(const unsigned char *buffer, const unsigned 
   return DC_CONTINUE;
 }
 
-static data_check_t data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
-  if(i<buffer_size/2)
-  {
-    if(i>=10)
-      file_recovery->calculated_file_size=file_recovery->file_size+i;
-    return DC_STOP;
-  }
-  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  return DC_CONTINUE;
-}
-
 static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
@@ -534,104 +519,33 @@ static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
-static int header_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static data_check_t data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(buffer[56]<'0' || buffer[56]>'9')
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_ttd;
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="ttd";
-  return 1;
-}
-
-static void file_check_ers(file_recovery_t *file_recovery)
-{
-  file_search_footer(file_recovery, "DatasetHeader End", 17, 0);
-  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
-}
-
-static int header_check_ers(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /* ER Mapper Rasters (ERS) */
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_ers;
-  file_recovery_new->extension="ers";
-  return 1;
-}
-
-static int header_check_ics(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const char *date_asc;
-  char *buffer2;
-  if(buffer[15]=='\0')
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  /* vcalendar  */
-  file_recovery_new->extension="ics";
-  /* DTSTART:19970714T133000            ;Local time
-   * DTSTART:19970714T173000Z           ;UTC time
-   * DTSTART;TZID=US-Eastern:19970714T133000    ;Local time and time
-   */
-  buffer2=(char *)MALLOC(buffer_size+1);
-  buffer2[buffer_size]='\0';
-  memcpy(buffer2, buffer, buffer_size);
-  date_asc=strstr(buffer2, "DTSTART");
-  if(date_asc!=NULL)
-    date_asc=strchr(date_asc, ':');
-  if(date_asc!=NULL && date_asc+1+14 < buffer2+buffer_size)
+  const unsigned int i=UTFsize(&buffer[buffer_size/2], buffer_size/2);
+  if(i<buffer_size/2)
   {
-    file_recovery_new->time=get_time_from_YYYYMMDD_HHMMSS(date_asc+1);
+    if(i>=10)
+      file_recovery->calculated_file_size=file_recovery->file_size+i;
+    return DC_STOP;
   }
-  free(buffer2);
-  return 1;
+  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
+  return DC_CONTINUE;
 }
 
-static int header_check_perlm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
-  const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
-  for(i=0; i<128 && buffer[i]!=';' && buffer[i]!='\n'; i++);
-  if(buffer[i]!=';')
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  if( td_memmem(buffer, buffer_size_test, "class", 5)!=NULL ||
-      td_memmem(buffer, buffer_size_test, "private static", 14)!=NULL ||
-      td_memmem(buffer, buffer_size_test, "public interface", 16)!=NULL)
+  if(buffer_size<=8)
+    return DC_CONTINUE;
+  i=UTFsize(&buffer[buffer_size/2+4], buffer_size/2-4)+4;
+  if(i<buffer_size/2)
   {
-    /* source code in java */
-#ifdef DJGPP
-    file_recovery_new->extension="jav";
-#else
-    file_recovery_new->extension="java";
-#endif
+    file_recovery->calculated_file_size=file_recovery->file_size+i;
+    return DC_STOP;
   }
-  else
-  {
-    /* perl module */
-    file_recovery_new->extension="pm";
-  }
-  return 1;
-}
-
-static int header_check_dc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(buffer[0]=='0' && buffer[1]=='0')
-  { /*
-       TSCe Survey Controller DC v10.0
-     */
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->data_check=&data_check_txt;
-    file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension="dc";
-    return 1;
-  }
-  return 0;
+  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
+  file_recovery->data_check=&data_check_txt;
+  return DC_CONTINUE;
 }
 
 static void file_rename_fods(file_recovery_t *file_recovery)
@@ -705,25 +619,10 @@ static void file_rename_html(file_recovery_t *file_recovery)
   fclose(file);
 }
 
-static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static void file_check_ers(file_recovery_t *file_recovery)
 {
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
-    return 0;
-  if(buffer[14]==0)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_html;
-  file_recovery_new->file_check=&file_check_size;
-  /* Hypertext Markup Language (HTML) */
-#ifdef DJGPP
-  file_recovery_new->extension="htm";
-#else
-  file_recovery_new->extension="html";
-#endif
-  file_recovery_new->file_rename=&file_rename_html;
-  return 1;
+  file_search_footer(file_recovery, "DatasetHeader End", 17, 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_vbm(file_recovery_t *file_recovery)
@@ -732,24 +631,9 @@ static void file_check_vbm(file_recovery_t *file_recovery)
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
-static int header_check_vbm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->extension="vbm";
-  file_recovery_new->file_check=&file_check_vbm;
-  return 1;
-}
-
 static void file_check_gpx(file_recovery_t *file_recovery)
 {
   file_search_footer(file_recovery, "</gpx>", 6, 0);
-  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
-}
-
-static void file_check_xml(file_recovery_t *file_recovery)
-{
-  file_search_footer(file_recovery, ">", 1, 0);
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
@@ -759,195 +643,22 @@ static void file_check_svg(file_recovery_t *file_recovery)
   file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
-static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static void file_check_emlx(file_recovery_t *file_recovery)
 {
-  unsigned int i;
-  if(buffer_size<=8)
-    return DC_CONTINUE;
-  i=UTFsize(&buffer[buffer_size/2+4], buffer_size/2-4)+4;
-  if(i<buffer_size/2)
+  if(file_recovery->file_size < file_recovery->calculated_file_size)
+    file_recovery->file_size=0;
+  else
   {
-    file_recovery->calculated_file_size=file_recovery->file_size+i;
-    return DC_STOP;
+    if(file_recovery->file_size > file_recovery->calculated_file_size+2048)
+      file_recovery->file_size=file_recovery->calculated_file_size+2048;
+    file_search_footer(file_recovery, "</plist>\n", 9, 0);
   }
-  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
-  file_recovery->data_check=&data_check_txt;
-  return DC_CONTINUE;
 }
 
-static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static void file_check_smil(file_recovery_t *file_recovery)
 {
-  const char *tmp;
-  /* buffer may not be null-terminated */
-  char *buf=(char *)MALLOC(buffer_size+1);
-  memcpy(buf, buffer, buffer_size);
-  buf[buffer_size]='\0';
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_xml_utf8;
-  file_recovery_new->extension=NULL;
-  tmp=strchr(buf,'<');
-  while(tmp!=NULL && file_recovery_new->extension==NULL)
-  {
-    if(strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
-    {
-      /* Grasshopper archive */
-      file_recovery_new->extension="ghx";
-    }
-    tmp++;
-    tmp=strchr(tmp,'<');
-  }
-  if(file_recovery_new->extension==NULL)
-  {
-    file_recovery_new->extension="xml";
-  }
-  file_recovery_new->file_check=&file_check_xml;
-  free(buf);
-  return 1;
-}
-
-static int header_check_xml_utf16(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /* Avoid false positive with .sldprt */
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension="xml";
-  return 1;
-}
-
-static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const char *tmp;
-  /* buffer may not be null-terminated */
-  char *buf=(char *)MALLOC(buffer_size+1);
-  memcpy(buf, buffer, buffer_size);
-  buf[buffer_size]='\0';
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->extension=NULL;
-  tmp=strchr(buf,'<');
-  while(tmp!=NULL && file_recovery_new->extension==NULL)
-  {
-    if(strncasecmp(tmp, "<Grisbi>", 8)==0)
-    {
-      /* Grisbi - Personal Finance Manager XML data */
-      file_recovery_new->extension="gsb";
-    }
-    else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
-    {
-      /* GCstart, personal collections manager, http://www.gcstar.org/ */
-      file_recovery_new->extension="gcs";
-    }
-    else if(strncasecmp(tmp, "<html", 5)==0)
-    {
-      file_recovery_new->data_check=&data_check_html;
-#ifdef DJGPP
-      file_recovery_new->extension="htm";
-#else
-      file_recovery_new->extension="html";
-#endif
-      file_recovery_new->file_rename=&file_rename_html;
-    }
-    else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
-    {
-      /* QuickBook */
-      file_recovery_new->extension="fst";
-    }
-    else if(strncasecmp(tmp, "<svg", 4)==0)
-    {
-      /* Scalable Vector Graphics */
-      file_recovery_new->extension="svg";
-      file_recovery_new->file_check=&file_check_svg;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
-    {
-      /* Mac OS X property list */
-#ifdef DJGPP
-      file_recovery_new->extension="pli";
-#else
-      file_recovery_new->extension="plist";
-#endif
-    }
-    else if(strncasecmp(tmp, "<gpx ", 5)==0)
-    {
-      /* GPS eXchange Format */
-      file_recovery_new->extension="gpx";
-      file_recovery_new->file_check=&file_check_gpx;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
-    {
-      /* Adobe Premiere project  */
-      file_recovery_new->data_check=NULL;
-      file_recovery_new->extension="prproj";
-    }
-    else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
-    {
-      /* Scribus XML file */
-      file_recovery_new->extension="sla";
-    }
-    else if(strncasecmp(tmp, "<FictionBook", 12)==0)
-    {
-      /* FictionBook, see http://www.fictionbook.org */
-      file_recovery_new->extension="fb2";
-    }
-    else if(strncasecmp(tmp, "<office:document", 16)==0)
-    {
-      /* OpenDocument Flat XML Spreadsheet */
-      file_recovery_new->extension="fods";
-      file_recovery_new->data_check=NULL;
-      file_recovery_new->file_rename=&file_rename_fods;
-    }
-    tmp++;
-    tmp=strchr(tmp,'<');
-  }
-  if(file_recovery_new->extension==NULL)
-  {
-    /* XML Extensible Markup Language */
-    file_recovery_new->extension="xml";
-  }
-  file_recovery_new->file_check=&file_check_xml;
-  free(buf);
-  return 1;
-}
-
-static int header_check_rtf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  unsigned int i;
-  for(i=0; i<16; i++)
-    if(buffer[i]=='\0')
-      return 0;
-  /* Avoid a false positive with .snt */
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  /* Rich Text Format */
-  file_recovery_new->extension="rtf";
-  return 1;
-}
-
-static int header_check_xmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  if(buffer[35]=='\0')
-    return 0;
-  if(file_recovery->file_stat!=NULL &&
-      (file_recovery->file_stat->file_hint==&file_hint_jpg ||
-       file_recovery->file_stat->file_hint==&file_hint_pdf ||
-       file_recovery->file_stat->file_hint==&file_hint_tiff))
-    return 0;
-  /* Adobe's Extensible Metadata Platform */
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="xmp";
-  return 1;
+  file_search_footer(file_recovery, "</smil>", 7, 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
 static void file_check_thunderbird(file_recovery_t *file_recovery)
@@ -960,46 +671,34 @@ static void file_check_thunderbird(file_recovery_t *file_recovery)
   file_recovery->file_size=file_recovery->calculated_file_size;
 }
 
-static int header_check_thunderbird(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static void file_check_xml(file_recovery_t *file_recovery)
 {
-  unsigned int i;
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
-    return 0;
-  for(i=0; i<64; i++)
-    if(buffer[i]==0)
-      return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_thunderbird;
-  file_recovery_new->extension="mbox";
-  return 1;
+  file_search_footer(file_recovery, ">", 1, 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
 }
 
-static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_dc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  unsigned int i;
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
-      strcmp(file_recovery->extension,"mbox")==0)
-    return 0;
-  for(i=0; i<64; i++)
-    if(buffer[i]==0)
-      return 0;
-  if( memcmp(buffer, "From ", 5)==0 &&
-      memcmp(buffer, "From MAILER-DAEMON ", 19)!=0)
-  {
-    /* From someone@somewhere */
-    for(i=5; i<200 && buffer[i]!=' ' && buffer[i]!='@'; i++);
-    if(buffer[i]!='@')
-      return 0;
+  if(buffer[0]=='0' && buffer[1]=='0')
+  { /*
+       TSCe Survey Controller DC v10.0
+     */
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->data_check=&data_check_txt;
+    file_recovery_new->file_check=&file_check_size;
+    file_recovery_new->extension="dc";
+    return 1;
   }
+  return 0;
+}
+
+static int header_check_ers(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* ER Mapper Rasters (ERS) */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  /* Incredimail has .imm extension but this extension isn't frequent */
-  file_recovery_new->extension="mbox";
+  file_recovery_new->file_check=&file_check_ers;
+  file_recovery_new->extension="ers";
   return 1;
 }
 
@@ -1024,24 +723,54 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   return 0;
 }
 
-static int is_ini(const char *buffer)
+static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char *src=buffer;
-  if(*src!='[')
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+      strcmp(file_recovery->extension,"mbox")==0)
     return 0;
-  src++;
-  while(1)
+  if(buffer[14]==0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_html;
+  file_recovery_new->file_check=&file_check_size;
+  /* Hypertext Markup Language (HTML) */
+#ifdef DJGPP
+  file_recovery_new->extension="htm";
+#else
+  file_recovery_new->extension="html";
+#endif
+  file_recovery_new->file_rename=&file_rename_html;
+  return 1;
+}
+
+static int header_check_ics(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const char *date_asc;
+  char *buffer2;
+  if(buffer[15]=='\0')
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  /* vcalendar  */
+  file_recovery_new->extension="ics";
+  /* DTSTART:19970714T133000            ;Local time
+   * DTSTART:19970714T173000Z           ;UTC time
+   * DTSTART;TZID=US-Eastern:19970714T133000    ;Local time and time
+   */
+  buffer2=(char *)MALLOC(buffer_size+1);
+  buffer2[buffer_size]='\0';
+  memcpy(buffer2, buffer, buffer_size);
+  date_asc=strstr(buffer2, "DTSTART");
+  if(date_asc!=NULL)
+    date_asc=strchr(date_asc, ':');
+  if(date_asc!=NULL && date_asc+1+14 < buffer2+buffer_size)
   {
-    if(*src==']')
-    {
-      if(src > buffer + 3)
-	return 1;
-      return 0;
-    }
-    if(!isalnum(*src) && *src!=' ')
-      return 0;
-    src++;
+    file_recovery_new->time=get_time_from_YYYYMMDD_HHMMSS(date_asc+1);
   }
+  free(buffer2);
+  return 1;
 }
 
 #ifdef UTF16
@@ -1071,16 +800,155 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
 }
 #endif
 
-static void file_check_emlx(file_recovery_t *file_recovery)
+static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(file_recovery->file_size < file_recovery->calculated_file_size)
-    file_recovery->file_size=0;
+  unsigned int i;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+      strcmp(file_recovery->extension,"mbox")==0)
+    return 0;
+  for(i=0; i<64; i++)
+    if(buffer[i]==0)
+      return 0;
+  if( memcmp(buffer, "From ", 5)==0 &&
+      memcmp(buffer, "From MAILER-DAEMON ", 19)!=0)
+  {
+    /* From someone@somewhere */
+    for(i=5; i<200 && buffer[i]!=' ' && buffer[i]!='@'; i++);
+    if(buffer[i]!='@')
+      return 0;
+  }
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  /* Incredimail has .imm extension but this extension isn't frequent */
+  file_recovery_new->extension="mbox";
+  return 1;
+}
+
+static int header_check_perlm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
+  for(i=0; i<128 && buffer[i]!=';' && buffer[i]!='\n'; i++);
+  if(buffer[i]!=';')
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  if( td_memmem(buffer, buffer_size_test, "class", 5)!=NULL ||
+      td_memmem(buffer, buffer_size_test, "private static", 14)!=NULL ||
+      td_memmem(buffer, buffer_size_test, "public interface", 16)!=NULL)
+  {
+    /* source code in java */
+#ifdef DJGPP
+    file_recovery_new->extension="jav";
+#else
+    file_recovery_new->extension="java";
+#endif
+  }
   else
   {
-    if(file_recovery->file_size > file_recovery->calculated_file_size+2048)
-      file_recovery->file_size=file_recovery->calculated_file_size+2048;
-    file_search_footer(file_recovery, "</plist>\n", 9, 0);
+    /* perl module */
+    file_recovery_new->extension="pm";
   }
+  return 1;
+}
+
+static int header_check_rtf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  for(i=0; i<16; i++)
+    if(buffer[i]=='\0')
+      return 0;
+  /* Avoid a false positive with .snt */
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  /* Rich Text Format */
+  file_recovery_new->extension="rtf";
+  return 1;
+}
+
+static int header_check_smil(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* Synchronized Multimedia Integration Language
+   * http://en.wikipedia.org/wiki/Synchronized_Multimedia_Integration_Language */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_smil;
+  file_recovery_new->extension="smil";
+  return 1;
+}
+
+static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
+  const unsigned char *pos=(const unsigned char *)td_memmem(buffer, buffer_size_test, ".snz", 4);
+  if(pos==NULL)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="snz";
+  file_recovery_new->min_filesize=pos-buffer;
+  return 1;
+}
+
+static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
+  if(td_memmem(buffer, buffer_size_test, "facet normal", 12)==NULL)
+    return 0;
+  /* StereoLithography - STL Ascii format
+   * http://www.ennex.com/~fabbers/StL.asp	*/
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="stl";
+  return 1;
+}
+
+
+static int header_check_svg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* Scalable Vector Graphics */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="svg";
+  file_recovery_new->file_check=&file_check_svg;
+  return 1;
+}
+
+
+static int header_check_thunderbird(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  unsigned int i;
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
+      strcmp(file_recovery->extension,"mbox")==0)
+    return 0;
+  for(i=0; i<64; i++)
+    if(buffer[i]==0)
+      return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_thunderbird;
+  file_recovery_new->extension="mbox";
+  return 1;
+}
+
+static int header_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[56]<'0' || buffer[56]>'9')
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_ttd;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension="ttd";
+  return 1;
 }
 
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1448,65 +1316,172 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   }
 }
 
-static void file_check_smil(file_recovery_t *file_recovery)
+static int header_check_vbm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  file_search_footer(file_recovery, "</smil>", 7, 0);
-  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
-}
-
-static int header_check_smil(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /* Synchronized Multimedia Integration Language
-   * http://en.wikipedia.org/wiki/Synchronized_Multimedia_Integration_Language */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_smil;
-  file_recovery_new->extension="smil";
+  file_recovery_new->extension="vbm";
+  file_recovery_new->file_check=&file_check_vbm;
   return 1;
 }
 
-static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
-  if(td_memmem(buffer, buffer_size_test, "facet normal", 12)==NULL)
+  const char *tmp;
+  /* buffer may not be null-terminated */
+  char *buf=(char *)MALLOC(buffer_size+1);
+  memcpy(buf, buffer, buffer_size);
+  buf[buffer_size]='\0';
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->extension=NULL;
+  tmp=strchr(buf,'<');
+  while(tmp!=NULL && file_recovery_new->extension==NULL)
+  {
+    if(strncasecmp(tmp, "<Grisbi>", 8)==0)
+    {
+      /* Grisbi - Personal Finance Manager XML data */
+      file_recovery_new->extension="gsb";
+    }
+    else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
+    {
+      /* GCstart, personal collections manager, http://www.gcstar.org/ */
+      file_recovery_new->extension="gcs";
+    }
+    else if(strncasecmp(tmp, "<html", 5)==0)
+    {
+      file_recovery_new->data_check=&data_check_html;
+#ifdef DJGPP
+      file_recovery_new->extension="htm";
+#else
+      file_recovery_new->extension="html";
+#endif
+      file_recovery_new->file_rename=&file_rename_html;
+    }
+    else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
+    {
+      /* QuickBook */
+      file_recovery_new->extension="fst";
+    }
+    else if(strncasecmp(tmp, "<svg", 4)==0)
+    {
+      /* Scalable Vector Graphics */
+      file_recovery_new->extension="svg";
+      file_recovery_new->file_check=&file_check_svg;
+      free(buf);
+      return 1;
+    }
+    else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
+    {
+      /* Mac OS X property list */
+#ifdef DJGPP
+      file_recovery_new->extension="pli";
+#else
+      file_recovery_new->extension="plist";
+#endif
+    }
+    else if(strncasecmp(tmp, "<gpx ", 5)==0)
+    {
+      /* GPS eXchange Format */
+      file_recovery_new->extension="gpx";
+      file_recovery_new->file_check=&file_check_gpx;
+      free(buf);
+      return 1;
+    }
+    else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
+    {
+      /* Adobe Premiere project  */
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->extension="prproj";
+    }
+    else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
+    {
+      /* Scribus XML file */
+      file_recovery_new->extension="sla";
+    }
+    else if(strncasecmp(tmp, "<FictionBook", 12)==0)
+    {
+      /* FictionBook, see http://www.fictionbook.org */
+      file_recovery_new->extension="fb2";
+    }
+    else if(strncasecmp(tmp, "<office:document", 16)==0)
+    {
+      /* OpenDocument Flat XML Spreadsheet */
+      file_recovery_new->extension="fods";
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->file_rename=&file_rename_fods;
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
+  }
+  if(file_recovery_new->extension==NULL)
+  {
+    /* XML Extensible Markup Language */
+    file_recovery_new->extension="xml";
+  }
+  file_recovery_new->file_check=&file_check_xml;
+  free(buf);
+  return 1;
+}
+
+static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const char *tmp;
+  /* buffer may not be null-terminated */
+  char *buf=(char *)MALLOC(buffer_size+1);
+  memcpy(buf, buffer, buffer_size);
+  buf[buffer_size]='\0';
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_xml_utf8;
+  file_recovery_new->extension=NULL;
+  tmp=strchr(buf,'<');
+  while(tmp!=NULL && file_recovery_new->extension==NULL)
+  {
+    if(strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
+    {
+      /* Grasshopper archive */
+      file_recovery_new->extension="ghx";
+    }
+    tmp++;
+    tmp=strchr(tmp,'<');
+  }
+  if(file_recovery_new->extension==NULL)
+  {
+    file_recovery_new->extension="xml";
+  }
+  file_recovery_new->file_check=&file_check_xml;
+  free(buf);
+  return 1;
+}
+
+static int header_check_xml_utf16(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  /* Avoid false positive with .sldprt */
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc)
     return 0;
-  /* StereoLithography - STL Ascii format
-   * http://www.ennex.com/~fabbers/StL.asp	*/
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension="xml";
+  return 1;
+}
+
+static int header_check_xmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  if(buffer[35]=='\0')
+    return 0;
+  if(file_recovery->file_stat!=NULL &&
+      (file_recovery->file_stat->file_hint==&file_hint_jpg ||
+       file_recovery->file_stat->file_hint==&file_hint_pdf ||
+       file_recovery->file_stat->file_hint==&file_hint_tiff))
+    return 0;
+  /* Adobe's Extensible Metadata Platform */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="stl";
+  file_recovery_new->extension="xmp";
   return 1;
 }
 
-static int header_check_svg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  /* Scalable Vector Graphics */
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension="svg";
-  file_recovery_new->file_check=&file_check_svg;
-  return 1;
-}
-
-static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const unsigned int buffer_size_test=(buffer_size < 512? buffer_size : 512);
-  const unsigned char *pos=(const unsigned char *)td_memmem(buffer, buffer_size_test, ".snz", 4);
-  if(pos==NULL)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="snz";
-  file_recovery_new->min_filesize=pos-buffer;
-  return 1;
-}
-
-static void register_header_check_snz(file_stat_t *file_stat)
-{
-  register_header_check(0, "DEFAULT\n",   8, &header_check_snz, file_stat);
-  register_header_check(0, "DEFAULT\r\n", 9, &header_check_snz, file_stat);
-}
 
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
@@ -1548,4 +1523,25 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
   register_header_check(0, "<svg xmlns=\"http://www.w3.org/2000/svg\"", 39, &header_check_svg, file_stat);
+}
+
+static void register_header_check_snz(file_stat_t *file_stat)
+{
+  register_header_check(0, "DEFAULT\n",   8, &header_check_snz, file_stat);
+  register_header_check(0, "DEFAULT\r\n", 9, &header_check_snz, file_stat);
+}
+
+static void register_header_check_txt(file_stat_t *file_stat)
+{
+  unsigned int i;
+  for(i=0; i<256; i++)
+    ascii_char[i]=i;
+  for(i=0; i<256; i++)
+  {
+    if(filtre(i) || i==0xE2 || i==0xC2 || i==0xC3 || i==0xC5 || i==0xC6 || i==0xCB)
+      register_header_check(0, &ascii_char[i], 1, &header_check_txt, file_stat);
+  }
+#ifdef UTF16
+  register_header_check(1, &ascii_char[0], 1, &header_check_le16_txt, file_stat);
+#endif
 }
