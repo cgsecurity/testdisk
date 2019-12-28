@@ -85,9 +85,10 @@ static int file_identify(const char *filename, const unsigned int options)
       file_recovery_t file_recovery_new;
       file_recovery_t file_recovery;
       reset_file_recovery(&file_recovery);
+      reset_file_recovery(&file_recovery_new);
       file_recovery.blocksize=blocksize;
       file_recovery_new.blocksize=blocksize;
-      file_recovery_new.file_stat=NULL;
+      /*@ assert file_recovery_new.file_stat==NULL; */
       td_list_for_each(tmpl, &file_check_list.list)
       {
 	struct td_list_head *tmp;

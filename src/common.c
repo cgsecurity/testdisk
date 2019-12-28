@@ -225,22 +225,50 @@ char* strip_dup(char* str)
 }
 
 /* Convert a MS-DOS time/date pair to a UNIX date (seconds since 1 1 70). */
+/*
+ * The epoch of FAT timestamp is 1980.
+ *     :  bits :     value
+ * date:  0 -  4: day	(1 -  31)
+ * date:  5 -  8: month	(1 -  12)
+ * date:  9 - 15: year	(0 - 127) from 1980
+ * time:  0 -  4: sec	(0 -  29) 2sec counts
+ * time:  5 - 10: min	(0 -  59)
+ * time: 11 - 15: hour	(0 -  23)
+ */
+#define SECS_PER_MIN	60
+#define SECS_PER_HOUR	(60 * 60)
+#define SECS_PER_DAY	(SECS_PER_HOUR * 24)
+/* days between 1.1.70 and 1.1.80 (2 leap days) */
+#define DAYS_DELTA	(365 * 10 + 2)
+/* 120 (2100 - 1980) isn't leap year */
+#define YEAR_2100	120
+#define IS_LEAP_YEAR(y)	(!((y) & 3) && (y) != YEAR_2100)
 
 time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 {
-  static const unsigned int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
+  static const unsigned int days_in_year[] = { 0, 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0 };
   /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
 
-  unsigned int month,year,secs;
+  unsigned long int day,leap_day,month,year,days;
+  unsigned long int secs;
+  year  = f_date >> 9;
+  month = td_max(1, (f_date >> 5) & 0xf);
+  day   = td_max(1, f_date & 0x1f) - 1;
 
-  /* first subtract and mask after that... Otherwise, if
-     f_date == 0, bad things happen */
-  month = ((f_date >> 5) - 1) & 15;
-  year = f_date >> 9;
-  secs = (f_time & 31)*2+60*((f_time >> 5) & 63)+(f_time >> 11)*3600+86400*
-    ((f_date & 31)-1+day_n[month]+(year/4)+year*365-((year & 3) == 0 &&
-      month < 2 ? 1 : 0)+3653);
-  /* days since 1.1.70 plus 80's leap day */
+  leap_day = (year + 3) / 4;
+  if (year > YEAR_2100)		/* 2100 isn't leap year */
+    leap_day--;
+  if (IS_LEAP_YEAR(year) && month > 2)
+    leap_day++;
+  days = days_in_year[month];
+  /*@ assert days <= 334; */
+  days += year * 365 + leap_day + day + DAYS_DELTA;
+
+  secs = (f_time & 0x1f)<<1;
+  secs += ((f_time >> 5) & 0x3f) * SECS_PER_MIN;
+  secs += (f_time >> 11)* SECS_PER_HOUR;
+  secs += days * SECS_PER_DAY;
+
   return secs+secwest;
 }
 

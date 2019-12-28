@@ -449,6 +449,8 @@ unsigned int up2power(const unsigned int number);
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
 char* strip_dup(char* str);
+
+/*@ assigns \nothing; */
 time_t date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 void set_secwest(void);
 time_t td_ntfs2utc (int64_t ntfstime);

@@ -235,14 +235,23 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
   {
     int i;
     int taille;
-    const unsigned int read_size=(offset%4096!=0 ? offset%4096 : 4096);
-    offset-=read_size;
+    if(offset <= 4096)
+      offset=0;
+    else if(offset%4096==0)
+      offset-=4096;
+    else
+      offset=offset-(offset%4096);
     if(my_fseek(handle,offset,SEEK_SET)<0)
     {
       free(buffer);
       return 0;
     }
-    taille=fread(buffer, 1, read_size, handle);
+    taille=fread(buffer, 1, 4096, handle);
+    if(taille <= 0)
+    {
+      free(buffer);
+      return 0;
+    }
     for(i=taille-1;i>=0;i--)
     {
       if(buffer[i]==*(const unsigned char *)footer && memcmp(buffer+i,footer,footer_length)==0)
@@ -264,6 +273,7 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   file_recovery->file_size=file_rsearch(file_recovery->handle, file_recovery->file_size-extra_length, footer, footer_length);
   if(file_recovery->file_size > 0)
     file_recovery->file_size+= footer_length + extra_length;
+  /*@ assert \valid(file_recovery->handle); */
 }
 
 #if 0
@@ -577,13 +587,6 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
   return -1;
 }
 
-/*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
-  @*/
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
@@ -707,13 +710,6 @@ static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buff
   return -1;
 }
 
-/*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
-  @*/
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
   if(buffer!=NULL && 0 <= offset && offset < buffer_size &&

@@ -123,6 +123,7 @@ void free_header_check(void);
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ ensures \valid(file_recovery->handle);
   @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
@@ -135,8 +136,10 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
   @ requires footer_length > 0;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @ ensures \valid(file_recovery->handle);
   @*/
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 
@@ -153,18 +156,21 @@ data_check_t data_check_size(const unsigned char *buffer, const unsigned int buf
 /*@
   @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size;
+  @ assigns file_recovery->file_size;
   @*/
 void file_check_size(file_recovery_t *file_recovery);
 
 /*@
   @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size_min;
+  @ assigns file_recovery->file_size;
   @*/
 void file_check_size_min(file_recovery_t *file_recovery);
 
 /*@
   @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size_max;
+  @ assigns file_recovery->file_size;
   @*/
 void file_check_size_max(file_recovery_t *file_recovery);
 
@@ -236,6 +242,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
   @*/
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
@@ -244,6 +251,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
+  @ ensures valid_read_string((char*)&file_recovery->filename);
   @*/
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
