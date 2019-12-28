@@ -49,18 +49,80 @@ extern const file_hint_t file_hint_sld;
 extern const file_hint_t file_hint_tiff;
 extern const file_hint_t file_hint_zip;
 
+typedef struct
+{
+  const char *string;
+  const unsigned int len;
+  const char *extension;
+} txt_header_t;
+
 static void register_header_check_fasttxt(file_stat_t *file_stat);
 static void register_header_check_snz(file_stat_t *file_stat);
 static void register_header_check_txt(file_stat_t *file_stat);
 
-const file_hint_t file_hint_snz= {
-  .extension="snz",
-  .description="Olfaction SeeNez odorama",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_snz
-};
+static const char *extension_asp="asp";
+static const char *extension_bat="bat";
+static const char *extension_c="c";
+static const char *extension_csv="csv";
+static const char *extension_dc="dc";
+static const char *extension_emlx="emlx";
+static const char *extension_ers="ers";
+static const char *extension_f="f";
+static const char *extension_fb2="fb2";
+static const char *extension_fods="fods";
+static const char *extension_fst="fst";
+static const char *extension_gcs="gcs";
+static const char *extension_ghx="ghx";
+static const char *extension_go="go";
+static const char *extension_gpx="gpx";
+static const char *extension_groovy="groovy";
+static const char *extension_gsb="gsb";
+static const char *extension_h="h";
+#ifdef DJGPP
+static const char *extension_html="htm";
+#else
+static const char *extension_html="html";
+#endif
+static const char *extension_ics="ics";
+static const char *extension_inf="inf";
+static const char *extension_ini="ini";
+#ifdef DJGPP
+static const char *extension_java="jav";
+#else
+static const char *extension_java="java";
+#endif
+static const char *extension_json="json";
+static const char *extension_jsp="jsp";
+static const char *extension_ldif="ldif";
+static const char *extension_ly="ly";
+static const char *extension_mbox="mbox";
+static const char *extension_php="php";
+static const char *extension_pl="pl";
+#ifdef DJGPP
+static const char *extension_plist="pli";
+#else
+static const char *extension_plist="plist";
+#endif
+static const char *extension_pm="pm";
+static const char *extension_prproj="prproj";
+static const char *extension_py="py";
+static const char *extension_rb="rb";
+static const char *extension_rtf="rtf";
+static const char *extension_sla="sla";
+static const char *extension_smil="smil";
+static const char *extension_snz="snz";
+static const char *extension_stl="stl";
+static const char *extension_svg="svg";
+static const char *extension_ttd="ttd";
+static const char *extension_tex="tex";
+#ifdef UTF16
+static const char *extension_utf16="utf16";
+#endif
+static const char *extension_vb="vb";
+static const char *extension_vbm="vbm";
+static const char *extension_vcf="vcf";
+static const char *extension_xml="xml";
+static const char *extension_xmp="xmp";
 
 const file_hint_t file_hint_fasttxt= {
   .extension="tx?",
@@ -69,6 +131,15 @@ const file_hint_t file_hint_fasttxt= {
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_fasttxt
+};
+
+const file_hint_t file_hint_snz= {
+  .extension="snz",
+  .description="Olfaction SeeNez odorama",
+  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .recover=1,
+  .enable_by_default=1,
+  .register_header_check=&register_header_check_snz
 };
 
 const file_hint_t file_hint_txt= {
@@ -81,13 +152,6 @@ const file_hint_t file_hint_txt= {
 };
 
 static unsigned char ascii_char[256];
-
-typedef struct
-{
-  const char *string;
-  const unsigned int len;
-  const char *extension;
-} txt_header_t;
 
 static const txt_header_t fasttxt_headers[] = {
   /* Unix shell */
@@ -686,7 +750,7 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension="dc";
+    file_recovery_new->extension=extension_dc;
     return 1;
   }
   return 0;
@@ -698,7 +762,7 @@ static int header_check_ers(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_ers;
-  file_recovery_new->extension="ers";
+  file_recovery_new->extension=extension_ers;
   return 1;
 }
 
@@ -735,11 +799,7 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->data_check=&data_check_html;
   file_recovery_new->file_check=&file_check_size;
   /* Hypertext Markup Language (HTML) */
-#ifdef DJGPP
-  file_recovery_new->extension="htm";
-#else
-  file_recovery_new->extension="html";
-#endif
+  file_recovery_new->extension=extension_html;
   file_recovery_new->file_rename=&file_rename_html;
   return 1;
 }
@@ -754,7 +814,7 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   /* vcalendar  */
-  file_recovery_new->extension="ics";
+  file_recovery_new->extension=extension_ics;
   /* DTSTART:19970714T133000            ;Local time
    * DTSTART:19970714T173000Z           ;UTC time
    * DTSTART;TZID=US-Eastern:19970714T133000    ;Local time and time
@@ -787,7 +847,7 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
       file_recovery_new->calculated_file_size=i;
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
-      file_recovery_new->extension="utf16";
+      file_recovery_new->extension=extension_utf16;
       return 1;
     }
   }
@@ -795,7 +855,7 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
   file_recovery_new->calculated_file_size=i;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="utf16";
+  file_recovery_new->extension=extension_utf16;
   return 1;
 }
 #endif
@@ -822,7 +882,7 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   /* Incredimail has .imm extension but this extension isn't frequent */
-  file_recovery_new->extension="mbox";
+  file_recovery_new->extension=extension_mbox;
   return 1;
 }
 
@@ -841,16 +901,12 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
       td_memmem(buffer, buffer_size_test, "public interface", 16)!=NULL)
   {
     /* source code in java */
-#ifdef DJGPP
-    file_recovery_new->extension="jav";
-#else
-    file_recovery_new->extension="java";
-#endif
+    file_recovery_new->extension=extension_java;
   }
   else
   {
     /* perl module */
-    file_recovery_new->extension="pm";
+    file_recovery_new->extension=extension_pm;
   }
   return 1;
 }
@@ -869,7 +925,7 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   /* Rich Text Format */
-  file_recovery_new->extension="rtf";
+  file_recovery_new->extension=extension_rtf;
   return 1;
 }
 
@@ -880,7 +936,7 @@ static int header_check_smil(const unsigned char *buffer, const unsigned int buf
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_smil;
-  file_recovery_new->extension="smil";
+  file_recovery_new->extension=extension_smil;
   return 1;
 }
 
@@ -893,7 +949,7 @@ static int header_check_snz(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="snz";
+  file_recovery_new->extension=extension_snz;
   file_recovery_new->min_filesize=pos-buffer;
   return 1;
 }
@@ -908,7 +964,7 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="stl";
+  file_recovery_new->extension=extension_stl;
   return 1;
 }
 
@@ -917,7 +973,7 @@ static int header_check_svg(const unsigned char *buffer, const unsigned int buff
 {
   /* Scalable Vector Graphics */
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension="svg";
+  file_recovery_new->extension=extension_svg;
   file_recovery_new->file_check=&file_check_svg;
   return 1;
 }
@@ -936,7 +992,7 @@ static int header_check_thunderbird(const unsigned char *buffer, const unsigned 
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_thunderbird;
-  file_recovery_new->extension="mbox";
+  file_recovery_new->extension=extension_mbox;
   return 1;
 }
 
@@ -947,7 +1003,7 @@ static int header_check_ttd(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_ttd;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="ttd";
+  file_recovery_new->extension=extension_ttd;
   return 1;
 }
 
@@ -974,7 +1030,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=NULL;
       file_recovery_new->file_check=&file_check_emlx;
       /* Mac OSX mail */
-      file_recovery_new->extension="emlx";
+      file_recovery_new->extension=extension_emlx;
       return 1;
     }
   }
@@ -986,7 +1042,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     /* Dos/Windows batch */
-    file_recovery_new->extension="bat";
+    file_recovery_new->extension=extension_bat;
     return 1;
   }
   if(strncasecmp((const char *)buffer, "<%@ language=\"vbscript", 22)==0)
@@ -997,7 +1053,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     /* Microsoft Active Server Pages */
-    file_recovery_new->extension="asp";
+    file_recovery_new->extension=extension_asp;
     return 1;
   }
   if(strncasecmp((const char *)buffer, "version 4.00\r\nbegin", 19)==0)
@@ -1008,7 +1064,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     /* Microsoft Visual Basic */
-    file_recovery_new->extension="vb";
+    file_recovery_new->extension=extension_vb;
     return 1;
   }
   if(strncasecmp((const char *)buffer, "begin:vcard", 11)==0)
@@ -1019,7 +1075,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     /* vcard, electronic business cards */
-    file_recovery_new->extension="vcf";
+    file_recovery_new->extension=extension_vcf;
     return 1;
   }
   if(buffer[0]=='#' && buffer[1]=='!')
@@ -1036,7 +1092,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       /* Groovy script */
-      file_recovery_new->extension="groovy";
+      file_recovery_new->extension=extension_groovy;
       return 1;
     }
     if(td_memmem(haystack, ll, "perl", 4) != NULL)
@@ -1045,7 +1101,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       /* Perl script */
-      file_recovery_new->extension="pl";
+      file_recovery_new->extension=extension_pl;
       return 1;
     }
     if(td_memmem(haystack, ll, "php", 3) != NULL)
@@ -1054,7 +1110,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       /* PHP script */
-      file_recovery_new->extension="php";
+      file_recovery_new->extension=extension_php;
       return 1;
     }
     if(td_memmem(haystack, ll, "python", 6) != NULL)
@@ -1063,7 +1119,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       /* Python script */
-      file_recovery_new->extension="py";
+      file_recovery_new->extension=extension_py;
       return 1;
     }
     if(td_memmem(haystack, ll, "ruby", 4) != NULL)
@@ -1072,7 +1128,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
       /* Ruby script */
-      file_recovery_new->extension="rb";
+      file_recovery_new->extension=extension_rb;
       return 1;
     }
   }
@@ -1123,7 +1179,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
     /* Dos/Windows batch */
-    file_recovery_new->extension="bat";
+    file_recovery_new->extension=extension_bat;
     return 1;
   }
   if(strncasecmp((const char *)buffer, "dn: ", 4)==0)
@@ -1131,7 +1187,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     reset_file_recovery(file_recovery_new);
     file_recovery_new->data_check=&data_check_txt;
     file_recovery_new->file_check=&file_check_size;
-    file_recovery_new->extension="ldif";
+    file_recovery_new->extension=extension_ldif;
     return 1;
   }
   {
@@ -1191,41 +1247,37 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     }
     /* Windows Autorun */
     if(strstr(buffer_lower, "[autorun]")!=NULL)
-      ext="inf";
+      ext=extension_inf;
     /* Detect .ini */
     else if(buffer[0]=='[' && l>50 && is_ini(buffer_lower))
-      ext="ini";
+      ext=extension_ini;
     /* php (Hypertext Preprocessor) script */
     else if(strstr(buffer_lower, "<?php")!=NULL)
-      ext="php";
+      ext=extension_php;
     /* Comma separated values */
     else if(is_csv>0)
-      ext="csv";
+      ext=extension_csv;
     /* Detect LaTeX, C, PHP, JSP, ASP, HTML, C header */
     else if(strstr(buffer_lower, "\\begin{")!=NULL)
-      ext="tex";
+      ext=extension_tex;
     else if(strstr(buffer_lower, "#include")!=NULL)
-      ext="c";
+      ext=extension_c;
     else if(l>20 && strstr(buffer_lower, "<%@")!=NULL)
-      ext="jsp";
+      ext=extension_jsp;
     else if(l>20 && strstr(buffer_lower, "<%=")!=NULL)
-      ext="jsp";
+      ext=extension_jsp;
     else if(l>20 && strstr(buffer_lower, "<% ")!=NULL)
-      ext="asp";
+      ext=extension_asp;
     else if(strstr(buffer_lower, "<html")!=NULL)
-      ext="html";
+      ext=extension_html;
     else if(strstr(buffer_lower, "private static")!=NULL ||
 	strstr(buffer_lower, "public interface")!=NULL)
     {
-#ifdef DJGPP
-      ext="jav";
-#else
-      ext="java";
-#endif
+      ext=extension_java;
     }
     else if(strstr(buffer_lower, "\nimport (")!=NULL)
     {
-      ext="go";
+      ext=extension_go;
     }
     else if((str=strstr(buffer_lower, "\nimport "))!=NULL)
     {
@@ -1233,33 +1285,29 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       while(*str!='\0' && *str!='\n' && *str!=';')
 	str++;
       if(*str==';')
-	ext="java";
+	ext=extension_java;
       else
-	ext="py";
+	ext=extension_py;
     }
     else if(strstr(buffer_lower, "class ")!=NULL &&
 	(l>=100 || file_recovery->file_stat==NULL))
     {
-#ifdef DJGPP
-      ext="jav";
-#else
-      ext="java";
-#endif
+      ext=extension_java;
     }
     /* Fortran */
     else if(nbrf>10 && ind<0.9 && strstr(buffer_lower, "integer")!=NULL)
-      ext="f";
+      ext=extension_f;
     /* LilyPond http://lilypond.org*/
     else if(strstr(buffer_lower, "\\score {")!=NULL)
-      ext="ly";
+      ext=extension_ly;
     /* C header file */
     else if(strstr(buffer_lower, "/*")!=NULL && l>50)
-      ext="h";
+      ext=extension_h;
     else if(l<100 || ind<0.03 || ind>0.90)
       ext=NULL;
     /* JavaScript Object Notation  */
     else if(memcmp(buffer_lower, "{\"", 2)==0)
-      ext="json";
+      ext=extension_json;
     else
       ext=file_hint_txt.extension;
     if(ext==NULL)
@@ -1267,7 +1315,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     if(strcmp(ext,"txt")==0 &&
 	(strstr(buffer_lower,"<br>")!=NULL || strstr(buffer_lower,"<p>")!=NULL))
     {
-      ext="html";
+      ext=extension_html;
     }
     if(file_recovery->file_stat!=NULL)
     {
@@ -1320,7 +1368,7 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
-  file_recovery_new->extension="vbm";
+  file_recovery_new->extension=extension_vbm;
   file_recovery_new->file_check=&file_check_vbm;
   return 1;
 }
@@ -1341,32 +1389,28 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     if(strncasecmp(tmp, "<Grisbi>", 8)==0)
     {
       /* Grisbi - Personal Finance Manager XML data */
-      file_recovery_new->extension="gsb";
+      file_recovery_new->extension=extension_gsb;
     }
     else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
     {
       /* GCstart, personal collections manager, http://www.gcstar.org/ */
-      file_recovery_new->extension="gcs";
+      file_recovery_new->extension=extension_gcs;
     }
     else if(strncasecmp(tmp, "<html", 5)==0)
     {
       file_recovery_new->data_check=&data_check_html;
-#ifdef DJGPP
-      file_recovery_new->extension="htm";
-#else
-      file_recovery_new->extension="html";
-#endif
+      file_recovery_new->extension=extension_html;
       file_recovery_new->file_rename=&file_rename_html;
     }
     else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
     {
       /* QuickBook */
-      file_recovery_new->extension="fst";
+      file_recovery_new->extension=extension_fst;
     }
     else if(strncasecmp(tmp, "<svg", 4)==0)
     {
       /* Scalable Vector Graphics */
-      file_recovery_new->extension="svg";
+      file_recovery_new->extension=extension_svg;
       file_recovery_new->file_check=&file_check_svg;
       free(buf);
       return 1;
@@ -1374,16 +1418,12 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
     {
       /* Mac OS X property list */
-#ifdef DJGPP
-      file_recovery_new->extension="pli";
-#else
-      file_recovery_new->extension="plist";
-#endif
+      file_recovery_new->extension=extension_plist;
     }
     else if(strncasecmp(tmp, "<gpx ", 5)==0)
     {
       /* GPS eXchange Format */
-      file_recovery_new->extension="gpx";
+      file_recovery_new->extension=extension_gpx;
       file_recovery_new->file_check=&file_check_gpx;
       free(buf);
       return 1;
@@ -1392,22 +1432,22 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
     {
       /* Adobe Premiere project  */
       file_recovery_new->data_check=NULL;
-      file_recovery_new->extension="prproj";
+      file_recovery_new->extension=extension_prproj;
     }
     else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
     {
       /* Scribus XML file */
-      file_recovery_new->extension="sla";
+      file_recovery_new->extension=extension_sla;
     }
     else if(strncasecmp(tmp, "<FictionBook", 12)==0)
     {
       /* FictionBook, see http://www.fictionbook.org */
-      file_recovery_new->extension="fb2";
+      file_recovery_new->extension=extension_fb2;
     }
     else if(strncasecmp(tmp, "<office:document", 16)==0)
     {
       /* OpenDocument Flat XML Spreadsheet */
-      file_recovery_new->extension="fods";
+      file_recovery_new->extension=extension_fods;
       file_recovery_new->data_check=NULL;
       file_recovery_new->file_rename=&file_rename_fods;
     }
@@ -1417,7 +1457,7 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
   if(file_recovery_new->extension==NULL)
   {
     /* XML Extensible Markup Language */
-    file_recovery_new->extension="xml";
+    file_recovery_new->extension=extension_xml;
   }
   file_recovery_new->file_check=&file_check_xml;
   free(buf);
@@ -1440,14 +1480,14 @@ static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int
     if(strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
     {
       /* Grasshopper archive */
-      file_recovery_new->extension="ghx";
+      file_recovery_new->extension=extension_ghx;
     }
     tmp++;
     tmp=strchr(tmp,'<');
   }
   if(file_recovery_new->extension==NULL)
   {
-    file_recovery_new->extension="xml";
+    file_recovery_new->extension=extension_xml;
   }
   file_recovery_new->file_check=&file_check_xml;
   free(buf);
@@ -1461,7 +1501,7 @@ static int header_check_xml_utf16(const unsigned char *buffer, const unsigned in
       file_recovery->file_stat->file_hint==&file_hint_doc)
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension="xml";
+  file_recovery_new->extension=extension_xml;
   return 1;
 }
 
@@ -1478,7 +1518,7 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
-  file_recovery_new->extension="xmp";
+  file_recovery_new->extension=extension_xmp;
   return 1;
 }
 
