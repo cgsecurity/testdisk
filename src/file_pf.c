@@ -61,20 +61,27 @@ struct pf_header
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_pf;
+  @ ensures valid_read_string((char*)&file_recovery->filename);
   @*/
 static void file_rename_pf(file_recovery_t *file_recovery)
 {
   FILE *file;
   struct pf_header hdr;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
+  {
+    /*@ assert valid_read_string((char*)&file_recovery->filename); */
     return;
+  }
   if(fread(&hdr, sizeof(hdr), 1, file) <= 0)
   {
     fclose(file);
+    /*@ assert valid_read_string((char*)&file_recovery->filename); */
     return ;
   }
   fclose(file);
+  /*@ assert valid_read_string((char*)&file_recovery->filename); */
   file_rename_unicode(file_recovery, &hdr.name, sizeof(hdr.name), 0, "pf", 0);
+  /*@ assert valid_read_string((char*)&file_recovery->filename); */
 }
 
 /*@
