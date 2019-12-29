@@ -19,5 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len);
-
+/*@
+  @ requires buf_len> 0;
+  @ requires \valid_read(buffer+(0..buf_len-1));
+  @ ensures 0 <= \result <= buf_len;
+  @ assigns \nothing;
+  @*/
+int UTFsize(const unsigned char *buffer, const unsigned int buf_len);

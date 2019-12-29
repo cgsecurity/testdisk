@@ -49,19 +49,16 @@ const file_hint_t file_hint_win= {
 static data_check_t data_check_win(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
-  char *buffer_lower=(char *)MALLOC(buffer_size+16);
   unsigned int offset=0;
   if(file_recovery->calculated_file_size==0)
     offset=3;
-  i=UTF2Lat((unsigned char*)buffer_lower, &buffer[buffer_size/2+offset], buffer_size/2-offset);
+  i=UTFsize(&buffer[buffer_size/2+offset], buffer_size/2-offset);
   if(i<buffer_size/2-offset)
   {
     if(i>=10)
       file_recovery->calculated_file_size=file_recovery->file_size+offset+i;
-    free(buffer_lower);
     return DC_STOP;
   }
-  free(buffer_lower);
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return DC_CONTINUE;
 }
