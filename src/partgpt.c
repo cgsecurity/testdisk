@@ -108,6 +108,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_MAC_BOOT,		"Mac Boot"		},
   { GPT_ENT_TYPE_MAC_LABEL,		"Mac Label"		},
   { GPT_ENT_TYPE_MAC_TV_RECOVERY,	"Mac TV Recovery"	},
+  { GPT_ENT_TYPE_APPLE_CORE_STORAGE,	"Apple Core Storage"	},
   { GPT_ENT_TYPE_SOLARIS_BOOT,		"Solaris /boot"		},
   { GPT_ENT_TYPE_SOLARIS_ROOT,		"Solaris /"		},
   { GPT_ENT_TYPE_SOLARIS_SWAP,		"Solaris Swap"		},
