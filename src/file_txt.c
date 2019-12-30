@@ -508,8 +508,6 @@ return ind/buffer_size/(buffer_size-1);
   @ requires \valid_read(buffer + (0..buf_len-1));
   @ ensures \result <= buf_len;
   @*/
-#if 0
-#endif
 static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
 {
   const unsigned char *p;	/* pointers to actual position in source buffer */
@@ -3390,17 +3388,6 @@ static int main_thunderbird()
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
   file_recovery_new.blocksize=BLOCKSIZE;
-#if 0
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
-#endif
-
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
   file_stats.recovered=0;
