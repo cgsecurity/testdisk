@@ -64,7 +64,7 @@ extern data_check_t data_check_avi_stream(const unsigned char *buffer, const uns
 
 static void register_header_check_jpg(file_stat_t *file_stat);
 static void file_check_jpg(file_recovery_t *file_recovery);
-data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_size, const unsigned i, const unsigned int size);
 
 const file_hint_t file_hint_jpg= {
@@ -1917,6 +1917,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 }
 
 /*@
+  @ requires buffer_size >= 2 && (buffer_size&1)==0;
   @ requires \valid(file_recovery);
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_jpg2;
@@ -1986,6 +1987,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 
 /*@
   @ requires buffer_size >= 8;
+  @ requires (buffer_size&1)==0;
   @ requires \valid(file_recovery);
   @ requires buffer_size >= 4;
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
@@ -1994,7 +1996,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
   @*/
 /* FIXME requires file_recovery->file_size == 0 || file_recovery->calculated_file_size >= file_recovery->file_size - 4; */
 /* FIXME ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 4); */
-data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /* Skip the SOI */
   if(file_recovery->calculated_file_size==0)
