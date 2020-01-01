@@ -30,10 +30,11 @@
 #include "filegen.h"
 #include "log.h"
 #include "common.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static void register_header_check_emf(file_stat_t *file_stat);
-static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static data_check_t data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_emf= {
   .extension="emf",
@@ -201,37 +202,30 @@ struct EMF_HDR
 #define EMR_COLORMATCHTOTARGETW	121
 #define EMR_CREATECOLORSPACEW	122
 
-static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
-  const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
-  const unsigned int atom_size=le32(hdr->emr.nSize);
-  if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
-      le32(hdr->nBytes) >= 88 &&
-      le16(hdr->sReserved)==0 &&
-      atom_size>=0x34 && atom_size%4==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_emf.extension;
-    if(file_recovery_new->blocksize >= 8)
-    {
-      file_recovery_new->data_check=&data_check_emf;
-      file_recovery_new->file_check=&file_check_size;
-      file_recovery_new->calculated_file_size=atom_size;
-    }
-    return 1;
-  }
-  return 0;
-}
-
+/*@
+  @ requires buffer_size >= 2;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_emf;
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8);
+  @ ensures file_recovery->data_check==&data_check_emf;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int itype=buffer[i]+(buffer[i+1]<<8)+(buffer[i+2]<<16)+(buffer[i+3]<<24);
-    const unsigned int atom_size=buffer[i+4]+(buffer[i+5]<<8)+(buffer[i+6]<<16)+(buffer[i+7]<<24);
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 8 ; */
+    const U_EMR *hdr=(const U_EMR *)&buffer[i];
+    const unsigned int itype=le32(hdr->iType);
+    const unsigned int atom_size=le32(hdr->nSize);
 #ifdef DEBUG_EMF
     log_trace("0x%llx ", (long long unsigned)file_recovery->calculated_file_size);
     switch(itype)
@@ -362,15 +356,152 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
 #endif
       if(atom_size<8 || atom_size%4!=0 || atom_size>1024*1024)
 	return DC_ERROR;
+      /*@ assert 8 <= atom_size <= 1024*1024; */
       file_recovery->calculated_file_size+=(uint64_t)atom_size;
       if(itype==EMR_EOF)
 	return DC_STOP;
+      /*@ assert file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2 - 8 + 1024*1024; */
   }
+  /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8; */
+  /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8; */
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct EMF_HDR);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_emf.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 0x34);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_emf);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @*/
+static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
+  const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
+  const unsigned int atom_size=le32(hdr->emr.nSize);
+  if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
+      le32(hdr->nBytes) >= 88 &&
+      le16(hdr->sReserved)==0 &&
+      atom_size>=0x34 && atom_size%4==0)
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_emf.extension;
+    if(file_recovery_new->blocksize >= 8)
+    {
+      file_recovery_new->data_check=&data_check_emf;
+      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->calculated_file_size=atom_size;
+    }
+    return 1;
+  }
+  return 0;
+}
+
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_emf(file_stat_t *file_stat)
 {
   static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
   register_header_check(0x28, emf_sign,sizeof(emf_sign), &header_check_emf, file_stat);
 }
+
+#if defined(MAIN_emf)
+#define BLOCKSIZE 65536u
+int main()
+{
+  const char fn[] = "recup_dir.1/f0000000.emf";
+  unsigned char buffer[BLOCKSIZE];
+  file_recovery_t file_recovery_new;
+  file_recovery_t file_recovery;
+  file_stat_t file_stats;
+
+  /*@ assert \valid(buffer + (0 .. (BLOCKSIZE - 1))); */
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)buffer, BLOCKSIZE);
+#endif
+
+  reset_file_recovery(&file_recovery);
+  file_recovery.blocksize=BLOCKSIZE;
+  file_recovery_new.blocksize=BLOCKSIZE;
+  file_recovery_new.data_check=NULL;
+  file_recovery_new.file_stat=NULL;
+  file_recovery_new.file_check=NULL;
+  file_recovery_new.file_rename=NULL;
+  file_recovery_new.calculated_file_size=0;
+  file_recovery_new.file_size=0;
+  file_recovery_new.location.start=0;
+
+  file_stats.file_hint=&file_hint_emf;
+  file_stats.not_recovered=0;
+  file_stats.recovered=0;
+  register_header_check_emf(&file_stats);
+  if(header_check_emf(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
+    return 0;
+  /*@ assert file_recovery_new.file_size == 0;	*/
+  /*@ assert file_recovery_new.calculated_file_size > 0;	*/
+  /*@ assert file_recovery_new.data_check == &data_check_emf; */
+  /*@ assert file_recovery_new.file_check == &file_check_size; */
+  /*@ assert file_recovery_new.file_rename == \null; */
+  /*@ assert file_recovery_new.extension == file_hint_emf.extension; */
+  /*@ assert valid_read_string(file_recovery_new.extension); */
+  /*@ assert \separated(&file_recovery_new, file_recovery_new.extension); */
+  /*@ assert valid_read_string((char *)&fn); */
+  memcpy(file_recovery_new.filename, fn, sizeof(fn));
+  /*@ assert valid_read_string((char *)&file_recovery_new.filename); */
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  /*X TODO assert valid_read_string(file_recovery_new.extension); */
+  file_recovery_new.file_stat=&file_stats;
+  {
+    unsigned char big_buffer[2*BLOCKSIZE];
+    data_check_t res_data_check=DC_CONTINUE;
+    memset(big_buffer, 0, BLOCKSIZE);
+    memcpy(big_buffer + BLOCKSIZE, buffer, BLOCKSIZE);
+    /*@ assert file_recovery_new.data_check == &data_check_emf; */
+    /*@ assert file_recovery_new.file_size == 0; */;
+    /*@ assert file_recovery_new.file_size <= file_recovery_new.calculated_file_size; */;
+    res_data_check=data_check_emf(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+    file_recovery_new.file_size+=BLOCKSIZE;
+    if(res_data_check == DC_CONTINUE)
+    {
+      memcpy(big_buffer, big_buffer + BLOCKSIZE, BLOCKSIZE);
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown((char *)big_buffer + BLOCKSIZE, BLOCKSIZE);
+#endif
+      data_check_emf(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+    }
+  }
+  {
+    file_recovery_t file_recovery_new2;
+    /* Test when another file of the same is detected in the next block */
+    file_recovery_new2.blocksize=BLOCKSIZE;
+    file_recovery_new2.file_stat=NULL;
+    file_recovery_new2.file_check=NULL;
+    file_recovery_new2.location.start=BLOCKSIZE;
+    file_recovery_new.handle=NULL;	/* In theory should be not null */
+    header_check_emf(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
+    /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  }
+  /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  {
+    file_recovery_new.handle=fopen(fn, "rb");
+    if(file_recovery_new.handle!=NULL)
+    {
+      file_check_size(&file_recovery_new);
+      fclose(file_recovery_new.handle);
+    }
+  }
+  return 0;
+}
+#endif
