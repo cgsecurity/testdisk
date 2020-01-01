@@ -852,22 +852,29 @@ static void file_check_zip(file_recovery_t *fr)
   @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_zip;
   @*/
+/* TODO ensures  valid_read_string((char*)file_recovery->filename); */
 static void file_rename_zip(file_recovery_t *file_recovery)
 {
   const char *ext=NULL;
   unsigned int file_nbr=0;
   file_recovery_t fr;
   reset_file_recovery(&fr);
+  /*@ assert valid_read_string((char*)file_recovery->filename); */
   if((fr.handle=fopen(file_recovery->filename, "rb"))==NULL)
+  {
+    /*@ assert valid_read_string((char*)file_recovery->filename); */
     return;
+  }
   fr.file_size = 0;
   fr.offset_error=0;
   first_filename[0]='\0';
   if(my_fseek(fr.handle, 0, SEEK_SET) < 0)
   {
     fclose(fr.handle);
+    /*@ assert valid_read_string((char*)file_recovery->filename); */
     return ;
   }
+  /*@ loop invariant valid_read_string((char*)file_recovery->filename); */
   while (1)
   {
     uint32_t header;
@@ -875,6 +882,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
     if(file_nbr>=0xffffffff || fr.file_size >= 0x8000000000000000 - 4)
     {
       fclose(fr.handle);
+      /*@ assert valid_read_string((char*)file_recovery->filename); */
       return;
     }
     /*@ assert fr.file_size < 0x8000000000000000 - 4; */
@@ -885,6 +893,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
       log_trace("Failed to read block header\n");
 #endif
       fclose(fr.handle);
+      /*@ assert valid_read_string((char*)file_recovery->filename); */
       return;
     }
 #if defined(__FRAMAC__)
@@ -921,7 +930,9 @@ static void file_rename_zip(file_recovery_t *file_recovery)
 	if(ext!=NULL)
 	{
 	  fclose(fr.handle);
+	  /*@ assert valid_read_string((char*)file_recovery->filename); */
 	  file_rename(file_recovery, NULL, 0, 0, ext, 1);
+	  /*@ assert valid_read_string((char*)file_recovery->filename); */
 	  return;
 	}
         break;
@@ -943,6 +954,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
     if (status<0)
     {
       fclose(fr.handle);
+      /*@ assert valid_read_string((char*)file_recovery->filename); */
       return;
     }
     /* Only end of central dir is end of archive, 64b version of it is before */
@@ -956,7 +968,9 @@ static void file_rename_zip(file_recovery_t *file_recovery)
 	  first_filename[len]!='/' &&
 	  first_filename[len]!='\\';
 	  len++);
+      /*@ assert valid_read_string((char*)file_recovery->filename); */
       file_rename(file_recovery, first_filename, len, 0, "zip", 0);
+      /*@ assert valid_read_string((char*)file_recovery->filename); */
       return;
     }
   }

@@ -103,6 +103,7 @@ static void file_rename_mov(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 16;
+  @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mov;

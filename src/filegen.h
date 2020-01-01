@@ -144,7 +144,8 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 
 /*@
-  @ requires buffer_size > 0;
+  @ requires buffer_size >= 2;
+  @ requires (buffer_size&1)==0;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_size;
