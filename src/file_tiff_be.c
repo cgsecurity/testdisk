@@ -54,8 +54,31 @@ static const char *extension_pef="pef";
 #ifndef MAIN_tiff_le
 /*@
   @ requires \valid_read(buffer+(0..tiff_size-1));
+  @ ensures \result <= 0xffff;
+  @ assigns \nothing;
+  @ */
+static unsigned int get_nbr_fields_be(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int offset_hdr)
+{
+  const unsigned char *ptr_hdr;
+  const struct ifd_header *hdr;
+  if(sizeof(struct ifd_header) > tiff_size)
+    return 0;
+  /*@ assert tiff_size >= sizeof(struct ifd_header); */
+  if(offset_hdr > tiff_size - sizeof(struct ifd_header))
+    return 0;
+  /*@ assert offset_hdr + sizeof(struct ifd_header) <= tiff_size; */
+  ptr_hdr=&buffer[offset_hdr];
+  /*@ assert \valid_read(ptr_hdr + (0 .. sizeof(struct ifd_header)-1)); */
+  hdr=(const struct ifd_header *)ptr_hdr;
+  /*@ assert \valid_read(hdr); */
+  return be16(hdr->nbr_fields);
+}
+
+/*@
+  @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
   @ requires \separated(potential_error, buffer+(..));
+  @ assigns *potential_error;
   @
  */
 static unsigned int find_tag_from_tiff_header_be_aux(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error, const unsigned int offset_hdr)
@@ -142,6 +165,25 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
     /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
     if(tmp)
       return tmp;
+  }
+  {
+    const unsigned int nbr_fields=get_nbr_fields_be(buffer, tiff_size, offset_ifd0);
+    unsigned int offset_tiff_next_diroff;
+    offset_tiff_next_diroff=offset_ifd0 + 2 + nbr_fields * sizeof(TIFFDirEntry);
+    /*@ assert tiff_size >= 4; */
+    if(offset_tiff_next_diroff < tiff_size - 4)
+    {
+      const unsigned char *ptr_hdr;
+      /*@ assert offset_tiff_next_diroff + 4 <= tiff_size; */
+      ptr_hdr=&buffer[offset_tiff_next_diroff];
+      /*@ assert \valid_read(ptr_hdr + (0 .. 4-1)); */
+      const uint32_t *tiff_next_diroff=(const uint32_t *)ptr_hdr;
+      /*@ assert \valid_read(tiff_next_diroff); */
+      /* IFD1 */
+      const unsigned int offset_ifd1=be32(*tiff_next_diroff);
+      if(offset_ifd1 > 0)
+	return find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd1);
+    }
   }
   /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
   return 0;
