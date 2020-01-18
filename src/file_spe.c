@@ -36,7 +36,6 @@
 #endif
 
 static void register_header_check_spe(file_stat_t *file_stat);
-static int header_check_spe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_spe= {
   .extension="spe",
@@ -251,11 +250,13 @@ struct header_spe
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_spe.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 4100);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 4100);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
   @ assigns file_recovery_new->filename[0];

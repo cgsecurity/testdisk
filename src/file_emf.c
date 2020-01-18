@@ -368,19 +368,23 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size >= sizeof(struct EMF_HDR);
+  @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_emf.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 0x34);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_emf);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
@@ -390,6 +394,8 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
   static const unsigned char emf_header[4]= { 0x01, 0x00, 0x00, 0x00};
   const struct EMF_HDR *hdr=(const struct EMF_HDR *)buffer;
   const unsigned int atom_size=le32(hdr->emr.nSize);
+  if(buffer_size < sizeof(struct EMF_HDR))
+    return 0;
   if(memcmp(buffer,emf_header,sizeof(emf_header))==0 &&
       le32(hdr->nBytes) >= 88 &&
       le16(hdr->sReserved)==0 &&

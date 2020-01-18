@@ -90,13 +90,20 @@ static void file_rename_pf(file_recovery_t *file_recovery)
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
-  @ requires separation: \separated(file_recovery, file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pf, buffer+(..), file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_pf.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= sizeof(struct pf_header));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename==&file_rename_pf);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check==&data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check==&file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename==&file_rename_pf);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
   @*/
 static int header_check_pf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

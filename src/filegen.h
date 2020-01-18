@@ -149,8 +149,9 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_size;
-  @ assigns \nothing;
   @ ensures \result == DC_STOP || \result == DC_CONTINUE;
+  @ ensures file_recovery->data_check == &data_check_size;
+  @ assigns \nothing;
   @*/
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
