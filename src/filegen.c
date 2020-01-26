@@ -835,12 +835,13 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
       return;
     }
     *current_search_space=file_space;
-    if(file_space->start < prev_location || file_space->start < offset_skipped_header)
+    if(file_space->start < offset_skipped_header)
     {
 #ifdef DEBUG_PREV_LOCATION
-      log_info("get_prev_location_smart: file_space->start < prev_location=%llu (in 512-bytes sectors), offset=%llu\n",
+      log_info("get_prev_location_smart: file_space->start < offset_skipped_header, prev_location=%llu (in 512-bytes sectors), offset=%llu => %llu\n",
 	  (long long unsigned)(prev_location/512),
-	  (long long unsigned)(*offset/512));
+	  (long long unsigned)(*offset/512),
+	  (long long unsigned)(offset_skipped_header/512));
 #endif
       *offset=offset_skipped_header;
       offset_skipped_header=0;
