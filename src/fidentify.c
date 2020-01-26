@@ -60,6 +60,9 @@ extern file_check_list_t file_check_list;
 #define OPT_CHECK 1
 #define OPT_TIME  2
 
+/*@
+  @ requires valid_read_string(filename);
+  @*/
 static int file_identify(const char *filename, const unsigned int options)
 {
   const unsigned int blocksize=65536;
@@ -96,6 +99,7 @@ static int file_identify(const char *filename, const unsigned int options)
 	td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
 	{
 	  const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
+	  /*@ assert &file_check->header_check != \null; */
 	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 	      file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
 	  {
@@ -112,13 +116,15 @@ static int file_identify(const char *filename, const unsigned int options)
 	  ((options&OPT_CHECK)!=0 || ((options&OPT_TIME)!=0 && file_recovery_new.time==0))
 	)
       {
+	off_t file_size;
 	file_recovery_new.handle=file;
 	my_fseek(file_recovery_new.handle, 0, SEEK_END);
-#ifdef HAVE_FTELLO
-	file_recovery_new.file_size=ftello(file_recovery_new.handle);
+#if defined(HAVE_FTELLO) && !defined(__FRAMAC__)
+	file_size=ftello(file_recovery_new.handle);
 #else
-	file_recovery_new.file_size=ftell(file_recovery_new.handle);
+	file_size=ftell(file_recovery_new.handle);
 #endif
+	file_recovery_new.file_size=(file_size==-1?0:file_size);
 	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
 	(file_recovery_new.file_check)(&file_recovery_new);
 	if(file_recovery_new.file_size < file_recovery_new.min_filesize)
@@ -148,7 +154,7 @@ static int file_identify(const char *filename, const unsigned int options)
   return 0;
 }
 
-#ifndef __AFL_COMPILER
+#if !defined(__AFL_COMPILER) && !defined(MAIN_fidentify)
 static void file_identify_dir(const char *current_dir, const unsigned int options)
 {
   DIR *dir;
@@ -201,20 +207,27 @@ static void display_version(void)
 #ifdef RECORD_COMPILATION_DATE
   printf("Compilation date: %s\n", get_compilation_date());
 #endif
+#ifndef MAIN_fidentify
   printf("libjpeg: %s, zlib: %s\n", td_jpeg_version(), td_zlib_version());
   printf("OS: %s\n" , get_os());
+#endif
 }
 
 int main(int argc, char **argv)
 {
   int i;
+#ifdef MAIN_fidentify
+  unsigned int options=OPT_CHECK|OPT_TIME;
+#else
   unsigned int options=0;
+#endif
   FILE *log_handle=NULL;
   int log_errno=0;
   int enable_all_formats=1;
   int scan_dir=1;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
+#ifndef MAIN_fidentify
   for(i=1; i<argc; i++)
   {
     if( strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
@@ -239,24 +252,28 @@ int main(int argc, char **argv)
       return 0;
     }
   }
+#endif
 #ifndef __AFL_COMPILER
   log_handle=log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
   if(log_handle!=NULL)
   {
     time_t my_time;
-#ifdef HAVE_DUP2
+#if defined(HAVE_DUP2) && !defined(__FRAMAC__)
     dup2(fileno(log_handle),2);
 #endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
     log_info("Command line: fidentify");
+#ifndef MAIN_fidentify
     for(i=1;i<argc;i++)
       log_info(" %s", argv[i]);
+#endif
     log_info("\n\n");
     log_flush();
   }
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
 #endif
+#ifndef MAIN_fidentify
   for(i=1; i<argc; i++)
   {
     file_enable_t *file_enable;
@@ -269,6 +286,7 @@ int main(int argc, char **argv)
 	enable_all_formats=0;
       }
   }
+#endif
   if(enable_all_formats)
   {
     /* Enable all file formats */
@@ -277,6 +295,7 @@ int main(int argc, char **argv)
       file_enable->enable=1;
   }
   file_stats=init_file_stats(list_file_enable);
+#ifndef MAIN_fidentify
   for(i=1; i<argc; i++)
   {
     if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0 ||
@@ -306,6 +325,9 @@ int main(int argc, char **argv)
 #ifndef __AFL_COMPILER
   if(scan_dir)
     file_identify_dir(".", options);
+#endif
+#else
+  file_identify("demo", options);
 #endif
   free_header_check();
   free(file_stats);

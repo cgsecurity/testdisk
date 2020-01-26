@@ -366,6 +366,7 @@ extern const file_hint_t file_hint_zpr;
 
 file_enable_t list_file_enable[]=
 {
+#ifndef MAIN_fidentify
   { .enable=0, .file_hint=&file_hint_sig  },
   { .enable=0, .file_hint=&file_hint_1cd  },
   { .enable=0, .file_hint=&file_hint_3dm  },
@@ -405,7 +406,9 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_binvox  },
   { .enable=0, .file_hint=&file_hint_bkf  },
   { .enable=0, .file_hint=&file_hint_blend },
+#endif
   { .enable=0, .file_hint=&file_hint_bmp  },
+#ifndef MAIN_fidentify
   { .enable=0, .file_hint=&file_hint_bpg  },
   { .enable=0, .file_hint=&file_hint_bvr  },
   { .enable=0, .file_hint=&file_hint_bz2  },
@@ -702,6 +705,7 @@ file_enable_t list_file_enable[]=
   { .enable=0, .file_hint=&file_hint_zcode  },
   { .enable=0, .file_hint=&file_hint_zip  },
   { .enable=0, .file_hint=&file_hint_zpr  },
+#endif
   { .enable=0, .file_hint=NULL }
 };
 

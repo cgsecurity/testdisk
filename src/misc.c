@@ -172,7 +172,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.a
   }
 #elif defined(DJGPP)
   return "DOS";
-#elif defined(HAVE_SYS_UTSNAME_H) && defined(HAVE_UNAME)
+#elif defined(HAVE_SYS_UTSNAME_H) && defined(HAVE_UNAME) && !defined(__FRAMAC__)
   {
     struct utsname Ver;
     if(uname(&Ver)==0)
@@ -281,7 +281,7 @@ const char *get_compilation_date(void)
 {
   static char buffer[100] = {0x00};
 #ifdef __DATE__ 
-#ifdef HAVE_STRPTIME
+#if defined(HAVE_STRPTIME) && !defined(__FRAMAC__)
   struct tm tm;
   memset(&tm,0,sizeof(tm));
   if(strptime(__DATE__, "%b %d %Y", &tm)!=NULL)

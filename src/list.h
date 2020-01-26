@@ -124,10 +124,19 @@ static inline void td_list_add_tail(struct td_list_head *newe, struct td_list_he
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
+/*@
+  @ requires \valid(prev);
+  @ requires \valid(next);
+  @ ensures next->prev == prev;
+  @ ensures prev->next == next;
+  @ assigns next->prev,prev->next;
+  @*/
 static inline void __td_list_del(struct td_list_head * prev, struct td_list_head * next)
 {
 	next->prev = prev;
 	prev->next = next;
+	/*@ assert next->prev == prev; */
+	/*@ assert prev->next == next; */
 }
 
 /**
@@ -136,11 +145,23 @@ static inline void __td_list_del(struct td_list_head * prev, struct td_list_head
  * Note: td_list_empty on entry does not return true after this, the entry is
  * in an undefined state.
  */
+/*@
+  @ requires \valid(entry);
+  @ requires \valid(entry->prev);
+  @ requires \valid(entry->next);
+  @ ensures \old(entry->prev)->next == \old(entry->next);
+  @ ensures \old(entry->next)->prev == \old(entry->prev);
+  @ assigns \old(entry->prev)->next, \old(entry->next)->prev, entry->next, entry->prev;
+  @*/
 static inline void td_list_del(struct td_list_head *entry)
 {
 	__td_list_del(entry->prev, entry->next);
+	/*@ assert entry->prev->next == entry->next; */
+	/*@ assert entry->next->prev == entry->prev; */
 	entry->next = (struct td_list_head*)LIST_POISON1;
 	entry->prev = (struct td_list_head*)LIST_POISON2;
+	/*@ assert \at(entry->prev,Pre)->next == \at(entry->next,Pre); */
+	/*@ assert \at(entry->next,Pre)->prev == \at(entry->prev,Pre); */
 }
 
 /**

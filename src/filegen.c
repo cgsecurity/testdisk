@@ -182,6 +182,11 @@ void free_header_check(void)
   {
     unsigned int i;
     file_check_list_t *pos=td_list_entry(tmpl, file_check_list_t, list);
+    /*@
+      @ loop unroll 256;
+      @ loop invariant 0 <= i <= 256;
+      @*/
+    /* TODO loop variant 255-i; */
     for(i=0;i<256;i++)
     {
       struct td_list_head *tmp;

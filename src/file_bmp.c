@@ -130,6 +130,8 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
     /*@ assert file_recovery_new->min_filesize == 65; */
     /*@ assert file_recovery_new->data_check == &data_check_size; */
     /*@ assert file_recovery_new->file_check == &file_check_size; */
+    /*@ assert valid_read_string(file_recovery_new->extension); */
+    /*@ assert \initialized(&file_recovery_new->time); */
     return 1;
   }
   return 0;
@@ -145,7 +147,7 @@ static void register_header_check_bmp(file_stat_t *file_stat)
 
 #if defined(MAIN_bmp)
 #define BLOCKSIZE 65536u
-int main()
+int main(void)
 {
   const char fn[] = "recup_dir.1/f0000000.bmp";
   unsigned char buffer[BLOCKSIZE];
