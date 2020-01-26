@@ -53,7 +53,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#ifndef MAIN_jpg
+#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
@@ -112,7 +112,7 @@ struct MP_IFD_Field
   uint16_t tag;
   uint16_t type;
   uint32_t count;
-  char     value[0];
+  char     value[4];
 } __attribute__ ((gcc_struct, __packed__));
 
 struct MP_Entry
@@ -126,7 +126,8 @@ struct MP_Entry
 
 /*@
   @ requires size >= 8;
-  @ requires \valid(mpo + ( 0 .. size-1));
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @ assigns \nothing;
   @*/
 static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
 {
@@ -137,40 +138,55 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
   unsigned int nbr;
   unsigned int NumberOfImages=0;
   unsigned int MPEntry_offset=0;
-  const struct MP_Entry* MPEntry;
   uint64_t max_offset=0;
 #ifdef DEBUG_JPEG
   log_info("check_mpo_be\n");
 #endif
-  if(offset+2 >= size)
+  if(offset >= size - 2)
     return 0;
+  /*@ assert offset < size - 2; */
   tmp16=(const uint16_t*)(&mpo[offset]);
   nbr=be16(*tmp16);
   offset+=2;
+  /* @offset: MP Index Fields*/
+  if(offset + nbr * 12 > size)
+    return 0;
+  /*@ assert offset + nbr * 12 <= size; */
+  /*@
+    @ loop invariant 0 <= i <= nbr;
+    @ loop assigns i, NumberOfImages, MPEntry_offset;
+    @ loop variant nbr-i;
+    @*/
   for(i=0; i< nbr; i++)
   {
-    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)(&mpo[offset]);
-    if(offset+12 > size)
-      return 0;
+    /*@ assert 0 <= i < nbr; */
+    const unsigned char *field_ptr=&mpo[offset + i * 12];
+    /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
+    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
+    const unsigned int count=be32(field->count);
+    const unsigned int type=be16(field->type);
     switch(be16(field->tag))
     {
       case 0xb000:
 	/* MPFVersion, type must be undefined */
-	if(be16(field->type)!=7 || be32(field->count)!=4)
+	if(type!=7 || count!=4)
 	  return 0;
 	break;
       case 0xb001:
 	/* NumberOfImages, type must be long */
-	if(be16(field->type)!=4 || be32(field->count)!=1)
+	if(type!=4 || count!=1)
 	  return 0;
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  NumberOfImages=be32(*tmp);
+	  if(NumberOfImages >= 0x100000)
+	    return 0;
+	  /*@ assert NumberOfImages < 0x100000; */
 	}
 	break;
       case 0xb002:
 	/* MPEntry, type must be undefined */
-	if(be16(field->type)!=7 || be32(field->count)!=16*NumberOfImages)
+	if(type!=7 || count!=16*NumberOfImages)
 	  return 0;
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
@@ -178,25 +194,34 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
 	}
 	break;
     }
-    offset+=12;
   }
 #ifdef DEBUG_JPEG
   log_info("MPEntry_offset=%u, NumberOfImages=%u\n", MPEntry_offset, NumberOfImages);
 #endif
+  /*@ assert NumberOfImages < 0x100000; */
+  if(MPEntry_offset > size)
+    return 0;
   if(MPEntry_offset + 16*NumberOfImages > size)
     return 0;
-  for(i=0, MPEntry=(const struct MP_Entry*)(&mpo[MPEntry_offset]);
-      i<NumberOfImages;
-      i++, MPEntry++)
+  /*@
+    @ loop invariant 0 <= i <= NumberOfImages;
+    @ loop assigns i, max_offset;
+    @ loop variant NumberOfImages-i;
+    @*/
+  for(i=0; i<NumberOfImages; i++)
   {
-    uint64_t tmp=be32(MPEntry->offset)+be32(MPEntry->size);
+    /*@ assert 0 <= i < NumberOfImages; */
+    const unsigned char *MPEntry_ptr=&mpo[MPEntry_offset + i * sizeof(struct MP_Entry)];
+    /*@ assert \valid_read(MPEntry_ptr+ ( 0 .. sizeof(struct MP_Entry)-1)); */
+    const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
+    uint64_t tmp=be32(MPEntry->size);
 #ifdef DEBUG_JPEG
     log_info("offset=%lu, size=%lu\n",
 	(long unsigned)be32(MPEntry->offset),
 	(long unsigned)be32(MPEntry->size));
 #endif
     if(be32(MPEntry->offset)>0)
-      tmp+=mpo_offset;
+      tmp+=be32(MPEntry->offset)+mpo_offset;
     if(max_offset < tmp)
       max_offset = tmp;
   }
@@ -205,51 +230,69 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
 
 /*@
   @ requires size >= 8;
-  @ requires \valid(mpo + ( 0 .. size-1));
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @ assigns \nothing;
   @*/
 static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
 {
   const uint16_t *tmp16;
+  /* Offset to first IFD */
   const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
   unsigned int offset=le32(*tmp32);
   unsigned int i;
   unsigned int nbr;
   unsigned int NumberOfImages=0;
   unsigned int MPEntry_offset=0;
-  const struct MP_Entry* MPEntry;
   uint64_t max_offset=0;
 #ifdef DEBUG_JPEG
   log_info("check_mpo_le\n");
 #endif
-  if(offset+2 >= size)
+  if(offset >= size - 2)
     return 0;
+  /*@ assert offset < size - 2; */
   tmp16=(const uint16_t*)(&mpo[offset]);
   nbr=le16(*tmp16);
   offset+=2;
+  /* @offset: MP Index Fields*/
+  if(offset + nbr * 12 > size)
+    return 0;
+  /*@ assert offset + nbr * 12 <= size; */
+  /*@
+    @ loop invariant 0 <= i <= nbr;
+    @ loop assigns i, NumberOfImages, MPEntry_offset;
+    @ loop variant nbr-i;
+    @*/
   for(i=0; i< nbr; i++)
   {
-    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)(&mpo[offset]);
-    if(offset+12 > size)
-      return 0;
+    /*@ assert 0 <= i < nbr; */
+    const unsigned char *field_ptr=&mpo[offset + i * 12];
+    /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
+    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
+    /*@ assert \valid_read(field); */
+    const unsigned int count=le32(field->count);
+    const unsigned int type=le16(field->type);
     switch(le16(field->tag))
     {
       case 0xb000:
 	/* MPFVersion, type must be undefined */
-	if(le16(field->type)!=7 || le32(field->count)!=4)
+	if(type!=7 || count!=4)
 	  return 0;
 	break;
       case 0xb001:
 	/* NumberOfImages, type must be long */
-	if(le16(field->type)!=4 || le32(field->count)!=1)
+	if(type!=4 || count!=1)
 	  return 0;
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  NumberOfImages=le32(*tmp);
+	  if(NumberOfImages >= 0x100000)
+	    return 0;
+	  /*@ assert NumberOfImages < 0x100000; */
 	}
 	break;
       case 0xb002:
 	/* MPEntry, type must be undefined */
-	if(le16(field->type)!=7 || le32(field->count)!=16*NumberOfImages)
+	if(type!=7 || count!=16*NumberOfImages)
 	  return 0;
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
@@ -257,25 +300,34 @@ static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset
 	}
 	break;
     }
-    offset+=12;
   }
 #ifdef DEBUG_JPEG
   log_info("MPEntry_offset=%u, NumberOfImages=%u\n", MPEntry_offset, NumberOfImages);
 #endif
+  /*@ assert NumberOfImages < 0x100000; */
+  if(MPEntry_offset > size)
+    return 0;
   if(MPEntry_offset + 16*NumberOfImages > size)
     return 0;
-  for(i=0, MPEntry=(const struct MP_Entry*)(&mpo[MPEntry_offset]);
-      i<NumberOfImages;
-      i++, MPEntry++)
+  /*@
+    @ loop invariant 0 <= i <= NumberOfImages;
+    @ loop assigns i, max_offset;
+    @ loop variant NumberOfImages-i;
+    @*/
+  for(i=0; i<NumberOfImages; i++)
   {
-    uint64_t tmp=le32(MPEntry->offset)+le32(MPEntry->size);
+    /*@ assert 0 <= i < NumberOfImages; */
+    const unsigned char *MPEntry_ptr=&mpo[MPEntry_offset + i * sizeof(struct MP_Entry)];
+    /*@ assert \valid_read(MPEntry_ptr+ ( 0 .. sizeof(struct MP_Entry)-1)); */
+    const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
+    uint64_t tmp=le32(MPEntry->size);
 #ifdef DEBUG_JPEG
     log_info("offset=%lu, size=%lu\n",
 	(long unsigned)le32(MPEntry->offset),
 	(long unsigned)le32(MPEntry->size));
 #endif
     if(le32(MPEntry->offset)>0)
-      tmp+=mpo_offset;
+      tmp+=(uint64_t)le32(MPEntry->offset) + mpo_offset;
     if(max_offset < tmp)
       max_offset = tmp;
   }
@@ -284,10 +336,15 @@ static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset
 
 /*@
   @ requires size >= 8;
-  @ requires \valid(mpo + ( 0 .. size-1));
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @ assigns \nothing;
   @*/
 static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const unsigned int size)
 {
+  /* MP header:
+   * - MP Endian (4Byte)
+   * - Offset to First IFD (4Byte)
+   */
   if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
   {
     return check_mpo_le(mpo, offset, size);
@@ -304,8 +361,8 @@ static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const
   @ requires \valid(fr->handle);
   @ requires valid_read_string((char *)&fr->filename);
   @ requires \initialized(&fr->time);
+  @ requires fr->file_check==&file_check_mpo;
   @*/
-/* TODO requires fr->file_check==&file_check_mpo; */
 static void file_check_mpo(file_recovery_t *fr)
 {
   unsigned char buffer[512];
@@ -323,6 +380,12 @@ static void file_check_mpo(file_recovery_t *fr)
   do
   {
     offset+=(uint64_t)2+size;
+    if(offset >= 0x8000000000000000)
+    {
+      fr->file_size=0;
+      return ;
+    }
+    /*@ assert offset < 0x8000000000000000; */
     if(my_fseek(fr->handle, offset, SEEK_SET) < 0)
     {
       fr->file_size=0;
@@ -355,7 +418,7 @@ static void file_check_mpo(file_recovery_t *fr)
     fr->file_size=0;
     return ;
   }
-  /*@ assert 16 <= size; */
+  /*@ assert 16 <= size <= 65535; */
   {
     const uint64_t max_offset=check_mpo(buffer+8, offset+8, size-8);
     fr->file_size=(max_offset > fr->file_size ? 0 : max_offset);
@@ -429,25 +492,55 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
 
 
 /*@
+  @ requires buffer_size >= 10;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)&file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_jpg, buffer+(..), file_recovery, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures \result == 1 ==> file_recovery_new->extension == file_hint_jpg.extension;
-  @ ensures \result == 1 ==> valid_read_string(file_recovery_new->extension);
+  @ ensures \result == 1 ==> \initialized(&file_recovery_new->time);
   @ ensures \result == 1 ==> file_recovery_new->calculated_file_size == 0;
   @ ensures \result == 1 ==> file_recovery_new->file_size == 0;
+  @ ensures \result == 1 ==> file_recovery_new->min_filesize > 0;
   @ ensures \result == 1 ==> file_recovery_new->offset_ok == 0;
-  @ ensures \result == 1 ==> file_recovery_new->file_check == file_check_jpg;
-  @ ensures \result == 1 ==> \initialized(&file_recovery_new->time);
   @ ensures \result == 1 && buffer_size >= 4 ==> file_recovery_new->data_check == data_check_jpg;
+  @ ensures \result == 1 ==> file_recovery_new->file_check == file_check_jpg;
+  @ ensures \result == 1 ==> file_recovery_new->file_rename == \null;
+  @ ensures \result == 1 ==> valid_read_string(file_recovery_new->extension);
   @*/
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i=2;
   time_t jpg_time=0;
+  while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
+  {
+    const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+    if(buffer[i+1]==0xff)
+      i++;
+    else
+    {
+      if(buffer[i+1]==0xe1)
+      { /* APP1 Exif information */
+	jpg_time=jpg_get_date(buffer, buffer_size, i, size);
+      }
+      else if(buffer[i+1]==0xc4)
+      {
+	/* DHT */
+	if(jpg_check_dht(buffer, buffer_size, i, 2+(buffer[i+2]<<8)+buffer[i+3])!=0)
+	  return 0;
+      }
+      i+=2+size;
+    }
+  }
+  if(i+1 < file_recovery_new->blocksize && buffer[i+1]!=0xda)
+    return 0;
+  if(i+1 < 512 && buffer[i+1]!=0xda)
+    return 0;
   if(file_recovery->file_stat!=NULL)
   {
     static const unsigned char jpg_header_app0_avi[0x0c]= {
@@ -460,7 +553,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     unsigned int width=0;
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
-#ifndef MAIN_jpg
+#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
       if(header_ignored_adv(file_recovery, file_recovery_new)==0)
@@ -506,7 +599,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  return 0;
       }
     }
-#ifndef MAIN_jpg
+#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
     /* Don't extract jpg inside AVI */
     if( file_recovery->file_stat->file_hint==&file_hint_riff &&
 	(memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||
@@ -556,30 +649,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       return 0;
     }
   }
-  while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
-  {
-    const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
-    if(buffer[i+1]==0xff)
-      i++;
-    else
-    {
-      if(buffer[i+1]==0xe1)
-      { /* APP1 Exif information */
-	jpg_time=jpg_get_date(buffer, buffer_size, i, size);
-      }
-      else if(buffer[i+1]==0xc4)
-      {
-	/* DHT */
-	if(jpg_check_dht(buffer, buffer_size, i, 2+(buffer[i+2]<<8)+buffer[i+3])!=0)
-	  return 0;
-      }
-      i+=2+size;
-    }
-  }
-  if(i+1 < file_recovery_new->blocksize && buffer[i+1]!=0xda)
-    return 0;
-  if(i+1 < 512 && buffer[i+1]!=0xda)
-    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=i;
   file_recovery_new->calculated_file_size=0;
@@ -1458,6 +1527,7 @@ struct sof_header
 
 /*@
   @ requires \valid_read(buffer + (0..buffer_size-1));
+  @ assigns \nothing;
   @*/
 static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i)
 {
@@ -1511,10 +1581,10 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
   {
     unsigned int i;
     /*@ assert 0 < nbytes <= sizeof(buffer); */
-#if defined(__FRAMAC__)
-    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
     if(offset_test > 0x80000000)
       return ;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
 #endif
     /*@ assert offset_test >= offset_error; */
     offset=offset_test / file_recovery->blocksize * file_recovery->blocksize;
@@ -1695,40 +1765,49 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       j+=2U+(buffer[j+2]<<8)+buffer[j+3];
     }
     if(thumb_sos_found>0 && extract_thumb>0
-	&& offset < nbytes && buffer[offset]==0xff)
+	&& offset < nbytes && buffer[offset]==0xff &&
+	*thumb_offset+thumb_size < nbytes)
     {
-      char *thumbname;
+      char thumbname[2048];
+      char *sep;
+      /*@ assert sizeof(thumbname) == sizeof(file_recovery->filename); */
       /*@ assert valid_read_string((char *)&file_recovery->filename); */
+      memcpy(thumbname,file_recovery->filename, sizeof(thumbname));
+      thumbname[sizeof(thumbname)-1]='\0';
+      /*@ assert valid_read_string(&thumbname[0]); */
+      sep=strrchr(thumbname,'/');
+      if(sep!=NULL
 #ifndef __FRAMAC__
-      thumbname=strdup(file_recovery->filename);
-      if(thumbname!=NULL)
-      {
-	char *sep;
-	/*@ assert thumbname!=\null; */
-	/*@ assert valid_read_string(thumbname); */
-	sep=strrchr(thumbname,'/');
-	if(sep!=NULL && *(sep+1)=='f' && *thumb_offset+thumb_size < nbytes)
-	{
-	  FILE *out;
-	  *(sep+1)='t';
-	  if((out=fopen(thumbname,"wb"))!=NULL)
-	  {
-	    if(fwrite(&buffer[*thumb_offset], thumb_size, 1, out) < 1)
-	    {
-	      log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
-	    }
-	    fclose(out);
-	    if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
-	      set_date(thumbname, file_recovery->time, file_recovery->time);
-	  }
-	  else
-	  {
-	    log_error("fopen %s failed\n", thumbname);
-	  }
-	}
-	free(thumbname);
-      }
+	&& *(sep+1)=='f'
 #endif
+	)
+      {
+	FILE *out;
+#ifndef __FRAMAC__
+	*(sep+1)='t';
+#endif
+	if((out=fopen(thumbname,"wb"))!=NULL)
+	{
+	  const char *buffer_char=(const char *)buffer;
+	  /*@ assert \valid_read(buffer_char + (0 .. nbytes - 1)); */
+	  /*@ assert *thumb_offset + thumb_size < nbytes; */
+	  /*@ assert \valid_read(buffer_char + (0 .. *thumb_offset + thumb_size - 1)); */
+	  /*@ assert \valid_read(buffer_char + *thumb_offset + (0 .. thumb_size - 1)); */
+	  const char *thumb_char=&buffer_char[*thumb_offset];
+	  /*@ assert \valid_read(thumb_char + (0 .. thumb_size - 1)); */
+	  if(fwrite(thumb_char, thumb_size, 1, out) < 1)
+	  {
+	    log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
+	  }
+	  fclose(out);
+	  if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+	    set_date(thumbname, file_recovery->time, file_recovery->time);
+	}
+	else
+	{
+	  log_error("fopen %s failed\n", thumbname);
+	}
+      }
     }
   }
   return 1;
@@ -1867,8 +1946,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #ifdef DEBUG_JPEG
   log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
 #endif
-#ifndef __FRAMAC__
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && !defined(__FRAMAC__)
   if(thumb_offset!=0 &&
       (file_recovery->checkpoint_status==0 || thumb_error!=0) &&
       (file_recovery->offset_error==0 || thumb_offset < file_recovery->offset_error))
@@ -1913,37 +1991,41 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     return ;
   }
 #endif
-#endif
 }
 
 /*@
   @ requires buffer_size >= 2 && (buffer_size&1)==0;
   @ requires \valid(file_recovery);
+  @ requires file_recovery->calculated_file_size >= 2;
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_jpg2;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ ensures file_recovery->data_check == &data_check_jpg2 || file_recovery->data_check == \null;
+  @ ensures file_recovery->data_check == &data_check_jpg2 ==> file_recovery->calculated_file_size >= 2;
+  @ ensures file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0;
+  @ assigns file_recovery->calculated_file_size;
+  @ assigns file_recovery->data_check;
+  @ assigns file_recovery->offset_error;
   @*/
 static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-#if 0
-  unsigned int old_marker=0;
-#endif
-  if(file_recovery->calculated_file_size<2)
-  {
-    /* Reset to the correct file checker */
-    file_recovery->data_check=&data_check_jpg;
-    return data_check_jpg(buffer, buffer_size, file_recovery);
-  }
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop assigns file_recovery->data_check;
+    @ loop assigns file_recovery->offset_error;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  > file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert file_recovery->data_check == &data_check_jpg2; */
     if(buffer[i-1]==0xFF)
     {
       if(buffer[i]==0xd9)
       {
 	/* JPEG_EOI */
 	file_recovery->calculated_file_size++;
+	/*@ assert file_recovery->data_check == &data_check_jpg2; */
 	return DC_STOP;
       }
       else if(buffer[i] >= 0xd0 && buffer[i] <= 0xd7)
@@ -1962,6 +2044,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 	/* TODO: store old_marker in file_recovery */
 	old_marker=buffer[i];
 #endif
+	/*@ assert file_recovery->data_check == &data_check_jpg2; */
       }
       else if(buffer[i] == 0xda || buffer[i] == 0xc4)
       {
@@ -1977,9 +2060,11 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 	    (long long unsigned)file_recovery->calculated_file_size);
 #endif
 	file_recovery->offset_error=file_recovery->calculated_file_size;
+	/*@ assert file_recovery->data_check == &data_check_jpg2; */
 	return DC_STOP;
       }
     }
+    /*@ assert file_recovery->data_check == &data_check_jpg2; */
     file_recovery->calculated_file_size++;
   }
   return DC_CONTINUE;
@@ -1993,18 +2078,33 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_jpg;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ ensures file_recovery->data_check == &data_check_jpg2 || file_recovery->data_check == &data_check_jpg || file_recovery->data_check == &data_check_size || file_recovery->data_check == \null;
+  @ ensures file_recovery->data_check == &data_check_jpg2 ==> file_recovery->calculated_file_size >= 2;
+  @ assigns file_recovery->calculated_file_size;
+  @ assigns file_recovery->data_check;
+  @ assigns file_recovery->file_check;
+  @ assigns file_recovery->offset_error;
   @*/
 /* FIXME requires file_recovery->file_size == 0 || file_recovery->calculated_file_size >= file_recovery->file_size - 4; */
 /* FIXME ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 4); */
 static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /* Skip the SOI */
-  if(file_recovery->calculated_file_size==0)
-    file_recovery->calculated_file_size+=2;
+  if(file_recovery->calculated_file_size<2)
+    file_recovery->calculated_file_size=2;
+  /*@ assert file_recovery->calculated_file_size >= 2; */
+  /*@ assert file_recovery->data_check == &data_check_jpg; */
   /* Search SOS */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop assigns file_recovery->data_check;
+    @ loop assigns file_recovery->file_check;
+    @ loop assigns file_recovery->offset_error;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
+    /*@ assert file_recovery->data_check == &data_check_jpg; */
     const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
     /*@ assert 0 <= i < buffer_size - 4 ; */
     if(buffer[i]==0xFF && buffer[i+1]==0xFF)
@@ -2012,6 +2112,7 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
     else if(buffer[i]==0xFF)
     {
       const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      const uint64_t old_calculated_file_size=file_recovery->calculated_file_size;
 #ifdef DEBUG_JPEG
       log_info("data_check_jpg %02x%02x at %llu, next expected at %llu\n", buffer[i], buffer[i+1],
 	  (long long unsigned)file_recovery->calculated_file_size,
@@ -2021,28 +2122,40 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
       if(buffer[i+1]==0xc0)	/* SOF0 */
       {
 	if(jpg_check_sof0(buffer, buffer_size, i)!=0)
+	{
+	  /*@ assert file_recovery->data_check == &data_check_jpg; */
 	  return DC_STOP;
+	}
       }
       else if(buffer[i+1]==0xc4)	/* DHT */
       {
 	if(jpg_check_dht(buffer, buffer_size, i, 2+size)!=0)
+	{
+	  /*@ assert file_recovery->data_check == &data_check_jpg; */
 	  return DC_STOP;
+	}
       }
       else if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
       {
+	data_check_t tmp;
 	file_recovery->data_check=&data_check_jpg2;
-	return data_check_jpg2(buffer, buffer_size, file_recovery);
+	/*@ assert file_recovery->calculated_file_size >= 2; */
+	tmp=data_check_jpg2(buffer, buffer_size, file_recovery);
+	/*@ assert file_recovery->data_check == &data_check_jpg2 || file_recovery->data_check == \null; */
+	/*@ assert file_recovery->data_check == &data_check_jpg2 ==> file_recovery->calculated_file_size >= 2; */
+	return tmp;
       }
       else if(buffer[i+1]==0xe2)	/* APP2 Exif information */
       {
 	if(i+8 < buffer_size &&
 	    buffer[i+4]=='M' && buffer[i+5]=='P' && buffer[i+6]=='F' && buffer[i+7]==0)
 	{
-	  const uint64_t offset=file_recovery->calculated_file_size-(2+size)+8;
+	  const uint64_t offset=old_calculated_file_size+8;
 	  if(i>=buffer_size/2)
 	  {
 	    /* Restore previous value */
-	    file_recovery->calculated_file_size-=2+size;
+	    file_recovery->calculated_file_size=old_calculated_file_size;
+	    /*@ assert file_recovery->data_check == &data_check_jpg; */
 	    return DC_CONTINUE;
 	  }
 	  /*@ assert 0 <= i < buffer_size / 2 ; */
@@ -2052,18 +2165,25 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
 	    /*@ assert size <= buffer_size - i; */
 	    if(size >= 16)
 	    {
-	      /*@ assert 16 <= size; */
-#ifndef __FRAMAC__
-	      const uint64_t calculated_file_size=check_mpo(buffer+i+8, offset, size-8);
+	      /*@ assert 16 <= size <= 65535; */
+	      /*@ assert \valid_read(buffer + (0 .. buffer_size-1)); */
+	      /*@ assert \valid_read(buffer + (0 .. i+size-1)); */
+	      /*@ assert \valid_read((buffer + i ) + (0 .. size-1)); */
+	      /*@ assert \valid_read((buffer + i + 8) + (0 .. size-8-1)); */
+	      const unsigned char *mpo=buffer + i + 8;
+	      const unsigned int size_mpo=size-8;
+	      /*@ assert \valid_read(mpo + (0 .. size-8-1)); */
+	      /*@ assert \valid_read(mpo + (0 .. size_mpo-1)); */
+	      const uint64_t calculated_file_size=check_mpo(mpo, offset, size_mpo);
 	      if(calculated_file_size > 0)
 	      {
 		/* Multi-picture format */
 		file_recovery->calculated_file_size=calculated_file_size;
 		file_recovery->data_check=&data_check_size;
 		file_recovery->file_check=&file_check_mpo;
+		/*@ assert file_recovery->data_check == &data_check_size; */
 		return DC_CONTINUE;
 	      }
-#endif
 	    }
 	  }
 	  else
@@ -2080,6 +2200,7 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
 		file_recovery->calculated_file_size=calculated_file_size;
 		file_recovery->data_check=&data_check_size;
 		file_recovery->file_check=&file_check_mpo;
+		/*@ assert file_recovery->data_check == &data_check_size; */
 		return DC_CONTINUE;
 	      }
 	    }
@@ -2093,11 +2214,13 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
       log_info("data_check_jpg %02x at %llu\n", buffer[i],
 	  (long long unsigned)file_recovery->calculated_file_size);
 #endif
+      /*@ assert file_recovery->data_check == &data_check_jpg; */
       return DC_STOP;
     }
   }
+  /*@ assert file_recovery->data_check == &data_check_jpg; */
   /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 4; */
-  /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 4; */
+  /*X TODO assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 4; */
   return DC_CONTINUE;
 }
 
@@ -2187,6 +2310,7 @@ int main()
     /*@ assert file_recovery_new.data_check == &data_check_jpg; */
     /*@ assert file_recovery_new.file_size == 0; */;
     res_data_check=data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+    /*@ assert file_recovery_new.data_check == &data_check_jpg2 ==> file_recovery_new.calculated_file_size >= 2; */
     file_recovery_new.file_size+=BLOCKSIZE;
     if(res_data_check == DC_CONTINUE)
     {
@@ -2194,11 +2318,29 @@ int main()
 #if defined(__FRAMAC__)
       Frama_C_make_unknown((char *)big_buffer + BLOCKSIZE, BLOCKSIZE);
 #endif
-      /*@ assert file_recovery_new.data_check == &data_check_jpg || file_recovery_new.data_check == &data_check_jpg2 || file_recovery_new.data_check == NULL; */
+      /*@ assert file_recovery_new.data_check == &data_check_jpg || file_recovery_new.data_check == &data_check_jpg2 || file_recovery_new.data_check == &data_check_size || file_recovery_new.data_check == NULL; */
       if(file_recovery_new.data_check == &data_check_jpg)
-	data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+	res_data_check=data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
       else if(file_recovery_new.data_check == &data_check_jpg2)
-	data_check_jpg2(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+	res_data_check=data_check_jpg2(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+      else if(file_recovery_new.data_check == &data_check_size)
+	res_data_check=data_check_size(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+      file_recovery_new.file_size+=BLOCKSIZE;
+      if(res_data_check == DC_CONTINUE)
+      {
+	memcpy(big_buffer, big_buffer + BLOCKSIZE, BLOCKSIZE);
+#if defined(__FRAMAC__)
+	Frama_C_make_unknown((char *)big_buffer + BLOCKSIZE, BLOCKSIZE);
+#endif
+	/*@ assert file_recovery_new.data_check == &data_check_jpg || file_recovery_new.data_check == &data_check_jpg2 || file_recovery_new.data_check == &data_check_size || file_recovery_new.data_check == NULL; */
+	if(file_recovery_new.data_check == &data_check_jpg)
+	  res_data_check=data_check_jpg(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+	else if(file_recovery_new.data_check == &data_check_jpg2)
+	  res_data_check=data_check_jpg2(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+	else if(file_recovery_new.data_check == &data_check_size)
+	  res_data_check=data_check_size(big_buffer, 2*BLOCKSIZE, &file_recovery_new);
+	file_recovery_new.file_size+=BLOCKSIZE;
+      }
     }
   }
   /*@ assert file_recovery_new.offset_ok == 0;	*/
@@ -2213,7 +2355,8 @@ int main()
     header_check_jpg(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
   }
   /*@ assert file_recovery_new.offset_ok == 0;	*/
-  /*@ assert file_recovery_new.file_check == file_check_jpg; */
+  /*@ assert file_recovery_new.file_check == file_check_jpg || file_recovery_new.file_check == file_check_mpo; */
+  if(file_recovery_new.file_check == file_check_jpg)
   {
     file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
@@ -2222,7 +2365,9 @@ int main()
       fclose(file_recovery_new.handle);
     }
   }
+  else
   {
+    /*@ assert file_recovery_new.file_check == file_check_mpo; */
     file_recovery_new.handle=fopen(fn, "rb");
     if(file_recovery_new.handle!=NULL)
     {
