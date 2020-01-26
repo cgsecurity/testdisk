@@ -1,3 +1,24 @@
+.PRECIOUS: session_%.framac
+FRAMA_C_FLAGS=-machdep x86_64 \
+	  -warn-left-shift-negative \
+	  -warn-right-shift-negative \
+	  -warn-signed-downcast \
+	  -warn-signed-overflow \
+	  -warn-unsigned-downcast \
+	  -warn-unsigned-overflow \
+	  -rte \
+	  -eva \
+	  -eva-slevel 6 \
+	  -eva-warn-undefined-pointer-comparison none \
+	  -eva-ignore-recursive-calls \
+	  -then \
+	  -wp \
+	  -wp-dynamic \
+	  -wp-steps 100000 \
+	  -wp-split -wp-literals \
+	  -wp-timeout 10 -pp-annot \
+	  -kernel-msg-key pp
+
 .rc.o:
 	$(WINDRES) --include-dir $(srcdir) $< $@ 
 
@@ -404,6 +425,33 @@ small: $(sbin_PROGRAMS) $(bin_PROGRAMS)
 	$(STRIP) -s $(sbin_PROGRAMS) $(bin_PROGRAMS)
 
 extras: $(EXTRA_PROGRAMS)
+
+frama-c-%: session_%.framac
+	frama-c-gui -load $^
+
+session_doc.framac: file_doc.c common.c filegen.c log.c setdate.c
+	gcc $(CFLAGS) -DMAIN_doc -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_jpg.framac: file_jpg.c file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c suspend_no.c setdate.c
+	gcc $(CFLAGS) -DMAIN_jpg -DHAVE_CONFIG_H -O -o demo -I.. $^ -ljpeg
+	frama-c $^ -cpp-extra-args="-DMAIN_jpg -DHAVE_CONFIG_H -D__x86_64__ -I/usr/include  -I.. -I $(frama-c -print-path)/libc" $(FRAMA_C_FLAGS) -save $@ 2>&1 | tee session_jpg.log
+
+session_tiff_be.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
+	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_be -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_tiff_le.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
+	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_%.framac: file_%.c common.c filegen.c log.c
+	gcc $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_$* -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_fidentify.framac: fidentify.c common.c misc.c filegen.c log.c setdate.c file_bmp.c file_list.c
+	gcc $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 moc_qphotorec.cpp: qphotorec.h
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $< -o $@
