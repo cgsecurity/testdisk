@@ -104,6 +104,7 @@ static inline void td_list_add(struct td_list_head *newe, struct td_list_head *h
 /*@
   @ requires \valid(newe);
   @ requires \valid(head);
+  @ requires \valid(head->prev);
   @ requires separation: \separated(newe, head);
   @ ensures head->prev == newe;
   @ ensures newe->next == head;

@@ -85,17 +85,31 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   return (int)fc_b->length-(int)fc_a->length;
 }
 
+/*@
+  @ requires \valid(file_check_new);
+  @ requires \valid(pos);
+  @*/
 static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
 {
   unsigned int i;
+  const unsigned int tmp=(file_check_new->length==0?0:((const unsigned char *)file_check_new->value)[0]);
   file_check_list_t *newe=(file_check_list_t *)MALLOC(sizeof(*newe));
   newe->offset=file_check_new->offset;
+  /*@
+    @ loop unroll 256;
+    @ loop invariant 0 <= i <= 256;
+    @ loop assigns i, newe->file_checks[0 .. 255].list.prev, newe->file_checks[0 .. 255].list.next;
+    @ loop variant 255-i;
+    @*/
   for(i=0;i<256;i++)
   {
     newe->file_checks[i].list.prev=&newe->file_checks[i].list;
     newe->file_checks[i].list.next=&newe->file_checks[i].list;
+    /*@ assert newe->file_checks[i].list.prev == &newe->file_checks[i].list; */
+    /*@ assert newe->file_checks[i].list.next == &newe->file_checks[i].list; */
   }
-  td_list_add_tail(&file_check_new->list, &newe->file_checks[file_check_new->length==0?0:((const unsigned char *)file_check_new->value)[0]].list);
+  /*@ assert newe->file_checks[tmp].list.prev == &newe->file_checks[tmp].list; */
+  td_list_add_tail(&file_check_new->list, &newe->file_checks[tmp].list);
   td_list_add_tail(&newe->list, &pos->list);
 }
 
