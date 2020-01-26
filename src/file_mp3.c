@@ -534,27 +534,6 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
 	 (buffer[1]&0xFE)==0xF2 ||
 	 (buffer[1]&0xFE)==0xE2)))
     return 0;
-  if(file_recovery->file_stat!=NULL)
-  {
-    if(file_recovery->file_stat->file_hint==&file_hint_mp3
-#if !defined(MAIN_mp3)
-      || file_recovery->file_stat->file_hint==&file_hint_mkv
-#endif
-      )
-    {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
-#if !defined(MAIN_mp3)
-    /* RGV values from TIFF may be similar to the beginning of an mp3 */
-    if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
-	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
-    {
-      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
-	return 0;
-    }
-#endif
-  }
   /*@ assert nbr == 0; */
   /*@
     @ loop invariant 0 <= nbr <= potential_frame_offset <= 2048 + 8065;
@@ -603,28 +582,47 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       nbr++;
     }
   }
-  if(nbr>1)
+  if(nbr<=1)
+    return 0;
+  if(file_recovery->file_stat!=NULL)
   {
-    /*@ assert nbr > 1; */
-    /*@ assert potential_frame_offset > 0; */
-#ifdef DEBUG_MP3
-    log_info("header_check_mp3 mp3 found\n");
+    if(file_recovery->file_stat->file_hint==&file_hint_mp3
+#if !defined(MAIN_mp3)
+      || file_recovery->file_stat->file_hint==&file_hint_mkv
 #endif
-    reset_file_recovery(file_recovery_new);
-    /*@ assert file_recovery_new->file_check == \null; */
-    /*@ assert file_recovery_new->data_check == \null; */
-    file_recovery_new->calculated_file_size=potential_frame_offset;
-    /*@ assert file_recovery_new->calculated_file_size > 0; */
-    file_recovery_new->min_filesize=287;
-    file_recovery_new->extension=file_hint_mp3.extension;
-    if(file_recovery_new->blocksize >= 16)
+      )
     {
-      file_recovery_new->data_check=&data_check_mp3;
-      file_recovery_new->file_check=&file_check_size;
+      header_ignored(file_recovery_new);
+      return 0;
     }
-    return 1;
+#if !defined(MAIN_mp3)
+    /* RGV values from TIFF may be similar to the beginning of an mp3 */
+    if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
+	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
+    {
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
+    }
+#endif
   }
-  return 0;
+  /*@ assert nbr > 1; */
+  /*@ assert potential_frame_offset > 0; */
+#ifdef DEBUG_MP3
+  log_info("header_check_mp3 mp3 found\n");
+#endif
+  reset_file_recovery(file_recovery_new);
+  /*@ assert file_recovery_new->file_check == \null; */
+  /*@ assert file_recovery_new->data_check == \null; */
+  file_recovery_new->calculated_file_size=potential_frame_offset;
+  /*@ assert file_recovery_new->calculated_file_size > 0; */
+  file_recovery_new->min_filesize=287;
+  file_recovery_new->extension=file_hint_mp3.extension;
+  if(file_recovery_new->blocksize >= 16)
+  {
+    file_recovery_new->data_check=&data_check_mp3;
+    file_recovery_new->file_check=&file_check_size;
+  }
+  return 1;
 }
 
 /*@

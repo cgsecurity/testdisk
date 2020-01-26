@@ -157,18 +157,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   }
   if(off >= 512 || off >= buffer_size)
     return 0;
-  if(file_recovery->file_stat!=NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc)
-  {
-    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
-      return 0;
-  }
-  if(file_recovery->file_check==&file_check_bgzf)
-  {
-    header_ignored(file_recovery_new);
-    return 0;
-  }
-#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ) && !defined(__FRAMAC__)
   {
     static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,
       'S', 'c', 'h', 'e', 'm', 'a', 't', 'i', 'c'};
@@ -207,6 +196,17 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     /* Probably too small to be a file */
     if(d_stream.total_out < 16)
       return 0;
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_doc)
+    {
+      if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+	return 0;
+    }
+    if(file_recovery->file_check==&file_check_bgzf)
+    {
+      header_ignored(file_recovery_new);
+      return 0;
+    }
     buffer_uncompr[d_stream.total_out]='\0';
     if(bgzf!=0)
     {
@@ -297,6 +297,17 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     }
   }
 #else
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_stat->file_hint==&file_hint_doc)
+  {
+    if(header_ignored_adv(file_recovery, file_recovery_new)==0)
+      return 0;
+  }
+  if(file_recovery->file_check==&file_check_bgzf)
+  {
+    header_ignored(file_recovery_new);
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=22;
   file_recovery_new->time=le32(gz->mtime);
