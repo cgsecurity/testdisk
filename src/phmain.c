@@ -78,7 +78,7 @@
 #include "dfxml.h"
 
 int need_to_stop=0;
-extern file_enable_t list_file_enable[];
+extern file_enable_t array_file_enable[];
 
 #ifdef HAVE_SIGACTION
 static struct sigaction action;
@@ -150,7 +150,7 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=list_file_enable
+    .list_file_format=array_file_enable
   };
   struct ph_param params;
   params.recup_dir=NULL;
@@ -370,7 +370,7 @@ int main( int argc, char **argv )
     element_disk->disk=new_diskcache(element_disk->disk, testdisk_mode);
   }
   log_disk_list(list_disk);
-  reset_list_file_enable(options.list_file_format);
+  reset_array_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
 #ifdef SUDO_BIN
   if(list_disk==NULL)

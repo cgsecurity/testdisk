@@ -364,7 +364,7 @@ extern const file_hint_t file_hint_zcode;
 extern const file_hint_t file_hint_zip;
 extern const file_hint_t file_hint_zpr;
 
-file_enable_t list_file_enable[]=
+file_enable_t array_file_enable[]=
 {
 #ifndef MAIN_fidentify
   { .enable=0, .file_hint=&file_hint_sig  },

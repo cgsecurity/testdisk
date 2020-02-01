@@ -88,7 +88,7 @@
 #include "qphotorec.h"
 
 extern const arch_fnct_t arch_none;
-extern file_enable_t list_file_enable[];
+extern file_enable_t array_file_enable[];
 
 QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
 {
@@ -116,8 +116,8 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   options->expert=0;
   options->lowmem=0;
   options->verbose=0;
-  options->list_file_format=list_file_enable;
-  reset_list_file_enable(options->list_file_format);
+  options->list_file_format=array_file_enable;
+  reset_array_file_enable(options->list_file_format);
 
   stop_the_recovery=false;
 
@@ -936,7 +936,7 @@ void QPhotorec::qphotorec_formats()
   file_enable_t *file_enable;
   QStringList list;
   formats=new QListWidget();
-  for(file_enable=list_file_enable;
+  for(file_enable=array_file_enable;
       file_enable->file_hint!=NULL;
       file_enable++)
   {
@@ -972,7 +972,7 @@ void QPhotorec::qphotorec_formats()
   connect(bt_restore, SIGNAL(clicked()), this, SLOT(formats_restore()));
   fenetre3.exec();
   int i;
-  for (i = 0, file_enable=list_file_enable;
+  for (i = 0, file_enable=array_file_enable;
       i < formats->count() && file_enable->file_hint!=NULL;
       i++, file_enable++)
   {
@@ -993,7 +993,7 @@ void QPhotorec::formats_restore()
 {
   file_enable_t *file_enable;
   int i;
-  for (i = 0, file_enable=list_file_enable;
+  for (i = 0, file_enable=array_file_enable;
       i < formats->count() && file_enable->file_hint!=NULL;
       i++, file_enable++)
   {

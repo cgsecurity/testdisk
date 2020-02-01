@@ -49,7 +49,7 @@
 #include "filegen.h"
 #include <sys/types.h>
 #include <unistd.h>
-extern file_enable_t list_file_enable[];
+extern file_enable_t array_file_enable[];
 extern file_check_list_t file_check_list;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
@@ -71,9 +71,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   {
     /* Enable all file formats */
     file_enable_t *file_enable;
-    for(file_enable=list_file_enable;file_enable->file_hint!=NULL;file_enable++)
+    for(file_enable=array_file_enable;file_enable->file_hint!=NULL;file_enable++)
       file_enable->enable=1;
-    file_stats=init_file_stats(list_file_enable);
+    file_stats=init_file_stats(array_file_enable);
   }
   if(buffer_start==NULL)
   {

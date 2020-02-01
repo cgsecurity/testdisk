@@ -3,7 +3,7 @@ PhotoRec - Theory of operation:
 Carvers are plugable. Each carver consists of:
 
 struct file_hint_t - describes extension, name, max size, enable by default, etc.
-file_enable_t list_file_enable[] - array with all file hints and whether enabled or not.
+file_enable_t array_file_enable[] - array with all file hints and whether enabled or not.
 
 
 phmain.c - Contains the main() and driver logic for photorec.

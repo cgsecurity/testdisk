@@ -43,7 +43,7 @@
 #include "log.h"
 #include "phcfg.h"
 
-void reset_list_file_enable(file_enable_t *files_enable)
+void reset_array_file_enable(file_enable_t *files_enable)
 {
   file_enable_t *file_enable;
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)

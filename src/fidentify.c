@@ -53,7 +53,7 @@
 #include "file_jpg.h"
 #include "file_gz.h"
 
-extern file_enable_t list_file_enable[];
+extern file_enable_t array_file_enable[];
 extern file_check_list_t file_check_list;
 
 #define READ_SIZE 1024*512
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
   for(i=1; i<argc; i++)
   {
     file_enable_t *file_enable;
-    for(file_enable=list_file_enable;file_enable->file_hint!=NULL;file_enable++)
+    for(file_enable=array_file_enable;file_enable->file_hint!=NULL;file_enable++)
       if(argv[i][0]=='+' &&
 	  file_enable->file_hint->extension!=NULL &&
 	  strcmp(file_enable->file_hint->extension,&argv[i][1])==0)
@@ -291,10 +291,10 @@ int main(int argc, char **argv)
   {
     /* Enable all file formats */
     file_enable_t *file_enable;
-    for(file_enable=list_file_enable;file_enable->file_hint!=NULL;file_enable++)
+    for(file_enable=array_file_enable;file_enable->file_hint!=NULL;file_enable++)
       file_enable->enable=1;
   }
-  file_stats=init_file_stats(list_file_enable);
+  file_stats=init_file_stats(array_file_enable);
 #ifndef MAIN_fidentify
   for(i=1; i<argc; i++)
   {

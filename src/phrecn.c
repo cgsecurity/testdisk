@@ -718,7 +718,7 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
 	      file_enable->enable=0;
 	  }
 	  else
-	    reset_list_file_enable(files_enable);
+	    reset_array_file_enable(files_enable);
 	}
 	break;
       case 'b':
