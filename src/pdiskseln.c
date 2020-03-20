@@ -24,6 +24,10 @@
 #include <config.h>
 #endif
 
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
+#undef SUDO_BIN
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -126,10 +130,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
     }
     {
       mvwaddstr(stdscr, INTER_NOTE_Y,0,"Note: ");
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#else
-#ifndef DJGPP
-#ifdef HAVE_GETEUID
+#if defined(HAVE_GETEUID) && !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(DJGPP)
       if(geteuid()!=0)
       {
 	if(has_colors())
@@ -141,8 +142,6 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	use_sudo=1;
 #endif
       }
-#endif
-#endif
 #endif
       wmove(stdscr, INTER_NOTE_Y+1, 0);
       wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");

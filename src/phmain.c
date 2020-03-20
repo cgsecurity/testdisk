@@ -24,6 +24,10 @@
 #include <config.h>
 #endif
 
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
+#undef SUDO_BIN
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -133,7 +137,7 @@ int main( int argc, char **argv )
 {
   int i;
 #ifdef SUDO_BIN
-  int use_sudo=0;
+  int use_sudo;
 #endif
   int create_log=TD_LOG_NONE;
   int run_setlocale=1;
@@ -349,14 +353,11 @@ int main( int argc, char **argv )
 #endif
   log_info("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s, curses lib: %s\n",
       td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version(), td_curses_version());
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
-#else
-#ifdef HAVE_GETEUID
+#if defined(HAVE_GETEUID) && !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(DJGPP)
   if(geteuid()!=0)
   {
     log_warning("User is not root!\n");
   }
-#endif
 #endif
   log_flush();
   screen_buffer_reset();
@@ -373,18 +374,14 @@ int main( int argc, char **argv )
   reset_array_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
 #ifdef SUDO_BIN
-  if(list_disk==NULL)
+  if(list_disk==NULL && geteuid()!=0)
   {
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
-#else
-#ifdef HAVE_GETEUID
-    if(geteuid()!=0)
-      use_sudo=2;
-#endif
-#endif
+    use_sudo=2;
   }
-  if(use_sudo==0)
+  else
+  {
     use_sudo=do_curses_photorec(&params, &options, list_disk);
+  }
 #else
   do_curses_photorec(&params, &options, list_disk);
 #endif

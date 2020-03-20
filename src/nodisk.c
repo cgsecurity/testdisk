@@ -22,6 +22,10 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
+#undef SUDO_BIN
+#endif
  
 #ifdef HAVE_NCURSES
 #include <stdio.h>
@@ -53,8 +57,7 @@ int intrf_no_disk_ncurses(const char *prog_name)
   wmove(stdscr,11,0);
   wprintw(stdscr,"choose \"Run as administrator\".\n");
 #elif defined(DJGPP)
-#else
-#ifdef HAVE_GETEUID
+#elif defined(HAVE_GETEUID)
   if(geteuid()!=0)
   {
     wmove(stdscr,8,0);
@@ -77,7 +80,6 @@ int intrf_no_disk_ncurses(const char *prog_name)
     }
 #endif
   }
-#endif
 #endif
   wmove(stdscr,22,0);
   wattrset(stdscr, A_REVERSE);

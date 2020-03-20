@@ -23,6 +23,11 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
+#undef SUDO_BIN
+#endif
+
 #ifdef SUDO_BIN
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

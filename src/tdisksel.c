@@ -22,6 +22,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
+#undef SUDO_BIN
+#endif
  
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
@@ -113,9 +116,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
     {
       int line=INTER_NOTE_Y;
       mvwaddstr(stdscr,line++,0,"Note: ");
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP)
-#else
-#ifdef HAVE_GETEUID
+#if defined(HAVE_GETEUID) && !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(DJGPP)
       if(geteuid()!=0)
       {
         if(has_colors())
@@ -128,7 +129,6 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
 	use_sudo=1;
 #endif
       }
-#endif
 #endif
       waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr,line++,0);
