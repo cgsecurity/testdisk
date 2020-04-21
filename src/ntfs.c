@@ -305,6 +305,7 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
   unsigned char *buffer;
   uint64_t mft_pos;
   unsigned int mft_record_size;
+  partition->fsname[0]='\0';
   if(ntfs_header->clusters_per_mft_record>0)
     mft_record_size=ntfs_header->clusters_per_mft_record * ntfs_header->sectors_per_cluster * ntfs_sector_size(ntfs_header);
   else
@@ -334,13 +335,19 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
     const ntfs_attribresident *attrib=(const ntfs_attribresident *)ntfs_findattribute((const ntfs_recordheader*)buffer, 0x60, (char*)buffer+mft_record_size);
     if(attrib && attrib->header.bNonResident==0)	/* attribute is resident */
     {
-      char *dest=partition->fsname;
+      char *dest;
       const char *name_it;
       unsigned int volume_name_length=le32(attrib->cbAttribData);
       volume_name_length/=2;	/* Unicode */
       if(volume_name_length>sizeof(partition->fsname)-1)
 	volume_name_length=sizeof(partition->fsname)-1;
-      for(name_it=ntfs_getattributedata(attrib, (char*)(buffer+mft_record_size));
+      name_it=ntfs_getattributedata(attrib, (char*)(buffer+mft_record_size));
+      if(name_it==NULL)
+      {
+	free(buffer);
+	return;
+      }
+      for(dest=partition->fsname;
 	  volume_name_length>0 && *name_it!='\0' && name_it[1]=='\0';
 	  name_it+=2,volume_name_length--)
 	*dest++=*name_it;

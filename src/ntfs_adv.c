@@ -451,7 +451,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	if(attr30 && attr30->bNonResident==0)
 	{
 	  const TD_FILE_NAME_ATTR *file_name_attr=(const TD_FILE_NAME_ATTR *)ntfs_getattributedata((const ntfs_attribresident *)attr30, buffer+0x400);
-	  if(file_name_attr->file_name_length==4 &&
+	  if(file_name_attr!=NULL &&
+	      file_name_attr->file_name_length==4 &&
 	      (const char*)&file_name_attr->file_name[0]+8 <= buffer+0x400 &&
 	      memcmp(file_name_attr->file_name,"$\0M\0F\0T\0", 8)==0)
 	    res=1;
@@ -518,7 +519,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	if(attr30 && attr30->bNonResident==0)
 	{
 	  const TD_FILE_NAME_ATTR *file_name_attr=(const TD_FILE_NAME_ATTR *)ntfs_getattributedata((const ntfs_attribresident *)attr30, buffer+0x400);
-	  if(file_name_attr->file_name_length==4 &&
+	  if(file_name_attr!=NULL &&
+	      file_name_attr->file_name_length==4 &&
 	      (const char*)&file_name_attr->file_name[0]+8 <= buffer+0x400 &&
 	      memcmp(file_name_attr->file_name,"$\0M\0F\0T\0", 8)==0)
 	    res=1;
