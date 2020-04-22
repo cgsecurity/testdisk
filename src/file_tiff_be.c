@@ -174,13 +174,15 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
     if(offset_tiff_next_diroff < tiff_size - 4)
     {
       const unsigned char *ptr_hdr;
+      const uint32_t *tiff_next_diroff;
+      unsigned int offset_ifd1;
       /*@ assert offset_tiff_next_diroff + 4 <= tiff_size; */
       ptr_hdr=&buffer[offset_tiff_next_diroff];
       /*@ assert \valid_read(ptr_hdr + (0 .. 4-1)); */
-      const uint32_t *tiff_next_diroff=(const uint32_t *)ptr_hdr;
+      tiff_next_diroff=(const uint32_t *)ptr_hdr;
       /*@ assert \valid_read(tiff_next_diroff); */
       /* IFD1 */
-      const unsigned int offset_ifd1=be32(*tiff_next_diroff);
+      offset_ifd1=be32(*tiff_next_diroff);
       if(offset_ifd1 > 0)
 	return find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd1);
     }

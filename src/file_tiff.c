@@ -47,7 +47,7 @@ static void register_header_check_tiff(file_stat_t *file_stat);
 const file_hint_t file_hint_tiff= {
   .extension="tif",
   .description="Tag Image File Format and some raw file formats (pef/nef/dcr/sr2/cr2)",
-  .max_filesize=100*1024*1024,
+  .max_filesize=1024*1024*1024,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_tiff
