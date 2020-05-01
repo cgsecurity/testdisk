@@ -27,6 +27,10 @@
 #undef SUDO_BIN
 #endif
 
+#if defined(__FRAMAC__)
+#undef HAVE_LIBEWF
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -70,19 +74,26 @@
 #include "hidden.h"
 
 #ifdef HAVE_SIGACTION
+int need_to_stop=0;
 static struct sigaction action;
-static void sighup_hdlr(int sig);
 
 static void sighup_hdlr(int sig)
 {
   if(sig == SIGINT)
-    log_critical("SIGINT detected! TestDisk has been killed.\n");
+    log_critical("SIGINT detected! PhotoRec has been killed.\n");
+  else if(sig == SIGHUP)
+    log_critical("SIGHUP detected! PhotoRec has been killed.\n");
   else
-    log_critical("SIGHUP detected! TestDisk has been killed.\n");
+    log_critical("SIGTERM detected! PhotoRec has been killed.\n");
   log_flush();
-  action.sa_handler=SIG_DFL;
-  sigaction(sig,&action,NULL);
-  kill(0, sig);
+  if(need_to_stop==1)
+  {
+    action.sa_handler=SIG_DFL;
+    sigaction(sig,&action,NULL);
+    kill(0, sig);
+    return ;
+  }
+  need_to_stop=1;
 }
 #endif
 
@@ -202,7 +213,7 @@ int main( int argc, char **argv )
 {
   int i;
 #ifdef SUDO_BIN
-  int use_sudo;
+  int use_sudo=0;
 #endif
   int verbose=0, dump_ind=0;
   int create_log=TD_LOG_NONE;
@@ -229,14 +240,12 @@ int main( int argc, char **argv )
   sigemptyset(&action.sa_mask);
   sigaddset(&action.sa_mask, SIGINT);
   sigaddset(&action.sa_mask, SIGHUP);
+  sigaddset(&action.sa_mask, SIGTERM);
   action.sa_handler  = &sighup_hdlr;
   action.sa_flags = 0;
-  if(sigaction(SIGINT, &action, NULL)==-1)
-  {
-    printf("Error on SIGACTION call\n");
-    return -1;
-  }
-  if(sigaction(SIGHUP, &action, NULL)==-1)
+  if( sigaction(SIGINT,  &action, NULL)==-1 ||
+      sigaction(SIGHUP,  &action, NULL)==-1 ||
+      sigaction(SIGTERM, &action, NULL)==-1 )
   {
     printf("Error on SIGACTION call\n");
     return -1;
@@ -450,10 +459,8 @@ int main( int argc, char **argv )
   {
     use_sudo=2;
   }
-  else
-  {
+  if(use_sudo==0)
     use_sudo=do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
-  }
 #else
   do_curses_testdisk(verbose,dump_ind,list_disk,saveheader,cmd_device,&cmd_run);
 #endif
