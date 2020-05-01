@@ -12,7 +12,9 @@ URL:		https://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	libtool autoconf automake
 BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
+%if  0%{?rhel} < 8
 BuildRequires:	libewf-devel
+%endif
 BuildRequires:	libjpeg-devel
 BuildRequires:	ncurses-devel >= 5.2
 BuildRequires:	ntfs-3g-devel
