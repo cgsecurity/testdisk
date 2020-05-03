@@ -28,6 +28,11 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBNTFS
+#undef HAVE_LIBNTFS3G
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_FEATURES_H
 #include <features.h>
@@ -1263,7 +1268,7 @@ static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *part
 	  waddstr(window, " ");
 	if((file_info->status&FILE_STATUS_MARKED)!=0 && has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(2));
-	set_date((char *)&datestr, sizeof(datestr), file_info->td_mtime);
+	set_datestr((char *)&datestr, sizeof(datestr), file_info->td_mtime);
 	if(COLS <= 1+17+1+9+1)
 	  wprintw(window, "%s", file_info->name);
 	else
