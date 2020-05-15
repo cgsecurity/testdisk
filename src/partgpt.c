@@ -25,6 +25,12 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__)
+#undef HAVE_SYS_UUID_H
+#undef HAVE_UUID_H
+#undef HAVE_UUID_UUID_H
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -90,6 +96,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_MS_LDM_METADATA,	"MS LDM MetaData"	},
   { GPT_ENT_TYPE_MS_LDM_DATA,		"MS LDM Data"		},
   { GPT_ENT_TYPE_MS_RECOVERY,		"Windows Recovery Env"  },
+  { GPT_ENT_TYPE_MS_SPACES,		"MS Storage Spaces"	},
 //  { GPT_ENT_TYPE_LINUX_DATA
   { GPT_ENT_TYPE_LINUX_RAID,		"Linux Raid"		},
   { GPT_ENT_TYPE_LINUX_SWAP,		"Linux Swap"		},
@@ -100,7 +107,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_LINUX_DATA,		"Linux filesys. data"	},
   { GPT_ENT_TYPE_HPUX_DATA,		"HPUX Data"		},
   { GPT_ENT_TYPE_HPUX_SERVICE,		"HPUX Service"		},
-  { GPT_ENT_TYPE_MAC_AFS,		"Apple APFS"		},
+  { GPT_ENT_TYPE_MAC_APFS,		"Apple APFS"		},
   { GPT_ENT_TYPE_MAC_HFS,		"Mac HFS"		},
   { GPT_ENT_TYPE_MAC_UFS,		"Mac UFS"		},
   { GPT_ENT_TYPE_MAC_RAID,		"Mac Raid"		},
