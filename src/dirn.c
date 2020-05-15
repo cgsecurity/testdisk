@@ -202,7 +202,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	waddstr(window,", ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"h");
+	waddstr(window,"'h'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if((dir_data->param&FLAG_LIST_DELETED)==0)
@@ -215,7 +215,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	waddstr(window,", ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"h");
+	waddstr(window,"'h'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if((dir_data->param&FLAG_LIST_ADS)==0)
@@ -226,7 +226,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
       wmove(window,LINES-2,4);
       if(has_colors())
 	wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-      waddstr(window,"q");
+      waddstr(window,"'q'");
       if(has_colors())
 	wbkgdset(window,' ' | COLOR_PAIR(0));
       waddstr(window," to quit");
@@ -235,13 +235,13 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	waddstr(window,", ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,":");
+	waddstr(window,"':'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to select the current file, ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"a");
+	waddstr(window,"'a'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	if((status&FILE_STATUS_MARKED)==FILE_STATUS_MARKED)
@@ -250,13 +250,13 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	  waddstr(window," to deselect all files");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	mvwaddstr(window,LINES-1,4,"C");
+	mvwaddstr(window,LINES-1,4,"'C'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to copy the selected files, ");
 	if(has_colors())
 	  wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(0));
-	waddstr(window,"c");
+	waddstr(window,"'c'");
 	if(has_colors())
 	  wbkgdset(window,' ' | COLOR_PAIR(0));
 	waddstr(window," to copy the current file");
