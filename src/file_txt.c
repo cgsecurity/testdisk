@@ -218,6 +218,7 @@ static const txt_header_t fasttxt_headers[] = {
   { "-- phpMyAdmin SQL Dump",				22, "sql"},
   { "--\n-- PostgreSQL database cluster dump",		38, "sql"},
   { "--\r\n-- PostgreSQL database cluster dump",	39, "sql"},
+  { "# ************************************************************\n# Sequel Pro SQL dump", 84, "sql"},
   { "---- BEGIN SSH2 PUBLIC KEY ----",			31, "ppk"},
   { "PuTTY-User-Key-File-2:",				22, "ppk"},
   { "-----BEGIN PGP PRIVATE KEY BLOCK-----",		37, "priv"},
