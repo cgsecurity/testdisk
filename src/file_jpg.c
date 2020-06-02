@@ -23,6 +23,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#ifdef __FRAMAC__
+#undef HAVE_LIBJPEG
+#undef DEBUG_JPEG
+#endif
+
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -661,7 +667,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && !defined(__FRAMAC__)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
 struct my_error_mgr {
   struct jpeg_error_mgr pub;	/* "public" fields, must be the first field */
 
@@ -1854,7 +1860,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i]!=0xff)
     {
-#if defined(DEBUG_JPEG) && !defined(__FRAMAC__)
+#if defined(DEBUG_JPEG)
       log_info("%s no marker at 0x%x\n", file_recovery->filename, i);
 #endif
       file_recovery->offset_error=i;
@@ -1867,7 +1873,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
       offset++;
       continue;
     }
-#if defined(DEBUG_JPEG) && !defined(__FRAMAC__)
+#if defined(DEBUG_JPEG)
     log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
     offset+=(uint64_t)2+size;
@@ -1946,7 +1952,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #ifdef DEBUG_JPEG
   log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
 #endif
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && !defined(__FRAMAC__)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   if(thumb_offset!=0 &&
       (file_recovery->checkpoint_status==0 || thumb_error!=0) &&
       (file_recovery->offset_error==0 || thumb_offset < file_recovery->offset_error))
@@ -1974,7 +1980,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
-#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H) && ! defined(__FRAMAC__)
+#if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   jpg_check_picture(file_recovery);
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;

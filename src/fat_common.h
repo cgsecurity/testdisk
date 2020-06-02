@@ -24,10 +24,34 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*@
+  @ requires \valid_read(entry);
+  @ assigns \nothing;
+  @ */
 unsigned int fat_get_cluster_from_entry(const struct msdos_dir_entry *entry);
+
+/*@
+  @ requires \valid_read(buffer + (0 .. 0x40-1));
+  @ assigns \nothing;
+  @ */
 int is_fat_directory(const unsigned char *buffer);
+
+/*@
+  @ requires \valid_read(fat_header);
+  @ assigns \nothing;
+  @ */
 unsigned int get_dir_entries(const struct fat_boot_sector *fat_header);
+
+/*@
+  @ requires \valid_read(fat_header);
+  @ assigns \nothing;
+  @ */
 unsigned int fat_sector_size(const struct fat_boot_sector *fat_header);
+
+/*@
+  @ requires \valid_read(fat_header);
+  @ assigns \nothing;
+  @ */
 unsigned int fat_sectors(const struct fat_boot_sector *fat_header);
 
 #ifdef __cplusplus

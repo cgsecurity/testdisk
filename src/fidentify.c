@@ -24,6 +24,11 @@
 #include <config.h>
 #endif
 
+#ifdef __FRAMAC__
+#undef HAVE_FTELLO
+#undef HAVE_DUP2
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -52,6 +57,9 @@
 #include "misc.h"
 #include "file_jpg.h"
 #include "file_gz.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 extern file_enable_t array_file_enable[];
 extern file_check_list_t file_check_list;
@@ -119,7 +127,7 @@ static int file_identify(const char *filename, const unsigned int options)
 	off_t file_size;
 	file_recovery_new.handle=file;
 	my_fseek(file_recovery_new.handle, 0, SEEK_END);
-#if defined(HAVE_FTELLO) && !defined(__FRAMAC__)
+#if defined(HAVE_FTELLO)
 	file_size=ftello(file_recovery_new.handle);
 #else
 	file_size=ftell(file_recovery_new.handle);
@@ -258,7 +266,7 @@ int main(int argc, char **argv)
   if(log_handle!=NULL)
   {
     time_t my_time;
-#if defined(HAVE_DUP2) && !defined(__FRAMAC__)
+#if defined(HAVE_DUP2)
     dup2(fileno(log_handle),2);
 #endif
     my_time=time(NULL);

@@ -41,6 +41,9 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -123,6 +126,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
     free(buffer);
     return -1;
   }
+#if !defined(__FRAMAC__)
   if(fstat(disk_dst, &stat_buf)==0)
   {
     int res=1;
@@ -136,6 +140,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
       src_offset+=dst_offset;
     }
   }
+#endif
   src_offset_old=src_offset;
 #ifdef HAVE_NCURSES
   window=newwin(LINES, COLS, 0, 0);	/* full screen */

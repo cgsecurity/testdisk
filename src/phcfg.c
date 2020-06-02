@@ -81,23 +81,11 @@ static FILE *file_options_save_aux(void)
     }
   }
 #endif
-#ifndef DJGPP
+#if !defined(DJGPP) && !defined(__FRAMAC__)
   if(filename==NULL)
   {
     char *home;
     home = getenv("HOME");
-#if 0
-    /* Using 'getpwuid' in statically linked applications requires at
-       runtime the shared libraries from the glibc version used for linking
-    */
-    if (home == NULL) 
-    {
-      struct passwd *pw;
-      pw = getpwuid(getuid());
-      if (pw != NULL)
-	home = pw->pw_dir;
-    }
-#endif
     if (home != NULL)
     {
       filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_CFG)+1);
@@ -157,22 +145,10 @@ static FILE *file_options_load_aux(void)
     }
   }
 #endif
-#ifndef DJGPP
+#if !defined(DJGPP) && !defined(__FRAMAC__)
   {
     char *home;
     home = getenv("HOME");
-#if 0
-    /* Using 'getpwuid' in statically linked applications requires at
-       runtime the shared libraries from the glibc version used for linking
-    */
-    if (home == NULL) 
-    {
-      struct passwd *pw;
-      pw = getpwuid(getuid());
-      if (pw != NULL)
-	home = pw->pw_dir;
-    }
-#endif
     if (home != NULL)
     {
       FILE*handle;
@@ -232,6 +208,9 @@ int file_options_load(file_enable_t *files_enable)
   {
     const char *extension=&buffer[0];
     char *extension_status;
+#ifdef __FRAMAC__
+  Frama_C_make_unknown(buffer, sizeof(buffer)-1);
+#endif
     buffer[sizeof(buffer)-1]='\0';
     extension_status=strchr(buffer,',');
     if(extension_status!=NULL)

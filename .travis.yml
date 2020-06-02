@@ -6,10 +6,8 @@ addons:
     organization: "cgsecurity-github"
     token:
       secure: "HGnOsSSghmeMHCbigtEAgkV6oaJZ1xFUhvZun0oPOv7Y2XCpIPw376G5wTppgzZUZdcSsNcu63FAnWmZZDBH29mAd6K4tIw6MDqAe9UyLzWHMEMWrMQjqSMOaqetLCw4e1Zqa0kSYyZAdg4Fp7NrNjPLho1fVUJBCCrBtU1AxaPmMNkGpSZ1d9YK6rz58jNBnm7dKp0LSUFfcas88aXKuGhGYdttdPmD4/E6XQprFGMzBMk7XXV2guKgziAprhaIAF7QOs24FhAq6IKSu00JH5UAqtgeQ9+K7srv4lHeHz/N2SzLJldrei3+WNo72T8g10enJpcerZ/lS0Tl/J+5YPsC0TAXRqZmWlbSs7CR/N6CTMlckox8tUTeDyptIYhh50xZYwR+WB4ODW5vROz7EKXVfd7YHprnMZuGMw8eJaenTZ8wm/erms38rmZNsRKqoHWXxP4QwjOJumMFJVKyq1/5MkT18lA2Ajy57WcS6SjWGyRhdirV/IGbsFdS8A21PQ0ASDA7UjJrDYclmiEfy7G1OItMv739llM2z23mN/UnKO9ijPPfi3quCSEeozQiOLQpwsdmGUhAkPfBN6dAutqIrgXl/rFV3y2KNhDprWd0GBrtNhcTLWr3/5+0rrh8ntkF904QCBvR1XwOUH4z8nmGq35WXVs4Y2aafrRw1dM="
-    branches:
-      - master
-      - dev
 
+os: linux
 language: c
 compiler:
   - gcc

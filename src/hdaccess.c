@@ -22,6 +22,19 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_FSYNC
+#undef HAVE_GLOB_H
+#undef HAVE_LIBEWF
+#undef HAVE_LINUX_HDREG_H
+#undef HAVE_LINUX_TYPES_H
+#undef HAVE_PREAD
+#undef HAVE_PWRITE
+#undef HAVE_SYS_MOUNT_H
+#undef HAVE_SYS_PARAM_H
+#undef TARGET_LINUX
+#endif
  
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -38,7 +51,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "types.h"
-#ifdef HAVE_LINUX_TYPES_H
+#if defined(HAVE_LINUX_TYPES_H)
 #include <linux/types.h>
 #endif
 #include "common.h"
@@ -48,13 +61,13 @@
 #ifdef HAVE_SYS_DISKLABEL_H
 #include <sys/disklabel.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#if defined(HAVE_SYS_PARAM_H)
 #include <sys/param.h>
 #endif
-#ifdef HAVE_SYS_MOUNT_H
+#if defined(HAVE_SYS_MOUNT_H)
 #include <sys/mount.h>	/* BLKFLSBUF */
 #endif
-#ifdef HAVE_LINUX_HDREG_H
+#if defined(HAVE_LINUX_HDREG_H)
 #include <linux/hdreg.h>
 #endif
 #ifdef HAVE_SYS_DISK_H
@@ -103,6 +116,9 @@
 #endif
 #if defined(__HAIKU__)
 #include <Drivers.h>
+#endif
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
 #endif
 #include "fnctdsk.h"
 #include "ewf.h"
@@ -849,7 +865,9 @@ void update_disk_car_fields(disk_t *disk_car)
   {
     if(disk_car->geom.cylinders>0)
     {
+#ifndef __FRAMAC__
       log_warning("Fix disk size using CHS\n");
+#endif
       disk_car->disk_real_size=(uint64_t)disk_car->geom.cylinders * disk_car->geom.heads_per_cylinder *
 	disk_car->geom.sectors_per_head * disk_car->sector_size;
     }
@@ -862,8 +880,10 @@ void update_disk_car_fields(disk_t *disk_car)
       (uint64_t)disk_car->sector_size;
     if(cylinder_num>0 && disk_car->geom.cylinders != cylinder_num)
     {
+#ifndef __FRAMAC__
       log_debug("Fix cylinder count for %s: number of cylinders %lu != %lu (calculated)\n",
 	  disk_car->device, disk_car->geom.cylinders, cylinder_num);
+#endif
       disk_car->geom.cylinders = cylinder_num;
     }
   }
@@ -901,7 +921,7 @@ static char * read_device_sysfs_file (const disk_t *disk_car, const char *file)
  * information.  It uses the deprecated SCSI_IOCTL_SEND_COMMAND to
  * issue this query.
  */
-#ifdef TARGET_LINUX
+#if defined(TARGET_LINUX)
 #ifdef HAVE_SCSI_SCSI_H
 #include <scsi/scsi.h>
 #endif

@@ -36,6 +36,9 @@
 #endif
 #include <stdio.h>
 #include <ctype.h>
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
@@ -424,12 +427,16 @@ static void register_header_check_sig(file_stat_t *file_stat)
   handle=open_signature_file();
   if(!handle)
     return;
+#ifdef __FRAMAC__
+  buffer_size=1024*1024;
+#else
   if(fstat(fileno(handle), &stat_rec)<0 || stat_rec.st_size>100*1024*1024)
   {
     fclose(handle);
     return;
   }
   buffer_size=stat_rec.st_size;
+#endif
   buffer=(char *)MALLOC(buffer_size+1);
   if(fread(buffer,1,buffer_size,handle)!=buffer_size)
   {
@@ -438,6 +445,9 @@ static void register_header_check_sig(file_stat_t *file_stat)
     return;
   }
   fclose(handle);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, buffer_size);
+#endif
   buffer[buffer_size]='\0';
   pos=buffer;
   pos=parse_signature_file(file_stat, pos);

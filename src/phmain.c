@@ -28,6 +28,11 @@
 #undef SUDO_BIN
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_DUP2
+#undef HAVE_LIBEWF
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -335,7 +340,7 @@ int main( int argc, char **argv )
   if(log_handle!=NULL)
   {
     time_t my_time;
-#ifdef HAVE_DUP2
+#if defined(HAVE_DUP2)
     dup2(fileno(log_handle),2);
 #endif
     my_time=time(NULL);
@@ -351,8 +356,10 @@ int main( int argc, char **argv )
 #ifdef RECORD_COMPILATION_DATE
   log_info("Compilation date: %s\n", get_compilation_date());
 #endif
+#ifndef MAIN_photorec
   log_info("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s, curses lib: %s\n",
       td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version(), td_curses_version());
+#endif
 #if defined(HAVE_GETEUID) && !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(DJGPP)
   if(geteuid()!=0)
   {

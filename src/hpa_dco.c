@@ -22,7 +22,13 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
+#if defined(__FRAMAC__)
+#undef HAVE_LINUX_TYPES_H
+#undef HAVE_LINUX_HDREG_H
+#undef HAVE_SCSI_SG_H
+#endif
+
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -37,20 +43,20 @@
 #endif
 #include <stdio.h>
 #include "types.h"
-#ifdef HAVE_LINUX_TYPES_H
+#if defined(HAVE_LINUX_TYPES_H)
 #include <linux/types.h>
 #endif
 #include "common.h"
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
-#ifdef HAVE_LINUX_HDREG_H
+#if defined(HAVE_LINUX_HDREG_H)
 #include <linux/hdreg.h>
 #endif
 #ifdef HAVE_FNCTL_H
 #include <fnctl.h>
 #endif
-#ifdef HAVE_SCSI_SG_H
+#if defined(HAVE_SCSI_SG_H)
 #include <scsi/sg.h>
 #endif
 #include "log.h"

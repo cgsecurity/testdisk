@@ -28,6 +28,10 @@
 #undef SUDO_BIN
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -41,7 +45,7 @@
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
 #include "intrfn.h"
 #endif
 #include "dir.h"
@@ -60,7 +64,7 @@
 #include "chgarch.h"
 #include "chgarchn.h"
 
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
 #define NBR_DISK_MAX 		(LINES-6-8)
 #define INTER_DISK_X		0
 #define INTER_DISK_Y		(8+NBR_DISK_MAX)
@@ -70,7 +74,7 @@
 extern const arch_fnct_t arch_none;
 
 
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
 static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk, alloc_data_t *list_search_space)
 {
   int command;
@@ -273,12 +277,12 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     char *saved_cmd=NULL;
     session_load(&saved_device, &saved_cmd,&list_search_space);
     if(saved_device!=NULL && saved_cmd!=NULL && !td_list_empty(&list_search_space.list)
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
 	&& ( resume_session!=0 || ask_confirmation("Continue previous session ? (Y/N)")!=0)
 #endif
       )
     {
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
       {
 	WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
 	aff_copy(window);
@@ -305,7 +309,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
   if(params->cmd_device!=NULL && params->cmd_run!=NULL)
   {
     params->disk=photorec_disk_selection_cli(params->cmd_device, list_disk, &list_search_space);
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
     if(params->disk==NULL)
     {
       log_critical("No disk found\n");
@@ -328,7 +332,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     return 0;
 #endif
   }
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
   return photorec_disk_selection_ncurses(params, options, list_disk, &list_search_space);
 #else
   return 0;

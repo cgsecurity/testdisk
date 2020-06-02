@@ -22,6 +22,11 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__FRAMAC__)
+#undef HAVE_UTIME
+#endif
+
 #include "types.h"
 #ifdef HAVE_UTIME_H
 #include <utime.h>
@@ -49,12 +54,10 @@ int set_date(const char *pathname, time_t actime, time_t modtime)
     return -1;
   ut.actime  = actime;
   ut.modtime = modtime;
-#ifndef __FRAMAC__
   if (utime(pathname, &ut)) {
     log_error("ERROR: Couldn't set the file's date and time for %s\n", pathname);
     return -1;
   }
-#endif
 #endif
   return 0;
 }

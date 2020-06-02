@@ -230,9 +230,10 @@ void reset_file_recovery(file_recovery_t *file_recovery);
   @ requires \valid_function(header_check);
   @ requires \valid(file_stat);
   @*/
-void register_header_check(const unsigned int offset, const void *value, const unsigned int length, int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
+void register_header_check(const unsigned int offset, const void *value, const unsigned int length,
+    int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
-  file_stat_t *file_stat);
+    file_stat_t *file_stat);
 
 /*@
   @ requires \valid(files_enable);

@@ -24,6 +24,12 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__)
+#undef HAVE_STRPTIME
+#undef HAVE_SYS_UTSNAME_H
+#undef HAVE_UNAME
+#endif
+
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -172,7 +178,7 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.a
   }
 #elif defined(DJGPP)
   return "DOS";
-#elif defined(HAVE_SYS_UTSNAME_H) && defined(HAVE_UNAME) && !defined(__FRAMAC__)
+#elif defined(HAVE_SYS_UTSNAME_H) && defined(HAVE_UNAME)
   {
     struct utsname Ver;
     if(uname(&Ver)==0)
@@ -281,7 +287,7 @@ const char *get_compilation_date(void)
 {
   static char buffer[100] = {0x00};
 #ifdef __DATE__ 
-#if defined(HAVE_STRPTIME) && !defined(__FRAMAC__)
+#if defined(HAVE_STRPTIME)
   struct tm tm;
   memset(&tm,0,sizeof(tm));
   if(strptime(__DATE__, "%b %d %Y", &tm)!=NULL)
@@ -299,6 +305,7 @@ const char *get_compilation_date(void)
 #endif
 #endif
 #endif
+  /*@ assert valid_read_string(&buffer[0]); */
   return buffer;
 }
 #endif

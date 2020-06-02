@@ -42,6 +42,9 @@
 #include <stdlib.h>
 #endif
 #include <errno.h>
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 #include "types.h"
 #include "common.h"
 #include "intrf.h"
@@ -70,12 +73,17 @@ int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_
     session_save(NULL, NULL, NULL);
     return -1;
   }
-  if(fstat(fileno(f_session), &stat_rec)<0)
-    buffer_size=SESSION_MAXSIZE;
-  else
+#ifndef __FRAMAC__
+  if(fstat(fileno(f_session), &stat_rec)>=0)
     buffer_size=stat_rec.st_size;
+  else
+#endif
+    buffer_size=SESSION_MAXSIZE;
   buffer=(char *)MALLOC(buffer_size+1);
   taille=fread(buffer,1,buffer_size,f_session);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, buffer_size);
+#endif
   buffer[taille]='\0';
   fclose(f_session);
   pos=buffer;

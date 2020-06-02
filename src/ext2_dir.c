@@ -23,6 +23,10 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBEXT2FS
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -31,11 +35,13 @@
 #include <errno.h>
 #endif
 
+#if defined(HAVE_LIBEXT2FS)
 #ifdef HAVE_EXT2FS_EXT2_FS_H
 #include "ext2fs/ext2_fs.h"
 #endif
 #ifdef HAVE_EXT2FS_EXT2FS_H
 #include "ext2fs/ext2fs.h"
+#endif
 #endif
 
 #include "types.h"

@@ -23,6 +23,10 @@
 extern "C" {
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBEWF
+#endif
+
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
 disk_t *fewf_init(const char *device, const int testdisk_mode);
 #endif

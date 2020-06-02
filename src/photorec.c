@@ -24,6 +24,13 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_FTRUNCATE
+#undef HAVE_LIBEXT2FS
+#undef HAVE_LIBNTFS
+#undef HAVE_LIBNTFS3G
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -40,6 +47,9 @@
 #endif
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
 #endif
 #include "types.h"
 #include "common.h"
@@ -88,7 +98,7 @@ void del_search_space(alloc_data_t *list_search_space, const uint64_t start, con
 /*@
   @ requires \valid(list_search_space);
   @ requires new_current_search_space == \null || \valid(*new_current_search_space);
-  @ requires offset == \null || \valid(*offset);
+  @ requires offset == \null || \valid(offset);
   @*/
 static void update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
@@ -339,7 +349,7 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
   else if(partition->upart_type==UP_NTFS)
     return ntfs_remove_used_space(disk_car, partition, list_search_space);
 #endif
-#ifdef HAVE_LIBEXT2FS
+#if defined(HAVE_LIBEXT2FS)
   else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3 || partition->upart_type==UP_EXT4)
     return ext2_remove_used_space(disk_car, partition, list_search_space);
 #endif
@@ -558,7 +568,7 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     unlink(file_recovery->filename);
     return;
   }
-#ifdef HAVE_FTRUNCATE
+#if defined(HAVE_FTRUNCATE)
   fflush(file_recovery->handle);
   if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
   {

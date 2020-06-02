@@ -22,6 +22,10 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#ifdef __FRAMAC__
+#undef HAVE_CHMOD
+#endif
  
 #include <stdio.h>
 #ifdef HAVE_STRING_H

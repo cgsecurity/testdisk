@@ -26,6 +26,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBNTFS
+#undef HAVE_LIBNTFS3G
+#undef HAVE_SYS_PARAM_H
+#endif
  
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -43,7 +49,7 @@
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
+#if defined(HAVE_SYS_PARAM_H)
 #include <sys/param.h>
 #endif
 #ifdef HAVE_MACHINE_ENDIAN_H
@@ -56,14 +62,14 @@
 #include <stdarg.h>
 #include "types.h"
 
-#ifdef HAVE_LIBNTFS
+#if defined(HAVE_LIBNTFS)
 #include <ntfs/volume.h>
 #include <ntfs/attrib.h>
 #ifdef HAVE_NTFS_VERSION_H
 #include <ntfs/version.h>
 #endif
 #endif
-#ifdef HAVE_LIBNTFS3G
+#if defined(HAVE_LIBNTFS3G)
 #include <ntfs-3g/volume.h>
 #include <ntfs-3g/attrib.h>
 #endif

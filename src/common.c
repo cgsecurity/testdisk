@@ -24,6 +24,11 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#ifdef __FRAMAC__
+#undef HAVE_POSIX_MEMALIGN
+#undef HAVE_MEMALIGN
+#endif
  
 #include <stdio.h>
 #include <ctype.h>
@@ -51,8 +56,6 @@
 
 static int32_t secwest=0;
 
-static unsigned int up2power_aux(const unsigned int number);
-
 /* coverity[+alloc] */
 void *MALLOC(size_t size)
 {
@@ -61,7 +64,7 @@ void *MALLOC(size_t size)
   /* Warning, memory leak checker must be posix_memalign/memalign aware, otherwise  *
    * reports may look strange. Aligned memory is required if the buffer is *
    * used for read/write operation with a file opened with O_DIRECT        */
-#if defined(HAVE_POSIX_MEMALIGN) && !defined(__FRAMAC__)
+#if defined(HAVE_POSIX_MEMALIGN)
   if(size>=512)
   {
     if(posix_memalign(&res,4096,size)==0)
@@ -70,7 +73,7 @@ void *MALLOC(size_t size)
       return res;
     }
   }
-#elif defined(HAVE_MEMALIGN) && !defined(__FRAMAC__)
+#elif defined(HAVE_MEMALIGN)
   if(size>=512)
   {
     if((res=memalign(4096, size))!=NULL)
@@ -167,27 +170,29 @@ char * strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
-#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__)
+#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__) && !defined(__FRAMAC__)
 struct tm *localtime_r(const time_t *timep, struct tm *result)
 {
   return localtime(timep);
 }
 #endif
 
-unsigned int up2power(const unsigned int number)
-{
-  /* log_trace("up2power(%u)=>%u\n",number, (1<<up2power_aux(number-1))); */
-  if(number==0)
-    return 1;
-  return (1<<up2power_aux(number-1));
-}
-
+/*@
+  @ assigns \nothing;
+  @*/
 static unsigned int up2power_aux(const unsigned int number)
 {
   if(number==0)
 	return 0;
   else
 	return(1+up2power_aux(number/2));
+}
+
+unsigned int up2power(const unsigned int number)
+{
+  if(number==0)
+    return 1;
+  return (1<<up2power_aux(number-1));
 }
 
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size)
@@ -275,7 +280,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
-#if defined(__MINGW32__) || defined(__FRAMAC__)
+#if defined(__MINGW32__)
   const struct  tm *tmptr = localtime(&t);
 #else
   struct  tm tmp;
@@ -319,7 +324,10 @@ int check_command(char **current_cmd, const char *cmd, size_t n)
 {
   const int res=strncmp(*current_cmd, cmd, n);
   if(res==0)
+  {
     (*current_cmd)+=n;
+    return 0;
+  }
   return res;
 }
 

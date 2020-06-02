@@ -22,6 +22,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBEXT2FS
+#endif
+
+#if defined(HAVE_LIBEXT2FS)
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -48,7 +54,6 @@
 #include "log.h"
 #include "log_part.h"
 
-#ifdef HAVE_LIBEXT2FS
 unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space)
 {
   dir_data_t dir_data;

@@ -23,6 +23,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#ifdef __FRAMAC__
+#undef HAVE_FTELLO
+#undef HAVE_FSEEKO
+#endif
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -51,11 +57,10 @@ file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
-static unsigned int index_header_check(void);
-
 /*@
   @ requires \valid_read(a);
   @ requires \valid_read(b);
+  @ assigns \nothing;
   @*/
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
@@ -773,7 +778,7 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   }
 
   memcpy(&fr_test, file_recovery, sizeof(fr_test));
-#if defined(HAVE_FTELLO) && !defined(__FRAMAC__)
+#if defined(HAVE_FTELLO)
   if((offset=ftello(file_recovery->handle)) < 0)
     offset=ftell(file_recovery->handle);
 #else
@@ -858,7 +863,7 @@ void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **cur
 
 int my_fseek(FILE *stream, off_t offset, int whence)
 {
-#if defined(HAVE_FSEEKO) && !defined(__MINGW32__) && !defined(__ARM_EABI__) && !defined(__FRAMAC__)
+#if defined(HAVE_FSEEKO) && !defined(__MINGW32__) && !defined(__ARM_EABI__)
   {
     int res;
     if((res=fseeko(stream, offset, whence))>=0)

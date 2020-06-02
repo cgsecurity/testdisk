@@ -22,9 +22,13 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
- 
+
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 #include <stdio.h>
-#ifdef HAVE_NCURSES
+#if defined(HAVE_NCURSES)
 #include <stdarg.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -1173,12 +1177,9 @@ int end_ncurses(void)
   wrefresh(stdscr);
   nl();
   endwin();
-#if defined(DJGPP) || defined(__MINGW32__)
-#else
-#ifdef HAVE_DELSCREEN
+#if defined(HAVE_DELSCREEN) && !defined(DJGPP) && !defined(__MINGW32__)
   if(screenp!=NULL)
     delscreen(screenp);
-#endif
 #endif
   return 0;
 }

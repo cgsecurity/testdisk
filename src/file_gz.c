@@ -23,6 +23,11 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#ifdef __FRAMAC__
+#undef HAVE_LIBZ
+#endif
+
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -157,7 +162,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   }
   if(off >= 512 || off >= buffer_size)
     return 0;
-#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ) && !defined(__FRAMAC__)
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {
     static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,
       'S', 'c', 'h', 'e', 'm', 'a', 't', 'i', 'c'};
