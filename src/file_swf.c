@@ -192,11 +192,13 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
 static int header_check_swfz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct swfz_header *hdr=(const struct swfz_header *)buffer;
-  if(hdr->version < 11 || le32(hdr->compressedLen) < 6)
+  const unsigned int compressedLen=le32(hdr->compressedLen);
+  /* ZWS file compression is permitted in SWF 13 or later only. */
+  if(hdr->version < 13 || hdr->version > 50 || compressedLen < 6)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_swf.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)4+4+4+5+le32(hdr->compressedLen);
+  file_recovery_new->calculated_file_size=(uint64_t)4+4+4+5+compressedLen;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size_max;
   return 1;
