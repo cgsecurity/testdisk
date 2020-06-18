@@ -130,46 +130,54 @@ static unsigned int old_format_packet_length(const unsigned char *buf, unsigned 
 /*@ requires \valid_read(buf+(0..5));
   @ requires \valid(length_type);
   @ requires \valid(partial_body_length);
+  @ requires separation: \separated(buf+(0..5), length_type, partial_body_length);
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==5);
   @ ensures (*partial_body_length==0) || (*partial_body_length==1);
   @ assigns *length_type, *partial_body_length;
  */
 static unsigned int new_format_packet_length(const unsigned char *buf, unsigned int *length_type, int *partial_body_length)
 {
+  const unsigned char buf0=buf[0];
   *partial_body_length=0;
   /* One-Octet Body Length */
-  if(buf[0]<=191)
+  if(buf0<=191)
   {
     *length_type=1;
-    /*@ assert 0 <= buf[0] <= 191; */
-    return buf[0];
+    /*@ assert buf0 <= 191; */
+    return buf0;
   }
   /* Two-Octet Body Length */
-  if(buf[0]<=223)
+  if(buf0<=223)
   {
-    /*@ assert 192 <= buf[0] <= 223; */
-    unsigned int tmp=buf[0];
+    /*@ assert 192 <= buf0 <= 223; */
+    unsigned int tmp=buf0;
     /*@ assert 192 <= tmp <= 223; */
     tmp = ((tmp-192) << 8) + buf[1] + 192;
-    /*@ assert 192 <= tmp <= ((223-192) << 8) + 255 + 192; */
     *length_type=2;
+    /*@ assert 192 <= tmp <= ((223-192) << 8) + 255 + 192; */
     return tmp;
   }
+  /*@ assert 224 <= buf0; */
   /* Five-Octet Body Length */
-  if(buf[0]==255)
+  if(buf0==255)
   {
     const uint32_t *tmp32=(const uint32_t *)&buf[1];
     const unsigned int tmp=be32(*tmp32);
     *length_type=5;
+    /*@ assert tmp <= 0xffffffff; */
     return tmp;
   }
+  /*@ assert buf0 != 255; */
+  /*@ assert 224 <= buf0 <= 254; */
   {
-    /*@ assert 224 <= buf[0] <= 254; */
-    const unsigned int tmp=buf[0]&0x1fu;
+    const unsigned int tmp=buf0&0x1fu;
+    /*@ assert tmp <= 30; */
+    const unsigned int tmp2=1u << tmp;
     /* Partial Body Lengths */
     *length_type=1;
     *partial_body_length=1;
-    return 1u << tmp;
+    /*@ assert tmp2 <= (1<<30); */
+    return tmp2;
   }
 }
 
@@ -271,6 +279,29 @@ static int is_valid_S2K(const unsigned int algo)
 }
 
 /*@
+  @ requires \valid(handle);
+  @ requires offset + tmp2 < 0x8000000000000000;
+  @*/
+static unsigned int file_check_gpg_pubkey(FILE *handle, const uint64_t offset, const uint64_t tmp2)
+{
+  int len2;
+  uint16_t mpi2;
+  if(my_fseek(handle, offset+tmp2, SEEK_SET) < 0 ||
+      fread(&mpi2, sizeof(mpi2), 1, handle) != 1)
+    return 0;
+#ifdef __FRAMAC__
+  Frama_C_make_unknown((char *)&mpi2, sizeof(mpi2));
+#endif
+  len2=is_valid_mpi(mpi2);
+#ifdef DEBUG_GPG
+  log_info(" data: [ %u bits]\n", be16(mpi2));
+#endif
+  if(len2 < 0)
+    return 0;
+  return len2;
+}
+
+/*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
   @ requires file_recovery->file_check == &file_check_gpg;
@@ -291,12 +322,16 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     unsigned int length_type=0;
     unsigned int length;
     const int old_partial_body_length=partial_body_length;
-    if(nbr >=0xffffffff || offset + 6 >= 0x8000000000000000)
+    if(nbr >=0xffffffff || offset >= 0x7000000000000000)
       return;
-    /*@ assert offset < 0x8000000000000000 - 6; */
+    /*@ assert offset < 0x7000000000000000; */
     if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
 	fread(&buffer, sizeof(buffer), 1, file_recovery->handle) != 1)
+    {
+      if(nbr>=2 && offset <= org_file_size)
+	file_recovery->file_size=org_file_size;
       return;
+    }
 #ifdef __FRAMAC__
     Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
 #endif
@@ -338,49 +373,44 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     i+=length_type;
     /*@ assert 0 < i <= 6; */
     offset+=length_type;
-    /*@ assert offset < 0x8000000000000000; */
-    if(offset + length >= 0x8000000000000000)
+    if(offset >= 0x7000000000000000 || offset + length >= 0x7000000000000000)
       return ;
+    /*@ assert offset < 0x7000000000000000; */
+    /*@ assert offset + length < 0x7000000000000000; */
     if(old_partial_body_length==0)
     {
       if(tag==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY)
       {
 	const uint16_t *mpi_ptr=(const uint16_t *)&buffer[i+1+8+1];
 	const int len=is_valid_mpi(*mpi_ptr);
+	const int pubkey_algo=buffer[i+1+8];
 	/* uint8_t  version	must be 3
 	 * uint64_t pub_key_id
 	 * uint8_t  pub_key_algo
 	 *          encrypted_session_key	*/
-	if(buffer[i]==3 && is_valid_pubkey_algo(buffer[i+1+8]) &&
+	if(buffer[i]==3 && is_valid_pubkey_algo(pubkey_algo) &&
 	    len>0)
 	{
+	  /* assert 0 < len <=2048; */
+	  const unsigned int tmp2=1+8+1+2+len;
+	  /* assert 12 < tmp2 <=12+2048; */
 #ifdef DEBUG_GPG
 	  log_info("GPG :pubkey enc packet: version %u, algo %u, keyid %02X%02X%02X%02X%02X%02X%02X%02X\n",
-	      buffer[i], buffer[i+1+8],
+	      buffer[i], pubkey_algo,
 	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
-	  log_info(" data: [ %u bits]\n", be16(*mpi));
+	  log_info(" data: [ %u bits]\n", be16(*mpi_ptr));
 #endif
-	  if((unsigned)(1+8+1+2+len) > length)
+	  if(tmp2 > length)
 	    return ;
-	  if(buffer[i+1+8]==16 || buffer[i+1+8]==20)
+	  /*@ assert tmp2 <= length; */
+	  if(pubkey_algo==16 || pubkey_algo==20)
 	  {
-	    int len2;
-	    uint16_t mpi2;
-	    if(my_fseek(file_recovery->handle, offset+1+8+1+2+len, SEEK_SET) < 0 ||
-		fread(&mpi2, sizeof(mpi2), 1, file_recovery->handle) != 1)
-	      return;
-#ifdef __FRAMAC__
-	    Frama_C_make_unknown((char *)&mpi2, sizeof(mpi2));
-#endif
-	    len2=is_valid_mpi(mpi2);
-#ifdef DEBUG_GPG
-	    log_info(" data: [ %u bits]\n", be16(*mpi2));
-#endif
+	    const int len2=file_check_gpg_pubkey(file_recovery->handle, offset, tmp2);
 	    if(len2 <= 0)
-	      return ;
+	      return;
 	    if((unsigned)(1+8+1+2+len+2+len2) > length)
-	      return ;
+	      return;
 	  }
 	}
 	else
@@ -530,7 +560,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     /*@ assert 0 <= length_type <= 6; */
     tag=packet_tag[nbr];
 #ifdef DEBUG_GPG
-    log_info("GPG 0x%04x: %02u tag=%2u, size=%u + %u)\n",
+    log_info("GPG 0x%04lx: %02u tag=%2u, size=%u + %u)\n",
 	i, nbr, tag, length_type, length);
 #endif
 #if 0
@@ -561,7 +591,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	      buffer[i], buffer[i+1+8],
 	      buffer[i+1], buffer[i+2], buffer[i+3], buffer[i+4],
 	      buffer[i+5], buffer[i+6], buffer[i+7], buffer[i+8]);
-	  log_info(" data: [ %u bits]\n", be16(*mpi));
+	  log_info(" data: [ %u bits]\n", be16(*mpi_ptr));
 #endif
 	  if(offset_mpi +2 > length)
 	    return 0;
@@ -573,7 +603,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	    mpi_ptr=(const uint16_t *)&buffer[offset_mpi];
 	    len2=is_valid_mpi(*mpi_ptr);
 #ifdef DEBUG_GPG
-	    log_info(" data: [ %u bits]\n", be16(*mpi));
+	    log_info(" data: [ %u bits]\n", be16(*mpi_ptr));
 #endif
 	    if(len2 <= 0)
 	      return 0;
