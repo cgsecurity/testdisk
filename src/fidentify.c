@@ -92,9 +92,12 @@ static int file_identify(const char *filename, const unsigned int options)
     }
     if(fread(buffer, 1, READ_SIZE, file) >0)
     {
-      struct td_list_head *tmpl;
+      const struct td_list_head *tmpl;
       file_recovery_t file_recovery_new;
       file_recovery_t file_recovery;
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown((char *)buffer, READ_SIZE);
+#endif
       reset_file_recovery(&file_recovery);
       reset_file_recovery(&file_recovery_new);
       file_recovery.blocksize=blocksize;
@@ -102,13 +105,18 @@ static int file_identify(const char *filename, const unsigned int options)
       /*@ assert file_recovery_new.file_stat==NULL; */
       td_list_for_each(tmpl, &file_check_list.list)
       {
-	struct td_list_head *tmp;
+	const struct td_list_head *tmp;
 	const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
-	td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
+	const struct td_list_head *tmp_list=&pos->file_checks[buffer[pos->offset]].list;
+	td_list_for_each(tmp, tmp_list)
 	{
+	  /*TODO assert tmp!=tmp_list; */
 	  const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
-	  /*@ assert &file_check->header_check != \null; */
-	  if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
+	  if(
+#ifdef __FRAMAC__
+	    file_check->header_check!=NULL &&
+#endif
+	    (file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 	      file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
 	  {
 	    file_recovery_new.file_stat=file_check->file_stat;
