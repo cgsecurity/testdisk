@@ -83,8 +83,8 @@ struct zip_file_entry {
   uint16_t unused1:2;               /** Unused */
 
   uint16_t compression;             /** Compression method */
-  uint16_t last_mod_time;           /** Last moditication file time */
-  uint16_t last_mod_date;           /** Last moditication file date */
+  uint16_t last_mod_time;           /** Last modification file time */
+  uint16_t last_mod_date;           /** Last modification file date */
   uint32_t crc32;                   /** CRC32 */
   uint32_t compressed_size;         /** Compressed size */
   uint32_t uncompressed_size;       /** Uncompressed size */
@@ -989,7 +989,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 21);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 30);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
@@ -1005,6 +1005,10 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 #ifdef DEBUG_ZIP
   log_trace("header_check_zip\n");
 #endif
+  if(len==0 || len > 4096)
+    return 0;
+  if(le16(file->version) < 10)
+    return 0;
 #ifndef MAIN_zip
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
@@ -1023,7 +1027,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
       return 0;
   }
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->min_filesize=21;
+  file_recovery_new->min_filesize=30;	/* 4+sizeof(file) == 30 */
   file_recovery_new->file_check=&file_check_zip;
   if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
   {
@@ -1148,7 +1152,6 @@ int main()
 {
   const char fn[] = "recup_dir.1/f0000000.zip";
   unsigned char buffer[BLOCKSIZE];
-  int res;
   file_recovery_t file_recovery_new;
   file_recovery_t file_recovery;
   file_stat_t file_stats;
@@ -1181,7 +1184,7 @@ int main()
   memcpy(file_recovery_new.filename, fn, sizeof(fn));
   file_recovery_new.file_stat=&file_stats;
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
-  /*@ assert file_recovery_new.min_filesize == 21;	*/
+  /*@ assert file_recovery_new.min_filesize == 30;	*/
   /*@ assert file_recovery_new.file_check == &file_check_zip || file_recovery_new.file_check == \null; */
   /*@ assert file_recovery_new.file_stat->file_hint!=NULL; */
   {
