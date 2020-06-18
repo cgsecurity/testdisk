@@ -123,7 +123,7 @@ void free_header_check(void);
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
-  @ ensures \valid(file_recovery->handle);
+  @ ensures file_recovery->handle == \old(file_recovery->handle);
   @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
