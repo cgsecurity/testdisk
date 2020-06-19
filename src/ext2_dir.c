@@ -96,7 +96,6 @@ static struct struct_io_manager my_struct_manager = {
 	.write_blk64=&my_write_blk64,
 #endif
 };
-static int ext2_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
 
 static io_channel shared_ioch=NULL;
 /*

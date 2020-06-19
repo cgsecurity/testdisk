@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 int search_type_0(const unsigned char *buffer, disk_t *disk_car,partition_t *partition,const int verbose, const int dump_ind);
-int search_type_1(const unsigned char *buffer, disk_t *disk_car,partition_t *partition,const int verbose, const int dump_ind);
+int search_type_1(const unsigned char *buffer, const disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind);
 int search_type_2(const unsigned char *buffer, disk_t *disk_car,partition_t *partition,const int verbose, const int dump_ind);
 int search_type_8(unsigned char *buffer, disk_t *disk_car,partition_t *partition,const int verbose, const int dump_ind);
 int search_type_16(unsigned char *buffer, disk_t *disk_car,partition_t *partition,const int verbose, const int dump_ind);

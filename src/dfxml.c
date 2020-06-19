@@ -263,7 +263,7 @@ void xml_add_DFXML_creator(const char *package, const char *version)
   xml_pop("creator");
 }
 
-void xml_setup(disk_t *disk, const partition_t *partition)
+void xml_setup(const disk_t *disk, const partition_t *partition)
 {
   if(xml_handle==NULL)
     return;

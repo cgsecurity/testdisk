@@ -1593,7 +1593,7 @@ static void ntfs_undelete_menu_ncurses(const disk_t *disk_car, const partition_t
 }
 #endif
 
-static void ntfs_undelete_cli(dir_data_t *dir_data, file_info_t *dir_list)
+static void ntfs_undelete_cli(dir_data_t *dir_data, const file_info_t *dir_list)
 {
   unsigned int file_ok=0;
   unsigned int file_bad=0;
@@ -1617,7 +1617,7 @@ static void ntfs_undelete_cli(dir_data_t *dir_data, file_info_t *dir_list)
   opts.dest=NULL;
 }
 
-static void ntfs_undelete_menu(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list, char**current_cmd)
+static void ntfs_undelete_menu(const disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list, char**current_cmd)
 {
   log_list_file(disk_car, partition, dir_data, dir_list);
   if(*current_cmd!=NULL)

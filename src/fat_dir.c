@@ -57,7 +57,6 @@ struct fat_dir_struct
 
 
 static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header, file_info_t *dir_list);
-static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list);
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
 static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_fat_close(dir_data_t *dir_data);

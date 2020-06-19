@@ -220,7 +220,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   return 0;
 }
 
-int search_type_1(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
+int search_type_1(const unsigned char *buffer, const disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
   const struct disklabel *bsd_header=(const struct disklabel *)(buffer+0x200);
   const struct disk_super_block *beos_block=(const struct disk_super_block*)(buffer+0x200);

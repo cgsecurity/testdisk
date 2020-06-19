@@ -70,7 +70,7 @@ static int test_HPFS(const disk_t *disk_car, const struct fat_boot_sector *hpfs_
   return 1;
 }
 
-int recover_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, partition_t *partition, const int verbose)
+int recover_HPFS(const disk_t *disk_car, const struct fat_boot_sector *hpfs_header, partition_t *partition, const int verbose)
 {
   if(test_HPFS(disk_car, hpfs_header, partition, verbose,0)!=0)
     return 1;

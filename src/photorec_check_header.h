@@ -92,7 +92,7 @@ static pstatus_t photorec_new_file(file_recovery_t *file_recovery, struct ph_par
   return PSTATUS_OK;
 }
 
-static pstatus_t photorec_header_found(file_recovery_t *file_recovery_new, file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
+static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new, file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
 {
   *file_recovered=PFSTATUS_BAD;
   if(file_recovery_new->file_stat==NULL || file_recovery_new->file_stat->file_hint==NULL)

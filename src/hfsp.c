@@ -76,7 +76,7 @@ int check_HFSP(disk_t *disk_car,partition_t *partition,const int verbose)
   return 0;
 }
 
-int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh,partition_t *partition,const int verbose, const int dump_ind, const int backup)
+int recover_HFSP(disk_t *disk_car, const struct hfsp_vh *vh, partition_t *partition, const int verbose, const int dump_ind, const int backup)
 {
   uint64_t part_size;
   if(test_HFSP(disk_car,vh,partition,verbose,dump_ind)!=0)
