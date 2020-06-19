@@ -79,12 +79,43 @@ extern const arch_fnct_t arch_xbox;
 
 #define DEFAULT_IMAGE_NAME "image.dd"
 
-static int is_exfat(const partition_t *partition);
-static int is_hfs(const partition_t *partition);
-static int is_hfsp(const partition_t *partition);
-static int is_linux(const partition_t *partition);
-static int is_part_hfs(const partition_t *partition);
-static int is_part_hfsp(const partition_t *partition);
+static int is_part_hfs(const partition_t *partition)
+{
+  if( partition->part_type_i386 == P_HFS ||
+      partition->part_type_mac  == PMAC_HFS)
+    return 1;
+  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
+    return 1;
+  return 0;
+}
+
+static int is_part_hfsp(const partition_t *partition)
+{
+  if( partition->part_type_i386 == P_HFSP ||
+      partition->part_type_mac  == PMAC_HFS )
+      return 1;
+  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
+    return 1;
+  return 0;
+}
+
+int is_part_linux(const partition_t *partition)
+{
+  if(partition->arch==&arch_i386 && partition->part_type_i386==P_LINUX)
+      return 1;
+  if(partition->arch==&arch_sun  && partition->part_type_sun==PSUN_LINUX)
+      return 1;
+  if(partition->arch==&arch_mac  && partition->part_type_mac==PMAC_LINUX)
+      return 1;
+  if(partition->arch==&arch_gpt &&
+      (
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0 ||
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_HOME)==0 ||
+       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_SRV)==0
+      ))
+      return 1;
+  return 0;
+}
 
 static int is_exfat(const partition_t *partition)
 {
@@ -128,46 +159,8 @@ static int is_linux(const partition_t *partition)
   return 0;
 }
 
-static int is_part_hfs(const partition_t *partition)
-{
-  if( partition->part_type_i386 == P_HFS ||
-      partition->part_type_mac  == PMAC_HFS)
-    return 1;
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
-    return 1;
-  return 0;
-}
-
-static int is_part_hfsp(const partition_t *partition)
-{
-  if( partition->part_type_i386 == P_HFSP ||
-      partition->part_type_mac  == PMAC_HFS )
-      return 1;
-  if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MAC_HFS)==0)
-    return 1;
-  return 0;
-}
-
-int is_part_linux(const partition_t *partition)
-{
-  if(partition->arch==&arch_i386 && partition->part_type_i386==P_LINUX)
-      return 1;
-  if(partition->arch==&arch_sun  && partition->part_type_sun==PSUN_LINUX)
-      return 1;
-  if(partition->arch==&arch_mac  && partition->part_type_mac==PMAC_LINUX)
-      return 1;
-  if(partition->arch==&arch_gpt &&
-      (
-       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_DATA)==0 ||
-       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_HOME)==0 ||
-       guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_LINUX_SRV)==0
-      ))
-      return 1;
-  return 0;
-}
-
 #ifdef HAVE_NCURSES
-static void interface_adv_ncurses(disk_t *disk, const int rewrite, list_part_t *list_part, list_part_t *current_element, const int offset)
+static void interface_adv_ncurses(disk_t *disk, const int rewrite, list_part_t *list_part, const list_part_t *current_element, const int offset)
 {
   list_part_t *element;
   int i;
@@ -369,7 +362,7 @@ static int adv_menu_boot_selected(disk_t *disk, partition_t *partition, const in
   return 0;
 }
 
-static void adv_menu_image_selected(disk_t *disk, partition_t *partition, char **current_cmd)
+static void adv_menu_image_selected(disk_t *disk, const partition_t *partition, char **current_cmd)
 {
   char *dst_path;
 #ifdef HAVE_NCURSES
@@ -398,7 +391,7 @@ static void adv_menu_image_selected(disk_t *disk, partition_t *partition, char *
   }
 }
 
-static void adv_menu_undelete_selected(disk_t *disk, partition_t *partition, const int verbose, char **current_cmd)
+static void adv_menu_undelete_selected(disk_t *disk, const partition_t *partition, const int verbose, char **current_cmd)
 {
   if(partition->sb_offset!=0 && partition->sb_size>0)
   {
@@ -424,7 +417,7 @@ static void adv_menu_undelete_selected(disk_t *disk, partition_t *partition, con
   }
 }
 
-static void adv_menu_list_selected(disk_t *disk, partition_t *partition, const int verbose, const int expert, char **current_cmd)
+static void adv_menu_list_selected(disk_t *disk, const partition_t *partition, const int verbose, const int expert, char **current_cmd)
 {
   if(partition->sb_offset!=0 && partition->sb_size>0)
   {

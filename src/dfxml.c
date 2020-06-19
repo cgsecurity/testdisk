@@ -317,7 +317,7 @@ static const char *relative_name(const char *fname)
 /* See filegen.h for the definition of file_recovery_struct */
 void xml_log_file_recovered(const file_recovery_t *file_recovery)
 {
-  struct td_list_head *tmp;
+  const struct td_list_head *tmp;
   uint64_t file_size=0;
   if(xml_handle==NULL)
     return;

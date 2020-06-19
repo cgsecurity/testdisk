@@ -91,7 +91,7 @@ typedef struct {
 
 #define pv_disk_t pv_disk_v2_t
 int check_LVM(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_LVM(disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
+int recover_LVM(const disk_t *disk_car, const pv_disk_t *pv,partition_t *partition,const int verbose, const int dump_ind);
 
 #define LVM2_LABEL	"LVM2 001"
 #define LABEL_ID 	"LABELONE"
@@ -119,7 +119,7 @@ struct lvm2_pv_header {
 } __attribute__ ((packed));
 
 int check_LVM2(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_LVM2(disk_t *disk_car, const unsigned char *buf,partition_t *partition,const int verbose, const int dump_ind);
+int recover_LVM2(const disk_t *disk_car, const unsigned char *buf,partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

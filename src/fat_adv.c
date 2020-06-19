@@ -173,7 +173,7 @@ static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_off
 #ifdef HAVE_NCURSES
 #define INTER_DIR 16
 
-static int ask_root_directory(disk_t *disk_car, const partition_t *partition, const file_info_t*dir_list, const unsigned long int cluster)
+static int ask_root_directory(const disk_t *disk_car, const partition_t *partition, const file_info_t*dir_list, const unsigned long int cluster)
 {
   /* Return value
    * -1: quit

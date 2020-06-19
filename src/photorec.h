@@ -64,7 +64,7 @@ struct ph_param
   uint64_t offset;
 };
 
-int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
+int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset);
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space);
 void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *params, alloc_data_t *list_search_space);
@@ -74,7 +74,7 @@ void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset);
 void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
-void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space);
+void forget(const alloc_data_t *list_search_space, alloc_data_t *current_search_space);
 void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition);
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space);
 void free_list_search_space(alloc_data_t *list_search_space);

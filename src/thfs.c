@@ -94,7 +94,7 @@ static int HFS_HFSP_boot_sector_command(char **current_cmd, const char *options)
   return 0;
 }
 
-static const char *HFS_HFSP_boot_sector_rescan(disk_t *disk_car, partition_t *partition,  unsigned char *buffer_bs, unsigned char *buffer_backup_bs, const int verbose)
+static const char *HFS_HFSP_boot_sector_rescan(disk_t *disk_car, const partition_t *partition,  unsigned char *buffer_bs, unsigned char *buffer_backup_bs, const int verbose)
 {
   int opt_B=0;
   int opt_O=0;

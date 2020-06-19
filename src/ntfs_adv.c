@@ -42,11 +42,6 @@
 #include "log.h"
 #include "log_part.h"
 
-#define INTER_NTFS_X 0
-#define INTER_NTFS_Y 23
-#define INTER_NTFSBS_X		0
-#define INTER_NTFSBS_Y		22
-
 #define MAX_INFO_MFT 10
 #define NTFS_SECTOR_SIZE 0x200
 
@@ -58,14 +53,42 @@ struct s_info_mft
   uint64_t mftmirr_lcn;
 };
 
-#ifdef HAVE_NCURSES
-static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2);
-static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header);
-#endif
 static int testdisk_ffs(int x);
-static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_t mft_sector, const int verbose, unsigned int *sectors_per_cluster, uint64_t *mft_lcn, uint64_t *mftmirr_lcn, unsigned int *mft_record_size);
 
 #ifdef HAVE_NCURSES
+#define INTER_NTFS_X 0
+#define INTER_NTFS_Y 23
+#define INTER_NTFSBS_X		0
+#define INTER_NTFSBS_Y		22
+
+static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header)
+{
+  wprintw(stdscr,"filesystem size           %llu\n", (long long unsigned)(le64(ntfs_header->sectors_nbr)+1));
+  wprintw(stdscr,"sectors_per_cluster       %u\n",ntfs_header->sectors_per_cluster);
+  wprintw(stdscr,"mft_lcn                   %lu\n",(long unsigned int)le64(ntfs_header->mft_lcn));
+  wprintw(stdscr,"mftmirr_lcn               %lu\n",(long unsigned int)le64(ntfs_header->mftmirr_lcn));
+  wprintw(stdscr,"clusters_per_mft_record   %d\n",ntfs_header->clusters_per_mft_record);
+  wprintw(stdscr,"clusters_per_index_record %d\n",ntfs_header->clusters_per_index_record);
+  return 0;
+}
+
+static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2)
+{
+  wprintw(stdscr,"filesystem size           %llu %llu\n",
+      (long long unsigned)(le64(nh1->sectors_nbr)+1),
+      (long long unsigned)(le64(nh2->sectors_nbr)+1));
+  wprintw(stdscr,"sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
+  wprintw(stdscr,"mft_lcn                   %lu %lu\n",
+      (long unsigned int)le64(nh1->mft_lcn),
+      (long unsigned int)le64(nh2->mft_lcn));
+  wprintw(stdscr,"mftmirr_lcn               %lu %lu\n",
+      (long unsigned int)le64(nh1->mftmirr_lcn),
+      (long unsigned int)le64(nh2->mftmirr_lcn));
+  wprintw(stdscr,"clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
+  wprintw(stdscr,"clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
+  return 0;
+}
+
 static void ntfs_dump_ncurses(disk_t *disk_car, const partition_t *partition, const unsigned char *orgboot, const unsigned char *newboot)
 {
   WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
@@ -114,7 +137,7 @@ static void ntfs_write_boot_sector(disk_t *disk, partition_t *partition, const u
   disk->sync(disk);
 }
 
-static void ntfs_list(disk_t *disk, partition_t *partition, const unsigned char *newboot, char **current_cmd, const int expert)
+static void ntfs_list(disk_t *disk, const partition_t *partition, const unsigned char *newboot, char **current_cmd, const int expert)
 {
   io_redir_add_redir(disk,partition->part_offset,NTFS_SECTOR_SIZE,0,newboot);
   dir_partition(disk, partition, 0, expert, current_cmd);
@@ -308,7 +331,7 @@ static void create_ntfs_boot_sector(disk_t *disk_car, partition_t *partition, co
 #endif
 }
 
-static int read_mft_info(disk_t *disk_car, partition_t *partition, const uint64_t mft_sector, const int verbose, unsigned int *sectors_per_cluster, uint64_t *mft_lcn, uint64_t *mftmirr_lcn, unsigned int *mft_record_size)
+static int read_mft_info(disk_t *disk_car, const partition_t *partition, const uint64_t mft_sector, const int verbose, unsigned int *sectors_per_cluster, uint64_t *mft_lcn, uint64_t *mftmirr_lcn, unsigned int *mft_record_size)
 {
   char buffer[8*DEFAULT_SECTOR_SIZE];
   const struct ntfs_mft_record *record=(const struct ntfs_mft_record *)buffer;
@@ -667,36 +690,6 @@ static int testdisk_ffs(int x)
   return r;
 }
 
-#ifdef HAVE_NCURSES
-static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header)
-{
-  wprintw(stdscr,"filesystem size           %llu\n", (long long unsigned)(le64(ntfs_header->sectors_nbr)+1));
-  wprintw(stdscr,"sectors_per_cluster       %u\n",ntfs_header->sectors_per_cluster);
-  wprintw(stdscr,"mft_lcn                   %lu\n",(long unsigned int)le64(ntfs_header->mft_lcn));
-  wprintw(stdscr,"mftmirr_lcn               %lu\n",(long unsigned int)le64(ntfs_header->mftmirr_lcn));
-  wprintw(stdscr,"clusters_per_mft_record   %d\n",ntfs_header->clusters_per_mft_record);
-  wprintw(stdscr,"clusters_per_index_record %d\n",ntfs_header->clusters_per_index_record);
-  return 0;
-}
-
-static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2)
-{
-  wprintw(stdscr,"filesystem size           %llu %llu\n",
-      (long long unsigned)(le64(nh1->sectors_nbr)+1),
-      (long long unsigned)(le64(nh2->sectors_nbr)+1));
-  wprintw(stdscr,"sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
-  wprintw(stdscr,"mft_lcn                   %lu %lu\n",
-      (long unsigned int)le64(nh1->mft_lcn),
-      (long unsigned int)le64(nh2->mft_lcn));
-  wprintw(stdscr,"mftmirr_lcn               %lu %lu\n",
-      (long unsigned int)le64(nh1->mftmirr_lcn),
-      (long unsigned int)le64(nh2->mftmirr_lcn));
-  wprintw(stdscr,"clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
-  wprintw(stdscr,"clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
-  return 0;
-}
-#endif
-
 int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_sector *nh2)
 {
   log_info("filesystem size           %llu %llu\n",
@@ -709,5 +702,3 @@ int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_se
   log_info("clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
   return 0;
 }
-
-

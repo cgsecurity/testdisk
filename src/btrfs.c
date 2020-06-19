@@ -74,7 +74,7 @@ int check_btrfs(disk_t *disk_car,partition_t *partition)
 Primary superblock is at 1024 (SUPERBLOCK_OFFSET)
 Group 0 begin at s_first_data_block
 */
-int recover_btrfs(disk_t *disk, const struct btrfs_super_block *sb, partition_t *partition, const int verbose, const int dump_ind)
+int recover_btrfs(const disk_t *disk, const struct btrfs_super_block *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   if(test_btrfs(sb)!=0)
     return 1;

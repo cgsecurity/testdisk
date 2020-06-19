@@ -38,7 +38,7 @@ struct vdev_boot_header {
         char            vb_pad[VDEV_BOOT_HEADER_SIZE - 4 * sizeof (uint64_t)];
 };
 int check_ZFS(disk_t *disk,partition_t *partition);
-int recover_ZFS(disk_t *disk, const struct vdev_boot_header *ZFS_header,partition_t *partition,const int verbose, const int dump_ind);
+int recover_ZFS(const disk_t *disk, const struct vdev_boot_header *ZFS_header,partition_t *partition,const int verbose, const int dump_ind);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

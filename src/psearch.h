@@ -24,7 +24,7 @@ static inline alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t off
   }
 }
 
-static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
+static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
   dst->location.list.prev=&dst->location.list;

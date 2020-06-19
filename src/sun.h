@@ -77,7 +77,7 @@ typedef struct struct_sun_partition_i386 sun_partition_i386;
 #define SUN_LABEL_MAGIC         0xDABE
 #define SUN_LABEL_MAGIC_START	0x600DDEEE
 
-int recover_sun_i386(disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition,const int verbose, const int dump_ind);
+int recover_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, partition_t *partition,const int verbose, const int dump_ind);
 int check_sun_i386(disk_t *disk_car,partition_t *partition,const int verbose);
 
 #ifdef __cplusplus

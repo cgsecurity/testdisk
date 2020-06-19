@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-list_part_t *add_partition_humax_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
+list_part_t *add_partition_humax_cli(const disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -35,7 +35,21 @@
 #include "log.h"
 #include "wbfs.h"
 
-static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, const partition_t *partition, const int dump_ind);
+static int test_WBFS(const disk_t *disk, const struct wbfs_head *sb, const partition_t *partition, const int dump_ind)
+{
+  if(be32(sb->magic)!=WBFS_MAGIC)
+    return 1;
+  if(dump_ind!=0)
+  {
+    if(partition!=NULL && disk!=NULL)
+      log_info("\nWBFS magic value at %u/%u/%u\n",
+          offset2cylinder(disk,partition->part_offset),
+          offset2head(disk,partition->part_offset),
+          offset2sector(disk,partition->part_offset));
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
+  return 0;
+}
 
 static void set_WBFS_info(partition_t *partition)
 {
@@ -61,7 +75,7 @@ int check_WBFS(disk_t *disk,partition_t *partition)
   return 0;
 }
 
-int recover_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int verbose, const int dump_ind)
+int recover_WBFS(const disk_t *disk, const struct wbfs_head *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   if(test_WBFS(disk, sb, partition, dump_ind)!=0)
     return 1;
@@ -76,22 +90,6 @@ int recover_WBFS(disk_t *disk, const struct wbfs_head *sb, partition_t *partitio
   if(verbose>0)
   {
     log_info("\n");
-  }
-  return 0;
-}
-
-static int test_WBFS(disk_t *disk, const struct wbfs_head *sb, const partition_t *partition, const int dump_ind)
-{
-  if(be32(sb->magic)!=WBFS_MAGIC)
-    return 1;
-  if(dump_ind!=0)
-  {
-    if(partition!=NULL && disk!=NULL)
-      log_info("\nWBFS magic value at %u/%u/%u\n",
-          offset2cylinder(disk,partition->part_offset),
-          offset2head(disk,partition->part_offset),
-          offset2sector(disk,partition->part_offset));
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
   return 0;
 }

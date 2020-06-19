@@ -471,7 +471,7 @@ struct ufs_super_block {
 
 
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind);
+int recover_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

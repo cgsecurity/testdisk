@@ -1264,7 +1264,7 @@ static void OLE_parse_summary_aux(const unsigned char *dataPt, const unsigned in
   @ requires 48 <= len <= 1024*1024;
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. len-1));
   @*/
-static void *OLE_read_ministream(unsigned char *ministream,
+static void *OLE_read_ministream(const unsigned char *ministream,
     const uint32_t *minifat, const unsigned int minifat_entries, const unsigned int uMiniSectorShift,
     const unsigned int miniblock_start, const unsigned int len, const unsigned int ministream_size)
 {

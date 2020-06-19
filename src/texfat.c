@@ -93,7 +93,7 @@ static int exFAT_boot_sector_command(char **current_cmd, const char *options)
   return 0;
 }
 
-static const char *exFAT_boot_sector_rescan(disk_t *disk, partition_t *partition, unsigned char *buffer_bs, unsigned char *buffer_backup_bs)
+static const char *exFAT_boot_sector_rescan(disk_t *disk, const partition_t *partition, unsigned char *buffer_bs, unsigned char *buffer_backup_bs)
 {
   const int size_bs=12 * disk->sector_size;
   int opt_B=0;

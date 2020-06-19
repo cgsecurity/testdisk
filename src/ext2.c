@@ -109,7 +109,7 @@ static void set_EXT2_info(const struct ext2_super_block *sb, partition_t *partit
 Primary superblock is at 1024 (SUPERBLOCK_OFFSET)
 Group 0 begin at s_first_data_block
 */
-int recover_EXT2(disk_t *disk, const struct ext2_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+int recover_EXT2(const disk_t *disk, const struct ext2_super_block *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   if(test_EXT2(sb, partition)!=0)
     return 1;

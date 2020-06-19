@@ -130,7 +130,7 @@ static int test_rfs4(const disk_t *disk_car, const struct reiser4_master_sb *sb,
   return 0;
 }
 
-int recover_rfs(disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
+int recover_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
   const struct reiser4_master_sb *sb4=(const struct reiser4_master_sb *)sb;
   if(test_rfs(disk_car, sb, partition, verbose)==0)

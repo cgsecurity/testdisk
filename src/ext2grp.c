@@ -36,7 +36,7 @@
 #include "log.h"
 #include "photorec.h"
 
-unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition)
+unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition)
 {
   struct td_list_head *search_walker = NULL;
   unsigned char *buffer;
@@ -73,7 +73,7 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, parti
   return blocksize;
 }
 
-unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition)
+unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition)
 {
   struct td_list_head *search_walker = NULL;
   unsigned char *buffer;

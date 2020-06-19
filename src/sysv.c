@@ -91,7 +91,7 @@ static int test_sysv4(const disk_t *disk_car, const struct sysv4_super_block *sb
   return 0;
 }
 
-int recover_sysv(disk_t *disk_car,  const struct sysv4_super_block *sbd, partition_t *partition,const int verbose, const int dump_ind)
+int recover_sysv(const disk_t *disk_car,  const struct sysv4_super_block *sbd, partition_t *partition,const int verbose, const int dump_ind)
 {
   if(test_sysv4(disk_car, sbd,partition, verbose)!=0)
     return 1;

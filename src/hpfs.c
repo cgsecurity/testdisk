@@ -46,7 +46,7 @@ static void set_HPFS_info(partition_t *partition)
   partition->upart_type=UP_HPFS;
 }
 
-static int test_HPFS(disk_t *disk_car, const struct fat_boot_sector *hpfs_header, const partition_t *partition, const int verbose, const int dump_ind)
+static int test_HPFS(const disk_t *disk_car, const struct fat_boot_sector *hpfs_header, const partition_t *partition, const int verbose, const int dump_ind)
 {
   const char*buffer=(const char*)hpfs_header;
   if(le16(hpfs_header->marker)==0xAA55)

@@ -37,8 +37,42 @@
 #include "log.h"
 #include "guid_cpy.h"
 
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, const partition_t *partition, const int dump_ind);
-static void set_JFS_info(const struct jfs_superblock *sb, partition_t *partition);
+static void set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
+{
+  partition->upart_type=UP_JFS;
+  partition->blocksize=le32(sb->s_bsize);
+  snprintf(partition->info, sizeof(partition->info), "JFS %u, blocksize=%u",
+      (unsigned int)le32(sb->s_version), partition->blocksize);
+  partition->fsname[0]='\0';
+  if(le32(sb->s_version)==1)
+  {
+    set_part_name(partition,sb->s_fpack,11);
+  }
+}
+
+static int test_JFS(const disk_t *disk_car, const struct jfs_superblock *sb, const partition_t *partition, const int dump_ind)
+{
+  if(memcmp(sb->s_magic,"JFS1",4)!=0)
+    return 1;
+  /* Blocksize must be a multiple of 512 */
+  if(le32(sb->s_bsize)<512 ||
+      ((le32(sb->s_bsize)-1) & le32(sb->s_bsize))!=0)
+    return 1;
+  if(dump_ind!=0)
+  {
+    log_info("\nJFS magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
+    /* There is a little offset ... */
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
+  /*
+  if( le32(sb->s_agsize) >= (1 << L2BPERDMAP) ) {
+    return 2;
+  }
+  if(partition->part_size!=0 && (partition->part_size<le64(sb->s_size)))
+    return 8;
+    */
+  return 0;
+}
 
 int check_JFS(disk_t *disk_car, partition_t *partition)
 {
@@ -58,23 +92,10 @@ int check_JFS(disk_t *disk_car, partition_t *partition)
   return 0;
 }
 
-static void set_JFS_info(const struct jfs_superblock *sb, partition_t *partition)
-{
-  partition->upart_type=UP_JFS;
-  partition->blocksize=le32(sb->s_bsize);
-  snprintf(partition->info, sizeof(partition->info), "JFS %u, blocksize=%u",
-      (unsigned int)le32(sb->s_version), partition->blocksize);
-  partition->fsname[0]='\0';
-  if(le32(sb->s_version)==1)
-  {
-    set_part_name(partition,sb->s_fpack,11);
-  }
-}
-
 /*
 Primary superblock is at 0x8000
 */
-int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
+int recover_JFS(const disk_t *disk_car, const struct jfs_superblock *sb,partition_t *partition,const int verbose, const int dump_ind)
 {
   if(test_JFS(disk_car, sb, partition, dump_ind)!=0)
     return 1;
@@ -98,29 +119,5 @@ int recover_JFS(disk_t *disk_car, const struct jfs_superblock *sb,partition_t *p
     log_info("recover_JFS: s_logpxd.len:%d\n", (int)le24(sb->s_logpxd.len));
     log_info("recover_JFS: part_size %lu\n",(long unsigned)(partition->part_size/disk_car->sector_size));
   }
-  return 0;
-}
-
-static int test_JFS(disk_t *disk_car, const struct jfs_superblock *sb, const partition_t *partition, const int dump_ind)
-{
-  if(memcmp(sb->s_magic,"JFS1",4)!=0)
-    return 1;
-  /* Blocksize must be a multiple of 512 */
-  if(le32(sb->s_bsize)<512 ||
-      ((le32(sb->s_bsize)-1) & le32(sb->s_bsize))!=0)
-    return 1;
-  if(dump_ind!=0)
-  {
-    log_info("\nJFS magic value at %u/%u/%u\n", offset2cylinder(disk_car,partition->part_offset),offset2head(disk_car,partition->part_offset),offset2sector(disk_car,partition->part_offset));
-    /* There is a little offset ... */
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
-  }
-  /*
-  if( le32(sb->s_agsize) >= (1 << L2BPERDMAP) ) {
-    return 2;
-  }
-  if(partition->part_size!=0 && (partition->part_size<le64(sb->s_size)))
-    return 8;
-    */
   return 0;
 }

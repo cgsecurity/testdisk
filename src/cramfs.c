@@ -76,7 +76,7 @@ static int test_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, co
   return 0;
 }
 
-int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind)
+int recover_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   if(test_cramfs(disk_car, sb, partition, verbose)!=0)
     return 1;

@@ -83,7 +83,7 @@ typedef enum { BF_OK=0, BF_STOP=1, BF_EACCES=2, BF_ENOSPC=3, BF_FRAG_FOUND=4, BF
 static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, const int phase);
 static bf_status_t photorec_bf_frag(struct ph_param *params, file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t *start_search_space, const int phase, alloc_data_t **current_search_space, uint64_t *offset, unsigned char *buffer, unsigned char *block_buffer, const unsigned int frag);
 
-static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
+static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
   dst->location.list.prev=&dst->location.list;

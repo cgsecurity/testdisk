@@ -31,7 +31,7 @@ struct xbox_partition
 	uint32_t bootnbr;
 } __attribute__ ((gcc_struct, __packed__));
 
-list_part_t *add_partition_xbox_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
+list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

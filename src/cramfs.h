@@ -83,7 +83,7 @@ struct cramfs_super {
 
 
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_cramfs(disk_t *disk_car, const struct cramfs_super *sb,partition_t *partition,const int verbose, const int dump_ind);
+int recover_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partition_t *partition, const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

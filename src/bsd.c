@@ -33,28 +33,8 @@
 #include "bsd.h"
 #include "intrf.h"
 #include "log.h"
-static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header, const partition_t *partition, const int verbose, const int dump_ind, const unsigned int max_partitions);
 
-int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const unsigned int max_partitions)
-{
-  unsigned char *buffer;
-  buffer=(unsigned char*)MALLOC(BSD_DISKLABEL_SIZE);
-  if(disk_car->pread(disk_car, buffer, BSD_DISKLABEL_SIZE, partition->part_offset + 0x200) != BSD_DISKLABEL_SIZE)
-  {
-    free(buffer);
-    return 1;
-  }
-  if(test_BSD(disk_car,(const struct disklabel*)buffer,partition,verbose,0,max_partitions))
-  {
-    free(buffer);
-    return 1;
-  }
-  set_part_name(partition,((const struct disklabel*)buffer)->d_packname,16);
-  free(buffer);
-  return 0;
-}
-
-static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header, const partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions)
+static int test_BSD(const disk_t *disk_car, const struct disklabel*bsd_header, const partition_t *partition,const int verbose, const int dump_ind, const unsigned int max_partitions)
 {
   unsigned int i;
   const uint16_t* cp;
@@ -125,7 +105,26 @@ static int test_BSD(disk_t *disk_car, const struct disklabel*bsd_header, const p
   return 0;
 }
 
-int recover_BSD(disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind)
+int check_BSD(disk_t *disk_car,partition_t *partition,const int verbose, const unsigned int max_partitions)
+{
+  unsigned char *buffer;
+  buffer=(unsigned char*)MALLOC(BSD_DISKLABEL_SIZE);
+  if(disk_car->pread(disk_car, buffer, BSD_DISKLABEL_SIZE, partition->part_offset + 0x200) != BSD_DISKLABEL_SIZE)
+  {
+    free(buffer);
+    return 1;
+  }
+  if(test_BSD(disk_car,(const struct disklabel*)buffer,partition,verbose,0,max_partitions))
+  {
+    free(buffer);
+    return 1;
+  }
+  set_part_name(partition,((const struct disklabel*)buffer)->d_packname,16);
+  free(buffer);
+  return 0;
+}
+
+int recover_BSD(const disk_t *disk_car, const struct disklabel*bsd_header,partition_t *partition,const int verbose, const int dump_ind)
 {
   int i;
   int i_max_p_offset=-1;

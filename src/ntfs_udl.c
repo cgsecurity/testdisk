@@ -215,7 +215,7 @@ static void free_file(struct ufile *file)
  * Return:	@rec's filename, either same name space as @name or lowest space.
  *		NULL if can't determine parenthood or on error.
  */
-static FILE_NAME_ATTR* verify_parent(struct filename* name, MFT_RECORD* rec)
+static FILE_NAME_ATTR* verify_parent(const struct filename* name, MFT_RECORD* rec)
 {
 	ATTR_RECORD *attr30;
 	FILE_NAME_ATTR *filename_attr = NULL, *lowest_space_name = NULL;
@@ -450,7 +450,7 @@ static int get_filenames(struct ufile *file, ntfs_volume* vol)
  * Return:  n  The number of $FILENAME attributes found
  *	   -1  Error
  */
-static int get_data(struct ufile *file, ntfs_volume *vol)
+static int get_data(struct ufile *file, const ntfs_volume *vol)
 {
 	ATTR_RECORD *rec;
 	ntfs_attr_search_ctx *ctx;
@@ -1222,7 +1222,7 @@ static struct td_list_head *ntfs_prev_non_deleted(struct td_list_head *current_f
   return current_file;
 }
 
-static void ntfs_undelete_menu_ncurses(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list)
+static void ntfs_undelete_menu_ncurses(const disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, file_info_t *dir_list)
 {
   struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data->private_dir_data;
   WINDOW *window=(WINDOW*)dir_data->display;
@@ -1597,8 +1597,8 @@ static void ntfs_undelete_cli(dir_data_t *dir_data, file_info_t *dir_list)
 {
   unsigned int file_ok=0;
   unsigned int file_bad=0;
-  struct td_list_head *file_walker = NULL;
-  struct ntfs_dir_struct *ls=(struct ntfs_dir_struct *)dir_data->private_dir_data;
+  const struct td_list_head *file_walker = NULL;
+  const struct ntfs_dir_struct *ls=(const struct ntfs_dir_struct *)dir_data->private_dir_data;
   char *dst_path;
   dst_path=get_default_location();
   dir_data->local_dir=dst_path;

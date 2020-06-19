@@ -139,7 +139,7 @@ struct btrfs_super_block {
 } __attribute__ ((gcc_struct, __packed__));
 
 int check_btrfs(disk_t *disk_car,partition_t *partition);
-int recover_btrfs(disk_t *disk_car, const struct btrfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+int recover_btrfs(const disk_t *disk_car, const struct btrfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

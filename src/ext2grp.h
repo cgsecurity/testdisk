@@ -23,8 +23,8 @@
 extern "C" {
 #endif
 
-unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition);
-unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, partition_t *partition);
+unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition);
+unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

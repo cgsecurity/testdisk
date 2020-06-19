@@ -57,7 +57,7 @@ struct luks_phdr {
 };
 
 int check_LUKS(disk_t *disk_car, partition_t *partition);
-int recover_LUKS(disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
+int recover_LUKS(const disk_t *disk_car, const struct luks_phdr *sb,partition_t *partition,const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

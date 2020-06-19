@@ -60,22 +60,13 @@ extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
-static int use_backup(disk_t *disk_car, const list_part_t *list_part, const int verbose,const int dump_ind, const unsigned int expert, char**current_cmd);
-static int interface_part_bad_log(disk_t *disk_car,list_part_t *list_part_bad);
 #ifdef HAVE_NCURSES
-static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part_bad);
-static void ask_mbr_order_i386(disk_t *disk_car,list_part_t *list_part);
 #define ANALYSE_X	0
 #define ANALYSE_Y	5
 #define INTER_BAD_PART	10
 #endif
-static list_part_t *add_ext_part_i386(disk_t *disk_car, list_part_t *list_part, const int max_ext, const int verbose);
-static void hint_insert(uint64_t *tab, const uint64_t offset, unsigned int *tab_nbr);
-/* Optimization */
-static inline uint64_t CHS2offset_inline(const disk_t *disk_car,const CHS_t*CHS);
-static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd);
-static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
+/* Optimization */
 static inline void offset2CHS_inline(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS)
 {
   uint64_t pos=offset/disk_car->sector_size;
@@ -160,7 +151,7 @@ static void align_structure(list_part_t *list_part, const disk_t *disk, const un
   }
 }
 
-void only_one_bootable( list_part_t *list_part, list_part_t *part_boot)
+void only_one_bootable( list_part_t *list_part, const list_part_t *part_boot)
 {
   list_part_t *element;
   if(part_boot->part->status==STATUS_PRIM_BOOT)
@@ -1124,7 +1115,7 @@ static list_part_t *reduce_structure(const list_part_t *list_part_org)
   return list_part;
 }
 
-static list_part_t *add_ext_part_i386(disk_t *disk, list_part_t *list_part, const int max_ext, const int verbose)
+static list_part_t *add_ext_part_i386(const disk_t *disk, list_part_t *list_part, const int max_ext, const int verbose)
 {
   /* list_part need to be sorted! */
   /* All extended partitions of an P_EXTENDX are P_EXTENDED */

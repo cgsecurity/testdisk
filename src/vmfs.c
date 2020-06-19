@@ -35,9 +35,27 @@
 #include "log.h"
 #include "vmfs.h"
 
-static int test_VMFS(disk_t *disk, const struct vmfs_volume *sb, const partition_t *partition, const int dump_ind);
-static void set_VMFS_info(const struct vmfs_volume *sb, partition_t *partition);
+static void set_VMFS_info(const struct vmfs_volume *sb, partition_t *partition)
+{
+  partition->upart_type=UP_VMFS;
+  sprintf(partition->info,"VMFS %lu", (long unsigned)le32(sb->version));
+}
 
+static int test_VMFS(const disk_t *disk, const struct vmfs_volume *sb, const partition_t *partition, const int dump_ind)
+{
+  if(le32(sb->magic)!=0xc001d00d || le32(sb->version)>20)
+    return 1;
+  if(dump_ind!=0)
+  {
+    if(partition!=NULL && disk!=NULL)
+      log_info("\nVMFS magic value at %u/%u/%u\n",
+          offset2cylinder(disk,partition->part_offset),
+          offset2head(disk,partition->part_offset),
+          offset2sector(disk,partition->part_offset));
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
+  return 0;
+}
 int check_VMFS(disk_t *disk,partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(2*DEFAULT_SECTOR_SIZE);
@@ -56,13 +74,7 @@ int check_VMFS(disk_t *disk,partition_t *partition)
   return 0;
 }
 
-static void set_VMFS_info(const struct vmfs_volume *sb, partition_t *partition)
-{
-  partition->upart_type=UP_VMFS;
-  sprintf(partition->info,"VMFS %lu", (long unsigned)le32(sb->version));
-}
-
-int recover_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int verbose, const int dump_ind)
+int recover_VMFS(const disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   const struct vmfs_lvm* lvm=(const struct vmfs_lvm*)(((const char *)sb)+0x200);
   if(test_VMFS(disk, sb, partition, dump_ind)!=0)
@@ -78,22 +90,6 @@ int recover_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partit
   if(verbose>0)
   {
     log_info("\n");
-  }
-  return 0;
-}
-
-static int test_VMFS(disk_t *disk, const struct vmfs_volume *sb, const partition_t *partition, const int dump_ind)
-{
-  if(le32(sb->magic)!=0xc001d00d || le32(sb->version)>20)
-    return 1;
-  if(dump_ind!=0)
-  {
-    if(partition!=NULL && disk!=NULL)
-      log_info("\nVMFS magic value at %u/%u/%u\n",
-          offset2cylinder(disk,partition->part_offset),
-          offset2head(disk,partition->part_offset),
-          offset2sector(disk,partition->part_offset));
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
   }
   return 0;
 }

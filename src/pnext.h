@@ -25,7 +25,7 @@ static
 #ifndef DEBUG_GET_NEXT_SECTOR
 inline
 #endif
-void get_next_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
+void get_next_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
 #ifdef DEBUG_GET_NEXT_SECTOR
   log_trace(" get_next_header %llu (%llu-%llu)\n",
@@ -42,7 +42,7 @@ static
 #ifndef DEBUG_GET_NEXT_SECTOR
 inline
 #endif
-void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
+void get_next_sector(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
 #ifdef DEBUG_GET_NEXT_SECTOR
   log_debug(" get_next_sector %llu (%llu-%llu)\n",
@@ -72,14 +72,14 @@ void get_next_sector(alloc_data_t *list_search_space, alloc_data_t **current_sea
     get_next_header(list_search_space, current_search_space, offset);
 }
 
-static inline void get_prev_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
+static inline void get_prev_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   if((*current_search_space) != list_search_space)
     *current_search_space=td_list_entry((*current_search_space)->list.prev, alloc_data_t, list);
   *offset=(*current_search_space)->end + 1 - blocksize;
 }
 
-static inline void get_prev_sector(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
+static inline void get_prev_sector(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   if((*current_search_space) == list_search_space)
   {

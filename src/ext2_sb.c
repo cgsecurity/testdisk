@@ -38,7 +38,7 @@
 #include "guid_cmp.h"
 #include "ext2_sb.h"
 
-int interface_superblock(disk_t *disk_car,list_part_t *list_part, char**current_cmd)
+int interface_superblock(disk_t *disk_car, const list_part_t *list_part, char**current_cmd)
 {
   const list_part_t *parts;
   const partition_t *old_part=NULL;

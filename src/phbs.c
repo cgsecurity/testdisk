@@ -58,7 +58,7 @@ extern const file_hint_t file_hint_tar;
 extern file_check_list_t file_check_list;
 extern int need_to_stop;
 
-static inline void file_recovery_cpy(file_recovery_t *dst, file_recovery_t *src)
+static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
   dst->location.list.prev=&dst->location.list;

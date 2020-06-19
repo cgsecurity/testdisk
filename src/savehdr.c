@@ -44,7 +44,7 @@
 #include "log.h"
 #define BACKUP_MAXSIZE 5120
 
-int save_header(disk_t *disk_car,partition_t *partition, const int verbose)
+int save_header(disk_t *disk_car, const partition_t *partition, const int verbose)
 {
   unsigned char *buffer;
   FILE *f_backup;
@@ -202,9 +202,9 @@ backup_disk_t *partition_load(const disk_t *disk_car, const int verbose)
   return list_backup;
 }
 
-int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose)
+int partition_save(disk_t *disk_car, const list_part_t *list_part, const int verbose)
 {
-  list_part_t *parts;
+  const list_part_t *parts;
   FILE *f_backup;
   if(verbose>0)
   {

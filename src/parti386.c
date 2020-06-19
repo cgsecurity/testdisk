@@ -91,7 +91,7 @@ static void log_dos_entry(const struct partition_dos*);
 static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 static list_part_t *get_ext_data_i386(disk_t *disk_car, list_part_t *list_part, const int verbose, const int saveheader);
 static void test_MBR_data(list_part_t *list_part);
-static int test_MBR_over(disk_t *disk_car,list_part_t *list_part);
+static int test_MBR_over(const disk_t *disk_car,list_part_t *list_part);
 static int write_mbr_i386(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose);
 static int write_all_log_i386(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
 static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned char buffer_org[DEFAULT_SECTOR_SIZE]);
@@ -651,7 +651,7 @@ int recover_i386_logical(disk_t *disk, const unsigned char *buffer, partition_t 
   return 0;
 }
 
-static int test_MBR_over(disk_t *disk_car,list_part_t *list_part)
+static int test_MBR_over(const disk_t *disk_car,list_part_t *list_part)
 {/* Test if partitions overlap */
   int res=0;
   list_part_t *element;

@@ -60,7 +60,7 @@ int check_netware(disk_t *disk_car, partition_t *partition)
   return 0;
 }
 
-int recover_netware(disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition)
+int recover_netware(const disk_t *disk_car, const struct disk_netware *netware_block,partition_t *partition)
 {
   if(test_netware(netware_block)!=0)
     return 1;

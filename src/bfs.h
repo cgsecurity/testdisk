@@ -83,7 +83,7 @@ struct disk_super_block          /* super block as it is on disk */
 #define BFS_BIG_ENDIAN       0x42494745    /* BIGE */
 /* int test_beos(struct disk_super_block *,partition_t); */
 int check_BeFS(disk_t *disk_car, partition_t *partition);
-int recover_BeFS(disk_t *disk_car, const struct disk_super_block *beos_block, partition_t *partition, const int dump_ind);
+int recover_BeFS(const disk_t *disk_car, const struct disk_super_block *beos_block, partition_t *partition, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

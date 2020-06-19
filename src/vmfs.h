@@ -42,7 +42,7 @@ struct vmfs_lvm
 } __attribute__ ((gcc_struct, __packed__));
 
 int check_VMFS(disk_t *disk,partition_t *partition);
-int recover_VMFS(disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int verbose, const int dump_ind);
+int recover_VMFS(const disk_t *disk, const struct vmfs_volume *sb, partition_t *partition, const int verbose, const int dump_ind);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

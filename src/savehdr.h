@@ -32,8 +32,8 @@ typedef struct
   list_part_t *list_part;
 } backup_disk_t;
 
-int save_header(disk_t *disk_car,partition_t *partition, const int verbose);
-int partition_save(disk_t *disk_car, list_part_t *list_part, const int verbose);
+int save_header(disk_t *disk_car, const partition_t *partition, const int verbose);
+int partition_save(disk_t *disk_car, const list_part_t *list_part, const int verbose);
 backup_disk_t *partition_load(const disk_t *disk_car, const int verbose);
 
 #ifdef __cplusplus

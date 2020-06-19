@@ -35,10 +35,182 @@
 #include "md.h"
 #include "fnctdsk.h"
 #include "log.h"
-static int test_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind);
-static int test_MD_be(disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind);
-static void set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose);
-static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose);
+
+static int test_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind)
+{
+  if(le32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
+    return 1;
+  log_info("\nRaid magic value at %u/%u/%u\n",
+      offset2cylinder(disk_car,partition->part_offset),
+      offset2head(disk_car,partition->part_offset),
+      offset2sector(disk_car,partition->part_offset));
+  log_info("Raid apparent size: %llu sectors\n", (long long unsigned)(sb->size<<1));
+  if(le32(sb->major_version)==0)
+  {
+    /* chunk_size may be 0 */
+    log_info("Raid chunk size: %llu bytes\n", (long long unsigned)le32(sb->chunk_size));
+  }
+  if(le32(sb->major_version)>1)
+    return 1;
+  if(dump_ind!=0)
+  {
+    /* There is a little offset ... */
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
+  return 0;
+}
+
+static int test_MD_be(const disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind)
+{
+  if(be32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
+    return 1;
+  log_info("\nRaid magic value at %u/%u/%u\n",
+      offset2cylinder(disk_car,partition->part_offset),
+      offset2head(disk_car,partition->part_offset),
+      offset2sector(disk_car,partition->part_offset));
+  log_info("Raid apparent size: %llu sectors\n", (long long unsigned)(sb->size<<1));
+  if(be32(sb->major_version)==0)
+  {
+    /* chunk_size may be 0 */
+    log_info("Raid chunk size: %llu bytes\n",(long long unsigned)be32(sb->chunk_size));
+  }
+  if(be32(sb->major_version)>1)
+    return 1;
+  if(dump_ind!=0)
+  {
+    /* There is a little offset ... */
+    dump_log(sb,DEFAULT_SECTOR_SIZE);
+  }
+  return 0;
+}
+
+static void set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
+{
+  if(le32(sb->major_version)==0)
+  {
+    unsigned int i;
+    partition->upart_type=UP_MD;
+    sprintf(partition->fsname,"md%u",(unsigned int)le32(sb->md_minor));
+    sprintf(partition->info,"md %u.%u.%u L.Endian Raid %u: devices",
+        (unsigned int)le32(sb->major_version),
+        (unsigned int)le32(sb->minor_version),
+        (unsigned int)le32(sb->patch_version),
+        (unsigned int)le32(sb->level));
+    for(i=0;i<MD_SB_DISKS;i++)
+    {
+      if(le32(sb->disks[i].major)!=0 && le32(sb->disks[i].minor)!=0)
+      {
+        if(strlen(partition->info)<sizeof(partition->info)-26)
+        {
+          sprintf(&partition->info[strlen(partition->info)]," %u(%u,%u)",
+              (unsigned int)le32(sb->disks[i].number),
+              (unsigned int)le32(sb->disks[i].major),
+	      (unsigned int)le32(sb->disks[i].minor));
+          if(le32(sb->disks[i].major)==le32(sb->this_disk.major) &&
+	    le32(sb->disks[i].minor)==le32(sb->this_disk.minor))
+            sprintf(&partition->info[strlen(partition->info)],"*");
+        }
+      }
+    }
+  }
+  else
+  {
+    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
+    partition->upart_type=UP_MD1;
+    set_part_name(partition,sb1->set_name,32);
+    sprintf(partition->info,"md %u.x L.Endian Raid %u - Array Slot : %lu",
+	(unsigned int)le32(sb1->major_version),
+	(unsigned int)le32(sb1->level),
+	(long unsigned)le32(sb1->dev_number));
+    if(le32(sb1->max_dev) <= 384)
+    {
+      unsigned int i,d;
+      for (i= le32(sb1->max_dev); i> 0 ; i--)
+	if (le16(sb1->dev_roles[i-1]) != 0xffff)
+	  break;
+      strcat(partition->info, " (");
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
+      {
+	const int role = le16(sb1->dev_roles[d]);
+	if (d)
+	  strcat(partition->info, ", ");
+	if (role == 0xffff)
+	  strcat(partition->info, "empty");
+	else if(role == 0xfffe)
+	  strcat(partition->info, "failed");
+	else
+	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      }
+      strcat(partition->info, ")");
+    }
+  }
+  if(verbose>0)
+    log_info("%s %s\n", partition->fsname, partition->info);
+}
+
+static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
+{
+  if(be32(sb->major_version)==0)
+  {
+    unsigned int i;
+    partition->upart_type=UP_MD;
+    sprintf(partition->fsname,"md%u",(unsigned int)be32(sb->md_minor));
+    sprintf(partition->info,"md %u.%u.%u B.Endian Raid %u: devices",
+        (unsigned int)be32(sb->major_version),
+        (unsigned int)be32(sb->minor_version),
+        (unsigned int)be32(sb->patch_version),
+        (unsigned int)be32(sb->level));
+    for(i=0;i<MD_SB_DISKS;i++)
+    {
+      if(be32(sb->disks[i].major)!=0 && be32(sb->disks[i].minor)!=0)
+      {
+        if(strlen(partition->info)<sizeof(partition->info)-26)
+        {
+          sprintf(&partition->info[strlen(partition->info)]," %u(%u,%u)",
+              (unsigned int)be32(sb->disks[i].number),
+              (unsigned int)be32(sb->disks[i].major),
+	      (unsigned int)be32(sb->disks[i].minor));
+          if(be32(sb->disks[i].major)==be32(sb->this_disk.major) &&
+	      be32(sb->disks[i].minor)==be32(sb->this_disk.minor))
+            sprintf(&partition->info[strlen(partition->info)],"*");
+        }
+      }
+    }
+  }
+  else
+  {
+    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
+    partition->upart_type=UP_MD1;
+    set_part_name(partition,sb1->set_name,32);
+    sprintf(partition->info,"md %u.x B.Endian Raid %u - Array Slot : %lu",
+	(unsigned int)be32(sb1->major_version),
+	(unsigned int)be32(sb1->level),
+	(long unsigned)be32(sb1->dev_number));
+    if(be32(sb1->max_dev) <= 384)
+    {
+      unsigned int i,d;
+      for (i= be32(sb1->max_dev); i> 0 ; i--)
+	if (be16(sb1->dev_roles[i-1]) != 0xffff)
+	  break;
+      strcat(partition->info, " (");
+      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
+      {
+	const int role = be16(sb1->dev_roles[d]);
+	if (d)
+	  strcat(partition->info, ", ");
+	if (role == 0xffff)
+	  strcat(partition->info, "empty");
+	else if(role == 0xfffe)
+	  strcat(partition->info, "failed");
+	else
+	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
+      }
+      strcat(partition->info, ")");
+    }
+  }
+  if(verbose>0)
+    log_info("%s %s\n", partition->fsname, partition->info);
+}
 
 int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 {
@@ -196,7 +368,7 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   return 1;
 }
 
-int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind)
+int recover_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
   if(test_MD(disk_car, sb, partition, dump_ind)==0)
   {
@@ -239,180 +411,4 @@ int recover_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t 
     return 0;
   }
   return 1;
-}
-
-static void set_MD_info(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
-{
-  if(le32(sb->major_version)==0)
-  {
-    unsigned int i;
-    partition->upart_type=UP_MD;
-    sprintf(partition->fsname,"md%u",(unsigned int)le32(sb->md_minor));
-    sprintf(partition->info,"md %u.%u.%u L.Endian Raid %u: devices",
-        (unsigned int)le32(sb->major_version),
-        (unsigned int)le32(sb->minor_version),
-        (unsigned int)le32(sb->patch_version),
-        (unsigned int)le32(sb->level));
-    for(i=0;i<MD_SB_DISKS;i++)
-    {
-      if(le32(sb->disks[i].major)!=0 && le32(sb->disks[i].minor)!=0)
-      {
-        if(strlen(partition->info)<sizeof(partition->info)-26)
-        {
-          sprintf(&partition->info[strlen(partition->info)]," %u(%u,%u)",
-              (unsigned int)le32(sb->disks[i].number),
-              (unsigned int)le32(sb->disks[i].major),
-	      (unsigned int)le32(sb->disks[i].minor));
-          if(le32(sb->disks[i].major)==le32(sb->this_disk.major) &&
-	    le32(sb->disks[i].minor)==le32(sb->this_disk.minor))
-            sprintf(&partition->info[strlen(partition->info)],"*");
-        }
-      }
-    }
-  }
-  else
-  {
-    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
-    partition->upart_type=UP_MD1;
-    set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x L.Endian Raid %u - Array Slot : %lu",
-	(unsigned int)le32(sb1->major_version),
-	(unsigned int)le32(sb1->level),
-	(long unsigned)le32(sb1->dev_number));
-    if(le32(sb1->max_dev) <= 384)
-    {
-      unsigned int i,d;
-      for (i= le32(sb1->max_dev); i> 0 ; i--)
-	if (le16(sb1->dev_roles[i-1]) != 0xffff)
-	  break;
-      strcat(partition->info, " (");
-      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
-      {
-	const int role = le16(sb1->dev_roles[d]);
-	if (d)
-	  strcat(partition->info, ", ");
-	if (role == 0xffff)
-	  strcat(partition->info, "empty");
-	else if(role == 0xfffe)
-	  strcat(partition->info, "failed");
-	else
-	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
-      }
-      strcat(partition->info, ")");
-    }
-  }
-  if(verbose>0)
-    log_info("%s %s\n", partition->fsname, partition->info);
-}
-
-static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
-{
-  if(be32(sb->major_version)==0)
-  {
-    unsigned int i;
-    partition->upart_type=UP_MD;
-    sprintf(partition->fsname,"md%u",(unsigned int)be32(sb->md_minor));
-    sprintf(partition->info,"md %u.%u.%u B.Endian Raid %u: devices",
-        (unsigned int)be32(sb->major_version),
-        (unsigned int)be32(sb->minor_version),
-        (unsigned int)be32(sb->patch_version),
-        (unsigned int)be32(sb->level));
-    for(i=0;i<MD_SB_DISKS;i++)
-    {
-      if(be32(sb->disks[i].major)!=0 && be32(sb->disks[i].minor)!=0)
-      {
-        if(strlen(partition->info)<sizeof(partition->info)-26)
-        {
-          sprintf(&partition->info[strlen(partition->info)]," %u(%u,%u)",
-              (unsigned int)be32(sb->disks[i].number),
-              (unsigned int)be32(sb->disks[i].major),
-	      (unsigned int)be32(sb->disks[i].minor));
-          if(be32(sb->disks[i].major)==be32(sb->this_disk.major) &&
-	      be32(sb->disks[i].minor)==be32(sb->this_disk.minor))
-            sprintf(&partition->info[strlen(partition->info)],"*");
-        }
-      }
-    }
-  }
-  else
-  {
-    const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)sb;
-    partition->upart_type=UP_MD1;
-    set_part_name(partition,sb1->set_name,32);
-    sprintf(partition->info,"md %u.x B.Endian Raid %u - Array Slot : %lu",
-	(unsigned int)be32(sb1->major_version),
-	(unsigned int)be32(sb1->level),
-	(long unsigned)be32(sb1->dev_number));
-    if(be32(sb1->max_dev) <= 384)
-    {
-      unsigned int i,d;
-      for (i= be32(sb1->max_dev); i> 0 ; i--)
-	if (be16(sb1->dev_roles[i-1]) != 0xffff)
-	  break;
-      strcat(partition->info, " (");
-      for (d=0; d < i && strlen(partition->info) < sizeof(partition->info) - 9; d++)
-      {
-	const int role = be16(sb1->dev_roles[d]);
-	if (d)
-	  strcat(partition->info, ", ");
-	if (role == 0xffff)
-	  strcat(partition->info, "empty");
-	else if(role == 0xfffe)
-	  strcat(partition->info, "failed");
-	else
-	  sprintf(&partition->info[strlen(partition->info)], "%d", role);
-      }
-      strcat(partition->info, ")");
-    }
-  }
-  if(verbose>0)
-    log_info("%s %s\n", partition->fsname, partition->info);
-}
-
-static int test_MD(disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind)
-{
-  if(le32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
-    return 1;
-  log_info("\nRaid magic value at %u/%u/%u\n",
-      offset2cylinder(disk_car,partition->part_offset),
-      offset2head(disk_car,partition->part_offset),
-      offset2sector(disk_car,partition->part_offset));
-  log_info("Raid apparent size: %llu sectors\n", (long long unsigned)(sb->size<<1));
-  if(le32(sb->major_version)==0)
-  {
-    /* chunk_size may be 0 */
-    log_info("Raid chunk size: %llu bytes\n", (long long unsigned)le32(sb->chunk_size));
-  }
-  if(le32(sb->major_version)>1)
-    return 1;
-  if(dump_ind!=0)
-  {
-    /* There is a little offset ... */
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
-  }
-  return 0;
-}
-
-static int test_MD_be(disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind)
-{
-  if(be32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
-    return 1;
-  log_info("\nRaid magic value at %u/%u/%u\n",
-      offset2cylinder(disk_car,partition->part_offset),
-      offset2head(disk_car,partition->part_offset),
-      offset2sector(disk_car,partition->part_offset));
-  log_info("Raid apparent size: %llu sectors\n", (long long unsigned)(sb->size<<1));
-  if(be32(sb->major_version)==0)
-  {
-    /* chunk_size may be 0 */
-    log_info("Raid chunk size: %llu bytes\n",(long long unsigned)be32(sb->chunk_size));
-  }
-  if(be32(sb->major_version)>1)
-    return 1;
-  if(dump_ind!=0)
-  {
-    /* There is a little offset ... */
-    dump_log(sb,DEFAULT_SECTOR_SIZE);
-  }
-  return 0;
 }

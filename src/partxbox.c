@@ -145,7 +145,7 @@ static list_part_t *init_part_order_xbox(const disk_t *disk_car, list_part_t *li
   return list_part;
 }
 
-list_part_t *add_partition_xbox_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd)
+list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_part, char **current_cmd)
 {
   partition_t *new_partition=partition_new(&arch_xbox);
   assert(current_cmd!=NULL);

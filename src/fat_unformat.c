@@ -58,7 +58,7 @@
 extern int need_to_stop;
 
 #define READ_SIZE 4*1024*1024
-static int pfind_sectors_per_cluster(disk_t *disk, partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
+static int pfind_sectors_per_cluster(disk_t *disk, const partition_t *partition, const int verbose, unsigned int *sectors_per_cluster, uint64_t *offset_org, alloc_data_t *list_search_space)
 {
   uint64_t offset=0;
   uint64_t next_offset=0;

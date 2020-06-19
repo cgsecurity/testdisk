@@ -42,7 +42,7 @@
 
 /* Using a couple of inodes of "." directory entries, get the cluster size and where the first cluster begins.
  * */
-int find_sectors_per_cluster(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, unsigned int *sectors_per_cluster, uint64_t *offset_org, const upart_type_t upart_type)
+int find_sectors_per_cluster(disk_t *disk_car, const partition_t *partition, const int verbose, const int dump_ind, unsigned int *sectors_per_cluster, uint64_t *offset_org, const upart_type_t upart_type)
 {
   unsigned int nbr_subdir=0;
   sector_cluster_t sector_cluster[10];

@@ -290,7 +290,7 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
   return dir_num;
 }
 
-int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
+int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
   int nbr;
   alloc_data_t *file_space=*current_search_space;
@@ -313,7 +313,7 @@ int get_prev_file_header(alloc_data_t *list_search_space, alloc_data_t **current
   return -1;
 }
 
-void forget(alloc_data_t *list_search_space, alloc_data_t *current_search_space)
+void forget(const alloc_data_t *list_search_space, alloc_data_t *current_search_space)
 {
   struct td_list_head *search_walker = NULL;
   struct td_list_head *prev= NULL;
@@ -938,6 +938,8 @@ static inline void file_block_remove_from_sp(alloc_data_t *list_search_space, al
     }
   }
   log_critical("file_block_remove_from_sp(list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize) failed\n");
+  log_flush();
+  exit(1);
 }
 
 static inline void file_block_add_to_file(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)

@@ -94,7 +94,7 @@ static int test_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, co
   return 1;
 }
 
-int recover_ufs(disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind)
+int recover_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind)
 {
   if(test_ufs(disk_car, sb, partition, verbose)!=0)
     return 1;

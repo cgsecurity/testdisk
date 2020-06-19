@@ -811,7 +811,7 @@ void header_ignored(const file_recovery_t *file_recovery_new)
     offset_skipped_header=file_recovery_new->location.start;
 }
 
-void get_prev_location_smart(alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
+void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
 {
   alloc_data_t *file_space=*current_search_space;
   if(offset_skipped_header==0)

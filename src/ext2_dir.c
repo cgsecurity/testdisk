@@ -73,7 +73,6 @@ static errcode_t my_flush(io_channel channel);
 static errcode_t my_read_blk64(io_channel channel, unsigned long long block, int count, void *buf);
 static errcode_t my_write_blk64(io_channel channel, unsigned long long block, int count, const void *buf);
 
-static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data);
 static void dir_partition_ext2_close(dir_data_t *dir_data);
 static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 
@@ -111,7 +110,7 @@ static io_channel shared_ioch=NULL;
 /*
  * Allocate libext2fs structures associated with I/O manager
  */
-static io_channel alloc_io_channel(disk_t *disk_car,my_data_t *my_data)
+static io_channel alloc_io_channel(const disk_t *disk_car,my_data_t *my_data)
 {
   io_channel     ioch;
 #ifdef DEBUG_EXT2

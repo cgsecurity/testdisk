@@ -108,7 +108,7 @@ struct xfs_sb
 } __attribute__ ((gcc_struct, __packed__));
 
 int check_xfs(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_xfs(disk_t *disk_car, const struct xfs_sb *sb,partition_t *partition,const int verbose, const int dump_ind);
+int recover_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *partition, const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
