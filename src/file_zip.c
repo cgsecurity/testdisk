@@ -58,6 +58,35 @@ const file_hint_t file_hint_zip= {
   .register_header_check=&register_header_check_zip
 };
 
+static const char *extension_apk="apk";
+static const char *extension_celtx="celtx";
+static const char *extension_docx="docx";
+static const char *extension_epub="epub";
+static const char *extension_jar="jar";
+static const char *extension_kmz="kmz";
+static const char *extension_kra="kra";
+static const char *extension_mmap="mmap";
+static const char *extension_notebook="notebook";
+static const char *extension_numbers="numbers";
+static const char *extension_odg="odg";
+static const char *extension_odp="odp";
+static const char *extension_ods="ods";
+static const char *extension_odt="odt";
+static const char *extension_ora="ora";
+static const char *extension_pages="pages";
+static const char *extension_pptx="pptx";
+static const char *extension_sh3d="sh3d";
+static const char *extension_sketch="sketch";
+static const char *extension_sxc="sxc";
+static const char *extension_sxd="sxd";
+static const char *extension_sxi="sxi";
+static const char *extension_sxw="sxw";
+static const char *extension_vsdx="vsdx";
+static const char *extension_xd="xd";
+static const char *extension_xlsx="xlsx";
+static const char *extension_xpi="xpi";
+static const char *extension_xrns="xrns";
+
 static const unsigned char zip_header[4]  = { 'P', 'K', 0x03, 0x04};
 #define ZIP_CENTRAL_DIR         0x02014B50
 #define ZIP_FILE_ENTRY          0x04034B50
@@ -136,29 +165,35 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
     if(read_size >= size)
     {
       /*@ assert read_size >= size; */
+      const unsigned int count_max=read_size - size;
       unsigned int count = 0;
+      // TODO loop invariant 0 <= count <= count_max + 1;
       /*@
-	@ loop invariant 0 <= count <= read_size - size + 1;
-	@ loop variant read_size - size - count;
+	@ loop variant count_max - count;
 	@*/
-      for(count=0; count <= read_size - size; count++)
+      for(count=0; count <= count_max; count++)
       {
+	/*@ assert count <= count_max; */
 	if (buffer[count]==*(const char *)needle && memcmp(buffer+count, needle, size)==0)
 	{
 	  free(buffer);
 	  if(my_fseek(f, (off_t)count-(off_t)read_size, SEEK_CUR)<0)
 	  {
+#if !defined(__FRAMAC__)
 	    log_trace("zip: file_get_pos count-read failed\n");
+#endif
 	    return -1;
 	  }
 	  return total+count;
 	}
       }
-      total+=count;
+      total+=count_max+1;
     }
     if(feof(f) || my_fseek(f, (off_t)1-size, SEEK_CUR)<0)
     {
+#if !defined(__FRAMAC__)
       log_trace("zip: file_get_pos 1-size failed\n");
+#endif
       free(buffer);
       return -1;
     }
@@ -167,6 +202,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   return -1;
 }
 
+#ifndef __FRAMAC__
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
@@ -174,6 +210,66 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   @ requires \valid(krita);
   @ requires fr->file_size < 0x8000000000000000 - 65535;
   @ requires 0 < len <= 65535;
+  @ requires *ext == \null ||
+     *ext == extension_apk ||
+     *ext == extension_celtx ||
+     *ext == extension_docx ||
+     *ext == extension_epub ||
+     *ext == extension_jar ||
+     *ext == extension_kmz ||
+     *ext == extension_kra ||
+     *ext == extension_mmap ||
+     *ext == extension_notebook ||
+     *ext == extension_numbers ||
+     *ext == extension_odg  ||
+     *ext == extension_odp ||
+     *ext == extension_ods ||
+     *ext == extension_odt ||
+     *ext == extension_ora ||
+     *ext == extension_pages ||
+     *ext == extension_pptx ||
+     *ext == extension_sh3d ||
+     *ext == extension_sketch ||
+     *ext == extension_sxc ||
+     *ext == extension_sxd ||
+     *ext == extension_sxi ||
+     *ext == extension_sxw ||
+     *ext == extension_vsdx ||
+     *ext == extension_xd ||
+     *ext == extension_xlsx ||
+     *ext == extension_xpi ||
+     *ext == extension_xrns ||
+     *ext == file_hint_zip.extension;
+  @ ensures *ext == \null ||
+     *ext == extension_apk ||
+     *ext == extension_celtx ||
+     *ext == extension_docx ||
+     *ext == extension_epub ||
+     *ext == extension_jar ||
+     *ext == extension_kmz ||
+     *ext == extension_kra ||
+     *ext == extension_mmap ||
+     *ext == extension_notebook ||
+     *ext == extension_numbers ||
+     *ext == extension_odg  ||
+     *ext == extension_odp ||
+     *ext == extension_ods ||
+     *ext == extension_odt ||
+     *ext == extension_ora ||
+     *ext == extension_pages ||
+     *ext == extension_pptx ||
+     *ext == extension_sh3d ||
+     *ext == extension_sketch ||
+     *ext == extension_sxc ||
+     *ext == extension_sxd ||
+     *ext == extension_sxi ||
+     *ext == extension_sxw ||
+     *ext == extension_vsdx ||
+     *ext == extension_xd ||
+     *ext == extension_xlsx ||
+     *ext == extension_xpi ||
+     *ext == extension_xrns ||
+     *ext == file_hint_zip.extension;
   @ ensures fr->file_size < 0x8000000000000000;
   @ ensures \result == -1 || \result == 0;
   @ ensures *krita==0 || *krita==19;
@@ -248,59 +344,59 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	  return -1;
 	}
 	if(compressed_size==16      && memcmp(buffer,"image/openraster",16)==0)
-	  *ext="ora";
+	  *ext=extension_ora;
 	else if(compressed_size==20 && memcmp(buffer,"application/epub+zip",20)==0)
-	  *ext="epub";
+	  *ext=extension_epub;
 	else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
-	  *ext="sxc";
+	  *ext=extension_sxc;
 	else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.draw",28)==0)
-	  *ext="sxd";
+	  *ext=extension_sxd;
 	else if(compressed_size==31 && memcmp(buffer,"application/vnd.sun.xml.impress",31)==0)
-	  *ext="sxi";
+	  *ext=extension_sxi;
 	else if(compressed_size==30 && memcmp(buffer,"application/vnd.sun.xml.writer",30)==0)
-	  *ext="sxw";
+	  *ext=extension_sxw;
 	else if(compressed_size==39 && memcmp(buffer,"application/vnd.oasis.opendocument.text",39)==0)
-	  *ext="odt";
+	  *ext=extension_odt;
 	else if(compressed_size==43 && memcmp(buffer,"application/vnd.oasis.opendocument.graphics",43)==0)
-	  *ext="odg";
+	  *ext=extension_odg;
 	else if(compressed_size==46 && memcmp(buffer,"application/vnd.oasis.opendocument.spreadsheet",46)==0)
-	  *ext="ods";
+	  *ext=extension_ods;
 	else if(compressed_size==47 && memcmp(buffer,"application/vnd.oasis.opendocument.presentation",47)==0)
-	  *ext="odp";
+	  *ext=extension_odp;
 	else if(memcmp(buffer,"application/x-krita",19)==0)
 	{
-	  *ext="kra";
+	  *ext=extension_kra;
 	  *krita=19;
 	}
 	else
 	{ /* default to writer */
-	  *ext="sxw";
+	  *ext=extension_sxw;
 	}
       }
       /* Zipped Keyhole Markup Language (KML) used by Google Earth */
       else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
-	*ext="kmz";
+	*ext=extension_kmz;
       else if(len==4 && memcmp(filename, "Home", 4)==0)
 	sh3d=1;
       /* Celtx, Screenwriting & Media Pre-production file */
       else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
-	*ext="celtx";
+	*ext=extension_celtx;
       else if(len==13 && memcmp(filename, "document.json", 13)==0)
-	*ext="sketch";
+	*ext=extension_sketch;
     }
     else if(file_nbr==1 && sh3d==1)
     {
       if(len==1 && filename[0]=='0')
-	*ext="sh3d";
+	*ext=extension_sh3d;
     }
     if(strncmp(filename, "word/", 5)==0)
-      ext_msoffice="docx";
+      ext_msoffice=extension_docx;
     else if(strncmp(filename, "xl/", 3)==0)
-      ext_msoffice="xlsx";
+      ext_msoffice=extension_xlsx;
     else if(strncmp(filename, "ppt/", 4)==0)
-      ext_msoffice="pptx";
+      ext_msoffice=extension_pptx;
     else if(strncmp(filename, "visio/", 6)==0)
-      ext_msoffice="vsdx";
+      ext_msoffice=extension_vsdx;
     if(msoffice && ext_msoffice!=NULL)
       *ext=ext_msoffice;
   }
@@ -308,25 +404,26 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   {
     /* iWork */
     if(len==23 && memcmp(filename, "QuickLook/Thumbnail.jpg", 23)==0)
-      *ext="pages";
+      *ext=extension_pages;
     else if(len==20 && strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
-      *ext="jar";
+      *ext=extension_jar;
     else if(len==15 && strncasecmp(filename, "chrome.manifest", 15)==0)
-      *ext="xpi";
+      *ext=extension_xpi;
     /* SMART Notebook */
     else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
-      *ext="notebook";
+      *ext=extension_notebook;
     /* Apple Numbers */
     else if(len==18 && memcmp(filename, "Index/Document.iwa", 18)==0)
-      *ext="numbers";
+      *ext=extension_numbers;
     else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
-      *ext="apk";
+      *ext=extension_apk;
     else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
-      *ext="mmap";
+      *ext=extension_mmap;
   }
   free(filename);
   return 0;
 }
+#endif
 
 /*@
   @ requires \valid(fr);
@@ -334,6 +431,66 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   @ requires \valid(ext);
   @ requires fr->file_size < 0x8000000000000000 + 4;
   @ requires \separated(fr, ext);
+  @ requires *ext == \null ||
+     *ext == extension_apk ||
+     *ext == extension_celtx ||
+     *ext == extension_docx ||
+     *ext == extension_epub ||
+     *ext == extension_jar ||
+     *ext == extension_kmz ||
+     *ext == extension_kra ||
+     *ext == extension_mmap ||
+     *ext == extension_notebook ||
+     *ext == extension_numbers ||
+     *ext == extension_odg  ||
+     *ext == extension_odp ||
+     *ext == extension_ods ||
+     *ext == extension_odt ||
+     *ext == extension_ora ||
+     *ext == extension_pages ||
+     *ext == extension_pptx ||
+     *ext == extension_sh3d ||
+     *ext == extension_sketch ||
+     *ext == extension_sxc ||
+     *ext == extension_sxd ||
+     *ext == extension_sxi ||
+     *ext == extension_sxw ||
+     *ext == extension_vsdx ||
+     *ext == extension_xd ||
+     *ext == extension_xlsx ||
+     *ext == extension_xpi ||
+     *ext == extension_xrns ||
+     *ext == file_hint_zip.extension;
+  @ ensures *ext == \null ||
+     *ext == extension_apk ||
+     *ext == extension_celtx ||
+     *ext == extension_docx ||
+     *ext == extension_epub ||
+     *ext == extension_jar ||
+     *ext == extension_kmz ||
+     *ext == extension_kra ||
+     *ext == extension_mmap ||
+     *ext == extension_notebook ||
+     *ext == extension_numbers ||
+     *ext == extension_odg  ||
+     *ext == extension_odp ||
+     *ext == extension_ods ||
+     *ext == extension_odt ||
+     *ext == extension_ora ||
+     *ext == extension_pages ||
+     *ext == extension_pptx ||
+     *ext == extension_sh3d ||
+     *ext == extension_sketch ||
+     *ext == extension_sxc ||
+     *ext == extension_sxd ||
+     *ext == extension_sxi ||
+     *ext == extension_sxw ||
+     *ext == extension_vsdx ||
+     *ext == extension_xd ||
+     *ext == extension_xlsx ||
+     *ext == extension_xpi ||
+     *ext == extension_xrns ||
+     *ext == file_hint_zip.extension;
   @*/
 static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const unsigned int file_nbr)
 {
@@ -377,8 +534,10 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   if (len)
   {
     /*@ assert 0 < len <= 65535; */
+#ifndef __FRAMAC__
     if(zip_parse_file_entry_fn(fr, ext, file_nbr, file, len, &krita) < 0)
       return -1;
+#endif
     /*@ assert fr->file_size < 0x8000000000000000; */
   }
   /*@ assert fr->file_size < 0x8000000000000000; */
@@ -762,6 +921,8 @@ static void file_check_zip(file_recovery_t *fr)
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
+  /* fr->time is already set to 0 but it helps frama-c */
+  fr->time=0;
   first_filename[0]='\0';
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0)
     return ;
@@ -995,6 +1156,26 @@ static void file_rename_zip(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_zip || file_recovery_new->file_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_zip || file_recovery_new->file_rename == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_zip.extension ||
+      file_recovery_new->extension == extension_docx ||
+      file_recovery_new->extension == extension_epub ||
+      file_recovery_new->extension == extension_kra ||
+      file_recovery_new->extension == extension_numbers ||
+      file_recovery_new->extension == extension_odg ||
+      file_recovery_new->extension == extension_odp ||
+      file_recovery_new->extension == extension_ods ||
+      file_recovery_new->extension == extension_odt ||
+      file_recovery_new->extension == extension_ora ||
+      file_recovery_new->extension == extension_pptx ||
+      file_recovery_new->extension == extension_sh3d ||
+      file_recovery_new->extension == extension_sxc ||
+      file_recovery_new->extension == extension_sxd ||
+      file_recovery_new->extension == extension_sxi ||
+      file_recovery_new->extension == extension_sxw ||
+      file_recovery_new->extension == extension_vsdx ||
+      file_recovery_new->extension == extension_xd ||
+      file_recovery_new->extension == extension_xlsx ||
+      file_recovery_new->extension == extension_xrns );
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
   @*/
@@ -1034,56 +1215,56 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     const unsigned int compressed_size=le32(file->compressed_size);
     /* Mypaint .ora */
     if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
-      file_recovery_new->extension="ora";
+      file_recovery_new->extension=extension_ora;
     else if(compressed_size==20 && memcmp(&buffer[38],"application/epub+zip",20)==0)
-      file_recovery_new->extension="epub";
+      file_recovery_new->extension=extension_epub;
     else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
-      file_recovery_new->extension="sxc";
+      file_recovery_new->extension=extension_sxc;
     else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
-      file_recovery_new->extension="sxd";
+      file_recovery_new->extension=extension_sxd;
     else if(compressed_size==31 && memcmp(&buffer[38],"application/vnd.sun.xml.impress",31)==0)
-      file_recovery_new->extension="sxi";
+      file_recovery_new->extension=extension_sxi;
     else if(compressed_size==30 && memcmp(&buffer[38],"application/vnd.sun.xml.writer",30)==0)
-      file_recovery_new->extension="sxw";
+      file_recovery_new->extension=extension_sxw;
     else if(compressed_size==39 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.text",39)==0)
-      file_recovery_new->extension="odt";
+      file_recovery_new->extension=extension_odt;
     else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
-      file_recovery_new->extension="odg";
+      file_recovery_new->extension=extension_odg;
     else if(compressed_size==45 && memcmp(&buffer[38],"application/vnd.adobe.sparkler.project+dcxucf",45)==0)
-      file_recovery_new->extension="xd";
+      file_recovery_new->extension=extension_xd;
     else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
-      file_recovery_new->extension="ods";
+      file_recovery_new->extension=extension_ods;
     else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
-      file_recovery_new->extension="odp";
+      file_recovery_new->extension=extension_odp;
     else if(memcmp(&buffer[38],"application/x-krita",19)==0)
-      file_recovery_new->extension="kra";
+      file_recovery_new->extension=extension_kra;
     else
     { /* default to writer */
-      file_recovery_new->extension="sxw";
+      file_recovery_new->extension=extension_sxw;
     }
   }
   else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
   {
     if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"word/", 5)!=0)
-      file_recovery_new->extension="docx";
+      file_recovery_new->extension=extension_docx;
     else if(pos_in_mem(&buffer[0], 2000, (const unsigned char*)"xl/", 3)!=0)
-      file_recovery_new->extension="xlsx";
+      file_recovery_new->extension=extension_xlsx;
     else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"ppt/", 4)!=0)
-      file_recovery_new->extension="pptx";
+      file_recovery_new->extension=extension_pptx;
     else if(pos_in_mem(&buffer[0], buffer_size, (const unsigned char*)"visio/", 6)!=0)
-      file_recovery_new->extension="vsdx";
+      file_recovery_new->extension=extension_vsdx;
     else
-      file_recovery_new->extension="docx";
+      file_recovery_new->extension=extension_docx;
     file_recovery_new->file_rename=&file_rename_zip;
   }
   /* Extended Renoise song file */
   else if(len==8 && memcmp(&buffer[30], "Song.xml", 8)==0)
-    file_recovery_new->extension="xrns";
+    file_recovery_new->extension=extension_xrns;
   else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
-    file_recovery_new->extension="sh3d";
+    file_recovery_new->extension=extension_sh3d;
   /* Apple Numbers */
   else if(len==18 && memcmp(&buffer[30], "Index/Document.iwa", 18)==0)
-    file_recovery_new->extension="numbers";
+    file_recovery_new->extension=extension_numbers;
   else
   {
     file_recovery_new->extension=file_hint_zip.extension;
@@ -1180,6 +1361,7 @@ int main()
   register_header_check_zip(&file_stats);
   if(header_check_zip(buffer, BLOCKSIZE, 0u, &file_recovery, &file_recovery_new)!=1)
     return 0;
+  /*@ assert valid_read_string(file_recovery_new.extension); */
   /*@ assert valid_read_string((char *)&fn); */
   memcpy(file_recovery_new.filename, fn, sizeof(fn));
   file_recovery_new.file_stat=&file_stats;
@@ -1187,6 +1369,7 @@ int main()
   /*@ assert file_recovery_new.min_filesize == 30;	*/
   /*@ assert file_recovery_new.file_check == &file_check_zip || file_recovery_new.file_check == \null; */
   /*@ assert file_recovery_new.file_stat->file_hint!=NULL; */
+  /*@ assert file_recovery_new.time == 0; */
   {
     file_recovery_t file_recovery_new2;
     file_recovery_new2.blocksize=BLOCKSIZE;
@@ -1194,18 +1377,43 @@ int main()
     file_recovery_new2.file_check=NULL;
     file_recovery_new2.location.start=BLOCKSIZE;
     file_recovery_new.handle=NULL;	/* In theory should be not null */
+    /*@ assert file_recovery_new.extension == file_hint_zip.extension ||
+      file_recovery_new.extension == extension_docx ||
+      file_recovery_new.extension == extension_epub ||
+      file_recovery_new.extension == extension_kra ||
+      file_recovery_new.extension == extension_numbers ||
+      file_recovery_new.extension == extension_odg ||
+      file_recovery_new.extension == extension_odp ||
+      file_recovery_new.extension == extension_ods ||
+      file_recovery_new.extension == extension_odt ||
+      file_recovery_new.extension == extension_ora ||
+      file_recovery_new.extension == extension_pptx ||
+      file_recovery_new.extension == extension_sh3d ||
+      file_recovery_new.extension == extension_sxc ||
+      file_recovery_new.extension == extension_sxd ||
+      file_recovery_new.extension == extension_sxi ||
+      file_recovery_new.extension == extension_sxw ||
+      file_recovery_new.extension == extension_vsdx ||
+      file_recovery_new.extension == extension_xd ||
+      file_recovery_new.extension == extension_xlsx ||
+      file_recovery_new.extension == extension_xrns; */
+    /*@ assert valid_read_string(file_recovery_new.extension); */
     /*@ assert valid_read_string((char *)file_recovery_new.filename); */
 #if defined(__FRAMAC__)
     Frama_C_make_unknown((char *)buffer, BLOCKSIZE);
 #endif
     /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+    /*@ assert valid_read_string(file_recovery_new.extension); */
     header_check_zip(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
   }
+  /*@ assert file_recovery_new.time == 0; */
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+  /*@ assert valid_read_string(file_recovery_new.extension); */
   file_recovery_new.handle=fopen(fn, "rb");
   if(file_recovery_new.handle!=NULL && file_recovery_new.file_check !=NULL)
   {
     /*@ assert file_recovery_new.file_check == &file_check_zip; */
+    /*@ assert file_recovery_new.time == 0; */
     file_check_zip(&file_recovery_new);
     fclose(file_recovery_new.handle);
   }
