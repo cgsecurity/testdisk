@@ -262,7 +262,10 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 
   leap_day = (year + 3) / 4;
   if (year > YEAR_2100)		/* 2100 isn't leap year */
+  {
+    /*@ assert year > YEAR_2100 && leap_day > (YEAR_2100 + 3)/4; */
     leap_day--;
+  }
   if (IS_LEAP_YEAR(year) && month > 2)
     leap_day++;
   days = days_in_year[month];

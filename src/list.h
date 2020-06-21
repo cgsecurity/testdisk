@@ -78,6 +78,10 @@ static inline void __td_list_add(struct td_list_head *newe,
 	newe->next = next;
 	newe->prev = prev;
 	prev->next = newe;
+	/*@ assert next->prev == newe; */
+	/*@ assert newe->next == next; */
+	/*@ assert newe->prev == prev; */
+	/*@ assert prev->next == newe; */
 }
 
 /**
