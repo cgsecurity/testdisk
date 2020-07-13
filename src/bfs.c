@@ -86,5 +86,6 @@ int recover_BeFS(const disk_t *disk_car, const struct disk_super_block *beos_blo
   set_BeFS_info(beos_block, partition);
   partition->part_size=le64(beos_block->num_blocks) << le32(beos_block->block_shift);
   partition->part_type_i386=(unsigned char)P_BEOS;
+  partition->part_type_mac=PMAC_BEOS;
   return 0;
 }

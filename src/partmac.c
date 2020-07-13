@@ -68,6 +68,7 @@ static const struct systypes mac_sys_types[] = {
   { PMAC_FWDRIVER,	"FWDriver"	},
   { PMAC_SWAP,		"Swap"		},
   { PMAC_LINUX,		"Linux"		},
+  { PMAC_BEOS,		"BeFS"		},
   { PMAC_HFS,		"HFS"		},
   { PMAC_MAP,		"partition_map"	},
   { PMAC_PATCHES,	"Patches"	},
@@ -173,6 +174,8 @@ static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int
 	new_partition->part_type_mac=PMAC_MFS;
       else if(strcmp(dpme->dpme_type,"Apple_PRODOS")==0)
 	new_partition->part_type_mac=PMAC_PRODOS;
+      else if(strcmp(dpme->dpme_type,"Be_BFS")==0)
+	new_partition->part_type_mac=PMAC_BEOS;
       else if(strcmp(dpme->dpme_type,"DOS_FAT_32")==0)
 	new_partition->part_type_mac=PMAC_FAT32;
       else
@@ -353,6 +356,7 @@ static int check_part_mac(disk_t *disk_car,const int verbose,partition_t *partit
     case PMAC_NewWorld:
     case PMAC_DRIVER:
     case PMAC_MFS:
+    case PMAC_BEOS:
     case PMAC_PRODOS:
       break;
     case PMAC_LINUX:

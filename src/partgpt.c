@@ -56,6 +56,7 @@
 #include "chgtype.h"
 #include "partgpt.h"
 #include "savehdr.h"
+#include "bfs.h"
 #include "exfat.h"
 #include "fat.h"
 #include "hfs.h"
@@ -129,6 +130,7 @@ const struct systypes_gtp gpt_sys_types[] = {
   { GPT_ENT_TYPE_SOLARIS_RESERVED3,	"Solaris Reserved3"	},
   { GPT_ENT_TYPE_SOLARIS_RESERVED4,	"Solaris Reserved4"	},
   { GPT_ENT_TYPE_SOLARIS_RESERVED5,	"Solaris Reserved5"	},
+  { GPT_ENT_TYPE_BEOS_BFS,		"BeFS"},
   { GPT_ENT_TYPE_UNUSED,  NULL }
  };
 
@@ -500,6 +502,12 @@ static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition
       ret=check_HFSP(disk, partition, verbose);
     if(ret!=0)
       screen_buffer_add("No HFS or HFS+ structure\n");
+  }
+  else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_BEOS_BFS)==0)
+  {
+    ret=check_BeFS(disk, partition);
+    if(ret!=0)
+      screen_buffer_add("No BFS structure\n");
   }
   log_set_levels(old_levels);
   if(ret!=0)
