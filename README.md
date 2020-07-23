@@ -66,14 +66,7 @@ TestDisk and PhotoRec run under:
 
 Both are under GNU General Public License.
 
-To build git repository from source:
-
-```
-mkdir config
-autoreconf --install -W all -I config
-./configure
-make
-```
+To build from source, read [INSTALL](INSTALL)
 
 See also [latest documentation](https://github.com/cgsecurity/testdisk_documentation)
 
