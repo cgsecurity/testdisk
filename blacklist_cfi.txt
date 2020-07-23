@@ -1,0 +1,5 @@
+# https://clang.llvm.org/docs/ControlFlowIntegrity.html
+# export CC="clang -flto -fsanitize=cfi -fvisibility=default -fsanitize-blacklist=blacklist_cfi.txt"
+# export CXX="clang++ -flto -fsanitize=cfi -fvisibility=default -fsanitize-blacklist=blacklist_cfi.txt"
+[cfi-icall]
+fun:jpeg_testdisk_alloc_src

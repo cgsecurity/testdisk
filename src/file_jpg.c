@@ -888,13 +888,25 @@ static void jpg_term_source (j_decompress_ptr cinfo)
 }
 
 
+/* WARNING: This function must be listed in clang Control Flow Integrity (CFI) function blacklist, section cfi-icall */
+static void jpeg_testdisk_alloc_src (j_decompress_ptr cinfo, const unsigned int blocksize)
+{
+  my_source_mgr *src= (my_source_mgr *)
+    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+	sizeof(my_source_mgr));
+  cinfo->src = (struct jpeg_source_mgr *) src;
+  src->buffer = (JOCTET *)
+    (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+	blocksize * sizeof(JOCTET));
+}
+
 /*
  * Prepare for input from a stdio stream.
  * The caller must have already opened the stream, and is responsible
  * for closing it after finishing decompression.
  */
 
-static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile, uint64_t offset, const unsigned int blocksize)
+static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile, const uint64_t offset, const unsigned int blocksize)
 {
   my_source_mgr * src;
 
@@ -906,13 +918,7 @@ static void jpeg_testdisk_src (j_decompress_ptr cinfo, FILE * infile, uint64_t o
    * manager serially with the same JPEG object.  Caveat programmer.
    */
   if (cinfo->src == NULL) {	/* first time for this JPEG object? */
-    cinfo->src = (struct jpeg_source_mgr *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-				  sizeof(my_source_mgr));
-    src = (my_source_mgr *) cinfo->src;
-    src->buffer = (JOCTET *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
-				  blocksize * sizeof(JOCTET));
+    jpeg_testdisk_alloc_src(cinfo, blocksize);
   }
 
   src = (my_source_mgr *) cinfo->src;
@@ -1541,16 +1547,18 @@ static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer
     return 0;
   {
     const struct sof_header *h=(const struct sof_header *)&buffer[i];
-    if(be16(h->length) < sizeof(struct sof_header)-2)
+    const unsigned int length=be16(h->length);
+    if(length < sizeof(struct sof_header)-2)
       return 1;
   }
   if(i+2+8 > buffer_size)
     return 0;
   {
     const struct sof_header *h=(const struct sof_header *)&buffer[i];
+    const unsigned int length=be16(h->length);
     if(h->precision!=8 || be16(h->width)==0 || h->nbr==0)
       return 1;
-    if(be16(h->length) < 8+h->nbr*3)
+    if(length < 8+h->nbr*3)
       return 1;
   }
 //  if(i+2+be16(h->length) > buffer_size)
