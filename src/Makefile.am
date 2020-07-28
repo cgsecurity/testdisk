@@ -108,6 +108,7 @@ file_C			= filegen.c \
 			  file_cwk.c \
 			  file_d2s.c \
 			  file_dad.c \
+			  file_dap.c \
 			  file_dar.c \
 			  file_dat.c \
 			  file_dbf.c \
