@@ -75,9 +75,29 @@ struct hfs_mdb {
   uint32_t drCTFlSize;                 /* 0x92 bytes in the catalog B-tree */
   hfs_extent_rec drCTExtRec;           /* 0x96 catalog B-tree's first 3 extents */
 } __attribute__ ((gcc_struct, __packed__));
-int check_HFS(disk_t *disk_car,partition_t *partition,const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @*/
+int check_HFS(disk_t *disk_car, partition_t *partition, const int verbose);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(hfs_mdb);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, hfs_mdb, partition);
+  @*/
 int test_HFS(const disk_t *disk_car, const hfs_mdb_t *hfs_mdb, const partition_t *partition, const int verbose, const int dump_ind);
-int recover_HFS(disk_t *disk_car, const hfs_mdb_t *hfs_mdb,partition_t *partition,const int verbose, const int dump_ind, const int backup);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(hfs_mdb);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, hfs_mdb, partition);
+  @*/
+int recover_HFS(const disk_t *disk_car, const hfs_mdb_t *hfs_mdb, partition_t *partition, const int verbose, const int dump_ind, const int backup);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
