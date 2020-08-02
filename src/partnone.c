@@ -295,7 +295,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   partition->order=NO_ORDER;
   partition->status=STATUS_PRIM;
   screen_buffer_reset();
-  disk->arch->check_part(disk, verbose,partition,saveheader);
+  check_part_none(disk, verbose,partition,saveheader);
   aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk, partition);
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
   if(insert_error>0)

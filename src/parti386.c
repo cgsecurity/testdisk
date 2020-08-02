@@ -1126,7 +1126,7 @@ static int i386_entry2partition(disk_t *disk_car, const uint64_t offset, partiti
       partition->errcode=BAD_SCOUNT;
   }
   /* Check partition and load partition name */
-  partition->arch->check_part(disk_car,verbose,partition,saveheader);
+  check_part_i386(disk_car,verbose,partition,saveheader);
   return 0;
 }
 
@@ -1458,7 +1458,7 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
       }
     }
   }
-  if(vista_partition>0 || disk_car->arch->test_structure(new_list_part))
+  if(vista_partition>0 || test_structure_i386(new_list_part))
   { /* Handle Vista partition */
     unsigned int i;
     int set_prim_bootable_done=0;
@@ -1480,7 +1480,7 @@ static void init_structure_i386(const disk_t *disk_car,list_part_t *list_part, c
 	element->part->status=STATUS_LOG;
     }
   }
-  if(disk_car->arch->test_structure(new_list_part))
+  if(test_structure_i386(new_list_part))
   {
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_DELETED;

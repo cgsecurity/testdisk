@@ -186,7 +186,7 @@ static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int
       new_partition->part_offset=(uint64_t)be32(dpme->dpme_pblock_start)*PBLOCK_SIZE;
       new_partition->part_size=(uint64_t)be32(dpme->dpme_pblocks)*PBLOCK_SIZE;
       new_partition->status=STATUS_PRIM;
-      new_partition->arch->check_part(disk_car,verbose,new_partition,saveheader);
+      check_part_mac(disk_car,verbose,new_partition,saveheader);
       aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk_car,new_partition);
       new_list_part=insert_new_partition(new_list_part, new_partition, 0, &insert_error);
       if(insert_error>0)
@@ -331,7 +331,7 @@ static void init_structure_mac(const disk_t *disk_car,list_part_t *list_part, co
   }
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_PRIM;
-  if(disk_car->arch->test_structure(new_list_part))
+  if(test_structure_mac(new_list_part))
   {
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_DELETED;

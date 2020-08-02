@@ -294,7 +294,7 @@ static void init_structure_humax(const disk_t *disk_car,list_part_t *list_part, 
   }
   for(element=new_list_part;element!=NULL;element=element->next)
     element->part->status=STATUS_PRIM;
-  if(disk_car->arch->test_structure(new_list_part))
+  if(test_structure_humax(new_list_part))
   {
     for(element=new_list_part;element!=NULL;element=element->next)
       element->part->status=STATUS_DELETED;
