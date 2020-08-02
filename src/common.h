@@ -367,7 +367,7 @@ struct arch_fnct_struct
   int (*write_MBR_code)(disk_t *disk);
   void (*set_prev_status)(const disk_t *disk, partition_t *partition);
   void (*set_next_status)(const disk_t *disk, partition_t *partition);
-  int (*test_structure)(list_part_t *list_part);
+  int (*test_structure)(const list_part_t *list_part);
   unsigned int (*get_part_type)(const partition_t *partition);
   int (*set_part_type)(partition_t *partition, unsigned int part_type);
   void (*init_structure)(const disk_t *disk,list_part_t *list_part, const int verbose);

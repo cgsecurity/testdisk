@@ -280,7 +280,7 @@ static void set_next_status_mac(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_DELETED;
 }
 
-int test_structure_mac(list_part_t *list_part)
+int test_structure_mac(const list_part_t *list_part)
 { /* Return 1 if bad*/
   list_part_t *new_list_part;
   int res;

@@ -45,17 +45,78 @@
 #include "fatx.h"
 #include "log.h"
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @*/
 static int check_part_xbox(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
+
+/*@
+  @ requires \valid(disk_car);
+  @*/
 static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveheader);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static int write_part_xbox(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static list_part_t *init_part_order_xbox(const disk_t *disk_car, list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @ assigns partition->status;
+  @*/
 static void set_next_status_xbox(const disk_t *disk_car, partition_t *partition);
-static int test_structure_xbox(list_part_t *list_part);
+
+/*@
+  @ requires list_part == \null || \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+static int test_structure_xbox(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns partition->part_type_xbox;
+  @*/
 static int set_part_type_xbox(partition_t *partition, unsigned int part_type_xbox);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns \nothing;
+  @*/
 static int is_part_known_xbox(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @*/
 static void init_structure_xbox(const disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_xbox(const partition_t *partition);
+
+/*@
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_xbox_aux(const unsigned int part_type_xbox);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static unsigned int get_part_type_xbox(const partition_t *partition);
 
 static const struct systypes xbox_sys_types[] = {
@@ -212,7 +273,7 @@ static void set_next_status_xbox(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_DELETED;
 }
 
-static int test_structure_xbox(list_part_t *list_part)
+static int test_structure_xbox(const list_part_t *list_part)
 { /* Return 1 if bad*/
   list_part_t *new_list_part;
   int res;

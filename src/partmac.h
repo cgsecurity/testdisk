@@ -92,7 +92,7 @@ struct dpme {
 };
 typedef struct dpme mac_DPME;
 
-int test_structure_mac(list_part_t *list_part);
+int test_structure_mac(const list_part_t *list_part);
 list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 
 #ifdef __cplusplus

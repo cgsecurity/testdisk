@@ -72,14 +72,59 @@
 #include "unicode.h"
 #include "crc.h"
 
+/*@
+  @ requires \valid(disk);
+  @ requires \valid(partition);
+  @*/
 static int check_part_gpt(disk_t *disk, const int verbose, partition_t *partition, const int saveheader);
+
+/*@
+  @ requires \valid(disk_car);
+  @*/
 static list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int saveheader);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static list_part_t *init_part_order_gpt(const disk_t *disk_car, list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @ assigns partition->status;
+  @*/
 static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition);
-static int test_structure_gpt(list_part_t *list_part);
+
+/*@
+  @ requires list_part == \null || \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+static int test_structure_gpt(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns \nothing;
+  @*/
 static int is_part_known_gpt(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @*/
 static void init_structure_gpt(const disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_gpt(const partition_t *partition);
+
+/*@
+  @ assigns \nothing;
+  @*/
 static const char *get_gpt_typename(const efi_guid_t part_type_gpt);
 
 const struct systypes_gtp gpt_sys_types[] = {
@@ -414,7 +459,7 @@ static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_DELETED;
 }
 
-static int test_structure_gpt(list_part_t *list_part)
+static int test_structure_gpt(const list_part_t *list_part)
 { /* Return 1 if bad*/
   int res;
   list_part_t *new_list_part;

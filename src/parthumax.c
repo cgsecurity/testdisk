@@ -43,14 +43,61 @@
 #include "log.h"
 #include "parthumax.h"
 
+/*@
+  @ requires \valid(disk_car);
+  @*/
 static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const int saveheader);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static int write_part_humax(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static list_part_t *init_part_order_humax(const disk_t *disk_car, list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @ assigns partition->status;
+  @*/
 static void set_next_status_humax(const disk_t *disk_car, partition_t *partition);
-static int test_structure_humax(list_part_t *list_part);
+
+/*@
+  @ requires list_part == \null || \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+static int test_structure_humax(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns \nothing;
+  @*/
 static int is_part_known_humax(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @*/
 static void init_structure_humax(const disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_humax(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static unsigned int get_part_type_humax(const partition_t *partition);
 
 #if 0
@@ -240,25 +287,17 @@ static void set_next_status_humax(const disk_t *disk_car, partition_t *partition
     partition->status=STATUS_DELETED;
 }
 
-static int test_structure_humax(list_part_t *list_part)
+static int test_structure_humax(const list_part_t *list_part)
 { /* Return 1 if bad*/
   list_part_t *new_list_part=NULL;
   int res;
   unsigned int nbr_prim=0;
-  list_part_t *element;
+  const list_part_t *element;
+  /*@ loop assigns element, nbr_prim; */
   for(element=list_part;element!=NULL;element=element->next)
   {
-    switch(element->part->status)
-    {
-      case STATUS_PRIM:
+    if(element->part->status == STATUS_PRIM)
 	nbr_prim++;
-	break;
-      case STATUS_DELETED:
-	break;
-      default:
-	log_critical("test_structure_humax: severe error\n");
-	break;
-    }
   }
   if(nbr_prim>4)
     return 1;

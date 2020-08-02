@@ -51,17 +51,79 @@
 #include "partsun.h"
 
 static int check_part_sun(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
+/*@
+  @ requires \valid_read(buffer + (0 .. 0x200-1));
+  @ requires \valid(geometry);
+  @ requires \separated(buffer + (0 .. 0x200-1), geometry);
+  @ ensures geometry->cylinders == 0;
+  @ assigns geometry->sectors_per_head, geometry->heads_per_cylinder, geometry->cylinders;
+  @*/
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
+
+/*@
+  @ requires \valid(disk_car);
+  @*/
 static list_part_t *read_part_sun(disk_t *disk_car, const int verbose, const int saveheader);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 static int write_part_sun(disk_t *disk_car, const list_part_t *list_part, const int ro , const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @*/
 static list_part_t *init_part_order_sun(const disk_t *disk_car, list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(partition);
+  @ assigns partition->status;
+  @*/
 static void set_next_status_sun(const disk_t *disk_car, partition_t *partition);
-static int test_structure_sun(list_part_t *list_part);
+
+/*@
+  @ requires list_part == \null || \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+static int test_structure_sun(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns partition->part_type_sun;
+  @*/
 static int set_part_type_sun(partition_t *partition, unsigned int part_type_sun);
+
+/*@
+  @ requires \valid(partition);
+  @ assigns \nothing;
+  @*/
 static int is_part_known_sun(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires list_part == \null || \valid(list_part);
+  @*/
 static void init_structure_sun(const disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_sun(const partition_t *partition);
+
+/*@
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_sun_aux(const unsigned int part_type_sun);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static unsigned int get_part_type_sun(const partition_t *partition);
 
 static const struct systypes sun_sys_types[] = {
@@ -274,7 +336,7 @@ static void set_next_status_sun(const disk_t *disk_car, partition_t *partition)
     partition->status=STATUS_DELETED;
 }
 
-static int test_structure_sun(list_part_t *list_part)
+static int test_structure_sun(const list_part_t *list_part)
 { /* Return 1 if bad*/
   int res;
   list_part_t *new_list_part=gen_sorted_partition_list(list_part);

@@ -75,17 +75,71 @@
 #include "zfs.h"
 #include "log.h"
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @*/
 static int check_part_none(disk_t *disk_car, const int verbose,partition_t *partition,const int saveheader);
+
+/*@
+  @ requires \valid_read(buffer + (0 .. 0x200-1));
+  @ requires \valid(geometry);
+  @ requires \separated(buffer + (0 .. 0x200-1), geometry);
+  @ assigns geometry->sectors_per_head, geometry->heads_per_cylinder, geometry->bytes_per_sector;
+  @*/
 static int get_geometry_from_nonembr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
+
+/*@
+  @ requires \valid(disk_car);
+  @*/
 static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ assigns \nothing;
+  @*/
 static list_part_t *init_part_order_none(const disk_t *disk_car, list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ assigns \nothing;
+  @*/
 static void set_next_status_none(const disk_t *disk_car, partition_t *partition);
-static int test_structure_none(list_part_t *list_part);
-static int is_part_known_none(const partition_t *partition);
-static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, const int verbose);
-static const char *get_partition_typename_none_aux(const unsigned int part_type_none);
+
+/*@
+  @ requires list_part == \null || \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+static int test_structure_none(const list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns partition->upart_type;
+  @*/
 static int set_part_type_none(partition_t *partition, unsigned int part_type);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
+static int is_part_known_none(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires list_part==\null || \valid(list_part);
+  @*/
+static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static unsigned int get_part_type_none(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_none(const partition_t *partition);
 
 static const struct systypes none_sys_types[] = {
@@ -313,7 +367,7 @@ static void set_next_status_none(const disk_t *disk_car, partition_t *partition)
 {
 }
 
-static int test_structure_none(list_part_t *list_part)
+static int test_structure_none(const list_part_t *list_part)
 {
   return 0;
 }
