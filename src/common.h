@@ -476,6 +476,10 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
   @*/
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
 
+/*@
+  @ requires valid_read_string(str);
+  @ ensures \result == \null || valid_read_string(\result);
+  @*/
 char* strip_dup(char* str);
 
 /*@ assigns \nothing; */
@@ -574,21 +578,31 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
 
 /*@
   @ requires \valid(current_cmd);
-  @ requires valid_string(*current_cmd);
-  @ requires valid_read_string((char *)*cmd);
+  @ requires valid_read_string(*current_cmd);
+  @ requires valid_read_string(cmd);
+  @ requires \separated(cmd+(..), current_cmd);
+  @ requires strlen(cmd) == n;
+  @ assigns  *current_cmd;
+  @ assigns \result \from indirect:(*current_cmd)[0 .. n-1], indirect:cmd[0 ..n-1], indirect:n;
+  @ ensures  valid_read_string(*current_cmd);
+  @ ensures  \result == 0 ==> *current_cmd == \old(*current_cmd) + n;
+  @ ensures  \result != 0 ==> *current_cmd == \old(*current_cmd);
   @*/
-  // requires strlen(cmd) == n;
-int check_command(char **current_cmd, const char *cmd, size_t n);
+int check_command(char **current_cmd, const char *cmd, const size_t n);
 
 /*@
   @ requires \valid(current_cmd);
-  @ requires valid_string(*current_cmd);
+  @ requires valid_read_string(*current_cmd);
+  @ assigns  *current_cmd;
+  @ ensures  valid_read_string(*current_cmd);
   @*/
 void skip_comma_in_command(char **current_cmd);
 
 /*@
   @ requires \valid(current_cmd);
-  @ requires valid_string(*current_cmd);
+  @ requires valid_read_string(*current_cmd);
+  @ assigns  *current_cmd;
+  @ ensures  valid_read_string(*current_cmd);
   @*/
 uint64_t get_int_from_command(char **current_cmd);
 #ifdef __cplusplus
