@@ -23,6 +23,10 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBEWF
+#endif
+
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
@@ -96,34 +100,30 @@ struct info_fewf_struct
   unsigned int buffer_size;
 };
 
+#if defined( HAVE_LIBEWF_V2_API )
 disk_t *fewf_init(const char *device, const int mode)
 {
   unsigned int num_files=0;
   char **filenames= NULL;
   disk_t *disk=NULL;
   struct info_fewf_struct *data;
-#if !defined( HAVE_LIBEWF_V2_API ) && defined( HAVE_GLOB_H )
-  glob_t globbuf;
-#endif
-#if defined( HAVE_LIBEWF_V2_API )
   libewf_error_t *ewf_error = NULL;
-#endif
   data=(struct info_fewf_struct *)MALLOC(sizeof(struct info_fewf_struct));
-  memset(data, 0, sizeof(struct info_fewf_struct)); 
+  memset(data, 0, sizeof(struct info_fewf_struct));
   data->file_name = strdup(device);
+  if(data->file_name==NULL)
+  {
+    free(data);
+    return NULL;
+  }
   data->handle=NULL;
   data->mode = mode;
 
 #ifdef DEBUG_EWF
-#if defined( HAVE_LIBEWF_V2_API )
   libewf_notify_set_stream( stderr, NULL );
   libewf_notify_set_verbose( 1 );
-#else
-  libewf_set_notify_values( stderr, 1 );
-#endif
 #endif
 
-#if defined( HAVE_LIBEWF_V2_API )
   if( libewf_glob(
        data->file_name,
        strlen(data->file_name),
@@ -140,36 +140,9 @@ disk_t *fewf_init(const char *device, const int mode)
     free(data);
     return NULL;
   }
-#elif defined( HAVE_GLOB_H )
-  {
-    globbuf.gl_offs = 0;
-    glob(data->file_name, GLOB_DOOFFS, NULL, &globbuf);
-    if(globbuf.gl_pathc>0)
-    {
-      filenames=(char **)MALLOC(globbuf.gl_pathc * sizeof(*filenames));
-      for (num_files=0; num_files<globbuf.gl_pathc; num_files++) {
-	filenames[num_files]=globbuf.gl_pathv[num_files];
-      }
-    }
-  }
-  if(filenames==NULL)
-  {
-    globfree(&globbuf);
-    free(data->file_name);
-    free(data);
-    return NULL;
-  }
-#else
-  {
-    filenames=(char **)MALLOC(1*sizeof(*filenames));
-    filenames[num_files] = data->file_name;
-    num_files++;
-  }
-#endif
 
   if((mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR)
   {
-#if defined( HAVE_LIBEWF_V2_API )
     if( libewf_handle_initialize(
 	  &( data->handle ),
 	  &ewf_error) != 1 )
@@ -209,18 +182,10 @@ disk_t *fewf_init(const char *device, const int mode)
 	  NULL );
       data->handle=NULL;
     }
-#else
-    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ_WRITE);
-    if(data->handle==NULL)
-    {
-      log_error("libewf_open(%s) in RW mode failed\n", device);
-    }
-#endif /* defined( HAVE_LIBEWF_V2_API ) */
   }
   if(data->handle==NULL)
   {
     data->mode&=~TESTDISK_O_RDWR;
-#if defined( HAVE_LIBEWF_V2_API )
     if( libewf_handle_initialize(
 	  &( data->handle ),
 	  &ewf_error) != 1 )
@@ -261,7 +226,140 @@ disk_t *fewf_init(const char *device, const int mode)
       free(data);
       return NULL;
     }
+  }
+  if( libewf_handle_set_header_values_date_format(
+       data->handle,
+       LIBEWF_DATE_FORMAT_DAYMONTH,
+       NULL ) != 1 )
+  {
+    log_error("%s Unable to set header values date format\n", device);
+  }
+  disk=(disk_t *)MALLOC(sizeof(*disk));
+  init_disk(disk);
+  disk->arch=&arch_none;
+  disk->device=strdup(device);
+  if(disk->device==NULL)
+  {
+    free(disk);
+    libewf_glob_free(
+	filenames,
+	num_files,
+	NULL );
+    free(data->file_name);
+    free(data);
+    return NULL;
+  }
+  disk->data=data;
+  disk->description=&fewf_description;
+  disk->description_short=&fewf_description_short;
+  disk->pread=&fewf_pread;
+  disk->pwrite=((data->mode&TESTDISK_O_RDWR)?&fewf_pwrite:&fewf_nopwrite);
+  disk->sync=&fewf_sync;
+  disk->access_mode=(data->mode&TESTDISK_O_RDWR);
+  disk->clean=&fewf_clean;
+  {
+    uint32_t bytes_per_sector = 0;
+    if( libewf_handle_get_bytes_per_sector(
+	  data->handle,
+	  &bytes_per_sector,
+	  NULL ) != 1 )
+    {
+      disk->sector_size=DEFAULT_SECTOR_SIZE;
+    }
+    else
+    {
+      disk->sector_size=bytes_per_sector;
+    }
+  }
+//  printf("libewf_get_bytes_per_sector %u\n",disk->sector_size);
+  if(disk->sector_size==0)
+    disk->sector_size=DEFAULT_SECTOR_SIZE;
+  /* Set geometry */
+  disk->geom.cylinders=0;
+  disk->geom.heads_per_cylinder=1;
+  disk->geom.sectors_per_head=1;
+  disk->geom.bytes_per_sector=disk->sector_size;
+  {
+    size64_t media_size = 0;
+    if( libewf_handle_get_media_size(
+	  data->handle,
+	  &media_size,
+	  NULL ) != 1 )
+    {
+      disk->disk_real_size=0;
+    }
+    disk->disk_real_size=media_size;
+  }
+  update_disk_car_fields(disk);
+  libewf_glob_free(
+    filenames,
+    num_files,
+    NULL );
+  return disk;
+}
 #else
+disk_t *fewf_init(const char *device, const int mode)
+{
+  unsigned int num_files=0;
+  char **filenames= NULL;
+  disk_t *disk=NULL;
+  struct info_fewf_struct *data;
+#if defined( HAVE_GLOB_H )
+  glob_t globbuf;
+#endif
+  data=(struct info_fewf_struct *)MALLOC(sizeof(struct info_fewf_struct));
+  memset(data, 0, sizeof(struct info_fewf_struct));
+  data->file_name = strdup(device);
+  if(data->file_name==NULL)
+  {
+    free(data);
+    return NULL;
+  }
+  data->handle=NULL;
+  data->mode = mode;
+
+#ifdef DEBUG_EWF
+  libewf_set_notify_values( stderr, 1 );
+#endif
+
+#if defined( HAVE_GLOB_H )
+  {
+    globbuf.gl_offs = 0;
+    glob(data->file_name, GLOB_DOOFFS, NULL, &globbuf);
+    if(globbuf.gl_pathc>0)
+    {
+      filenames=(char **)MALLOC(globbuf.gl_pathc * sizeof(*filenames));
+      for (num_files=0; num_files<globbuf.gl_pathc; num_files++) {
+	filenames[num_files]=globbuf.gl_pathv[num_files];
+      }
+    }
+  }
+  if(filenames==NULL)
+  {
+    globfree(&globbuf);
+    free(data->file_name);
+    free(data);
+    return NULL;
+  }
+#else
+  {
+    filenames=(char **)MALLOC(1*sizeof(*filenames));
+    filenames[num_files] = data->file_name;
+    num_files++;
+  }
+#endif
+
+  if((mode&TESTDISK_O_RDWR)==TESTDISK_O_RDWR)
+  {
+    data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ_WRITE);
+    if(data->handle==NULL)
+    {
+      log_error("libewf_open(%s) in RW mode failed\n", device);
+    }
+  }
+  if(data->handle==NULL)
+  {
+    data->mode&=~TESTDISK_O_RDWR;
     data->handle=libewf_open(filenames, num_files, LIBEWF_OPEN_READ);
     if(data->handle==NULL)
     {
@@ -274,27 +372,27 @@ disk_t *fewf_init(const char *device, const int mode)
       free(data);
       return NULL;
     }
-#endif /* defined( HAVE_LIBEWF_V2_API ) */
   }
 
-#if defined( HAVE_LIBEWF_V2_API )
-  if( libewf_handle_set_header_values_date_format(
-       data->handle,
-       LIBEWF_DATE_FORMAT_DAYMONTH,
-       NULL ) != 1 )
-  {
-    log_error("%s Unable to set header values date format\n", device);
-  }
-#else
   if( libewf_parse_header_values( data->handle, LIBEWF_DATE_FORMAT_DAYMONTH) != 1 )
   {
     log_error("%s Unable to parse EWF header values\n", device);
   }
-#endif
   disk=(disk_t *)MALLOC(sizeof(*disk));
   init_disk(disk);
   disk->arch=&arch_none;
   disk->device=strdup(device);
+  if(disk->device==NULL)
+  {
+    free(disk);
+#if defined( HAVE_GLOB_H )
+    globfree(&globbuf);
+#endif
+    free(filenames);
+    free(data->file_name);
+    free(data);
+    return NULL;
+  }
   disk->data=data;
   disk->description=&fewf_description;
   disk->description_short=&fewf_description_short;
@@ -303,18 +401,10 @@ disk_t *fewf_init(const char *device, const int mode)
   disk->sync=&fewf_sync;
   disk->access_mode=(data->mode&TESTDISK_O_RDWR);
   disk->clean=&fewf_clean;
-#if defined( HAVE_LIBEWF_V2_API ) || defined( LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS )
+#if defined( LIBEWF_GET_BYTES_PER_SECTOR_HAVE_TWO_ARGUMENTS )
   {
     uint32_t bytes_per_sector = 0;
-
-#if defined( HAVE_LIBEWF_V2_API )
-    if( libewf_handle_get_bytes_per_sector(
-         data->handle,
-         &bytes_per_sector,
-         NULL ) != 1 )
-#else
     if( libewf_get_bytes_per_sector(data->handle, &bytes_per_sector)<0)
-#endif
     {
       disk->sector_size=DEFAULT_SECTOR_SIZE;
     }
@@ -326,7 +416,6 @@ disk_t *fewf_init(const char *device, const int mode)
 #else
   disk->sector_size=libewf_get_bytes_per_sector(data->handle);
 #endif
-
 //  printf("libewf_get_bytes_per_sector %u\n",disk->sector_size);
   if(disk->sector_size==0)
     disk->sector_size=DEFAULT_SECTOR_SIZE;
@@ -335,19 +424,10 @@ disk_t *fewf_init(const char *device, const int mode)
   disk->geom.heads_per_cylinder=1;
   disk->geom.sectors_per_head=1;
   disk->geom.bytes_per_sector=disk->sector_size;
-  /* Get disk_real_size */
-#if defined( HAVE_LIBEWF_V2_API ) || defined( LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS )
+#if defined( LIBEWF_GET_MEDIA_SIZE_HAVE_TWO_ARGUMENTS )
   {
     size64_t media_size = 0;
-
-#if defined( HAVE_LIBEWF_V2_API )
-    if( libewf_handle_get_media_size(
-         data->handle,
-         &media_size,
-         NULL ) != 1 )
-#else
     if(libewf_get_media_size(data->handle, &media_size)<0)
-#endif
     {
       disk->disk_real_size=0;
     }
@@ -360,19 +440,13 @@ disk_t *fewf_init(const char *device, const int mode)
   disk->disk_real_size=libewf_get_media_size(data->handle);
 #endif
   update_disk_car_fields(disk);
-#if defined( HAVE_LIBEWF_V2_API )
-  libewf_glob_free(
-    filenames,
-    num_files,
-    NULL );
-#else
 #if defined( HAVE_GLOB_H )
   globfree(&globbuf);
 #endif
   free(filenames);
-#endif
   return disk;
 }
+#endif
 
 static const char *fewf_description(disk_t *disk)
 {
@@ -529,4 +603,3 @@ const char*td_ewf_version(void)
   return "none";
 }
 #endif /* defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF) */
-
