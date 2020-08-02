@@ -1199,10 +1199,10 @@ static void file_clean(disk_t *disk)
   generic_clean(disk);
 }
 
-static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
+static int file_pread_aux(const disk_t *disk, void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
-  int fd=((struct info_file_struct *)disk->data)->handle;
+  const int fd=((const struct info_file_struct *)disk->data)->handle;
 #if defined(__CYGWIN__)
   if(lseek(fd,offset,SEEK_SET) < 0)
   {
@@ -1304,7 +1304,7 @@ static int file_pread_aux(disk_t *disk, void *buf, const unsigned int count, con
 #ifdef HDCLONE
   if(ret>0)
   {
-    int handle_clone=((struct info_file_struct *)disk->data)->handle_clone;
+    const int handle_clone=((const struct info_file_struct *)disk->data)->handle_clone;
     if(handle_clone>0)
     {
       pwrite(handle_clone, buf, ret, offset);

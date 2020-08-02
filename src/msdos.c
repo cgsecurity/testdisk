@@ -53,7 +53,7 @@ static void free_dos_buffer(void);
 static int alloc_cmd_dos_buffer(void);
 static int hd_identify_enh_bios(disk_t *param_disk,const int verbose);
 static int check_enh_bios(const unsigned int disk, const int verbose);
-static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
+static int hd_report_error(const disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc);
 static const char *disk_description_short(disk_t *disk_car);
 static int disk_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t hd_offset);
 static int disk_pwrite(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t hd_offset);
@@ -85,20 +85,20 @@ static int alloc_cmd_dos_buffer(void)
   return 0;
 }
 
-static void disk_reset_error(disk_t *disk_car)
+static void disk_reset_error(const disk_t *disk_car)
 {
-  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
+  const struct info_disk_struct *data=(const struct info_disk_struct *)disk_car->data;
   biosdisk(0, data->disk, 0, 0, 1, 1, NULL);
 }
 
-static int hd_pread(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int hd_pread(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   __dpmi_regs r;
   unsigned char buf_cmd[HD_RW_BUF_SIZ];
   int xfer_dos_segment, xfer_dos_selector;
   int nsects;
   unsigned long int hd_offset;
-  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
+  const struct info_disk_struct *data=(const struct info_disk_struct *)disk_car->data;
   nsects=count/disk_car->sector_size;
   hd_offset=offset/disk_car->sector_size;
   if(data->mode_enh==0)
@@ -453,9 +453,9 @@ static const char *disk_description_short(disk_t *disk_car)
   return disk_car->description_short_txt;
 }
 
-static int disk_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int disk_pread_aux(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
-  struct info_disk_struct *data=(struct info_disk_struct *)disk_car->data;
+  const struct info_disk_struct *data=(const struct info_disk_struct *)disk_car->data;
   if(data->geo_phys.cylinders>0 && offset+count>disk_car->disk_size)
   {
     log_error("disk_pread_aux: Don't read after the end of the disk\n");
@@ -544,7 +544,7 @@ static void disk_clean(disk_t *disk_car)
   generic_clean(disk_car);
 }
 
-static int hd_report_error(disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc)
+static int hd_report_error(const disk_t *disk_car, const uint64_t hd_offset, const unsigned int count, const int rc)
 {
   log_error(" lba=%lu(%u/%u/%u) nbr_sector=%u, rc=%d\n",(long unsigned int)(hd_offset/disk_car->sector_size),
       offset2cylinder(disk_car,hd_offset),offset2head(disk_car,hd_offset),offset2sector(disk_car,hd_offset),

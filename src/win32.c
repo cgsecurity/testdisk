@@ -424,10 +424,10 @@ static unsigned int file_win32_compute_sector_size(HANDLE handle)
   return 0;
 }
 
-static int file_win32_pread_aux(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
+static int file_win32_pread_aux(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
-  HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
+  HANDLE fd=((const struct info_file_win32_struct *)disk_car->data)->handle;
   LARGE_INTEGER li;
   li.QuadPart = offset;
   li.LowPart = SetFilePointer(fd, li.LowPart, &li.HighPart, FILE_BEGIN);
@@ -497,7 +497,7 @@ static int file_win32_pread(disk_t *disk_car, void *buf, const unsigned int coun
 static int file_win32_pwrite_aux(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset)
 {
   long int ret;
-  HANDLE fd=((struct info_file_win32_struct *)disk_car->data)->handle;
+  HANDLE fd=((const struct info_file_win32_struct *)disk_car->data)->handle;
   LARGE_INTEGER li;
   li.QuadPart = offset;
   li.LowPart = SetFilePointer(fd, li.LowPart, &li.HighPart, FILE_BEGIN);

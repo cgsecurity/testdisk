@@ -31,7 +31,7 @@
   @ requires disk_car->rbuffer == \null || (\freeable(disk_car->rbuffer) && disk_car->rbuffer_size > 0);
   @ ensures  disk_car->rbuffer == \null || (\freeable(disk_car->rbuffer) && disk_car->rbuffer_size > 0);
   @*/
-static int align_pread(int (*fnct_pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+static int align_pread(int (*fnct_pread)(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
            disk_t *disk_car, void*buf, const unsigned int count, const uint64_t offset)
 {
   const uint64_t offset_new=offset+disk_car->offset;
@@ -83,7 +83,7 @@ static int align_pread(int (*fnct_pread)(disk_t *disk_car, void *buf, const unsi
   @ requires disk_car->wbuffer == \null || \freeable(disk_car->wbuffer);
   @ ensures  disk_car->wbuffer == \null || \freeable(disk_car->wbuffer);
   @*/
-static int align_pwrite(int (*fnct_pread)(disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
+static int align_pwrite(int (*fnct_pread)(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
     int (*fnct_pwrite)(disk_t *disk_car, const void *buf, const unsigned int count, const uint64_t offset),
     disk_t *disk_car, const void*buf, const unsigned int count, const uint64_t offset)
 {
