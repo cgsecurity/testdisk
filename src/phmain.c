@@ -220,7 +220,7 @@ int main( int argc, char **argv )
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
     }
-    else if(((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)) &&(i+1<argc))
+    else if(i+1<argc && ((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)))
     {
       const int len=strlen(argv[i+1]);
       if(argv[i+1][len-1]=='\\' || argv[i+1][len-1]=='/')
@@ -254,10 +254,6 @@ int main( int argc, char **argv )
     }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
-    else if(i+1 <= argc && strcmp(argv[i],"/cmd")==0 && strcmp(argv[i+1],"resume")==0)
-    {
-      params.cmd_device=argv[++i];
-    }
     else if(strcmp(argv[i],"/cmd")==0)
     {
       if(i+2>=argc)
@@ -266,6 +262,11 @@ int main( int argc, char **argv )
 	free(params.recup_dir);
 	return 1;
       }
+      if(strcmp(argv[i+1],"resume")==0)
+      {
+	params.cmd_device=argv[++i];
+      }
+      else
       {
         disk_t *disk_car;
         params.cmd_device=argv[++i];
