@@ -68,6 +68,7 @@
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
 /* #define DEBUG_FREE */
+uint64_t gpfh_nbr=0;
 
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
 static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
@@ -295,6 +296,7 @@ int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **c
   int nbr;
   alloc_data_t *file_space=*current_search_space;
   uint64_t size=0;
+  gpfh_nbr++;
   /* Search backward the first fragment of a file not successfully recovered
    * Limit the search to 10 fragments or 1GB */
   for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
@@ -531,11 +533,12 @@ void file_block_free(alloc_list_t *list_allocation)
     free(allocated_space);
   }
 }
-/* file_finish_aux()
-    @param file_recovery - handle!=NULL
-    @param struct ph_param *params
-*/
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(params);
+  @ requires \valid(file_recovery->handle);
+  @*/
 static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid)
 {
   if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&

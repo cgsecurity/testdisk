@@ -88,6 +88,8 @@
 
 int need_to_stop=0;
 extern file_enable_t array_file_enable[];
+extern uint64_t gpfh_nbr;
+extern uint64_t gpls_nbr;
 
 #ifdef HAVE_SIGACTION
 static struct sigaction action;
@@ -397,6 +399,10 @@ int main( int argc, char **argv )
   end_ncurses();
 #endif
   log_info("PhotoRec exited normally.\n");
+  if(options.verbose > 0)
+  {
+    log_info("perf: get_prev_file_header: %lu, get_prev_location_smart: %lu\n", (long unsigned)gpfh_nbr, (long unsigned)gpls_nbr);
+  }
   if(log_close()!=0)
   {
     printf("PhotoRec: Log file corrupted!\n");

@@ -57,6 +57,8 @@ file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
+uint64_t gpls_nbr=0;
+
 /*@
   @ requires \valid_read(a);
   @ requires \valid_read(b);
@@ -816,6 +818,7 @@ void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t
   alloc_data_t *file_space=*current_search_space;
   if(offset_skipped_header==0)
     return ;
+  gpls_nbr++;
   while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
