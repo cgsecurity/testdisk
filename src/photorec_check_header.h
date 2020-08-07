@@ -72,26 +72,22 @@ static void photorec_dir_fat(const unsigned char *buffer, const unsigned int rea
   }
 }
 
-static pstatus_t photorec_new_file(file_recovery_t *file_recovery, struct ph_param *params, const uint64_t offset)
-{
-  set_filename(file_recovery, params);
-  if(file_recovery->file_stat->file_hint->recover==1)
-  {
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-    file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
-#else
-    file_recovery->handle=fopen(file_recovery->filename,"w+b");
-#endif
-    if(!file_recovery->handle)
-    { 
-      log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
-      params->offset=offset;
-      return PSTATUS_EACCES;
-    }
-  }
-  return PSTATUS_OK;
-}
-
+/*@
+  @ requires \valid_read(file_recovery_new);
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->extension == \null || valid_read_string(file_recovery->extension);
+  @ requires \valid(file_recovery->file_stat);
+  @ requires \valid(file_recovery->file_stat->file_hint);
+  @ requires valid_read_string(file_recovery->file_stat->file_hint->description);
+  @ requires \valid(params);
+  @ requires \valid(params->disk);
+  @ requires \valid_read(options);
+  @ requires \valid(list_search_space);
+  @ requires \valid(buffer + (0 .. params->blocksize -1));
+  @ requires params->disk->sector_size > 0;
+  @ ensures \result == PSTATUS_OK || \result == PSTATUS_EACCES;
+  @ ensures *file_recovered == PFSTATUS_BAD || *file_recovered == PFSTATUS_OK || *file_recovered == PFSTATUS_OK_TRUNCATED;
+  @*/
 static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new, file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
 {
   *file_recovered=PFSTATUS_BAD;
@@ -121,7 +117,22 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
     const unsigned int read_size=(blocksize>65536?blocksize:65536);
     photorec_dir_fat(buffer, read_size, file_recovery->location.start/params->disk->sector_size);
   }
-  return photorec_new_file(file_recovery, params, offset);
+  set_filename(file_recovery, params);
+  if(file_recovery->file_stat->file_hint->recover==1)
+  {
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
+#else
+    file_recovery->handle=fopen(file_recovery->filename,"w+b");
+#endif
+    if(!file_recovery->handle)
+    {
+      log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
+      params->offset=offset;
+      return PSTATUS_EACCES;
+    }
+  }
+  return PSTATUS_OK;
 }
 
 inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space, const unsigned char *buffer, pfstatus_t *file_recovered, const uint64_t offset)
