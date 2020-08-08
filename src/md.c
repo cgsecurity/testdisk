@@ -337,7 +337,7 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   unsigned char *buffer=(unsigned char*)MALLOC(MD_SB_BYTES);
   /* MD version 0.90 */
   {
-    uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
+    const uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
     if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       if(recover_MD(disk_car,(struct mdp_superblock_s*)buffer,partition,verbose,0)==0)
@@ -350,7 +350,7 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   /* MD version 1.0 */
   if(partition->part_size > 8*2*512)
   {
-    uint64_t offset=(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
+    const uint64_t offset=(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
     if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
