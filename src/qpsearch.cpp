@@ -83,6 +83,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   uint64_t offset_before_back=0;
   unsigned int back=0;
+  pfstatus_t file_recovered_old=PFSTATUS_BAD;
   alloc_data_t *current_search_space;
   file_recovery_t file_recovery;
   memset(&file_recovery, 0, sizeof(file_recovery));
@@ -211,19 +212,37 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
     {
       if(data_check_status==DC_SCAN)
       {
-	get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
-	if(offset > offset_before_back)
-	  back=0;
+	if(file_recovered_old==PFSTATUS_OK)
+	{
+	  offset_before_back=offset;
+	  if(back < 5 &&
+	      get_prev_file_header(list_search_space, &current_search_space, &offset)==0)
+	  {
+	    back++;
+	  }
+	  else
+	  {
+	    back=0;
+	    get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
+	  }
+	}
+	else
+	{
+	  get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
+	  if(offset > offset_before_back)
+	    back=0;
+	}
       }
     }
-    else if(file_recovered==PFSTATUS_OK_TRUNCATED ||
-              (file_recovered==PFSTATUS_OK && file_recovery.file_stat==NULL))
+    else if(file_recovered==PFSTATUS_OK_TRUNCATED)
     {
       /* try to recover the previous file, otherwise stay at the current location */
       offset_before_back=offset;
       if(back < 5 &&
 	  get_prev_file_header(list_search_space, &current_search_space, &offset)==0)
+      {
 	back++;
+      }
       else
       {
 	back=0;
@@ -284,6 +303,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
         }
       }
     }
+    file_recovered_old=file_recovered;
   } /* end while(current_search_space!=list_search_space) */
   free(buffer_start);
   return ind_stop;
