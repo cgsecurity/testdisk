@@ -164,6 +164,13 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.a
       else
 	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2012 R2 (%lu)", Ver.dwBuildNumber);
     }
+    else if (Ver.dwMajorVersion == 10 && Ver.dwMinorVersion == 0)
+    {
+      if( Ver.wProductType == VER_NT_WORKSTATION )
+	snprintf(buffer, sizeof(buffer) - 1, "Windows 10 (%lu)", Ver.dwBuildNumber);
+      else
+	snprintf(buffer, sizeof(buffer) - 1, "Windows Server 2016 (%lu)", Ver.dwBuildNumber);
+    }
     else
     {
       snprintf(buffer, sizeof(buffer) - 1, "Windows %s %i.%i.%i",
