@@ -112,7 +112,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
   {
     pfstatus_t file_recovered=PFSTATUS_BAD;
     uint64_t old_offset=offset;
-    data_check_t res=DC_SCAN;
+    data_check_t data_check_status=DC_SCAN;
 #ifdef DEBUG
     log_debug("sector %llu\n",
         (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size));
@@ -135,7 +135,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
           ind_block(buffer,blocksize)!=0)
       {
 	file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 0);
-	res=DC_CONTINUE;
+	data_check_status=DC_CONTINUE;
         if(options->verbose > 1)
         {
           log_verbose("Skipping sector %10lu/%lu\n",
@@ -154,7 +154,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	    if(errno==EFBIG)
 	    {
 	      /* File is too big for the destination filesystem */
-	      res=DC_STOP;
+	      data_check_status=DC_STOP;
 	    }
 	    else
 	    {
@@ -168,32 +168,32 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	{
 	  file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 1);
 	  if(file_recovery.data_check!=NULL)
-	    res=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
+	    data_check_status=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
 	  else
-	    res=DC_CONTINUE;
+	    data_check_status=DC_CONTINUE;
 	  file_recovery.file_size+=blocksize;
-	  if(res==DC_STOP)
+	  if(data_check_status==DC_STOP)
 	  {
 	    if(options->verbose > 1)
 	      log_trace("EOF found\n");
 	  }
 	}
       }
-      if(res!=DC_STOP && res!=DC_ERROR && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
+      if(data_check_status!=DC_STOP && data_check_status!=DC_ERROR && file_recovery.file_stat->file_hint->max_filesize>0 && file_recovery.file_size>=file_recovery.file_stat->file_hint->max_filesize)
       {
-	res=DC_STOP;
+	data_check_status=DC_STOP;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res!=DC_STOP && res!=DC_ERROR &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
+      if(data_check_status!=DC_STOP && data_check_status!=DC_ERROR &&  file_recovery.file_size + blocksize >= PHOTOREC_MAX_SIZE_32 && is_fat(params->partition))
       {
-      	res=DC_STOP;
+	data_check_status=DC_STOP;
 	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
       }
-      if(res==DC_STOP || res==DC_ERROR)
+      if(data_check_status==DC_STOP || data_check_status==DC_ERROR)
       {
-	if(res==DC_ERROR)
+	if(data_check_status==DC_ERROR)
 	  file_recovery.file_size=0;
 	file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
 	if(options->lowmem > 0)
@@ -209,7 +209,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
     }
     if(file_recovered==PFSTATUS_BAD)
     {
-      if(res==DC_SCAN)
+      if(data_check_status==DC_SCAN)
       {
 	get_next_sector(list_search_space, &current_search_space,&offset,blocksize);
 	if(offset > offset_before_back)
