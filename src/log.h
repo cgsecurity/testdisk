@@ -25,12 +25,29 @@
 extern "C" {
 #endif
 
-int log_set_levels(const unsigned int levels);
+unsigned int log_set_levels(const unsigned int levels);
+
+/*@
+  @ requires valid_read_string(default_filename);
+  @ requires \valid(errsv);
+  @ requires separation: \separated(default_filename, errsv);
+  @*/
 FILE *log_open(const char*default_filename, const int mode, int *errsv);
+
+/*@
+  @ requires \valid_read(default_filename);
+  @ requires \valid(errsv);
+  @ requires separation: \separated(default_filename, errsv);
+  @*/
 FILE *log_open_default(const char*default_filename, const int mode, int *errsv);
+
 int log_flush(void);
 int log_close(void);
-int log_redirect(unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
+
+/*@
+  @ requires valid_read_string(format);
+  @*/
+int log_redirect(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 void dump_log(const void *nom_dump,unsigned int lng);
 void dump2_log(const void *dump_1, const void *dump_2,const unsigned int lng);
 

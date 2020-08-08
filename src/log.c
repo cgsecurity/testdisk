@@ -49,13 +49,18 @@
 
 static FILE *log_handle=NULL;
 static int f_status=0;
+
+/*@
+  @ requires valid_read_string(_format);
+  @*/
 static int log_handler(const char *_format, va_list ap) __attribute__((format(printf, 1, 0)));
+
 /* static unsigned int log_levels=LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL; */
 static unsigned int log_levels=LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL;
 
-int log_set_levels(const unsigned int levels)
+unsigned int log_set_levels(const unsigned int levels)
 {
-  const int old_levels=log_levels;
+  const unsigned int old_levels=log_levels;
   log_levels=levels;
   return old_levels;
 }
@@ -160,7 +165,7 @@ int log_close(void)
   return f_status;
 }
 
-int log_redirect(unsigned int level, const char *format, ...)
+int log_redirect(const unsigned int level, const char *format, ...)
 {
   if((log_levels & level)==0)
     return 0;
