@@ -659,7 +659,9 @@ int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
     /* Reject some invalid UTF-8 sequences */
     if(*p==0xc0 || *p==0xc1 || *p==0xf7 || *p>=0xfd)
       return i;
-    if((*p & 0xf0)==0xe0 && (i+2 >= buf_len || ((*(p+1) & 0xc0)==0x80 && (*(p+2) & 0xc0)==0x80)))
+    if((*p & 0xf0)==0xe0 &&
+	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80) &&
+	(i+2 >= buf_len || (*(p+2) & 0xc0)==0x80))
     { /* UTF8 l=3 */
 #ifdef DEBUG_TXT
       log_info("UTFsize i=%u l=3\n", i);
@@ -667,7 +669,8 @@ int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
       p+=3;
       i+=3;
     }
-    else if((*p & 0xe0)==0xc0 && (i+1 >= buf_len || (*(p+1) & 0xc0)==0x80))
+    else if((*p & 0xe0)==0xc0 &&
+	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80))
     { /* UTF8 l=2 */
 #ifdef DEBUG_TXT
       log_info("UTFsize i=%u l=2\n", i);
