@@ -52,8 +52,23 @@ extern const arch_fnct_t arch_mac;
 
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
 static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns  \nothing;
+  @*/
 static int is_fat12(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns  \nothing;
+  @*/
 static int is_fat16(const partition_t *partition);
+
+/*@
+  @ requires \valid_read(partition);
+  @ assigns  \nothing;
+  @*/
 static int is_fat32(const partition_t *partition);
 
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)

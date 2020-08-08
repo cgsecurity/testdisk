@@ -49,7 +49,18 @@ union swap_header {
   } magic8k;
 };
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @*/
 int check_Linux_SWAP(disk_t *disk_car, partition_t *partition);
+
+/*@
+  @ requires \valid_read(swap_header);
+  @ requires \valid(partition);
+  @ requires separation: \separated(swap_header, partition);
+  @*/
 int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partition);
 
 #ifdef __cplusplus

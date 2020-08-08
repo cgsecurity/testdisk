@@ -24,6 +24,10 @@ extern "C" {
 #endif
 
 char *ask_location(const char*msg, const char *src_dir, const char *dst_org);
+
+/*@
+  @ ensures \result == \null || (\result != \null && \freeable(\result) && valid_string(\result));
+  @*/
 char *get_default_location(void);
 
 #ifdef __cplusplus

@@ -23,7 +23,17 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(current_cmd);
+  @ requires valid_read_string(*current_cmd);
+  @ requires \valid(options);
+  @ ensures  valid_read_string(*current_cmd);
+  @ */
 void interface_options_photorec_cli(struct ph_options *options, char**current_cmd);
+
+/*@
+  @ requires \valid_read(options);
+  @ */
 void interface_options_photorec_log(const struct ph_options *options);
 
 #ifdef __cplusplus

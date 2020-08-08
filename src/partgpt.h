@@ -62,7 +62,20 @@ struct systypes_gtp {
   const char *name;
 };
 
-list_part_t *add_partition_gpt_cli(const disk_t *disk_car,list_part_t *list_part, char **current_cmd);
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part, current_cmd);
+  @ requires \valid(current_cmd);
+  @ requires valid_string(*current_cmd);
+  @*/
+list_part_t *add_partition_gpt_cli(const disk_t *disk_car, list_part_t *list_part, char **current_cmd);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(list_part);
+  @ requires separation: \separated(disk_car, list_part);
+  @*/
 int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro, const int verbose);
 
 #ifdef __cplusplus

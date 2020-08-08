@@ -38,8 +38,17 @@
 #include "log_part.h"
 #include "guid_cpy.h"
 
-static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, const list_part_t *list_part, const int verbose);
-static list_part_t *element_new(partition_t *part);
+/*@
+  @ requires \valid(part);
+  @*/
+static list_part_t *element_new(partition_t *part)
+{
+  list_part_t *new_element=(list_part_t*)MALLOC(sizeof(*new_element));
+  new_element->part=part;
+  new_element->prev=new_element->next=NULL;
+  new_element->to_be_removed=0;
+  return new_element;
+}
 
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S)
 {
@@ -318,19 +327,16 @@ partition_t *partition_new(const arch_fnct_t *arch)
   return partition;
 }
 
-static list_part_t *element_new(partition_t *part)
-{
-  list_part_t *new_element=(list_part_t*)MALLOC(sizeof(*new_element));
-  new_element->part=part;
-  new_element->prev=new_element->next=NULL;
-  new_element->to_be_removed=0;
-  return new_element;
-}
-
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
 static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, const list_part_t *list_part, const int verbose)
 {
   const list_part_t *element;
   unsigned int nbr=0;
+  /*@ loop assigns element, nbr; */
   for(element=list_part;element!=NULL;element=element->next)
   {
     CHS_t start;

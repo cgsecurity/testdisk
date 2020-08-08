@@ -23,6 +23,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ ensures \valid(\result);
+  @*/
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int cache_size_min);
 
 #ifdef __cplusplus

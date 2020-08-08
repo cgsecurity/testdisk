@@ -23,6 +23,12 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(list_part);
+  @ requires \valid(params);
+  @ requires \valid(options);
+  @ requires \valid(list_search_space);
+  @*/
 int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph_options *options, alloc_data_t*list_search_space);
 
 #ifdef __cplusplus

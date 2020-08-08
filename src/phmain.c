@@ -31,6 +31,7 @@
 #if defined(__FRAMAC__) || defined(MAIN_photorec)
 #undef HAVE_DUP2
 #undef HAVE_LIBEWF
+#undef HAVE_SIGACTION
 #endif
 
 #include <stdio.h>

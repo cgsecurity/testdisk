@@ -528,15 +528,23 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
   return ret;
 }
 
+/*@
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_none_aux(const unsigned int part_type_none)
 {
   int i;
+  /*@ loop assigns i; */
   for (i=0; none_sys_types[i].name!=NULL; i++)
     if (none_sys_types[i].part_type == part_type_none)
       return none_sys_types[i].name;
   return NULL;
 }
 
+/*@
+  @ requires \valid_read(partition);
+  @ assigns \nothing;
+  @*/
 static const char *get_partition_typename_none(const partition_t *partition)
 {
   return get_partition_typename_none_aux(partition->upart_type);

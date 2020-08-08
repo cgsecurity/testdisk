@@ -68,13 +68,30 @@ int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **c
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space);
 void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *params, alloc_data_t *list_search_space);
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(params);
+  @ requires \valid(list_search_space);
+  @ ensures \result == PFSTATUS_BAD || \result == PFSTATUS_OK || \result == PFSTATUS_OK_TRUNCATED;
+  @*/
 pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
+
 void write_stats_log(const file_stat_t *file_stats);
 void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space);
 partition_t *new_whole_disk(const disk_t *disk_car);
 unsigned int find_blocksize(alloc_data_t *list_file, const unsigned int default_blocksize, uint64_t *offset);
 void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_space, const uint64_t offset);
 void forget(const alloc_data_t *list_search_space, alloc_data_t *current_search_space);
+
+/*@
+  @ requires \valid(list_search_space);
+  @ requires \valid_read(disk_car);
+  @ requires disk_car->disk_size > 0;
+  @ requires disk_car->disk_real_size > 0;
+  @ requires \valid_read(partition);
+  @ requires separation: \separated(list_search_space, disk_car, partition);
+  @*/
 void init_search_space(alloc_data_t *list_search_space, const disk_t *disk_car, const partition_t *partition);
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space);
 void free_list_search_space(alloc_data_t *list_search_space);
@@ -87,6 +104,13 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
 void params_reset(struct ph_param *params, const struct ph_options *options);
 const char *status_to_name(const photorec_status_t status);
 void status_inc(struct ph_param *params, const struct ph_options *options);
+
+/*@
+  @ requires \valid(disk);
+  @ requires \valid_read(&disk->arch);
+  @ requires \valid_function(disk->arch->read_part);
+  @ requires \valid_read(options);
+  @*/
 list_part_t *init_list_part(disk_t *disk, const struct ph_options *options);
 void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size);
 void file_block_free(alloc_list_t *list_allocation);

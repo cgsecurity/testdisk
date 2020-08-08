@@ -384,6 +384,10 @@ static unsigned int get_part_type_i386(const partition_t *partition)
   return partition->part_type_i386;
 }
 
+/*@
+  @ requires \valid(cp);
+  @ assigns  cp[0 .. 3];
+  @*/
 static void store4_little_endian(unsigned char *cp, unsigned int val)
 {
   cp[0] = (val & 0xff);
@@ -392,43 +396,65 @@ static void store4_little_endian(unsigned char *cp, unsigned int val)
   cp[3] = ((val >> 24) & 0xff);
 }
 
+/*@
+  @ requires \valid_read(cp);
+  @ assigns  \nothing;
+  @*/
 static unsigned int read4_little_endian(const unsigned char *cp)
 {
   return (unsigned int)(cp[0]) + ((unsigned int)(cp[1]) << 8) + ((unsigned int)(cp[2]) << 16) + ((unsigned int)(cp[3]) << 24);
 }
 
+/*@
+  @ requires \valid_read(p);
+  @ assigns \nothing;
+  @*/
 static uint64_t get_start_sect(const struct partition_dos *p)
 {
   return read4_little_endian(p->start4);
 }
 
+/*@
+  @ requires \valid_read(p);
+  @ assigns \nothing;
+  @*/
 static uint64_t get_nr_sects(const struct partition_dos *p)
 {
   return read4_little_endian(p->size4);
 }
 
+/*@
+  @ requires \valid(p);
+  @ assigns p->size4[0 .. 3];
+  @*/
 static void set_nr_sects(struct partition_dos *p, unsigned int nr_sects)
 {
   store4_little_endian(p->size4, nr_sects);
 }
 
+/*@
+  @ requires \valid(p);
+  @ assigns p->start4[0 .. 3];
+  @*/
 static void set_start_sect(struct partition_dos *p, unsigned int start_sect)
 {
   store4_little_endian(p->start4, start_sect);
 }
 
-
 static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   unsigned int i;
+#ifndef __FRAMAC__
   if(verbose>1)
   {
     log_trace("get_geometry_from_i386mbr\n");
   }
+#endif
   if((buffer[0x1FE]!=(unsigned char)0x55)||(buffer[0x1FF]!=(unsigned char)0xAA))
   {
     return 1;
   }
+  /*@ loop assigns i, geometry->cylinders, geometry->heads_per_cylinder, geometry->sectors_per_head; */
   for(i=0;i<4;i++)
   {
     const struct partition_dos *p=pt_offset_const(buffer,i);
@@ -1373,6 +1399,7 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -1783,6 +1810,7 @@ static int check_part_i386(disk_t *disk_car,const int verbose,partition_t *parti
 static const char *get_partition_typename_i386_aux(const unsigned int part_type_i386)
 {
   int i;
+  /*@ loop assigns i; */
   for (i=0; i386_sys_types[i].name!=NULL; i++)
     if (i386_sys_types[i].part_type == part_type_i386)
       return i386_sys_types[i].name;

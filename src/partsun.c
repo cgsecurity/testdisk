@@ -175,18 +175,22 @@ static unsigned int get_part_type_sun(const partition_t *partition)
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   const sun_disklabel *sunlabel=(const sun_disklabel*)buffer;
+#ifndef __FRAMAC__
   if(verbose>1)
   {
     log_trace("get_geometry_from_sunmbr\n");
   }
+#endif
   geometry->cylinders=0;
   geometry->heads_per_cylinder=be16(sunlabel->ntrks);
   geometry->sectors_per_head=be16(sunlabel->nsect);
+#ifndef __FRAMAC__
   if(geometry->sectors_per_head>0)
   {
     log_info("Geometry from SUN MBR: head=%u sector=%u\n",
 	geometry->heads_per_cylinder, geometry->sectors_per_head);
   }
+#endif
   return 0;
 }
 
@@ -290,6 +294,7 @@ list_part_t *add_partition_sun_cli(const disk_t *disk_car,list_part_t *list_part
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -446,6 +451,7 @@ static int check_part_sun(disk_t *disk_car,const int verbose,partition_t *partit
 static const char *get_partition_typename_sun_aux(const unsigned int part_type_sun)
 {
   int i;
+  /*@ loop assigns i; */
   for (i=0; sun_sys_types[i].name!=NULL; i++)
     if (sun_sys_types[i].part_type == part_type_sun)
       return sun_sys_types[i].name;

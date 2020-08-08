@@ -469,9 +469,20 @@ struct ufs_super_block {
 #define UFS_42POSTBLFMT		-1	/* 4.2BSD rotational table format */
 #define UFS_DYNAMICPOSTBLFMT	1	/* dynamic rotational table format */
 
-
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @*/
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition,const int verbose, const int dump_ind);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(sb);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, sb, partition);
+  @*/
+int recover_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partition_t *partition, const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

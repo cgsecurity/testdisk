@@ -23,29 +23,190 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid_read(disk_car);
+  @ assigns \nothing;
+  @*/
 unsigned long int C_H_S2LBA(const disk_t *disk_car,const unsigned int C, const unsigned int H, const unsigned int S);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ assigns \nothing;
+  @*/
 uint64_t CHS2offset(const disk_t *disk_car,const CHS_t*CHS);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires disk_car->sector_size > 0;
+  @ requires disk_car->geom.sectors_per_head > 0;
+  @ assigns \nothing;
+  @ ensures 0 < \result <= disk_car->geom.sectors_per_head;
+  @*/
 unsigned int offset2sector(const disk_t *disk_car, const uint64_t offset);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires disk_car->sector_size > 0;
+  @ requires disk_car->geom.sectors_per_head > 0;
+  @ requires disk_car->geom.heads_per_cylinder > 0;
+  @ assigns \nothing;
+  @ ensures \result <= disk_car->geom.heads_per_cylinder;
+  @*/
 unsigned int offset2head(const disk_t *disk_car, const uint64_t offset);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires disk_car->sector_size > 0;
+  @ requires disk_car->geom.sectors_per_head > 0;
+  @ requires disk_car->geom.heads_per_cylinder > 0;
+  @ assigns \nothing;
+  @*/
 unsigned int offset2cylinder(const disk_t *disk_car, const uint64_t offset);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid(CHS);
+  @ requires disk_car->sector_size > 0;
+  @ requires disk_car->geom.sectors_per_head > 0;
+  @ requires disk_car->geom.heads_per_cylinder > 0;
+  @ assigns CHS->cylinder,CHS->head,CHS->sector;
+  @*/
 void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
 
+/*@
+  @ requires list_disk==\null || \valid(list_disk);
+  @ requires disk==\null || (\valid(disk) && valid_read_string(disk->device));
+  @ requires the_disk==\null || \valid(the_disk);
+  @ ensures \result==\null || \valid(\result);
+  @ ensures disk==\null ==> \result == list_disk;
+  @*/
 list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **the_disk);
-list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car);
-list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error);
-list_part_t *sort_partition_list(list_part_t *list_part);
-list_part_t *gen_sorted_partition_list(const list_part_t *list_part);
-void part_free_list(list_part_t *list_part);
-void part_free_list_only(list_part_t *list_part);
-void  partition_reset(partition_t *partition, const arch_fnct_t *arch);
-partition_t *partition_new(const arch_fnct_t *arch);
-unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part_t *list_part, const int verbose);
-int delete_list_disk(list_disk_t *list_disk);
-void size_to_unit(const uint64_t disk_size, char *buffer);
-int is_part_overlapping(const list_part_t *list_part);
-void dup_partition_t(partition_t *dest, const partition_t *src);
-void log_disk_list(list_disk_t *list_disk);
 
+/*@
+  @ requires list_disk==\null || \valid(list_disk);
+  @ requires disk_car==\null || (\valid(disk_car) && valid_read_string(disk_car->device));
+  @ ensures \result==\null || \valid(\result);
+  @*/
+list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car);
+
+/*@
+  @ requires list_part == \null || \valid(list_part);
+  @ requires \valid(part);
+  @ requires \valid(insert_error);
+  @*/
+list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error);
+
+/*@
+  @ requires \valid(list_part);
+  @*/
+list_part_t *sort_partition_list(list_part_t *list_part);
+
+/*@
+  @ requires \valid_read(list_part);
+  @*/
+list_part_t *gen_sorted_partition_list(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(list_part);
+  @*/
+void part_free_list(list_part_t *list_part);
+
+/*@
+  @ requires \valid(list_part);
+  @*/
+void part_free_list_only(list_part_t *list_part);
+
+/*@
+  @ requires \valid(partition);
+  @ requires \valid_read(arch);
+  @ assigns partition->part_size;
+  @ assigns partition->sborg_offset;
+  @ assigns partition->sb_offset;
+  @ assigns partition->sb_size;
+  @ assigns partition->blocksize;
+  @ assigns partition->part_type_i386;
+  @ assigns partition->part_type_sun;
+  @ assigns partition->part_type_mac;
+  @ assigns partition->part_type_xbox;
+  @ assigns partition->part_type_gpt;
+  @ assigns partition->part_uuid;
+  @ assigns partition->upart_type;
+  @ assigns partition->status;
+  @ assigns partition->order;
+  @ assigns partition->errcode;
+  @ assigns partition->fsname[0];
+  @ assigns partition->partname[0];
+  @ assigns partition->info[0];
+  @ ensures partition->part_size == 0;
+  @ ensures partition->sborg_offset == 0;
+  @ ensures partition->sb_offset == 0;
+  @ ensures partition->sb_size == 0;
+  @ ensures partition->blocksize == 0;
+  @ ensures partition->part_type_i386 == P_NO_OS;
+  @ ensures partition->part_type_sun == PSUN_UNK;
+  @ ensures partition->part_type_mac == PMAC_UNK;
+  @ ensures partition->part_type_xbox == PXBOX_UNK;
+  @ ensures partition->upart_type == UP_UNK;
+  @ ensures partition->status == STATUS_DELETED;
+  @ ensures partition->order == NO_ORDER;
+  @ ensures partition->errcode == BAD_NOERR;
+  @ ensures partition->fsname[0] == '\0';
+  @ ensures partition->partname[0] == '\0';
+  @ ensures partition->info[0] == '\0';
+  @ ensures partition->arch == arch;
+  @*/
+void  partition_reset(partition_t *partition, const arch_fnct_t *arch);
+
+/*@
+  @ requires \valid_read(arch);
+  @ ensures \result->arch == arch;
+  @*/
+partition_t *partition_new(const arch_fnct_t *arch);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+unsigned int get_geometry_from_list_part(const disk_t *disk_car, const list_part_t *list_part, const int verbose);
+
+/*@
+  @ requires list_disk==\null || \valid(list_disk);
+  @ requires list_disk==\null || \freeable(list_disk);
+  @ requires list_disk==\null || \freeable(list_disk->disk);
+  @ requires list_disk==\null || (list_disk->disk->device == \null || \freeable(list_disk->disk->device));
+  @ requires list_disk==\null || (list_disk->disk->model == \null || \freeable(list_disk->disk->model));
+  @ requires list_disk==\null || (list_disk->disk->serial_no == \null || \freeable(list_disk->disk->serial_no));
+  @ requires list_disk==\null || (list_disk->disk->fw_rev == \null || \freeable(list_disk->disk->fw_rev));
+  @ requires list_disk==\null || (list_disk->disk->data == \null || \freeable(list_disk->disk->data));
+  @ requires list_disk==\null || (list_disk->disk->rbuffer == \null || \freeable(list_disk->disk->rbuffer));
+  @ requires list_disk==\null || (list_disk->disk->wbuffer == \null || \freeable(list_disk->disk->wbuffer));
+  @*/
+int delete_list_disk(list_disk_t *list_disk);
+
+/*@
+  @ requires \valid(buffer + (0..99));
+  @ ensures valid_string(buffer);
+  @*/
+/* TODO assigns */
+void size_to_unit(const uint64_t disk_size, char *buffer);
+
+/*@
+  @ requires \valid_read(list_part);
+  @ assigns \nothing;
+  @*/
+int is_part_overlapping(const list_part_t *list_part);
+
+/*@
+  @ requires \valid(dest);
+  @ requires \valid_read(src);
+  @*/
+void dup_partition_t(partition_t *dest, const partition_t *src);
+
+/*@
+  @ requires list_disk==\null || \valid(list_disk);
+  @*/
+void log_disk_list(list_disk_t *list_disk);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

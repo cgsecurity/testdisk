@@ -105,8 +105,20 @@ struct format40_super {
   char sb_unused[432];
 } __attribute__((packed));
 
-int check_rfs(disk_t *disk_car,partition_t *partition,const int verbose);
-int recover_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, partition);
+  @*/
+int check_rfs(disk_t *disk_car, partition_t *partition, const int verbose);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires \valid_read(sb);
+  @ requires \valid(partition);
+  @ requires separation: \separated(disk_car, sb, partition);
+  @*/
+int recover_rfs(const disk_t *disk_car, const struct reiserfs_super_block *sb, partition_t *partition, const int verbose, const int dump_ind);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -398,6 +398,7 @@ list_part_t *add_partition_gpt_cli(const disk_t *disk_car, list_part_t *list_par
   new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-new_partition->part_offset;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -571,6 +572,7 @@ static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition
 static const char *get_gpt_typename(const efi_guid_t part_type_gpt)
 {
   int i;
+  /*@ loop assigns i; */
   for(i=0; gpt_sys_types[i].name!=NULL; i++)
     if(guid_cmp(gpt_sys_types[i].part_type, part_type_gpt)==0)
       return gpt_sys_types[i].name;

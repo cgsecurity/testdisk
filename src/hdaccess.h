@@ -22,14 +22,88 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
+/*@
+  @ requires \valid(disk_car);
+  @ requires disk_car->sector_size > 0;
+  @ requires disk_car->geom.heads_per_cylinder > 0;
+  @ requires \valid_function(disk_car->pread);
+  @*/
 void hd_update_geometry(disk_t *disk_car, const int verbose);
+
+/*@
+  @ requires list_disk==\null || \valid_read(list_disk);
+  @*/
 void hd_update_all_geometry(const list_disk_t * list_disk, const int verbose);
+
+/*@
+  @ requires list_disk==\null || \valid_read(list_disk);
+  @ ensures \result==\null || \valid_read(\result);
+  @*/
 list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testdisk_mode);
+
+/*@
+  @ requires valid_read_string(device);
+  @ ensures \result==\null || \valid(\result);
+  @ ensures \result!=\null ==> (0 < \result->geom.cylinders < 0x2000000000000);
+  @ ensures \result!=\null ==> (0 < \result->geom.heads_per_cylinder <= 255);
+  @ ensures \result!=\null ==> (0 < \result->geom.sectors_per_head <= 63);
+  @ ensures \result!=\null ==> valid_read_string(\result->device);
+  @ ensures \result!=\null ==> \freeable(\result);
+  @ ensures \result!=\null ==> (\result->device == \null || \freeable(\result->device));
+  @ ensures \result!=\null ==> (\result->model == \null || \freeable(\result->model));
+  @ ensures \result!=\null ==> (\result->serial_no == \null || \freeable(\result->serial_no));
+  @ ensures \result!=\null ==> (\result->fw_rev == \null || \freeable(\result->fw_rev));
+  @ ensures \result!=\null ==> (\result->data == \null || \freeable(\result->data));
+  @ ensures \result!=\null ==> (\result->rbuffer == \null || \freeable(\result->rbuffer));
+  @ ensures \result!=\null ==> (\result->wbuffer == \null || \freeable(\result->wbuffer));
+  @*/
 disk_t *file_test_availability(const char *device, const int verbose, const int testdisk_mode);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires 0 < disk_car->geom.heads_per_cylinder;
+  @ requires 0 < disk_car->geom.sectors_per_head;
+  @ requires 0 < disk_car->sector_size;
+  @ ensures 0 < disk_car->geom.cylinders < 0x2000000000000;
+  @*/
 void update_disk_car_fields(disk_t *disk_car);
+
+/*@
+  @ requires \valid(disk);
+  @ ensures disk->autodetect == 0;
+  @ ensures disk->disk_size == 0;
+  @ ensures disk->user_max == 0;
+  @ ensures disk->native_max == 0;
+  @ ensures disk->dco == 0;
+  @ ensures disk->offset == 0;
+  @ ensures disk->rbuffer == NULL;
+  @ ensures disk->wbuffer == NULL;
+  @ ensures disk->rbuffer_size == 0;
+  @ ensures disk->wbuffer_size == 0;
+  @ ensures disk->model == NULL;
+  @ ensures disk->serial_no == NULL;
+  @ ensures disk->fw_rev == NULL;
+  @ ensures disk->write_used == 0;
+  @ ensures disk->description_txt[0] == '\0';
+  @ ensures disk->unit == UNIT_CHS;
+  @ assigns disk->autodetect, disk->disk_size, disk->user_max, disk->native_max, disk->dco, disk->offset;
+  @ assigns disk->rbuffer, disk->wbuffer, disk->rbuffer_size, disk->wbuffer_size;
+  @ assigns disk->model, disk->serial_no, disk->fw_rev, disk->write_used;
+  @ assigns disk->description_txt[0], disk->unit;
+  @*/
 void init_disk(disk_t *disk);
+
+/*@
+  @ requires \valid(disk);
+  @ requires \freeable(disk);
+  @ requires disk->device == \null || \freeable(disk->device);
+  @ requires disk->model == \null || \freeable(disk->model);
+  @ requires disk->serial_no == \null || \freeable(disk->serial_no);
+  @ requires disk->fw_rev == \null || \freeable(disk->fw_rev);
+  @ requires disk->data == \null || \freeable(disk->data);
+  @ requires disk->rbuffer == \null || \freeable(disk->rbuffer);
+  @ requires disk->wbuffer == \null || \freeable(disk->wbuffer);
+  @*/
 void generic_clean(disk_t *disk);
 
 #ifdef __cplusplus

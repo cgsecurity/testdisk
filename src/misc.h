@@ -23,9 +23,14 @@
 extern "C" {
 #endif
 
+/*@ ensures valid_read_string(\result); */
 const char *get_os(void);
+
+/*@ ensures valid_read_string(\result); */
 const char *get_compiler(void);
+
 #ifdef RECORD_COMPILATION_DATE
+/*@ ensures valid_read_string(\result); */
 const char *get_compilation_date(void);
 #endif
 

@@ -80,6 +80,7 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
   if(*current_cmd==NULL)
     return 0;
   log_info("Current geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while (done==0)
   {
     skip_comma_in_command(current_cmd);

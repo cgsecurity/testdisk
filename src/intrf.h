@@ -58,9 +58,18 @@ struct MenuItem
 
 void log_CHS_from_LBA(const disk_t *disk_car, const unsigned long int pos_LBA);
 const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
-void aff_part_buffer(const unsigned int newline,const disk_t *disk_car,const partition_t *partition);
+void aff_part_buffer(const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
 
+/*@
+  @ requires valid_read_string(nptr);
+  @ assigns \nothing;
+  @*/
 uint64_t atouint64(const char *nptr);
+
+/*@
+  @ requires valid_read_string(*current_cmd);
+  @ ensures  valid_read_string(*current_cmd);
+  @*/
 uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64_t val_min, const uint64_t val_max, const char * _format, ...) __attribute__ ((format (printf, 5, 6)));
 void screen_buffer_reset(void);
 int screen_buffer_add(const char *_format, ...)  __attribute__ ((format (printf, 1, 2)));

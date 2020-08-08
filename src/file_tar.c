@@ -64,6 +64,15 @@ struct posix_header
 				/* 500 */
 };
 
+/*@
+  @ requires buffer_size >= 512;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_tar, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct posix_header *h=(const struct posix_header *)buffer;
@@ -80,6 +89,9 @@ int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size
   return 1;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_tar(file_stat_t *file_stat)
 {
   static const unsigned char tar_header_gnu[6]	= { 'u','s','t','a','r',0x00};

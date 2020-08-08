@@ -38,6 +38,7 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
 {
   if(*current_cmd==NULL)
     return ;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);

@@ -19,5 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+/*@
+  @ requires \valid(disk_car);
+  @ assigns disk_car->unit;
+  @*/
 void autoset_unit(disk_t *disk_car);
 

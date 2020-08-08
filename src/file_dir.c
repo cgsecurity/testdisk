@@ -50,6 +50,11 @@ const file_hint_t file_hint_dir= {
   .register_header_check=&register_header_check_dir
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_fatdir;
+  @*/
 static void file_rename_fatdir(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
@@ -68,6 +73,15 @@ static void file_rename_fatdir(file_recovery_t *file_recovery)
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
+/*@
+  @ requires buffer_size >= 2;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check == &data_check_fatdir;
+  @ ensures \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_fatdir(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /* Save only one cluster */
@@ -75,6 +89,15 @@ static data_check_t data_check_fatdir(const unsigned char *buffer, const unsigne
   return DC_STOP;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct msdos_dir_entry);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_dir, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct msdos_dir_entry *de=(const struct msdos_dir_entry*)buffer;
@@ -89,6 +112,9 @@ static int header_check_dir(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_dir(file_stat_t *file_stat)
 {
   register_header_check(0, ".          ", 8+3, &header_check_dir, file_stat);

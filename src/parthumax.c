@@ -241,6 +241,7 @@ list_part_t *add_partition_humax_cli(const disk_t *disk_car,list_part_t *list_pa
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);

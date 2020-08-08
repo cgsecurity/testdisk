@@ -23,6 +23,14 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(params);
+  @ requires \valid(options);
+  @ requires list_disk == \null || \valid_read(list_disk);
+  @ requires params->cmd_device==\null || valid_read_string(params->cmd_device);
+  @ requires params->cmd_run==\null || valid_read_string(params->cmd_run);
+  @ ensures  params->cmd_run==\null || valid_read_string(params->cmd_run);
+  @*/
 int do_curses_photorec(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk);
 
 #ifdef __cplusplus

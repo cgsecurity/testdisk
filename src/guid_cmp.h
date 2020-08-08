@@ -19,6 +19,10 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
+/*@
+  @ assigns \nothing;
+  @*/
 static inline int guid_cmp (const efi_guid_t left, const efi_guid_t right)
 {
   return memcmp(&left, &right, sizeof(efi_guid_t));

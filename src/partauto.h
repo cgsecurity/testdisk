@@ -23,6 +23,11 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk);
+  @ requires \valid_read(arch);
+  @ requires separation: \separated(disk, arch);
+  @*/
 void autodetect_arch(disk_t *disk, const arch_fnct_t *arch);
 
 #ifdef __cplusplus

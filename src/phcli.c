@@ -44,6 +44,11 @@
 extern int need_to_stop;
 typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 
+/*@
+  @ requires \valid_read(a);
+  @ requires \valid_read(b);
+  @ assigns \nothing;
+  @*/
 static int spacerange_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const alloc_data_t *space_a=td_list_entry_const(a, const alloc_data_t, list);

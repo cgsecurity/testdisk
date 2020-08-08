@@ -26,6 +26,12 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_LIBNTFS
+#undef HAVE_LIBNTFS3G
+#endif
+
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H

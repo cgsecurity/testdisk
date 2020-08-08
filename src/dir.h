@@ -75,8 +75,17 @@ struct dir_data
 #define	FILE_STATUS_MARKED	2
 #define	FILE_STATUS_ADS		4
 
+/*@
+  @ requires \valid(datestr);
+  @*/
 int set_datestr(char *datestr, size_t n, const time_t timev);
+
+/*@
+  @ requires \valid_read(dir_data);
+  @ requires \valid_read(dir_list);
+  @*/
 int dir_aff_log(const dir_data_t *dir_data, const file_info_t*dir_list);
+
 void log_list_file(const disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list);
 unsigned int delete_list_file(file_info_t *list);
 int dir_whole_partition_log(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode);

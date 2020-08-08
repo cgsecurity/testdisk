@@ -212,6 +212,7 @@ list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_par
   assert(current_cmd!=NULL);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-disk_car->sector_size;
+  /*@ loop invariant valid_read_string(*current_cmd); */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -364,6 +365,7 @@ static int check_part_xbox(disk_t *disk_car,const int verbose,partition_t *parti
 static const char *get_partition_typename_xbox_aux(const unsigned int part_type_xbox)
 {
   int i;
+  /*@ loop assigns i; */
   for (i=0; xbox_sys_types[i].name!=NULL; i++)
     if (xbox_sys_types[i].part_type == part_type_xbox)
       return xbox_sys_types[i].name;

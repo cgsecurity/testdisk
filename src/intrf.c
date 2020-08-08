@@ -201,6 +201,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
 uint64_t atouint64(const char *nptr)
 {
   uint64_t tmp=0;
+  /*@ loop assigns tmp, nptr; */
   while(*nptr >='0' && *nptr <= '9')
   {
     tmp = tmp * 10 + *nptr - '0';
@@ -215,7 +216,9 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
   {
     uint64_t tmp_val;
     skip_comma_in_command(current_cmd);
+    /*@ assert valid_read_string(*current_cmd); */
     tmp_val = get_int_from_command(current_cmd);
+    /*@ assert valid_read_string(*current_cmd); */
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
       return tmp_val;
     else
@@ -231,6 +234,7 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
       va_end(ap);
     }
   }
+  /*@ assert valid_read_string(*current_cmd); */
   return val_cur;
 }
 
