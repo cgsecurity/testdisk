@@ -54,7 +54,7 @@ void autodetect_arch(disk_t *disk, const arch_fnct_t *arch)
 #endif
   {
     disk->arch=&arch_none;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_none.read_part(disk,verbose,0);
     if(list_part!=NULL && list_part->part!=NULL && list_part->part->upart_type==UP_UNK)
     {
       part_free_list(list_part);
@@ -64,32 +64,32 @@ void autodetect_arch(disk_t *disk, const arch_fnct_t *arch)
   if(list_part==NULL)
   {
     disk->arch=&arch_xbox;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_xbox.read_part(disk,verbose,0);
   }
   if(list_part==NULL)
   {
     disk->arch=&arch_gpt;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_gpt.read_part(disk,verbose,0);
   }
   if(list_part==NULL)
   {
     disk->arch=&arch_humax;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_humax.read_part(disk,verbose,0);
   }
   if(list_part==NULL)
   {
     disk->arch=&arch_i386;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_i386.read_part(disk,verbose,0);
   }
   if(list_part==NULL)
   {
     disk->arch=&arch_sun;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_sun.read_part(disk,verbose,0);
   }
   if(list_part==NULL)
   {
     disk->arch=&arch_mac;
-    list_part=disk->arch->read_part(disk,verbose,0);
+    list_part=arch_mac.read_part(disk,verbose,0);
   }
 #ifndef DEBUG_PARTAUTO
   log_set_levels(old_levels);
