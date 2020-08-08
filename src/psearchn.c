@@ -302,15 +302,13 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #ifdef HAVE_NCURSES
           ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
 #endif
-	  if(need_to_stop!=0)
-	    ind_stop=PSTATUS_STOP;
 	  params->offset=offset;
-	  if(ind_stop!=PSTATUS_OK)
+	  if(need_to_stop!=0 || ind_stop!=PSTATUS_OK)
 	  {
 	    log_info("PhotoRec has been stopped\n");
 	    file_recovery_aborted(&file_recovery, params, list_search_space);
 	    free(buffer_start);
-	    return ind_stop;
+	    return PSTATUS_STOP;
 	  }
 	  if(current_time >= next_checkpoint)
 	    next_checkpoint=regular_session_save(list_search_space, params, options, current_time);

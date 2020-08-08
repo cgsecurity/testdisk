@@ -24,6 +24,12 @@ extern "C" {
 #endif
 #ifdef HAVE_NCURSES
 void photorec_info(WINDOW *window, const file_stat_t *file_stats);
+
+/*@
+  @ requires \valid(window);
+  @ requires \valid_read(params);
+  @ ensures  \result == PSTATUS_OK || \result == PSTATUS_STOP;
+  @*/
 pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const struct ph_param *params, const uint64_t offset, const time_t current_time);
 #endif
 #ifdef __cplusplus
