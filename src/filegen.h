@@ -123,6 +123,7 @@ void free_header_check(void);
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ ensures file_recovery->handle == \old(file_recovery->handle);
   @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
@@ -139,6 +140,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
   @ requires \valid(file_recovery->handle);
   @ requires footer_length > 0;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ ensures \valid(file_recovery->handle);
   @*/
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
@@ -269,8 +271,11 @@ void header_ignored(const file_recovery_t *file_recovery_new);
   @ requires separation: \separated(file_recovery, file_recovery_new, &errno);
   @ requires \valid_read(file_recovery);
   @ requires \valid_read(file_recovery_new);
+  @ requires file_recovery->handle == \null || \valid(file_recovery->handle);
+  @ requires \valid_function(file_recovery->file_check);
   @ requires \initialized(&file_recovery->file_check);
   @ requires \initialized(&file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ ensures \result == 0 || \result == 1;
   @*/
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new);
@@ -287,21 +292,25 @@ int my_fseek(FILE *stream, off_t offset, int whence);
 
 /*@
   @ requires \valid_read(date_asc + (0 .. 11));
+  @ assigns \nothing;
   @*/
 time_t get_time_from_YYMMDDHHMMSS(const char *date_asc);
 
 /*@
   @ requires \valid_read(date_asc + (0 .. 18));
+  @ assigns \nothing;
   @*/
 time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const unsigned char *date_asc);
 
 /*@
   @ requires \valid_read(date_asc + (0 .. 16));
+  @ assigns \nothing;
   @*/
 time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc);
 
 /*@
   @ requires \valid_read(date_asc + (0 .. 14));
+  @ assigns \nothing;
   @*/
 time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc);
 

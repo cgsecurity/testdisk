@@ -72,19 +72,24 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
   unsigned int min_length;
   /*@ assert \valid_read(fc_a); */
   /*@ assert \valid_read(fc_b); */
+  /*@ assert fc_a->length==0 ==> fc_a->offset == 0; */
+  /*@ assert fc_b->length==0 ==> fc_b->offset == 0; */
   if(fc_a->length==0 && fc_b->length!=0)
     return -1;
   if(fc_a->length!=0 && fc_b->length==0)
     return 1;
+  /*@ assert (fc_a->length > 0 && fc_b->length > 0) || (fc_a->length == 0 && fc_b->length == 0) ; */
   res=fc_a->offset-fc_b->offset;
   if(res!=0)
     return res;
+  /*@ assert fc_a->offset == fc_b->offset; */
+  if(fc_a->length==0 && fc_b->length==0)
+    return 0;
+  /*@ assert fc_a->length > 0 && fc_b->length > 0; */
   /*@ assert \valid_read((char *)fc_a->value + (0 .. fc_a->length - 1)); */
-  /*@ assert \initialized((char *)fc_a->value + (0 .. fc_a->length - 1)); */
-#if 0
   /*@ assert \valid_read((char *)fc_b->value + (0 .. fc_b->length - 1)); */
+  /*@ assert \initialized((char *)fc_a->value + (0 .. fc_a->length - 1)); */
   /*@ assert \initialized((char *)fc_b->value + (0 .. fc_b->length - 1)); */
-#endif
   min_length=fc_a->length<=fc_b->length?fc_a->length:fc_b->length;
   res=memcmp(fc_a->value,fc_b->value, min_length);
   if(res!=0)
@@ -95,6 +100,7 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
 /*@
   @ requires \valid(file_check_new);
   @ requires \valid(pos);
+  @ requires initialization: \initialized(&file_check_new->offset) && \initialized(&file_check_new->length);
   @*/
 static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
 {
@@ -110,19 +116,26 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
     @*/
   for(i=0;i<256;i++)
   {
-    newe->file_checks[i].list.prev=&newe->file_checks[i].list;
-    newe->file_checks[i].list.next=&newe->file_checks[i].list;
+    TD_INIT_LIST_HEAD(&newe->file_checks[i].list);
     /*@ assert newe->file_checks[i].list.prev == &newe->file_checks[i].list; */
     /*@ assert newe->file_checks[i].list.next == &newe->file_checks[i].list; */
   }
+  /*@ assert 0 <= tmp <= 255; */
   /*@ assert newe->file_checks[tmp].list.prev == &newe->file_checks[tmp].list; */
+  /*@ assert newe->file_checks[tmp].list.next == &newe->file_checks[tmp].list; */
   td_list_add_tail(&file_check_new->list, &newe->file_checks[tmp].list);
   td_list_add_tail(&newe->list, &pos->list);
 }
 
-void register_header_check(const unsigned int offset, const void *value, const unsigned int length, int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
+/*@
+  @ requires \valid_read((const char *)value + (0 .. length-1));
+  @ requires \valid_function(header_check);
+  @ requires separation: \separated(file_stat, &file_check_plist);
+  @*/
+void register_header_check(const unsigned int offset, const void *value, const unsigned int length,
+    int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
-  file_stat_t *file_stat)
+    file_stat_t *file_stat)
 {
   file_check_t *file_check_new=(file_check_t *)MALLOC(sizeof(*file_check_new));
   file_check_new->value=value;
@@ -135,9 +148,12 @@ void register_header_check(const unsigned int offset, const void *value, const u
 
 /*@
   @ requires \valid(file_check_new);
+  @ requires initialization: \initialized(&file_check_new->offset) && \initialized(&file_check_new->length);
+  @ requires \valid_function(file_check_new->header_check);
   @*/
 static void index_header_check_aux(file_check_t *file_check_new)
 {
+  /* file_check_list is sorted by increasing offset */
   if(file_check_new->length>0)
   {
     /*@ assert file_check_new->offset < 0x80000000; */
@@ -174,7 +190,9 @@ static unsigned int index_header_check(void)
   {
     file_check_t *current_check;
     current_check=td_list_entry(tmp, file_check_t, list);
+    /* dettach current_check from file_check_plist */
     td_list_del(tmp);
+    /*@ assert \initialized(&current_check->offset) && \initialized(&current_check->length); */
     index_header_check_aux(current_check);
     nbr++;
   }
@@ -231,8 +249,12 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
   unsigned char buffer[4096];
   int taille;
+  /*@ assert \valid(file_recovery->handle); */
   if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
+  {
+    /*@ assert \valid(file_recovery->handle); */
     return;
+  }
   taille=fread(buffer,1, 4096,file_recovery->handle);
 #ifdef __FRAMAC__
   Frama_C_make_unknown((char *)&buffer, 4096);
@@ -243,6 +265,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     file_recovery->file_size+=2;
   else if(taille > 0 && buffer[0]=='\r' && (nl_mode&NL_BARECR)==NL_BARECR)
     file_recovery->file_size++;
+  /*@ assert \valid(file_recovery->handle); */
 }
 
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
@@ -302,7 +325,6 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   /*@ assert \valid(file_recovery->handle); */
 }
 
-#if 0
 /*@
   @ requires \valid(file_recovery);
   @ requires footer_length > 0;
@@ -348,7 +370,6 @@ static void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned
   file_recovery->file_size=0;
   free(buffer);
 }
-#endif
 
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -410,24 +431,25 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   file_enable_t *file_enable;
   unsigned int enable_count=1;	/* Lists are terminated by NULL */
   unsigned int sign_nbr;
+  /*@ loop assigns enable_count, file_enable; */
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
-    if(file_enable->enable>0)
+    if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       enable_count++;
     }
   }
+  /*@ assert enable_count > 0; */
   file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
   enable_count=0;
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
-    if(file_enable->enable>0)
+    if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       file_stats[enable_count].file_hint=file_enable->file_hint;
       file_stats[enable_count].not_recovered=0;
       file_stats[enable_count].recovered=0;
-      if(file_enable->file_hint->register_header_check!=NULL)
-	file_enable->file_hint->register_header_check(&file_stats[enable_count]);
+      file_enable->file_hint->register_header_check(&file_stats[enable_count]);
       enable_count++;
     }
   }
@@ -441,7 +463,8 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @ requires \valid(file_recovery);
   @ requires valid_read_string((const char*)&file_recovery->filename);
   @ requires valid_read_string(new_ext);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @ requires separation: \separated(file_recovery, new_ext);
+  @ ensures valid_read_string((const char*)&file_recovery->filename);
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
@@ -453,14 +476,16 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
   if(len > sizeof(file_recovery->filename))
   {
+    /*@ assert valid_read_string((const char *)&file_recovery->filename); */
     return -1;
   }
   /*@ assert len <= sizeof(file_recovery->filename); */
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
   strcpy(new_filename, (char *)&file_recovery->filename);
-  dst_dir_sep=strrchr(new_filename, '/');
 #ifndef __FRAMAC__
-  /*@ assert valid_read_string(dst_dir_sep); */
+  /*@ assert valid_string((char *)&new_filename); */
+  dst_dir_sep=strrchr(new_filename, '/');
+  /*@ assert valid_string(dst_dir_sep); */
   dst=dst_dir_sep;
   while(*dst!='.' && *dst!='\0')
     dst++;
@@ -473,23 +498,25 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
       *dst++ = *src++;
     *dst='\0';
   }
-#endif
-  /*@ assert valid_read_string(&new_filename[0]); */
+  /*@ assert valid_string(&new_filename[0]); */
   if(strlen(new_filename) >= sizeof(file_recovery->filename))
   {
-    /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    /*@ assert valid_read_string((const char *)&file_recovery->filename); */
     return -1;
   }
   /*@ assert valid_read_string(&new_filename[0]); */
   if(rename(&file_recovery->filename[0], new_filename)<0)
   {
     /* Rename has failed */
-    /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    /*@ assert valid_read_string((const char *)&file_recovery->filename); */
     return -1;
   }
   /*@ assert valid_read_string(&new_filename[0]); */
   strcpy(file_recovery->filename, new_filename);
-  /*@ assert valid_read_string(&file_recovery->filename[0]); */
+#else
+  file_recovery->filename[0]='/';
+#endif
+  /*@ assert valid_read_string((const char *)&file_recovery->filename); */
   return 0;
 }
 
@@ -879,7 +906,6 @@ int my_fseek(FILE *stream, off_t offset, int whence)
 time_t get_time_from_YYMMDDHHMMSS(const char *date_asc)
 {
   struct tm tm_time;
-  memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[10]-'0')*10+(date_asc[11]-'0');	/* seconds 0-59 */
   tm_time.tm_min=(date_asc[8]-'0')*10+(date_asc[9]-'0');      /* minutes 0-59 */
   tm_time.tm_hour=(date_asc[6]-'0')*10+(date_asc[7]-'0');     /* hours   0-23*/
@@ -897,7 +923,6 @@ time_t get_time_from_YYYY_MM_DD_HH_MM_SS(const unsigned char *date_asc)
   struct tm tm_time;
   if(memcmp(date_asc, "0000", 4)==0)
     return (time_t)0;
-  memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[17]-'0')*10+(date_asc[18]-'0');      /* seconds 0-59 */
   tm_time.tm_min=(date_asc[14]-'0')*10+(date_asc[15]-'0');      /* minutes 0-59 */
   tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
@@ -914,7 +939,6 @@ time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc)
   struct tm tm_time;
   if(memcmp(date_asc, "0000", 4)==0)
     return (time_t)0;
-  memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[15]-'0')*10+(date_asc[16]-'0');      /* seconds 0-59 */
   tm_time.tm_min=(date_asc[13]-'0')*10+(date_asc[14]-'0');      /* minutes 0-59 */
   tm_time.tm_hour=(date_asc[11]-'0')*10+(date_asc[12]-'0');     /* hours   0-23*/
@@ -929,7 +953,6 @@ time_t get_time_from_YYYY_MM_DD_HHMMSS(const char *date_asc)
 time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc)
 {
   struct tm tm_time;
-  memset(&tm_time, 0, sizeof(tm_time));
   tm_time.tm_sec=(date_asc[13]-'0')*10+(date_asc[14]-'0');      /* seconds 0-59 */
   tm_time.tm_min=(date_asc[11]-'0')*10+(date_asc[12]-'0');      /* minutes 0-59 */
   tm_time.tm_hour=(date_asc[9]-'0')*10+(date_asc[10]-'0');      /* hours   0-23*/
