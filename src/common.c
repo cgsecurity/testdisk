@@ -217,9 +217,15 @@ char* strip_dup(char* str)
 {
   unsigned int i;
   char *end;
+  /*@
+    @ loop assigns str;
+    @*/
   while(isspace(*str))
     str++;
   end=str;
+  /*@
+    @ loop assigns i, end;
+    @*/
   for (i = 0; str[i] != 0; i++)
     if (!isspace (str[i]))
       end=&str[i];
@@ -257,17 +263,31 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
   unsigned long int day,leap_day,month,year,days;
   unsigned long int secs;
   year  = f_date >> 9;
+  /*@ assert 0 <= year <= 127; */
   month = td_max(1, (f_date >> 5) & 0xf);
+  /*@ assert 1 <= month <= 15; */
   day   = td_max(1, f_date & 0x1f) - 1;
+  /*@ assert 0 <= day <= 30; */
 
   leap_day = (year + 3) / 4;
+  /*@ assert 0 <= leap_day <= 32; */
   if (year > YEAR_2100)		/* 2100 isn't leap year */
   {
-    /*@ assert year > YEAR_2100 && leap_day > (YEAR_2100 + 3)/4; */
+    /*@ assert year > YEAR_2100; */
+    leap_day = (year + 3) / 4;
+    /*@ assert (YEAR_2100 + 3)/4 < leap_day <= 32; */
     leap_day--;
+    /*@ assert (YEAR_2100 + 3)/4 <= leap_day < 32; */
   }
+  else
+  {
+    /*@ assert year <= YEAR_2100; */
+    /*@ assert 0 <= leap_day <= (YEAR_2100 + 3)/4; */
+  }
+  /*@ assert 0 <= leap_day < 32; */
   if (IS_LEAP_YEAR(year) && month > 2)
     leap_day++;
+  /*@ assert 0 <= leap_day <= 32; */
   days = days_in_year[month];
   /*@ assert days <= 334; */
   days += year * 365 + leap_day + day + DAYS_DELTA;
@@ -283,7 +303,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__FRAMAC__)
   const struct  tm *tmptr = localtime(&t);
 #else
   struct  tm tmp;
