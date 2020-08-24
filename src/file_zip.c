@@ -1212,7 +1212,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 #endif
   /* A zip file begins by ZIP_FILE_ENTRY, this signature can also be
    * found for each compressed file */
-  if(file_recovery->file_check == file_check_zip &&
+  if(file_recovery->file_check == &file_check_zip &&
       file_recovery->file_stat!=NULL &&
 //      file_recovery->file_stat->file_hint==&file_hint_zip &&
       safe_header_only==0)

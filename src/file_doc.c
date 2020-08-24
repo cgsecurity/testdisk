@@ -684,7 +684,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
       free(minifat);
       return NULL;
     }
-    if(OLE_read_block(IN, (char *)minifat_pos, uSectorShift, block, offset)<0)
+    if(OLE_read_block(IN, minifat_pos, uSectorShift, block, offset)<0)
     {
       free(minifat);
       return NULL;

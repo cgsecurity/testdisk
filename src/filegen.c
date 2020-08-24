@@ -325,52 +325,6 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   /*@ assert \valid(file_recovery->handle); */
 }
 
-/*@
-  @ requires \valid(file_recovery);
-  @ requires footer_length > 0;
-  @ requires \valid_read((char *)footer+(0..footer_length-1));
-  @*/
-static void file_search_lc_footer(file_recovery_t *file_recovery, const unsigned char*footer, const unsigned int footer_length)
-{
-  const unsigned int read_size=4096;
-  unsigned char*buffer;
-  int64_t file_size;
-  if(footer_length==0)
-    return ;
-  buffer=(unsigned char*)MALLOC(read_size+footer_length-1);
-  file_size=file_recovery->file_size;
-  memset(buffer+read_size,0,footer_length-1);
-  do
-  {
-    int i;
-    int taille;
-    if(file_size%read_size!=0)
-      file_size=file_size-(file_size%read_size);
-    else
-      file_size-=read_size;
-    if(my_fseek(file_recovery->handle,file_size,SEEK_SET)<0)
-    {
-      free(buffer);
-      return;
-    }
-    taille=fread(buffer,1,read_size,file_recovery->handle);
-    for(i=0;i<taille;i++)
-      buffer[i]=tolower(buffer[i]);
-    for(i=taille-1;i>=0;i--)
-    {
-      if(buffer[i]==footer[0] && memcmp(buffer+i,footer,footer_length)==0)
-      {
-        file_recovery->file_size=file_size+i+footer_length;
-        free(buffer);
-        return;
-      }
-    }
-    memcpy(buffer+read_size,buffer,footer_length-1);
-  } while(file_size>0);
-  file_recovery->file_size=0;
-  free(buffer);
-}
-
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
