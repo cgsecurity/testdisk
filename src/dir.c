@@ -168,7 +168,7 @@ int set_datestr(char *datestr, size_t n, const time_t timev)
     strncpy(datestr, "                 ", n);
     return 0;
   }
-#if defined(__MINGW32__)
+#if defined(__MINGW32__) || defined(__FRAMAC__)
   tm_p=localtime(&timev);
 #else
   tm_p=localtime_r(&timev, &tmp);

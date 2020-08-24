@@ -251,7 +251,7 @@ void xml_add_DFXML_creator(const char *package, const char *version)
     char outstr[200];
     const time_t t = time(NULL);
 #if defined(__MINGW32__) || defined(__FRAMAC__)
-    const struct  tm *tmptr = localtime(&t);
+    const struct  tm *tmp = localtime(&t);
 #else
     struct tm tm_tmp;
     const struct tm *tmp = localtime_r(&t,&tm_tmp);
