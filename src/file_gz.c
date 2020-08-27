@@ -24,8 +24,10 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#if defined(MAIN_fidentify) || defined(MAIN_photorec) || defined(__FRAMAC__)
 #undef HAVE_LIBZ
+#undef HAVE_ZLIB_H
+#define SINGLE_FORMAT
 #endif
 
 #ifdef HAVE_STRING_H
@@ -42,7 +44,9 @@
 
 static void register_header_check_gz(file_stat_t *file_stat);
 static void file_rename_gz(file_recovery_t *file_recovery);
+#ifndef SINGLE_FORMAT
 extern const file_hint_t file_hint_doc;
+#endif
 
 const file_hint_t file_hint_gz= {
   .extension="gz",
@@ -201,12 +205,14 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     /* Probably too small to be a file */
     if(d_stream.total_out < 16)
       return 0;
+#ifndef SINGLE_FORMAT
     if(file_recovery->file_stat!=NULL &&
 	file_recovery->file_stat->file_hint==&file_hint_doc)
     {
       if(header_ignored_adv(file_recovery, file_recovery_new)==0)
 	return 0;
     }
+#endif
     if(file_recovery->file_check==&file_check_bgzf)
     {
       header_ignored(file_recovery_new);
@@ -302,12 +308,14 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     }
   }
 #else
+#ifndef SINGLE_FORMAT
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)
       return 0;
   }
+#endif
   if(file_recovery->file_check==&file_check_bgzf)
   {
     header_ignored(file_recovery_new);
