@@ -441,7 +441,6 @@ static int is_marker_valid(const unsigned int marker)
 {
   switch(marker)
   {
-    case 0x02 ... 0xbf:	/* Reserved */
     case 0xc0:		/* SOF0 Start of Frame */
     case 0xc1:		/* SOF1 Extended sequential */
     case 0xc2:		/* SOF2 Progressive */
@@ -458,19 +457,22 @@ static int is_marker_valid(const unsigned int marker)
     case 0xcd:		/* SOF13 Differential sequential, arithmetic coding */
     case 0xce:		/* SOF14 Differential progressive, arithmetic coding */
     case 0xcf:		/* SOF15 Differential lossless, arithmetic coding */
-    case 0xd0 ... 0xd7:	/* JPEG_RST0 .. JPEG_RST7 markers */
-//    case 0xd8:	/* SOI Start of Image */
-//    case 0xd9:	/* EOI End of Image */
-//    case 0xda:	/* SOS: Start Of Scan */
     case 0xdb:		/* DQT: Define Quantization Table */
-    case 0xdc:		/* DNL: Define Number of Lines */
     case 0xdd:		/* DRI: define restart interval */
-    case 0xde:		/* DHP: define hierarchical progression */
     case 0xe0 ... 0xef:	/* APP0 - APP15 */
-    case 0xf0 ... 0xfd:	/* Reserved for JPEG extensions */
     case 0xfe:		/* COM */
     case 0xff:
       return 1;
+#if 0
+    case 0x02 ... 0xbf:	/* Reserved */
+    case 0xd0 ... 0xd7:	/* JPEG_RST0 .. JPEG_RST7 markers */
+    case 0xd8:	/* SOI Start of Image */
+    case 0xd9:	/* EOI End of Image */
+    case 0xda:	/* SOS: Start Of Scan */
+    case 0xdc:		/* DNL: Define Number of Lines */
+    case 0xde:		/* DHP: define hierarchical progression */
+    case 0xf0 ... 0xfd:	/* Reserved for JPEG extensions */
+#endif
     default:
       return 0;
   }
@@ -549,10 +551,21 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       i+=2+size;
     }
   }
+  if(i < file_recovery_new->blocksize && buffer[i]!=0xff)
+    return 0;
   if(i+1 < file_recovery_new->blocksize && buffer[i+1]!=0xda)
+    return 0;
+  if(i < 512 && buffer[i]!=0xff)
     return 0;
   if(i+1 < 512 && buffer[i+1]!=0xda)
     return 0;
+  if(file_recovery->file_stat==NULL)
+  {
+    if(i < buffer_size && buffer[i]!=0xff)
+      return 0;
+    if(i+1 < buffer_size && buffer[i+1]!=0xda)
+      return 0;
+  }
   if(file_recovery->file_stat!=NULL)
   {
     static const unsigned char jpg_header_app0_avi[0x0c]= {
@@ -635,30 +648,32 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	return 0;
     }
 #endif
-    if(buffer[3]==0xdb)	/* DQT */
+    switch(buffer[3])
     {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
-    if(buffer[3]==0xc4)	/* DHT - needed to recover .cr2 */
-    {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
-    if(buffer[3]==0xe0 && (buffer[6]!='J' || buffer[7]!='F'))	/* Should be JFIF/JFXX */
-    {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
-    if(buffer[3]==0xe1 && (buffer[6]!='E' || buffer[7]!='x' || buffer[8]!='i'|| buffer[9]!='f'))	/* Should be EXIF */
-    {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
-    if(buffer[3]==0xfe && (!isprint(buffer[6]) || !isprint(buffer[7])))
-    {
-      header_ignored(file_recovery_new);
-      return 0;
+      case 0xe0:	/* APP0 */
+	if(buffer[6]!='J' || buffer[7]!='F')	/* Should be JFIF/JFXX */
+	{
+	  header_ignored(file_recovery_new);
+	  return 0;
+	}
+	break;
+    case 0xe1:		/* APP1 */
+	if(buffer[6]!='E' || buffer[7]!='x' || buffer[8]!='i'|| buffer[9]!='f')	/* Should be Exif */
+	{
+	  header_ignored(file_recovery_new);
+	  return 0;
+	}
+	break;
+    case 0xfe:		/* COM */
+	if(!isprint(buffer[6]) || !isprint(buffer[7]))
+	{
+	  header_ignored(file_recovery_new);
+	  return 0;
+	}
+	break;
+    default:
+	header_ignored(file_recovery_new);
+	return 0;
     }
   }
   reset_file_recovery(file_recovery_new);
@@ -1920,19 +1935,10 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     }
   }
   offset=2;
-  while(offset + 4 < nbytes && (file_recovery->offset_error==0 || offset < file_recovery->offset_error))
+  while(offset + 4 < nbytes && buffer[offset]==0xff && is_marker_valid(buffer[offset+1]) && (file_recovery->offset_error==0 || offset < file_recovery->offset_error))
   {
     const unsigned int i=offset;
     const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
-    if(buffer[i]!=0xff)
-    {
-#if defined(DEBUG_JPEG)
-      log_info("%s no marker at 0x%x\n", file_recovery->filename, i);
-#endif
-      file_recovery->offset_error=i;
-      jpg_search_marker(file_recovery);
-      return thumb_offset;
-    }
     if(buffer[i+1]==0xff)
     {
       /* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
@@ -1943,12 +1949,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
     offset+=(uint64_t)2+size;
-    if(buffer[i+1]==0xda)	/* SOS: Start Of Scan */
-    {
-      file_recovery->offset_ok=i+1;
-      return thumb_offset;
-    }
-    else if(buffer[i+1]==0xe1)
+    if(buffer[i+1]==0xe1)
     { /* APP1 Exif information */
       if(jpg_check_app1(file_recovery, extract_thumb, buffer, i, offset, size, nbytes, &thumb_offset)==0)
 	return 0;
@@ -1960,26 +1961,26 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
 	file_recovery->offset_error=i+2;
 	return thumb_offset;
       }
-      if(file_recovery->offset_ok<i+1)
-	file_recovery->offset_ok=i+1;
     }
-    else if(buffer[i+1]==0xdb ||			/* DQT */
-	(buffer[i+1]>=0xc0 && buffer[i+1]<=0xcf) ||	/* SOF0 - SOF15 */
-	buffer[i+1]==0xdd ||				/* DRI */
-	(buffer[i+1]>=0xe0 && buffer[i+1]<=0xef) ||	/* APP0 - APP15 */
-	buffer[i+1]==0xfe)				/* COM */
-    {
-      if(file_recovery->offset_ok<i+1)
-	file_recovery->offset_ok=i+1;
-    }
-    else
-    {
-#ifndef __FRAMAC__
-      log_info("%s unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i+1);
+    if(file_recovery->offset_ok<i+1)
+      file_recovery->offset_ok=i+1;
+  }
+  if(offset < nbytes && buffer[offset]!=0xff)
+  {
+#if defined(DEBUG_JPEG)
+    log_info("%s no marker at 0x%x\n", file_recovery->filename, offset);
 #endif
-      file_recovery->offset_error=i+1;
-      return thumb_offset;
-    }
+    file_recovery->offset_error=offset;
+    jpg_search_marker(file_recovery);
+    return thumb_offset;
+  }
+  if(offset + 4 < nbytes)
+  {
+    if(buffer[offset+1]==0xda)	/* SOS: Start Of Scan */
+      file_recovery->offset_ok=offset+1;
+    else
+      file_recovery->offset_error=offset+1;
+    return thumb_offset;
   }
   if(offset > nbytes && nbytes < sizeof(buffer))
   {
