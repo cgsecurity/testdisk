@@ -166,15 +166,20 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   }
   if(off >= 512 || off >= buffer_size)
     return 0;
+  /*@ assert off < 512; */
+  /*@ assert off < buffer_size ; */
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
   {
     static const unsigned char schematic_header[12]={ 0x0a, 0x00, 0x09,
       'S', 'c', 'h', 'e', 'm', 'a', 't', 'i', 'c'};
     static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
     const unsigned char *buffer_compr=buffer+off;
-    unsigned char buffer_uncompr[512];
-    const unsigned int comprLen=(buffer_size<512?buffer_size:512)-off;
-    const unsigned int uncomprLen=512-1;
+    unsigned char buffer_uncompr[4096];
+    const unsigned int uncomprLen=sizeof(buffer_uncompr)-1;
+    const unsigned int bs=td_max(512,file_recovery_new->blocksize);
+    /*@ assert bs >=512; */
+    const unsigned int comprLen=td_min(buffer_size,bs)-off;
+    /*@ assert comprLen > 0; */
     int err;
     z_stream d_stream; /* decompression stream */
     d_stream.zalloc = (alloc_func)0;
@@ -227,6 +232,15 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     file_recovery_new->min_filesize=22;
     file_recovery_new->time=le32(gz->mtime);
     file_recovery_new->file_rename=&file_rename_gz;
+    if(d_stream.avail_in==0 && d_stream.total_in < comprLen && d_stream.total_out < uncomprLen)
+    {
+      /* an 8-byte footer, containing a CRC-32 checksum and
+       * the length of the original uncompressed data, modulo 2^32
+       */
+      file_recovery_new->calculated_file_size=off+d_stream.total_in+8;
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+    }
     if(memcmp(buffer_uncompr, "PVP ", 4)==0)
     {
       /* php Video Pro */
