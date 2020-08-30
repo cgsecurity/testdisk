@@ -91,7 +91,7 @@ unsigned int get_crc32(const void*buf, const unsigned int len, const uint32_t se
   register uint32_t crc32val;
   const unsigned char *s=(const unsigned char *)buf;
   crc32val = seed; 
-  /*@ loop assigns crc32val; */
+  /*@ loop assigns i, crc32val; */
   for (i = 0;  i < len;  i ++)
   {
     crc32val = crc32_tab[(crc32val ^ s[i]) & 0xff] ^ (crc32val >> 8);
