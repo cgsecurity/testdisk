@@ -28,7 +28,6 @@
 #endif
 #include "types.h"
 #include "common.h"
-#include "fat.h"
 #include "fat_common.h"
 
 unsigned int fat_sector_size(const struct fat_boot_sector *fat_header)

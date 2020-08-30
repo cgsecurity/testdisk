@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fat)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -35,7 +36,6 @@
 #include "filegen.h"
 #include "log.h"
 #include "memmem.h"
-#include "fat.h"
 #include "fat_common.h"
 
 static void register_header_check_fat(file_stat_t *file_stat);
@@ -136,3 +136,4 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_size;
   return 1;
 }
+#endif

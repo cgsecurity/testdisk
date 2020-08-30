@@ -43,7 +43,6 @@
 #include "intrf.h"
 #include "log.h"
 #include "log_part.h"
-#include "fat_common.h"
 #include "dir.h"
 #include "fat_dir.h"
 

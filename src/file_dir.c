@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -33,10 +34,9 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#include "fat.h"
+#include "fat_common.h"
 #include "dir.h"
 #include "fat_dir.h"
-#include "fat_common.h"
 
 static void register_header_check_dir(file_stat_t *file_stat);
 static int header_check_dir(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
@@ -119,3 +119,4 @@ static void register_header_check_dir(file_stat_t *file_stat)
 {
   register_header_check(0, ".          ", 8+3, &header_check_dir, file_stat);
 }
+#endif

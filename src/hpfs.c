@@ -51,7 +51,7 @@ static int test_HPFS(const disk_t *disk_car, const struct fat_boot_sector *hpfs_
   const char*buffer=(const char*)hpfs_header;
   if(le16(hpfs_header->marker)==0xAA55)
   {
-    if(memcmp(buffer+OS2_NAME,"IBM",3)==0)
+    if(memcmp(buffer+3,"IBM",3)==0)
     {   /* D'apres une analyse de OS2 sur systeme FAT...
            FAT_NAME1=FAT
          */
