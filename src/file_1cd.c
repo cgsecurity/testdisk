@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_1cd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,7 +57,7 @@ static int header_check_1cd(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_1cd.extension;
-  file_recovery_new->calculated_file_size=le32(hdr->size)<<12;
+  file_recovery_new->calculated_file_size=((uint64_t)le32(hdr->size))<<12;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
@@ -67,3 +68,4 @@ static void register_header_check_1cd(file_stat_t *file_stat)
   static const unsigned char header_1cd[9]=  { '1', 'C', 'D', 'B', 'M', 'S', 'V', '8', 0x08 };
   register_header_check(0, header_1cd, sizeof(header_1cd), &header_check_1cd, file_stat);
 }
+#endif
