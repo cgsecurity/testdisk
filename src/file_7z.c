@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_7z)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,6 +59,9 @@ static int header_check_7z(const unsigned char *buffer, const unsigned int buffe
   if(buffer_7z->majorversion!=0 ||
       le64(buffer_7z->nextHeaderSize)==0)
     return 0;
+  if( le64(buffer_7z->nextHeaderOffset) > 0x7000000000000000 ||
+      le64(buffer_7z->nextHeaderSize)   > 0x7000000000000000)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_7z.extension;
   file_recovery_new->min_filesize=31;
@@ -74,3 +78,4 @@ static void register_header_check_7z(file_stat_t *file_stat)
   static const unsigned char header_7z[6]  = {'7','z', 0xbc, 0xaf, 0x27, 0x1c};
   register_header_check(0, header_7z, sizeof(header_7z), &header_check_7z, file_stat);
 }
+#endif
