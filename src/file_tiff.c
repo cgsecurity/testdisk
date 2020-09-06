@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,8 +54,6 @@ const file_hint_t file_hint_tiff= {
   .register_header_check=&register_header_check_tiff
 };
 
-/* @ ensures \result == 1 || \result == 2 || \result == 4 || \result == 8;
- */
 unsigned int tiff_type2size(const unsigned int type)
 {
   switch(type)
@@ -185,10 +184,13 @@ static void register_header_check_tiff(file_stat_t *file_stat)
 {
   static const unsigned char tiff_header_be[4]= { 'M','M',0x00, 0x2a};
   static const unsigned char tiff_header_le[4]= { 'I','I',0x2a, 0x00};
+#if !defined(SINGLE_FORMAT_jpg)
 #if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
   register_header_check(0, tiff_header_be, sizeof(tiff_header_be), &header_check_tiff_be, file_stat);
 #endif
 #if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
   register_header_check(0, tiff_header_le, sizeof(tiff_header_le), &header_check_tiff_le, file_stat);
 #endif
+#endif
 }
+#endif

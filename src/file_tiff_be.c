@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -42,7 +43,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
 extern const file_hint_t file_hint_jpg;
 #endif
 extern const file_hint_t file_hint_tiff;
@@ -149,7 +150,6 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
     return 0;
   /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
   /*@ assert offset_ifd0 + sizeof(struct ifd_header) <= tiff_size; */
-  /*X assert \valid_read(buffer+(0..offset_ifd0 + sizeof(struct ifd_header)-1)); */
   {
     const unsigned int tmp=find_tag_from_tiff_header_be_aux(buffer, tiff_size, tag, potential_error, offset_ifd0);
     /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
@@ -196,6 +196,7 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
   @ requires \valid(handle);
   @ requires \valid_read(entry_strip_offsets);
   @ requires \valid_read(entry_strip_bytecounts);
+  @ requires \separated(handle, &errno, &Frama_C_entropy_source, &__fc_heap_status, \union(entry_strip_offsets, entry_strip_bytecounts));
   @*/
 static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_offsets, const TIFFDirEntry *entry_strip_bytecounts)
 {
@@ -235,8 +236,8 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
   if(fseek(handle, be32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
       fread(sizep, sizeof(*sizep), nbr, handle) != nbr)
   {
-    free(offsetp);
     free(sizep);
+    free(offsetp);
     return TIFF_ERROR;
   }
 #if defined(__FRAMAC__)
@@ -249,8 +250,8 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
     if(max_offset < tmp)
       max_offset=tmp;
   }
-  free(offsetp);
   free(sizep);
+  free(offsetp);
   return max_offset;
 }
 
@@ -258,6 +259,7 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
   @ requires type != 1 || \valid_read((const char *)val);
   @ requires type != 3 || \valid_read((const char *)val + ( 0 .. 2));
   @ requires type != 4 || \valid_read((const char *)val + ( 0 .. 4));
+  @ assigns \nothing;
   @*/
 static unsigned int tiff_be_read(const void *val, const unsigned int type)
 {
@@ -380,7 +382,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
 #endif
 #endif
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
 static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 
 /*@
@@ -743,9 +745,7 @@ static void file_check_tiff_be(file_recovery_t *fr)
       strcmp(fr->extension,"wdp")==0)
     fr->file_size=calculated_file_size;
 }
-#endif
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
 /*@
   @ requires separation: \separated(&file_hint_tiff, buffer+(..), file_recovery, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_be);
@@ -761,7 +761,7 @@ int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_
   const TIFFHeader *header=(const TIFFHeader *)buffer;
   if((uint32_t)be32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
-#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
@@ -794,6 +794,7 @@ int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_
   file_recovery_new->file_check=&file_check_tiff_be;
   return 1;
 }
+#endif
 #endif
 
 #if defined(MAIN_tiff_be)

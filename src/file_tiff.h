@@ -71,6 +71,7 @@ struct ifd_header {
 /*@
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ ensures \valid_read(buffer+(0..buffer_size-1));
+  @ assigns \nothing;
   @*/
 time_t get_date_from_tiff_header(const unsigned char*buffer, const unsigned int buffer_size);
 
@@ -93,7 +94,7 @@ unsigned int find_tag_from_tiff_header(const unsigned char *buffer, const unsign
 unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
@@ -106,24 +107,33 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
 void file_check_tiff_le(file_recovery_t *fr);
 
 /*@
-  @ requires buffer_size >= 15;
+  @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= 15;
+  @
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures \result == 1 ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_le);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_le);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @*/
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
@@ -140,30 +150,44 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
 unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);
 #endif
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
 /*@
-  @ requires buffer_size >= 15;
+  @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= 15;
+  @
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures \result == 1 ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @*/
 int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
 
+/*@
+  @ ensures \result == 1 || \result == 2 || \result == 4 || \result == 8;
+  @ assigns \nothing;
+  @*/
 unsigned int tiff_type2size(const unsigned int type);
+
 #ifdef DEBUG_TIFF
 const char *tag_name(unsigned int tag);
 #endif

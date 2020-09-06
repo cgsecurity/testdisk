@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -42,10 +43,10 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_raf;
 #endif
-#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
 extern const file_hint_t file_hint_jpg;
 #endif
 extern const file_hint_t file_hint_tiff;
@@ -173,6 +174,7 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
     const unsigned int nbr_fields=get_nbr_fields_le(buffer, tiff_size, offset_ifd0);
     unsigned int offset_tiff_next_diroff;
     offset_tiff_next_diroff=offset_ifd0 + 2 + nbr_fields * sizeof(TIFFDirEntry);
+    /*@ assert tiff_size >= 4; */
     if(offset_tiff_next_diroff < tiff_size - 4)
     {
       const unsigned char *ptr_hdr;
@@ -198,6 +200,7 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
   @ requires \valid(handle);
   @ requires \valid_read(entry_strip_offsets);
   @ requires \valid_read(entry_strip_bytecounts);
+  @ requires \separated(handle, &errno, &Frama_C_entropy_source, &__fc_heap_status, \union(entry_strip_offsets, entry_strip_bytecounts));
   @*/
 static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_offsets, const TIFFDirEntry *entry_strip_bytecounts)
 {
@@ -237,22 +240,25 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
   if(fseek(handle, le32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
       fread(sizep, sizeof(*sizep), nbr, handle) != nbr)
   {
-    free(offsetp);
     free(sizep);
+    free(offsetp);
     return TIFF_ERROR;
   }
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)offsetp, nbr*sizeof(*offsetp));
   Frama_C_make_unknown((char *)sizep, nbr*sizeof(*sizep));
 #endif
+  /*@
+    @ loop assigns i, max_offset;
+    @*/
   for(i=0; i<nbr; i++)
   {
     const uint64_t tmp=(uint64_t)le32(offsetp[i]) + le32(sizep[i]);
     if(max_offset < tmp)
       max_offset=tmp;
   }
-  free(offsetp);
   free(sizep);
+  free(offsetp);
   return max_offset;
 }
 
@@ -260,6 +266,7 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
   @ requires type != 1 || \valid_read((const char *)val);
   @ requires type != 3 || \valid_read((const char *)val + ( 0 .. 2));
   @ requires type != 4 || \valid_read((const char *)val + ( 0 .. 4));
+  @ assigns \nothing;
   @*/
 static unsigned int tiff_le_read(const void *val, const unsigned int type)
 {
@@ -382,7 +389,7 @@ static uint64_t tiff_le_makernote(FILE *in, const uint32_t tiff_diroff)
 #endif
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
 static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 
 /*@
@@ -437,17 +444,17 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
   unsigned char buffer[8192];
   unsigned int i,n;
   int data_read;
-  uint64_t max_offset=0;
-  uint64_t alphaoffset=0;
   uint64_t alphabytecount=0;
-  uint64_t imageoffset=0;
+  uint64_t alphaoffset=0;
   uint64_t imagebytecount=0;
-  uint64_t jpegifoffset=0;
+  uint64_t imageoffset=0;
   uint64_t jpegifbytecount=0;
-  uint64_t strip_offsets=0;
+  uint64_t jpegifoffset=0;
+  uint64_t max_offset=0;
   uint64_t strip_bytecounts=0;
-  uint64_t tile_offsets=0;
+  uint64_t strip_offsets=0;
   uint64_t tile_bytecounts=0;
+  uint64_t tile_offsets=0;
   unsigned int tdir_tag_old=0;
   unsigned int sorted_tag_error=0;
   const TIFFDirEntry *entries=(const TIFFDirEntry *)&buffer[2];
@@ -748,7 +755,7 @@ void file_check_tiff_le(file_recovery_t *fr)
 }
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)  && !defined(SINGLE_FORMAT_jpg)
 /*@
   @ requires separation: \separated(&file_hint_tiff, buffer+(..), file_recovery, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_tiff.extension ||
@@ -767,7 +774,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
     return 0;
   /* Avoid a false positiv with some RAF files */
   if(file_recovery->file_stat!=NULL &&
-#if !defined(MAIN_tiff_be) && !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT)
     file_recovery->file_stat->file_hint==&file_hint_raf &&
 #endif
     memcmp(buffer, raf_fp, 15)==0)
@@ -775,7 +782,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
     header_ignored(file_recovery_new);
     return 0;
   }
-#if (!defined(MAIN_tiff_be) && !defined(MAIN_tiff_le)) || defined(MAIN_jpg)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
@@ -813,6 +820,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
   file_recovery_new->file_check=&file_check_tiff_le;
   return 1;
 }
+#endif
 #endif
 
 #if defined(MAIN_tiff_le)
