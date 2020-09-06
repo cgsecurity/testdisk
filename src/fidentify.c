@@ -129,10 +129,14 @@ static int file_identify(const char *filename, const unsigned int options)
       if(file_recovery_new.file_stat!=NULL &&
 	  file_recovery_new.file_stat->file_hint!=NULL &&
 	  file_recovery_new.file_check!=NULL &&
+#ifdef __FRAMAC__
+	  file_recovery_new.extension != NULL &&
+#endif
 	  ((options&OPT_CHECK)!=0 || ((options&OPT_TIME)!=0 && file_recovery_new.time==0))
 	)
       {
 	off_t file_size;
+	/*@ assert valid_read_string(file_recovery_new.extension); */
 	file_recovery_new.handle=file;
 	my_fseek(file_recovery_new.handle, 0, SEEK_END);
 #if defined(HAVE_FTELLO)
@@ -155,8 +159,25 @@ static int file_identify(const char *filename, const unsigned int options)
 	     file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
 	if((options&OPT_CHECK)!=0 && file_recovery_new.file_check!=NULL)
 	  printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
-	if((options&OPT_TIME)!=0 && file_recovery_new.time!=0)
-	  printf(" time=%llu", (long long unsigned)file_recovery_new.time);
+	if((options&OPT_TIME)!=0 && file_recovery_new.time!=0 && file_recovery_new.time!=(time_t)-1)
+#ifdef __FRAMAC__
+	{
+	  printf(" time=%lld", (long long)file_recovery_new.time);
+	}
+#else
+	{
+	  char outstr[200];
+#if defined(__MINGW32__) || defined(__FRAMAC__)
+	  const struct  tm *tmp = localtime(&file_recovery_new.time);
+#else
+	  struct tm tm_tmp;
+	  const struct tm *tmp = localtime_r(&file_recovery_new.time,&tm_tmp);
+#endif
+	  if(tmp != NULL &&
+	      strftime(outstr, sizeof(outstr), "%Y-%m-%dT%H:%M:%S%z", tmp) != 0)
+	    printf(" time=%s", &outstr[0]);
+	}
+#endif
 	printf("\n");
       }
       else
