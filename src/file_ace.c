@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ace)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -32,9 +33,15 @@
 #include "common.h"
 #include "log.h"
 #include "crc.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 /* #define DEBUG_ACE */
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_ace(file_stat_t *file_stat);
 
 const file_hint_t file_hint_ace= {
@@ -61,34 +68,62 @@ struct header_ace {
 typedef struct header_ace ace_header_t;
 #define BUF_SIZE 4096
 
+/*@
+  @ requires \valid(handle);
+  @ requires \separated(handle, &errno, &Frama_C_entropy_source);
+  @ assigns *handle, errno;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static int check_ace_crc(FILE *handle, const unsigned int len, const unsigned int crc32_low)
 {
-  unsigned char buffer[BUF_SIZE];
+  char buffer[BUF_SIZE];
   uint32_t crc32=0xFFFFFFFF;
   unsigned int remaining=len;
+  /*@
+    @ loop assigns *handle, errno;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns buffer[0 .. BUF_SIZE-1], crc32, remaining;
+    @*/
   while (remaining>0)
   {
     const unsigned int count = ((remaining>BUF_SIZE) ? BUF_SIZE : remaining);
     if(fread(buffer, 1, count, handle) != count)
     {
 #ifdef DEBUG_ACE
-      log_trace("file_ace: truncated file\n");
+      log_info("file_ace: truncated file\n");
 #endif
       return 1;
     }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
+#endif
     crc32=get_crc32(buffer, count, crc32);
     remaining -= count;
   }
   if (crc32_low != (crc32&0xFFFF))
   {
 #ifdef DEBUG_ACE
-    log_trace("file_ace: bad CRC: %04X vs %04X\n", crc32_low, crc32&0xFFFF);
+    log_info("file_ace: bad CRC: %04X vs %04X\n", crc32_low, crc32&0xFFFF);
 #endif
     return 1;
   }
   return 0;
 }
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \valid_read(&file_recovery->extension);
+  @ requires valid_read_string(file_recovery->extension);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires \initialized(&file_recovery->time);
+  @
+  @ requires file_recovery->file_check == &file_check_ace;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size, file_recovery->offset_error, file_recovery->offset_ok;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_ace(file_recovery_t *file_recovery)
 {
   file_recovery->offset_error = 0;
@@ -96,58 +131,52 @@ static void file_check_ace(file_recovery_t *file_recovery)
   file_recovery->file_size = 0;
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
     return ;
-#ifdef DEBUG_ACE
-  log_trace("file_check_ace\n");
-#endif
+  /*@
+    @ loop assigns *file_recovery->handle, errno, file_recovery->file_size, file_recovery->offset_error;
+    @ loop assigns Frama_C_entropy_source;
+    @*/
   while (!feof(file_recovery->handle))
   {
-    ace_header_t h;
-    size_t res;
-    memset(&h, 0, sizeof(h));
-    res=fread(&h, 1, sizeof(h), file_recovery->handle);
-    if(res==0)
-      return ;
-    if(res != sizeof(h))
+    char buffer[sizeof(ace_header_t)];
+    const ace_header_t *h=(const ace_header_t *)&buffer;
+    if(fread(&buffer, sizeof(buffer), 1, file_recovery->handle)!= 1)
     {
-      file_recovery->offset_error=file_recovery->file_size;
-      file_recovery->file_size=0;
       return ;
     }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
+#endif
 #ifdef DEBUG_ACE
-    log_trace("file_ace: Block header at 0x%08lx: CRC16=0x%04X size=%u type=%u"
+    log_info("file_ace: Block header at 0x%08lx: CRC16=0x%04X size=%u type=%u"
         " flags=0x%04X addsize=%u\n",
         (long unsigned) file_recovery->file_size,
-        le16(h.crc16), le16(h.size), h.type, le16(h.flags),
-        (le16(h.flags)&1) ? le32(h.addsize):0);
+        le16(h->crc16), le16(h->size), h->type, le16(h->flags),
+        (le16(h->flags)&1) ? le32(h->addsize):0);
 #endif
     /* Type 0=Archive header, 1=File block, 2=Recovery Record, 5 new_recovery ? */
-    if (h.type==0 && le16(h.size)==0)
+    if (h->type==0 && le16(h->size)==0)
     {
       return ;
     }
-    if (h.type!=0 && h.type!=1 && h.type!=2 && h.type!=5)
+    if (h->type!=0 && h->type!=1 && h->type!=2 && h->type!=5)
     {
 #ifdef DEBUG_ACE
-      log_trace("file_ace: Invalid block type %u\n", h.type);
+      log_info("file_ace: Invalid block type %u\n", h->type);
 #endif
-      file_recovery->offset_error=file_recovery->file_size;
-      file_recovery->file_size=0;
       return ;
     }
 
     /* Minimal size is type+flags */
-    if (le16(h.size) < 1U + 2U)
+    if (le16(h->size) < 1U + 2U)
     {
 #ifdef DEBUG_ACE
-      log_trace("file_ace: Invalid block size %u\n", le16(h.size));
+      log_info("file_ace: Invalid block size %u\n", le16(h->size));
 #endif
-      file_recovery->offset_error=file_recovery->file_size;
-      file_recovery->file_size=0;
       return ;
     }
 
-    if(my_fseek(file_recovery->handle, -sizeof(h)+4, SEEK_CUR)<0 ||
-	check_ace_crc(file_recovery->handle, le16(h.size), le16(h.crc16)) != 0)
+    if(my_fseek(file_recovery->handle, -(off_t)sizeof(h)+(off_t)4, SEEK_CUR)<0 ||
+	check_ace_crc(file_recovery->handle, le16(h->size), le16(h->crc16)) != 0)
     {
       file_recovery->offset_error=file_recovery->file_size;
       file_recovery->file_size=0;
@@ -155,11 +184,17 @@ static void file_check_ace(file_recovery_t *file_recovery)
     }
 
     /* Add its header size */
-    file_recovery->file_size += (uint64_t)4 + le16(h.size);	/* +2: CRC16, +2: size */
-    /* If addsize flag, add complementary size */
-    if (le16(h.flags)&1)
+    file_recovery->file_size += (uint64_t)4 + le16(h->size);	/* +2: CRC16, +2: size */
+
+    if(file_recovery->file_size >= 0x8000000000000000-0x100000000)
     {
-      file_recovery->file_size += le32(h.addsize);
+      file_recovery->file_size=0;
+      return ;
+    }
+    /* If addsize flag, add complementary size */
+    if (le16(h->flags)&1)
+    {
+      file_recovery->file_size += le32(h->addsize);
       if(my_fseek(file_recovery->handle, file_recovery->file_size, SEEK_SET)<0)
       {
 	file_recovery->offset_error=file_recovery->file_size;
@@ -170,6 +205,36 @@ static void file_check_ace(file_recovery_t *file_recovery)
   }
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= sizeof(ace_header_t);
+  @ requires separation: \separated(&file_hint_ace, buffer+(..), file_recovery, file_recovery_new);
+  @
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
+  @ ensures (\result != 0) ==> file_recovery_new->extension != \null;
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_ace.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_ace);
+  @*/
 static int header_check_ace(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const ace_header_t *h=(const ace_header_t *)buffer;
@@ -193,3 +258,4 @@ static void register_header_check_ace(file_stat_t *file_stat)
   static const unsigned char ace_header[7] = { '*','*','A','C','E','*','*'};
   register_header_check(7, ace_header,sizeof(ace_header), &header_check_ace, file_stat);
 }
+#endif
