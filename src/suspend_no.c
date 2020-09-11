@@ -2,6 +2,9 @@
 #include <config.h>
 #endif
  
+#ifdef __FRAMAC__
+#undef HAVE_LIBJPEG
+#endif
 
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
 #include <stdio.h>
