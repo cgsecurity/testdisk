@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nk2)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -190,3 +191,4 @@ static void register_header_check_nk2(file_stat_t *file_stat)
   static const unsigned char nk2_header[8]=  { 0x0d, 0xf0, 0xad, 0xba, 0x0a, 0x00, 0x00, 0x00 };
   register_header_check(0, nk2_header,  sizeof(nk2_header),  &header_check_nk2, file_stat);
 }
+#endif

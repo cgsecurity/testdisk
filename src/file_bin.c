@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bin)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -72,3 +73,4 @@ static void register_header_check_bin(file_stat_t *file_stat)
     'i' , 'c' , 'k' , 'e' , 't' , 's' };
   register_header_check(6, bin_header, sizeof(bin_header), &header_check_bin, file_stat);
 }
+#endif

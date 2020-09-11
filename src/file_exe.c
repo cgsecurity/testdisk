@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_exe)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -913,6 +914,7 @@ static void register_header_check_exe(file_stat_t *file_stat)
 {
   register_header_check(0, exe_header,sizeof(exe_header), &header_check_exe, file_stat);
 }
+#endif
 
 #if defined(MAIN_exe)
 #define BLOCKSIZE 65536u

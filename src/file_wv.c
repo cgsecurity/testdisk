@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -116,3 +117,4 @@ static void register_header_check_wv(file_stat_t *file_stat)
 {
   register_header_check(0, wv_header,  sizeof(wv_header),  &header_check_wv, file_stat);
 }
+#endif

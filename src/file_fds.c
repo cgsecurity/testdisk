@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fds)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -67,3 +68,4 @@ static void register_header_check_fds(file_stat_t *file_stat)
   static const unsigned char fds_header[4]= {'F','D','S',0x1A};
   register_header_check(0, fds_header,sizeof(fds_header), &header_check_fds, file_stat);
 }
+#endif

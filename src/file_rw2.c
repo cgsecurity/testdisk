@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rw2)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -62,3 +63,4 @@ static void register_header_check_rw2(file_stat_t *file_stat)
   static const unsigned char rw2_header_panasonic[4]= {'I','I','U','\0'};
   register_header_check(0, rw2_header_panasonic, sizeof(rw2_header_panasonic), &header_check_rw2, file_stat);
 }
+#endif

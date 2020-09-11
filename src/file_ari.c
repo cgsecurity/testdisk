@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ari)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -74,3 +75,4 @@ static void register_header_check_ari(file_stat_t *file_stat)
     0x00, 0x10, 0x00, 0x00};
   register_header_check(0, ari_header, sizeof(ari_header), &header_check_ari, file_stat);
 }
+#endif

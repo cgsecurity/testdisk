@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_woff)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -86,3 +87,4 @@ static void register_header_check_woff(file_stat_t *file_stat)
 {
   register_header_check(0, "wOFF", 4, &header_check_woff, file_stat);
 }
+#endif

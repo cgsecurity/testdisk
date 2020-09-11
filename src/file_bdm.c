@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bdm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_bdm(file_stat_t *file_stat)
   register_header_check(0, "INDX0100", 8, &header_check_bdm, file_stat);
   register_header_check(0, "MOBJ0100", 8, &header_check_bdm, file_stat);
 }
+#endif

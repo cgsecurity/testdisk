@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wpb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_wpb(file_stat_t *file_stat)
   };
   register_header_check(0, wpb_header, sizeof(wpb_header), &header_check_wpb, file_stat);
 }
+#endif

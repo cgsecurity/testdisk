@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_m2ts)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -203,3 +204,4 @@ static void register_header_check_ts(file_stat_t *file_stat)
   register_header_check(0, "G", 1,  &header_check_m2t, file_stat);
   register_header_check(4, "G", 1,  &header_check_m2ts, file_stat);
 }
+#endif

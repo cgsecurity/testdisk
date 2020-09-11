@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cdt)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -62,3 +63,4 @@ static void register_header_check_cdt(file_stat_t *file_stat)
   };
   register_header_check(12, cdt_header, sizeof(cdt_header), &header_check_cdt, file_stat);
 }
+#endif

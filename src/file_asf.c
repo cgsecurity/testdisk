@@ -32,6 +32,7 @@
 #include "common.h"
 #include "log.h"
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asf)
 static void register_header_check_asf(file_stat_t *file_stat);
 static int header_check_asf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
@@ -156,3 +157,4 @@ static void register_header_check_asf(file_stat_t *file_stat)
   };
   register_header_check(0, asf_header,sizeof(asf_header), &header_check_asf, file_stat);
 }
+#endif

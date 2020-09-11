@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pds)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,3 +59,4 @@ static void register_header_check_pds(file_stat_t *file_stat)
   };
   register_header_check(0, pds_header, sizeof(pds_header), &header_check_pds, file_stat);
 }
+#endif

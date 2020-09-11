@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qbb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -51,7 +52,9 @@ struct qbb_header
  uint16_t type;
  uint16_t data_len;
  uint16_t unk1;
+#if 0
  unsigned char data[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
 struct qbb_header02
@@ -64,7 +67,9 @@ struct qbb_header02
  uint32_t size;
  uint8_t  unk3[10];
  uint16_t title_len;
+#if 0
  uint8_t  title[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
 static void file_rename_qbb(file_recovery_t *file_recovery)
@@ -85,9 +90,10 @@ static void file_rename_qbb(file_recovery_t *file_recovery)
     if(le16(hdr->type)==2)
     {
       const struct qbb_header02 *hdr2=(const struct qbb_header02 *)hdr;
+      /* FIXME */
       if(sizeof(struct qbb_header02)+le16(hdr2->title_len) <= sizeof(struct qbb_header)+le16(hdr2->data_len) &&
 	  i+sizeof(struct qbb_header)+le16(hdr->data_len) < lu)
-	file_rename(file_recovery, hdr2->title, le16(hdr2->title_len), 0, NULL, 1);
+	file_rename(file_recovery, (const char *)hdr2 + sizeof(struct qbb_header02), le16(hdr2->title_len), 0, NULL, 1);
       return ;
     }
     i+=sizeof(struct qbb_header)+le16(hdr->data_len);
@@ -171,3 +177,4 @@ static void register_header_check_qbb(file_stat_t *file_stat)
   register_header_check(4, qbw_header,sizeof(qbw_header), &header_check_qbw, file_stat);
   register_header_check(0x14, qbw2_header,sizeof(qbw2_header), &header_check_qbw2, file_stat);
 }
+#endif

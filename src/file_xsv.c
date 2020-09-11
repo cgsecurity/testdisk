@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xsv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,3 +59,4 @@ static void register_header_check_xsv(file_stat_t *file_stat)
   static const unsigned char xsv_header[9]= {'B','L','O','C', 'K', 'L', 0xDC, 0x1D, 'd'};
   register_header_check(20, xsv_header,sizeof(xsv_header), &header_check_xsv, file_stat);
 }
+#endif

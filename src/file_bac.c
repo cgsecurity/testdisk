@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bac)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -33,6 +34,9 @@
 #include "log.h"
 #include "memmem.h"
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_bac(file_stat_t *file_stat);
 
 const file_hint_t file_hint_bac= {
@@ -54,6 +58,16 @@ struct block_header
   uint32_t VolSessionTime;          /* Session Time for Job */
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= 2*0x18;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_bac;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size < 2*0x18)
@@ -62,6 +76,9 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
     file_recovery->file_check=NULL;
     return DC_CONTINUE;
   }
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
@@ -76,8 +93,10 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
 #endif
     if(memcmp(hdr->ID, "BB02", 4)!=0 || block_size<0x18)
     {
+#ifndef __FRAMAC__
       log_error("file_bac.c: invalid block at %llu\n",
 	  (long long unsigned)file_recovery->calculated_file_size);
+#endif
       return DC_STOP;
     }
     file_recovery->calculated_file_size+=(uint64_t)block_size;
@@ -89,6 +108,24 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct block_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_bac, buffer, file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_bac);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bac.extension);
+  @*/
 static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct block_header *hdr=(const struct block_header *)buffer;
@@ -111,3 +148,4 @@ static void register_header_check_bac(file_stat_t *file_stat)
   static const unsigned char bac_header[8]={ 0, 0, 0, 0, 'B', 'B', '0', '2' };
   register_header_check(8, bac_header, sizeof(bac_header), &header_check_bac, file_stat);
 }
+#endif

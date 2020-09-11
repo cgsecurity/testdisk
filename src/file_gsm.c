@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gsm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -52,6 +53,9 @@ struct block_header
 
 static data_check_t data_check_gsm(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + sizeof(struct block_header) < file_recovery->file_size + buffer_size/2)
   {
@@ -64,14 +68,26 @@ static data_check_t data_check_gsm(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires file_recovery_new->blocksize <= buffer_size;
+  @ requires separation: \separated(&file_hint_gsm, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_gsm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const struct block_header *hdr;
   unsigned int i=0;
-  for(i=0, hdr=(const struct block_header *)buffer;
-      i * sizeof(struct block_header) < file_recovery_new->blocksize;
-      i++, hdr++)
+  /*@ loop assigns i; */
+  for(i=0;
+      (i+1) * sizeof(struct block_header) <= file_recovery_new->blocksize;
+      i++)
   {
+    const struct block_header *hdr=(const struct block_header *)&buffer[i*sizeof(struct block_header)];
     if(hdr->marker < 0xd0 || hdr->marker > 0xdf)
       return 0;
   }
@@ -128,3 +144,4 @@ static void register_header_check_gsm(file_stat_t *file_stat)
   register_header_check(0, gsm_header15, sizeof(gsm_header15), &header_check_gsm, file_stat);
   register_header_check(0, gsm_header16, sizeof(gsm_header16), &header_check_gsm, file_stat);
 }
+#endif

@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ape)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -139,3 +140,4 @@ static void register_header_check_ape(file_stat_t *file_stat)
   static const unsigned char ape_header[4]= { 'M', 'A', 'C', ' '};
   register_header_check(0, ape_header,sizeof(ape_header), &header_check_ape, file_stat);
 }
+#endif

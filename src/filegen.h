@@ -320,6 +320,7 @@ time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc);
   @ requires \valid(offset);
   @*/
 void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location);
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

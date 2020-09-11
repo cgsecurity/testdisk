@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tib)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -125,3 +126,4 @@ static void register_header_check_tib(file_stat_t *file_stat)
   register_header_check(0, tib_header,sizeof(tib_header), &header_check_tib, file_stat);
   register_header_check(0, tib2_header,sizeof(tib2_header), &header_check_tib2, file_stat);
 }
+#endif

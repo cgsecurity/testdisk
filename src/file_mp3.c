@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mp3)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -35,7 +36,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_mp3)
+#if !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_mkv;
 extern const file_hint_t file_hint_tiff;
 #endif
@@ -536,12 +537,12 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
     return 0;
   /*@ assert nbr == 0; */
   /*@
-    @ loop invariant 0 <= nbr <= potential_frame_offset <= 2048 + 8065;
+    @ loop invariant 0 <= nbr <= potential_frame_offset <= 8192 + 8065;
     @ loop assigns potential_frame_offset,nbr;
-    @ loop variant  2048 - potential_frame_offset;
+    @ loop variant  8192 - potential_frame_offset;
     @*/
   while(potential_frame_offset+1 < buffer_size &&
-      potential_frame_offset+1 < 2048)
+      potential_frame_offset+1 < 8192)
   {
     if(buffer[potential_frame_offset+0]!=0xFF)
       return 0;
@@ -587,7 +588,7 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
   if(file_recovery->file_stat!=NULL)
   {
     if(file_recovery->file_stat->file_hint==&file_hint_mp3
-#if !defined(MAIN_mp3)
+#if !defined(SINGLE_FORMAT)
       || file_recovery->file_stat->file_hint==&file_hint_mkv
 #endif
       )
@@ -595,7 +596,7 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
       header_ignored(file_recovery_new);
       return 0;
     }
-#if !defined(MAIN_mp3)
+#if !defined(SINGLE_FORMAT)
     /* RGV values from TIFF may be similar to the beginning of an mp3 */
     if(file_recovery->file_stat->file_hint==&file_hint_tiff &&
 	buffer[0]==buffer[3] && buffer[1]==buffer[4] && buffer[2]==buffer[5])
@@ -644,6 +645,7 @@ static void register_header_check_mp3(file_stat_t *file_stat)
   register_header_check(0, mpeg25_L3_header1, sizeof(mpeg25_L3_header1), &header_check_mp3, file_stat);
   register_header_check(0, mpeg25_L3_header2, sizeof(mpeg25_L3_header2), &header_check_mp3, file_stat);
 }
+#endif
 
 #if defined(MAIN_mp3)
 #define BLOCKSIZE 65536u

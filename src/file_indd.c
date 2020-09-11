@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_indd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -150,3 +151,4 @@ static void register_header_check_indd(file_stat_t *file_stat)
     0x44, 0x4f, 0x43, 0x55, 0x4d, 0x45, 0x4e, 0x54 };
   register_header_check(0, indd_header,sizeof(indd_header), &header_check_indd, file_stat);
 }
+#endif

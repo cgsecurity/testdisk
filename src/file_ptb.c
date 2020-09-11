@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ptb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,3 +59,4 @@ static void register_header_check_ptb(file_stat_t *file_stat)
   static const unsigned char ptb_header[4]= {'p', 't', 'a', 'b'};
   register_header_check(0, ptb_header,sizeof(ptb_header), &header_check_ptb, file_stat);
 }
+#endif

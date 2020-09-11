@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_au)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -85,3 +86,4 @@ static void register_header_check_au(file_stat_t *file_stat)
   static const unsigned char au_header[4]= {'.','s','n','d'};
   register_header_check(0, au_header,sizeof(au_header), &header_check_au, file_stat);
 }
+#endif

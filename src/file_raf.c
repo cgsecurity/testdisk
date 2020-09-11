@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_raf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -92,3 +93,4 @@ static void register_header_check_raf(file_stat_t *file_stat)
 {
   register_header_check(0, "FUJIFILMCCD-RAW ", 16, &header_check_raf, file_stat);
 }
+#endif

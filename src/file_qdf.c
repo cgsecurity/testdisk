@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qdf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -45,8 +46,8 @@ const file_hint_t file_hint_qdf= {
 static int header_check_qdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery->file_stat != NULL &&
-      file_recovery->file_stat->file_hint==&file_hint_doc &&
-      strstr(file_recovery->filename, ".qdf-backup")!=NULL)
+      file_recovery->file_stat->file_hint==&file_hint_doc)
+//      && strstr(file_recovery->filename, ".qdf-backup")!=NULL)
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)
       return 0;
@@ -61,3 +62,4 @@ static void register_header_check_qdf(file_stat_t *file_stat)
   static const unsigned char qdf_header[6]  = { 0xAC, 0x9E, 0xBD, 0x8F, 0x00, 0x00};
   register_header_check(0, qdf_header, sizeof(qdf_header), &header_check_qdf, file_stat);
 }
+#endif

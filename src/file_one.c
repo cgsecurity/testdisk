@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_one)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -62,3 +63,4 @@ static void register_header_check_one(file_stat_t *file_stat)
     0xae, 0xb1, 0x53, 0x78, 0xd0, 0x29, 0x96, 0xd3 };
   register_header_check(0, one_header,sizeof(one_header), &header_check_one, file_stat);
 }
+#endif

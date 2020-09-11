@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_skp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_skp(file_stat_t *file_stat)
     'U',  0x00,  'p', 0x00, ' ', 0x00, 'M', 0x00, 'o', 0x00, 'd', 0x00, 'e', 0x00, 'l', 0x00 };
   register_header_check(0, skp_header,sizeof(skp_header), &header_check_skp, file_stat);
 }
+#endif

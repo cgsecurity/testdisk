@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qxd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -69,3 +70,4 @@ static void register_header_check_qxd(file_stat_t *file_stat)
   register_header_check(2, qxp_header_be,sizeof(qxp_header_be), &header_check_qxp, file_stat);
   register_header_check(2, qxp_header_le,sizeof(qxp_header_le), &header_check_qxp, file_stat);
 }
+#endif

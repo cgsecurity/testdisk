@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_crw)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -71,3 +72,4 @@ static void file_check_crw(file_recovery_t *file_recovery)
   const unsigned char crw_footer[2]= { 0x0A, 0x30};
   file_search_footer(file_recovery, crw_footer, sizeof(crw_footer), 12);
 }
+#endif

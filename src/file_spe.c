@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_spe)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -319,6 +320,7 @@ static void register_header_check_spe(file_stat_t *file_stat)
   static const unsigned char spe_header[4]= {0x67, 0x45, 0x23, 0x01};
   register_header_check(0xbb4, spe_header,sizeof(spe_header), &header_check_spe, file_stat);
 }
+#endif
 
 #if defined(MAIN_spe)
 #define BLOCKSIZE 65536u

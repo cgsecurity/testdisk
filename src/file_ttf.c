@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ttf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -113,3 +114,4 @@ static void register_header_check_ttf(file_stat_t *file_stat)
   static const unsigned char header_ttf[5]= 	{0x00 , 0x01, 0x00, 0x00, 0x00};
   register_header_check(0, header_ttf, sizeof(header_ttf), &header_check_ttf, file_stat);
 }
+#endif

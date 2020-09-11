@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rar)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -83,3 +84,4 @@ static void register_header_check_rar(file_stat_t *file_stat)
   register_header_check(0, rar15fmt_header,sizeof(rar15fmt_header), &header_check_rar15fmt, file_stat);
   register_header_check(0, rar50fmt_header,sizeof(rar50fmt_header), &header_check_rar50fmt, file_stat);
 }
+#endif

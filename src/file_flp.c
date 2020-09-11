@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -76,3 +77,4 @@ static void register_header_check_flp(file_stat_t *file_stat)
   static const unsigned char flp_header[8]= {'F', 'L', 'h', 'd', 0x06, 0x00, 0x00, 0x00};
   register_header_check(0, flp_header,sizeof(flp_header), &header_check_flp, file_stat);
 }
+#endif

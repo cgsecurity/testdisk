@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sp3)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -118,3 +119,4 @@ static void register_header_check_sp3(file_stat_t *file_stat)
   register_header_check(0, sp31_header,  sizeof(sp31_header),  &header_check_sp3, file_stat);
   register_header_check(0, sp32_header,  sizeof(sp32_header),  &header_check_sp3, file_stat);
 }
+#endif

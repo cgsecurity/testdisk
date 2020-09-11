@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_chm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -60,3 +61,4 @@ static void register_header_check_chm(file_stat_t *file_stat)
     0x60, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
   register_header_check(0, chm_header,sizeof(chm_header), &header_check_chm, file_stat);
 }
+#endif

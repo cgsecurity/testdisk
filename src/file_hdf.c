@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -129,3 +130,4 @@ static void register_header_check_hdf(file_stat_t *file_stat)
   static const unsigned char hdf_header[4]=  { 0x0e, 0x03, 0x13, 0x01};
   register_header_check(0, hdf_header, sizeof(hdf_header), &header_check_hdf, file_stat);
 }
+#endif

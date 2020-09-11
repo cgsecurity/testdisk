@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ecryptfs)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -87,3 +88,4 @@ static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int
   file_recovery_new->file_check=&file_check_ecryptfs;
   return 1;
 }
+#endif

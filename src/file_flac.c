@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flac)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -90,8 +91,11 @@ static int header_check_flac(const unsigned char *buffer, const unsigned int buf
 #endif
   file_recovery_new->min_filesize=4+size;
 #if 0
-  file_recovery_new->calculated_file_size=4;
-  file_recovery_new->data_check=&data_check_flac_metadata;
+  if(file_recovery_new->blocksize >= 4)
+  {
+    file_recovery_new->calculated_file_size=4;
+    file_recovery_new->data_check=&data_check_flac_metadata;
+  }
 #endif
   return 1;
 }
@@ -104,3 +108,4 @@ static void register_header_check_flac(file_stat_t *file_stat)
   register_header_check(0, flac_header,sizeof(flac_header), &header_check_flac, file_stat);
   register_header_check(0, flac_header2,sizeof(flac_header2), &header_check_flac, file_stat);
 }
+#endif

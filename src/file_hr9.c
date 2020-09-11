@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hr9)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -63,3 +64,4 @@ static void register_header_check_hr9(file_stat_t *file_stat)
   };
   register_header_check(0, hr9_header,sizeof(hr9_header), &header_check_hr9, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mysql)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -70,3 +71,4 @@ static int header_check_mysql(const unsigned char *buffer, const unsigned int bu
   }
   return 0;
 }
+#endif

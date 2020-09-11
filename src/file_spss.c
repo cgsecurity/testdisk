@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_spss)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_spss(file_stat_t *file_stat)
   /* Check record type + beginning of product name*/
   register_header_check(0, "$FL2@(#) SPSS DATA FILE", 23, &header_check_spss, file_stat);
 }
+#endif

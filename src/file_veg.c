@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_veg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -60,3 +61,4 @@ static void register_header_check_veg(file_stat_t *file_stat)
   static const unsigned char veg_header[5]= {'r','i','f','f', '.'};
   register_header_check(0, veg_header,sizeof(veg_header), &header_check_veg, file_stat);
 }
+#endif

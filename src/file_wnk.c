@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wnk)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_wnk(file_stat_t *file_stat)
   static const unsigned char wnk_header[6]= {'R','P','K','W','I',0x02};
   register_header_check(0, wnk_header,sizeof(wnk_header), &header_check_wnk, file_stat);
 }
+#endif

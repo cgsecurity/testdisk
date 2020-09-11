@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mkv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -183,3 +184,4 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
   }
   return 1;
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -176,3 +177,4 @@ static void register_header_check_psd(file_stat_t *file_stat)
   static const unsigned char psd_header[6]={'8', 'B', 'P', 'S', 0x00, 0x01};
   register_header_check(0, psd_header,sizeof(psd_header), &header_check_psd, file_stat);
 }
+#endif

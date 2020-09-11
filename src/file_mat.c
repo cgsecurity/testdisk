@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mat)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -60,3 +61,4 @@ static void register_header_check_mat(file_stat_t *file_stat)
   static const unsigned char mat_header[7]= {'M', 'A', 'T', 'L', 'A', 'B', ' '};
   register_header_check(0, mat_header,sizeof(mat_header), &header_check_mat, file_stat);
 }
+#endif

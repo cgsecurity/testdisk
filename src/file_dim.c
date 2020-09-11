@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dim)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_dim(file_stat_t *file_stat)
   static const unsigned char dim_header[4]= { 'S', 'P','C','I'};
   register_header_check(0x0c, dim_header,sizeof(dim_header), &header_check_dim, file_stat);
 }
+#endif

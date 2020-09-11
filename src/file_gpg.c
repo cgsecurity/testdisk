@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -281,20 +282,23 @@ static int is_valid_S2K(const unsigned int algo)
 /*@
   @ requires \valid(handle);
   @ requires offset + tmp2 < 0x8000000000000000;
+  @ assigns *handle, errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static unsigned int file_check_gpg_pubkey(FILE *handle, const uint64_t offset, const uint64_t tmp2)
 {
   int len2;
-  uint16_t mpi2;
+  char buffer[2];
+  const uint16_t *mpi2_ptr=(uint16_t *)&buffer;
   if(my_fseek(handle, offset+tmp2, SEEK_SET) < 0 ||
-      fread(&mpi2, sizeof(mpi2), 1, handle) != 1)
+      fread(buffer, sizeof(buffer), 1, handle) != 1)
     return 0;
 #ifdef __FRAMAC__
-  Frama_C_make_unknown((char *)&mpi2, sizeof(mpi2));
+  Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-  len2=is_valid_mpi(mpi2);
+  len2=is_valid_mpi(*mpi2_ptr);
 #ifdef DEBUG_GPG
-  log_info(" data: [ %u bits]\n", be16(mpi2));
+  log_info(" data: [ %u bits]\n", be16(*mpi2_ptr));
 #endif
   if(len2 < 0)
     return 0;
@@ -304,6 +308,7 @@ static unsigned int file_check_gpg_pubkey(FILE *handle, const uint64_t offset, c
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ requires file_recovery->file_check == &file_check_gpg;
   @*/
 static void file_check_gpg(file_recovery_t *file_recovery)
@@ -778,6 +783,7 @@ static void register_header_check_gpg(file_stat_t *file_stat)
   register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey, sizeof(gpg_header_pkey), &header_check_gpg, file_stat);
 }
+#endif
 
 #if defined(MAIN_gpg)
 #define BLOCKSIZE 65536u

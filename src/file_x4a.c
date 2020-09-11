@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_x4a)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -102,3 +103,4 @@ static void register_header_check_ysfc100(file_stat_t *file_stat)
   };
   register_header_check(0x30, ysfc100_header, sizeof(ysfc100_header), &header_check_ysfc100, file_stat);
 }
+#endif

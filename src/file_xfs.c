@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xfs)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -148,3 +149,4 @@ static void register_header_check_xfs(file_stat_t *file_stat)
   register_header_check(0, iabt, 8, &header_save_xfs, file_stat);
   register_header_check(0, "IN", 2, &header_check_xfs_inode, file_stat);
 }
+#endif

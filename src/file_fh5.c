@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fh5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -77,3 +78,4 @@ static void register_header_check_fh5(file_stat_t *file_stat)
   static const unsigned char fh5_header[8] = { 0x41, 0x47, 0x44, 0x31, 0xbe, 0xb8, 0xbb, 0xce };
   register_header_check(0, fh5_header,sizeof(fh5_header), &header_check_fh5, file_stat);
 }
+#endif

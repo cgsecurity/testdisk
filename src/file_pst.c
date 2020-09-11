@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pst)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -146,3 +147,4 @@ static void register_header_check_pst(file_stat_t *file_stat)
   register_header_check(0, dbx_header,sizeof(dbx_header), &header_check_dbx, file_stat);
   register_header_check(0, wab_header,sizeof(wab_header), &header_check_wab, file_stat);
 }
+#endif

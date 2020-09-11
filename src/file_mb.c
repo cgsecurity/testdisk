@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -79,3 +80,4 @@ static void register_header_check_mb(file_stat_t *file_stat)
   register_header_check(8, "MAYAFOR4", 8, &header_check_mb, file_stat);
   register_header_check(8, "MPLEFOR4", 8, &header_check_mp, file_stat);
 }
+#endif

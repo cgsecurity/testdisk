@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dcm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_dcm(file_stat_t *file_stat)
     'U' , 'L' };
   register_header_check(0x80, dcm_header, sizeof(dcm_header), &header_check_dcm, file_stat);
 }
+#endif

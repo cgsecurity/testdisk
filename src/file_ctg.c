@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ctg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_ctg(file_stat_t *file_stat)
   static const unsigned char ctg_header[7]= {':','\\','D','C','I','M','\\'};
   register_header_check(1, ctg_header,sizeof(ctg_header), &header_check_ctg, file_stat);
 }
+#endif

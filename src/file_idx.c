@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_idx)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -71,3 +72,4 @@ static void register_header_check_idx(file_stat_t *file_stat)
 {
   register_header_check(0, "RT60", 4, &header_check_idx, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ifo)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -67,3 +68,4 @@ static void register_header_check_ifo(file_stat_t *file_stat)
   register_header_check(0, ifo_header_vmg, sizeof(ifo_header_vmg), &header_check_ifo, file_stat);
   register_header_check(0, ifo_header_vts, sizeof(ifo_header_vts), &header_check_ifo, file_stat);
 }
+#endif

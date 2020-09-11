@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pnm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -79,3 +80,4 @@ static void register_header_check_pnm(file_stat_t *file_stat)
   register_header_check(0, "P5\n# ", 5, &header_check_pgm, file_stat);
   register_header_check(0, "P6\n# ", 5, &header_check_ppm, file_stat);
 }
+#endif

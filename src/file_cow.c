@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cow)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -127,3 +128,4 @@ static void register_header_check_cow(file_stat_t *file_stat)
   register_header_check(0, cow_header2,sizeof(cow_header2), &header_check_qcow2, file_stat);
   register_header_check(0, cow_header3,sizeof(cow_header3), &header_check_qcow2, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fs)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,6 +59,9 @@ struct transaction_header
 
 static data_check_t data_check_fs(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x11 < file_recovery->file_size + buffer_size/2)
   {
@@ -102,3 +106,4 @@ static void register_header_check_fs(file_stat_t *file_stat)
   static const unsigned char fs_header[4]={ 'F', 'S','2','1' };
   register_header_check(0, fs_header,sizeof(fs_header), &header_check_fs, file_stat);
 }
+#endif

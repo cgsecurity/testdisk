@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bvr)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -43,6 +44,9 @@ const file_hint_t file_hint_bvr= {
 
 static data_check_t data_check_bvr(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
@@ -77,3 +81,4 @@ static void register_header_check_bvr(file_stat_t *file_stat)
   static const unsigned char bvrheader[8]= { 'B', 'L', 'U', 'E', 0x20, 0x00, 0x10, 0x00};
   register_header_check(0, bvrheader, sizeof(bvrheader), &header_check_bvr, file_stat);
 }
+#endif

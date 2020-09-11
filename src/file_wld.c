@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wld)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -91,3 +92,4 @@ static void register_header_check_wld(file_stat_t *file_stat)
     'r' , 'e' , 'l' , 'o' , 'g' , 'i' , 'c'   };
   register_header_check(1, wld_header, sizeof(wld_header), &header_check_wld, file_stat);
 }
+#endif

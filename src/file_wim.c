@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wim)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -109,3 +110,4 @@ static void register_header_check_wim(file_stat_t *file_stat)
 {
   register_header_check(0, "MSWIM\0\0\0", 8, &header_check_wim, file_stat);
 }
+#endif

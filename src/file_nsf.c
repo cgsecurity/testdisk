@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nsf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,3 +60,4 @@ static void register_header_check_nsf(file_stat_t *file_stat)
   register_header_check(0, nsf_header, sizeof(nsf_header), &header_check_nsf, file_stat);
 }
 
+#endif

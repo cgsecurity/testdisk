@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_sqm(file_stat_t *file_stat)
   static const unsigned char sqm_header[6]=  { 'M', 'S', 'Q', 'M', 'x', 0x00};
   register_header_check(0, sqm_header,  sizeof(sqm_header),  &header_check_sqm, file_stat);
 }
+#endif

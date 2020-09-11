@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_evt)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -34,7 +35,6 @@
 
 static void register_header_check_evt(file_stat_t *file_stat);
 static int header_check_evt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static data_check_t data_check_evt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_evt= {
   .extension="evt",
@@ -52,6 +52,9 @@ struct evt_chunk {
 
 static data_check_t data_check_evt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -84,9 +87,10 @@ static data_check_t data_check_evt(const unsigned char *buffer, const unsigned i
 static int header_check_evt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct evt_chunk *chunk=(const struct evt_chunk *)buffer;
-  const struct evt_chunk *chunk2=(const struct evt_chunk *)&buffer[le32(chunk->size)];
+  const struct evt_chunk *chunk2;
   if(le32(chunk->size) != 0x30)
     return 0;
+  chunk2=(const struct evt_chunk *)&buffer[le32(chunk->size)];
   if(le32(chunk2->size) < 8)
     return 0;
   reset_file_recovery(file_recovery_new);
@@ -105,3 +109,4 @@ static void register_header_check_evt(file_stat_t *file_stat)
   static const unsigned char evt_header[8]= {0x30, 0x00, 0x00, 0x00, 'L', 'f', 'L', 'e'};
   register_header_check(0, evt_header,sizeof(evt_header), &header_check_evt, file_stat);
 }
+#endif

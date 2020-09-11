@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cab)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -77,3 +78,4 @@ static void register_header_check_cab(file_stat_t *file_stat)
   static const unsigned char cab_header[4]  = { 'M','S','C','F'};
   register_header_check(0, cab_header,sizeof(cab_header), &header_check_cab, file_stat);
 }
+#endif

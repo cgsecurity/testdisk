@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dst)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -62,3 +63,4 @@ static void register_header_check_dst(file_stat_t *file_stat)
 {
   register_header_check(0x13, "\rST:", 4, &header_check_dst, file_stat);
 }
+#endif

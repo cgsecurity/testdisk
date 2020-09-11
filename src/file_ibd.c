@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ibd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -104,3 +105,4 @@ static void register_header_check_ibd(file_stat_t *file_stat)
 {
   register_header_check(0xc063, "infimum", 7, &header_check_ibd, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_cm(file_stat_t *file_stat)
   static const unsigned char cm_header[8]	= { 'f','L','m','C','0','0','0','1'};
   register_header_check(0x0, cm_header,sizeof(cm_header), &header_check_cm, file_stat);
 }
+#endif

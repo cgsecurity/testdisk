@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_compress)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_compress(file_stat_t *file_stat)
   static const unsigned char compress_header[9]	= {'S', 'Z', 'D', 'D', 0x88, 0xf0, 0x27, 0x33, 'A'};
   register_header_check(0, compress_header, sizeof(compress_header), &header_check_compress, file_stat);
 }
+#endif

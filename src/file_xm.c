@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -192,3 +193,4 @@ static void register_header_check_xm(file_stat_t *file_stat)
   static const unsigned char xm_header[17]  = { 'E','x','t','e','n','d','e','d',' ','M','o','d','u','l','e',':',' '};
   register_header_check(0, xm_header,sizeof(xm_header), &header_check_xm, file_stat);
 }
+#endif

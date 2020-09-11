@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -64,6 +65,9 @@ struct flv_tag
 static data_check_t data_check_flv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   static uint32_t datasize=0;
+  /*@
+    @ loop assigns file_recovery->calculated_file_size, datasize;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 15 < file_recovery->file_size + buffer_size/2)
   {
@@ -113,3 +117,4 @@ static void register_header_check_flv(file_stat_t *file_stat)
   static const unsigned char flv_header[4]= {'F', 'L', 'V', 0x01};
   register_header_check(0, flv_header,sizeof(flv_header), &header_check_flv, file_stat);
 }
+#endif

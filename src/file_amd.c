@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_amd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -84,3 +85,4 @@ static void register_header_check_amd(file_stat_t *file_stat)
   register_header_check(0, amd_header,sizeof(amd_header), &header_check_amd, file_stat);
   register_header_check(0, amt_header,sizeof(amt_header), &header_check_amt, file_stat);
 }
+#endif

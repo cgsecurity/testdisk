@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rdc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_rdc(file_stat_t *file_stat)
   static const unsigned char rdc_header[9]= {'D','S','C','-','I','m','a','g','e'};
   register_header_check(0, rdc_header,sizeof(rdc_header), &header_check_rdc, file_stat);
 }
+#endif

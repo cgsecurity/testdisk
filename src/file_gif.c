@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gif)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -160,3 +161,4 @@ static void register_header_check_gif(file_stat_t *file_stat)
   register_header_check(0, gif_header,sizeof(gif_header), &header_check_gif, file_stat);
   register_header_check(0, gif_header2,sizeof(gif_header2), &header_check_gif, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shn)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_shn(file_stat_t *file_stat)
   static const unsigned char shn_header[5]=  { 'a' , 'j' , 'k' , 'g' , 0x02 };
   register_header_check(0, shn_header, sizeof(shn_header), &header_check_shn, file_stat);
 }
+#endif

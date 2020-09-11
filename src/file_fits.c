@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fits)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -52,25 +53,45 @@ const file_hint_t file_hint_fits= {
  * Image metadata is store in an ASCII header
  * Specification can be found at http://fits.gsfc.nasa.gov/ 	*/
 
+/*@
+  @ requires \valid_read(str + (0 .. 80-1));
+  @ assigns \nothing;
+  @*/
 static uint64_t fits_get_val(const unsigned char *str)
 {
   unsigned int i;
   uint64_t val=0;
+  /*@ loop assigns i; */
   for(i=0;i<80 && str[i]!='=';i++);
   i++;
+  /*@ loop assigns i; */
   for(;i<80 && str[i]==' ';i++);
   if(i<80 && str[i]=='-')
     i++;
+  /*@ loop assigns i,val; */
   for(;i<80 && str[i]>='0' && str[i]<='9';i++)
     val=val*10+str[i]-'0';
   return val;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires \valid(i_pointer);
+  @ requires \separated(buffer+(..), file_recovery, i_pointer);
+  @*/
 static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery, unsigned int *i_pointer)
 {
   uint64_t naxis_size=1;
   unsigned int i=*i_pointer;
+  if( i+80 >= buffer_size)
+    return 1;
   /* Header is composed of 80 character fixed-length strings */
+  /*@
+    @ loop invariant i < buffer_size + 80;
+    @ loop assigns i, naxis_size, file_recovery->time;
+    @*/
   for(; i+80 < buffer_size &&
       memcmp(&buffer[i], "END ", 4)!=0;
       i+=80)
@@ -95,13 +116,14 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
     {
       /*	  CREA_DAT= '2007-08-29T16:22:09' */
       /*	             0123456789012345678  */
-      const char *date_asc;
       unsigned int j;
-      for(j=0,date_asc=(const char *)&buffer[i];j<80 && *date_asc!='\'';j++,date_asc++);
-      if(j<60 && *date_asc=='\'')
+      /*@
+        @ loop assigns j;
+	@*/
+      for(j=0;j<80 && buffer[i+j]!='\'';j++);
+      if(j<60 && buffer[i+j]=='\'')
       {
-	date_asc++;
-	file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(date_asc);
+	file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[i+j+1]);
       }
     }
   }
@@ -111,6 +133,9 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
 
 static data_check_t data_check_fits(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -171,3 +196,4 @@ static void register_header_check_fits(file_stat_t *file_stat)
 {
   register_header_check(0, "SIMPLE  =", 9, &header_check_fits, file_stat);
 }
+#endif

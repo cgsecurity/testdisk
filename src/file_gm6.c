@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gm6)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -140,3 +141,4 @@ static void register_header_check_gm6(file_stat_t *file_stat)
   register_header_check(0, gm50_header, sizeof(gm50_header), &header_check_gmd, file_stat);
   register_header_check(0, gm43_header, sizeof(gm43_header), &header_check_gmd, file_stat);
 }
+#endif

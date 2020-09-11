@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_frm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -70,3 +71,4 @@ static void register_header_check_frm(file_stat_t *file_stat)
     'W', 'G', 'F', 'O', 'R', 'M'};
   register_header_check(0, frm_header,sizeof(frm_header), &header_check_frm, file_stat);
 }
+#endif

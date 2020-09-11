@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dta)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -66,3 +67,4 @@ static void register_header_check_dta(file_stat_t *file_stat)
   register_header_check(0, dta_header_71le,sizeof(dta_header_71le), &header_check_dta, file_stat);
   register_header_check(0, dta_header_72le,sizeof(dta_header_72le), &header_check_dta, file_stat);
 }
+#endif

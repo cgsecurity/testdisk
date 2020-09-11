@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mobi)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -68,3 +69,4 @@ static void register_header_check_mobi(file_stat_t *file_stat)
 {
   register_header_check(0x3c, "BOOKMOBI", 8, &header_check_mobi, file_stat);
 }
+#endif

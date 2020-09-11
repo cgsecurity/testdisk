@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dxf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,6 +60,9 @@ static int header_check_dxf(const unsigned char *buffer, const unsigned int buff
 static data_check_t data_check_dxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i, file_recovery->calculated_file_size;
+    @*/
   for(i=(buffer_size/2)-3;i+4<buffer_size;i++)
   {
     if(buffer[i]=='\n' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
@@ -94,3 +98,4 @@ static void register_header_check_dxf(file_stat_t *file_stat)
   register_header_check(0, header_dxflib, sizeof(header_dxflib), &header_check_dxf, file_stat);
   register_header_check(0, header_dxflib_dos, sizeof(header_dxflib_dos), &header_check_dxf, file_stat);
 }
+#endif

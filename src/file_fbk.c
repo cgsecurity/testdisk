@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbk)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_fbk(file_stat_t *file_stat)
   static const unsigned char fbk_header[10]	= {'T','a','b','l','e','D','a','t','a',' '};
   register_header_check(0, fbk_header,      sizeof(fbk_header), 	&header_check_fbk, file_stat);
 }
+#endif

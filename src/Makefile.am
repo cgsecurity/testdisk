@@ -1,4 +1,4 @@
-.PRECIOUS: session_%.framac
+.PRECIOUS: session_%.framac session_fidentify-%.framac
 FRAMA_C_FLAGS=-machdep x86_64 \
 	  -warn-left-shift-negative \
 	  -warn-right-shift-negative \
@@ -16,7 +16,7 @@ FRAMA_C_FLAGS=-machdep x86_64 \
 	  -wp-dynamic \
 	  -wp-steps 100000 \
 	  -wp-split -wp-literals \
-	  -wp-timeout 10 -pp-annot \
+	  -wp-timeout 5 -pp-annot \
 	  -kernel-msg-key pp
 
 .rc.o:
@@ -50,6 +50,7 @@ file_C			= filegen.c \
 			  file_list.c \
 			  file_1cd.c \
 			  file_3dm.c \
+			  file_3ds.c \
 			  file_7z.c \
 			  file_DB.c \
 			  file_a.c \
@@ -80,6 +81,7 @@ file_C			= filegen.c \
 			  file_bac.c \
 			  file_bdm.c \
 			  file_berkeley.c \
+			  file_bfa.c \
 			  file_bim.c \
 			  file_bin.c \
 			  file_binvox.c \
@@ -224,6 +226,7 @@ file_C			= filegen.c \
 			  file_mcd.c \
 			  file_mdb.c \
 			  file_mdf.c \
+			  file_mdp.c \
 			  file_mfa.c \
 			  file_mfg.c \
 			  file_mft.c \
@@ -411,9 +414,12 @@ qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphotor
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp rcc_qphotorec_locale.cpp
 
-fidentify_SOURCES	= fidentify.c common.c common.h misc.c misc.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
+fidentify_C_SOURCES	= fidentify.c common.c misc.c phcfg.c setdate.c $(file_C) log.c crc.c ext2_common.c fat_common.c suspend_no.c
+fidentify_H_SOURCES	= common.h misc.h phcfg.h setdate.h $(file_H) log.h crc.h fat_common.h
+fidentify_SOURCES	= $(fidentify_C_SOURCES) $(fidentify_H_SOURCES)
 
 fuzzerfidentify_SOURCES		= fuzzerfidentify.cpp common.c common.h misc.c misc.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
+
 
 QT_QM=$(QT_TS:.ts=.qm)
 SECONDARY: $(QT_QM)
@@ -430,28 +436,40 @@ frama-c-%: session_%.framac
 	frama-c-gui -load $^
 
 session_doc.framac: file_doc.c common.c filegen.c log.c setdate.c
-	gcc $(CFLAGS) -DMAIN_doc -DHAVE_CONFIG_H -O -o demo -I.. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+	gcc $(CFLAGS) -DMAIN_doc -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_doc -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_doc -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_jpg.framac: file_jpg.c file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c suspend_no.c setdate.c
-	gcc $(CFLAGS) -DMAIN_jpg -DHAVE_CONFIG_H -O -o demo -I.. $^ -ljpeg
-	frama-c $^ -cpp-extra-args="-DMAIN_jpg -DHAVE_CONFIG_H -D__x86_64__ -I/usr/include  -I.. -I $(frama-c -print-path)/libc" $(FRAMA_C_FLAGS) -save $@ 2>&1 | tee session_jpg.log
+	gcc $(CFLAGS) -DMAIN_jpg -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_jpg -O -o demo -I.. $^ -ljpeg
+	frama-c $^ -cpp-extra-args="-DMAIN_jpg -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_jpg -D__x86_64__ -I/usr/include  -I.. -I $(frama-c -print-path)/libc" $(FRAMA_C_FLAGS) -save $@
+
+session_swf.framac: file_swf.c common.c filegen.c log.c
+	gcc $(CFLAGS) -DMAIN_swf -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_swf -O -o demo -I.. $^ -lz
+	frama-c $^ -cpp-extra-args="-DMAIN_swf -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_swf -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_tiff_be.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I.. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_tiff_be -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_be -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_tiff_le.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -O -o demo -I.. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_%.framac: file_%.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -O -o demo -I.. $^
-	frama-c $^ -cpp-extra-args="-DMAIN_$* -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+	gcc $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
-session_fidentify.framac: fidentify.c common.c misc.c filegen.c log.c setdate.c file_bmp.c file_list.c
-	gcc $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -O -o demo -I.. $^
+session_fidentify-%.framac: $(fidentify_C_SOURCES)
+	gcc -o fidentify_$* -O -DMAIN_fidentify -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_fidentify.framac: fidentify.c common.c misc.c log.c setdate.c filegen.c file_list.c file_gz.c
+	gcc -O $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -O -o demo -I.. $^
 	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_photorec.framac: phmain.c $(photorec_C) filegen.c file_list.c file_bmp.c file_tar.c $(base_C) partgptro.c $(fs_C) chgtype.c pdiskseln.c phcli.c ppartseln.c askloc.c phrecn.c psearchn.c phbs.c phbf.c fat_unformat.c fat_cluster.c intrfn.c file_dir.c
+#	gcc $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -O -o demo -I.. $^
+	frama-c $^ -cpp-extra-args="-DMAIN_photorec -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 moc_qphotorec.cpp: qphotorec.h
 	$(AM_V_GEN) QT_SELECT=$(QT_SELECT) $(MOC) $< -o $@

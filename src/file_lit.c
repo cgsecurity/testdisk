@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lit)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -57,3 +58,4 @@ static void register_header_check_lit(file_stat_t *file_stat)
   };
   register_header_check(0, lit_header, sizeof(lit_header), &header_check_lit, file_stat);
 }
+#endif

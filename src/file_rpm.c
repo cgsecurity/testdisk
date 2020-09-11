@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rpm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -99,3 +100,4 @@ static void register_header_check_rpm(file_stat_t *file_stat)
   static const unsigned char rpm_header[5]= {0xed, 0xab, 0xee, 0xdb, 0x3};
   register_header_check(0, rpm_header,sizeof(rpm_header), &header_check_rpm, file_stat);
 }
+#endif

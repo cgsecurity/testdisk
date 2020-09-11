@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dwg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -69,3 +70,4 @@ static void register_header_check_dwg(file_stat_t *file_stat)
   register_header_check(0, dwg_header_24,sizeof(dwg_header_24), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_27,sizeof(dwg_header_27), &header_check_dwg, file_stat);
 }
+#endif

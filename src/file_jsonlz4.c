@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,3 +60,4 @@ static void register_header_check_jsonlz4(file_stat_t *file_stat)
 {
   register_header_check(0, "mozLz40", 8, &header_check_jsonlz4, file_stat);
 }
+#endif

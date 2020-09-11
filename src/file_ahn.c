@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ahn)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,3 +57,4 @@ static void register_header_check_ahn(file_stat_t *file_stat)
   static const unsigned char ahn_magic[10]	= {'A','H','N','E','N','B','L','A','T','T'};
   register_header_check(8, ahn_magic,      sizeof(ahn_magic), 	&header_check_ahn, file_stat);
 }
+#endif

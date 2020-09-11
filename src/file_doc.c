@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -43,6 +44,9 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_doc(file_stat_t *file_stat);
 
 const file_hint_t file_hint_doc= {
@@ -139,6 +143,7 @@ static int OLE_read_block(FILE *IN, char *buf, const unsigned int uSectorShift, 
 /*@
   @ requires \valid_read(dir_entry);
   @ requires \initialized(dir_entry);
+  @ assigns \nothing;
   @ ensures \result == \null || valid_read_string(\result);
   @*/
 static const char *entry2ext(const struct OLE_DIR *dir_entry)
@@ -283,6 +288,10 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
       /*@ assert \valid_read(dir_entries + (0 .. 512/sizeof(struct OLE_DIR)-1)); */
       const char *ext=NULL;
       int is_db=0;
+      /*@
+	@ loop invariant ext == \null || ext == extension_xls || ext == extension_psmodel || ext == extension_snt;
+        @ loop assigns ext, is_db, sid;
+	@*/
       for(sid=0;
 	  sid<512/sizeof(struct OLE_DIR);
 	  sid++)
@@ -445,6 +454,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ ensures \valid(file_recovery->handle);
   @*/
 void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
@@ -602,6 +612,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle);
   @ requires file_recovery->file_check == &file_check_doc;
   @ ensures \valid(file_recovery->handle);
   @*/
@@ -615,6 +626,7 @@ static void file_check_doc(file_recovery_t *file_recovery)
   @ requires \valid_read(fat + (0 .. fat_entries-1));
   @ requires 9 == uSectorShift || 12 == uSectorShift;
   @ requires 0 < len <= 1024*1024;
+  @ requires \separated(IN, fat + (..), &errno, &Frama_C_entropy_source);
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. len - 1));
   @*/
 static void *OLE_read_stream(FILE *IN,
@@ -647,6 +659,7 @@ static void *OLE_read_stream(FILE *IN,
       return NULL;
     }
   }
+  /*@ assert \valid(dataPt + (0 .. len - 1)); */
   return dataPt;
 }
 
@@ -1798,14 +1811,12 @@ static int header_check_doc(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
 static void register_header_check_doc(file_stat_t *file_stat)
 {
   static const unsigned char doc_header[]= { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1};
   register_header_check(0, doc_header,sizeof(doc_header), &header_check_doc, file_stat);
 }
+#endif
 
 #if defined(MAIN_doc)
 #define BLOCKSIZE 65536u

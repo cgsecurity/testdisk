@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dat)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -93,3 +94,4 @@ static void register_header_check_dat(file_stat_t *file_stat)
   register_header_check(4, dat_history, sizeof(dat_history), &header_check_dat_history4, file_stat);
   register_header_check(10, dat_history, sizeof(dat_history), &header_check_dat_history10, file_stat);
 }
+#endif

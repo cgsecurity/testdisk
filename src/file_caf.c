@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_caf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -46,7 +47,7 @@ const file_hint_t file_hint_caf= {
   .register_header_check=&register_header_check_caf
 };
 
-/* http://developer.apple.com/library/mac/documentation/MusicAudio/Reference/CAFSpec/CAF_spec/CAF_spec.html */
+/* https://developer.apple.com/library/archive/documentation/MusicAudio/Reference/CAFSpec/CAF_spec/CAF_spec.html */
 
 struct chunk_struct
 {
@@ -56,6 +57,9 @@ struct chunk_struct
 
 static data_check_t data_check_caf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
   {
@@ -97,7 +101,7 @@ static data_check_t data_check_caf(const unsigned char *buffer, const unsigned i
 static int header_check_caf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct chunk_struct *chunk=(const struct chunk_struct*)&buffer[8];
-  const int64_t chunk_size=be64(chunk->size);
+  const int64_t chunk_size=(int64_t)be64(chunk->size);
   if(chunk_size < 0)
     return 0;
   reset_file_recovery(file_recovery_new);
@@ -120,3 +124,4 @@ static void register_header_check_caf(file_stat_t *file_stat)
   };
   register_header_check(0, caf_header, sizeof(caf_header), &header_check_caf, file_stat);
 }
+#endif

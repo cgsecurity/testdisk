@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_elf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -152,3 +153,4 @@ static void register_header_check_elf(file_stat_t *file_stat)
   register_header_check(0, elf_header16, sizeof(elf_header16), &header_check_elf, file_stat);
   register_header_check(0, elf_header32, sizeof(elf_header32), &header_check_elf, file_stat);
 }
+#endif

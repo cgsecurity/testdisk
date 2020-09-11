@@ -59,12 +59,15 @@ file_check_list_t file_check_list={
 
 uint64_t gpls_nbr=0;
 
+//  X requires \valid_read(b);
 /*@
   @ requires \valid_read(a);
-  @ requires \valid_read(b);
   @ assigns \nothing;
   @*/
-static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
+#ifndef __FRAMAC__
+static
+#endif
+int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const file_check_t *fc_a=td_list_entry_const(a, const file_check_t, list);
   const file_check_t *fc_b=td_list_entry_const(b, const file_check_t, list);
@@ -111,7 +114,7 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   /*@
     @ loop unroll 256;
     @ loop invariant 0 <= i <= 256;
-    @ loop assigns i, newe->file_checks[0 .. 255].list.prev, newe->file_checks[0 .. 255].list.next;
+    @ loop assigns i, newe->file_checks[0 .. i-1].list.prev, newe->file_checks[0 .. i-1].list.next;
     @ loop variant 255-i;
     @*/
   for(i=0;i<256;i++)
@@ -249,6 +252,8 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
   unsigned char buffer[4096];
   int taille;
+  if(file_recovery->file_size >= 0x8000000000000000-2)
+    return ;
   /*@ assert \valid(file_recovery->handle); */
   if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
   {

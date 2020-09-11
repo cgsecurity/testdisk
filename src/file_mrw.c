@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mrw)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -96,3 +97,4 @@ static void register_header_check_mrw(file_stat_t *file_stat)
   static const unsigned char mrw_header[4]= { 0x00,'M','R','M'}; /* Minolta Raw */
   register_header_check(0, mrw_header,sizeof(mrw_header), &header_check_mrw, file_stat);
 }
+#endif

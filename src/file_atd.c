@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_atd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_atd(file_stat_t *file_stat)
     'D' ,'A' ,'T' ,'A' ,'B' ,'A' ,'S' ,'E' };
   register_header_check(0, atd_header,sizeof(atd_header), &header_check_atd, file_stat);
 }
+#endif

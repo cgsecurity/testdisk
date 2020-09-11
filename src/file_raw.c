@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_raw)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_raw(file_stat_t *file_stat)
   static const unsigned char raw_header_contax[7]= {'A','R','E','C','O','Y','K'};
   register_header_check(25, raw_header_contax,sizeof(raw_header_contax), &header_check_raw, file_stat);
 }
+#endif

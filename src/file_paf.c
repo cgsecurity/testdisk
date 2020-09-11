@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_paf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,3 +57,4 @@ static void register_header_check_paf(file_stat_t *file_stat)
   static const unsigned char paf_header[11]= {'5', '0', '0', '\0', '5', '0', '0', '\0', 'P','A','F'};
   register_header_check(0, paf_header,sizeof(paf_header), &header_check_paf, file_stat);
 }
+#endif

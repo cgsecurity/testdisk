@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dex)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -93,3 +94,4 @@ static void register_header_check_dex(file_stat_t *file_stat)
   static const unsigned char dex_header[4]= {'d','e','x','\n'};
   register_header_check(0, dex_header,sizeof(dex_header), &header_check_dex, file_stat);
 }
+#endif

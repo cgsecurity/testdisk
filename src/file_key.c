@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_key)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_key(file_stat_t *file_stat)
 {
   register_header_check(0, "323382b3c4f1c6d2", 16, &header_check_key, file_stat);
 }
+#endif

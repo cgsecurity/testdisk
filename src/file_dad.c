@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dad)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,6 +54,9 @@ struct dad_header
 
 static data_check_t data_check_dad(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 <= file_recovery->file_size + buffer_size/2)
   {
@@ -98,3 +102,4 @@ static void register_header_check_dad(file_stat_t *file_stat)
 {
   register_header_check(0, "DHAV", 4, &header_check_dad, file_stat);
 }
+#endif

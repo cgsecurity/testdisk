@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_axp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -41,6 +42,16 @@ const file_hint_t file_hint_axp= {
   .register_header_check=&register_header_check_axp
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_axp;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_axp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   const unsigned char axp_footer[34]= {
@@ -51,6 +62,9 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
     0x0a, 0
   };
   unsigned int j;
+  /*@
+    @ loop assigns j;
+    @*/
   for(j=(buffer_size/2>sizeof(axp_footer)?buffer_size/2-sizeof(axp_footer):0);
       j+sizeof(axp_footer) < buffer_size;
       j++)
@@ -94,3 +108,4 @@ static void register_header_check_axp(file_stat_t *file_stat)
   };
   register_header_check(0, axp_header, sizeof(axp_header), &header_check_axp, file_stat);
 }
+#endif

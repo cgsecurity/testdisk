@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cam)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_cam(file_stat_t *file_stat)
   static const unsigned char cam_header[4]= {0x07, 0x20, 'M', 'M'};
   register_header_check(0, cam_header,sizeof(cam_header), &header_check_cam, file_stat);
 }
+#endif

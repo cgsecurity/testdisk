@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_r3d)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -149,3 +150,4 @@ static void register_header_check_r3d(file_stat_t *file_stat)
   register_header_check(4, r3d_header1, sizeof(r3d_header1), &header_check_r3d, file_stat);
   register_header_check(4, r3d_header2, sizeof(r3d_header2), &header_check_r3d_v2, file_stat);
 }
+#endif

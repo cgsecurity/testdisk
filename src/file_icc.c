@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_icc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -65,3 +66,4 @@ static void register_header_check_icc(file_stat_t *file_stat)
   static const unsigned char icc_header[4]= { 'a', 'c', 's', 'p' };
   register_header_check(36, icc_header,sizeof(icc_header), &header_check_icc, file_stat);
 }
+#endif

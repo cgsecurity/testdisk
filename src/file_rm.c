@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -67,3 +68,4 @@ static void register_header_check_rm(file_stat_t *file_stat)
   static const unsigned char rm_header[9]  = { '.', 'R', 'M', 'F', 0x00, 0x00, 0x00, 0x12, 0x00};
   register_header_check(0, rm_header,sizeof(rm_header), &header_check_rm, file_stat);
 }
+#endif

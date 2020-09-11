@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ldf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -65,3 +66,4 @@ static int header_check_ldf(const unsigned char *buffer, const unsigned int buff
   }
   return 0;
 }
+#endif

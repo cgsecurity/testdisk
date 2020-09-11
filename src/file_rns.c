@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rns)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_rns(file_stat_t *file_stat)
   static const unsigned char rns_header[]  = "Propellerheads Reason Song File";
   register_header_check(0, rns_header,sizeof(rns_header)-1, &header_check_rns, file_stat);
 }
+#endif

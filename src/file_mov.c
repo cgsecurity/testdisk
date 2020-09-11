@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mov) || defined(SINGLE_FORMAT_mov_mdat)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,7 +59,7 @@ const file_hint_t file_hint_mov_mdat= {
 };
 
 static const char *extension_mp4="mp4";
-static const char *extension_m4p="m4p";
+static const char *extension_m4a="m4a";
 static const char *extension_3gp="3gp";
 static const char *extension_3g2="3g2";
 static const char *extension_heic="heic";
@@ -214,7 +215,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 				file_recovery_new->extension == extension_cr3 ||
 				file_recovery_new->extension == extension_heic ||
 				file_recovery_new->extension == extension_jp2 ||
-				file_recovery_new->extension == extension_m4p ||
+				file_recovery_new->extension == extension_m4a ||
 				file_recovery_new->extension == extension_mp4);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
@@ -339,8 +340,7 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
       else if(memcmp(&buffer[i+8], "M4A ", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
-	/* acc ? */
-	file_recovery_new->extension=extension_m4p;
+	file_recovery_new->extension=extension_m4a;
 	if(file_recovery->blocksize < 16)
 	{
 	  file_recovery_new->min_filesize=calculated_file_size;
@@ -477,7 +477,7 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 				file_recovery_new->extension == extension_cr3 ||
 				file_recovery_new->extension == extension_heic ||
 				file_recovery_new->extension == extension_jp2 ||
-				file_recovery_new->extension == extension_m4p ||
+				file_recovery_new->extension == extension_m4a ||
 				file_recovery_new->extension == extension_mp4);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_mov || file_recovery_new->file_rename == \null);
@@ -529,6 +529,7 @@ static void register_header_check_mov(file_stat_t *file_stat)
   register_header_check(4, (const unsigned char*)"wide",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"jP  ",4, &header_check_mov, file_stat);
 }
+#endif
 
 #if defined(MAIN_mov)
 #define BLOCKSIZE 65536u

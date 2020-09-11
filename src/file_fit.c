@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fit )
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -73,3 +74,4 @@ static void register_header_check_fit(file_stat_t *file_stat)
   static const unsigned char fits_header[4]= { '.', 'F', 'I', 'T' };
   register_header_check(8, fits_header, sizeof(fits_header), &header_check_fit, file_stat);
 }
+#endif

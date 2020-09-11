@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mcd)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_mcd(file_stat_t *file_stat)
   static const unsigned char mcd_header[11]= { 'V', 'e','c','t','o','r','W','o','r','k','s'};
   register_header_check(0x0e, mcd_header,sizeof(mcd_header), &header_check_mcd, file_stat);
 }
+#endif

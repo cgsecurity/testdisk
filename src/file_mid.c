@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mid)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -121,3 +122,4 @@ static void register_header_check_mid(file_stat_t *file_stat)
   static const unsigned char mid_header[8]  = { 'M','T','h','d', 0, 0, 0, 0x6};
   register_header_check(0, mid_header,sizeof(mid_header), &header_check_mid, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -29,6 +30,9 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static void register_header_check_dv(file_stat_t *file_stat);
 
@@ -43,6 +47,9 @@ const file_hint_t file_hint_dv= {
 
 static data_check_t data_check_NTSC(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -64,6 +71,9 @@ static void file_check_dv_NTSC(file_recovery_t *fr)
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, fr->handle) != 1)
     return ;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer_header, sizeof(buffer_header));
+#endif
   if(fs > 0)
     fs-=120000;
   if(fs > 0)
@@ -73,6 +83,9 @@ static void file_check_dv_NTSC(file_recovery_t *fr)
       fread(&buffer, sizeof(buffer), 1, fr->handle) == 1)
   {
     unsigned int i;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
     for(i=1; i<sizeof(buffer); i+=0x50)
       if((buffer[i]&0x0f)!=(buffer_header[1]&0x0f))
       {
@@ -86,6 +99,9 @@ static void file_check_dv_NTSC(file_recovery_t *fr)
 
 static data_check_t data_check_PAL(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -107,6 +123,9 @@ static void file_check_dv_PAL(file_recovery_t *fr)
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer_header, sizeof(buffer_header), 1, fr->handle) != 1)
     return ;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer_header, sizeof(buffer_header));
+#endif
   if(fs > 0)
     fs-=144000;
   if(fs > 0)
@@ -116,6 +135,9 @@ static void file_check_dv_PAL(file_recovery_t *fr)
       fread(&buffer, sizeof(buffer), 1, fr->handle) == 1)
   {
     unsigned int i;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
     for(i=1; i<sizeof(buffer); i+=0x50)
       if((buffer[i]&0x0f)!=(buffer_header[1]&0x0f))
       {
@@ -159,3 +181,4 @@ static void register_header_check_dv(file_stat_t *file_stat)
   static const unsigned char dv_header[3]= {0x1f, 0x07, 0x00};
   register_header_check(0, dv_header,sizeof(dv_header), &header_check_dv, file_stat);
 }
+#endif

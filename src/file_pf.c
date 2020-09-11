@@ -21,6 +21,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -128,6 +129,7 @@ static void register_header_check_pf(file_stat_t *file_stat)
   static const unsigned char pf_header[7] = {0x00, 0x00, 0x00, 'S', 'C', 'C', 'A'};
   register_header_check(1, pf_header,sizeof(pf_header), &header_check_pf, file_stat);
 }
+#endif
 
 #if defined(MAIN_pf)
 #define BLOCKSIZE 65536u

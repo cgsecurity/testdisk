@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vfb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -66,3 +67,4 @@ static void register_header_check_vfb(file_stat_t *file_stat)
   register_header_check(0, vfb_header, sizeof(vfb_header), &header_check_vfb, file_stat);
 }
 
+#endif

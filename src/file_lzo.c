@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzo)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,3 +57,4 @@ static void register_header_check_lzo(file_stat_t *file_stat)
   };
   register_header_check(0, lzo_header, sizeof(lzo_header), &header_check_lzo, file_stat);
 }
+#endif

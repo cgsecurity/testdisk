@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pap)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_pap(file_stat_t *file_stat)
   static const unsigned char pap_header[]  = {'P','A','P','1'};
   register_header_check(0, pap_header,sizeof(pap_header), &header_check_pap, file_stat);
 }
+#endif

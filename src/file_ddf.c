@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ddf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -138,3 +139,4 @@ static void register_header_check_ddf(file_stat_t *file_stat)
   register_header_check(0, ddf4_header, sizeof(ddf4_header), &header_check_ddf4, file_stat);
   register_header_check(0, ddf5_header, sizeof(ddf5_header), &header_check_ddf5, file_stat);
 }
+#endif

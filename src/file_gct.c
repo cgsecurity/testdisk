@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,3 +60,4 @@ static void register_header_check_gct(file_stat_t *file_stat)
   };
   register_header_check(0, gct_header, sizeof(gct_header), &header_check_gct, file_stat);
 }
+#endif

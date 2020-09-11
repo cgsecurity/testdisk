@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_kdb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_kdb(file_stat_t *file_stat)
   static const unsigned char kdb_header[8]= {0x03, 0xd9, 0xa2, 0x9a, 0x65, 0xfb, 0x4b, 0xb5};
   register_header_check(0, kdb_header,sizeof(kdb_header), &header_check_kdb, file_stat);
 }
+#endif

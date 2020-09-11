@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vmg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -70,3 +71,4 @@ static void register_header_check_vmg(file_stat_t *file_stat)
   };
   register_header_check(0, vmg_header, sizeof(vmg_header), &header_check_vmg, file_stat);
 }
+#endif

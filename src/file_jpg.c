@@ -20,13 +20,15 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#if defined(__FRAMAC__) || defined(SINGLE_FORMAT)
 #undef HAVE_LIBJPEG
 #undef DEBUG_JPEG
+#undef HAVE_JPEGLIB_H
 #endif
 
 #ifdef HAVE_STRING_H
@@ -506,26 +508,37 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
 
 
 /*@
-  @ requires buffer_size >= 10;
+  @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)&file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= 10;
   @ requires separation: \separated(&file_hint_jpg, buffer+(..), file_recovery, file_recovery_new);
+  @
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures \result == 1 ==> file_recovery_new->extension == file_hint_jpg.extension;
   @ ensures \result == 1 ==> \initialized(&file_recovery_new->time);
-  @ ensures \result == 1 ==> file_recovery_new->calculated_file_size == 0;
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures \result == 1 ==> file_recovery_new->file_size == 0;
-  @ ensures \result == 1 ==> file_recovery_new->min_filesize > 0;
-  @ ensures \result == 1 ==> file_recovery_new->offset_ok == 0;
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
+  @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
+  @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
+  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures \result == 1 ==> file_recovery_new->calculated_file_size == 0;
   @ ensures \result == 1 && buffer_size >= 4 ==> file_recovery_new->data_check == data_check_jpg;
   @ ensures \result == 1 ==> file_recovery_new->file_check == file_check_jpg;
   @ ensures \result == 1 ==> file_recovery_new->file_rename == \null;
-  @ ensures \result == 1 ==> valid_read_string(file_recovery_new->extension);
+  @ ensures \result == 1 ==> file_recovery_new->extension == file_hint_jpg.extension;
+  @ ensures \result == 1 ==> file_recovery_new->min_filesize > 0;
+  @ ensures \result == 1 ==> file_recovery_new->offset_ok == 0;
   @*/
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -1733,6 +1746,7 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
   @ requires \valid(thumb_offset_ptr);
   @ requires valid_read_string((char *)&file_recovery->filename);
   @ requires file_recovery->blocksize > 0;
+  @ requires nbytes > 4;
   @ requires \valid_read(buffer + (0 .. nbytes-1));
   @ requires \initialized(&file_recovery->time);
   @ requires separation: \separated(file_recovery, file_recovery->handle, buffer+(..), thumb_offset_ptr, &errno);
@@ -1796,9 +1810,10 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
   *thumb_offset_ptr=thumb_offset;
   if(file_recovery->offset_ok<i)
     file_recovery->offset_ok=i;
-  if(thumb_offset >= nbytes - 1)
+  if(thumb_offset + 6 >= nbytes)
     return 1;
-  /*@ assert 0 < thumb_offset < nbytes - 1; */
+  /*@ assert 0 < thumb_offset < nbytes - 6; */
+  /*@ assert thumb_offset < nbytes; */
   {
     unsigned int j=thumb_offset+2;
     unsigned int thumb_sos_found=0;
@@ -1816,14 +1831,22 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       file_recovery->offset_error=thumb_offset+1;
       return 0;
     }
+    /*@ assert j == thumb_offset + 2; */
+    /*@ assert j < nbytes - 4; */
     /*@
-      @ loop invariant j <= nbytes + 2 + 65535;
       @ loop invariant 0 < thumb_size;
       @ loop invariant 0 < thumb_offset < nbytes - 1;
       @*/
+    /*X
+      X loop assigns j, thumb_sos_found;
+      X loop assigns errno, *file_recovery->handle,Frama_C_entropy_source;
+      X loop assigns file_recovery->offset_ok;
+      X loop assigns file_recovery->offset_error;
+      X loop assigns file_recovery->extra;
+      X*/
     while(j+4<nbytes && thumb_sos_found==0)
     {
-      /*@ assert j < nbytes; */
+      /*@ assert j + 4 < nbytes; */
       if(buffer[j]!=0xff)
       {
 	file_recovery->offset_error=j;
@@ -1844,7 +1867,9 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       log_info("%s thumb marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
 #endif
       if(buffer[j+1]==0xda)	/* Thumb SOS: Start Of Scan */
+      {
 	thumb_sos_found=1;
+      }
       else if(buffer[j+1]==0xc4)			/* DHT */
       {
 	if(jpg_check_dht(buffer, nbytes, j, 2+(buffer[j+2]<<8)+buffer[j+3])!=0)
@@ -1893,9 +1918,9 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
     return 1;
   if(thumb_offset+thumb_size > nbytes)
     return 1;
-  /*@ assert thumb_offset < nbytes; */
   /*@ assert thumb_offset + thumb_size <= nbytes; */
   /*@ assert 0 < thumb_size; */
+  /*@ assert thumb_offset < nbytes; */
   jpg_save_thumbnail(file_recovery, (const char *)buffer, nbytes, thumb_offset, thumb_size);
   return 1;
 }
@@ -1938,6 +1963,8 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
   while(offset + 4 < nbytes && buffer[offset]==0xff && is_marker_valid(buffer[offset+1]) && (file_recovery->offset_error==0 || offset < file_recovery->offset_error))
   {
     const unsigned int i=offset;
+    /*@ assert i + 4 < nbytes; */
+    /*@ assert i < nbytes; */
     const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i+1]==0xff)
     {
@@ -2072,6 +2099,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   @ requires file_recovery->calculated_file_size >= 2;
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_jpg2;
+  @ requires separation: \separated(buffer+(..), file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ ensures file_recovery->data_check == &data_check_jpg2 || file_recovery->data_check == \null;
   @ ensures file_recovery->data_check == &data_check_jpg2 ==> file_recovery->calculated_file_size >= 2;
@@ -2083,6 +2111,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
+    @ loop invariant file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0;
     @ loop assigns file_recovery->calculated_file_size;
     @ loop assigns file_recovery->data_check;
     @ loop assigns file_recovery->offset_error;
@@ -2099,6 +2128,8 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 	/* JPEG_EOI */
 	file_recovery->calculated_file_size++;
 	/*@ assert file_recovery->data_check == &data_check_jpg2; */
+	/*@ assert file_recovery->calculated_file_size >= 2; */
+	/*@ assert file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0; */
 	return DC_STOP;
       }
       else if(buffer[i] >= 0xd0 && buffer[i] <= 0xd7)
@@ -2118,12 +2149,16 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 	old_marker=buffer[i];
 #endif
 	/*@ assert file_recovery->data_check == &data_check_jpg2; */
+	/*@ assert file_recovery->calculated_file_size >= 2; */
       }
       else if(buffer[i] == 0xda || buffer[i] == 0xc4)
       {
 	/* SOS and DHT may be embedded by progressive jpg */
 	file_recovery->data_check=NULL;
 	file_recovery->calculated_file_size=0;
+	/*@ assert file_recovery->data_check == \null; */
+	/*@ assert file_recovery->calculated_file_size == 0; */
+	/*@ assert file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0; */
 	return DC_CONTINUE;
       }
       else if(buffer[i]!=0x00)
@@ -2134,12 +2169,17 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
 #endif
 	file_recovery->offset_error=file_recovery->calculated_file_size;
 	/*@ assert file_recovery->data_check == &data_check_jpg2; */
+	/*@ assert file_recovery->calculated_file_size >= 2; */
+	/*@ assert file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0; */
 	return DC_STOP;
       }
     }
     /*@ assert file_recovery->data_check == &data_check_jpg2; */
     file_recovery->calculated_file_size++;
   }
+  /*@ assert file_recovery->data_check == &data_check_jpg2; */
+  /*@ assert file_recovery->calculated_file_size >= 2; */
+  /*@ assert file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0; */
   return DC_CONTINUE;
 }
 
@@ -2150,6 +2190,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
   @ requires buffer_size >= 4;
   @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_jpg;
+  @ requires separation: \separated(buffer+(..), file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ ensures file_recovery->data_check == &data_check_jpg2 || file_recovery->data_check == &data_check_jpg || file_recovery->data_check == &data_check_size || file_recovery->data_check == \null;
   @ ensures file_recovery->data_check == &data_check_jpg2 ==> file_recovery->calculated_file_size >= 2;
@@ -2327,6 +2368,7 @@ static void register_header_check_jpg(file_stat_t *file_stat)
   static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
   register_header_check(0, jpg_header, sizeof(jpg_header), &header_check_jpg, file_stat);
 }
+#endif
 
 #if defined(MAIN_jpg)
 #define BLOCKSIZE 65536u

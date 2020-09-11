@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ps)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -100,3 +101,4 @@ static data_check_t data_check_ps(const unsigned char *buffer, const unsigned in
   file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
   return DC_CONTINUE;
 }
+#endif

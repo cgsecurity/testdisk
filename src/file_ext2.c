@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ext2_fs)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -37,7 +38,7 @@ static void register_header_check_ext2_fs(file_stat_t *file_stat);
 static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ext2_fs= {
-  .extension="ext",
+  .extension="ext2",
   .description="ext2/ext3/ext4 Filesystem",
   .max_filesize=0,
   .recover=1,
@@ -73,3 +74,4 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
   file_recovery_new->file_check=&file_check_size;
   return 1;
 }
+#endif

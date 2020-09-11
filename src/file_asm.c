@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asm)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -31,10 +32,7 @@
 #include "types.h"
 #include "filegen.h"
 
-
 static void register_header_check_asm(file_stat_t *file_stat);
-static int header_check_asm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_asm(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_asm= {
   .extension="asm",
@@ -49,9 +47,12 @@ static const unsigned char asm_header[16]= {
   '#', 'U', 'G', 'C', ':', '2', ' ', 'A',
   'S', 'S', 'E', 'M', 'B', 'L', 'Y', ' '};
 
-static void register_header_check_asm(file_stat_t *file_stat)
+static void file_check_asm(file_recovery_t *file_recovery)
 {
-  register_header_check(0, asm_header,sizeof(asm_header), &header_check_asm, file_stat);
+  const unsigned char asm_footer[11]= {
+    '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
+    'U', 'G', 'C'};
+  file_search_footer(file_recovery, asm_footer, sizeof(asm_footer), 1);
 }
 
 static int header_check_asm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -64,10 +65,8 @@ static int header_check_asm(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-static void file_check_asm(file_recovery_t *file_recovery)
+static void register_header_check_asm(file_stat_t *file_stat)
 {
-  const unsigned char asm_footer[11]= {
-    '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
-    'U', 'G', 'C'};
-  file_search_footer(file_recovery, asm_footer, sizeof(asm_footer), 1);
+  register_header_check(0, asm_header,sizeof(asm_header), &header_check_asm, file_stat);
 }
+#endif

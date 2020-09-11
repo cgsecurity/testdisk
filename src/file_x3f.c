@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_x3f)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -81,3 +82,4 @@ static void register_header_check_x3f(file_stat_t *file_stat)
   static const unsigned char x3f_header[4]= {'F','O','V','b'};
   register_header_check(0, x3f_header,sizeof(x3f_header), &header_check_x3f, file_stat);
 }
+#endif

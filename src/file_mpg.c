@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -341,3 +342,4 @@ static void register_header_check_mpg(file_stat_t *file_stat)
   register_header_check(0, mpg_header_BA,sizeof(mpg_header_BA), &header_check_mpg_Pack, file_stat);
   register_header_check(0, mpg_header_BB,sizeof(mpg_header_BB), &header_check_mpg_System, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wks)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -74,3 +75,4 @@ static void register_header_check_wks(file_stat_t *file_stat)
   register_header_check(0, wks_header,sizeof(wks_header), &header_check_wks, file_stat);
   register_header_check(0, wk4_header,sizeof(wk4_header), &header_check_wk4, file_stat);
 }
+#endif

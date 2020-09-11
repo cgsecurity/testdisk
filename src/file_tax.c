@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tax)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_tax(file_stat_t *file_stat)
   static const unsigned char tax_header[6]=  { 'T', 'T', 'F', 'N', 0x01, 0x01};
   register_header_check(0, tax_header,  sizeof(tax_header),  &header_check_tax, file_stat);
 }
+#endif

@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fcp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -58,3 +59,4 @@ static void register_header_check_fcp(file_stat_t *file_stat)
   static const unsigned char fcp_header[5]= { 0xA2, 'K','e','y','G'};
   register_header_check(0, fcp_header,sizeof(fcp_header), &header_check_fcp, file_stat);
 }
+#endif

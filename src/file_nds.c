@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nds)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -74,3 +75,4 @@ static void register_header_check_nds(file_stat_t *file_stat)
   };
   register_header_check(0xc0, nds_header, sizeof(nds_header), &header_check_nds, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_abr)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -49,8 +50,21 @@ const file_hint_t file_hint_abr= {
   .register_header_check=&register_header_check_abr
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_abr;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_abr(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
   {
@@ -94,3 +108,4 @@ static void register_header_check_abr(file_stat_t *file_stat)
   };
   register_header_check(2, abr_header, sizeof(abr_header), &header_check_abr, file_stat);
 }
+#endif

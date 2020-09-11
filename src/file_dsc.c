@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dsc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_dsc(file_stat_t *file_stat)
   static const unsigned char dsc_header[3]= { 'M','L','T'};
   register_header_check(588, dsc_header,sizeof(dsc_header), &header_check_dsc, file_stat);
 }
+#endif

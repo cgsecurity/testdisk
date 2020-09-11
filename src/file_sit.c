@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sit)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,3 +57,4 @@ static void register_header_check_sit(file_stat_t *file_stat)
   static const unsigned char sit_header[14]  = { '7','1','0','0',' ','3','.','3','D',' ','7','1','0','0'};
   register_header_check(0, sit_header,sizeof(sit_header), &header_check_sit, file_stat);
 }
+#endif

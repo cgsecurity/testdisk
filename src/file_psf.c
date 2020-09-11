@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -61,3 +62,4 @@ static void register_header_check_psf(file_stat_t *file_stat)
 {
   register_header_check(12, "PSD5RDOC", 8, &header_check_psf, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_icns)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -52,7 +53,7 @@ struct icon_data
 {
   char type[4];
   uint32_t size;
-  uint8_t  data[0];
+//  uint8_t  data[0];
 };
 
 static int check_icon_type(const char *type)
@@ -120,3 +121,4 @@ static void register_header_check_icns(file_stat_t *file_stat)
 {
   register_header_check(0, "icns", 4, &header_check_icns, file_stat);
 }
+#endif

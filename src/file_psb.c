@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -176,3 +177,4 @@ static void register_header_check_psb(file_stat_t *file_stat)
   static const unsigned char psb_header[6]={'8', 'B', 'P', 'S', 0x00, 0x02};
   register_header_check(0, psb_header,sizeof(psb_header), &header_check_psb, file_stat);
 }
+#endif

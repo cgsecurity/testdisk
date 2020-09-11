@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mk5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_mk5(file_stat_t *file_stat)
   static const unsigned char mk5_header[4]= { 0x36, 0xff, 0xff, 0xff };
   register_header_check(0, mk5_header,sizeof(mk5_header), &header_check_mk5, file_stat);
 }
+#endif

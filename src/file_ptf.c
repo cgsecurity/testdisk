@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ptf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -69,3 +70,4 @@ static void register_header_check_ptf(file_stat_t *file_stat)
   };
   register_header_check(0, ptf_header, sizeof(ptf_header), &header_check_ptf, file_stat);
 }
+#endif

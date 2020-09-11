@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzh)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,7 +55,8 @@ struct lzh_level0
   uint8_t  attrib;
   uint8_t  level;
   uint8_t  filename_len;
-  uint8_t  filename[0];
+  /* Size should be 0, be carefull when using sizeof to decrement */
+  uint8_t  filename[1];
 } __attribute__ ((gcc_struct, __packed__));
 
 struct lzh_level1
@@ -68,7 +70,9 @@ struct lzh_level1
   uint8_t  reserved_20;
   uint8_t  level;
   uint8_t  filename_len;
+#ifndef __FRAMAC__
   uint8_t  filename[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
 struct lzh_level2
@@ -96,9 +100,9 @@ static void file_rename_level0(file_recovery_t *file_recovery)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  if(buffer_size < sizeof(struct lzh_level0))
+  if(buffer_size < sizeof(struct lzh_level0) - 1)
     return;
-  if(buffer_size < sizeof(struct lzh_level0) + hdr->filename_len)
+  if(buffer_size < sizeof(struct lzh_level0) - 1 + hdr->filename_len)
     return;
   for(i=0; i< hdr->filename_len && hdr->filename[i]!=0 && hdr->filename[i]!='.'; i++);
   file_rename(file_recovery, hdr->filename, i, 0, NULL, 1);
@@ -155,3 +159,4 @@ static void register_header_check_lzh(file_stat_t *file_stat)
   register_header_check(2, "-lzs-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lz4-", 5, &header_check_lzh, file_stat);
 }
+#endif

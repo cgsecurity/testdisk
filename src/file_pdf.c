@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pdf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -316,3 +317,4 @@ static void register_header_check_pdf(file_stat_t *file_stat)
   static const unsigned char pdf_header[]  = { '%','P','D','F','-','1'};
   register_header_check(0, pdf_header,sizeof(pdf_header), &header_check_pdf, file_stat);
 }
+#endif

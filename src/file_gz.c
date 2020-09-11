@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -27,7 +28,6 @@
 #if defined(MAIN_fidentify) || defined(MAIN_photorec) || defined(__FRAMAC__)
 #undef HAVE_LIBZ
 #undef HAVE_ZLIB_H
-#define SINGLE_FORMAT
 #endif
 
 #ifdef HAVE_STRING_H
@@ -372,6 +372,13 @@ static void file_rename_gz(file_recovery_t *file_recovery)
   }
 }
 
+static void register_header_check_gz(file_stat_t *file_stat)
+{
+  static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
+  register_header_check(0, gz_header_magic,sizeof(gz_header_magic), &header_check_gz, file_stat);
+}
+#endif
+
 const char*td_zlib_version(void)
 {
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
@@ -379,10 +386,4 @@ const char*td_zlib_version(void)
 #else
   return "none";
 #endif
-}
-
-static void register_header_check_gz(file_stat_t *file_stat)
-{
-  static const unsigned char gz_header_magic[3]= {0x1F, 0x8B, 0x08};
-  register_header_check(0, gz_header_magic,sizeof(gz_header_magic), &header_check_gz, file_stat);
 }

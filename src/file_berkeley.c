@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_berkeley)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -72,3 +73,4 @@ static void register_header_check_berkeley_le(file_stat_t *file_stat)
   register_header_check(0xC, berkeley_db_btree_8, 8, &header_check_berkeley_le, file_stat);
   register_header_check(0xC, berkeley_db_btree_9, 8, &header_check_berkeley_le, file_stat);
 }
+#endif

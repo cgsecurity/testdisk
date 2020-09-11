@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -1800,6 +1801,34 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       if(strstr(file_recovery->filename,".html")==NULL)
 	return 0;
     }
+    /* DFRWS 2006 Forensics Challenge: recover recup_dir.1/f0034288.doc
+     */
+#if 0
+    if(file_recovery->file_stat->file_hint == &file_hint_doc)
+    {
+      if(strstr(file_recovery->filename,".doc")==NULL)
+	return 0;
+    }
+#endif
+    /* Useful for DFRWS 2006 Forensics Challenge */
+#if 0
+    else if(file_recovery->file_stat->file_hint == &file_hint_jpg)
+    {
+      /* Don't search text at the beginning of JPG */
+      if(file_recovery->file_size < file_recovery->min_filesize)
+	return 0;
+      /* Text should not be found in JPEG */
+      if(td_memmem(buffer, buffer_size_test, "8BIM", 4)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "adobe", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "exif:", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<rdf:", 5)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<?xpacket", 9)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "<dict>", 6)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "xmp:CreatorTool>", 16)!=NULL ||
+	  td_memmem(buffer, buffer_size_test, "[camera info]", 13)!=NULL)
+	return 0;
+    }
+#endif
     else
       return 0;
   }
@@ -2284,7 +2313,9 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   }
   register_header_check(4, "SC V10",		6,  &header_check_dc, file_stat);
   register_header_check(0, "DatasetHeader Begin", 19, &header_check_ers, file_stat);
-//  register_header_check(0, "\n<!DOCTYPE html",	15, &header_check_html, file_stat);
+  /* DFRWS 2006 Forensics Challenge */
+  register_header_check(0, "\n<!DOCTYPE html",	15, &header_check_html, file_stat);
+//
   register_header_check(0, "<!DOCTYPE html",	14, &header_check_html, file_stat);
   register_header_check(0, "<!DOCTYPE HTML",	14, &header_check_html, file_stat);
 //  register_header_check(0, "<html",		 5, &header_check_html, file_stat);
@@ -2339,6 +2370,7 @@ static void register_header_check_txt(file_stat_t *file_stat)
   register_header_check(1, &ascii_char[0], 1, &header_check_le16_txt, file_stat);
 #endif
 }
+#endif
 
 #if defined(MAIN_txt)
 #define BLOCKSIZE 65536u

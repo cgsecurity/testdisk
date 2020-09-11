@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlite)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -100,3 +101,4 @@ static void register_header_check_sqlite(file_stat_t *file_stat)
 {
   register_header_check(0, "SQLite format 3", 16, &header_check_sqlite, file_stat);
 }
+#endif

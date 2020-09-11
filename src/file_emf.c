@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_emf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -422,6 +423,7 @@ static void register_header_check_emf(file_stat_t *file_stat)
   static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
   register_header_check(0x28, emf_sign,sizeof(emf_sign), &header_check_emf, file_stat);
 }
+#endif
 
 #if defined(MAIN_emf)
 #define BLOCKSIZE 65536u

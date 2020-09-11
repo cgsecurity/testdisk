@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bmp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -144,6 +145,7 @@ static void register_header_check_bmp(file_stat_t *file_stat)
 {
   register_header_check(0, bmp_header,sizeof(bmp_header), &header_check_bmp, file_stat);
 }
+#endif
 
 #if defined(MAIN_bmp)
 #define BLOCKSIZE 65536u

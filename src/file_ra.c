@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ra)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -111,3 +112,4 @@ static void register_header_check_ra(file_stat_t *file_stat)
   static const unsigned char ra_header[4]  = { '.', 'r', 'a', 0xfd};
   register_header_check(0, ra_header,sizeof(ra_header), &header_check_ra, file_stat);
 }
+#endif

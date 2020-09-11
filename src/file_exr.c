@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_exr)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,3 +57,4 @@ static void register_header_check_exr(file_stat_t *file_stat)
   static const unsigned char exr_header[5]=  { 'v' , 0x2f, '1' , 0x01, 0x02  };
   register_header_check(0, exr_header, sizeof(exr_header), &header_check_exr, file_stat);
 }
+#endif

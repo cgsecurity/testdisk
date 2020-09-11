@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nd2)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -55,3 +56,4 @@ static void register_header_check_nd2(file_stat_t *file_stat)
 {
   register_header_check(0x10, "ND2 FILE SIGNATURE CHUNK NAME01!Ver", 0x23, &header_check_nd2, file_stat);
 }
+#endif

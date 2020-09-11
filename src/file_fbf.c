@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -57,3 +58,4 @@ static void register_header_check_fbf(file_stat_t *file_stat)
   };
   register_header_check(0, fbf_header, sizeof(fbf_header), &header_check_fbf, file_stat);
 }
+#endif

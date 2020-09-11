@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_stuffit)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_stuffit(file_stat_t *file_stat)
   static const unsigned char stuffit_header[7] = { 'S', 't', 'u', 'f', 'f', 'I', 't'};
   register_header_check(0, stuffit_header,sizeof(stuffit_header), &header_check_stuffit, file_stat);
 }
+#endif

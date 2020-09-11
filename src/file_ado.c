@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ado)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_ado(file_stat_t *file_stat)
 {
   register_header_check(0x2c, "\5Black\0\0", 8, &header_check_ado, file_stat);
 }
+#endif

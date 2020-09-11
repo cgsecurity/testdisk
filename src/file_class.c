@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_class)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -71,3 +72,4 @@ static int header_check_class(const unsigned char *buffer, const unsigned int bu
   }
   return 0;
 }
+#endif

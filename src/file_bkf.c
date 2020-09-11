@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bkf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -94,3 +95,4 @@ static void register_header_check_bkf(file_stat_t *file_stat)
   static const unsigned char bkf_header[4]= { 'T','A','P','E'};
   register_header_check(0, bkf_header,sizeof(bkf_header), &header_check_bkf, file_stat);
 }
+#endif

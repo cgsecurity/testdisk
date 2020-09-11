@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wtv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -72,3 +73,4 @@ static void register_header_check_wtv(file_stat_t *file_stat)
   };
   register_header_check(0, wtv_header, sizeof(wtv_header), &header_check_wtv, file_stat);
 }
+#endif

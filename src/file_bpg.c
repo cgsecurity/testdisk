@@ -24,6 +24,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bpg)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -94,3 +95,4 @@ static void register_header_check_bpg(file_stat_t *file_stat)
   static const unsigned char bpg_header[4]= {'B','P','G',0xFB};
   register_header_check(0, bpg_header,sizeof(bpg_header), &header_check_bpg, file_stat);
 }
+#endif

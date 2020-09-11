@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pzh)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -79,3 +80,4 @@ static void register_header_check_pzh(file_stat_t *file_stat)
 {
   register_header_check(0x9c4, pzh_header, sizeof(pzh_header), &header_check_pzh, file_stat);
 }
+#endif

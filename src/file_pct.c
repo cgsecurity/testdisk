@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pct)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -134,3 +135,4 @@ static void register_header_check_pct(file_stat_t *file_stat)
   static const unsigned char pct_header[6]= { 0x00, 0x11, 0x02, 0xff, 0x0c, 0x00};
   register_header_check(0x20a, pct_header,sizeof(pct_header), &header_check_pct, file_stat);
 }
+#endif

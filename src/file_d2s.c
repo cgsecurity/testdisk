@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_d2s)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -46,7 +47,7 @@ struct d2s_header {
   uint32_t size;
   uint32_t unk1;
   uint32_t unk2;
-  char name[0];
+//  char name[0];
 } __attribute__ ((gcc_struct, __packed__));
 
 static void file_rename_d2s(file_recovery_t *file_recovery)
@@ -82,3 +83,4 @@ static void register_header_check_d2s(file_stat_t *file_stat)
   };
   register_header_check(0, d2s_header,sizeof(d2s_header), &header_check_d2s, file_stat);
 }
+#endif

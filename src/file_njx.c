@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_njx)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -69,3 +70,4 @@ static void file_check_njx(file_recovery_t *file_recovery)
   const unsigned char njx_footer[4]= {'N', 'J', '*', 0x04};
   file_search_footer(file_recovery, njx_footer, sizeof(njx_footer), 0);
 }
+#endif

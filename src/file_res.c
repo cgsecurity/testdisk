@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_res)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,3 +55,4 @@ static void register_header_check_res(file_stat_t *file_stat)
     0xFF, 0xFF, 0, 0, 0xFF, 0xFF};
   register_header_check(0, MS_res_header,sizeof(MS_res_header), &header_check_res, file_stat);
 }
+#endif

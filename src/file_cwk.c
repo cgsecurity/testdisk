@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cwk)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -86,3 +87,4 @@ static void register_header_check_cwk(file_stat_t *file_stat)
   static const unsigned char cwk_header[4]= {'B','O','B','O'};
   register_header_check(4, cwk_header,sizeof(cwk_header), &header_check_cwk, file_stat);
 }
+#endif

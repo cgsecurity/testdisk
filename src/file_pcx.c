@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcx)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -110,4 +111,4 @@ static int header_check_pcx(const unsigned char *buffer, const unsigned int buff
   }
   return 0;
 }
-
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dump)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -145,3 +146,4 @@ static void register_header_check_dump(file_stat_t *file_stat)
   register_header_check(0x18, dump_header_le_old_fs,sizeof(dump_header_le_old_fs), &header_check_dump, file_stat);
   register_header_check(0x18, dump_header_le_new_fs,sizeof(dump_header_le_new_fs), &header_check_dump, file_stat);
 }
+#endif

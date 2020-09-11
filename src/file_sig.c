@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sig)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -73,7 +74,10 @@ static signature_t signatures={
   .list = TD_LIST_HEAD_INIT(signatures.list)
 };
 
-static int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
+#ifndef __FRAMAC__
+static
+#endif
+int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const signature_t *sig_a=td_list_entry_const(a, const signature_t, list);
   const signature_t *sig_b=td_list_entry_const(b, const signature_t, list);
@@ -457,3 +461,4 @@ static void register_header_check_sig(file_stat_t *file_stat)
   }
   free(buffer);
 }
+#endif

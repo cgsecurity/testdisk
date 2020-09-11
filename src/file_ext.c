@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ext2_sb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -32,6 +33,7 @@
 #include "ext2.h"
 #include "ext2_common.h"
 #include "filegen.h"
+#include "log.h"
 
 static void register_header_check_ext2_sb(file_stat_t *file_stat);
 
@@ -121,3 +123,4 @@ static void register_header_check_ext2_sb(file_stat_t *file_stat)
   register_header_check(0x38, ext2_sb_header, sizeof(ext2_sb_header), &header_check_ext2_sb, file_stat);
   register_header_check(0x4, ext2_ll_dir1, sizeof(ext2_ll_dir1), &header_check_ext2_dir, file_stat);
 }
+#endif

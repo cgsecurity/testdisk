@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -67,3 +68,4 @@ static void register_header_check_drw(file_stat_t *file_stat)
     'R', 'A', 'W', 'I', 'N', 'G'};
   register_header_check(0, drw_header,sizeof(drw_header), &header_check_drw, file_stat);
 }
+#endif

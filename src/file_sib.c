@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sib)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_sib(file_stat_t *file_stat)
   static const unsigned char sib_header[9]= {0x0F, 'S', 'I', 'B', 'E', 'L', 'I', 'U', 'S'};
   register_header_check(0, sib_header,sizeof(sib_header), &header_check_sib, file_stat);
 }
+#endif

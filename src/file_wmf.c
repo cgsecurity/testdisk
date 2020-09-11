@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wmf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -119,3 +120,4 @@ static void register_header_check_wmf(file_stat_t *file_stat)
   register_header_check(0, apm_header,sizeof(apm_header), &header_check_wmf_placeable, file_stat);
   register_header_check(0, wmf_header,sizeof(wmf_header), &header_check_wmf, file_stat);
 }
+#endif

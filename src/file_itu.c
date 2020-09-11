@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_itunes)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -63,3 +64,4 @@ static void register_header_check_itunes(file_stat_t *file_stat)
   static const unsigned char itunes_header[8]= {'m', 'h', 'b', 'd', 0x68, 0x00, 0x00, 0x00};
   register_header_check(0, itunes_header,sizeof(itunes_header), &header_check_itunes, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdi)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -103,3 +104,4 @@ static void register_header_check_vdi(file_stat_t *file_stat)
   static const unsigned char vdi_header[4]= {0x7f, 0x10, 0xda, 0xbe};
   register_header_check(0x40, vdi_header,sizeof(vdi_header), &header_check_vdi, file_stat);
 }
+#endif

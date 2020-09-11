@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mft)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -78,7 +79,7 @@ static int header_check_mft(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_mft.extension;
-  file_recovery_new->calculated_file_size=bytes_allocated;
+  file_recovery_new->calculated_file_size=td_max(file_recovery_new->blocksize, bytes_allocated);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_mft;
@@ -89,3 +90,4 @@ static void register_header_check_mft(file_stat_t *file_stat)
 {
   register_header_check(0, "FILE", 4, &header_check_mft, file_stat);
 }
+#endif

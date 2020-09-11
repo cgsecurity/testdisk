@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mig)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -111,3 +112,4 @@ static void register_header_check_mig(file_stat_t *file_stat)
   };
   register_header_check(0, mig_header, sizeof(mig_header), &header_check_mig, file_stat);
 }
+#endif

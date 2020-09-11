@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arj)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -162,3 +163,4 @@ static void register_header_check_arj(file_stat_t *file_stat)
   static const unsigned char arj_header[2]={0x60, 0xEA};
   register_header_check(0, arj_header,sizeof(arj_header), &header_check_arj, file_stat);
 }
+#endif

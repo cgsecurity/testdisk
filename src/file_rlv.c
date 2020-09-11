@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rlv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,3 +60,4 @@ static void register_header_check_rlv(file_stat_t *file_stat)
   static const unsigned char rlv_header[4]=  { 'r' , 'v' , 'l' , 0x00 };
   register_header_check(0, rlv_header, sizeof(rlv_header), &header_check_rlv, file_stat);
 }
+#endif

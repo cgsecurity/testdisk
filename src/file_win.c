@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_win)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -82,3 +83,4 @@ static void register_header_check_win(file_stat_t *file_stat)
   };
   register_header_check(0, win_header, sizeof(win_header), &header_check_win, file_stat);
 }
+#endif

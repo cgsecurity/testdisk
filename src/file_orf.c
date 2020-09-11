@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -65,3 +66,4 @@ static void register_header_check_orf(file_stat_t *file_stat)
   register_header_check(0, orf_header_IIRS, sizeof(orf_header_IIRS), &header_check_orf_IIRS, file_stat);
   register_header_check(0, orf_header_IIRO, sizeof(orf_header_IIRO), &header_check_orf_IIRO, file_stat);
 }
+#endif

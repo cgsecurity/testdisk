@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hfsp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -59,3 +60,4 @@ static void register_header_check_hfsp(file_stat_t *file_stat)
   register_header_check(0, "HX\0\5", 4, &header_check_hfsp, file_stat);
 }
 
+#endif

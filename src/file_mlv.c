@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mlv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -31,6 +32,9 @@
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 static void register_header_check_mlv(file_stat_t *file_stat);
 
@@ -66,9 +70,15 @@ typedef struct {
   uint64_t    timestamp;
 } __attribute__ ((gcc_struct, __packed__)) mlv_hdr_t;
 
+/*@
+  @ requires \valid_read(hdr);
+  @ requires \initialized(hdr);
+  @ assigns \nothing;
+  @*/
 static int is_valid_type(const mlv_hdr_t *hdr)
 {
   unsigned int i;
+  /*@ loop assigns i; */
   for(i=0; i<4; i++)
   {
     const uint8_t c=hdr->blockType[i];
@@ -80,6 +90,9 @@ static int is_valid_type(const mlv_hdr_t *hdr)
 
 static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *fr)
 {
+  /*@
+    @ loop assigns fr->calculated_file_size;
+    @*/
   while(fr->calculated_file_size + buffer_size/2  >= fr->file_size &&
       fr->calculated_file_size + 8 < fr->file_size + buffer_size/2)
   {
@@ -94,13 +107,20 @@ static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned i
 
 static void file_check_mlv(file_recovery_t *file_recovery)
 {
-  mlv_hdr_t hdr;
   uint64_t fs=0;
-  do
+  while(fs < 0x8000000000000000)
   {
+    mlv_hdr_t hdr;
     if(my_fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
-	fread(&hdr, sizeof(hdr), 1, file_recovery->handle)!=1 ||
-	le32(hdr.blockSize)<0x10 ||
+	fread(&hdr, sizeof(hdr), 1, file_recovery->handle)!=1)
+    {
+      file_recovery->file_size=(fs <= file_recovery->blocksize ? 0 : fs);
+      return;
+    }
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&hdr, sizeof(mlv_hdr_t));
+#endif
+    if(le32(hdr.blockSize)<0x10 ||
 	!is_valid_type(&hdr) ||
 	fs + le32(hdr.blockSize) > file_recovery->file_size)
     {
@@ -108,7 +128,8 @@ static void file_check_mlv(file_recovery_t *file_recovery)
       return;
     }
     fs+=le32(hdr.blockSize);
-  } while(1);
+  }
+  file_recovery->file_size=0;
 }
 
 static void file_rename_mlv(file_recovery_t *file_recovery)
@@ -129,6 +150,17 @@ static void file_rename_mlv(file_recovery_t *file_recovery)
   file_rename(file_recovery, NULL, 0, 0, ext, 1);
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= sizeof(mlv_file_hdr_t);
+  @ requires separation: \separated(&file_hint_mlv, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const mlv_file_hdr_t *hdr=(const mlv_file_hdr_t *)buffer;
@@ -163,3 +195,4 @@ static void register_header_check_mlv(file_stat_t *file_stat)
 {
   register_header_check(0, "MLVI", 4, &header_check_mlv, file_stat);
 }
+#endif

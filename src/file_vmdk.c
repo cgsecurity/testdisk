@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vmdk)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -118,3 +119,4 @@ static void register_header_check_vmdk(file_stat_t *file_stat)
   register_header_check(0, vmdk_header4_2,sizeof(vmdk_header4_2), &header_check_vmdk4, file_stat);
   register_header_check(0, vmdk_header4_3,sizeof(vmdk_header4_3), &header_check_vmdk4, file_stat);
 }
+#endif

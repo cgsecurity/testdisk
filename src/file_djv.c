@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_djv)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -68,3 +69,4 @@ static void register_header_check_djv(file_stat_t *file_stat)
   static const unsigned char djv_header[8]= { 'A','T','&','T','F','O','R','M'};
   register_header_check(0, djv_header,sizeof(djv_header), &header_check_djv, file_stat);
 }
+#endif

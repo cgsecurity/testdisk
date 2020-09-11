@@ -26,6 +26,7 @@
    http://www.libpng.org/pub/mng/spec/
 */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_png)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -262,3 +263,4 @@ static void register_header_check_png(file_stat_t *file_stat)
   register_header_check(0, mng_header, sizeof(mng_header), &header_check_mng, file_stat);
   register_header_check(0, jng_header, sizeof(jng_header), &header_check_jng, file_stat);
 }
+#endif

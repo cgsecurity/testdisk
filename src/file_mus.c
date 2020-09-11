@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mus)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -61,3 +62,4 @@ static void register_header_check_mus(file_stat_t *file_stat)
   static const unsigned char mus_header[18]  = { 'E','N','I','G','M','A',' ','B','I','N','A','R','Y',' ','F','I','L','E' };
   register_header_check(0, mus_header,sizeof(mus_header), &header_check_mus, file_stat);
 }
+#endif

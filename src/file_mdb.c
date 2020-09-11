@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdb)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -76,3 +77,4 @@ static void register_header_check_accdb(file_stat_t *file_stat)
   static const unsigned char accdb_header[]= { 0x00, 0x01, 0x00, 0x00, 'S', 't', 'a', 'n', 'd','a','r','d',' ','A','C','E',' ', 'D','B', 0x00};
   register_header_check(0, accdb_header,sizeof(accdb_header), &header_check_accdb, file_stat);
 }
+#endif

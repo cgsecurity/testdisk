@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_prc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -76,3 +77,4 @@ static void register_header_check_prc(file_stat_t *file_stat)
   static const unsigned char prc_header[16]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,'a','p','p','l'};
   register_header_check(0x30, prc_header,sizeof(prc_header), &header_check_prc, file_stat);
 }
+#endif

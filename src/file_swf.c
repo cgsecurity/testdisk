@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_swf)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -296,6 +297,7 @@ static void register_header_check_swf(file_stat_t *file_stat)
   register_header_check(0, "FWS", 3, &header_check_swf, file_stat);
   register_header_check(0, "ZWS", 3, &header_check_swfz, file_stat);
 }
+#endif
 
 #if defined(MAIN_swf)
 #define BLOCKSIZE 65536u

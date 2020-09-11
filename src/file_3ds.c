@@ -1,8 +1,8 @@
 /*
 
-    File: file_gi.c
+    File: file_3ds.c
 
-    Copyright (C) 2015 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2019 Christophe GRENIER <grenier@cgsecurity.org>
 
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gi)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_3ds)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -32,40 +32,45 @@
 #include "filegen.h"
 #include "common.h"
 
-static void register_header_check_gi(file_stat_t *file_stat);
+static void register_header_check_3ds(file_stat_t *file_stat);
 
-const file_hint_t file_hint_gi= {
-  .extension="gi",
-  .description="Roxio Creator",
+const file_hint_t file_hint_3ds= {
+  .extension="3ds",
+  .description="3d Studio",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-  .register_header_check=&register_header_check_gi
+  .register_header_check=&register_header_check_3ds
 };
 
-struct header_gi
+struct chunk_3ds
 {
-  char magic[12];
-  uint64_t size;
+  uint16_t chunk_id;
+  uint32_t next_chunk;
 } __attribute__ ((gcc_struct, __packed__));
 
-static int header_check_gi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_3ds(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const struct header_gi *hdr=(const struct header_gi *)buffer;
+  uint64_t fs;
+  const struct chunk_3ds *hdr=(const struct chunk_3ds *)buffer;
+  if(buffer_size < 0x12)
+    return 0;
+  if(buffer[0]!=0x4d || buffer[1]!=0x4d || buffer[0x10]!=0x3d || buffer[0x11]!=0x3d)
+    return 0;
+  fs=le32(hdr->next_chunk);
+  if(fs <= 0x12)
+    return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_gi.extension;
-  file_recovery_new->calculated_file_size=le64(hdr->size)+20;
+  file_recovery_new->extension=file_hint_3ds.extension;
+  file_recovery_new->calculated_file_size=fs;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
 }
 
-static void register_header_check_gi(file_stat_t *file_stat)
+static void register_header_check_3ds(file_stat_t *file_stat)
 {
-  static const unsigned char gi_header[12]=  {
-    0xda, 0xda, 0xfe, 0xfe, 0x00, 0x06, 0x1c, 0x04,
-    0x00, 0x04, 0x00, 0x00
-  };
-  register_header_check(0, gi_header, sizeof(gi_header), &header_check_gi, file_stat);
+  static const unsigned char header_3ds[4]=  { 0x02, 0x00, 0x0a, 0x00 };
+  register_header_check(6, header_3ds, sizeof(header_3ds), &header_check_3ds, file_stat);
 }
 #endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_stl)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -68,3 +69,4 @@ static void register_header_check_stl(file_stat_t *file_stat)
   /* Note: STL Ascii format is recovered in file_txt.c */
   register_header_check(0, "solid ", 6, &header_check_stl, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pyc)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -94,3 +95,4 @@ static void register_header_check_pyc(file_stat_t *file_stat)
   register_header_check(0, pyc_33_magic, sizeof(pyc_33_magic), &header_check_pyc, file_stat);
   register_header_check(0, pyc_34_magic, sizeof(pyc_34_magic), &header_check_pyc, file_stat);
 }
+#endif

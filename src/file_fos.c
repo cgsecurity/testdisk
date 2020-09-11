@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fos)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -53,3 +54,4 @@ static void register_header_check_fos(file_stat_t *file_stat)
 {
   register_header_check(0, "FO4_SAVEGAME", 11, &header_check_fos, file_stat);
 }
+#endif

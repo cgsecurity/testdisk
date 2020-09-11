@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gp5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -77,3 +78,4 @@ static void register_header_check_gp5(file_stat_t *file_stat)
   };
   register_header_check(0, gp5_header, sizeof(gp5_header), &header_check_gp5, file_stat);
 }
+#endif

@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wdp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -61,3 +62,4 @@ static void register_header_check_wdp(file_stat_t *file_stat)
   static const unsigned char wdp_header[4]= {'I', 'I', 0xbc, 0x01};
   register_header_check(0, wdp_header, sizeof(wdp_header), &header_check_wdp, file_stat);
 }
+#endif
