@@ -24,6 +24,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 #include "list.h"
 
@@ -130,18 +133,22 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
 /*@
   @ requires \valid(handle);
-  @ requires footer_length > 0;
+  @ requires 0 < footer_length < 4096;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
+  @ requires \separated(handle, (char *)footer + (..), &errno, &Frama_C_entropy_source);
+  @ assigns *handle, errno, Frama_C_entropy_source;
   @*/
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length);
 
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
-  @ requires footer_length > 0;
+  @ requires 0 < footer_length < 4096;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
-  @ requires \separated(file_recovery, file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ ensures \valid(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
   @*/
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 

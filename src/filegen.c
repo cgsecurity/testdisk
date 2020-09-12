@@ -45,9 +45,6 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
-#if defined(__FRAMAC__)
-#include "__fc_builtin.h"
-#endif
 
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
@@ -275,16 +272,19 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
 {
-  unsigned char*buffer;
-  assert(footer_length < 4096);
-  /*@ assert 0 < footer_length < 4096; */
   /*
    * 4096+footer_length-1: required size
    * 4096+footer_length: to avoid a Frama-C warning when footer_length==1
    * 8192: maximum size
    * */
-  buffer=(unsigned char*)MALLOC(4096+footer_length);
-  memset(buffer+4096,0,footer_length-1);
+  char buffer[8192];
+  assert(footer_length < 4096);
+  /*@ assert 0 < footer_length < 4096; */
+  memset(&buffer[4096],0,footer_length-1);
+  /*@
+    @ loop assigns errno, *handle, Frama_C_entropy_source;
+    @ loop assigns offset, buffer[0 .. 8192-1];
+    @*/
   do
   {
     int i;
@@ -296,27 +296,24 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
     else
       offset=offset-(offset%4096);
     if(my_fseek(handle,offset,SEEK_SET)<0)
-    {
-      free(buffer);
       return 0;
-    }
-    taille=fread(buffer, 1, 4096, handle);
+    taille=fread(&buffer, 1, 4096, handle);
     if(taille <= 0)
-    {
-      free(buffer);
       return 0;
-    }
+    /*@ assert 0 < taille <= 4096; */
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&buffer, 4096);
+#endif
+    /*@ loop assigns i; */
     for(i=taille-1;i>=0;i--)
     {
-      if(buffer[i]==*(const unsigned char *)footer && memcmp(buffer+i,footer,footer_length)==0)
+      if(buffer[i]==*(const char *)footer && memcmp(&buffer[i],footer,footer_length)==0)
       {
-        free(buffer);
         return offset + i;
       }
     }
     memcpy(buffer+4096,buffer,footer_length-1);
   } while(offset>0);
-  free(buffer);
   return 0;
 }
 
