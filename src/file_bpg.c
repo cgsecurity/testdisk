@@ -6,7 +6,7 @@
     Copyright (C) 2016 Dmitry Brant <me@dmitrybrant.com>
     
     BPG specification can be found at:
-    http://bellard.org/bpg/bpg_spec.txt
+    https://bellard.org/bpg/bpg_spec.txt
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,10 +48,22 @@ const file_hint_t file_hint_bpg= {
   .register_header_check=&register_header_check_bpg
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(buf_ptr);
+  @ requires \separated(buffer+(..), buf_ptr);
+  @*/
 static unsigned int getue32(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *buf_ptr)
 {
-  unsigned int value = 0;
+  uint64_t value = 0;
   int bitsRead = 0;
+  /*@
+    @ loop invariant bitsRead <= 35;
+    @ loop invariant value < (bitsRead == 0 ? 1: (0x80 << (bitsRead-7)));
+    @ loop assigns value, bitsRead, *buf_ptr;
+    @ loop variant 35 - bitsRead;
+    @ */
   while (*buf_ptr < buffer_size)
   {
     const unsigned int b = buffer[*buf_ptr];
@@ -64,9 +76,39 @@ static unsigned int getue32(const unsigned char *buffer, const unsigned int buff
     if (bitsRead >= 32)
       break;
   }
-  return value;
+  return value&0xffffffff;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= 6+3*5;
+  @ requires separation: \separated(&file_hint_bpg, buffer+(..), file_recovery, file_recovery_new);
+  @
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
+  @ ensures (\result != 0) ==> file_recovery_new->extension != \null;
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bpg.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check== &data_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @*/
 static int header_check_bpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int buf_ptr = 6;
@@ -74,7 +116,7 @@ static int header_check_bpg(const unsigned char *buffer, const unsigned int buff
   const unsigned int picture_width = getue32(buffer, buffer_size, &buf_ptr);
   // get image height
   const unsigned int picture_height = getue32(buffer, buffer_size, &buf_ptr);
-  unsigned int size = getue32(buffer, buffer_size, &buf_ptr);
+  uint64_t size = getue32(buffer, buffer_size, &buf_ptr);
   if(picture_width==0 || picture_height==0)
     return 0;
   if (size == 0) {
