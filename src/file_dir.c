@@ -35,7 +35,6 @@
 #include "filegen.h"
 #include "common.h"
 #include "fat_common.h"
-#include "dir.h"
 #include "fat_dir.h"
 
 static void register_header_check_dir(file_stat_t *file_stat);
