@@ -44,7 +44,7 @@ fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h ext2_common.h fat
 testdisk_ncurses_C	= addpart.c addpartn.c adv.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c dimage.c dirn.c dirpart.c diskacc.c diskcapa.c edit.c ext2_sb.c ext2_sbn.c fat1x.c fat32.c fat_adv.c fat_cluster.c fatn.c geometry.c geometryn.c godmode.c hiddenn.c intrface.c intrfn.c nodisk.c ntfs_adv.c ntfs_fix.c ntfs_udl.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c tanalyse.c tbanner.c tdelete.c tdiskop.c tdisksel.c testdisk.c texfat.c thfs.c tload.c tlog.c tmbrcode.c tntfs.c toptions.c tpartwr.c 
 testdisk_ncurses_H	= addpart.h addpartn.h adv.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h dimage.h dirn.h dirpart.h diskacc.h diskcapa.h edit.h ext2_sb.h ext2_sbn.h fat1x.h fat32.h fat_adv.h fat_cluster.h fatn.h geometry.h geometryn.h godmode.h hiddenn.h intrface.h intrfn.h nodisk.h ntfs_fix.h ntfs_udl.h partgptn.h parti386n.h partmacn.h partsunn.h partxboxn.h tanalyse.h tdelete.h tdiskop.h tdisksel.h texfat.h thfs.h tload.h tlog.h tmbrcode.h tntfs.h toptions.h tpartwr.h 
 
-testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h exfat_dir.c exfat_dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h setdate.c setdate.h $(ICON_TESTDISK) next.c next.h
+testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h dir_common.h exfat_dir.c exfat_dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h setdate.c setdate.h $(ICON_TESTDISK) next.c next.h
 
 file_C			= filegen.c \
 			  file_list.c \
@@ -389,7 +389,7 @@ file_H			= ext2.h ext2_common.h filegen.h file_doc.h file_jpg.h file_gz.h file_s
 
 photorec_C		= photorec.c phcfg.c addpart.c chgarch.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c setdate.c dfxml.c
 
-photorec_H		= photorec.h phcfg.h addpart.h chgarch.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h poptions.h sessionp.h setdate.h dfxml.h
+photorec_H		= photorec.h phcfg.h addpart.h chgarch.h dir_common.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h poptions.h sessionp.h setdate.h dfxml.h
 
 photorec_ncurses_C	= addpartn.c askloc.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phcli.c phnc.c phrecn.c ppartseln.c psearchn.c
 photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phcli.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h photorec_check_header.h
