@@ -53,7 +53,7 @@ struct SHeader
 static void file_check_axx(file_recovery_t *fr)
 {
   uint64_t	offset=0x10;
-  while(1)
+  while(offset < 0x8000000000000000)
   {
     struct SHeader header;
     unsigned int len;
@@ -61,6 +61,9 @@ static void file_check_axx(file_recovery_t *fr)
       return ;
     if (fread(&header, sizeof(header), 1, fr->handle)!=1)
       return ;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&header, sizeof(header));
+#endif
     len=le32(header.aoLength);
 #ifdef DEBUG_AAX
     log_info("axx 0x%llx 0x%x 0x%x/%d\n", (long long int)offset, len, header.oType, header.oType);
@@ -68,6 +71,8 @@ static void file_check_axx(file_recovery_t *fr)
     if(len<5)
       return ;
     offset+=len;
+    if(offset >= 0x8000000000000000)
+      break;
     if(header.oType==63) // eData
     {
       uint64_t fsize;
@@ -75,12 +80,18 @@ static void file_check_axx(file_recovery_t *fr)
 	return ;
       if (fread(&fsize, sizeof(fsize), 1, fr->handle)!=1)
 	return ;
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown(&fsize, sizeof(fsize));
+#endif
       fsize=le64(fsize);
+      if(fsize >= 0x8000000000000000)
+	break;
       offset+=fsize;
       fr->file_size=(fr->file_size < offset ? 0 : offset);
       return ;
     }
   }
+  fr->file_size=0;
 }
 
 static int header_check_axx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -91,7 +102,7 @@ static int header_check_axx(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_axx.extension;
   file_recovery_new->file_check=&file_check_axx;
-  file_recovery_new->min_filesize=0x25+le32(header->aoLength);
+  file_recovery_new->min_filesize=(uint64_t)0x25+le32(header->aoLength);
   return 1;
 }
 
