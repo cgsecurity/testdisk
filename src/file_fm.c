@@ -52,6 +52,8 @@ struct fm_header
 static int header_check_fm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct fm_header *hdr=(const struct fm_header *)buffer;
+  if(le64(hdr->size) > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_fm.extension;
   file_recovery_new->calculated_file_size=(uint64_t)le64(hdr->size) + 12833;
