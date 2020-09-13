@@ -87,12 +87,29 @@ static void file_check_e01(file_recovery_t *file_recovery)
 static int header_check_e01(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ewf_file_header *ewf=(const struct ewf_file_header *)buffer;
-  static char ext[4];
+  static char ext[10];
+  uint16_t fields_segment=le16(ewf->fields_segment);
   reset_file_recovery(file_recovery_new);
-  ext[0]='E'+le16(ewf->fields_segment)/100;
-  ext[1]='0'+(le16(ewf->fields_segment)%100)/10;
-  ext[2]='0'+(le16(ewf->fields_segment)%10);
-  ext[3]='\0';
+  if(fields_segment > ('Z'-'E') * 100 + 99)
+  {
+    ext[0]='E';
+    ext[1]='0';
+    ext[2]='1';
+    ext[3]='_';
+    ext[4]='0'+(fields_segment/10000)%10;
+    ext[5]='0'+(fields_segment/1000)%10;
+    ext[6]='0'+(fields_segment/100)%10;
+    ext[7]='0'+(fields_segment/10)%10;
+    ext[8]='0'+fields_segment%10;
+    ext[9]='\0';
+  }
+  else
+  {
+    ext[0]='E'+fields_segment/100;
+    ext[1]='0'+(fields_segment/10)%10;
+    ext[2]='0'+(fields_segment%10);
+    ext[3]='\0';
+  }
   file_recovery_new->extension=(const char*)&ext;
   file_recovery_new->file_check=&file_check_e01;
   return 1;
