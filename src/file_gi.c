@@ -52,6 +52,8 @@ struct header_gi
 static int header_check_gi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct header_gi *hdr=(const struct header_gi *)buffer;
+  if(le64(hdr->size) > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_gi.extension;
   file_recovery_new->calculated_file_size=le64(hdr->size)+20;
