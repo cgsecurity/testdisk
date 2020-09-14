@@ -95,8 +95,17 @@ static void file_check_indd(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return ;
     }
-    if(fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1 ||
-	memcmp(hdr.fGUID, kINDDContigObjHeaderGUID, sizeof(kINDDContigObjHeaderGUID))!=0)
+    if(fread(&hdr, sizeof(hdr), 1, file_recovery->handle) != 1)
+    {
+      file_recovery->file_size=(offset+4096-1)/4096*4096;
+      if(file_recovery->file_size>file_size_org)
+	file_recovery->file_size=0;
+      return ;
+    }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&hdr, sizeof(hdr));
+#endif
+    if(memcmp(hdr.fGUID, kINDDContigObjHeaderGUID, sizeof(kINDDContigObjHeaderGUID))!=0)
     {
       file_recovery->file_size=(offset+4096-1)/4096*4096;
       if(file_recovery->file_size>file_size_org)
