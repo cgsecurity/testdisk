@@ -175,7 +175,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
       return ;
     }
 
-    if(my_fseek(file_recovery->handle, -(off_t)sizeof(h)+(off_t)4, SEEK_CUR)<0 ||
+    if(my_fseek(file_recovery->handle, -(off_t)sizeof(ace_header_t)+(off_t)4, SEEK_CUR)<0 ||
 	check_ace_crc(file_recovery->handle, le16(h->size), le16(h->crc16)) != 0)
     {
       file_recovery->offset_error=file_recovery->file_size;
