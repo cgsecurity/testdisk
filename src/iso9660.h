@@ -33,11 +33,13 @@ struct iso_primary_descriptor
 	char system_id[32];
 	char volume_id[32];
 	char unused2[8];
-	char volume_space_size[8];
+	uint32_t volume_space_size_le;
+	uint32_t volume_space_size_be;
 	char unused3[32];
 	char volume_set_size[4];
 	char volume_sequence_number[4];
-	char logical_block_size[4];
+	uint16_t logical_block_size_le;
+	uint16_t logical_block_size_be;
 	char path_table_size[8];
 	char type_l_path_tabl[4];
 	char opt_type_l_path_table[4];

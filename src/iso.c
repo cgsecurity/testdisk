@@ -67,15 +67,15 @@ int check_ISO(disk_t *disk_car, partition_t *partition)
 
 static void set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *partition)
 {
-  const unsigned int volume_space_size=iso->volume_space_size[0] | (iso->volume_space_size[1]<<8) | (iso->volume_space_size[2]<<16) | (iso->volume_space_size[3]<<24);
-  const unsigned int volume_space_size2=iso->volume_space_size[7] | (iso->volume_space_size[6]<<8) | (iso->volume_space_size[5]<<16) | (iso->volume_space_size[4]<<24);
-  const unsigned int logical_block_size=iso->logical_block_size[0] | (iso->logical_block_size[1]<<8);
-  const unsigned int logical_block_size2=iso->logical_block_size[3] | (iso->logical_block_size[2]<<8);
+  const unsigned int volume_space_size_le=le32(iso->volume_space_size_le);
+  const unsigned int volume_space_size_be=be32(iso->volume_space_size_be);
+  const unsigned int logical_block_size_le=le16(iso->logical_block_size_le);
+  const unsigned int logical_block_size_be=be16(iso->logical_block_size_be);
   partition->upart_type=UP_ISO;
   set_part_name_chomp(partition, (const unsigned char*)iso->volume_id, 32);
-  if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
+  if(volume_space_size_le==volume_space_size_be && logical_block_size_le==logical_block_size_be)
   {
-    partition->blocksize=logical_block_size;
+    partition->blocksize=logical_block_size_le;
     snprintf(partition->info, sizeof(partition->info),
 	"ISO9660 blocksize=%u", partition->blocksize);
   }
@@ -89,13 +89,13 @@ int recover_ISO(const struct iso_primary_descriptor *iso, partition_t *partition
     return 1;
   set_ISO_info(iso, partition);
   {
-    const unsigned int volume_space_size=iso->volume_space_size[0] | (iso->volume_space_size[1]<<8) | (iso->volume_space_size[2]<<16) | (iso->volume_space_size[3]<<24);
-    const unsigned int volume_space_size2=iso->volume_space_size[7] | (iso->volume_space_size[6]<<8) | (iso->volume_space_size[5]<<16) | (iso->volume_space_size[4]<<24);
-    const unsigned int logical_block_size=iso->logical_block_size[0] | (iso->logical_block_size[1]<<8);
-    const unsigned int logical_block_size2=iso->logical_block_size[3] | (iso->logical_block_size[2]<<8);
-    if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
+    const unsigned int volume_space_size_le=le32(iso->volume_space_size_le);
+    const unsigned int volume_space_size_be=be32(iso->volume_space_size_be);
+    const unsigned int logical_block_size_le=le16(iso->logical_block_size_le);
+    const unsigned int logical_block_size_be=be16(iso->logical_block_size_be);
+    if(volume_space_size_le==volume_space_size_be && logical_block_size_le==logical_block_size_be)
     {	/* ISO 9660 */
-      partition->part_size=(uint64_t)volume_space_size * logical_block_size;
+      partition->part_size=(uint64_t)volume_space_size_le * logical_block_size_le;
     }
   }
   return 0;

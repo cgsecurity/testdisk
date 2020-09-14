@@ -29,6 +29,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 #include "iso9660.h"
 
@@ -50,13 +51,13 @@ static int header_check_db(const unsigned char *buffer, const unsigned int buffe
     return 0;
   {
     const struct iso_primary_descriptor *iso1=(const struct iso_primary_descriptor*)&buffer[0x8000];
-    const unsigned int volume_space_size=iso1->volume_space_size[0] | (iso1->volume_space_size[1]<<8) | (iso1->volume_space_size[2]<<16) | (iso1->volume_space_size[3]<<24);
-    const unsigned int volume_space_size2=iso1->volume_space_size[7] | (iso1->volume_space_size[6]<<8) | (iso1->volume_space_size[5]<<16) | (iso1->volume_space_size[4]<<24);
-    const unsigned int logical_block_size=iso1->logical_block_size[0] | (iso1->logical_block_size[1]<<8);
-    const unsigned int logical_block_size2=iso1->logical_block_size[3] | (iso1->logical_block_size[2]<<8);
-    if(volume_space_size==volume_space_size2 && logical_block_size==logical_block_size2)
+    const unsigned int volume_space_size_le=le32(iso1->volume_space_size_le);
+    const unsigned int volume_space_size_be=be32(iso1->volume_space_size_be);
+    const unsigned int logical_block_size_le=le16(iso1->logical_block_size_le);
+    const unsigned int logical_block_size_be=be16(iso1->logical_block_size_be);
+    if(volume_space_size_le==volume_space_size_be && logical_block_size_le==logical_block_size_be)
     {	/* ISO 9660 */
-      const uint64_t size=(uint64_t)volume_space_size * logical_block_size;
+      const uint64_t size=(uint64_t)volume_space_size_le * logical_block_size_le;
       if(size < 0x8000+512)
 	return 0;
       reset_file_recovery(file_recovery_new);
@@ -79,5 +80,4 @@ static void register_header_check_iso(file_stat_t *file_stat)
   static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
   register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_db, file_stat);
 }
-
 #endif
