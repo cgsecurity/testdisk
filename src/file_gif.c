@@ -33,8 +33,6 @@
 #include "log.h"
 
 static void register_header_check_gif(file_stat_t *file_stat);
-static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_gif(file_recovery_t *file_recovery);
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
@@ -47,36 +45,36 @@ const file_hint_t file_hint_gif= {
   .register_header_check=&register_header_check_gif
 };
 
-static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  uint64_t offset;
-  offset=6;   /* Header */
-  offset+=7;  /* Logical Screen Descriptor */
-  if((buffer[10]>>7)&0x1)
-  {
-    /* Global Color Table */
-    offset+=3<<((buffer[10]&7)+1);
-  }
-  if(offset < buffer_size && buffer[offset]!=0x21 && buffer[offset]!=0x2c)
-    return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_gif.extension;
-  file_recovery_new->min_filesize=42;
-  if(file_recovery_new->blocksize < 2)
-    return 1;
-  file_recovery_new->file_check=&file_check_gif;
-  file_recovery_new->calculated_file_size=offset;
-  file_recovery_new->data_check=&data_check_gif;
-  return 1;
-}
-
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \valid_read(&file_recovery->extension);
+  @ requires valid_read_string(file_recovery->extension);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires \initialized(&file_recovery->time);
+  @
+  @ requires file_recovery->file_check == &file_check_gif;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_gif(file_recovery_t *file_recovery)
 {
-  const unsigned char gif_footer[2]= {0x00, 0x3b};
-  unsigned char buffer[2];
-  if(my_fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
-      fread(buffer, 2, 1, file_recovery->handle)!=1 ||
-      memcmp(buffer, gif_footer, sizeof(gif_footer))!=0)
+  const char gif_footer[2]= {0x00, 0x3b};
+  char buffer[2];
+  /* file_recovery->calculated_file_size is always >= */
+  if(file_recovery->calculated_file_size < 2 ||
+      my_fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
+      fread(buffer, 2, 1, file_recovery->handle)!=1)
+  {
+    file_recovery->file_size=0;
+    return;
+  }
+#ifdef __FRAMAC__
+  Frama_C_make_unknown(&buffer, sizeof(buffer));
+#endif
+  if(memcmp(buffer, gif_footer, sizeof(gif_footer))!=0)
   {
     file_recovery->file_size=0;
     return;
@@ -152,6 +150,59 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
   }
   file_recovery->data_check=&data_check_gif2;
   return DC_CONTINUE;
+}
+
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @
+  @ requires buffer_size >= 6+7+(3<<8)+1;
+  @ requires separation: \separated(&file_hint_gif, buffer+(..), file_recovery, file_recovery_new);
+  @
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
+  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
+  @ ensures (\result != 0) ==> file_recovery_new->extension != \null;
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->calculated_file_size >= 6+7);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->extension == file_hint_gif.extension);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->file_check == &file_check_gif);
+  @*/
+static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  uint64_t offset;
+  offset=6;   /* Header */
+  offset+=7;  /* Logical Screen Descriptor */
+  if((buffer[10]>>7)&0x1)
+  {
+    /* Global Color Table */
+    offset+=3<<((buffer[10]&7)+1);
+  }
+  if(offset < buffer_size && buffer[offset]!=0x21 && buffer[offset]!=0x2c)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_gif.extension;
+  file_recovery_new->min_filesize=42;
+  if(file_recovery_new->blocksize < 2)
+    return 1;
+  file_recovery_new->calculated_file_size=offset;
+  file_recovery_new->file_check=&file_check_gif;
+  file_recovery_new->data_check=&data_check_gif;
+  return 1;
 }
 
 static void register_header_check_gif(file_stat_t *file_stat)
