@@ -72,33 +72,49 @@ static void file_check_hdf(file_recovery_t *file_recovery)
   do
   {
     struct ddh_struct ddh;
-    const struct dd_struct *p;
     unsigned int i;
     unsigned int size;
     if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
-	fread(&ddh, sizeof(ddh), 1, file_recovery->handle) !=1 ||
-	be16(ddh.size)==0 ||
-	fread(dd, sizeof(struct dd_struct)*be16(ddh.size), 1, file_recovery->handle) !=1)
+	fread(&ddh, sizeof(ddh), 1, file_recovery->handle) !=1)
     {
       free(dd);
       file_recovery->file_size=0;
       return ;
     }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&ddh, sizeof(ddh));
+#endif
     size=be16(ddh.size);
+    if(size==0 ||
+	fread(dd, sizeof(struct dd_struct)*size, 1, file_recovery->handle) !=1)
+    {
+      free(dd);
+      file_recovery->file_size=0;
+      return ;
+    }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(dd, sizeof(struct dd_struct)*size);
+#endif
     if(file_size < offset + sizeof(struct dd_struct) * size)
       file_size = offset + sizeof(struct dd_struct) * size;
 #ifdef DEBUG_HDF
     log_info("size=%u next=%lu\n", size, be32(ddh.next));
 #endif
-    for(i=0, p=dd; i < size; i++,p++)
+    /*@
+      @ loop assigns i, file_size;
+      @*/
+    for(i=0; i < size; i++)
     {
+      const struct dd_struct *p=&dd[i];
+      const unsigned int p_offset=be32(p->offset);
+      const unsigned int p_length=be32(p->length);
 #ifdef DEBUG_HDF
       log_info("tag=0x%04x, ref=%u, offset=%lu, length=%lu\n",
-	  be16(p->tag), be16(p->ref), be32(p->offset), be32(p->length));
+	  be16(p->tag), be16(p->ref), p_offset, p_length);
 #endif
-      if((unsigned)be32(p->offset)!=(unsigned)(-1) &&
-	file_size < (uint64_t)be32(p->offset) + (uint64_t)be32(p->length))
-	file_size = (uint64_t)be32(p->offset) + (uint64_t)be32(p->length);
+      if(p_offset!=0xffffffff &&
+	file_size < (uint64_t)p_offset + (uint64_t)p_length)
+	file_size = (uint64_t)p_offset + (uint64_t)p_length;
     }
     offset_old=offset;
     offset=be32(ddh.next);
