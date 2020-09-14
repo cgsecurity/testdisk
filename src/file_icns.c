@@ -101,17 +101,19 @@ static int header_check_icns(const unsigned char *buffer, const unsigned int buf
 {
   const struct icns_header *hdr=(const struct icns_header *)buffer;
   const struct icon_data *icon=(const struct icon_data *)&buffer[8];
-  if(be32(hdr->size) < sizeof(struct icns_header))
+  const unsigned int hdr_size=be32(hdr->size);
+  const unsigned int icon_size=be32(icon->size);
+  if(hdr_size < sizeof(struct icns_header))
     return 0;
-  if(be32(icon->size) < sizeof(struct icon_data))
+  if(icon_size < sizeof(struct icon_data))
     return 0;
-  if(8 + be32(icon->size) > be32(hdr->size))
+  if(icon_size > hdr_size - 8)
     return 0;
   if(!check_icon_type(icon->type))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_icns.extension;
-  file_recovery_new->calculated_file_size=be32(hdr->size);
+  file_recovery_new->calculated_file_size=hdr_size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
