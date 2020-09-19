@@ -87,7 +87,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
   unsigned int len;
   if((flags&SCF_PIDL)!=0)
   { /* The Shell Item Id List */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Shell Item Id List at 0x%04x=%04x\n",
 	i, len);
@@ -100,10 +101,14 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_LOCATION)!=0)
   { /* File location info */
-    len=buffer[i] + (buffer[i+1]<<8) + (buffer[i+2]<<16) + (buffer[i+3]<<24);
+    const uint32_t *ptr=(const uint32_t *)&buffer[i];
+    len=le32(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK File location info at 0x%04x=%04x\n", i, len);
 #endif
+    /* Discard too big files, avoid overflow */
+    if(len >= 0x10000000)
+      return 0;
     i+=2;
     i+=len;
   }
@@ -112,7 +117,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_DESCRIPTION)!=0)
   { /* Description string */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK description string at 0x%04x=%04x\n", i, len);
 #endif
@@ -126,7 +132,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_RELATIVE)!=0)
   { /* Relative path */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK relative path at 0x%04x=%04x\n", i, len);
 #endif
@@ -140,7 +147,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_WORKDIR)!=0)
   { /* Working directory */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Working directory at 0x%04x=%04x\n", i, len);
 #endif
@@ -154,7 +162,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_ARGS)!=0)
   { /* Command line string */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Command line string at 0x%04x=%04x\n", i, len);
 #endif
@@ -168,7 +177,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_CUSTOMICON)!=0)
   { /* Icon filename string */
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Icon filename string at 0x%04x=%04x\n", i, len);
 #endif
@@ -182,7 +192,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_PRODUCT)!=0)
   {
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Icon product at 0x%04x=%04x\n", i, len);
 #endif
@@ -194,7 +205,8 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     return 0;
   if((flags&SCF_COMPONENT)!=0)
   {
-    len=buffer[i]+(buffer[i+1]<<8);
+    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Icon component at 0x%04x=%04x\n", i, len);
 #endif
@@ -205,7 +217,10 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
   if(i >= buffer_size - 4)
     return 0;
   /* Extra stuff */
-  len=buffer[i] + (buffer[i+1]<<8) + (buffer[i+2]<<16) + (buffer[i+3]<<24);
+  {
+    const uint32_t *ptr=(const uint32_t *)&buffer[i];
+    len=le32(*ptr);
+  }
 #ifdef DEBUG_LNK
   log_debug("LNK extra stuff at 0x%04x=%04x\n", i, len);
 #endif
