@@ -268,6 +268,7 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mp3;
+  @ requires \separated(buffer + (..), file_recovery);
   @ requires file_recovery->file_size == 0 || file_recovery->calculated_file_size >= file_recovery->file_size - 16;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16);
@@ -373,6 +374,16 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
     else if(buffer[i]=='T' && buffer[i+1]=='A' && buffer[i+2]=='G')
     { /* http://www.id3.org/ID3v1 TAGv1 size = 128 bytes with header "TAG" */
       file_recovery->calculated_file_size+=128;
+      /*@ assert file_recovery->calculated_file_size > 0; */
+    }
+    else if(buffer[i]=='I' && buffer[i+1]=='D' && buffer[i+2]=='3' && (buffer[i+3]==2 || buffer[i+3]==3 || buffer[i+3]==4) && buffer[i+4]==0)
+    {
+      unsigned int potential_frame_offset=0;
+      if(buffer[i+3]==4 && (buffer[i+5]&0x10)==0x10)
+	potential_frame_offset = 10;
+      potential_frame_offset+=((buffer[i+6]&0x7f)<<21) + ((buffer[i+7]&0x7f)<<14)
+	+ ((buffer[i+8]&0x7f)<<7) + (buffer[i+9]&0x7f)+ 10;
+      file_recovery->calculated_file_size+=potential_frame_offset;
       /*@ assert file_recovery->calculated_file_size > 0; */
     }
     else
