@@ -29,6 +29,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 #include "log.h"
 
@@ -43,6 +44,10 @@ const file_hint_t file_hint_mpg= {
   .register_header_check=&register_header_check_mpg
 };
 
+/*@
+  @ requires \valid_read(buffer + (0 .. 13));
+  @ assigns \nothing;
+  @*/
 static unsigned int calculate_packet_size(const unsigned char *buffer)
 {
   /* http://dvd.sourceforge.net/dvdinfo/mpeghdrs.html */
@@ -134,8 +139,21 @@ static unsigned int calculate_packet_size(const unsigned char *buffer)
   }
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_mpg;
+  @ requires \separated(buffer + (..), file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_mpg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 14 < file_recovery->file_size + buffer_size/2)
   {
@@ -162,10 +180,22 @@ static int header_mpg_found(file_recovery_t *file_recovery_new)
   return 1;
 }
 
+/*@
+  @ requires buffer_size >= 13;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mpg, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i=0;
-  while(i<buffer_size && i+14<512)
+  /*@
+    @ loop assigns i;
+    @*/
+  while(i+14 < td_min(buffer_size,512U))
   {
     const unsigned int ret=calculate_packet_size(&buffer[i]);
     if(ret==0)
@@ -225,6 +255,15 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
   return 0;
 }
 
+/*@
+  @ requires buffer_size >= 12;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mpg, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_mpg_System(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* MPEG-1 http://andrewduncan.ws/MPEG/MPEG-1.ps */
@@ -249,7 +288,10 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
   if((buffer[6]&0x80)==0x80 && (buffer[8]&0x01)==0x01 && buffer[11]==0xff)
   {
     unsigned int i=0;
-    while(i<buffer_size && i+14<512)
+    /*@
+      @ loop assigns i;
+      @*/
+    while(i+14 < td_min(buffer_size,512U))
     {
       const unsigned int ret=calculate_packet_size(&buffer[i]);
       if(ret==0)
@@ -266,6 +308,15 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
   return 0;
 }
 
+/*@
+  @ requires buffer_size >= 11;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mpg, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* MPEG-1 sequence header code 0x1B3 */
@@ -283,7 +334,10 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
       (buffer[10]&0x20)==0x20)
   {
     unsigned int i=0;
-    while(i<buffer_size && i+14<512)
+    /*@
+      @ loop assigns i;
+      @*/
+    while(i+14 < td_min(buffer_size,512U))
     {
       const unsigned int ret=calculate_packet_size(&buffer[i]);
       if(ret==0)
@@ -300,6 +354,15 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
   return 0;
 }
 
+/*@
+  @ requires buffer_size >= 6;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mpg, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* ISO/IEC 14496-2 (MPEG-4 video) ELEMENTARY VIDEO HEADER - visual object start code */
@@ -314,7 +377,10 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
     )
   {
     unsigned int i=0;
-    while(i<buffer_size && i+14<512)
+    /*@
+      @ loop assigns i;
+      @*/
+    while(i+14 < td_min(buffer_size,512U))
     {
       const unsigned int ret=calculate_packet_size(&buffer[i]);
       if(ret==0)
@@ -331,6 +397,9 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
   return 0;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_mpg(file_stat_t *file_stat)
 {
   static const unsigned char mpg_header_B3[4]= {0x00, 0x00, 0x01, 0xB3};
