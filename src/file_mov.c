@@ -108,12 +108,17 @@ static void file_rename_mov(file_recovery_t *file_recovery)
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mov;
+  @ requires \separated(buffer + (..), file_recovery);
   @ requires file_recovery->file_size == 0 || file_recovery->calculated_file_size > file_recovery->file_size - 16;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size > file_recovery->file_size + buffer_size/2 - 16);
+  @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
   {
@@ -182,10 +187,12 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
     }
     else
     {
+#ifndef __FRAMAC__
       if(!(buffer[i+4]==0 && buffer[i+5]==0 && buffer[i+6]==0 && buffer[i+7]==0))
         log_warning("file_mov.c: unknown atom 0x%02x%02x%02x%02x at %llu\n",
             buffer[i+4],buffer[i+5],buffer[i+6],buffer[i+7],
             (long long unsigned)file_recovery->calculated_file_size);
+#endif
       return DC_STOP;
     }
   }
@@ -513,6 +520,7 @@ static void register_header_check_mov_mdat(file_stat_t *file_stat)
 static void register_header_check_mov(file_stat_t *file_stat)
 {
   register_header_check(4, (const unsigned char*)"cmov",4, &header_check_mov, file_stat);
+#ifndef __FRAMAC__
   register_header_check(4, (const unsigned char*)"cmvd",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"dcom",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"free",4, &header_check_mov, file_stat);
@@ -528,6 +536,7 @@ static void register_header_check_mov(file_stat_t *file_stat)
   register_header_check(4, (const unsigned char*)"trak",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"wide",4, &header_check_mov, file_stat);
   register_header_check(4, (const unsigned char*)"jP  ",4, &header_check_mov, file_stat);
+#endif
 }
 #endif
 
