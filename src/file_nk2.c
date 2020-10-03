@@ -33,12 +33,16 @@
 #include "common.h"
 #include "log.h"
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_nk2(file_stat_t *file_stat);
+#define NK2_MAX_FILESIZE 100*1024*1024
 
 const file_hint_t file_hint_nk2= {
   .extension="nk2",
   .description="Outlook Nickfile",
-  .max_filesize=100*1024*1024,
+  .max_filesize=NK2_MAX_FILESIZE,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_nk2
@@ -84,6 +88,13 @@ typedef struct {
 #define PT_ACTIONS	0x00fe
 #define	PT_BINARY	0x0102
 
+/*@
+  @ requires \valid(fr);
+  @ requires \valid(fr->handle);
+  @ requires \separated(fr, fr->handle);
+  @ requires fr->file_check == &file_check_nk2;
+  @ ensures \valid(fr->handle);
+  @*/
 static void file_check_nk2(file_recovery_t *fr)
 {
   nk2Header nk2h;
@@ -94,6 +105,9 @@ static void file_check_nk2(file_recovery_t *fr)
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&nk2h, sizeof(nk2h), 1, fr->handle)!=1)
     return;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&nk2h, sizeof(nk2h));
+#endif
   fr->file_size+=sizeof(nk2h);
 #ifdef DEBUG_NK2
   log_info("nk2 item_count=%u\n", (unsigned int)le32(nk2h.items_count));
@@ -102,19 +116,28 @@ static void file_check_nk2(file_recovery_t *fr)
   {
     unsigned int j;
     itemHeader itemh;
+    if(fr->file_size >= NK2_MAX_FILESIZE)
+    {
+      fr->file_size=0;
+      return;
+    }
+    /*@ assert fr->file_size < NK2_MAX_FILESIZE; */
     if (fread(&itemh, sizeof(itemh), 1, fr->handle)!=1)
     {
       fr->offset_error=fr->file_size;
       fr->file_size=0;
       return;
     }
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown((char *)&itemh, sizeof(itemh));
+#endif
     fr->file_size+=sizeof(itemh);
 #ifdef DEBUG_NK2
     log_info("nk2  entries_count=%u\n", (unsigned int)le32(itemh.entries_count));
 #endif
     for(j=0; j<le32(itemh.entries_count); j++)
     {
-      uint32_t size;
+      uint64_t size;
       entryHeader entryh;
       if (fread(&entryh, sizeof(entryh), 1, fr->handle)!=1)
       {
@@ -122,6 +145,9 @@ static void file_check_nk2(file_recovery_t *fr)
 	fr->file_size=0;
 	return;
       }
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown((char *)&entryh, sizeof(entryh));
+#endif
       switch(le16(entryh.value_type))
       {
 	case PT_LONG:
@@ -140,7 +166,10 @@ static void file_check_nk2(file_recovery_t *fr)
 	      fr->file_size=0;
 	      return;
 	    }
-	    size=4+le32(entry_size);
+#if defined(__FRAMAC__)
+	    Frama_C_make_unknown((char *)&entry_size, sizeof(entry_size));
+#endif
+	    size=(uint64_t)4+le32(entry_size);
 	  }
 	  break;
 	default:
@@ -162,10 +191,18 @@ static void file_check_nk2(file_recovery_t *fr)
 	if(size_to_log>2048)
 	  size_to_log=2048;
 	fread(&buffer, size_to_log, 1, fr->handle);
+#if defined(__FRAMAC__)
+	Frama_C_make_unknown(buffer, 2048);
+#endif
 	dump_log(&buffer, size_to_log);
       }
 #endif
       fr->file_size+=sizeof(entryh);
+      if(fr->file_size >= NK2_MAX_FILESIZE)
+      {
+	fr->file_size=0;
+	return;
+      }
       if (my_fseek(fr->handle, fr->file_size+size, SEEK_SET) < 0)
       {
 	fr->offset_error=fr->file_size;
@@ -178,6 +215,15 @@ static void file_check_nk2(file_recovery_t *fr)
   fr->file_size+=12;
 }
 
+/*@
+  @ requires buffer_size >= 6;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_nk2, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
