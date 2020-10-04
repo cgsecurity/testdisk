@@ -82,21 +82,30 @@ typedef struct {
 static int header_check_vdi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const VdiHeader *header=(const VdiHeader *)buffer;
-  if(le32(header->version) == VDI_VERSION_1_1)
+  uint64_t fs;
+  if(le32(header->version) != VDI_VERSION_1_1)
+    return 0;
+  if(le32(header->offset_data) < sizeof(VdiHeader))
+    return 0;
+  if(le32(header->image_type) != VDI_TYPE_STATIC)
   {
-    if(le32(header->offset_data) < sizeof(VdiHeader))
-      return 0;
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_vdi.extension;
-    if(le32(header->image_type) == VDI_TYPE_STATIC)
-    {
-      file_recovery_new->calculated_file_size=(uint64_t) le32(header->offset_data) + le32(header->blocks_in_image) * le32(header->block_size);
-      file_recovery_new->data_check=&data_check_size;
-      file_recovery_new->file_check=&file_check_size;
-    }
+    file_recovery_new->min_filesize=le32(header->offset_data);
     return 1;
   }
-  return 0;
+  fs=(uint64_t)le32(header->blocks_in_image) * le32(header->block_size);
+  if(fs > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
+  fs+=le32(header->offset_data);
+  if(fs > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_vdi.extension;
+  file_recovery_new->calculated_file_size=fs;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_vdi(file_stat_t *file_stat)
