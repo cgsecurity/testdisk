@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _LANG_H
+#define _LANG_H
 
 #define msg_DUMP_HEXA     "Dump Hexa\n"
 #define c_YES           'Y'
@@ -56,3 +58,4 @@
 #define msg_MBR_ORDER_GOOD        "Partitions order: Ok "
 #define msg_MBR_ORDER_BAD "Partitions order: Bad"
 #define msg_NO_EXT_PART   "No extended partition\n"
+#endif

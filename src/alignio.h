@@ -20,6 +20,9 @@
 
  */
 
+#ifndef _ALIGNIO_H
+#define _ALIGNIO_H
+
 /*@
   @ requires \valid_function(fnct_pread);
   @ requires \valid(disk_car);
@@ -124,3 +127,4 @@ static int align_pwrite(int (*fnct_pread)(const disk_t *disk_car, void *buf, con
   }
   return fnct_pwrite(disk_car, buf, count, offset_new);
 }
+#endif

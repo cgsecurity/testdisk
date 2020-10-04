@@ -22,6 +22,12 @@
 
 /* Special thanks to Paulo Sousa for providing the information */
 
+#ifndef file_SP3_H
+#define file_SP3_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct SP3FileInfo
 {
   uint8_t	Versao;
@@ -304,3 +310,8 @@ struct SP3FileInfo
    
   char 		zzReserved999[1024*10-1312];
 } __attribute__ ((gcc_struct, __packed__));
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif
