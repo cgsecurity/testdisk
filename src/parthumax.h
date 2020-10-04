@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PARTHUMAX_H
+#define _PARTHUMAX_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ list_part_t *add_partition_humax_cli(const disk_t *disk_car,list_part_t *list_pa
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _CRAMFS_H
+#define _CRAMFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -87,4 +89,5 @@ int recover_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partit
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _TEXFAT_H
+#define _TEXFAT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int exFAT_boot_sector(disk_t *disk, partition_t *partition, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _TLOG_H
+#define _TLOG_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int ask_testdisk_log_creation(void);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

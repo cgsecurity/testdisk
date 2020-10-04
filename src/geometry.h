@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _GEOMETRY_H
+#define _GEOMETRY_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,4 +52,5 @@ int change_geometry_cli(disk_t *disk, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

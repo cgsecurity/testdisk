@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _EXT2_SB_H
+#define _EXT2_SB_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int interface_superblock(disk_t *disk_car, const list_part_t *list_part, char**c
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

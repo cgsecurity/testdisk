@@ -20,6 +20,8 @@
 
  */
 
+#ifndef _GUID_CPY_H
+#define _GUID_CPY_H
 /*@ requires \valid(dst);
   @ requires \valid_read(src);
   @ requires separation:
@@ -32,5 +34,4 @@ static inline void guid_cpy (efi_guid_t *dst, const efi_guid_t *src)
 {
   memcpy(dst, src, sizeof(efi_guid_t));
 }
-
-
+#endif

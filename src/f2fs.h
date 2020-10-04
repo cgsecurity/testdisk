@@ -19,7 +19,17 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _F2FS_H
+#define _F2FS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int check_f2fs(disk_t *disk, partition_t *partition);
 int test_f2fs(const struct f2fs_super_block *hdr);
 int recover_f2fs(const disk_t *disk, const struct f2fs_super_block *hdr, partition_t *partition);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

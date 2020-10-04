@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _ANALYSE_H
+#define _ANALYSE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,4 +41,5 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

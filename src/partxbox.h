@@ -20,6 +20,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PARTXBOX_H
+#define _PARTXBOX_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,4 +37,5 @@ list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_par
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

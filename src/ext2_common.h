@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef EXT2_COMMON_H
+#define EXT2_COMMON_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,4 +31,5 @@ int test_EXT2(const struct ext2_super_block *sb, const partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

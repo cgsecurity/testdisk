@@ -19,7 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-
+#ifndef _PDISKSEL_H
+#define _PDISKSEL_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,4 +29,5 @@ disk_t *photorec_disk_selection_cli(const char *cmd_device, const list_disk_t *l
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

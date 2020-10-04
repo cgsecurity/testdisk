@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _GFS2_H
+#define _GFS2_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,4 +85,5 @@ int recover_gfs2(const disk_t *disk_car, const struct gfs2_sb *sb, partition_t *
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

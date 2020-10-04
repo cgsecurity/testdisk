@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _FILE_TAR_H
+#define _FILE_TAR_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
+#ifndef _ISO_H
+#define _ISO_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,4 +40,5 @@ int check_ISO(disk_t *disk_car, partition_t *partition);
 int recover_ISO(const struct iso_primary_descriptor *iso, partition_t *partition);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

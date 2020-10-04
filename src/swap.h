@@ -19,6 +19,9 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+
+#ifndef _SWAP_H
+#define _SWAP_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,4 +68,5 @@ int recover_Linux_SWAP(const union swap_header *swap_header, partition_t *partit
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

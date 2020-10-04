@@ -20,6 +20,8 @@
 
  */
 
+#ifndef _CRC_H
+#define _CRC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,4 +39,5 @@ unsigned int get_crc32(const void *s, const unsigned int len, const uint32_t see
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

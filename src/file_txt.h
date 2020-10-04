@@ -19,6 +19,12 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _FILE_TXT_H
+#define _FILE_TXT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*@
   @ requires buf_len> 0;
   @ requires \valid_read(buffer+(0..buf_len-1));
@@ -26,3 +32,7 @@
   @ assigns \nothing;
   @*/
 int UTFsize(const unsigned char *buffer, const unsigned int buf_len);
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

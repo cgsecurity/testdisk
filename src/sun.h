@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _SUN_H
+#define _SUN_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,4 +96,5 @@ int check_sun_i386(disk_t *disk_car, partition_t *partition, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

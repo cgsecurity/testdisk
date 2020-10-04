@@ -19,9 +19,19 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _AUTOSET_H
+#define _AUTOSET_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*@
   @ requires \valid(disk_car);
   @ assigns disk_car->unit;
   @*/
 void autoset_unit(disk_t *disk_car);
 
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PARTI386_H
+#define _PARTI386_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,4 +52,5 @@ int recover_i386_logical(disk_t *disk, const unsigned char *buffer, partition_t 
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

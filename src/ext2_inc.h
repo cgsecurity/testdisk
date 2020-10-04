@@ -19,8 +19,15 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _EXT2_INC_H
+#define _EXT2_INC_H
+
 #if defined(__FRAMAC__) || defined(MAIN_photorec)
 #undef HAVE_LIBEXT2FS
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if defined(HAVE_LIBEXT2FS)
@@ -30,4 +37,9 @@ struct ext2_dir_struct {
 	int flags;
 	dir_data_t *dir_data;
 };
+#endif
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

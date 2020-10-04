@@ -20,6 +20,8 @@
 
     LUKS on-disk-format: http://luks.endorphin.org/spec
  */
+#ifndef _LUKS_H
+#define _LUKS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,4 +63,5 @@ int recover_LUKS(const disk_t *disk_car, const struct luks_phdr *sb,partition_t 
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _EXFAT_DIR_H
+#define _EXFAT_DIR_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ dir_partition_t dir_partition_exfat_init(disk_t *disk_car, const partition_t *pa
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

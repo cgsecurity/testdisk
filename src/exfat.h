@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _EXFAT_H
+#define _EXFAT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,4 +102,5 @@ int test_exFAT(const struct exfat_super_block *exfat_header);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

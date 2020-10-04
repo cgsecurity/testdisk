@@ -20,4 +20,15 @@
 
  */
 
+#ifndef _ADDPARTN_H
+#define _ADDPARTN_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 list_part_t *add_partition_ncurses(disk_t *disk, list_part_t *list_part);
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _NTFS_FIX_H
+#define _NTFS_FIX_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int repair_MFT(disk_t *disk_car, partition_t *partition, const int verbose, cons
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

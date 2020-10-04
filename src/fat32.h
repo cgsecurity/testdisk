@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _FAT32_H
+#define _FAT32_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int fat32_boot_sector(disk_t *disk_car, partition_t *partition, const int verbos
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

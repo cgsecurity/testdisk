@@ -17,6 +17,16 @@
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+#ifndef _LIST_SORT_H
+#define _LIST_SORT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void td_list_sort(struct td_list_head *head,
     int (*cmp)(const struct td_list_head *a, const struct td_list_head *b));
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

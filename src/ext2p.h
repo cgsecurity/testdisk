@@ -19,12 +19,17 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _EXT2P_H
+#define _EXT2P_H
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #ifdef HAVE_LIBEXT2FS
 unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space);
 #endif
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

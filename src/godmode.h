@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _GODMODE_H
+#define _GODMODE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,4 +31,5 @@ void only_one_bootable( list_part_t *list_part, const list_part_t *part_boot);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

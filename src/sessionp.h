@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _SESSIONP_H
+#define _SESSIONP_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,4 +31,5 @@ time_t regular_session_save(alloc_data_t *list_free_space, struct ph_param *para
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

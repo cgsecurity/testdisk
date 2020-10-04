@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PHOTOREC_CHECK_HEADER_H
+#define _PHOTOREC_CHECK_HEADER_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -174,4 +176,5 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
 }
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

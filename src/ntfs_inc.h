@@ -19,6 +19,12 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _NTFS_INC_H
+#define _NTFS_INC_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 struct ntfs_dir_struct {
 	file_info_t *dir_list;
@@ -30,4 +36,9 @@ struct ntfs_dir_struct {
         iconv_t cd;
 #endif
 };
+#endif
+
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
 #endif

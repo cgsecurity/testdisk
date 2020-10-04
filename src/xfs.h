@@ -27,6 +27,8 @@
  * Fits into a sector-sized buffer at address 0 of each allocation group.
  * Only the first of these is ever updated except during growfs.
  */
+#ifndef _XFS_H
+#define _XFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -125,4 +127,5 @@ int recover_xfs(const disk_t *disk_car, const struct xfs_sb *sb, partition_t *pa
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

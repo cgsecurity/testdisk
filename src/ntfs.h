@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _NTFS_H
+#define _NTFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -260,4 +262,5 @@ long int ntfs_get_first_rl_element(const ntfs_attribnonresident *attrnr, const c
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

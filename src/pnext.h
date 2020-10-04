@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PNEXT_H
+#define _PNEXT_H
 
 /* #define DEBUG_GET_NEXT_SECTOR */
 static
@@ -90,3 +92,4 @@ static inline void get_prev_sector(const alloc_data_t *list_search_space, alloc_
   else
     get_prev_header(list_search_space, current_search_space, offset, blocksize);
 }
+#endif

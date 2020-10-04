@@ -20,6 +20,8 @@
 
  */
 
+#ifndef _INTRFN_H
+#define _INTRFN_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,4 +74,5 @@ void display_message(const char*msg);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

@@ -19,11 +19,15 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PHBF_H
+#define _PHBF_H
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
+
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
-
+#endif

@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PBLOCKSIZE_H
+#define _PBLOCKSIZE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ void menu_choose_blocksize(unsigned int *blocksize, uint64_t *offset, const unsi
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

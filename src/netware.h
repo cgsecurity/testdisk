@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _NETWARE_H
+#define _NETWARE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,4 +51,5 @@ int recover_netware(const disk_t *disk_car, const struct disk_netware *netware_b
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

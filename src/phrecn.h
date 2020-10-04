@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _PHRECN_H
+#define _PHRECN_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,4 +33,5 @@ void interface_options_photorec_ncurses(struct ph_options *options);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

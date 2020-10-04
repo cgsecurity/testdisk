@@ -21,6 +21,8 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
+#ifndef _UFS_H
+#define _UFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -486,4 +488,5 @@ int recover_ufs(const disk_t *disk_car, const struct ufs_super_block *sb, partit
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

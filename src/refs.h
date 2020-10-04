@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef _REFS_H
+#define _REFS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ReFS_BS_SIZE 0x200
 struct ReFS_boot_sector {
   uint8_t	ignored[3];
@@ -35,4 +41,7 @@ struct ReFS_boot_sector {
 int check_ReFS(disk_t *disk, partition_t *partition);
 int recover_ReFS(const disk_t *disk, const struct ReFS_boot_sector *refs_header, partition_t *partition);
 
-
+#ifdef __cplusplus
+} /* closing brace for extern "C" */
+#endif
+#endif

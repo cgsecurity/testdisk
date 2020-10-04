@@ -21,6 +21,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _MEMMEM_H
+#define _MEMMEM_H
 
 /*@
   @ requires \valid_read((const char *)haystack+(0..haystack_len-1));
@@ -53,3 +55,4 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
       return (const void *) begin;
   return NULL;
 }
+#endif

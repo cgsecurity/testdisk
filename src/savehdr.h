@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _SAVEHDR_H
+#define _SAVEHDR_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,4 +40,5 @@ backup_disk_t *partition_load(const disk_t *disk_car, const int verbose);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

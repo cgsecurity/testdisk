@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _DISKACC_H
+#define _DISKACC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int interface_check_disk_access(disk_t *disk_car, char **current_cmd);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif

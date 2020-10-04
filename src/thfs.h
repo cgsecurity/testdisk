@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _THFS_H
+#define _THFS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,5 @@ int HFS_HFSP_boot_sector(disk_t *disk_car, partition_t *partition, const int ver
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif
