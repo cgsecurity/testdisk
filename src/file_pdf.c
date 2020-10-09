@@ -40,8 +40,10 @@
 #include "memmem.h"
 #include "common.h"
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_pdf(file_stat_t *file_stat);
-static void file_date_pdf(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_pdf= {
   .extension="pdf",
@@ -52,6 +54,9 @@ const file_hint_t file_hint_pdf= {
   .register_header_check=&register_header_check_pdf
 };
 
+/*@
+  @ assigns \nothing;
+  @*/
 static int hex(int c)
 {
   if(c>='0' && c<='9')
@@ -63,6 +68,11 @@ static int hex(int c)
   return -1;
 }
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_pdf;
+  @*/
 static void file_rename_pdf(file_recovery_t *file_recovery)
 {
   char title[512];
@@ -110,6 +120,9 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
     fclose(handle);
     return ;
   }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, 512);
+#endif
   fclose(handle);
   /* Skip spaces after /Title */
   for(i=0; i<bsize && buffer[i]==' '; i++);
@@ -185,47 +198,19 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
   free(buffer);
 }
 
-static void file_check_pdf_and_size(file_recovery_t *file_recovery)
-{
-  if(file_recovery->file_size>=file_recovery->calculated_file_size)
-  {
-    const unsigned int read_size=20;
-    unsigned char buffer[20+3];	/* read_size+3 */
-    int i;
-    int taille;
-    file_recovery->file_size=file_recovery->calculated_file_size;
-    if(my_fseek(file_recovery->handle,file_recovery->file_size-read_size,SEEK_SET)<0)
-    {
-      file_recovery->file_size=0;
-      return ;
-    }
-    taille=fread(buffer,1,read_size,file_recovery->handle);
-    for(i=taille-4;i>=0;i--)
-    {
-      if(buffer[i]=='%' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
-      {
-	file_date_pdf(file_recovery);
-	return ;
-      }
-    }
-  }
-  file_recovery->file_size=0;
-}
-
-static void file_check_pdf(file_recovery_t *file_recovery)
-{
-  const unsigned char pdf_footer[4]= { '%', 'E', 'O', 'F'};
-  file_search_footer(file_recovery, pdf_footer, sizeof(pdf_footer), 0);
-  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
-  file_date_pdf(file_recovery);
-}
-
+/*@
+  @ requires \valid(file_recovery);
+  @*/
 static void file_date_pdf(file_recovery_t *file_recovery)
 {
   const unsigned char pattern[14]={'x', 'a', 'p', ':', 'C', 'r', 'e', 'a', 't', 'e', 'D', 'a', 't', 'e'};
   uint64_t offset=0;
   unsigned int j=0;
-  unsigned char*buffer=(unsigned char*)MALLOC(4096);
+  unsigned char*buffer;
+  if(file_recovery->file_size > PHOTOREC_MAX_FILE_SIZE)
+    return ;
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  buffer=(unsigned char*)MALLOC(4096);
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
     free(buffer);
@@ -270,11 +255,129 @@ static void file_date_pdf(file_recovery_t *file_recovery)
   free(buffer);
 }
 
-static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+
+#define PDF_READ_SIZE 20
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
+static void file_check_pdf_and_size(file_recovery_t *file_recovery)
+{
+  unsigned char buffer[PDF_READ_SIZE + 3];
+  int i;
+  int taille;
+  if( file_recovery->file_size < file_recovery->calculated_file_size ||
+      file_recovery->calculated_file_size < PDF_READ_SIZE)
+  {
+    file_recovery->file_size=0;
+    return;
+  }
+  /*@ assert file_recovery->calculated_file_size >= PDF_READ_SIZE; */
+  file_recovery->file_size=file_recovery->calculated_file_size;
+  /*@ assert file_recovery->file_size >= PDF_READ_SIZE; */
+  if(my_fseek(file_recovery->handle,file_recovery->file_size-PDF_READ_SIZE,SEEK_SET)<0)
+  {
+    file_recovery->file_size=0;
+    return ;
+  }
+  taille=fread(buffer, 1, PDF_READ_SIZE, file_recovery->handle);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
+  for(i=taille-4;i>=0;i--)
+  {
+    if(buffer[i]=='%' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
+    {
+      file_date_pdf(file_recovery);
+      return ;
+    }
+  }
+  file_recovery->file_size=0;
+}
+
+/*@
+  @ requires \valid(file_recovery);
+  @*/
+static void file_check_pdf(file_recovery_t *file_recovery)
+{
+  const unsigned char pdf_footer[4]= { '%', 'E', 'O', 'F'};
+  file_search_footer(file_recovery, pdf_footer, sizeof(pdf_footer), 0);
+  file_allow_nl(file_recovery, NL_BARENL|NL_CRLF|NL_BARECR);
+  file_date_pdf(file_recovery);
+}
+
+/*@
+  @ requires \valid_read(buffer+(0..512-1));
+  @ assigns \nothing;
+  @*/
+static uint64_t read_pdf_file_aux(const unsigned char *buffer, unsigned int i)
+{
+  uint64_t file_size=0;
+  /*@ loop assigns i; */
+  while(i < 512 &&
+      (buffer[i] ==' ' || buffer[i]=='\t' || buffer[i]=='\n' || buffer[i]=='\r'))
+    i++;
+  /*@
+    @ loop invariant file_size <= PHOTOREC_MAX_FILE_SIZE;
+    @ loop assigns i, file_size;
+    @ */
+  for(;i<512 && buffer[i]>='0' && buffer[i]<='9'; i++)
+  {
+    file_size*=10;
+    file_size+=buffer[i]-'0';
+    if(file_size > PHOTOREC_MAX_FILE_SIZE)
+    {
+      return PHOTOREC_MAX_FILE_SIZE + 1;
+    }
+    /*@ assert file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  }
+  return file_size;
+}
+
+/*@
+  @ requires \valid_read(buffer+(0..512-1));
+  @*/
+static uint64_t read_pdf_file(const unsigned char *buffer)
 {
   const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
   const unsigned char *src;
+  unsigned int i;
+  src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized));
+  if(src == NULL)
+    return 0;
+  i = src - buffer;
+  i+=sizeof(sig_linearized);
+  if( i >= 512 -1)
+    return 0;
+  /*@ assert i < 512-1; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 512 - 1 - i;
+    @ */
+  for(; i < 512-1 && buffer[i]!='>'; i++)
+  {
+    if(buffer[i]=='/' && buffer[i+1]=='L')
+      return read_pdf_file_aux(buffer, i+2);
+  }
+  return 0;
+}
+
+/*@
+  @ requires buffer_size >= 512;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pdf, buffer, file_recovery, file_recovery_new);
+  @*/
+static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  uint64_t file_size;
   if(!isprint(buffer[6]))
+    return 0;
+  file_size=read_pdf_file(buffer);
+  if(file_size > PHOTOREC_MAX_FILE_SIZE)
     return 0;
   reset_file_recovery(file_recovery_new);
   if(td_memmem(buffer, buffer_size, "<</Illustrator ", 15) != NULL)
@@ -284,31 +387,14 @@ static int header_check_pdf(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=file_hint_pdf.extension;
     file_recovery_new->file_rename=&file_rename_pdf;
   }
-  if((src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized))) != NULL)
+  if(file_size == 0)
   {
-    src+=sizeof(sig_linearized);
-    for(; src<=buffer+512 && *src!='>'; src++)
-    {
-      if(*src=='/' && *(src+1)=='L')
-      {
-	src+=2;
-	while(src<buffer+512 &&
-	    (*src==' ' || *src=='\t' || *src=='\n' || *src=='\r'))
-	  src++;
-	file_recovery_new->calculated_file_size=0;
-	while(src<buffer+512 &&
-	    *src>='0' && *src<='9')
-	{
-	  file_recovery_new->calculated_file_size=file_recovery_new->calculated_file_size*10+(*src)-'0';
-	  src++;
-	}
-	file_recovery_new->data_check=&data_check_size;
-	file_recovery_new->file_check=&file_check_pdf_and_size;
-	return 1;
-      }
-    }
+    file_recovery_new->file_check=&file_check_pdf;
+    return 1;
   }
-  file_recovery_new->file_check=&file_check_pdf;
+  file_recovery_new->calculated_file_size=file_size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_pdf_and_size;
   return 1;
 }
 
