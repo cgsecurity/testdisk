@@ -109,7 +109,7 @@ static void file_rename_par2(file_recovery_t *file_recovery)
 static int header_check_par2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const uint64_t length=le64((*(const uint64_t *)(&buffer[8])));
-  if(length % 4 !=0 || length < 16)
+  if(length % 4 !=0 || length < 16 || length > PHOTOREC_MAX_FILE_SIZE)
     return 0;
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_par2)
