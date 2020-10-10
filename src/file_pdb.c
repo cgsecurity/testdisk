@@ -61,6 +61,9 @@ static void file_check_pdb(file_recovery_t *file_recovery)
   if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, 1, sizeof(buffer), file_recovery->handle) < 82)
     return ;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, sizeof(buffer));
+#endif
   if(buffer[80]=='\r' && buffer[81]=='\n')
     file_recovery->file_size=file_recovery->calculated_file_size/82*82;
   else if(buffer[80]=='\n')
