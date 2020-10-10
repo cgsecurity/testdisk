@@ -33,6 +33,9 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_mpg(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mpg= {
@@ -397,9 +400,6 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
   return 0;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
 static void register_header_check_mpg(file_stat_t *file_stat)
 {
   static const unsigned char mpg_header_B3[4]= {0x00, 0x00, 0x01, 0xB3};
