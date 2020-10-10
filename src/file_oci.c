@@ -87,6 +87,8 @@ static data_check_t data_check_oci(const unsigned char *buffer, const unsigned i
 static int header_check_oci(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct oci_header *hdr=(const struct oci_header *)buffer;
+  if(le32(hdr->size) >= 0x0fffffff0)
+    return 0;
   if(8+le32(hdr->size)+8 <= buffer_size)
   {
     const struct oci_header *hdr2=(const struct oci_header *)&buffer[8+le32(hdr->size)];
