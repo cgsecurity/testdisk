@@ -49,19 +49,34 @@ struct msa_header
   uint32_t size;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > 0x13;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_msa, buffer+(..), file_recovery, file_recovery_new);
+  @*/
 static int header_check_msa(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct msa_header *msa=(const struct msa_header *)buffer;
+  const uint64_t size=le32(msa->size);
   if(buffer[0x13]!=0x40)
+    return 0;
+  if(size <= 0x13)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_msa.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)le32(msa->size);
+  file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
 }
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_msa(file_stat_t *file_stat)
 {
   static const unsigned char msa_header_fb[4]=  {
@@ -71,6 +86,8 @@ static void register_header_check_msa(file_stat_t *file_stat)
     0xfc, 0xff, 0xff, 0xff
   };
   register_header_check(0, msa_header_fb, sizeof(msa_header_fb), &header_check_msa, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, msa_header_fc, sizeof(msa_header_fc), &header_check_msa, file_stat);
+#endif
 }
 #endif
