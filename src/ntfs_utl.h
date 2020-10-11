@@ -19,13 +19,14 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _NTFS_UTL_H
+#define _NTFS_UTL_H
+
 #ifdef __FRAMAC__
 #undef HAVE_LIBNTFS
 #undef HAVE_LIBNTFS3G
 #endif
 
-#ifndef _NTFS_UTL_H
-#define _NTFS_UTL_H
 #if defined(HAVE_LIBNTFS) || defined(HAVE_LIBNTFS3G)
 #ifdef __cplusplus
 extern "C" {

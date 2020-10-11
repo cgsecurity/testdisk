@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#ifndef _HDACCESS_H
+#define _HDACCESS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -108,4 +110,5 @@ void generic_clean(disk_t *disk);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif
