@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg) || defined(SINGLE_FORMAT_rw2)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -755,7 +755,7 @@ void file_check_tiff_le(file_recovery_t *fr)
 }
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)  && !defined(SINGLE_FORMAT_jpg)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg)  && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2)
 /*@
   @ requires separation: \separated(&file_hint_tiff, buffer+(..), file_recovery, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_tiff.extension ||
