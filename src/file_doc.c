@@ -1103,8 +1103,8 @@ static void OLE_parse_PropertySet_entry(const char *buffer, const unsigned int s
   /*@ assert \valid_read(buffer + (0 .. offset + 4 - 1)); */
   type=get32u(buffer, offset);
 #ifdef DEBUG_OLE
-  log_info("entry 0x%x, tag 0x%x, offset 0x%x, offset + 4 0x%x, type 0x%x\n",
-      entry_offset, tag, offset, offset + 4, type);
+  log_info("entry: tag 0x%x, offset 0x%x, offset + 4 0x%x, type 0x%x\n",
+      tag, offset, offset + 4, type);
 #endif
   /*@ assert *ext == \null || valid_read_string(*ext); */
   /*@ assert valid_string(title); */
@@ -1576,7 +1576,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	    {
 	      log_info("%c",dir_entry->name[j]);
 	    }
-	    log_info(" type %u", dir_entry->type);
+	    log_info(" namsiz=%u type %u", namsiz, dir_entry->type);
 	    log_info(" Flags=%s", (dir_entry->bflags==0?"Red":"Black"));
 	    log_info(" sector %u (%u bytes)\n",
 		(unsigned int)le32(dir_entry->start_block),
@@ -1637,6 +1637,11 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 		  /*@ assert ext == \null || valid_read_string(ext); */
 		}
 		/*@ assert valid_string(&title[0]); */
+		break;
+	      case 42:
+		/* 256_ */
+	        if(sid==1 && memcmp(dir_entry->name, "2\0005\0006\000_\000", 8)==0)
+		  ext=extension_db;
 		break;
 	      default:
 		/*@ assert valid_string(&title[0]); */
