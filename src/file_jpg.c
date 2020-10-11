@@ -891,7 +891,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  return 0;
       }
       /* Don't recover the thumb instead of the jpg itself */
-      if(file_recovery->file_size <= 4096 &&
+      if(file_recovery->file_size <= 16384 &&
 	  buffer[3]==0xe0 &&
 	  width>0 && width<200 && height>0 && height<200)
       {
@@ -2247,7 +2247,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
       continue;
     }
 #if defined(DEBUG_JPEG)
-    log_info("%s marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
+    log_info("%s marker ff%02x at 0x%x\n", file_recovery->filename, buffer[i+1], i);
 #endif
     offset+=(uint64_t)2+size;
     if(buffer[i+1]==0xe1)
