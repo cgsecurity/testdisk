@@ -139,6 +139,239 @@ struct MP_Entry
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
+  @ requires \valid(handle);
+  @ requires size >= 8;
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @*/
+static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
+{
+  const uint16_t *tmp16;
+  const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
+  unsigned int offset=be32(*tmp32);
+  unsigned int i;
+  unsigned int nbr;
+  unsigned int NumberOfImages=0;
+  unsigned int MPEntry_offset=0;
+  uint64_t max_offset=0;
+#ifdef DEBUG_JPEG
+  log_info("file_check_mpo_be\n");
+#endif
+  if(offset >= size - 2)
+    return 0;
+  /*@ assert offset < size - 2; */
+  tmp16=(const uint16_t*)(&mpo[offset]);
+  nbr=be16(*tmp16);
+  offset+=2;
+  /* @offset: MP Index Fields*/
+  if(offset + nbr * 12 > size)
+    return 0;
+  /*@ assert offset + nbr * 12 <= size; */
+  /*@
+    @ loop invariant 0 <= i <= nbr;
+    @ loop assigns i, NumberOfImages, MPEntry_offset;
+    @ loop variant nbr-i;
+    @*/
+  for(i=0; i< nbr; i++)
+  {
+    /*@ assert 0 <= i < nbr; */
+    const unsigned char *field_ptr=&mpo[offset + i * 12];
+    /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
+    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
+    const unsigned int count=be32(field->count);
+    const unsigned int type=be16(field->type);
+    switch(be16(field->tag))
+    {
+      case 0xb000:
+	/* MPFVersion, type must be undefined */
+	if(type!=7 || count!=4)
+	  return 0;
+	break;
+      case 0xb001:
+	/* NumberOfImages, type must be long */
+	if(type!=4 || count!=1)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  NumberOfImages=be32(*tmp);
+	  if(NumberOfImages >= 0x100000)
+	    return 0;
+	  /*@ assert NumberOfImages < 0x100000; */
+	}
+	break;
+      case 0xb002:
+	/* MPEntry, type must be undefined */
+	if(type!=7 || count!=16*NumberOfImages)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  MPEntry_offset=be32(*tmp);
+	}
+	break;
+    }
+  }
+#ifdef DEBUG_JPEG
+  log_info("MPEntry_offset=%u, NumberOfImages=%u\n", MPEntry_offset, NumberOfImages);
+#endif
+  /*@ assert NumberOfImages < 0x100000; */
+  if(MPEntry_offset > size)
+    return 0;
+  if(MPEntry_offset + 16*NumberOfImages > size)
+    return 0;
+  /*@
+    @ loop invariant 0 <= i <= NumberOfImages;
+    @ loop assigns i, max_offset;
+    @ loop variant NumberOfImages-i;
+    @*/
+  for(i=0; i<NumberOfImages; i++)
+  {
+    static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
+    unsigned char buffer[3];
+    /*@ assert 0 <= i < NumberOfImages; */
+    const unsigned char *MPEntry_ptr=&mpo[MPEntry_offset + i * sizeof(struct MP_Entry)];
+    /*@ assert \valid_read(MPEntry_ptr+ ( 0 .. sizeof(struct MP_Entry)-1)); */
+    const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
+    uint64_t tmp=be32(MPEntry->offset);
+#ifdef DEBUG_JPEG
+    log_info("offset=%lu, size=%lu\n",
+	(long unsigned)be32(MPEntry->offset),
+	(long unsigned)be32(MPEntry->size));
+#endif
+    if(tmp>0)
+      tmp+=mpo_offset;
+    if(my_fseek(handle, tmp, SEEK_SET) < 0 ||
+      fread(buffer, sizeof(buffer), 1, handle) != 1)
+      return 0;
+    tmp+=be32(MPEntry->size);
+#ifdef __FRAMAC__
+    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
+    if(memcmp(buffer, jpg_header, sizeof(jpg_header))!=0)
+      return 0;
+    if(max_offset < tmp)
+      max_offset = tmp;
+  }
+  return max_offset;
+}
+
+/*@
+  @ requires \valid(handle);
+  @ requires size >= 8;
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @*/
+static uint64_t file_check_mpo_le(FILE *handle, const unsigned char *mpo, const uint64_t mpo_offset, const unsigned int size)
+{
+  const uint16_t *tmp16;
+  /* Offset to first IFD */
+  const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
+  unsigned int offset=le32(*tmp32);
+  unsigned int i;
+  unsigned int nbr;
+  unsigned int NumberOfImages=0;
+  unsigned int MPEntry_offset=0;
+  uint64_t max_offset=0;
+#ifdef DEBUG_JPEG
+  log_info("file_check_mpo_le\n");
+#endif
+  if(offset >= size - 2)
+    return 0;
+  /*@ assert offset < size - 2; */
+  tmp16=(const uint16_t*)(&mpo[offset]);
+  nbr=le16(*tmp16);
+  offset+=2;
+  /* @offset: MP Index Fields*/
+  if(offset + nbr * 12 > size)
+    return 0;
+  /*@ assert offset + nbr * 12 <= size; */
+  /*@
+    @ loop invariant 0 <= i <= nbr;
+    @ loop assigns i, NumberOfImages, MPEntry_offset;
+    @ loop variant nbr-i;
+    @*/
+  for(i=0; i< nbr; i++)
+  {
+    /*@ assert 0 <= i < nbr; */
+    const unsigned char *field_ptr=&mpo[offset + i * 12];
+    /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
+    const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
+    /*@ assert \valid_read(field); */
+    const unsigned int count=le32(field->count);
+    const unsigned int type=le16(field->type);
+    switch(le16(field->tag))
+    {
+      case 0xb000:
+	/* MPFVersion, type must be undefined */
+	if(type!=7 || count!=4)
+	  return 0;
+	break;
+      case 0xb001:
+	/* NumberOfImages, type must be long */
+	if(type!=4 || count!=1)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  NumberOfImages=le32(*tmp);
+	  if(NumberOfImages >= 0x100000)
+	    return 0;
+	  /*@ assert NumberOfImages < 0x100000; */
+	}
+	break;
+      case 0xb002:
+	/* MPEntry, type must be undefined */
+	if(type!=7 || count!=16*NumberOfImages)
+	  return 0;
+	{
+	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
+	  MPEntry_offset=le32(*tmp);
+	}
+	break;
+    }
+  }
+#ifdef DEBUG_JPEG
+  log_info("MPEntry_offset=%u, NumberOfImages=%u\n", MPEntry_offset, NumberOfImages);
+#endif
+  /*@ assert NumberOfImages < 0x100000; */
+  if(MPEntry_offset > size)
+    return 0;
+  if(MPEntry_offset + 16*NumberOfImages > size)
+    return 0;
+  /*@
+    @ loop invariant 0 <= i <= NumberOfImages;
+    @ loop assigns i, max_offset;
+    @ loop variant NumberOfImages-i;
+    @*/
+  for(i=0; i<NumberOfImages; i++)
+  {
+    static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
+    unsigned char buffer[3];
+    /*@ assert 0 <= i < NumberOfImages; */
+    const unsigned char *MPEntry_ptr=&mpo[MPEntry_offset + i * sizeof(struct MP_Entry)];
+    /*@ assert \valid_read(MPEntry_ptr+ ( 0 .. sizeof(struct MP_Entry)-1)); */
+    const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
+    uint64_t tmp=le32(MPEntry->offset);
+#ifdef DEBUG_JPEG
+    log_info("mpo_offset=%lu offset=%lu, size=%lu\n",
+        (long unsigned)mpo_offset,
+	(long unsigned)le32(MPEntry->offset),
+	(long unsigned)le32(MPEntry->size));
+#endif
+    if(tmp > 0)
+      tmp+=mpo_offset;
+    if(my_fseek(handle, tmp, SEEK_SET) < 0 ||
+      fread(buffer, sizeof(buffer), 1, handle) != 1)
+      return 0;
+    tmp+=le32(MPEntry->size);
+#ifdef __FRAMAC__
+    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
+    if(memcmp(buffer, jpg_header, sizeof(jpg_header))!=0)
+      return 0;
+    if(max_offset < tmp)
+      max_offset = tmp;
+  }
+  return max_offset;
+}
+
+/*@
   @ requires size >= 8;
   @ requires \valid_read(mpo + ( 0 .. size-1));
   @ assigns \nothing;
@@ -336,7 +569,8 @@ static uint64_t check_mpo_le(const unsigned char *mpo, const uint64_t mpo_offset
     const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
     uint64_t tmp=le32(MPEntry->size);
 #ifdef DEBUG_JPEG
-    log_info("offset=%lu, size=%lu\n",
+    log_info("mpo_offset=%lu offset=%lu, size=%lu\n",
+        (long unsigned)mpo_offset,
 	(long unsigned)le32(MPEntry->offset),
 	(long unsigned)le32(MPEntry->size));
 #endif
@@ -371,6 +605,28 @@ static uint64_t check_mpo(const unsigned char *mpo, const uint64_t offset, const
 }
 
 /*@
+  @ requires \valid(handle);
+  @ requires size >= 8;
+  @ requires \valid_read(mpo + ( 0 .. size-1));
+  @*/
+static uint64_t file_check_mpo_aux(FILE *handle, const unsigned char *mpo, const uint64_t offset, const unsigned int size)
+{
+  /* MP header:
+   * - MP Endian (4Byte)
+   * - Offset to First IFD (4Byte)
+   */
+  if(mpo[0]=='I' && mpo[1]=='I' && mpo[2]=='*' && mpo[3]==0)
+  {
+    return file_check_mpo_le(handle, mpo, offset, size);
+  }
+  else if(mpo[0]=='M' && mpo[1]=='M' && mpo[2]==0 && mpo[3]=='*')
+  {
+    return file_check_mpo_be(handle, mpo, offset, size);
+  }
+  return 0;
+}
+
+/*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires valid_read_string((char *)&fr->filename);
@@ -383,12 +639,20 @@ static void file_check_mpo(file_recovery_t *fr)
   uint64_t offset=0;
   unsigned int size=0;
   size_t nbytes;
+  uint64_t jpg_fs;
+#ifdef DEBUG_JPEG
+  log_info("file_check_mpo  %s calculated_file_size=%llu, error at %llu\n", fr->filename,
+      (long long unsigned)fr->calculated_file_size,
+      (long long unsigned)fr->offset_error);
+#endif
+  fr->calculated_file_size=0;
   {
     /* Check the first jpg */
     const uint64_t fs=fr->file_size;
     file_check_jpg(fr);
     if(fr->file_size==0)
       return ;
+    jpg_fs=fr->file_size;
     fr->file_size=fs;
   }
   do
@@ -435,7 +699,17 @@ static void file_check_mpo(file_recovery_t *fr)
   /*@ assert 16 <= size <= 65535; */
   {
     const uint64_t max_offset=check_mpo(buffer+8, offset+8, size-8);
-    fr->file_size=(max_offset > fr->file_size ? 0 : max_offset);
+    if(max_offset > fr->file_size)
+    {
+      fr->file_size=0;
+      return ;
+    }
+    fr->file_size=max_offset;
+  }
+  if(file_check_mpo_aux(fr->handle, buffer+8, offset+8, size-8) == 0)
+  {
+    log_info("file_check_mpo  %s failed, limiting to first jpeg: %llu\n", fr->filename, (long long unsigned)jpg_fs);
+    fr->file_size=jpg_fs;
   }
 }
 
