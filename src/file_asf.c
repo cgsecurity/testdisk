@@ -81,7 +81,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
   uint64_t offset_prop=sizeof(struct asf_header_obj_s);
   /* Header + File Properties + Stream Properties + Header Extension */
   if(le64(hdr->object_size)<30 ||
-      le64(hdr->object_size)>buffer_size ||
+      le64(hdr->object_size) >= PHOTOREC_MAX_FILE_SIZE ||
       nbr_header_obj<4)
     return 0;
   for(i=0;
