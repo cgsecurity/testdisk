@@ -105,7 +105,7 @@ int recover_JFS(const disk_t *disk_car, const struct jfs_superblock *sb,partitio
   partition->part_type_mac=PMAC_LINUX;
   partition->part_type_gpt=GPT_ENT_TYPE_LINUX_DATA;
   partition->part_size=(uint64_t)le32(sb->s_pbsize) * le64(sb->s_size) +
-    le32(sb->s_bsize) * (le24(sb->s_fsckpxd.len)+le24(sb->s_logpxd.len));
+    (uint64_t)le32(sb->s_bsize) * (le24(sb->s_fsckpxd.len)+le24(sb->s_logpxd.len));
   partition->sborg_offset=64*512;
   partition->sb_size=JFS_SUPERBLOCK_SIZE;
   partition->sb_offset=0;
