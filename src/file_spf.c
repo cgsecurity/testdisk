@@ -49,28 +49,35 @@ enum { READ_SIZE=32*512 };
 static void file_check_spf(file_recovery_t *file_recovery)
 {
   unsigned char*buffer;
-  buffer=(unsigned char*)MALLOC(READ_SIZE);
   file_recovery->file_size=0;
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
-    free(buffer);
     return;
   }
+  buffer=(unsigned char*)MALLOC(READ_SIZE);
   while(1)
   {
     int i;
     const int taille=fread(buffer,1,READ_SIZE,file_recovery->handle);
-    if(taille<512)
+    if(taille<512 || taille%512!=0)
     {
       file_recovery->file_size=0;
       free(buffer);
       return ;
     }
+#ifdef __FRAMAC__
+  Frama_C_make_unknown(buffer, READ_SIZE);
+#endif
     for(i=0; i<taille; i+=512)
     {
       int j;
       int is_valid=0;
       file_recovery->file_size+=512;
+      if(file_recovery->file_size >= PHOTOREC_MAX_FILE_SIZE)
+      {
+	free(buffer);
+	return;
+      }
       for(j=0; j<8; j++)
 	if(buffer[i+j]!=0)
 	  is_valid=1;
