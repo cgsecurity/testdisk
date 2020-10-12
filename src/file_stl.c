@@ -46,10 +46,13 @@ const file_hint_t file_hint_stl= {
 
 static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const uint64_t *fs_ptr=(const uint64_t *)&buffer[80];
-  unsigned int i;
   /* STL Binary format
    * http://www.ennex.com/~fabbers/StL.asp	*/
+  unsigned int i;
+  const uint32_t *fs_ptr=(const uint32_t *)&buffer[80];
+  const uint64_t filesize=80+4+(uint64_t)le32(*fs_ptr)*50;
+  if(filesize > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
   for(i=0; i<80 && buffer[i]!='\0'; i++);
   if(i>64)
     return 0;
@@ -58,7 +61,7 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_stl.extension;
-  file_recovery_new->calculated_file_size=80+4+50*le64(*fs_ptr);
+  file_recovery_new->calculated_file_size=filesize;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
