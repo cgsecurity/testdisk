@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(__FRAMAC__) || defined(SINGLE_FORMAT) || defined(MAIN_photorec)
 #undef HAVE_ZLIB_H
 #undef HAVE_LIBZ
 #endif
