@@ -1,17 +1,8 @@
 The Windows version of TestDisk & PhotoRec should work under
-- Windows NT 4
-- Windows 2000
-- Windows XP
-- Windows 2003
 - Windows Vista
-- Windows Server 2008
-- Windows 7
-On Windows 64-bit, WoW64 (Windows 32-bit On Windows 64-bit) is required to run
-these 32-bit executables.
-For Windows 64-bit without WoW64, use the Windows 64-bit version of TestDisk
-& PhotoRec.
+- Windows 7 and later
+- Windows Server 2008 and later
 
-If you are using an older version of Windows, run the DOS version of TestDisk.
 You can download it from https://www.cgsecurity.org/wiki/TestDisk_Download
 
 TestDisk doesn't need to be installed, you only need to
@@ -21,3 +12,9 @@ TestDisk doesn't need to be installed, you only need to
 TestDisk & PhotoRec documentation can be found online:
 - https://www.cgsecurity.org/wiki/TestDisk
 - https://www.cgsecurity.org/wiki/PhotoRec
+
+TestDisk & PhotoRec 7.0 is the last version supporting Windows Server 2003.
+TestDisk & PhotoRec 6.14 is the last version supporting
+- Windows NT 4
+- Windows XP
+- Windows Server 2000
