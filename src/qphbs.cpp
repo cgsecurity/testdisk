@@ -98,7 +98,7 @@ pstatus_t QPhotorec::photorec_find_blocksize(alloc_data_t *list_search_space)
     {
       file_recovery_t file_recovery_new;
       if(file_recovery.file_stat!=NULL && file_recovery.file_stat->file_hint==&file_hint_tar &&
-          header_check_tar(buffer-0x200,0x200,0,&file_recovery,&file_recovery_new))
+	  is_valid_tar_header((const struct tar_posix_header *)(buffer-0x200)))
       { /* Currently saving a tar, do not check the data for know header */
       }
       else

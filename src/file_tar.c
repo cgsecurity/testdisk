@@ -34,6 +34,8 @@
 #include "file_tar.h"
 
 static void register_header_check_tar(file_stat_t *file_stat);
+static const unsigned char tar_header_gnu[6]	= { 'u','s','t','a','r',0x00};
+static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
 
 const file_hint_t file_hint_tar= {
   .extension="tar",
@@ -44,26 +46,63 @@ const file_hint_t file_hint_tar= {
   .register_header_check=&register_header_check_tar
 };
 
-struct posix_header
-{				/* byte offset */
-  char name[100];		/*   0 */
-  char mode[8];			/* 100 */
-  char uid[8];			/* 108 */
-  char gid[8];			/* 116 */
-  char size[12];		/* 124 */
-  char mtime[12];		/* 136 */
-  char chksum[8];		/* 148 */
-  char typeflag;		/* 156 */
-  char linkname[100];		/* 157 */
-  char magic[6];		/* 257 */
-  char version[2];		/* 263 */
-  char uname[32];		/* 265 */
-  char gname[32];		/* 297 */
-  char devmajor[8];		/* 329 */
-  char devminor[8];		/* 337 */
-  char prefix[155];		/* 345 */
-				/* 500 */
-};
+/*@
+  @ requires \valid_read(h);
+  @ assigns \nothing;
+  @*/
+static int is_valid_checksum_format(const struct tar_posix_header *h)
+{
+  unsigned int i;
+  int space_allowed=1;
+  int all_null=1;
+  /* No checksum ? */
+  /*@
+    @ loop assigns i,all_null;
+    @*/
+  for(i=0; i<8; i++)
+    if(h->chksum[i]!=0)
+      all_null=0;
+  if(all_null!=0)
+    return 1;
+  /*
+   * Checksum should be stored as a six digit octal number with leading zeroes followed by a NUL and then a space.
+   * Various implementations do not adhere to this format, try to handle them
+   */
+  /*@
+    @ loop assigns i,space_allowed;
+    @*/
+  for(i=0; i<6; i++)
+  {
+    if(h->chksum[i] >= '0' || h->chksum[i] <= '7')
+    {
+      space_allowed=0;
+      continue;
+    }
+    if(h->chksum[i] == ' ')
+    {
+      if(space_allowed == 0)
+	return 0;
+    }
+    else
+      return 0;
+  }
+  if(h->chksum[6] == 0 || h->chksum[7] == ' ')
+    return 1;
+  if((h->chksum[6] >= '0' || h->chksum[6] <= '7') && h->chksum[7] == ' ')
+    return 1;
+  return 0;
+}
+
+int is_valid_tar_header(const struct tar_posix_header *h)
+{
+  /* Do not remove this check. */
+  if(memcmp(&h->magic,tar_header_gnu,sizeof(tar_header_gnu))!=0 &&
+      memcmp(&h->magic,tar_header_posix,sizeof(tar_header_posix))!=0)
+    return 0;
+  if(is_valid_checksum_format(h)==0)
+    return 0;
+  return 1;
+}
 
 /*@
   @ requires buffer_size >= 512;
@@ -74,10 +113,10 @@ struct posix_header
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_tar, buffer+(..), file_recovery, file_recovery_new);
   @*/
-int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const struct posix_header *h=(const struct posix_header *)buffer;
-  if(!isspace(h->chksum[0]) && !((unsigned) (h->chksum[0]) - '0' <= 7))
+  const struct tar_posix_header *h=(const struct tar_posix_header *)buffer;
+  if(is_valid_tar_header(h)==0)
     return 0;
   if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
   {
@@ -95,9 +134,9 @@ int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size
   @*/
 static void register_header_check_tar(file_stat_t *file_stat)
 {
-  static const unsigned char tar_header_gnu[6]	= { 'u','s','t','a','r',0x00};
-  static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
   register_header_check(0x101, tar_header_gnu,sizeof(tar_header_gnu), &header_check_tar, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0x101, tar_header_posix,sizeof(tar_header_posix), &header_check_tar, file_stat);
+#endif
 }
 #endif
