@@ -64,19 +64,26 @@ static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned 
 
 static void file_check_tib2(file_recovery_t *file_recovery)
 {
-  unsigned char*buffer=(unsigned char*)MALLOC(512);
-  int64_t file_size=file_recovery->calculated_file_size-512;
+  unsigned char buffer[512];
+  int64_t file_size;
+  if(file_recovery->calculated_file_size < 512)
+  {
+    file_recovery->file_size=0;
+    return ;
+  }
+  file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
   if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
       fread(buffer, 1, 512, file_recovery->handle) != 512)
   {
-    free(buffer);
     file_recovery->file_size=0;
     return;
   }
+#ifdef __FRAMAC__
+  Frama_C_make_unknown(buffer, 512);
+#endif
   if(memcmp(&buffer[512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
   {
-    free(buffer);
     return;
   }
 
@@ -86,7 +93,6 @@ static void file_check_tib2(file_recovery_t *file_recovery)
     if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
 	fread(buffer, 1, 512, file_recovery->handle) != 512)
     {
-      free(buffer);
       file_recovery->file_size=0;
       return;
     }
@@ -94,11 +100,9 @@ static void file_check_tib2(file_recovery_t *file_recovery)
     if(i!=512)
     {
       file_recovery->file_size=file_size + 512;
-      free(buffer);
       return ;
     }
   }
-  free(buffer);
 }
 
 static int header_check_tib(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
