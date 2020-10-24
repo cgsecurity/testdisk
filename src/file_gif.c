@@ -142,7 +142,7 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
     log_info("data_check_gif2 calculated_file_size=0x%llx\n",
 	(long long unsigned)file_recovery->calculated_file_size);
 #endif
-    file_recovery->calculated_file_size+=buffer[i]+1;
+    file_recovery->calculated_file_size+=(uint64_t)1+buffer[i];
     if(buffer[i]==0)
     {
       return data_check_gif(buffer, buffer_size, file_recovery);
@@ -210,6 +210,8 @@ static void register_header_check_gif(file_stat_t *file_stat)
   static const unsigned char gif_header[6]=  { 'G','I','F','8','7','a'};
   static const unsigned char gif_header2[6]= { 'G','I','F','8','9','a'};
   register_header_check(0, gif_header,sizeof(gif_header), &header_check_gif, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, gif_header2,sizeof(gif_header2), &header_check_gif, file_stat);
+#endif
 }
 #endif
