@@ -60,18 +60,26 @@ static void file_check_x4a(file_recovery_t *fr)
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(buffer), 1, fr->handle)!=1)
     return;
+#ifdef __FRAMAC__
+  Frama_C_make_unknown(buffer, sizeof(buffer));
+#endif
+  /*@
+    @ loop assigns i, fs;
+    @*/
   for(i=0x80; i<0x200; i+=8)
   {
+    /*@ assert i <= 0x200 - 8; */
     const struct x4a_catalog *p=(const struct x4a_catalog *)&buffer[i];
-    if(be32(p->size) > fs)
-      fs=be32(p->size);
+    const unsigned int tmp=be32(p->size);
+    if(tmp > fs)
+      fs=tmp;
   }
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, 8, 1, fr->handle)!=1)
     return;
   {
     const struct x4a_catalog *p=(const struct x4a_catalog *)buffer;
-    fr->file_size=fs+be32(p->size);
+    fr->file_size=(uint64_t)fs+be32(p->size);
   }
 }
 
