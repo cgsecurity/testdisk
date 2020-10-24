@@ -47,13 +47,16 @@ const file_hint_t file_hint_xm= {
 
 static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 {
-  while (patterns--)
+  for(; patterns!=0; patterns--)
   {
     uint32_t header_size;
     uint16_t data_size;
 
     if (fread(&header_size, 4, 1, fr->handle) != 1)
       return -1;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&header_size, sizeof(header_size));
+#endif
 
     header_size = le32(header_size);
     log_debug("xm: pattern header of size %u\n", (unsigned int)header_size);
@@ -67,25 +70,33 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 
     if (fread(&data_size, 2, 1, fr->handle) != 1)
       return -1;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&data_size, sizeof(data_size));
+#endif
     data_size = le16(data_size);
     log_debug("xm: pattern data of size %u\n", data_size);
 
     if (fseek(fr->handle, data_size, SEEK_CUR) == -1)
       return -1;
     fr->file_size += (uint64_t)header_size+data_size;
+    if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
+      return -1;
   }
   return 0;
 }
 
 static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
 {
-  while (instrs--)
+  for(; instrs!=0; instrs--)
   {
     uint16_t samples;
     uint32_t size;
 
     if (fread(&size, 4, 1, fr->handle) != 1)
       return -1;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&size, sizeof(size));
+#endif
 
     size = le32(size);
     log_debug("xm: instrument header of size %u\n", (unsigned int)size);
@@ -99,10 +110,15 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
 
     if (fread(&samples, 2, 1, fr->handle) != 1)
       return -1;
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&samples, sizeof(samples));
+#endif
     samples = le16(samples);
     log_debug("xm: instrument with %u samples\n", samples);
 
     fr->file_size += size;
+    if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
+      return -1;
     /* Never seen any xm having anything but 263 when there are samples */
     if (samples>0)
     {
@@ -118,20 +134,24 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
         return -1;
 
 
-      while (samples--)
+      for(; samples!=0; samples--)
       {
         if (fread(&size, 4, 1, fr->handle) != 1)
           return -1;
-
+#if defined(__FRAMAC__)
+	Frama_C_make_unknown(&size, sizeof(size));
+#endif
         size = le32(size);
         log_debug("xm: sample with length of %u\n", (unsigned int)size);
 
         /* Skip remaining of sample header            *
          * @todo Verify that last 22 bytes are ASCII? */
-        if (fseek(fr->handle, 36+size, SEEK_CUR) == -1)
+        if (fseek(fr->handle, (uint64_t)36+size, SEEK_CUR) == -1)
           return -1;
 
         fr->file_size += (uint64_t)40+size;
+	if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
+	  return -1;
       }
     }
     /* No sample, account for garbage */
@@ -155,6 +175,10 @@ static void file_check_xm(file_recovery_t *fr)
     return;
   if (fread(&instrs, 2, 1, fr->handle) != 1)
     return;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(&patterns, sizeof(patterns));
+  Frama_C_make_unknown(&instrs, sizeof(instrs));
+#endif
   instrs   = le16(instrs);
   patterns = le16(patterns);
 
