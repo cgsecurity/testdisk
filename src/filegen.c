@@ -247,7 +247,7 @@ void free_header_check(void)
 
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
-  unsigned char buffer[4096];
+  char buffer[4096];
   int taille;
   if(file_recovery->file_size >= 0x8000000000000000-2)
     return ;
@@ -259,7 +259,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
   }
   taille=fread(buffer,1, 4096,file_recovery->handle);
 #ifdef __FRAMAC__
-  Frama_C_make_unknown((char *)&buffer, 4096);
+  Frama_C_make_unknown(&buffer, 4096);
 #endif
   if(taille > 0 && buffer[0]=='\n' && (nl_mode&NL_BARENL)==NL_BARENL)
     file_recovery->file_size++;
@@ -740,8 +740,8 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end)
     offset_skipped_header=0;
 }
 
-/* 0: file_recovery is bad *
- * 1: file_recovery is ok  */
+/* 0: file_recovery_new->location.start has been taken into account, offset_skipped_header may have been updated
+ * 1: file_recovery_new->location.start has been ignored */
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)
 {
   file_recovery_t fr_test;
@@ -785,6 +785,10 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   return 0;
 }
 
+/*@
+  @ requires \separated(file_recovery_new, &offset_skipped_header);
+  @ assigns offset_skipped_header;
+  @*/
 void header_ignored(const file_recovery_t *file_recovery_new)
 {
   if(file_recovery_new==NULL)

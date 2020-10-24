@@ -126,8 +126,9 @@ void free_header_check(void);
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
-  @ requires \separated(file_recovery, file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source);
   @ ensures file_recovery->handle == \old(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, Frama_C_entropy_source, file_recovery->file_size;
   @*/
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
