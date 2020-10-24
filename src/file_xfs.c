@@ -48,14 +48,19 @@ const file_hint_t file_hint_xfs= {
 static int header_check_xfs_sb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct xfs_sb *sb=(const struct xfs_sb *)buffer;
+  const unsigned int sb_blocksize=be32(sb->sb_blocksize);
+  if( sb->sb_sectlog >= 16 ||
+      sb->sb_inodelog >= 16 ||
+      sb->sb_blocklog >= 16)
+    return 0;
   if(sb->sb_magicnum!=be32(XFS_SB_MAGIC) ||
-      (uint16_t)be16(sb->sb_sectsize)  != (1U << sb->sb_sectlog) ||
-      (uint32_t)be32(sb->sb_blocksize) != (1U << sb->sb_blocklog) ||
-      (uint16_t)be16(sb->sb_inodesize) != (1U << sb->sb_inodelog))
+      be16(sb->sb_sectsize)  != (1U << sb->sb_sectlog) ||
+      sb_blocksize != (1U << sb->sb_blocklog) ||
+      be16(sb->sb_inodesize) != (1U << sb->sb_inodelog))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_xfs.extension;
-  file_recovery_new->calculated_file_size=be32(sb->sb_blocksize);
+  file_recovery_new->calculated_file_size=sb_blocksize;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
