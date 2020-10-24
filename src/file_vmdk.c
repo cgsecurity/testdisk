@@ -33,11 +33,12 @@
 #include "common.h"
 
 static void register_header_check_vmdk(file_stat_t *file_stat);
+#define MAX_FILE_SIZE_VMDK (uint64_t)2048*1024*1024*1024
 
 const file_hint_t file_hint_vmdk= {
   .extension="vmdk",
   .description="VMWare",
-  .max_filesize=(uint64_t)2048*1024*1024*1024,
+  .max_filesize=MAX_FILE_SIZE_VMDK,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_vmdk
@@ -62,14 +63,14 @@ typedef struct {
   uint32_t magic;
   uint32_t version;
   uint32_t flags;
-  int64_t capacity;
-  int64_t granularity;
-  int64_t desc_offset;
-  int64_t desc_size;
-  int32_t num_gtes_per_gte;
-  int64_t rgd_offset;
-  int64_t gd_offset;
-  int64_t grain_offset;
+  uint64_t capacity;
+  uint64_t granularity;
+  uint64_t desc_offset;
+  uint64_t desc_size;
+  uint32_t num_gtes_per_gte;
+  uint64_t rgd_offset;
+  uint64_t gd_offset;
+  uint64_t grain_offset;
   char filler[1];
   char check_bytes[4];
 } __attribute__((gcc_struct,__packed__)) VMDK4Header;
@@ -78,7 +79,7 @@ static int header_check_vmdk3(const unsigned char *buffer, const unsigned int bu
 {
   const VMDK3Header *hdr=(const VMDK3Header *)buffer;
   const unsigned int cluster_sectors = le32(hdr->granularity);
-  if(cluster_sectors==0)
+  if(cluster_sectors==0 || cluster_sectors > 0x200000)
     return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
@@ -93,10 +94,15 @@ static int header_check_vmdk3(const unsigned char *buffer, const unsigned int bu
 static int header_check_vmdk4(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const VMDK4Header *hdr=(const VMDK4Header *)buffer;
-  const unsigned int cluster_sectors = le64(hdr->granularity);
-  const unsigned int l2_size = le32(hdr->num_gtes_per_gte);
-  const uint32_t l1_entry_sectors = l2_size * cluster_sectors;
-  if (l1_entry_sectors <= 0)
+  const uint64_t cluster_sectors = le64(hdr->granularity);
+  const unsigned int num_gtes_per_gte = le32(hdr->num_gtes_per_gte);
+  uint64_t l1_entry_sectors;
+  if(cluster_sectors == 0 || cluster_sectors > 0x200000)
+    return 0;
+  if(num_gtes_per_gte == 0 || num_gtes_per_gte > 512)
+    return 0;
+  l1_entry_sectors = (uint64_t)num_gtes_per_gte * cluster_sectors;
+  if(le64(hdr->grain_offset) > MAX_FILE_SIZE_VMDK)
     return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
@@ -104,7 +110,7 @@ static int header_check_vmdk4(const unsigned char *buffer, const unsigned int bu
 #else
   file_recovery_new->extension=file_hint_vmdk.extension;
 #endif
-  file_recovery_new->min_filesize=512;
+  file_recovery_new->min_filesize=td_max((uint64_t)512,(uint64_t)512 * le64(hdr->grain_offset));
   return 1;
 }
 
