@@ -35,13 +35,14 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#include "memmem.h"
 #ifdef DEBUG_MKV
 #include "log.h"
 #endif
 
+/*@
+  @ requires \valid(file_stat);
+  @*/
 static void register_header_check_mkv(file_stat_t *file_stat);
-static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_mkv= {
   .extension="mkv",
@@ -52,70 +53,126 @@ const file_hint_t file_hint_mkv= {
   .register_header_check=&register_header_check_mkv
 };
 
-static const unsigned char *EBML_find(const unsigned char *buffer, const unsigned int buffer_size, const unsigned char *EBML_Header, const unsigned int EBML_size)
-{
-  const unsigned char *tmp=(const unsigned char *)td_memmem(buffer, buffer_size, EBML_Header, EBML_size);
-  if(tmp==NULL)
-    return NULL;
-  return tmp+EBML_size;
-}
-
+/*@
+  @ requires \valid_read(p + (0 .. p_size-1));
+  @ requires \valid(uint64);
+  @ requires \separated(p + (..), uint64);
+  @ ensures -1 == \result || (1 <= \result <= 8);
+  @ ensures -1 != \result ==> \initialized(uint64);
+  @ ensures -1 != \result ==> *uint64 <= 0xfeffffffffffffff;
+  @ assigns *uint64;
+  @*/
 static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size, uint64_t *uint64)
 {
   unsigned char test_bit = 0x80;
   unsigned int i, bytes = 1;
-  if(p_size==0 || *p== 0x00)
+  const unsigned char c=*p;
+  uint64_t val;
+  if(p_size==0 || c== 0x00)
     return -1;
-  while((*p & test_bit) != test_bit)
+  /*@ assert c != 0; */
+  /*@
+    @ loop invariant test_bit > 0;
+    @ loop invariant test_bit == (0x100 >> bytes);
+    @ loop assigns test_bit, bytes;
+    @ loop unroll 8;
+    @*/
+  while((c & test_bit) != test_bit)
   {
+    /*@ assert c < test_bit; */
     test_bit >>= 1;
     bytes++;
   }
+  /*@ assert (c & test_bit) == test_bit; */
+  /*@ assert 1 <= bytes <= 8; */
+  /*@ assert c >= test_bit; */
   if(p_size < bytes)
     return -1;
-  *uint64 = *p - test_bit; //eliminate first bit
+  /*@ assert bytes <= p_size; */
+  val = c - test_bit; //eliminate first bit, val < 0x80
+  /*@ assert val <= 0xfe; */
+  /*@
+    @ loop assigns i, val;
+    @ loop unroll 8;
+    @ loop variant bytes-i;
+    @*/
   for(i=1; i<bytes; i++)
   {
-    *uint64 <<= 8;
-    *uint64 += p[i];
+    val <<= 8;
+    val += p[i];
   }
+  /*@ assert val <= 0xfeffffffffffffff; */
+  *uint64 = val;
   return bytes;
 }
 
-static int EBML_read_string(const unsigned char *p, const unsigned int p_size, char **string)
+/*@
+  @ requires EBML_size > 0;
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ requires \valid_read(EBML_Header + (0 .. EBML_size-1));
+  @ assigns \result;
+  @*/
+static int EBML_find(const unsigned char *buffer, const unsigned int buffer_size, const unsigned char *EBML_Header, const unsigned int EBML_size)
 {
-  uint64_t strlength;
-  unsigned char test_bit = 0x80;
-  unsigned int i, bytes = 1;
-  if(p_size==0 || *p== 0x00)
-    return -1;
-  while((*p & test_bit) != test_bit)
+  unsigned int offset=0;
+  /*@
+    @ loop assigns offset;
+    @*/
+  while(offset < buffer_size)
   {
-    test_bit >>= 1;
-    bytes++;
+    uint64_t uint64=0;
+    int bytes;
+    bytes = EBML_read_unsigned(&buffer[offset], buffer_size-offset, &uint64);
+#ifdef DEBUG_MKV
+    log_info("EBML_find %02x%02x bytes=%d\n", buffer[offset], buffer[offset+1], bytes);
+#endif
+    if(bytes <= 0)
+      return -1;
+    if((unsigned int)bytes == EBML_size && memcmp(&buffer[offset], EBML_Header, EBML_size)==0)
+    {
+      return offset+bytes;
+    }
+    offset += bytes;
+    if(offset >= buffer_size)
+      return -1;
+    bytes = EBML_read_unsigned(&buffer[offset], buffer_size-offset, &uint64);
+    if(bytes <= 0 || uint64 > buffer_size)
+      return -1;
+    offset += bytes;
+    offset += uint64;
   }
-  if(p_size < bytes)
+  return -1;
+}
+
+/*@
+  @ requires \valid_read(p + (0 .. p_size-1));
+  @ requires \valid(strlength);
+  @ requires \separated(p + (..), strlength);
+  @ ensures -1 == \result || (1 <= \result <= 8);
+  @ ensures -1 != \result ==> \initialized(strlength);
+  @ ensures -1 != \result ==> *strlength <= 0xfeffffffffffffff;
+  @ ensures -1 != \result ==> \result + *strlength <= p_size;
+  @ assigns *strlength, \result;
+  @*/
+static int EBML_read_string(const unsigned char *p, const unsigned int p_size, uint64_t *strlength)
+{
+  int bytes;
+  *strlength = 0;
+  bytes = EBML_read_unsigned(p, p_size, strlength);
+#ifdef DEBUG_MKV
+  log_info("EBML_read_string bytes=%d strlength=%llu\n", bytes, (long long unsigned)*strlength);
+#endif
+  if(bytes <= 0)
     return -1;
-  strlength = (uint64_t)(*p - test_bit); //eliminate first bit
-  for(i=1; i<bytes; i++)
-  {
-    strlength <<= 8;
-    strlength += p[i];
-  }
-  if(strlength + bytes > p_size)
+  /*@ assert 1 <= bytes <= 8; */
+  /*@ assert *strlength <= 0xfeffffffffffffff; */
+  if(bytes + *strlength > p_size)
     return -1;
-  *string = (char *)MALLOC(strlength+1);
-  memcpy(*string, p+bytes, strlength);
-  (*string)[strlength] = '\0';
-  return bytes+strlength;
+  /*@ assert bytes + *strlength <= p_size; */
+  return bytes;
 }
 
 static const unsigned char EBML_header[4]= { 0x1a,0x45,0xdf,0xa3};
-
-static void register_header_check_mkv(file_stat_t *file_stat)
-{
-  register_header_check(0, EBML_header,sizeof(EBML_header), &header_check_mkv, file_stat);
-}
 
 static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -126,12 +183,14 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     const unsigned char EBML_Segment[4]= { 0x18,0x53,0x80,0x67};
     uint64_t segment_size=0;
     uint64_t header_data_size=0;
-    char *doctype=NULL;
     const unsigned char *p;
     unsigned int header_data_offset;
     unsigned int segment_offset;
     unsigned int segment_data_offset;
+    uint64_t strlength = 0;
+    int bytes;
     int len;
+    int offset_doctype;
 
     if((len=EBML_read_unsigned(buffer+sizeof(EBML_header),
 	  buffer_size-sizeof(EBML_header), &header_data_size)) < 0)
@@ -139,10 +198,14 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     header_data_offset = sizeof(EBML_header) + len;
     if(header_data_offset >= buffer_size)
       return 0;
-    segment_offset = header_data_offset + header_data_size;
 #ifdef DEBUG_MKV
     log_info("header_data_offset %llu\n", (long long unsigned) header_data_offset);
     log_info("header_data_size   %llu\n", (long long unsigned) header_data_size);
+#endif
+    if(header_data_size >= buffer_size)
+      return 0;
+    segment_offset = header_data_offset + header_data_size;
+#ifdef DEBUG_MKV
     log_info("segment_offset     %llu\n", (long long unsigned) segment_offset);
 #endif
     if(segment_offset +sizeof(EBML_Segment) >= buffer_size)
@@ -161,17 +224,26 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     log_info("segment size %llu\n", (long long unsigned) segment_size);
 #endif
     /* get EBML_DocType, it will be used to set the file extension */
-    p=EBML_find(&buffer[header_data_offset], header_data_size, EBML_DocType, sizeof(EBML_DocType));
-    if (p == NULL || EBML_read_string(p, header_data_size-(p-&buffer[header_data_offset]), &doctype) < 0)
+    offset_doctype=EBML_find(&buffer[header_data_offset], header_data_size, EBML_DocType, sizeof(EBML_DocType));
+#ifdef DEBUG_MKV
+    log_info("offset_doctype = %u\n", offset_doctype);
+#endif
+    if(offset_doctype < 0 || header_data_size <= (uint64_t)offset_doctype)
+      return 0;
+    /*@ assert header_data_size > offset_doctype; */
+    p = &buffer[header_data_offset+offset_doctype];
+    bytes = EBML_read_string(&buffer[header_data_offset+offset_doctype], header_data_size-offset_doctype, &strlength);
+    if (bytes < 0)
       return 0;
     reset_file_recovery(file_recovery_new);
-    if(strcmp(doctype,"matroska")==0)
+    if( (strlength == 8 && memcmp(p+bytes,"matroska", 8)==0) ||
+	(strlength == 9 && memcmp(p+bytes,"matroska", 9)==0))
       file_recovery_new->extension=file_hint_mkv.extension;
-    else if(strcmp(doctype,"webm")==0)
+    else if((strlength == 4 && memcmp(p+bytes,"webm", 4)==0) ||
+	(    strlength == 5 && memcmp(p+bytes,"webm", 5)==0))
       file_recovery_new->extension="webm";
     else
       file_recovery_new->extension="ebml";
-    free(doctype);
     if(segment_size > 0)
     {
       file_recovery_new->calculated_file_size = segment_data_offset + segment_size;
@@ -183,5 +255,10 @@ static int header_check_mkv(const unsigned char *buffer, const unsigned int buff
     }
   }
   return 1;
+}
+
+static void register_header_check_mkv(file_stat_t *file_stat)
+{
+  register_header_check(0, EBML_header,sizeof(EBML_header), &header_check_mkv, file_stat);
 }
 #endif
