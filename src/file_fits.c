@@ -68,9 +68,16 @@ static uint64_t fits_get_val(const unsigned char *str)
   for(;i<80 && str[i]==' ';i++);
   if(i<80 && str[i]=='-')
     i++;
-  /*@ loop assigns i,val; */
+  /*@
+    @ loop invariant val < PHOTOREC_MAX_FILE_SIZE;
+    @ loop assigns i,val;
+    @*/
   for(;i<80 && str[i]>='0' && str[i]<='9';i++)
-    val=val*10+str[i]-'0';
+  {
+    val=val*10+(str[i]-'0');
+    if(val >= PHOTOREC_MAX_FILE_SIZE)
+      return val;
+  }
   return val;
 }
 
@@ -96,21 +103,35 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
       memcmp(&buffer[i], "END ", 4)!=0;
       i+=80)
   {
+    if(naxis_size > PHOTOREC_MAX_FILE_SIZE)
+      naxis_size=0;
+    /*@ assert naxis_size <= PHOTOREC_MAX_FILE_SIZE; */
     if(memcmp(&buffer[i], "BITPIX",6)==0)
     {
       const uint64_t tmp=fits_get_val(&buffer[i]);
-      if(tmp>=8)
-	naxis_size*=tmp/8;
+      if(tmp > PHOTOREC_MAX_FILE_SIZE)
+	naxis_size=0;
+      else if(tmp>0)
+      {
+	naxis_size*=(tmp+8-1)/8;
+      }
     }
     else if(memcmp(&buffer[i], "NAXIS ",6)==0)
     {
+      /* NAXIS - range [0:999] */
       if(fits_get_val(&buffer[i])==0)
 	naxis_size=0;
     }
     else if(memcmp(&buffer[i], "NAXIS",5)==0)
     {
+      /* NAXISn */
       const uint64_t naxis_val=fits_get_val(&buffer[i]);
-      naxis_size*=naxis_val;
+      if(naxis_val > PHOTOREC_MAX_FILE_SIZE)
+	naxis_size=0;
+      else
+      {
+	naxis_size*=naxis_val;
+      }
     }
     else if(memcmp(&buffer[i], "CREA_DAT=", 9)==0)
     {
@@ -169,6 +190,12 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
 {
   unsigned int i=0;
   uint64_t naxis_size_max=0;
+  if(file_recovery_new->blocksize >= 80)
+    naxis_size_max=fits_info(buffer, buffer_size, file_recovery_new, &i);
+  if(naxis_size_max > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
+  if(naxis_size_max !=0 && naxis_size_max < 2880)
+    return 0;
   reset_file_recovery(file_recovery_new);
 #ifdef DJGPP
   file_recovery_new->extension="fts";
@@ -176,15 +203,8 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_fits.extension;
 #endif
   file_recovery_new->min_filesize=2880;
-  if(file_recovery_new->blocksize < 80)
+  if(naxis_size_max==0)
     return 1;
-  {
-    const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery_new, &i);
-    if(tmp==0)
-      return 1;
-    if(naxis_size_max < tmp && tmp > 1)
-      naxis_size_max=tmp;
-  }
   /* File is composed of several 2880-bytes blocks */
   file_recovery_new->data_check=&data_check_fits;
   file_recovery_new->file_check=&file_check_size;
