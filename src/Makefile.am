@@ -35,16 +35,18 @@ endif
 bin_PROGRAMS		= testdisk photorec fidentify $(QPHOTOREC)
 EXTRA_PROGRAMS		= photorecf fuzzerfidentify
 
-base_C			= autoset.c common.c crc.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c iso.c list_sort.c log.c log_part.c misc.c msdos.c parti386.c partgpt.c parthumax.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
-base_H			= alignio.h autoset.h common.h crc.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h iso.h iso9660.h lang.h list.h list_sort.h log.h log_part.h misc.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h parthumax.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
+smallbase_C		= common.c crc.c ext2_common.c fat_common.c log.c misc.c setdate.c
+smallbase_H		= common.h crc.h ext2_common.h fat_common.h log.h misc.h setdate.h
+base_C			= $(smallbase_C) autoset.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c iso.c list_sort.c log_part.c msdos.c parti386.c partgpt.c parthumax.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
+base_H			= $(smallbase_H) alignio.h autoset.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h iso.h iso9660.h lang.h list.h list_sort.h log_part.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h parthumax.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
 
-fs_C			= analyse.c bfs.c bsd.c btrfs.c cramfs.c exfat.c ext2.c ext2_common.c fat.c fat_common.c fatx.c f2fs.c jfs.c gfs2.c hfs.c hfsp.c hpfs.c luks.c lvm.c md.c netware.c ntfs.c refs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c vmfs.c wbfs.c xfs.c zfs.c
-fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h ext2_common.h fat.h fat_common.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h luks.h lvm.h md.h netware.h ntfs.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h zfs.h
+fs_C			= analyse.c bfs.c bsd.c btrfs.c cramfs.c exfat.c ext2.c fat.c fatx.c f2fs.c jfs.c gfs2.c hfs.c hfsp.c hpfs.c luks.c lvm.c md.c netware.c ntfs.c refs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c vmfs.c wbfs.c xfs.c zfs.c
+fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h fat.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h luks.h lvm.h md.h netware.h ntfs.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h zfs.h
 
 testdisk_ncurses_C	= addpart.c addpartn.c adv.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c dimage.c dirn.c dirpart.c diskacc.c diskcapa.c edit.c ext2_sb.c ext2_sbn.c fat1x.c fat32.c fat_adv.c fat_cluster.c fatn.c geometry.c geometryn.c godmode.c hiddenn.c intrface.c intrfn.c nodisk.c ntfs_adv.c ntfs_fix.c ntfs_udl.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c tanalyse.c tbanner.c tdelete.c tdiskop.c tdisksel.c testdisk.c texfat.c thfs.c tload.c tlog.c tmbrcode.c tntfs.c toptions.c tpartwr.c 
 testdisk_ncurses_H	= addpart.h addpartn.h adv.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h dimage.h dirn.h dirpart.h diskacc.h diskcapa.h edit.h ext2_sb.h ext2_sbn.h fat1x.h fat32.h fat_adv.h fat_cluster.h fatn.h geometry.h geometryn.h godmode.h hiddenn.h intrface.h intrfn.h nodisk.h ntfs_fix.h ntfs_udl.h partgptn.h parti386n.h partmacn.h partsunn.h partxboxn.h tanalyse.h tdelete.h tdiskop.h tdisksel.h texfat.h thfs.h tload.h tlog.h tmbrcode.h tntfs.h toptions.h tpartwr.h 
 
-testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h dir_common.h exfat_dir.c exfat_dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h setdate.c setdate.h $(ICON_TESTDISK) next.c next.h
+testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h dir_common.h exfat_dir.c exfat_dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h $(ICON_TESTDISK) next.c next.h
 
 file_C			= filegen.c \
 			  file_list.c \
@@ -385,14 +387,14 @@ file_C			= filegen.c \
 			  file_zip.c \
 			  file_zpr.c
 
-file_H			= ext2.h ext2_common.h filegen.h file_doc.h file_jpg.h file_gz.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
+file_H			= ext2.h filegen.h file_doc.h file_jpg.h file_gz.h file_sp3.h file_tar.h file_tiff.h file_txt.h ole.h pe.h suspend.h
 
-photorec_C		= photorec.c phcfg.c addpart.c chgarch.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c setdate.c dfxml.c
+photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c
 
-photorec_H		= photorec.h phcfg.h addpart.h chgarch.h dir_common.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h poptions.h sessionp.h setdate.h dfxml.h
+photorec_H		= photorec.h phcfg.h addpart.h chgarch.h chgtype.h dfxml.h dir_common.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h photorec_check_header.h poptions.h psearch.h sessionp.h
 
-photorec_ncurses_C	= addpartn.c askloc.c chgarchn.c chgtype.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phcli.c phnc.c phrecn.c ppartseln.c psearchn.c
-photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtype.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phcli.h phnc.h phrecn.h ppartseln.h psearch.h psearchn.h photorec_check_header.h
+photorec_ncurses_C	= phmain.c addpartn.c askloc.c chgarchn.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phcli.c phnc.c phrecn.c ppartseln.c psearchn.c
+photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phcli.h phnc.h phrecn.h ppartseln.h psearchn.h
 
 QT_TS = \
   lang/qphotorec.ca.ts \
@@ -406,19 +408,27 @@ QT_TS = \
   lang/qphotorec.tr.ts \
   lang/qphotorec.zh_TW.ts
 
-photorec_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend_no.c
+photorec_C_SOURCES	= $(photorec_C) $(file_C) $(base_C) $(fs_C) $(photorec_ncurses_C) suspend_no.c
+photorec_H_SOURCES	= $(photorec_H) $(file_H) $(base_H) $(fs_H) $(photorec_ncurses_H) $(ICON_PHOTOREC)
+photorec_SOURCES	= $(photorec_C_SOURCES) $(photorec_H_SOURCES)
 
-photorecf_SOURCES	= phmain.c $(photorec_C) $(photorec_H) $(photorec_ncurses_C) $(photorec_ncurses_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_PHOTOREC) suspend.c
+photorecf_C_SOURCES	= $(photorec_C) $(file_C) $(base_C) $(fs_C) $(photorec_ncurses_C) suspend.c
+photorecf_H_SOURCES	= $(photorec_H_SOURCES)
+photorecf_SOURCES	= $(photorecf_C_SOURCES) $(photorecf_H_SOURCES)
 
-qphotorec_SOURCES	= qmainrec.cpp qphotorec.cpp qphotorec.h qphotorec.qrc qphotorec_locale.qrc qphbs.cpp qpsearch.cpp photorec_check_header.h psearch.h chgtype.c chgtype.h $(photorec_C) $(photorec_H) $(file_C) $(file_H) $(base_C) $(base_H) partgptro.c $(fs_C) $(fs_H) $(ICON_QPHOTOREC) suspend_no.c $(QT_TS)
+qphotorec_C_SOURCES	= $(photorec_C) $(file_C) $(base_C) $(fs_C) suspend_no.c qmainrec.cpp qphotorec.cpp qphbs.cpp qpsearch.cpp
+qphotorec_H_SOURCES	= $(photorec_H) $(file_H) $(base_H) $(fs_H) $(ICON_QPHOTOREC) qphotorec.h qphotorec.qrc qphotorec_locale.qrc $(QT_TS)
+qphotorec_SOURCES	= $(qphotorec_C_SOURCES) $(qphotorec_H_SOURCES)
 
 nodist_qphotorec_SOURCES = moc_qphotorec.cpp rcc_qphotorec.cpp rcc_qphotorec_locale.cpp
 
-fidentify_C_SOURCES	= fidentify.c common.c misc.c phcfg.c setdate.c $(file_C) log.c crc.c ext2_common.c fat_common.c suspend_no.c
-fidentify_H_SOURCES	= common.h misc.h phcfg.h setdate.h $(file_H) log.h crc.h fat_common.h
+fidentify_C_SOURCES	= $(file_C) $(smallbase_C) suspend_no.c fidentify.c
+fidentify_H_SOURCES	= $(file_H) $(smallbase_H)
 fidentify_SOURCES	= $(fidentify_C_SOURCES) $(fidentify_H_SOURCES)
 
-fuzzerfidentify_SOURCES		= fuzzerfidentify.cpp common.c common.h misc.c misc.h phcfg.c phcfg.h setdate.c setdate.h $(file_C) $(file_H) log.c log.h crc.c crc.h ext2_common.c fat_common.c fat_common.h suspend_no.c
+fuzzerfidentify_C_SOURCES	= $(file_C) $(smallbase_C) suspend_no.c fuzzerfidentify.cpp
+fuzzerfidentify_H_SOURCES	= $(fidentify_H_SOURCES)
+fuzzerfidentify_SOURCES		= $(fuzzerfidentify_C_SOURCES) $(fuzzerfidentify_H_SOURCES)
 
 
 QT_QM=$(QT_TS:.ts=.qm)
@@ -436,39 +446,43 @@ frama-c-%: session_%.framac
 	frama-c-gui -load $^
 
 session_doc.framac: file_doc.c common.c filegen.c log.c setdate.c
-	gcc $(CFLAGS) -DMAIN_doc -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_doc -O -o demo -I.. $^
+	$(CC) $(CFLAGS) -DMAIN_doc -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_doc -I.. $^ -o demo_doc
 	frama-c $^ -cpp-extra-args="-DMAIN_doc -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_doc -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_jpg.framac: file_jpg.c file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c suspend_no.c setdate.c
-	gcc $(CFLAGS) -DMAIN_jpg -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_jpg -O -o demo -I.. $^ -ljpeg
+	$(CC) $(CFLAGS) -DMAIN_jpg -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_jpg -I.. $^ -ljpeg -o demo_jpg
 	frama-c $^ -cpp-extra-args="-DMAIN_jpg -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_jpg -D__x86_64__ -I/usr/include  -I.. -I $(frama-c -print-path)/libc" $(FRAMA_C_FLAGS) -save $@
 
 session_swf.framac: file_swf.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_swf -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_swf -O -o demo -I.. $^ -lz
+	$(CC) $(CFLAGS) -DMAIN_swf -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_swf -I.. $^ -lz -o demo_swf
 	frama-c $^ -cpp-extra-args="-DMAIN_swf -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_swf -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_tiff_be.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -O -o demo -I.. $^
+	$(CC) $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -I.. $^ -o demo_tiff_be
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_be -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_tiff_le.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -O -o demo -I.. $^
+	$(CC) $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -I.. $^ -o demo_tiff_le
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_%.framac: file_%.c common.c filegen.c log.c
-	gcc $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -O -o demo -I.. $^
+	$(CC) $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -I.. $^ -o demo_$*
 	frama-c $^ -cpp-extra-args="-DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_fidentify-%.framac: $(fidentify_C_SOURCES)
-	gcc -o fidentify_$* -O -DMAIN_fidentify -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.. $^
+	$(CC) $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -I.. $^ -o fidentify_$*
 	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
-session_fidentify.framac: fidentify.c common.c misc.c log.c setdate.c filegen.c file_list.c file_gz.c
-	gcc -O $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -O -o demo -I.. $^
+session_fidentify.framac: $(fidentify_C_SOURCES)
+	$(CC) $(CFLAGS) -DMAIN_fidentify -DHAVE_CONFIG_H -I.. $^ -o demo_fidentify
 	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
-session_photorec.framac: phmain.c $(photorec_C) filegen.c file_list.c file_bmp.c file_tar.c $(base_C) partgptro.c $(fs_C) chgtype.c pdiskseln.c phcli.c ppartseln.c askloc.c phrecn.c psearchn.c phbs.c phbf.c fat_unformat.c fat_cluster.c intrfn.c file_dir.c
-#	gcc $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -O -o demo -I.. $^
+session_photorec-%.framac: $(photorec_C_SOURCES)
+	$(CC) $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -I.. $^ -o photorec_$*
+	frama-c $^ -cpp-extra-args="-DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_photorec.framac: $(photorec_C_SOURCES)
+	$(CC) $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -I.. $^ -o demo_photorec
 	frama-c $^ -cpp-extra-args="-DMAIN_photorec -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 moc_qphotorec.cpp: qphotorec.h
