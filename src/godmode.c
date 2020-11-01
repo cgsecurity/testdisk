@@ -97,7 +97,7 @@ static unsigned int align_structure_aux(const uint64_t offset, const disk_t *dis
   if(offset % (1024*1024) == 0)
     return 1024*1024;
   tmp=disk->geom.heads_per_cylinder * disk->geom.sectors_per_head * disk->sector_size;
-  if(offset % tmp == 0 || offset % tmp == disk->geom.sectors_per_head * disk->sector_size)
+  if(offset % tmp == 0 || offset % tmp == (uint64_t)disk->geom.sectors_per_head * disk->sector_size)
     return tmp;
   tmp= disk->geom.sectors_per_head * disk->sector_size;
   if(offset % tmp == 0)
@@ -399,18 +399,18 @@ static void search_add_hints(const disk_t *disk, uint64_t *try_offset, unsigned 
     /* 1/[01]/1 CHS x  16 63 */
     hint_insert(try_offset, 16 * 63 * disk->sector_size, try_offset_nbr);
     hint_insert(try_offset, 17 * 63 * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 16 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 17 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)16 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)17 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
     /* 1/[01]/1 CHS x 240 63 */
     hint_insert(try_offset, 240 * 63 * disk->sector_size, try_offset_nbr);
     hint_insert(try_offset, 241 * 63 * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 240 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 241 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)240 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)241 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
     /* 1/[01]/1 CHS x 255 63 */
     hint_insert(try_offset, 255 * 63 * disk->sector_size, try_offset_nbr);
     hint_insert(try_offset, 256 * 63 * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 255 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
-    hint_insert(try_offset, 256 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)255 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
+    hint_insert(try_offset, (uint64_t)256 * disk->geom.sectors_per_head * disk->sector_size, try_offset_nbr);
     /* Hints for NTFS backup */
     if(disk->geom.cylinders>1)
     {
@@ -500,11 +500,14 @@ static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, co
       unsigned int i;
       for(i=32;i>0;i--)
       {
-	partition->part_size=(uint64_t)0;
-	partition->part_offset=element->part->part_offset - i * disk_car->sector_size;
-	if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset)==DEFAULT_SECTOR_SIZE)
+	const uint64_t tmp=i * disk_car->sector_size;
+	if(element->part->part_offset > tmp)
 	{
-	  if(recover_NTFS(disk_car, (const struct ntfs_boot_sector*)buffer_disk, partition, verbose, dump_ind, 0)==0)
+	  partition_reset(partition, disk_car->arch);
+	  partition->part_size=(uint64_t)0;
+	  partition->part_offset=element->part->part_offset - tmp;
+	  if(disk_car->pread(disk_car, buffer_disk, DEFAULT_SECTOR_SIZE, partition->part_offset)==DEFAULT_SECTOR_SIZE &&
+	      recover_NTFS(disk_car, (const struct ntfs_boot_sector*)buffer_disk, partition, verbose, dump_ind, 0)==0)
 	  {
 	    partition->status=STATUS_DELETED;
 	    if(disk_car->arch->is_part_known(partition)!=0 && partition->part_size>1 &&
@@ -518,7 +521,6 @@ static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, co
 	      if(insert_error>0)
 		free(new_partition);
 	    }
-	    partition_reset(partition, disk_car->arch);
 	  }
 	}
       }
