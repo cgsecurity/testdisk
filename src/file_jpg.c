@@ -25,7 +25,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(SINGLE_FORMAT)
+#if defined(__FRAMAC__) || defined(SINGLE_FORMAT) || defined(MAIN_fidentify)
 #undef HAVE_LIBJPEG
 #undef DEBUG_JPEG
 #undef HAVE_JPEGLIB_H
@@ -61,7 +61,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
+#if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
@@ -865,7 +865,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     unsigned int width=0;
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
-#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
+#if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
       if(header_ignored_adv(file_recovery, file_recovery_new)==0)
@@ -911,7 +911,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	  return 0;
       }
     }
-#if !defined(MAIN_jpg) && !defined(MAIN_fidentify)
+#if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     /* Don't extract jpg inside AVI */
     if( file_recovery->file_stat->file_hint==&file_hint_riff &&
 	(memcmp(buffer,  jpg_header_app0_avi, sizeof(jpg_header_app0_avi))==0 ||

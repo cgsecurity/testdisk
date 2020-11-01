@@ -117,7 +117,11 @@ list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **
   list_disk_t *prev=NULL;
   list_disk_t *new_disk;
   if(disk==NULL)
+  {
+    if(the_disk!=NULL)
+      *the_disk=NULL;
     return list_disk;
+  }
   /* Add it at the end if it doesn't already exist */
   for(tmp=list_disk;tmp!=NULL;tmp=tmp->next)
   {
@@ -353,6 +357,7 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
       }
     }
   }
+#ifndef __FRAMAC__
   if(nbr>0)
   {
     log_info("get_geometry_from_list_part_aux head=%u nbr=%u\n",
@@ -372,6 +377,7 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
       }
     }
   }
+#endif
   return nbr;
 }
 

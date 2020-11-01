@@ -221,6 +221,7 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
     /*@ assert valid_read_string(*current_cmd); */
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
       return tmp_val;
+#ifndef __FRAMAC__
     else
     {
       char res[200];
@@ -233,6 +234,7 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
       log_error("Invalid value\n");
       va_end(ap);
     }
+#endif
   }
   /*@ assert valid_read_string(*current_cmd); */
   return val_cur;

@@ -23,6 +23,10 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 #if defined(__CYGWIN__) || defined(__MINGW32__) || defined(DJGPP) || !defined(HAVE_GETEUID)
 #undef SUDO_BIN
 #endif

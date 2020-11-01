@@ -24,6 +24,10 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

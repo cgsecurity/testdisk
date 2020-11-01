@@ -1409,7 +1409,7 @@ file_enable_t array_file_enable[]=
 #define compiletime_assert(condition, msg) \
 	_compiletime_assert(condition, msg, __compiletime_assert_, __COUNTER__)
 
-static void check_array_file_enable()
+static void check_array_file_enable(void)
 {
   compiletime_assert(sizeof(file_enable_t) != sizeof(array_file_enable), "No file format has been enabled");
 }

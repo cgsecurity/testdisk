@@ -28,6 +28,7 @@
 #ifdef __FRAMAC__
 #undef HAVE_POSIX_MEMALIGN
 #undef HAVE_MEMALIGN
+#undef HAVE_NCURSES
 #endif
  
 #include <stdio.h>

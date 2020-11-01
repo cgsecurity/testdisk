@@ -476,12 +476,18 @@ static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verb
 	 geometry->heads_per_cylinder==128 ||
 	 geometry->heads_per_cylinder==240 ||
 	 geometry->heads_per_cylinder==255)))
+  {
+#ifndef __FRAMAC__
     log_info("Geometry from i386 MBR: head=%u sector=%u\n",
 	geometry->heads_per_cylinder, geometry->sectors_per_head);
+#endif
+  }
   else
   {
+#ifndef __FRAMAC__
     if(geometry->sectors_per_head>0)
       log_warning("Geometry from i386 MBR: head=%u sector=%u\n",geometry->heads_per_cylinder, geometry->sectors_per_head);
+#endif
     /* Don't trust the geometry */
     geometry->cylinders=0;
     geometry->heads_per_cylinder=0;

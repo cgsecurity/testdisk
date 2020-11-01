@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir) || defined(MAIN_photorec)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif

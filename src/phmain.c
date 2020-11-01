@@ -32,6 +32,7 @@
 #undef HAVE_DUP2
 #undef HAVE_LIBEWF
 #undef HAVE_SIGACTION
+#undef HAVE_NCURSES
 #endif
 
 #include <stdio.h>
