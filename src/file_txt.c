@@ -46,7 +46,7 @@
 #include "__fc_builtin.h"
 #endif
 
-#if !defined(MAIN_txt)
+#if !defined(MAIN_txt) && !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_jpg;
 extern const file_hint_t file_hint_pdf;
@@ -340,6 +340,7 @@ static int filtre(unsigned int car)
 
 /*@
   @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \initialized(buffer+(0..buffer_size-1));
   @ assigns \nothing;
   @*/
 static int has_newline(const char *buffer, const unsigned int buffer_size)
@@ -372,8 +373,8 @@ static unsigned int is_csv(const char *buffer, const unsigned int buffer_size)
   unsigned int i;
   /*@
     @ loop invariant 0 <= i <= buffer_size;
-    @ loop invariant csv_per_line_current <= i+1;
-    @ loop invariant line_nbr <= i+1;
+    @ loop invariant csv_per_line_current <= i;
+    @ loop invariant line_nbr <= i;
     @ loop assigns i, csv_per_line_current, csv_per_line, line_nbr;
     @ loop variant buffer_size-i;
     @*/
@@ -414,6 +415,7 @@ static unsigned int is_fortran(const char *buffer)
   /*@ assert valid_read_string(str); */
   /*@
     @ loop invariant 0 <= i <= 10;
+    @ loop invariant valid_read_string(str);
     @ loop assigns str,i;
     @ loop variant 10 - i;
     @*/
@@ -448,6 +450,7 @@ static int is_ini(const unsigned char *buffer)
     return 0;
   src++;
   /*@
+    @ loop invariant valid_read_string((char *)src);
     @ loop assigns src;
     @*/
   while(*src!='\0')
@@ -468,6 +471,7 @@ static int is_ini(const unsigned char *buffer)
 /*@
   @ requires buffer_size >= 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \initialized(buffer+(0..buffer_size-1));
   @*/
 static double is_random(const unsigned char *buffer, const unsigned int buffer_size)
 {
@@ -490,7 +494,7 @@ static double is_random(const unsigned char *buffer, const unsigned int buffer_s
   ind=0;
   /*@
     @ loop invariant 0 <= i <= 256;
-    @ loop assigns ind;
+    @ loop assigns i,ind;
     @ loop variant 256-i;
     @*/
   for(i=0; i<256; i++)
@@ -508,8 +512,11 @@ return ind/buffer_size/(buffer_size-1);
   @ requires buf_len > 0;
   @ requires \valid(buffer_lower + (0..buf_len-1));
   @ requires \valid_read(buffer + (0..buf_len-1));
+  @ requires \initialized(buffer + (0..buf_len-1));
+  @ requires \separated(buffer + (0..buf_len-1), buffer_lower + (0..buf_len-1));
   @ ensures \result <= buf_len;
   @*/
+/* TODO assigns buffer_lower[0 .. \result]; */
 static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, const int buf_len)
 {
   const unsigned char *p;	/* pointers to actual position in source buffer */
@@ -519,6 +526,8 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
   /*@
     @ loop invariant offset_dst < buf_len;
     @ loop invariant q == buffer_lower + offset_dst;
+    @ loop assigns offset_dst, p, q;
+    @ loop assigns buffer_lower[0 .. offset_dst];
     @ loop variant buf_len - 1 - offset_dst;
     @*/
   for (offset_dst = 0, p = buffer, q = buffer_lower;
@@ -579,9 +588,13 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
       switch (*p)
       {
         case 0xC2 :
-          (*q) = ((*(p+1)) | 0x80) & 0xBF; /* A0-BF and a few 80-9F */
-          if((*q)==0xA0)
-            (*q)=' ';
+	  {
+	    unsigned char tmp=((*(p+1)) | 0x80) & 0xBF; /* A0-BF and a few 80-9F */
+	    if(tmp == 0xA0)
+	      (*q) = ' ';
+	    else
+	      (*q) = tmp;
+	  }
           break;
         case 0xC3 :
           switch (*(p+1))
@@ -619,6 +632,8 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
     }
     else if( 'A' <= *p && *p <='Z')
     {
+      /*@ assert 'A' <= *p <= 'Z'; */
+      /*@ assert 0 <= *p - 'A' <= 26; */
       *q = *p-'A'+'a';
       p++;
     }
@@ -641,6 +656,7 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
     q++;
     offset_dst++;
   }
+  /*@ assert q == buffer_lower + offset_dst; */
   *q = '\0';
   return offset_dst;
 }
@@ -655,12 +671,19 @@ int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
     @ loop assigns i, p;
     @ loop variant buf_len - 1 - i;
     @*/
-  while(i<buf_len && *p!='\0')
+  while(i<buf_len)
   {
-    /* Reject some invalid UTF-8 sequences */
-    if(*p==0xc0 || *p==0xc1 || *p==0xf7 || *p>=0xfd)
+    /*@ assert i < buf_len; */
+    /*@ assert p == buffer + i; */
+    const unsigned char c=*p;
+    if(c=='\0')
       return i;
-    if((*p & 0xf0)==0xe0 &&
+    /* Reject some invalid UTF-8 sequences */
+    if(c==0xc0 || c==0xc1 || c==0xf7 || c>=0xfd)
+      return i;
+    /*@ assert i + 1 >= buf_len || \valid_read(p+1); */
+    /*@ assert i + 2 >= buf_len || \valid_read(p+2); */
+    if((c & 0xf0)==0xe0 &&
 	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80) &&
 	(i+2 >= buf_len || (*(p+2) & 0xc0)==0x80))
     { /* UTF8 l=3 */
@@ -670,7 +693,7 @@ int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
       p+=3;
       i+=3;
     }
-    else if((*p & 0xe0)==0xc0 &&
+    else if((c & 0xe0)==0xc0 &&
 	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80))
     { /* UTF8 l=2 */
 #ifdef DEBUG_TXT
@@ -682,9 +705,9 @@ int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
     else
     { /* Ascii UCS */
 #ifdef DEBUG_TXT
-      log_info("UTFsize i=%u l=1 ? *p=%c\n", i, *p);
+      log_info("UTFsize i=%u l=1 ? *p=%c\n", i, c);
 #endif
-      switch(*p)
+      switch(c)
       {
 	case 0x00:
 	case 0x01:
@@ -1073,6 +1096,8 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=extension_dc;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1105,6 +1130,8 @@ static int header_check_ers(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_ers;
   file_recovery_new->extension=extension_ers;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1200,6 +1227,8 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
   /* Hypertext Markup Language (HTML) */
   file_recovery_new->extension=extension_html;
   file_recovery_new->file_rename=&file_rename_html;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1252,6 +1281,8 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->time=get_time_from_YYYYMMDD_HHMMSS(date_asc+1);
   }
   free(buffer2);
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1270,6 +1301,8 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
       file_recovery_new->extension=extension_utf16;
+      /*@ assert valid_read_string(file_recovery_new->extension); */
+      /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
       return 1;
     }
   }
@@ -1278,6 +1311,8 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=extension_utf16;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 #endif
@@ -1330,6 +1365,8 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->file_check=&file_check_size;
   /* Incredimail has .imm extension but this extension isn't frequent */
   file_recovery_new->extension=extension_mbox;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1378,6 +1415,8 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
     /* perl module */
     file_recovery_new->extension=extension_pm;
   }
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1412,7 +1451,7 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
       return 0;
   /* Avoid a false positive with .snt */
   if(file_recovery->file_stat!=NULL
-#if !defined(MAIN_txt)
+#if !defined(MAIN_txt) && !defined(SINGLE_FORMAT)
       && file_recovery->file_stat->file_hint==&file_hint_doc
 #endif
     )
@@ -1422,6 +1461,8 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_size;
   /* Rich Text Format */
   file_recovery_new->extension=extension_rtf;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1454,6 +1495,8 @@ static int header_check_smil(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_smil;
   file_recovery_new->extension=extension_smil;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1488,6 +1531,8 @@ static int header_check_snz(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=file_hint_snz.extension;
   file_recovery_new->min_filesize=pos-buffer;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1523,6 +1568,8 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=extension_stl;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1553,6 +1600,8 @@ static int header_check_svg(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=extension_svg;
   file_recovery_new->file_check=&file_check_svg;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1594,6 +1643,8 @@ static int header_check_thunderbird(const unsigned char *buffer, const unsigned 
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->extension=extension_mbox;
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \separated(file_recovery_new, file_recovery_new->extension); */
   return 1;
 }
 
@@ -1963,7 +2014,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	/* Special case: two consecutive HTML files */
       }
       else
-#if !defined(MAIN_txt)
+#if !defined(MAIN_txt) && !defined(SINGLE_FORMAT)
 	if(file_recovery->file_stat->file_hint == &file_hint_doc)
 #endif
       {
@@ -2246,7 +2297,7 @@ static int header_check_xml_utf16(const unsigned char *buffer, const unsigned in
 {
   /* Avoid false positive with .sldprt */
   if(file_recovery->file_stat!=NULL
-#if !defined(MAIN_txt)
+#if !defined(MAIN_txt) && !defined(SINGLE_FORMAT)
       && file_recovery->file_stat->file_hint==&file_hint_doc
 #endif
     )
@@ -2282,7 +2333,7 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   if(buffer[35]=='\0')
     return 0;
   if(file_recovery->file_stat!=NULL
-#if !defined(MAIN_txt)
+#if !defined(MAIN_txt) && !defined(SINGLE_FORMAT)
       && (file_recovery->file_stat->file_hint==&file_hint_jpg ||
 	file_recovery->file_stat->file_hint==&file_hint_pdf ||
 	file_recovery->file_stat->file_hint==&file_hint_tiff)
