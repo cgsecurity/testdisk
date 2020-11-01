@@ -96,12 +96,10 @@ static int header_check_vmdk4(const unsigned char *buffer, const unsigned int bu
   const VMDK4Header *hdr=(const VMDK4Header *)buffer;
   const uint64_t cluster_sectors = le64(hdr->granularity);
   const unsigned int num_gtes_per_gte = le32(hdr->num_gtes_per_gte);
-  uint64_t l1_entry_sectors;
   if(cluster_sectors == 0 || cluster_sectors > 0x200000)
     return 0;
   if(num_gtes_per_gte == 0 || num_gtes_per_gte > 512)
     return 0;
-  l1_entry_sectors = (uint64_t)num_gtes_per_gte * cluster_sectors;
   if(le64(hdr->grain_offset) > MAX_FILE_SIZE_VMDK)
     return 0;
   reset_file_recovery(file_recovery_new);
