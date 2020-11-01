@@ -52,7 +52,7 @@ struct ab_header
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
-  @ requires file_recovery->data_check==&data_check_ab;
+  @ requires file_recovery->data_check==&data_check_addressbook;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
