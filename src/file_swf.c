@@ -277,8 +277,9 @@ static int header_check_swfz(const unsigned char *buffer, const unsigned int buf
 {
   const struct swfz_header *hdr=(const struct swfz_header *)buffer;
   const unsigned int compressedLen=le32(hdr->compressedLen);
+  const unsigned int scriptLen=le32(hdr->scriptLen);
   /* ZWS file compression is permitted in SWF 13 or later only. */
-  if(hdr->version < 13 || hdr->version > 50 || compressedLen < 6)
+  if(hdr->version < 13 || hdr->version > 50 || scriptLen < 8 || compressedLen < 6)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_swf.extension;
