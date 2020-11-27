@@ -69,7 +69,7 @@ unsigned int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
-FILE *log_open(const char*default_filename, const int mode, int *errsv)
+int log_open(const char*default_filename, const int mode, int *errsv)
 {
   log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
   *errsv=errno;
@@ -85,22 +85,22 @@ FILE *log_open(const char*default_filename, const int mode, int *errsv)
     }
   }
 #endif
+  if(log_handle==NULL)
+    return 0;
 #if defined(HAVE_DUP2)
-  if(log_handle)
-  {
-    dup2(fileno(log_handle),2);
-  }
+  dup2(fileno(log_handle),2);
 #endif
-  return log_handle;
+  return 1;
 }
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
+int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
   char*filename;
   char *path;
+  int result;
   if(log_handle != NULL)
-    return log_handle;
+    return 1;
   path = getenv("USERPROFILE");
   if (path == NULL)
     path = getenv("HOMEPATH");
@@ -117,16 +117,16 @@ FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
 #endif
   strcat(filename, "/");
   strcat(filename, default_filename);
-  log_open(filename, mode, errsv);
+  result=log_open(filename, mode, errsv);
   free(filename);
-  return log_handle;
+  return result;
 }
 #else
-FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
+int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
   char*filename;
   char *path;
-  FILE *handle;
+  int result;
   path = getenv("HOME");
   if(path == NULL)
     return log_open(default_filename, mode, errsv);
@@ -134,9 +134,9 @@ FILE *log_open_default(const char*default_filename, const int mode, int *errsv)
   strcpy(filename, path);
   strcat(filename, "/");
   strcat(filename, default_filename);
-  handle=log_open(filename, mode, errsv);
+  result=log_open(filename, mode, errsv);
   free(filename);
-  return handle;
+  return result;
 }
 #endif
 

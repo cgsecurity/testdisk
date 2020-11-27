@@ -32,14 +32,14 @@ unsigned int log_set_levels(const unsigned int levels);
   @ requires \valid(errsv);
   @ requires separation: \separated(default_filename, errsv);
   @*/
-FILE *log_open(const char*default_filename, const int mode, int *errsv);
+int log_open(const char*default_filename, const int mode, int *errsv);
 
 /*@
   @ requires \valid_read(default_filename);
   @ requires \valid(errsv);
   @ requires separation: \separated(default_filename, errsv);
   @*/
-FILE *log_open_default(const char*default_filename, const int mode, int *errsv);
+int log_open_default(const char*default_filename, const int mode, int *errsv);
 
 int log_flush(void);
 int log_close(void);

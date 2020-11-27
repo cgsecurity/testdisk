@@ -231,7 +231,7 @@ int main( int argc, char **argv )
   const char *cmd_device=NULL;
   char *cmd_run=NULL;
   const char *logfile="testdisk.log";
-  FILE *log_handle=NULL;
+  int log_opened=0;
   int log_errno=0;
   /* srand needed for GPT creation (weak is ok) */
   srand(time(NULL));
@@ -274,16 +274,16 @@ int main( int argc, char **argv )
     {
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
-      if(log_handle==NULL)
-	log_handle=log_open(logfile, create_log, &log_errno);
+      if(log_opened==0)
+	log_opened=log_open(logfile, create_log, &log_errno);
     }
     else if((strcmp(argv[i],"/debug")==0) || (strcmp(argv[i],"-debug")==0))
     {
       verbose++;
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
-      if(log_handle==NULL)
-	log_handle=log_open(logfile, create_log, &log_errno);
+      if(log_opened==0)
+	log_opened=log_open(logfile, create_log, &log_errno);
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
       testdisk_mode|=TESTDISK_O_ALL;
@@ -375,8 +375,8 @@ int main( int argc, char **argv )
     }
   }
 #endif
-  if(create_log!=TD_LOG_NONE && log_handle==NULL)
-    log_handle=log_open_default(logfile, create_log, &log_errno);
+  if(create_log!=TD_LOG_NONE && log_opened==0)
+    log_opened=log_open_default(logfile, create_log, &log_errno);
 #ifdef HAVE_NCURSES
   /* ncurses need locale for correct unicode support */
   if(start_ncurses("TestDisk",argv[0]))
@@ -389,15 +389,15 @@ int main( int argc, char **argv )
     verbose=1;
     create_log=ask_testdisk_log_creation();
     if(create_log==TD_LOG_CREATE || create_log==TD_LOG_APPEND)
-      log_handle=log_open(logfile, create_log, &log_errno);
+      log_opened=log_open(logfile, create_log, &log_errno);
   }
   {
     const char*filename=logfile;
-    while(create_log!=TD_LOG_NONE && log_handle==NULL)
+    while(create_log!=TD_LOG_NONE && log_opened==0)
     {
       filename=ask_log_location(filename, log_errno);
       if(filename!=NULL)
-	log_handle=log_open(filename, create_log, &log_errno);
+	log_opened=log_open(filename, create_log, &log_errno);
       else
 	create_log=TD_LOG_NONE;
     }
