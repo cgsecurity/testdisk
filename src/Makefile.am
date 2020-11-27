@@ -6,6 +6,7 @@ FRAMA_C_FLAGS=-machdep x86_64 \
 	  -warn-signed-overflow \
 	  -warn-unsigned-downcast \
 	  -warn-unsigned-overflow \
+	  -c11 \
 	  -rte \
 	  -eva \
 	  -eva-slevel 6 \
