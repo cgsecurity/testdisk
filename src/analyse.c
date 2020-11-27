@@ -247,7 +247,7 @@ int search_type_1(const unsigned char *buffer, const disk_t *disk, partition_t *
   if(cramfs->magic==le32(CRAMFS_MAGIC) &&
     recover_cramfs(disk, cramfs, partition, verbose, dump_ind)==0)
     return 1;
-  if((sysv4->s_magic == (signed)le32(0xfd187e20) || sysv4->s_magic == (signed)be32(0xfd187e20)) &&
+  if(((unsigned)sysv4->s_magic == le32(0xfd187e20) || (unsigned)sysv4->s_magic == be32(0xfd187e20)) &&
       recover_sysv(disk, sysv4, partition, verbose, dump_ind)==0)
     return 1;
   if(memcmp((const char *)lvm2->type, LVM2_LABEL, sizeof(lvm2->type)) == 0 &&
