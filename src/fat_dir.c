@@ -86,7 +86,7 @@ GetNew:
   long_slots = 0;
   unicode[0]=0;
   if (de->attr == ATTR_EXT &&
-      de->name[0] == (int8_t) DELETED_FLAG &&
+      de->name[0] == DELETED_FLAG &&
       (param & FLAG_LIST_DELETED)==FLAG_LIST_DELETED)
   {
     unsigned int i;
@@ -106,7 +106,7 @@ ParseLongDeleted:
       if((const void*)de>=(const void*)(buffer+size))
 	return 0;
       ds = (const struct msdos_dir_slot *) de;
-      if(de->name[0] != (int8_t) DELETED_FLAG)
+      if(de->name[0] != DELETED_FLAG)
 	goto GetNew;
       if (ds->attr !=  ATTR_EXT)
 	goto ParseLongDeletedNext;
@@ -234,7 +234,7 @@ RecEnd:
 	unicode[j++]=de->ext[i];
     }
     unicode[j]=0;
-    if(((int8_t) unicode[0] == (int8_t) DELETED_FLAG) &&
+    if((unicode[0] == DELETED_FLAG) &&
       ((param & FLAG_LIST_DELETED)==FLAG_LIST_DELETED) &&
       inode!=0 && de->name[1]!='\0' &&
       de->name[2]!='\0' && de->name[3]!='\0' &&
@@ -255,7 +255,7 @@ RecEnd:
   {
     if(unicode[0]==0)
       return 0;
-    if((int8_t) unicode[0] != (int8_t) DELETED_FLAG)
+    if(unicode[0] != DELETED_FLAG)
     {
       unsigned int i,o;
       file_info_t *new_file=(file_info_t *)MALLOC(sizeof(*new_file));
