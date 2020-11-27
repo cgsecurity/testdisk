@@ -26,7 +26,6 @@
 
 #ifdef __FRAMAC__
 #undef HAVE_FTELLO
-#undef HAVE_DUP2
 #endif
 
 #include <stdio.h>
@@ -258,7 +257,6 @@ int main(int argc, char **argv)
 #else
   unsigned int options=0;
 #endif
-  FILE *log_handle=NULL;
   int log_errno=0;
   int enable_all_formats=1;
   int scan_dir=1;
@@ -291,24 +289,20 @@ int main(int argc, char **argv)
   }
 #endif
 #ifndef __AFL_COMPILER
-  log_handle=log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
-  if(log_handle!=NULL)
+  log_open("fidentify.log", TD_LOG_CREATE, &log_errno);
   {
     time_t my_time;
-#if defined(HAVE_DUP2)
-    dup2(fileno(log_handle),2);
-#endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
-    log_info("Command line: fidentify");
-#ifndef MAIN_fidentify
-    for(i=1;i<argc;i++)
-      log_info(" %s", argv[i]);
-#endif
-    log_info("\n\n");
-    log_flush();
   }
+  log_info("Command line: fidentify");
+#ifndef MAIN_fidentify
+  for(i=1;i<argc;i++)
+    log_info(" %s", argv[i]);
+#endif
+  log_info("\n\n");
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
+  log_flush();
 #endif
 #ifndef MAIN_fidentify
   for(i=1; i<argc; i++)

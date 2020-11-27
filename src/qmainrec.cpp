@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
 {
   int log_errno=0;
   time_t my_time;
-  FILE *log_handle;
   int i;
   for(i=1; i<argc; i++)
   {
@@ -104,7 +103,7 @@ int main(int argc, char *argv[])
     }
   }
 #endif
-  log_handle=log_open("qphotorec.log", TD_LOG_CREATE, &log_errno);
+  log_open("qphotorec.log", TD_LOG_CREATE, &log_errno);
   QApplication a(argc, argv);
   QTranslator translator;
   QString locale = QLocale::system().name().section('_', 0, 0);
@@ -118,12 +117,6 @@ int main(int argc, char *argv[])
   {
     log_info("translator not installed\n");
   }
-#ifdef HAVE_DUP2
-  if(log_handle)
-  {
-    dup2(fileno(log_handle),2);
-  }
-#endif
   my_time=time(NULL);
   log_info("\n\n%s",ctime(&my_time));
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);

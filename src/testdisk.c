@@ -403,19 +403,15 @@ int main( int argc, char **argv )
     }
   }
 #endif
-  if(log_handle!=NULL)
   {
     time_t my_time;
-#ifdef HAVE_DUP2
-    dup2(fileno(log_handle),2);
-#endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
-    log_info("Command line: TestDisk");
-    for(i=1;i<argc;i++)
-      log_info(" %s", argv[i]);
-    log_info("\n\n");
   }
+  log_info("Command line: TestDisk");
+  for(i=1;i<argc;i++)
+    log_info(" %s", argv[i]);
+  log_info("\n\n");
   log_info("TestDisk %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());

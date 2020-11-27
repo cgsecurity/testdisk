@@ -29,7 +29,6 @@
 #endif
 
 #if defined(__FRAMAC__) || defined(MAIN_photorec)
-#undef HAVE_DUP2
 #undef HAVE_LIBEWF
 #undef HAVE_SIGACTION
 #undef HAVE_NCURSES
@@ -342,19 +341,15 @@ int main( int argc, char **argv )
   wprintw(stdscr, "Disk identification, please wait...\n");
   wrefresh(stdscr);
 #endif
-  if(log_handle!=NULL)
   {
     time_t my_time;
-#if defined(HAVE_DUP2)
-    dup2(fileno(log_handle),2);
-#endif
     my_time=time(NULL);
     log_info("\n\n%s",ctime(&my_time));
-    log_info("Command line: PhotoRec");
-    for(i=1;i<argc;i++)
-      log_info(" %s", argv[i]);
-    log_info("\n\n");
   }
+  log_info("Command line: PhotoRec");
+  for(i=1;i<argc;i++)
+    log_info(" %s", argv[i]);
+  log_info("\n\n");
   log_info("PhotoRec %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_info("OS: %s\n" , get_os());
   log_info("Compiler: %s\n", get_compiler());

@@ -47,6 +47,10 @@
 #include "common.h"
 #include "log.h"
 
+#ifdef __FRAMAC__
+#undef HAVE_DUP2
+#endif
+
 static FILE *log_handle=NULL;
 static int f_status=0;
 
@@ -79,6 +83,12 @@ FILE *log_open(const char*default_filename, const int mode, int *errsv)
       log_handle=fopen(default_filename,"w");
       *errsv=errno;
     }
+  }
+#endif
+#if defined(HAVE_DUP2)
+  if(log_handle)
+  {
+    dup2(fileno(log_handle),2);
   }
 #endif
   return log_handle;
