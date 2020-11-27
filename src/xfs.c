@@ -40,10 +40,11 @@
 
 static void set_xfs_info(const struct xfs_sb *sb, partition_t *partition)
 {
+  const unsigned int version=be16(sb->sb_versionnum) & XFS_SB_VERSION_NUMBITS;
   partition->blocksize=be32(sb->sb_blocksize);
   partition->fsname[0]='\0';
   partition->info[0]='\0';
-  switch(be16(sb->sb_versionnum) & XFS_SB_VERSION_NUMBITS)
+  switch(version)
   {
     case XFS_SB_VERSION_1:
       partition->upart_type = UP_XFS;
@@ -72,7 +73,7 @@ static void set_xfs_info(const struct xfs_sb *sb, partition_t *partition)
       break;
     default:
       snprintf(partition->info, sizeof(partition->info),
-	  "XFS unknown version %u\n", be16(sb->sb_versionnum)& XFS_SB_VERSION_NUMBITS);
+	  "XFS unknown version %u\n", version);
       break;
   }
   set_part_name(partition,sb->sb_fname,12);
