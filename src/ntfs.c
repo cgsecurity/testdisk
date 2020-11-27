@@ -201,7 +201,7 @@ static const ntfs_attribheader* ntfs_searchattribute(const ntfs_attribheader* at
     return NULL;
   /* Now we should be at attributes */
   while((const char *)attrib + sizeof(ntfs_attribheader) < end &&
-      le32(attrib->type)!= -1)
+      le32(attrib->type)!= 0xffffffff)
   {
     const unsigned int attr_len=le32(attrib->cbAttribute);
     if(attr_len%8!=0 || attr_len<0x18 || attr_len>0x10000000 ||
