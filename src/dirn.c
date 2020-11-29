@@ -447,6 +447,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		    else
 		      copy_bad++;
 		  }
+		  wmove(window,22,0);
+		  wclrtoeol(window);
 		  copy_done(window, copy_ok, copy_bad, copy_stopped);
 		}
 		dir_data->current_directory[current_directory_namelength]='\0';
@@ -478,6 +480,8 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		waddstr(window,"  Stop  ");
 		wattroff(window, A_REVERSE);
 		copy_stopped=copy_selection(dir_list, window, disk, partition, dir_data, &copy_ok, &copy_bad);
+		wmove(window,22,0);
+		wclrtoeol(window);
 		copy_done(window, copy_ok, copy_bad, copy_stopped);
 	      }
 	    }
