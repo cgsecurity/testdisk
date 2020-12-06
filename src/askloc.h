@@ -26,10 +26,21 @@
 extern "C" {
 #endif
 
-char *ask_location(const char*msg, const char *src_dir, const char *dst_org);
+/*@
+  @ requires \valid(buf + (0 .. size-1));
+  @ ensures  valid_string(buf);
+  @ ensures  \result == buf;
+  @*/
+char *td_getcwd(char *buf, unsigned long size);
 
 /*@
-  @ ensures \result == \null || (\result != \null && \freeable(\result) && valid_string(\result));
+  @ requires \valid(dst + (0 .. dst_size-1));
+  @ requires valid_read_string(msg);
+  @*/
+void ask_location(char *dst, const unsigned int dst_size, const char *msg, const char *src_dir);
+
+/*@
+  @ ensures \result == \null || (\freeable(\result) && valid_string(\result));
   @*/
 char *get_default_location(void);
 

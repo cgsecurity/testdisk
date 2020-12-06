@@ -28,6 +28,8 @@
 #undef HAVE_NCURSES
 #endif
 
+extern int need_to_stop;
+
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -58,7 +60,6 @@
 #include "addpartn.h"
 #include "intrfn.h"
 
-extern int need_to_stop;
 extern const arch_fnct_t arch_none;
 
 #ifdef HAVE_NCURSES
@@ -94,24 +95,25 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   log_all_partitions(params->disk, list_part);
   if(params->cmd_run!=NULL)
   {
+    /*@ assert valid_read_string(params->cmd_run); */
     if(menu_photorec_cli(list_part, params, options, list_search_space) > 0)
     {
       if(params->recup_dir==NULL)
       {
-	char *res;
+	char dst_path[4096];
+	dst_path[0]='\0';
 #ifdef HAVE_NCURSES
-	res=ask_location("Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
+	ask_location(dst_path, sizeof(dst_path), "Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "");
 #else
-	res=get_default_location();
+	td_getcwd(&dst_path, sizeof(dst_path));
 #endif
-	if(res!=NULL)
+	if(dst_path[0]!='\0')
 	{
-	  params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	  strcpy(params->recup_dir,res);
+	  params->recup_dir=(char *)MALLOC(strlen(dst_path)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	  strcpy(params->recup_dir, dst_path);
 	  if(strcmp(params->recup_dir,"/")!=0)
 	    strcat(params->recup_dir,"/");
 	  strcat(params->recup_dir,DEFAULT_RECUP_DIR);
-	  free(res);
 	}
       }
       if(params->recup_dir!=NULL)
@@ -120,6 +122,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   }
   if(params->cmd_run!=NULL)
   {
+    /*@ assert valid_read_string(params->cmd_run); */
     skip_comma_in_command(&params->cmd_run);
     if(check_command(&params->cmd_run,"inter",5)==0)
     {   /* Start interactive mode */
@@ -129,8 +132,10 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   if(params->cmd_run!=NULL)
   {
     part_free_list(list_part);
+    /*@ assert valid_read_string(params->cmd_run); */
     return;
   }
+  /*@ assert params->cmd_run == \null; */
 #ifdef HAVE_NCURSES
   if(list_part->next!=NULL)
   {
@@ -247,16 +252,16 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	  menu=0;
 	  if(params->recup_dir==NULL)
 	  {
-	    char *res;
-	    res=ask_location("Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", NULL);
-	    if(res!=NULL)
+	    char dst_path[4096];
+	    dst_path[0]='\0';
+	    ask_location(dst_path, sizeof(dst_path), "Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "");
+	    if(dst_path[0]!='\0')
 	    {
-	      params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	      strcpy(params->recup_dir,res);
+	      params->recup_dir=(char *)MALLOC(strlen(dst_path)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	      strcpy(params->recup_dir, dst_path);
 	      if(strcmp(params->recup_dir,"/")!=0)
 		strcat(params->recup_dir,"/");
 	      strcat(params->recup_dir,DEFAULT_RECUP_DIR);
-	      free(res);
 	    }
 	  }
 	  if(params->recup_dir!=NULL)
@@ -324,4 +329,5 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 #endif
   log_info("\n");
   part_free_list(list_part);
+  /*@ assert params->cmd_run == \null; */
 }

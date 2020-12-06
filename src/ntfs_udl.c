@@ -1481,15 +1481,17 @@ static void ntfs_undelete_menu_ncurses(const disk_t *disk_car, const partition_t
 	    {
 	      if(dir_data->local_dir==NULL)
 	      {
-		char *res;
+		char dst_directory[4096];
+		dst_directory[0]='\0';
 		if(LINUX_S_ISDIR(file_info->st_mode)!=0)
-		  res=ask_location("Please select a destination where %s and any files below will be copied.",
-		      file_info->name, NULL);
+		  ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where %s and any files below will be copied.",
+		      file_info->name);
 		else
-		  res=ask_location("Please select a destination where %s will be copied.",
-		      file_info->name, NULL);
-		dir_data->local_dir=res;
-		opts.dest=res;
+		  ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where %s will be copied.",
+		      file_info->name);
+		if(dst_directory[0]!='\0')
+		  dir_data->local_dir=strdup(dst_directory);
+		opts.dest=dir_data->local_dir;
 	      }
 	      if(dir_data->local_dir!=NULL)
 	      {
@@ -1529,10 +1531,12 @@ static void ntfs_undelete_menu_ncurses(const disk_t *disk_car, const partition_t
 	case 'C':
 	  if(dir_data->local_dir==NULL)
 	  {
-	    char *res;
-	    res=ask_location("Please select a destination where the marked files will be copied.", NULL, NULL);
-	    dir_data->local_dir=res;
-	    opts.dest=res;
+	    char dst_directory[4096];
+	    dst_directory[0]='\0';
+	    ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where the marked files will be copied.", NULL);
+	    if(dst_directory[0]!='\0')
+	      dir_data->local_dir=strdup(dst_directory);
+	    opts.dest=dir_data->local_dir;
 	  }
 	  if(dir_data->local_dir!=NULL)
 	  {

@@ -411,14 +411,23 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		  strcat(dir_data->current_directory,tmp->name);
 		if(dir_data->local_dir==NULL || ask_destination>0)
 		{
-		  char *local_dir=dir_data->local_dir;
+		  char dst_directory[4096];
+		  dst_directory[0]='\0';
+		  if(dir_data->local_dir!=NULL)
+		  {
+		    strncpy(dst_directory, dir_data->local_dir, sizeof(dst_directory)-1);
+		    dst_directory[sizeof(dst_directory)-1]='\0';
+		  }
 		  if(LINUX_S_ISDIR(tmp->st_mode)!=0)
-		    dir_data->local_dir=ask_location("Please select a destination where %s and any files below will be copied.",
-			dir_data->current_directory, local_dir);
+		    ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where %s and any files below will be copied.",
+			dir_data->current_directory);
 		  else
-		    dir_data->local_dir=ask_location("Please select a destination where %s will be copied.",
-			dir_data->current_directory, local_dir);
-		  free(local_dir);
+		    ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where %s will be copied.",
+			dir_data->current_directory);
+		  free(dir_data->local_dir);
+		  dir_data->local_dir=NULL;
+		  if(dst_directory[0]!='\0')
+		    dir_data->local_dir=strdup(dst_directory);
 		  ask_destination=0;
 		}
 		if(dir_data->local_dir!=NULL)
@@ -460,9 +469,18 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	    {
 	      if(dir_data->local_dir==NULL || ask_destination>0)
 	      {
-		char *local_dir=dir_data->local_dir;
-		dir_data->local_dir=ask_location("Please select a destination where the marked files will be copied.", NULL, local_dir);
-		free(local_dir);
+		char dst_directory[4096];
+		dst_directory[0]='\0';
+		if(dir_data->local_dir!=NULL)
+		{
+		  strncpy(dst_directory, dir_data->local_dir, sizeof(dst_directory)-1);
+		  dst_directory[sizeof(dst_directory)-1]='\0';
+		}
+		ask_location(dst_directory, sizeof(dst_directory), "Please select a destination where the marked files will be copied.", NULL);
+		free(dir_data->local_dir);
+		dir_data->local_dir=NULL;
+		if(dst_directory[0]!='\0')
+		  dir_data->local_dir=strdup(dst_directory);
 		ask_destination=0;
 	      }
 	      if(dir_data->local_dir!=NULL)

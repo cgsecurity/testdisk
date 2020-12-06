@@ -364,22 +364,23 @@ static int adv_menu_boot_selected(disk_t *disk, partition_t *partition, const in
 
 static void adv_menu_image_selected(disk_t *disk, const partition_t *partition, char **current_cmd)
 {
-  char *dst_path;
+  char dst_path[4096];
+  dst_path[0]='\0';
 #ifdef HAVE_NCURSES
   if(*current_cmd!=NULL)
-    dst_path=get_default_location();
+    td_getcwd(dst_path, sizeof(dst_path));
   else
   {
     char msg[256];
     snprintf(msg, sizeof(msg),
 	"Please select where to store the file image.dd (%u MB), an image of the partition",
 	(unsigned int)(partition->part_size/1000/1000));
-    dst_path=ask_location(msg, "", NULL);
+    ask_location(dst_path, sizeof(dst_path), msg, "");
   }
 #else
-  dst_path=get_default_location();
+  td_getcwd(&dst_path, sizeof(dst_path));
 #endif
-  if(dst_path!=NULL)
+  if(dst_path[0]!='\0')
   {
     char *filename=(char *)MALLOC(strlen(dst_path) + 1 + strlen(DEFAULT_IMAGE_NAME) + 1);
     strcpy(filename, dst_path);
@@ -387,7 +388,6 @@ static void adv_menu_image_selected(disk_t *disk, const partition_t *partition, 
     strcat(filename, DEFAULT_IMAGE_NAME);
     disk_image(disk, partition, filename);
     free(filename);
-    free(dst_path);
   }
 }
 

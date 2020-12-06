@@ -319,7 +319,9 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     switch(params->status)
     {
       case STATUS_UNFORMAT:
+#ifndef __FRAMAC__
 	ind_stop=fat_unformat(params, options, list_search_space);
+#endif
 	params->blocksize=blocksize_is_known;
 	break;
       case STATUS_FIND_OFFSET:
@@ -345,7 +347,9 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	break;
       case STATUS_EXT2_ON_BF:
       case STATUS_EXT2_OFF_BF:
+#ifndef __FRAMAC__
 	ind_stop=photorec_bf(params, options, list_search_space);
+#endif
 	break;
       default:
 	ind_stop=photorec_aux(params, options, list_search_space);
@@ -359,28 +363,24 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       case PSTATUS_ENOSPC:
 	{ /* no more space */
 #ifdef HAVE_NCURSES
-	  char *dst;
+	  char dst_directory[4096];
 	  char *res;
-	  dst=strdup(params->recup_dir);
-	  if(dst!=NULL)
-	  {
-	    res=strrchr(dst, '/');
-	    if(res!=NULL)
-	      *res='\0';
-	  }
-	  res=ask_location("Warning: not enough free space available. Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "", dst);
-	  free(dst);
-	  if(res==NULL)
+	  strncpy(dst_directory, params->recup_dir, sizeof(dst_directory)-1);
+	  dst_directory[4095]='\0';
+	  res=strrchr(dst_directory, '/');
+	  if(res!=NULL)
+	    *res='\0';
+	  ask_location(dst_directory, sizeof(dst_directory), "Warning: not enough free space available. Please select a destination to save the recovered files to.\nDo not choose to write the files to the same partition they were stored on.", "");
+	  if(dst_directory[0]=='\0')
 	    params->status=STATUS_QUIT;
 	  else
 	  {
 	    free(params->recup_dir);
-	    params->recup_dir=(char *)MALLOC(strlen(res)+1+strlen(DEFAULT_RECUP_DIR)+1);
-	    strcpy(params->recup_dir,res);
+	    params->recup_dir=(char *)MALLOC(strlen(dst_directory)+1+strlen(DEFAULT_RECUP_DIR)+1);
+	    strcpy(params->recup_dir, dst_directory);
 	    if(strcmp(params->recup_dir,"/")!=0)
 	      strcat(params->recup_dir,"/");
 	    strcat(params->recup_dir,DEFAULT_RECUP_DIR);
-	    free(res);
 	    /* Create the directory */
 	    params->dir_num=photorec_mkdir(params->recup_dir,params->dir_num);
 	  }
