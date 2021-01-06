@@ -10,6 +10,7 @@ Group:		Applications/System
 Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
 URL:		https://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	libtool autoconf automake
+BuildRequires:	make
 BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
 %if  0%{?rhel} < 8

@@ -13,7 +13,8 @@ URL:		https://www.cgsecurity.org/wiki/TestDisk
 Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
 
 BuildArch:	noarch
-BuildRequires: libtool autoconf automake
+BuildRequires:	libtool autoconf automake
+BuildRequires:	make
 
 BuildRequires:	mingw32-filesystem >= 95
 BuildRequires:	mingw32-binutils

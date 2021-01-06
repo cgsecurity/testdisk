@@ -14,6 +14,7 @@ Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
 
 BuildArch:	noarch
 BuildRequires:	libtool autoconf automake
+BuildRequires:	make
 
 BuildRequires:	cygwin32-filesystem >= 9
 BuildRequires:	cygwin32-binutils
