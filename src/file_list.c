@@ -336,6 +336,7 @@ extern const file_hint_t file_hint_vfb;
 extern const file_hint_t file_hint_vib;
 extern const file_hint_t file_hint_vmdk;
 extern const file_hint_t file_hint_vmg;
+extern const file_hint_t file_hint_wad;
 extern const file_hint_t file_hint_wallet;
 extern const file_hint_t file_hint_wdp;
 extern const file_hint_t file_hint_wee;
@@ -1295,6 +1296,7 @@ file_enable_t array_file_enable[]=
   { .enable=0, .file_hint=&file_hint_vmg  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wallet)
+  { .enable=0, .file_hint=&file_hint_wad  },
   { .enable=0, .file_hint=&file_hint_wallet  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wdp)
