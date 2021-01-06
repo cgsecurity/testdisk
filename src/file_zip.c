@@ -43,7 +43,7 @@
 
 /* #define DEBUG_ZIP */
 
-#ifndef MAIN_zip
+#if !defined(SINGLE_FORMAT_zip)
 extern const file_hint_t file_hint_doc;
 #endif
 static void register_header_check_zip(file_stat_t *file_stat);
@@ -60,6 +60,7 @@ const file_hint_t file_hint_zip= {
 };
 
 static const char *extension_apk="apk";
+static const char *extension_bbdoc="bbdoc";
 static const char *extension_celtx="celtx";
 static const char *extension_docx="docx";
 static const char *extension_epub="epub";
@@ -217,6 +218,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   @ requires \separated(fr, fr->handle, ext, krita, file, &first_filename[0 .. 256]);
   @ requires *ext == \null ||
      *ext == extension_apk ||
+     *ext == extension_bbdoc ||
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
@@ -247,6 +249,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
      *ext == file_hint_zip.extension;
   @ ensures *ext == \null ||
      *ext == extension_apk ||
+     *ext == extension_bbdoc ||
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
@@ -382,6 +385,8 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	*ext=extension_celtx;
       else if(len==13 && memcmp(filename, "document.json", 13)==0)
 	*ext=extension_sketch;
+      else if(len > 16 && memcmp(filename,  "atlases/atlas_ID", 16)==0)
+	*ext=extension_bbdoc;
     }
     else if(file_nbr==1 && sh3d==1)
     {
@@ -430,6 +435,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   @ requires \separated(fr, fr->handle, ext, &first_filename);
   @ requires *ext == \null ||
      *ext == extension_apk ||
+     *ext == extension_bbdoc ||
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
@@ -460,6 +466,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == file_hint_zip.extension;
   @ ensures *ext == \null ||
      *ext == extension_apk ||
+     *ext == extension_bbdoc ||
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
@@ -1203,7 +1210,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     return 0;
   if(le16(file->version) < 10)
     return 0;
-#ifndef MAIN_zip
+#if !defined(SINGLE_FORMAT_zip)
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_doc)
   {
