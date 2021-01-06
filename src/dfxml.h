@@ -28,13 +28,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if defined(__FRAMAC__)
+#undef ENABLE_DFXML
+#endif
 
+#ifdef ENABLE_DFXML
 FILE *xml_open(const char *default_filename, const unsigned int dir_num);
 void xml_close(void);
 void xml_push(const char *tag, const char *attribute);
 void xml_pop(const char *tag);
 void xml_out2s(const char *tag, const char *value);
 void xml_out2i(const char *tag, const uint64_t value);
+/*@
+  @ requires \valid_read(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires \separated(disk, partition);
+  @*/
 void xml_setup(const disk_t *disk, const partition_t *partition);
 void xml_set_command_line(const int argc, char **argv);
 void xml_clear_command_line(void);
@@ -43,6 +53,7 @@ void xml_shutdown(void);
 void xml_log_file_recovered(const file_recovery_t *file_recovery);
 void xml_log_file_recovered2(const alloc_data_t *space, const file_recovery_t *file_recovery);
 void xml_printf(const char *__restrict __format,...) __attribute__((format(printf,1,2)));
+#endif
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

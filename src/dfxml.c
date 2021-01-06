@@ -27,6 +27,7 @@
 #if defined(__FRAMAC__)
 #undef HAVE_LIBEWF
 #undef HAVE_SYS_UTSNAME_H
+#undef ENABLE_DFXML
 #endif
 
 #ifdef ENABLE_DFXML

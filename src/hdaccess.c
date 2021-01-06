@@ -31,9 +31,11 @@
 #undef HAVE_LINUX_TYPES_H
 #undef HAVE_PREAD
 #undef HAVE_PWRITE
+#undef HAVE_SCSI_SCSI_H
+#undef HAVE_SCSI_SCSI_IOCTL_H
+#undef HAVE_SCSI_SG_H
 #undef HAVE_SYS_MOUNT_H
 #undef HAVE_SYS_PARAM_H
-#undef TARGET_LINUX
 #endif
  
 #ifdef HAVE_SYS_STAT_H

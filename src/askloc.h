@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 /*@
   @ requires \valid(buf + (0 .. size-1));
   @ ensures  valid_string(buf);
@@ -33,15 +37,17 @@ extern "C" {
   @*/
 char *td_getcwd(char *buf, unsigned long size);
 
+#ifdef HAVE_NCURSES
 /*@
   @ requires \valid(dst + (0 .. dst_size-1));
   @ requires valid_read_string(msg);
+  @ requires \separated(dst, msg, src_dir);
+  @ assigns  *(dst + (0 .. dst_size-1));
   @*/
 void ask_location(char *dst, const unsigned int dst_size, const char *msg, const char *src_dir);
+#endif
 
-/*@
-  @ ensures \result == \null || (\freeable(\result) && valid_string(\result));
-  @*/
+// ensures \result == \null || (\freeable(\result) && valid_string(\result));
 char *get_default_location(void);
 
 #ifdef __cplusplus

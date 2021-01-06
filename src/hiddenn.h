@@ -25,7 +25,13 @@
 extern "C" {
 #endif
 
+#ifdef HAVE_NCURSES
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @*/
 int interface_check_hidden_ncurses(disk_t *disk, const int hpa_dco);
+#endif
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

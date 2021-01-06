@@ -26,7 +26,14 @@
 extern "C" {
 #endif
 
+#ifdef HAVE_NCURSES
+/*@
+  @ requires valid_disk(disk);
+  @ requires valid_list_part(list_part);
+  @ requires separation: \separated(disk, list_part);
+  @*/
 list_part_t *add_partition_ncurses(disk_t *disk, list_part_t *list_part);
+#endif
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

@@ -32,6 +32,8 @@
 #undef HAVE_LIBEWF
 #undef HAVE_SIGACTION
 #undef HAVE_NCURSES
+#undef ENABLE_DFXML
+#undef HAVE_SETLOCALE
 #endif
 
 #include <stdio.h>

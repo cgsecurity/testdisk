@@ -24,6 +24,10 @@
 #include <config.h>
 #endif
 
+#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#undef HAVE_NCURSES
+#endif
+
 #ifdef HAVE_NCURSES
 #include <stdio.h>
 #include "types.h"
