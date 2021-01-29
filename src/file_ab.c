@@ -30,6 +30,7 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ab(file_stat_t *file_stat);
 
 const file_hint_t file_hint_addressbook= {
@@ -53,9 +54,10 @@ struct ab_header
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_addressbook;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @*/
 static data_check_t data_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -65,7 +67,8 @@ static data_check_t data_check_addressbook(const unsigned char *buffer, const un
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 8; */
     const struct ab_header *ab=(const struct ab_header *)&buffer[i];
     const unsigned int length=be32(ab->size);
 #ifdef DEBUG_AB
@@ -82,6 +85,16 @@ static data_check_t data_check_addressbook(const unsigned char *buffer, const un
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_addressbook, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_addressbook(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ab_header *ab=(const struct ab_header *)buffer;
