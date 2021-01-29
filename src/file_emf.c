@@ -35,6 +35,7 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_emf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_emf= {
@@ -209,8 +210,8 @@ struct EMF_HDR
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_emf;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
-  @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8);
   @ ensures file_recovery->data_check==&data_check_emf;
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -363,8 +364,6 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
 	return DC_STOP;
       /*@ assert file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2 - 8 + 1024*1024; */
   }
-  /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8; */
-  /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 8; */
   return DC_CONTINUE;
 }
 
@@ -389,6 +388,8 @@ static data_check_t data_check_emf(const unsigned char *buffer, const unsigned i
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns *file_recovery_new;
   @*/
 static int header_check_emf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -415,9 +416,6 @@ static int header_check_emf(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
 static void register_header_check_emf(file_stat_t *file_stat)
 {
   static const unsigned char emf_sign[4]= { ' ','E', 'M','F'};
