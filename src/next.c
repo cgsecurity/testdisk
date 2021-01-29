@@ -30,7 +30,7 @@
  
 #include "types.h"
 #include "common.h"
-#include "ext2.h"
+#include "ext2_common.h"
 #include "next.h"
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;

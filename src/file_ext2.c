@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include "types.h"
 #include "common.h"
-#include "ext2.h"
 #include "ext2_common.h"
 #include "filegen.h"
 

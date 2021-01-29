@@ -32,7 +32,7 @@
 #include "filegen.h"
 #include "dir.h"
 #include "ext2grp.h"
-#include "ext2.h"
+#include "ext2_common.h"
 #include "log.h"
 #include "photorec.h"
 

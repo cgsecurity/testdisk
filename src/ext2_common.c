@@ -32,7 +32,6 @@
 #endif
 #include "types.h"
 #include "common.h"
-#include "ext2.h"
 #include "ext2_common.h"
 
 uint64_t td_ext2fs_blocks_count(const struct ext2_super_block *super)

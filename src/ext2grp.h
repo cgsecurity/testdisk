@@ -25,7 +25,30 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires valid_list_search_space(list_search_space);
+  @ requires valid_disk(disk);
+  @ requires valid_partition(partition);
+  @ requires \valid(disk);
+  @ requires \valid_read(partition);
+  @ requires \separated(list_search_space, disk, partition);
+  @ ensures  valid_disk(disk);
+  @*/
+// ensures  valid_list_search_space(list_search_space);
+// ensures  valid_partition(partition);
 unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition);
+
+/*@
+  @ requires valid_list_search_space(list_search_space);
+  @ requires valid_disk(disk);
+  @ requires valid_partition(partition);
+  @ requires \valid(disk);
+  @ requires \valid_read(partition);
+  @ requires \separated(list_search_space, disk, partition);
+  @ ensures  valid_disk(disk);
+  @*/
+// ensures  valid_list_search_space(list_search_space);
+// ensures  valid_partition(partition);
 unsigned int ext2_fix_inode(alloc_data_t *list_search_space, disk_t *disk, const partition_t *partition);
 
 #ifdef __cplusplus
