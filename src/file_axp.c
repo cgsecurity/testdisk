@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_axp(file_stat_t *file_stat);
 
 const file_hint_t file_hint_axp= {
@@ -48,6 +49,7 @@ const file_hint_t file_hint_axp= {
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_axp;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
@@ -71,7 +73,7 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
   {
     if(buffer[j]=='<' && memcmp((const char *)&buffer[j], axp_footer, sizeof(axp_footer))==0)
     {
-      file_recovery->calculated_file_size+=j-buffer_size/2+sizeof(axp_footer);
+      file_recovery->calculated_file_size+=j+sizeof(axp_footer)-buffer_size/2;
       return DC_STOP;
     }
   }
@@ -79,6 +81,16 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_axp, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_axp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
