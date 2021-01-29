@@ -29,6 +29,7 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "common.h"
 #include "filegen.h"
 #include "log.h"
 
@@ -48,12 +49,31 @@ const file_hint_t file_hint_blend= {
 
 static const unsigned char blend_header_footer[4]  = { 'E', 'N', 'D', 'B'};
 
+struct blend4_block
+{
+  char		code[4];
+  uint32_t	size;
+  uint32_t	old_address;
+  uint32_t	SDNA_index;
+  uint32_t	count;
+} __attribute__ ((gcc_struct, __packed__));
+
+struct blend8_block
+{
+  char		code[4];
+  uint32_t	size;
+  uint64_t	old_address;
+  uint32_t	SDNA_index;
+  uint32_t	count;
+} __attribute__ ((gcc_struct, __packed__));
+
 /*@
   @ requires buffer_size > 0;
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_blend4le;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
@@ -64,8 +84,10 @@ static data_check_t data_check_blend4le(const unsigned char *buffer, const unsig
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x14; */
+    const struct blend4_block *blk=(const struct blend4_block *)&buffer[i];
+    const unsigned int len=le32(blk->size);
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
@@ -89,6 +111,7 @@ static data_check_t data_check_blend4le(const unsigned char *buffer, const unsig
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_blend8le;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
@@ -96,10 +119,13 @@ static data_check_t data_check_blend4le(const unsigned char *buffer, const unsig
 static data_check_t data_check_blend8le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@ loop assigns file_recovery->calculated_file_size; */
-  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=buffer[i+4]+ ((buffer[i+5])<<8)+ ((buffer[i+6])<<16)+ ((buffer[i+7])<<24);
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x18; */
+    const struct blend8_block *blk=(const struct blend8_block *)&buffer[i];
+    const unsigned int len=le32(blk->size);
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
@@ -123,6 +149,7 @@ static data_check_t data_check_blend8le(const unsigned char *buffer, const unsig
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_blend4be;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
@@ -130,10 +157,14 @@ static data_check_t data_check_blend8le(const unsigned char *buffer, const unsig
 static data_check_t data_check_blend4be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@ loop assigns file_recovery->calculated_file_size; */
-  while(file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x14; */
+    const struct blend4_block *blk=(const struct blend4_block *)&buffer[i];
+    const unsigned int len=be32(blk->size);
+    /*@ assert len <= 0xffffffff; */
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
@@ -157,17 +188,24 @@ static data_check_t data_check_blend4be(const unsigned char *buffer, const unsig
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_blend8be;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_blend8be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  /*@ loop assigns file_recovery->calculated_file_size; */
-  while(file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ */
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    const unsigned int len=(buffer[i+4]<<24)+ ((buffer[i+5])<<16)+ ((buffer[i+6])<<8)+ buffer[i+7];
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x18; */
+    const struct blend8_block *blk=(const struct blend8_block *)&buffer[i];
+    const unsigned int len=be32(blk->size);
+    /*@ assert len <= 0xffffffff; */
 #ifdef DEBUG_BLEND
     log_debug("file_mov.c: atom %c%c%c%c (0x%02x%02x%02x%02x) size %u, calculated_file_size %llu\n",
         buffer[i+0],buffer[i+1],buffer[i+2],buffer[i+3],
@@ -188,8 +226,7 @@ static data_check_t data_check_blend8be(const unsigned char *buffer, const unsig
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @
@@ -220,6 +257,8 @@ static data_check_t data_check_blend8be(const unsigned char *buffer, const unsig
   );
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_blend(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
