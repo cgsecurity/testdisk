@@ -33,6 +33,7 @@
 #include "common.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_dad(file_stat_t *file_stat);
 
 const file_hint_t file_hint_dad= {
@@ -52,32 +53,56 @@ struct dad_header
   uint32_t size;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_dad;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_dad(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 16 <= file_recovery->file_size + buffer_size/2)
+      file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 16; */
     const struct dad_header *dad=(const struct dad_header *)&buffer[i];
+    /*@ assert \valid_read(dad); */
+    const unsigned int size=le32(dad->size);
 #ifdef DEBUG_DAD
     log_info("%llu magic %08x => %llu\n",
 	(long long unsigned)file_recovery->calculated_file_size, le32(dad->magic),
-	(long long unsigned)file_recovery->calculated_file_size + le32(dad->size));
+	(long long unsigned)file_recovery->calculated_file_size + size);
 #endif
-    if(dad->magic!=le32(0x56414844) || le32(dad->size)<16)
+    if(dad->magic!=le32(0x56414844) || size<16)
       return DC_STOP;
-    file_recovery->calculated_file_size+=le32(dad->size);
+    file_recovery->calculated_file_size+=size;
   }
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= 10;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_dad, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_dad(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct dad_header *dad=(const struct dad_header *)buffer;
-  if(le32(dad->size)<16)
+  const unsigned int size=le32(dad->size);
+  if(size<16)
     return 0;
   if(file_recovery->file_stat!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_dad &&
@@ -89,7 +114,7 @@ static int header_check_dad(const unsigned char *buffer, const unsigned int buff
   }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dad.extension;
-  file_recovery_new->min_filesize=le32(dad->size);
+  file_recovery_new->min_filesize=size;
   if(file_recovery_new->blocksize >= 16)
   {
     file_recovery_new->data_check=&data_check_dad;
