@@ -32,7 +32,6 @@
 #include "filegen.h"
 #include "common.h"
 #include "log.h"
-#include "memmem.h"
 
 /*@
   @ requires \valid(file_stat);
@@ -64,6 +63,7 @@ struct block_header
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_bac;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
@@ -76,13 +76,15 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
     file_recovery->file_check=NULL;
     return DC_CONTINUE;
   }
+  /*@ assert buffer_size >= 2*0x18; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x18 ; */
     const struct block_header *hdr=(const struct block_header *)&buffer[i];
     const unsigned int block_size=be32(hdr->BlockSize);
 #ifdef DEBUG_BACULA
@@ -111,11 +113,11 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
 /*@
   @ requires buffer_size >= sizeof(struct block_header);
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_bac, buffer, file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
   @ ensures \result == 0 || \result == 1;
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
@@ -125,6 +127,7 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_bac);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bac.extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_bac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
