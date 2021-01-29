@@ -36,8 +36,8 @@
 #include "log.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_lnk(file_stat_t *file_stat);
-static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_lnk= {
   .extension="lnk",
@@ -67,28 +67,34 @@ struct lnk_header_s {
 } __attribute__ ((gcc_struct, __packed__));
 
 /* These constants comes from winedump/lnk.c */
-#define SCF_PIDL 	1
-#define SCF_LOCATION	2
-#define SCF_DESCRIPTION	4
-#define SCF_RELATIVE	8
-#define SCF_WORKDIR	0x10
-#define SCF_ARGS	0x20
-#define SCF_CUSTOMICON	0x40
-#define SCF_UNICODE 	0x80
-#define SCF_PRODUCT 	0x800
-#define SCF_COMPONENT 	0x1000
-/* */
+#define SLDF_HAS_ID_LIST 	1
+#define SLDF_HAS_LINK_INFO	2
+#define SLDF_HAS_NAME	4
+#define SLDF_HAS_RELPATH	8
+#define SLDF_HAS_WORKINGDIR	0x10
+#define SLDF_HAS_ARGS	0x20
+#define SLDF_HAS_ICONLOCATION	0x40
+#define SLDF_UNICODE 	0x80
+#define SLDF_HAS_LOGO3ID 	0x800
+#define SLDF_HAS_DARWINID 	0x1000
 
+/*@
+  @ requires buffer_size > 0x4c;
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ assigns \nothing;
+  @*/
 static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int buffer_size)
 {
   const struct lnk_header_s* lnk_head=(const struct lnk_header_s*)buffer;
   const uint32_t flags=le32(lnk_head->flags);
   unsigned int i=0x4c;		/* .LNK File Header */
-  unsigned int len;
-  if((flags&SCF_PIDL)!=0)
+  /* avoid out of bound read access */
+  if(i >= buffer_size - 4)
+    return 0;
+  if((flags&SLDF_HAS_ID_LIST)!=0)
   { /* The Shell Item Id List */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
+    const unsigned int len=le16(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK Shell Item Id List at 0x%04x=%04x\n",
 	i, len);
@@ -99,142 +105,134 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
   /* avoid out of bound read access */
   if(i >= buffer_size - 4)
     return 0;
-  if((flags&SCF_LOCATION)!=0)
+  if((flags&SLDF_HAS_LINK_INFO)!=0)
   { /* File location info */
     const uint32_t *ptr=(const uint32_t *)&buffer[i];
-    len=le32(*ptr);
+    const unsigned int len=le32(*ptr);
 #ifdef DEBUG_LNK
-    log_debug("LNK File location info at 0x%04x=%04x\n", i, len);
+    log_debug("LNK File location info at 0x%04x %u bytes\n", i, len);
 #endif
     /* Discard too big files, avoid overflow */
     if(len >= 0x10000000)
       return 0;
-    i+=2;
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_DESCRIPTION)!=0)
+  if((flags&SLDF_HAS_NAME)!=0)
   { /* Description string */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
-#ifdef DEBUG_LNK
-    log_debug("LNK description string at 0x%04x=%04x\n", i, len);
-#endif
-    i+=2;
-    if((flags& SCF_UNICODE)!=0)
+    unsigned int len=le16(*ptr);
+    if((flags& SLDF_UNICODE)!=0)
       len*=2;
+    i+=2;
+#ifdef DEBUG_LNK
+    log_debug("LNK description string at 0x%04x %u bytes\n", i, len);
+#endif
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_RELATIVE)!=0)
+  if((flags&SLDF_HAS_RELPATH)!=0)
   { /* Relative path */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
+    unsigned int len=le16(*ptr);
+    if((flags& SLDF_UNICODE)!=0)
+      len*=2;
+    i+=2;
 #ifdef DEBUG_LNK
     log_debug("LNK relative path at 0x%04x=%04x\n", i, len);
 #endif
-    i+=2;
-    if((flags& SCF_UNICODE)!=0)
-      len*=2;
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_WORKDIR)!=0)
+  if((flags&SLDF_HAS_WORKINGDIR)!=0)
   { /* Working directory */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
-#ifdef DEBUG_LNK
-    log_debug("LNK Working directory at 0x%04x=%04x\n", i, len);
-#endif
-    i+=2;
-    if((flags& SCF_UNICODE)!=0)
+    unsigned int len=le16(*ptr);
+    if((flags& SLDF_UNICODE)!=0)
       len*=2;
+    i+=2;
+#ifdef DEBUG_LNK
+    log_debug("LNK Working directory at 0x%04x %u bytes\n", i, len);
+#endif
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_ARGS)!=0)
+  if((flags&SLDF_HAS_ARGS)!=0)
   { /* Command line string */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
-#ifdef DEBUG_LNK
-    log_debug("LNK Command line string at 0x%04x=%04x\n", i, len);
-#endif
-    i+=2;
-    if((flags& SCF_UNICODE)!=0)
+    unsigned int len=le16(*ptr);
+    if((flags& SLDF_UNICODE)!=0)
       len*=2;
+    i+=2;
+#ifdef DEBUG_LNK
+    log_debug("LNK Command line string at 0x%04x %u bytes\n", i, len);
+#endif
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_CUSTOMICON)!=0)
+  if((flags&SLDF_HAS_ICONLOCATION)!=0)
   { /* Icon filename string */
     const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
+    unsigned int len=le16(*ptr);
+    if((flags& SLDF_UNICODE)!=0)
+      len*=2;
+    i+=2;
 #ifdef DEBUG_LNK
     log_debug("LNK Icon filename string at 0x%04x=%04x\n", i, len);
 #endif
-    i+=2;
-    if((flags& SCF_UNICODE)!=0)
-      len*=2;
     i+=len;
   }
   /* avoid out of bound read access */
   if(i >= buffer_size - 2)
     return 0;
-  if((flags&SCF_PRODUCT)!=0)
+  /*@
+    @ loop invariant i < buffer_size-2;
+    @ loop assigns i;
+    @*/
+  while(1)
   {
-    const uint16_t *ptr=(const uint16_t *)&buffer[i];
+    /* avoid out of bound read access */
+    const uint16_t *ptr;
+    unsigned int len;
+    ptr=(const uint16_t *)&buffer[i];
+    /*@ assert \valid_read(ptr); */
     len=le16(*ptr);
 #ifdef DEBUG_LNK
-    log_debug("LNK Icon product at 0x%04x=%04x\n", i, len);
+    log_debug("LNK 0x%04x - %u bytes\n", i, len);
 #endif
+    if(len == 0)
+    {
+#ifdef DEBUG_LNK
+      log_debug("LNK size %u (0x%04x)\n", i, i);
+#endif
+      return i;
+    }
     i+=2;
-    i+=len;
+    if(i >= buffer_size - 2)
+      return 0;
   }
-  /* avoid out of bound read access */
-  if(i >= buffer_size - 2)
-    return 0;
-  if((flags&SCF_COMPONENT)!=0)
-  {
-    const uint16_t *ptr=(const uint16_t *)&buffer[i];
-    len=le16(*ptr);
-#ifdef DEBUG_LNK
-    log_debug("LNK Icon component at 0x%04x=%04x\n", i, len);
-#endif
-    i+=2;
-    i+=len;
-  }
-  /* avoid out of bound read access */
-  if(i >= buffer_size - 4)
-    return 0;
-  /* Extra stuff */
-  {
-    const uint32_t *ptr=(const uint32_t *)&buffer[i];
-    len=le32(*ptr);
-  }
-#ifdef DEBUG_LNK
-  log_debug("LNK extra stuff at 0x%04x=%04x\n", i, len);
-#endif
-  /* Discard too big files */
-  if(len >= 0x10000000)
-    return 0;
-  i+=4;
-  i+=len;
-#ifdef DEBUG_LNK
-  log_debug("LNK size %u (0x%04x)\n", i, i);
-#endif
-  return i;
 }
 
+/*@
+  @ requires buffer_size >= 10;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_lnk, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int len;
