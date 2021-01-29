@@ -80,7 +80,7 @@ int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
   if(fc_a->length!=0 && fc_b->length==0)
     return 1;
   /*@ assert (fc_a->length > 0 && fc_b->length > 0) || (fc_a->length == 0 && fc_b->length == 0) ; */
-  res=fc_a->offset-fc_b->offset;
+  res=(int)fc_a->offset-(int)fc_b->offset;
   if(res!=0)
     return res;
   /*@ assert fc_a->offset == fc_b->offset; */
