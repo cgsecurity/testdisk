@@ -46,6 +46,9 @@
 #include "filegen.h"
 #include "log.h"
 
+uint64_t gpls_nbr=0;
+static uint64_t offset_skipped_header=0;
+
 static  file_check_t file_check_plist={
   .list = TD_LIST_HEAD_INIT(file_check_plist.list)
 };
@@ -53,8 +56,6 @@ static  file_check_t file_check_plist={
 file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
-
-uint64_t gpls_nbr=0;
 
 //  X requires \valid_read(b);
 /*@
@@ -127,11 +128,11 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   td_list_add_tail(&newe->list, &pos->list);
 }
 
+#ifndef __FRAMAC__
 /*@
-  @ requires \valid_read((const char *)value + (0 .. length-1));
-  @ requires \valid_function(header_check);
   @ requires separation: \separated(file_stat, &file_check_plist);
   @*/
+#endif
 void register_header_check(const unsigned int offset, const void *value, const unsigned int length,
     int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new),
@@ -255,6 +256,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
   if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
   {
     /*@ assert \valid(file_recovery->handle); */
+    /*@ assert valid_file_recovery(file_recovery); */
     return;
   }
   taille=fread(buffer,1, 4096,file_recovery->handle);
@@ -268,6 +270,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
   else if(taille > 0 && buffer[0]=='\r' && (nl_mode&NL_BARECR)==NL_BARECR)
     file_recovery->file_size++;
   /*@ assert \valid(file_recovery->handle); */
+  /*@ assert valid_file_recovery(file_recovery); */
 }
 
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
@@ -387,6 +390,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   file_enable_t *file_enable;
   unsigned int enable_count=1;	/* Lists are terminated by NULL */
   unsigned int sign_nbr;
+  unsigned int i;
   /*@ loop assigns enable_count, file_enable; */
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
@@ -397,20 +401,20 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   }
   /*@ assert enable_count > 0; */
   file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
-  enable_count=0;
+  i=0;
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
-      file_stats[enable_count].file_hint=file_enable->file_hint;
-      file_stats[enable_count].not_recovered=0;
-      file_stats[enable_count].recovered=0;
-      file_enable->file_hint->register_header_check(&file_stats[enable_count]);
-      enable_count++;
+      file_stats[i].file_hint=file_enable->file_hint;
+      file_stats[i].not_recovered=0;
+      file_stats[i].recovered=0;
+      file_enable->file_hint->register_header_check(&file_stats[i]);
+      i++;
     }
   }
   sign_nbr=index_header_check();
-  file_stats[enable_count].file_hint=NULL;
+  file_stats[enable_count-1].file_hint=NULL;
   log_info("%u first-level signatures enabled\n", sign_nbr);
   return file_stats;
 }
@@ -424,6 +428,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
+#ifndef __FRAMAC__
   char new_filename[sizeof(file_recovery->filename)];
   char *dst;
   char *dst_dir_sep;
@@ -438,7 +443,6 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   /*@ assert len <= sizeof(file_recovery->filename); */
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
   strcpy(new_filename, (char *)&file_recovery->filename);
-#ifndef __FRAMAC__
   /*@ assert valid_string((char *)&new_filename); */
   dst_dir_sep=strrchr(new_filename, '/');
   /*@ assert valid_string(dst_dir_sep); */
@@ -611,11 +615,13 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
 /* The original filename begins at offset in buffer and is null terminated */
 /*@
   @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires 0 <= offset < buffer_size;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @ ensures  valid_read_string((char*)&file_recovery->filename);
+  @ ensures  valid_file_recovery(file_recovery);
   @*/
 static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
@@ -716,6 +722,7 @@ static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buff
   free(new_filename);
 #endif
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  /*@ assert valid_file_recovery(file_recovery); */
   return -1;
 }
 
@@ -724,12 +731,11 @@ int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, cons
   if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
       _file_rename_unicode(file_recovery, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
     return 0;
+  /*@ assert valid_file_recovery(file_recovery); */
   if(new_ext==NULL)
     return 0;
   return file_rename_aux(file_recovery, new_ext);
 }
-
-static uint64_t offset_skipped_header=0;
 
 /*@
   @ assigns offset_skipped_header;
@@ -742,15 +748,22 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end)
 
 /* 0: file_recovery_new->location.start has been taken into account, offset_skipped_header may have been updated
  * 1: file_recovery_new->location.start has been ignored */
+/*@
+  @ requires separation: \separated(file_recovery, file_recovery_new, &errno, &offset_skipped_header);
+  @*/
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)
 {
   file_recovery_t fr_test;
   off_t offset;
   assert(file_recovery!=NULL);
   assert(file_recovery_new!=NULL);
+  /*@ assert \valid_read(file_recovery); */
+  /*@ assert \valid_read(file_recovery_new); */
   if(file_recovery->file_check==NULL)
   {
     log_warning("header_ignored_adv: file_check==NULL\n");
+    /*@ assert \valid_read(file_recovery); */
+    /*@ assert \valid_read(file_recovery_new); */
     return 1;
   }
   if(file_recovery->handle==NULL)
@@ -759,6 +772,8 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
     {
       offset_skipped_header=file_recovery_new->location.start;
     }
+    /*@ assert \valid_read(file_recovery); */
+    /*@ assert \valid_read(file_recovery_new); */
     return 0;
   }
 
@@ -774,6 +789,8 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
   {
     log_error("BUG in header_ignored_adv: my_fseek() failed\n");
+    /*@ assert \valid_read(file_recovery); */
+    /*@ assert \valid_read(file_recovery_new); */
     return 1;
   }
   if(fr_test.file_size>0)
@@ -782,6 +799,8 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
   {
     offset_skipped_header=file_recovery_new->location.start;
   }
+  /*@ assert \valid_read(file_recovery); */
+  /*@ assert \valid_read(file_recovery_new); */
   return 0;
 }
 
@@ -800,12 +819,19 @@ void header_ignored(const file_recovery_t *file_recovery_new)
     offset_skipped_header=file_recovery_new->location.start;
 }
 
+/*@
+  @ requires \separated(list_search_space, current_search_space, offset, &gpls_nbr, &offset_skipped_header);
+  @ assigns gpls_nbr, offset_skipped_header, *current_search_space, *offset;
+  @*/
 void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location)
 {
   alloc_data_t *file_space=*current_search_space;
   if(offset_skipped_header==0)
     return ;
   gpls_nbr++;
+  /*@
+    @ loop assigns file_space, offset_skipped_header, *current_search_space, *offset;
+    @*/
   while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
@@ -826,6 +852,9 @@ void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t
       (long long unsigned)(offset_skipped_header/512),
       (long long unsigned)(*offset/512));
 #endif
+  /*@
+    @ loop assigns file_space, offset_skipped_header, *current_search_space, *offset;
+    @*/
   while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
