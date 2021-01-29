@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_abr(file_stat_t *file_stat);
 struct abr_header
 {
@@ -56,20 +57,24 @@ const file_hint_t file_hint_abr= {
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_abr;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_abr(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 12 ; */
     const struct abr_header *hdr=(const struct abr_header*)&buffer[i];
+    /*@ assert \valid_read(hdr); */
     if(memcmp(hdr->magic, "8BIM", 4)!=0)
       return DC_STOP;
     file_recovery->calculated_file_size+=(uint64_t)12 + be32(hdr->size);
@@ -77,11 +82,24 @@ static data_check_t data_check_abr(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_abr, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns *file_recovery_new;
+  @ ensures \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_abr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct abr_header *hdr=(const struct abr_header*)&buffer[4];
   uint64_t i=4;
   assert(buffer_size >= 12);
+  /*@
+    @ loop assigns i;
+    @*/
   while(i < buffer_size - 12 && i < 512 - 12)
   {
     const struct abr_header *h=(const struct abr_header*)&buffer[i];
