@@ -44,6 +44,38 @@ struct td_list_head {
 	struct td_list_head *next, *prev;
 };
 
+#ifdef __FRAMAC__
+/*@
+  @ requires \valid_read(a);
+  @ requires \valid_read(b);
+  @ assigns \nothing;
+  @*/
+int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b);
+
+/*@
+  @ assigns \nothing;
+  @*/
+int signature_cmp(const struct td_list_head *a, const struct td_list_head *b);
+#endif
+
+/*@
+  inductive reachable{L}(struct td_list_head *root, struct td_list_head *node) {
+    case root_reachable{L}:
+      \forall struct td_list_head *root; reachable(root,root) ;
+    case next_reachable{L}:
+      \forall struct td_list_head *root,*node;
+      \valid(root) && reachable(root->next,node) ==> reachable(root,node);
+  }
+  @*/
+  // root->next->prev == root
+
+/*@ predicate finite{L}(struct td_list_head *root) = reachable(root->next,root); */
+
+/*
+      \forall struct td_list_head *l1;
+        reachable(l, l1) && \valid(l1) ==> \valid(l1->next) && l1->next->prev == l1;
+*/
+
 #define TD_LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define TD_LIST_HEAD(name) \
@@ -64,6 +96,7 @@ struct td_list_head {
   @ requires \valid(prev);
   @ requires \valid(next);
   @ requires separation: \separated(newe, \union(prev,next));
+  @ requires prev == next || \separated(prev,next,newe);
   @ ensures next->prev == newe;
   @ ensures newe->next == next;
   @ ensures newe->prev == prev;
@@ -74,9 +107,9 @@ static inline void __td_list_add(struct td_list_head *newe,
 			      struct td_list_head *prev,
 			      struct td_list_head *next)
 {
-	next->prev = newe;
 	newe->next = next;
 	newe->prev = prev;
+	next->prev = newe;
 	prev->next = newe;
 	/*@ assert next->prev == newe; */
 	/*@ assert newe->next == next; */
@@ -92,6 +125,17 @@ static inline void __td_list_add(struct td_list_head *newe,
  * Insert a new entry after the specified head.
  * This is good for implementing stacks.
  */
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires \valid(head->next);
+  @ requires separation: \separated(newe, \union(head,head->next));
+  @ ensures head->next == newe;
+  @ ensures newe->prev == head;
+  @ ensures newe->next == \old(head->next);
+  @ ensures \old(head->next)->prev == newe;
+  @ assigns head->next,newe->prev,newe->next,\old(head->next)->prev;
+  @*/
 static inline void td_list_add(struct td_list_head *newe, struct td_list_head *head)
 {
 	__td_list_add(newe, head, head->next);
@@ -110,6 +154,7 @@ static inline void td_list_add(struct td_list_head *newe, struct td_list_head *h
   @ requires \valid(head);
   @ requires \valid(head->prev);
   @ requires separation: \separated(newe, head);
+  @ requires head->prev == head || \separated(head->prev,head);
   @ ensures head->prev == newe;
   @ ensures newe->next == head;
   @ ensures newe->prev == \old(head->prev);
@@ -131,6 +176,7 @@ static inline void td_list_add_tail(struct td_list_head *newe, struct td_list_he
 /*@
   @ requires \valid(prev);
   @ requires \valid(next);
+  @ requires prev == next || \separated(prev,next);
   @ ensures next->prev == prev;
   @ ensures prev->next == next;
   @ assigns next->prev,prev->next;
@@ -153,8 +199,10 @@ static inline void __td_list_del(struct td_list_head * prev, struct td_list_head
   @ requires \valid(entry);
   @ requires \valid(entry->prev);
   @ requires \valid(entry->next);
-  @ ensures \old(entry->prev)->next == \old(entry->next);
-  @ ensures \old(entry->next)->prev == \old(entry->prev);
+  @ requires \separated(entry, \union(entry->prev,entry->next));
+  @ requires entry->prev == entry->next || \separated(entry->prev,entry->next);
+  @ ensures  \old(entry->prev)->next == \old(entry->next);
+  @ ensures  \old(entry->next)->prev == \old(entry->prev);
   @ assigns \old(entry->prev)->next, \old(entry->next)->prev, entry->next, entry->prev;
   @*/
 static inline void td_list_del(struct td_list_head *entry)
@@ -205,6 +253,10 @@ static inline void td_list_move_tail(struct td_list_head *list,
  * td_list_empty - tests whether a list is empty
  * @head: the list to test.
  */
+/*@
+  @ requires \valid_read(head);
+  @ assigns  \nothing;
+  @*/
 static inline int td_list_empty(const struct td_list_head *head)
 {
 	return head->next == head;
@@ -423,14 +475,23 @@ static inline void td_list_splice_init(struct td_list_head *list,
   @ requires \valid(newe);
   @ requires \valid(head);
   @ requires \valid_function(compar);
+  @ requires compar == signature_cmp || compar == file_check_cmp;
   @ requires separation: \separated(newe, head);
   @*/
 static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
     int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
 {
   struct td_list_head *pos;
+  /*@
+    @ loop invariant pos == head || \separated(pos, head);
+    @*/
   td_list_for_each(pos, head)
   {
+    /*@ assert compar == signature_cmp || compar == file_check_cmp; */
+    /*@ assert \valid_read(newe); */
+    /*@ assert \valid_read(pos); */
+    /*X calls signature_cmp, file_check_cmp; */
+    /*@ calls file_check_cmp; */
     if(compar(newe,pos)<0)
     {
       __td_list_add(newe, pos->prev, pos);
@@ -450,9 +511,14 @@ static inline int td_list_add_sorted_uniq(struct td_list_head *newe, struct td_l
     int (*compar)(const struct td_list_head *a, const struct td_list_head *b))
 {
   struct td_list_head *pos;
+  /*@
+    @ loop invariant pos == head || \separated(pos, head);
+    @*/
   td_list_for_each(pos, head)
   {
-    const int res=compar(newe,pos);
+    // TODO const
+    /* calls spacerange_cmp; */
+    int res=compar(newe,pos);
     if(res<0)
     {
       __td_list_add(newe, pos->prev, pos);

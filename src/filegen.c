@@ -60,6 +60,7 @@ file_check_list_t file_check_list={
 //  X requires \valid_read(b);
 /*@
   @ requires \valid_read(a);
+  @ requires \valid_read(b);
   @ assigns \nothing;
   @*/
 #ifndef __FRAMAC__
