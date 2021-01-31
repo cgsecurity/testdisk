@@ -33,6 +33,7 @@
 #include "common.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_flac(file_stat_t *file_stat);
 
 const file_hint_t file_hint_flac= {
@@ -46,18 +47,25 @@ const file_hint_t file_hint_flac= {
 
 /* https://xiph.org/flac/format.html */
 
-#if 0
-static data_check_t data_check_flac_frame(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  return DC_CONTINUE;
-}
-
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_flac_metadata;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures  \result == DC_CONTINUE || \result == DC_ERROR;
+  @ assigns  file_recovery->calculated_file_size, file_recovery->data_check;
+  @*/
 static data_check_t data_check_flac_metadata(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ loop assigns file_recovery->calculated_file_size, file_recovery->data_check; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 4; */
     const uint32_t *p32=(const uint32_t *)&buffer[i];
     const uint32_t size=be32(*p32)&0x00ffffff;
 #ifdef DEBUG_FLAC
@@ -69,16 +77,23 @@ static data_check_t data_check_flac_metadata(const unsigned char *buffer, const 
     file_recovery->calculated_file_size+=(uint64_t)4+size;
     if((buffer[i]&0x80)==0x80)
     {
-      file_recovery->data_check=&data_check_flac_frame;
-      log_info("data_check_flac_frame    calculated_file_size=0x%llx\n",
-	  (long long unsigned)file_recovery->calculated_file_size);
-      return data_check_flac_frame(buffer, buffer_size, file_recovery);
+      file_recovery->data_check=NULL;
+      return DC_CONTINUE;
     }
   }
   return DC_CONTINUE;
 }
-#endif
 
+/*@
+  @ requires buffer_size >= 8;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_flac, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_flac(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const uint32_t *p32=(const uint32_t *)&buffer[4];
@@ -90,13 +105,11 @@ static int header_check_flac(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->extension=file_hint_flac.extension;
 #endif
   file_recovery_new->min_filesize=4+size;
-#if 0
   if(file_recovery_new->blocksize >= 4)
   {
     file_recovery_new->calculated_file_size=4;
     file_recovery_new->data_check=&data_check_flac_metadata;
   }
-#endif
   return 1;
 }
 
@@ -106,6 +119,8 @@ static void register_header_check_flac(file_stat_t *file_stat)
   static const unsigned char flac_header[5]= {'f', 'L', 'a', 'C', 0x00};
   static const unsigned char flac_header2[5]= {'f', 'L', 'a', 'C', 0x80};
   register_header_check(0, flac_header,sizeof(flac_header), &header_check_flac, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, flac_header2,sizeof(flac_header2), &header_check_flac, file_stat);
+#endif
 }
 #endif
