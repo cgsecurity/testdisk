@@ -37,8 +37,8 @@
 #include "log.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_fits(file_stat_t *file_stat);
-static int header_check_fits(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_fits= {
   .extension="fits",
@@ -87,6 +87,9 @@ static uint64_t fits_get_val(const unsigned char *str)
   @ requires \valid(file_recovery);
   @ requires \valid(i_pointer);
   @ requires \separated(buffer+(..), file_recovery, i_pointer);
+  @ requires *i_pointer < buffer_size;
+  @ assigns *i_pointer, file_recovery->time;
+  @ ensures \old(*i_pointer) == *i_pointer || (\old(*i_pointer) <= *i_pointer < buffer_size + 80);
   @*/
 static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery, unsigned int *i_pointer)
 {
@@ -94,10 +97,13 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
   unsigned int i=*i_pointer;
   if( i+80 >= buffer_size)
     return 1;
+  /*@ assert *i_pointer == i; */
   /* Header is composed of 80 character fixed-length strings */
   /*@
+    @ loop invariant *i_pointer <= i;
     @ loop invariant i < buffer_size + 80;
     @ loop assigns i, naxis_size, file_recovery->time;
+    @ loop variant buffer_size + 80 - i;
     @*/
   for(; i+80 < buffer_size &&
       memcmp(&buffer[i], "END ", 4)!=0;
@@ -148,29 +154,47 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
       }
     }
   }
+  /*@ assert *i_pointer <= i < buffer_size + 80; */
   *i_pointer=i;
   return naxis_size;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_fits;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @*/
+/* assigns file_recovery->calculated_file_size, file_recovery->time; */
 static data_check_t data_check_fits(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
-    @ loop assigns file_recovery->calculated_file_size;
+    @ loop assigns file_recovery->calculated_file_size, file_recovery->time;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 8; */
+    /*@ assert \valid_read(&buffer[i] + (0 .. 8-1)); */
     if(memcmp(&buffer[i], "XTENSION", 8)!=0)
       break;
     {
-      const unsigned int i_org=i;
-      const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery, &i);
+      unsigned int new_i=i;
+      /*@ assert i==new_i; */
+      const uint64_t tmp=fits_info(buffer, buffer_size, file_recovery, &new_i);
+      /*@ assert (i==new_i && i < buffer_size - 8) || (i <= new_i < buffer_size + 80); */
+      /*@ assert i<=new_i; */
+      const unsigned int diff=new_i-i;
 #ifdef DEBUG_FITS
       log_info("data_check_fits cfr=%llu fs=%llu i=%u buffer_size=%u\n",
 	  (long long unsigned)file_recovery->calculated_file_size,
 	  (long long unsigned)file_recovery->file_size,
-	  i, buffer_size);
+	  new_i, buffer_size);
 #endif
       if(tmp==0)
       {
@@ -178,7 +202,8 @@ static data_check_t data_check_fits(const unsigned char *buffer, const unsigned 
 	file_recovery->file_check=NULL;
 	return DC_CONTINUE;
       }
-      file_recovery->calculated_file_size+=(i-i_org+2880-1)/2880*2880+(tmp+2880-1)/2880*2880;
+      /*@ assert diff < buffer_size + 80; */
+      file_recovery->calculated_file_size+=(uint64_t)(diff+2880-1)/2880*2880+(tmp+2880-1)/2880*2880;
     }
   }
   if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
@@ -186,6 +211,16 @@ static data_check_t data_check_fits(const unsigned char *buffer, const unsigned 
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= 10;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_fits, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_fits(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i=0;
@@ -209,6 +244,7 @@ static int header_check_fits(const unsigned char *buffer, const unsigned int buf
   file_recovery_new->data_check=&data_check_fits;
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->calculated_file_size=(i+2880-1)/2880*2880+(naxis_size_max+2880-1)/2880*2880;
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
