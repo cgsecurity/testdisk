@@ -91,7 +91,7 @@ struct file_recovery_struct
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
   data_check_t (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error */
+  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, time */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
   uint64_t checkpoint_offset;
@@ -138,7 +138,8 @@ typedef struct
         (file_recovery->extension == \null || valid_read_string(file_recovery->extension)) &&
 	(file_recovery->data_check == \null || \valid_function(file_recovery->data_check)) &&
 	(file_recovery->file_check == \null || \valid_function(file_recovery->file_check)) &&
-	(file_recovery->file_rename == \null || \valid_function(file_recovery->file_rename))
+	(file_recovery->file_rename == \null || \valid_function(file_recovery->file_rename)) &&
+	\separated(file_recovery, file_recovery->extension)
 	);
   @*/
 /*@
