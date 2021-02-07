@@ -37,7 +37,9 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mov(file_stat_t *file_stat);
+/*@ requires \valid(file_stat); */
 static void register_header_check_mov_mdat(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mov= {
@@ -80,8 +82,8 @@ struct atom64_struct
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename == &file_rename_mov;
   @*/
 static void file_rename_mov(file_recovery_t *file_recovery)
 {
@@ -103,15 +105,41 @@ static void file_rename_mov(file_recovery_t *file_recovery)
 }
 
 /*@
+  @ requires \valid_read(atom + (0 .. 3));
+  @ assigns  \nothing;
+  @*/
+static inline int is_known_atom(const unsigned char *atom)
+{
+  if( (atom[0]=='c' && atom[1]=='m' && atom[2]=='o' && atom[3]=='v') ||
+      (atom[0]=='c' && atom[1]=='m' && atom[2]=='v' && atom[3]=='d') ||
+      (atom[0]=='d' && atom[1]=='c' && atom[2]=='o' && atom[3]=='m') ||
+      (atom[0]=='f' && atom[1]=='r' && atom[2]=='e' && atom[3]=='a') ||
+      (atom[0]=='f' && atom[1]=='r' && atom[2]=='e' && atom[3]=='e') ||
+      (atom[0]=='f' && atom[1]=='t' && atom[2]=='y' && atom[3]=='p') ||
+      (atom[0]=='j' && atom[1]=='p' && atom[2]=='2' && atom[3]=='h') ||
+      (atom[0]=='m' && atom[1]=='d' && atom[2]=='i' && atom[3]=='a') ||
+      (atom[0]=='m' && atom[1]=='e' && atom[2]=='t' && atom[3]=='a') ||
+      (atom[0]=='m' && atom[1]=='o' && atom[2]=='o' && atom[3]=='v') ||
+      (atom[0]=='P' && atom[1]=='I' && atom[2]=='C' && atom[3]=='T') ||
+      (atom[0]=='p' && atom[1]=='n' && atom[2]=='o' && atom[3]=='t') ||
+      (atom[0]=='s' && atom[1]=='k' && atom[2]=='i' && atom[3]=='p') ||
+      (atom[0]=='s' && atom[1]=='t' && atom[2]=='b' && atom[3]=='l') ||
+      (atom[0]=='t' && atom[1]=='h' && atom[2]=='u' && atom[3]=='m') ||
+      (atom[0]=='t' && atom[1]=='r' && atom[2]=='a' && atom[3]=='k') ||
+      (atom[0]=='u' && atom[1]=='u' && atom[2]=='i' && atom[3]=='d') ||
+      (atom[0]=='w' && atom[1]=='i' && atom[2]=='d' && atom[3]=='e') )
+    return 1;
+  return 0;
+}
+
+/*@
   @ requires buffer_size >= 16;
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mov;
   @ requires \separated(buffer + (..), file_recovery);
-  @ requires file_recovery->file_size == 0 || file_recovery->calculated_file_size > file_recovery->file_size - 16;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
-  @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size > file_recovery->file_size + buffer_size/2 - 16);
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_mov(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -125,24 +153,26 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
     const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
     /*@ assert 0 <= i <= buffer_size - 8 ; */
     const struct atom_struct *atom=(const struct atom_struct*)&buffer[i];
+    /*@ assert \valid_read(atom); */
     uint64_t atom_size=be32(atom->size);
     if(atom_size==1)
     {
       const struct atom64_struct *atom64;
       if(i + 16 > buffer_size)
       {
-	/*@ assert file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size + 16 > buffer_size; */
-	/*@ assert file_recovery->calculated_file_size > file_recovery->file_size + buffer_size/2 - 16; */
 	return DC_CONTINUE;
       }
       /*@ assert i + 16 <= buffer_size; */
       atom64=(const struct atom64_struct*)&buffer[i];
+      /*@ assert \valid_read(atom64); */
       atom_size=be64(atom64->size);
       if(atom_size<16)
 	return DC_STOP;
+      /*@ assert atom_size >= 16; */
     }
     else if(atom_size<8)
       return DC_STOP;
+    /*@ assert atom_size >= 8; */
     if(atom_size >= 0x800000000000)
       return DC_STOP;
     /*@ assert 8 <= atom_size < 0x800000000000; */
@@ -164,24 +194,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
       }
 #endif
     }
-    else if( (buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-	(buffer[i+4]=='c' && buffer[i+5]=='m' && buffer[i+6]=='v' && buffer[i+7]=='d') ||
-	(buffer[i+4]=='d' && buffer[i+5]=='c' && buffer[i+6]=='o' && buffer[i+7]=='m') ||
-	(buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='a') ||
-	(buffer[i+4]=='f' && buffer[i+5]=='r' && buffer[i+6]=='e' && buffer[i+7]=='e') ||
-	(buffer[i+4]=='f' && buffer[i+5]=='t' && buffer[i+6]=='y' && buffer[i+7]=='p') ||
-	(buffer[i+4]=='j' && buffer[i+5]=='p' && buffer[i+6]=='2' && buffer[i+7]=='h') ||
-	(buffer[i+4]=='m' && buffer[i+5]=='d' && buffer[i+6]=='i' && buffer[i+7]=='a') ||
-	(buffer[i+4]=='m' && buffer[i+5]=='e' && buffer[i+6]=='t' && buffer[i+7]=='a') ||
-	(buffer[i+4]=='m' && buffer[i+5]=='o' && buffer[i+6]=='o' && buffer[i+7]=='v') ||
-	(buffer[i+4]=='P' && buffer[i+5]=='I' && buffer[i+6]=='C' && buffer[i+7]=='T') ||
-	(buffer[i+4]=='p' && buffer[i+5]=='n' && buffer[i+6]=='o' && buffer[i+7]=='t') ||
-	(buffer[i+4]=='s' && buffer[i+5]=='k' && buffer[i+6]=='i' && buffer[i+7]=='p') ||
-	(buffer[i+4]=='s' && buffer[i+5]=='t' && buffer[i+6]=='b' && buffer[i+7]=='l') ||
-	(buffer[i+4]=='t' && buffer[i+5]=='h' && buffer[i+6]=='u' && buffer[i+7]=='m') ||
-	(buffer[i+4]=='t' && buffer[i+5]=='r' && buffer[i+6]=='a' && buffer[i+7]=='k') ||
-	(buffer[i+4]=='u' && buffer[i+5]=='u' && buffer[i+6]=='i' && buffer[i+7]=='d') ||
-	(buffer[i+4]=='w' && buffer[i+5]=='i' && buffer[i+6]=='d' && buffer[i+7]=='e') )
+    else if(is_known_atom(&buffer[i+4]))
     {
       file_recovery->calculated_file_size+=atom_size;
     }
@@ -196,8 +209,6 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
       return DC_STOP;
     }
   }
-  /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size > file_recovery->file_size + buffer_size/2 - 8; */
-  /*@ assert file_recovery->calculated_file_size > file_recovery->file_size + buffer_size/2 - 8; */
 #ifdef DEBUG_MOV
   log_trace("file_mov.c: new calculated_file_size %llu\n",
       (long long unsigned)file_recovery->calculated_file_size);
@@ -232,6 +243,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
   @ ensures (\result == 1 && (file_recovery_new->extension == extension_jp2 || file_recovery_new->blocksize < 16)) ==> (file_recovery_new->data_check == \null && file_recovery_new->file_check == \null && file_recovery_new->file_rename == \null && file_recovery_new->min_filesize > 0);
   @ ensures (\result == 1 && file_recovery_new->extension != extension_jp2 && file_recovery_new->blocksize >= 16) ==> (file_recovery_new->calculated_file_size > 0 && file_recovery_new->file_check == &file_check_size && file_recovery_new->data_check == &data_check_mov);
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_mov_aux(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -492,6 +504,7 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
   @ ensures (\result == 1 && file_recovery_new->extension != file_hint_mov.extension) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1 && (file_recovery_new->extension == extension_jp2 || file_recovery_new->blocksize < 16)) ==> (file_recovery_new->data_check == \null && file_recovery_new->file_check == \null && file_recovery_new->file_rename == \null && file_recovery_new->min_filesize > 0);
   @ ensures (\result == 1 && file_recovery_new->extension != extension_jp2 && file_recovery_new->blocksize >= 16) ==> (file_recovery_new->calculated_file_size > 0 && file_recovery_new->file_check == &file_check_size && file_recovery_new->data_check == &data_check_mov);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_mov(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
