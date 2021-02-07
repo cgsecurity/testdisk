@@ -41,6 +41,7 @@ extern const file_hint_t file_hint_mkv;
 extern const file_hint_t file_hint_tiff;
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mp3(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mp3= {
@@ -269,10 +270,7 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mp3;
   @ requires \separated(buffer + (..), file_recovery);
-  @ requires file_recovery->file_size == 0 || file_recovery->calculated_file_size >= file_recovery->file_size - 16;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
-  @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16);
-  @ ensures file_recovery->data_check==&data_check_mp3;
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -399,8 +397,6 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       /*@ assert file_recovery->calculated_file_size > 0; */
     }
   }
-  /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16; */
-  /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16; */
   return DC_CONTINUE;
 }
 
@@ -411,15 +407,13 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_id3;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
-  @ ensures \result == DC_CONTINUE && file_recovery->data_check==&data_check_id3 ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 1);
-  @ ensures \result == DC_CONTINUE ==> (file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16);
   @ ensures file_recovery->data_check==&data_check_id3 || file_recovery->data_check==&data_check_mp3;
+  @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
   @*/
-  /*TODO assigns file_recovery->data_check,file_recovery->calculated_file_size; */
 static data_check_t data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
-    @ loop assigns file_recovery->data_check,file_recovery->calculated_file_size;
+    @ loop assigns file_recovery->data_check, file_recovery->calculated_file_size;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
@@ -433,18 +427,13 @@ static data_check_t data_check_id3(const unsigned char *buffer, const unsigned i
     else
     { /* no more padding or no padding */
       file_recovery->data_check=&data_check_mp3;
-      file_recovery->file_check=&file_check_size;
       /*@ assert file_recovery->data_check==&data_check_mp3; */
       if(data_check_mp3(buffer, buffer_size, file_recovery)!=DC_CONTINUE)
 	return DC_STOP;
-      /*@ assert file_recovery->data_check==&data_check_mp3; */
-      /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 16; */
       return DC_CONTINUE;
     }
   }
   /*@ assert file_recovery->data_check==&data_check_id3; */
-  /*@ assert file_recovery->calculated_file_size < file_recovery->file_size - buffer_size/2 || file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 1; */
-  /*@ assert file_recovery->calculated_file_size >= file_recovery->file_size + buffer_size/2 - 1; */
   return DC_CONTINUE;
 }
 
@@ -468,7 +457,8 @@ static data_check_t data_check_id3(const unsigned char *buffer, const unsigned i
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns *file_recovery_new;
   @*/
 static int header_check_id3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -523,7 +513,7 @@ static int header_check_id3(const unsigned char *buffer, const unsigned int buff
   @ ensures (\result == 1 && file_recovery_new->blocksize < 16) ==> (file_recovery_new->file_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_mp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
