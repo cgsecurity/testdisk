@@ -83,7 +83,7 @@ static data_check_t data_check_abr(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size > 0;
+  @ requires buffer_size >= 4 + sizeof(struct abr_header) ;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
