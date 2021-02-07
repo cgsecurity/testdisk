@@ -32,6 +32,7 @@
 #include "common.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mxf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mxf= {
@@ -63,16 +64,31 @@ struct partition_pack_next
   uint64_t body_offset;
   uint32_t body_SID;
   char	   op_pattern[16];
+#ifndef __FRAMAC__
   char     essence_container[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_mxf;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   static const unsigned char mxf_header[4]= { 0x06, 0x0e, 0x2b, 0x34 };
+  /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 15 < file_recovery->file_size + buffer_size/2)
+      file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 0x14; */
     if(memcmp(&buffer[i], mxf_header, sizeof(mxf_header))!=0)
       return DC_STOP;
 #ifdef DEBUG_MXF
@@ -104,8 +120,20 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= 0x26;
+  @ requires \valid_read(buffer+(0 .. buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mxf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct partition_pack_next *hdr;
   if(buffer[0x0d]!=0x02 || buffer[0x0e]!=0x04)
     return 0;
   reset_file_recovery(file_recovery_new);
@@ -113,36 +141,22 @@ static int header_check_mxf(const unsigned char *buffer, const unsigned int buff
   switch(buffer[0x10])
   {
     case 0x81:
-      {
-	const struct partition_pack_next *hdr=(const struct partition_pack_next *)&buffer[0x12];
-	file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
-      }
+      hdr=(const struct partition_pack_next *)&buffer[0x12];
       break;
     case 0x82:
-      {
-	const struct partition_pack_next *hdr=(const struct partition_pack_next *)&buffer[0x13];
-	file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
-      }
+      hdr=(const struct partition_pack_next *)&buffer[0x13];
       break;
     case 0x83:
-      {
-	const struct partition_pack_next *hdr=(const struct partition_pack_next *)&buffer[0x14];
-	file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
-      }
+      hdr=(const struct partition_pack_next *)&buffer[0x14];
       break;
     case 0x84:
-      {
-	const struct partition_pack_next *hdr=(const struct partition_pack_next *)&buffer[0x15];
-	file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
-      }
+      hdr=(const struct partition_pack_next *)&buffer[0x15];
       break;
     default:
-      {
-	const struct partition_pack_next *hdr=(const struct partition_pack_next *)&buffer[0x11];
-	file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
-      }
+      hdr=(const struct partition_pack_next *)&buffer[0x11];
       break;
   }
+  file_recovery_new->calculated_file_size=be64(hdr->footer_partition);
   file_recovery_new->data_check=&data_check_mxf;
   file_recovery_new->file_check=&file_check_size;
   return 1;
