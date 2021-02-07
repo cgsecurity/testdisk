@@ -32,6 +32,7 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ttf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_ttf= {
@@ -44,7 +45,7 @@ const file_hint_t file_hint_ttf= {
 };
 
 /*
- * http://www.microsoft.com/typography/otspec/otff.htm
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/otff
  */
 
 struct ttf_offset_table
@@ -79,6 +80,17 @@ static unsigned int td_ilog2(unsigned int v)
   return l;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct ttf_offset_table);
+  @ requires \valid_read(buffer+(0 .. buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ttf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_ttf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ttf_offset_table *ttf=(const struct ttf_offset_table *)buffer;
@@ -119,8 +131,8 @@ static int header_check_ttf(const unsigned char *buffer, const unsigned int buff
     {
       /*@ assert 0 <= i < numTables; */
       /*@ assert \valid_read(&ttf_dir[i]); */
-      /* | 0x3: align the end of the table */
-      const uint64_t new_offset=((uint64_t)be32(ttf_dir[i].offset) + be32(ttf_dir[i].length))|0x3;
+      /* Do not align the end of the table with "|0x3;"*/
+      const uint64_t new_offset=((uint64_t)be32(ttf_dir[i].offset) + be32(ttf_dir[i].length));
       if(max_offset < new_offset)
 	max_offset=new_offset;
     }
