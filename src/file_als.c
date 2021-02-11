@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_als(file_stat_t *file_stat);
 
 const file_hint_t file_hint_als= {
@@ -42,6 +43,16 @@ const file_hint_t file_hint_als= {
   .register_header_check=&register_header_check_als
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(file_recovery->handle);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_als(file_recovery_t *file_recovery)
 {
   static const unsigned char als_footer[0x16]= {
@@ -52,6 +63,17 @@ static void file_check_als(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, als_footer, sizeof(als_footer), 7);
 }
 
+/*@
+  @ requires buffer_size >= 11+13;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_als, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_als(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static const unsigned char als_header2[13]= {
