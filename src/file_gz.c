@@ -20,7 +20,6 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -35,13 +34,16 @@
 #endif
 #include <stdio.h>
 #include "types.h"
+#include "file_gz.h"
+
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 #ifdef HAVE_ZLIB_H
 #include <zlib.h>
 #endif
 #include "filegen.h"
 #include "common.h"
-#include "file_gz.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_gz(file_stat_t *file_stat);
 static void file_rename_gz(file_recovery_t *file_recovery);
 #ifndef SINGLE_FORMAT
@@ -83,10 +85,22 @@ struct gzip_header
 #define GZ_FNAME	8
 #define GZ_FCOMMENT     0x10
 
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+/*@ assigns \nothing; */
 static void file_check_bgzf(file_recovery_t *file_recovery)
 {
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct gzip_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(buffer_uncompr + (0 .. 4-1));
+  @ requires \valid(file_recovery_new);
+  @ requires separation: \separated(buffer+(..), file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result == 1;
+  @ ensures  valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_bgzf(const unsigned char *buffer, const unsigned char *buffer_uncompr, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
 {
   const struct gzip_header *gz=(const struct gzip_header *)buffer;
@@ -99,24 +113,39 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="bai";
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   if(memcmp(buffer_uncompr, "BAM\1", 4)==0)
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="bam";
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   if(memcmp(buffer_uncompr, "CSI\1", 4)==0)
   {
     /* https://github.com/samtools/hts-specs SAM/BAM and related high-throughput sequencing file formats */
     file_recovery_new->extension="csi";
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   file_recovery_new->extension="bgz";
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
+#endif
 
+/*@
+  @ requires buffer_size >= 16;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_gz, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int off=10;
@@ -330,11 +359,6 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       return 0;
   }
 #endif
-  if(file_recovery->file_check==&file_check_bgzf)
-  {
-    header_ignored(file_recovery_new);
-    return 0;
-  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=22;
   file_recovery_new->time=le32(gz->mtime);
@@ -344,6 +368,11 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
   return 1;
 }
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename==&file_rename_gz;
+  @*/
 static void file_rename_gz(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];

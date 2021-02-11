@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+/*@
+  @ assigns \result;
+  @*/
 const char*td_zlib_version(void);
 
 #ifdef __cplusplus
