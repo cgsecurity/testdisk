@@ -205,7 +205,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
     const unsigned char *buffer_compr=buffer+off;
     unsigned char buffer_uncompr[4096];
     const unsigned int uncomprLen=sizeof(buffer_uncompr)-1;
-    const unsigned int bs=td_max(512,file_recovery_new->blocksize);
+    const unsigned int bs=td_max(512U,file_recovery_new->blocksize);
     /*@ assert bs >=512; */
     const unsigned int comprLen=td_min(buffer_size,bs)-off;
     /*@ assert comprLen > 0; */
