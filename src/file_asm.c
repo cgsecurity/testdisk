@@ -32,6 +32,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_asm(file_stat_t *file_stat);
 
 const file_hint_t file_hint_asm= {
@@ -43,10 +44,16 @@ const file_hint_t file_hint_asm= {
   .register_header_check=&register_header_check_asm
 };
 
-static const unsigned char asm_header[16]= {
-  '#', 'U', 'G', 'C', ':', '2', ' ', 'A',
-  'S', 'S', 'E', 'M', 'B', 'L', 'Y', ' '};
-
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_asm;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_asm(file_recovery_t *file_recovery)
 {
   const unsigned char asm_footer[11]= {
@@ -55,6 +62,16 @@ static void file_check_asm(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, asm_footer, sizeof(asm_footer), 1);
 }
 
+/*@
+  @ requires buffer_size > 20;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_asm, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_asm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(!isprint(buffer[16]) || !isprint(buffer[17]) || !isprint(buffer[18]) || !isprint(buffer[19]))
@@ -67,6 +84,9 @@ static int header_check_asm(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_asm(file_stat_t *file_stat)
 {
+  static const unsigned char asm_header[16]= {
+    '#', 'U', 'G', 'C', ':', '2', ' ', 'A',
+    'S', 'S', 'E', 'M', 'B', 'L', 'Y', ' '};
   register_header_check(0, asm_header,sizeof(asm_header), &header_check_asm, file_stat);
 }
 #endif
