@@ -32,6 +32,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_bfa(file_stat_t *file_stat);
 
 const file_hint_t file_hint_bfa= {
@@ -55,6 +56,17 @@ struct bfa_header
   uint32_t	lKeyHash;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct bfa_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_bfa, buffer, file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_bfa(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct bfa_header *header=(const struct bfa_header*)buffer;
