@@ -43,8 +43,31 @@ const file_hint_t file_hint_axp= {
   .register_header_check=&register_header_check_axp
 };
 
+const unsigned char axp_footer[34]= {
+  '<', 0, '/', 0, 'V', 0, 'F', 0,
+  'N', 0, 'G', 0, 'D', 0, 'o', 0,
+  'c', 0, 'u', 0, 'm', 0, 'e', 0,
+  'n', 0, 't', 0, '>', 0, 0x0d, 0,
+  0x0a, 0
+};
+
 /*@
-  @ requires buffer_size > 0;
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(file_recovery->handle);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
+static void file_check_axp(file_recovery_t *file_recovery)
+{
+  file_search_footer(file_recovery, axp_footer, sizeof(axp_footer), 1);
+}
+
+/*@
+  @ requires buffer_size >= 2*sizeof(axp_footer);
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
@@ -56,19 +79,12 @@ const file_hint_t file_hint_axp= {
   @*/
 static data_check_t data_check_axp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  const unsigned char axp_footer[34]= {
-    '<', 0, '/', 0, 'V', 0, 'F', 0,
-    'N', 0, 'G', 0, 'D', 0, 'o', 0,
-    'c', 0, 'u', 0, 'm', 0, 'e', 0,
-    'n', 0, 't', 0, '>', 0, 0x0d, 0,
-    0x0a, 0
-  };
   unsigned int j;
   /*@
-    @ loop assigns j;
+    @ loop assigns j, file_recovery->calculated_file_size;
     @*/
-  for(j=(buffer_size/2>sizeof(axp_footer)?buffer_size/2-sizeof(axp_footer):0);
-      j+sizeof(axp_footer) < buffer_size;
+  for(j=buffer_size/2-sizeof(axp_footer);
+      j+sizeof(axp_footer) <= buffer_size;
       j++)
   {
     if(buffer[j]=='<' && memcmp((const char *)&buffer[j], axp_footer, sizeof(axp_footer))==0)
@@ -95,8 +111,12 @@ static int header_check_axp(const unsigned char *buffer, const unsigned int buff
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_axp.extension;
-  file_recovery_new->data_check=&data_check_axp;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->min_filesize=0x70+34;
+  file_recovery_new->file_check=&file_check_axp;
+  if(file_recovery_new->blocksize >= 0x34)
+  {
+    file_recovery_new->data_check=&data_check_axp;
+  }
   return 1;
 }
 
