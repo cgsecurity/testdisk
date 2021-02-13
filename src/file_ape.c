@@ -103,8 +103,7 @@ struct APE_HEADER
 /*@
   @ requires buffer_size >= sizeof(struct APE_HEADER_OLD);
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_ape, buffer, file_recovery, file_recovery_new);

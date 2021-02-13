@@ -208,8 +208,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @
