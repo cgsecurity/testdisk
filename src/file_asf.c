@@ -33,8 +33,8 @@
 #include "log.h"
 
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asf)
+/*@ requires \valid(file_stat); */
 static void register_header_check_asf(file_stat_t *file_stat);
-static int header_check_asf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_asf= {
   .extension="asf",
@@ -58,7 +58,7 @@ struct asf_file_prop_s {
   uint64_t      object_size;
   unsigned char file_id[16];
   uint64_t      file_size;
-  uint64_t      file_date;
+  int64_t       file_date;
 } __attribute__ ((gcc_struct, __packed__));
 
 struct asf_stream_prop_s {
@@ -70,6 +70,16 @@ struct asf_stream_prop_s {
 static const char *extension_wma="wma";
 static const char *extension_wmv="wmv";
 
+/*@
+  @ requires buffer_size > sizeof(struct asf_header_obj_s);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_asf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_asf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct asf_header_obj_s *hdr=(const struct asf_header_obj_s*)buffer;
@@ -84,6 +94,9 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
       le64(hdr->object_size) >= PHOTOREC_MAX_FILE_SIZE ||
       nbr_header_obj<4)
     return 0;
+  /*@
+    @ loop assigns extension, i, size, time, offset_prop;
+    @*/
   for(i=0;
       i < nbr_header_obj && offset_prop + 0x28 < buffer_size;
       i++)
@@ -102,7 +115,9 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     };
     if(object_size < 0x18)
     {
+#ifndef __FRAMAC__
       log_info("header_check_asf object_size too small %llu\n", (long long unsigned)object_size);
+#endif
       return 0;
     }
     if(object_size > 0x8000000000000000)
@@ -119,10 +134,10 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     else if(memcmp(prop->object_id, asf_stream_prop_s, sizeof(asf_stream_prop_s))==0)
     {
       const struct asf_stream_prop_s *stream=(const struct asf_stream_prop_s *)prop;
-      const char wma[16]={
+      const unsigned char wma[16]={
 	0x40, 0x9e, 0x69, 0xf8, 0x4d, 0x5b, 0xcf, 0x11, 0xa8, 0xfd, 0x00, 0x80, 0x5f, 0x5c, 0x44, 0x2b
       };
-      const char wmv[16]={
+      const unsigned char wmv[16]={
 	0xc0, 0xef, 0x19, 0xbc, 0x4d, 0x5b, 0xcf, 0x11, 0xa8, 0xfd, 0x00, 0x80, 0x5f, 0x5c, 0x44, 0x2b
       };
       if(object_size < 0x28)

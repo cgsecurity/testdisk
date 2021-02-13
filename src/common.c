@@ -199,6 +199,9 @@ unsigned int up2power(const unsigned int number)
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i, partition->fsname[i];
+    @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   partition->fsname[i]='\0';
@@ -207,8 +210,14 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i, partition->fsname[i];
+    @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
+  /*@
+    @ loop assigns i;
+    @*/
   while(i>0 && src[i-1]==' ')
     i--;
   partition->fsname[i]='\0';
@@ -270,8 +279,6 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
   day   = td_max(1, f_date & 0x1f) - 1;
   /*@ assert 0 <= day <= 30; */
 
-  leap_day = (year + 3) / 4;
-  /*@ assert 0 <= leap_day <= 32; */
   if (year > YEAR_2100)		/* 2100 isn't leap year */
   {
     /*@ assert year > YEAR_2100; */
@@ -283,6 +290,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
   else
   {
     /*@ assert year <= YEAR_2100; */
+    leap_day = (year + 3) / 4;
     /*@ assert 0 <= leap_day <= (YEAR_2100 + 3)/4; */
   }
   /*@ assert 0 <= leap_day < 32; */
@@ -341,7 +349,9 @@ void set_secwest(void)
 #define NTFS_TIME_OFFSET ((int64_t)(369 * 365 + 89) * 24 * 3600 * 10000000)
 time_t td_ntfs2utc (int64_t ntfstime)
 {
-  return (ntfstime - (NTFS_TIME_OFFSET)) / 10000000;
+  if(ntfstime < NTFS_TIME_OFFSET)
+    return 0;
+  return (ntfstime - NTFS_TIME_OFFSET) / 10000000;
 }
 
 int check_command(char **current_cmd, const char *cmd, const size_t n)
@@ -349,7 +359,17 @@ int check_command(char **current_cmd, const char *cmd, const size_t n)
   const int res=strncmp(*current_cmd, cmd, n);
   if(res==0)
   {
+#ifdef __FRAMAC__
+    unsigned int i;
+    /*@
+      @ loop invariant valid_read_string(*current_cmd);
+      @ loop assigns i, *current_cmd;
+      @*/
+    for(i=0; i<n && *current_cmd!='\0'; i++)
+      (*current_cmd)++;
+#else
     (*current_cmd)+=n;
+#endif
     /*@ assert valid_read_string(*current_cmd); */
     return 0;
   }
