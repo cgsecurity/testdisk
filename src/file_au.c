@@ -32,6 +32,7 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_au(file_stat_t *file_stat);
 
 const file_hint_t file_hint_au= {
@@ -54,21 +55,35 @@ struct header_au_s
   uint32_t channels;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > sizeof(struct header_au_s);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_au, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_au(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct header_au_s *au=(const struct header_au_s *)buffer;
-  if((const uint32_t)be32(au->offset) >= sizeof(struct header_au_s) &&
+  const unsigned int offset=be32(au->offset);
+  const unsigned int size=be32(au->size);
+  if(offset >= sizeof(struct header_au_s) &&
     be32(au->encoding)>0 && be32(au->encoding)<=27 &&
     be32(au->channels)>0 && be32(au->channels)<=256)
   {
-    if(be32(au->size)!=0xffffffff)
+    if(size!=0xffffffff)
     {
-      if(be32(au->offset)+be32(au->size) < 111)
+      const uint64_t cfs=(uint64_t)offset + size;
+      if(cfs < 111)
 	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->min_filesize=111;
       file_recovery_new->extension=file_hint_au.extension;
-      file_recovery_new->calculated_file_size=(uint64_t)be32(au->offset)+be32(au->size);
+      file_recovery_new->calculated_file_size=cfs;
       file_recovery_new->data_check=&data_check_size;
       file_recovery_new->file_check=&file_check_size;
       return 1;
