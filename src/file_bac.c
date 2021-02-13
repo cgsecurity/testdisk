@@ -70,12 +70,6 @@ struct block_header
   @*/
 static data_check_t data_check_bac(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(buffer_size < 2*0x18)
-  {
-    file_recovery->data_check=NULL;
-    file_recovery->file_check=NULL;
-    return DC_CONTINUE;
-  }
   /*@ assert buffer_size >= 2*0x18; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
