@@ -33,6 +33,7 @@
 #include "common.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_axx(file_stat_t *file_stat);
 
 const file_hint_t file_hint_axx= {
@@ -50,9 +51,23 @@ struct SHeader
   uint8_t   oType;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires valid_file_recovery(fr);
+  @ requires \valid(fr->handle);
+  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
+  @ requires fr->file_check == &file_check_axx;
+  @ assigns *fr->handle, errno, fr->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(fr->handle);
+  @*/
 static void file_check_axx(file_recovery_t *fr)
 {
   uint64_t	offset=0x10;
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size;
+    @ loop assigns offset;
+    @ */
   while(offset < 0x8000000000000000)
   {
     struct SHeader header;
@@ -94,6 +109,16 @@ static void file_check_axx(file_recovery_t *fr)
   fr->file_size=0;
 }
 
+/*@
+  @ requires buffer_size > 0x25+sizeof(struct SHeader);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_axx, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_axx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct SHeader *header=(const struct SHeader *)&buffer[0x10+0x15];
