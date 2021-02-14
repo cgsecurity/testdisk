@@ -33,6 +33,7 @@
 #include "common.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_che(file_stat_t *file_stat);
 
 const file_hint_t file_hint_che= {
@@ -53,6 +54,18 @@ struct che_block
 } __attribute__ ((gcc_struct, __packed__));
 
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires \initialized(&file_recovery->time);
+  @
+  @ requires file_recovery->file_check == &file_check_che;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_che(file_recovery_t *file_recovery)
 {
   struct che_block block;
@@ -60,6 +73,10 @@ static void file_check_che(file_recovery_t *file_recovery)
   uint64_t new_offset=0x19;
   const uint64_t file_size_org=file_recovery->file_size;
   file_recovery->file_size=0;
+  /*@
+    @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @*/
   do
   {
     offset=new_offset;
@@ -85,6 +102,17 @@ static void file_check_che(file_recovery_t *file_recovery)
   file_recovery->file_size=offset;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_che, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_che(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
