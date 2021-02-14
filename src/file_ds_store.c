@@ -32,6 +32,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ds_store(file_stat_t *file_stat);
 
 const file_hint_t file_hint_ds_store= {
@@ -53,6 +54,17 @@ struct ds_store_header
   char     unk2[16];
 };
 
+/*@
+  @ requires buffer_size >= sizeof(struct ds_store_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ds_store, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_ds_store(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ds_store_header *hdr=(const struct ds_store_header *)buffer;
@@ -60,7 +72,7 @@ static int header_check_ds_store(const unsigned char *buffer, const unsigned int
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_ds_store.extension;
-  file_recovery_new->min_filesize=be32(hdr->offset)+be32(hdr->size);
+  file_recovery_new->min_filesize=(uint64_t)be32(hdr->offset)+be32(hdr->size);
   return 1;
 }
 
