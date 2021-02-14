@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_dsc(file_stat_t *file_stat);
 
 const file_hint_t file_hint_dsc= {
@@ -41,12 +42,24 @@ const file_hint_t file_hint_dsc= {
   .register_header_check=&register_header_check_dsc
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_dsc, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_dsc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer_size<1024)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dsc.extension;
+  file_recovery_new->min_filesize=588+3;
   return 1;
 }
 
