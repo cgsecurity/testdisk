@@ -37,6 +37,7 @@
 
 #define MAX_BPG_SIZE 0x800000
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_bpg(file_stat_t *file_stat);
 
 const file_hint_t file_hint_bpg= {
@@ -53,6 +54,7 @@ const file_hint_t file_hint_bpg= {
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(buf_ptr);
   @ requires \separated(buffer+(..), buf_ptr);
+  @ assigns  *buf_ptr;
   @*/
 static unsigned int getue32(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *buf_ptr)
 {
@@ -97,17 +99,14 @@ static unsigned int getue32(const unsigned char *buffer, const unsigned int buff
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
   @ ensures (\result != 0) ==> file_recovery_new->extension != \null;
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
   @
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bpg.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check== &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_bpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
