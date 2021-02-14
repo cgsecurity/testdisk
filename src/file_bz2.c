@@ -31,8 +31,8 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_bz2(file_stat_t *file_stat);
-static int header_check_bz2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_bz2= {
   .extension="bz2",
@@ -43,13 +43,17 @@ const file_hint_t file_hint_bz2= {
   .register_header_check=&register_header_check_bz2
 };
 
-static const unsigned char bz2_header[3]= {'B','Z','h'};
-
-static void register_header_check_bz2(file_stat_t *file_stat)
-{
-  register_header_check(0, bz2_header,sizeof(bz2_header), &header_check_bz2, file_stat);
-}
-
+/*@
+  @ requires buffer_size >= 10;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_bz2, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_bz2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[0]=='B' && buffer[1]=='Z' && buffer[2]=='h' && buffer[3]>='0' && buffer[3]<='9' && buffer[4]=='1' && buffer[5]=='A' && buffer[6]=='Y' && buffer[7]=='&' && buffer[8]=='S' && buffer[9]=='Y')
@@ -59,5 +63,11 @@ static int header_check_bz2(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_bz2(file_stat_t *file_stat)
+{
+  static const unsigned char bz2_header[3]= {'B','Z','h'};
+  register_header_check(0, bz2_header,sizeof(bz2_header), &header_check_bz2, file_stat);
 }
 #endif
