@@ -32,7 +32,10 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_e01(file_stat_t *file_stat);
+
+static char ext[10];
 
 const file_hint_t file_hint_e01= {
   .extension="e01",
@@ -66,6 +69,15 @@ struct ewf_file_header
         uint16_t fields_end;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_e01;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_e01(file_recovery_t *file_recovery)
 {
   const uint64_t tmp=file_recovery->file_size;
@@ -84,10 +96,20 @@ static void file_check_e01(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, sig_done, sizeof(sig_done), 60);
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct ewf_file_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_e01, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new, *(ext + (0 .. sizeof(ext)-1));
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_e01(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ewf_file_header *ewf=(const struct ewf_file_header *)buffer;
-  static char ext[10];
   uint16_t fields_segment=le16(ewf->fields_segment);
   reset_file_recovery(file_recovery_new);
   if(fields_segment > ('Z'-'E') * 100 + 99)
