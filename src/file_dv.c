@@ -200,6 +200,7 @@ static void file_check_dv_PAL(file_recovery_t *fr)
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_dv, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
   @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_dv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
