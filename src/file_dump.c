@@ -33,6 +33,7 @@
 #include "filegen.h"
 #define TS_TAPE         1       /* dump tape header */
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_dump(file_stat_t *file_stat);
 
 const file_hint_t file_hint_dump= {
@@ -124,6 +125,17 @@ struct	dump_struct
 #define TS_CLRI 	6	/* map of inodes deleted since last dump */
 #define TS_END  	5	/* end of volume marker */
 
+/*@
+  @ requires buffer_size >= sizeof(struct dump_struct);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_dump, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_dump(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct dump_struct *dump=(const struct dump_struct*)buffer;
@@ -144,6 +156,8 @@ static void register_header_check_dump(file_stat_t *file_stat)
   static const unsigned char dump_header_le_old_fs[4]  = { 0x6b, 0xea, 0x00, 0x00};
   static const unsigned char dump_header_le_new_fs[4]  = { 0x6c, 0xea, 0x00, 0x00};
   register_header_check(0x18, dump_header_le_old_fs,sizeof(dump_header_le_old_fs), &header_check_dump, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0x18, dump_header_le_new_fs,sizeof(dump_header_le_new_fs), &header_check_dump, file_stat);
+#endif
 }
 #endif
