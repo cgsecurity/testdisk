@@ -45,7 +45,7 @@ const file_hint_t file_hint_dxf= {
 };
 
 /*@
-  @ requires buffer_size > 0;
+  @ requires buffer_size >= 6;
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
