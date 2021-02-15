@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ecryptfs(file_stat_t *file_stat);
-static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ecryptfs= {
   .extension="eCryptfs",
@@ -56,11 +56,13 @@ struct ecrypfs_header {
   uint32_t flags;
 } __attribute__ ((gcc_struct, __packed__));
 
-static void register_header_check_ecryptfs(file_stat_t *file_stat)
-{
-  register_header_check(0, ecryptfs_header, sizeof(ecryptfs_header), &header_check_ecryptfs, file_stat);
-}
-
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_ecryptfs;
+  @ assigns  file_recovery->file_size;
+  @*/
 static void file_check_ecryptfs(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size < file_recovery->calculated_file_size)
@@ -69,6 +71,17 @@ static void file_check_ecryptfs(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size+1024*1024;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct ecrypfs_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ecryptfs, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ecrypfs_header *e=(const struct ecrypfs_header *)buffer;
@@ -87,5 +100,10 @@ static int header_check_ecryptfs(const unsigned char *buffer, const unsigned int
   file_recovery_new->data_check=NULL;
   file_recovery_new->file_check=&file_check_ecryptfs;
   return 1;
+}
+
+static void register_header_check_ecryptfs(file_stat_t *file_stat)
+{
+  register_header_check(0, ecryptfs_header, sizeof(ecryptfs_header), &header_check_ecryptfs, file_stat);
 }
 #endif
