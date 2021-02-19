@@ -32,6 +32,7 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_elf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_elf= {
@@ -118,28 +119,112 @@ typedef struct {
 #define ELFDATA2LSB	1		/* 2's complement, little endian */
 #define ELFDATA2MSB	2		/* 2's complement, big endian */
 
-static int header_check_elf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+/*@
+  @ requires buffer_size >= sizeof(Elf32_Ehdr);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_elf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
+static int header_check_elf32_lsb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const Elf32_Ehdr *hdr32=(const Elf32_Ehdr *)buffer;
-  if(hdr32->e_ident[EI_DATA]!=ELFDATA2LSB && hdr32->e_ident[EI_DATA]!=ELFDATA2MSB)
-    return 0;
-  if((hdr32->e_ident[EI_DATA]==ELFDATA2LSB ? le32(hdr32->e_version) : be32(hdr32->e_version)) != 1)
+  const Elf32_Ehdr *hdr=(const Elf32_Ehdr *)buffer;
+  if(le32(hdr->e_version) != 1)
     return 0;
   /* http://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_elf.extension;
-  if(hdr32->e_ident[EI_CLASS]==ELFCLASS32)
   {
-    const uint32_t tmp=(hdr32->e_ident[EI_DATA]==ELFDATA2LSB ? le32(hdr32->e_shoff) : be32(hdr32->e_shoff));
-    file_recovery_new->min_filesize=(hdr32->e_ident[EI_DATA]==ELFDATA2LSB ? le32(hdr32->e_phoff) : be32(hdr32->e_phoff));
+    const uint32_t tmp=le32(hdr->e_shoff);
+    file_recovery_new->min_filesize=le32(hdr->e_phoff);
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
-  else
+  return 1;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(Elf32_Ehdr);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_elf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
+static int header_check_elf32_msb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const Elf32_Ehdr *hdr=(const Elf32_Ehdr *)buffer;
+  if(be32(hdr->e_version) != 1)
+    return 0;
+  /* http://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_elf.extension;
   {
-    const Elf64_Ehdr *hdr64=(const Elf64_Ehdr *)buffer;
-    const uint64_t tmp=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr64->e_shoff) : be64(hdr64->e_shoff));
-    file_recovery_new->min_filesize=(hdr64->e_ident[EI_DATA]==ELFDATA2LSB ? le64(hdr64->e_phoff) : be64(hdr64->e_phoff));
+    const uint32_t tmp=be32(hdr->e_shoff);
+    file_recovery_new->min_filesize=be32(hdr->e_phoff);
+    if(file_recovery_new->min_filesize < tmp)
+      file_recovery_new->min_filesize=tmp;
+  }
+  return 1;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(Elf64_Ehdr);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_elf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
+static int header_check_elf64_lsb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const Elf64_Ehdr *hdr=(const Elf64_Ehdr *)buffer;
+  if(le32(hdr->e_version) != 1)
+    return 0;
+  /* http://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_elf.extension;
+  {
+    const uint64_t tmp=le64(hdr->e_shoff);
+    file_recovery_new->min_filesize=le64(hdr->e_phoff);
+    if(file_recovery_new->min_filesize < tmp)
+      file_recovery_new->min_filesize=tmp;
+  }
+  return 1;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(Elf64_Ehdr);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_elf, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
+static int header_check_elf64_msb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const Elf64_Ehdr *hdr=(const Elf64_Ehdr *)buffer;
+  if(be32(hdr->e_version) != 1)
+    return 0;
+  /* http://en.wikipedia.org/wiki/Executable_and_Linkable_Format */
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_elf.extension;
+  {
+    const uint64_t tmp=be64(hdr->e_shoff);
+    file_recovery_new->min_filesize=be64(hdr->e_phoff);
     if(file_recovery_new->min_filesize < tmp)
       file_recovery_new->min_filesize=tmp;
   }
@@ -148,9 +233,13 @@ static int header_check_elf(const unsigned char *buffer, const unsigned int buff
 
 static void register_header_check_elf(file_stat_t *file_stat)
 {
-  static const unsigned char elf_header16[5]  = { 0x7f, 'E','L','F',0x01};
-  static const unsigned char elf_header32[5]  = { 0x7f, 'E','L','F',0x02};
-  register_header_check(0, elf_header16, sizeof(elf_header16), &header_check_elf, file_stat);
-  register_header_check(0, elf_header32, sizeof(elf_header32), &header_check_elf, file_stat);
+  static const unsigned char elf_header32_lsb[6]  = { 0x7f, 'E','L','F',0x01, ELFDATA2LSB};
+  static const unsigned char elf_header32_msb[6]  = { 0x7f, 'E','L','F',0x01, ELFDATA2MSB};
+  static const unsigned char elf_header64_lsb[6]  = { 0x7f, 'E','L','F',0x02, ELFDATA2LSB};
+  static const unsigned char elf_header64_msb[6]  = { 0x7f, 'E','L','F',0x02, ELFDATA2MSB};
+  register_header_check(0, elf_header32_lsb, sizeof(elf_header32_lsb), &header_check_elf32_lsb, file_stat);
+  register_header_check(0, elf_header32_msb, sizeof(elf_header32_msb), &header_check_elf32_msb, file_stat);
+  register_header_check(0, elf_header64_lsb, sizeof(elf_header64_lsb), &header_check_elf64_lsb, file_stat);
+  register_header_check(0, elf_header64_msb, sizeof(elf_header64_msb), &header_check_elf64_msb, file_stat);
 }
 #endif
