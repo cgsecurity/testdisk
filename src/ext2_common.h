@@ -222,7 +222,7 @@ uint64_t td_ext2fs_free_blocks_count(const struct ext2_super_block *super);
   @ requires \separated(sb, partition);
   @ assigns  \nothing;
   @ ensures  \result == 7 ==> le32(sb->s_log_block_size) > 6;
-  @ ensures  \result == 0 ==> le32(sb->s_log_block_size) < 32;
+  @ ensures  \result == 0 ==> le32(sb->s_log_block_size) <= 6;
   @ */
 int test_EXT2(const struct ext2_super_block *sb, const partition_t *partition);
 

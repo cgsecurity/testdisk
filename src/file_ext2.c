@@ -33,8 +33,8 @@
 #include "ext2_common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ext2_fs(file_stat_t *file_stat);
-static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_ext2_fs= {
   .extension="ext2",
@@ -45,18 +45,22 @@ const file_hint_t file_hint_ext2_fs= {
   .register_header_check=&register_header_check_ext2_fs
 };
 
-static const unsigned char ext2_fs_header[2]= {0x53, 0xEF};
-
-static void register_header_check_ext2_fs(file_stat_t *file_stat)
-{
-  register_header_check(0x438, ext2_fs_header,sizeof(ext2_fs_header), &header_check_ext2_fs, file_stat);
-}
-
+/*@
+  @ requires buffer_size >= sizeof(struct ext2_super_block);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ext2_fs, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer[0x400];
   if(test_EXT2(sb, NULL)!=0)
     return 0;
+  /*@ assert le32(sb->s_log_block_size) <= 6; */
   if(le16(sb->s_block_group_nr)!=0)
     return 0;
   if(file_recovery->file_stat!=NULL &&
@@ -72,5 +76,11 @@ static int header_check_ext2_fs(const unsigned char *buffer, const unsigned int 
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
+}
+
+static void register_header_check_ext2_fs(file_stat_t *file_stat)
+{
+  static const unsigned char ext2_fs_header[2]= {0x53, 0xEF};
+  register_header_check(0x438, ext2_fs_header,sizeof(ext2_fs_header), &header_check_ext2_fs, file_stat);
 }
 #endif
