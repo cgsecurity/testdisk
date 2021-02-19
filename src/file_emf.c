@@ -212,7 +212,6 @@ struct EMF_HDR
   @ requires file_recovery->data_check==&data_check_emf;
   @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
-  @ ensures file_recovery->data_check==&data_check_emf;
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_emf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
