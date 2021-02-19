@@ -40,8 +40,8 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_exe(file_stat_t *file_stat);
-static void file_rename_pe_exe(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_exe= {
   .extension="exe",
@@ -54,199 +54,6 @@ const file_hint_t file_hint_exe= {
 
 static const char *extension_dll="dll";
 static const unsigned char exe_header[2]  = {'M','Z'};
-
-/*@
-  @ requires buffer_size >= 2;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(&file_hint_exe, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_exe.extension || file_recovery_new->extension == extension_dll);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_size);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || file_recovery_new->file_rename == &file_rename_pe_exe);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
-  @*/
-static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
-{
-  const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
-  if(memcmp(buffer,exe_header,sizeof(exe_header))!=0)
-    return 0;
-  if(le32(dos_hdr->e_lfanew)>0 &&
-      le32(dos_hdr->e_lfanew) <= buffer_size-sizeof(struct pe_image_file_hdr))
-  {
-    const struct pe_image_file_hdr *pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
-    if((le32(pe_hdr->Magic) & 0xffff) == IMAGE_WIN16_SIGNATURE)
-    {
-      /* NE Win16 */
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=file_hint_exe.extension;
-      file_recovery_new->min_filesize=le32(dos_hdr->e_lfanew) + sizeof(struct pe_image_file_hdr);
-      return 1;
-    }
-    if((le32(pe_hdr->Magic) & 0xffff) == IMAGE_NT_SIGNATURE)
-    {
-      /* Windows PE */
-      if(le16(pe_hdr->Characteristics) & 0x2000)
-      {
-	/* Dynamic Link Library */
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->extension=extension_dll;
-      }
-      else if(le16(pe_hdr->Characteristics) & 0x02)
-      {
-	reset_file_recovery(file_recovery_new);
-	file_recovery_new->extension=file_hint_exe.extension;
-      }
-      else
-      {
-#ifdef DEBUG_EXE
-	log_warning("EXE rejected, bad characteristics %02x\n", le16(pe_hdr->Characteristics));
-#endif
-	return 0;
-      }
-      file_recovery_new->time=le32(pe_hdr->TimeDateStamp);
-#ifdef DEBUG_EXE
-      {
-	const struct pe_image_optional_hdr32 *pe_image_optional32=(const struct pe_image_optional_hdr32 *)
-	  (((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr)));
-	if((const unsigned char*)(pe_image_optional32+1) <= buffer+buffer_size)
-	{
-	  /*@ assert \valid_read(pe_image_optional32); */
-	  if(le16(pe_image_optional32->Magic)==IMAGE_NT_OPTIONAL_HDR_MAGIC)
-	  {
-	    log_debug("SizeOfCode %lx\n", (long unsigned)le32(pe_image_optional32->SizeOfCode));
-	    log_debug("SizeOfImage %lx\n", (long unsigned)le32(pe_image_optional32->SizeOfImage));
-	  }
-	  else if(le16(pe_image_optional32->Magic)==IMAGE_NT_OPTIONAL_HDR64_MAGIC)
-	  {
-	    const struct pe_image_optional_hdr64 *pe_image_optional64=(const struct pe_image_optional_hdr64 *)
-	      (((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr)));
-	  }
-	  log_debug("PE image opt 0x%lx-0x%lx\n", (long unsigned)sizeof(struct pe_image_file_hdr),
-	      (long unsigned)(sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader) - 1));
-	}
-      }
-#endif
-      {
-	unsigned int i;
-	uint64_t sum=le32(dos_hdr->e_lfanew) + sizeof(struct pe_image_file_hdr);
-	const struct pe_image_section_hdr *pe_image_section=(const struct pe_image_section_hdr*)
-	  ((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
-	for(i=0;
-	    i<le16(pe_hdr->NumberOfSections) &&
-	    (const unsigned char*)(pe_image_section+1) <= buffer+buffer_size;
-	    i++,pe_image_section++)
-	{
-	  if(le32(pe_image_section->SizeOfRawData)>0)
-	  {
-	    const uint64_t tmp=(uint64_t)le32(pe_image_section->PointerToRawData) + le32(pe_image_section->SizeOfRawData);
-#ifdef DEBUG_EXE
-	    log_debug("%s 0x%lx-0x%lx\n", pe_image_section->Name,
-		(unsigned long)le32(pe_image_section->PointerToRawData),
-		(unsigned long)(tmp-1));
-#endif
-	    if(le32(pe_image_section->SizeOfRawData)%32==0)
-	    {
-	      if(sum < tmp)
-		sum=tmp;
-	    }
-	  }
-	  if(le16(pe_image_section->NumberOfRelocations)>0)
-	  {
-	    /*@ assert le16(pe_image_section->NumberOfRelocations)>0; */
-	    const uint64_t tmp=(uint64_t)le32(pe_image_section->PointerToRelocations)+ 1*le16(pe_image_section->NumberOfRelocations);
-	    /*@ assert tmp > 0; */
-#ifdef DEBUG_EXE
-	    log_debug("relocations 0x%lx-0x%lx\n",
-		(unsigned long)le32(pe_image_section->PointerToRelocations),
-		(unsigned long)(tmp-1));
-#endif
-	    if(sum < tmp)
-	      sum = tmp;
-	  }
-	}
-	if(le32(pe_hdr->NumberOfSymbols)>0)
-	{
-	  /*@ assert le32(pe_hdr->NumberOfSymbols)>0; */
-	  const uint64_t tmp=(uint64_t)le32(pe_hdr->PointerToSymbolTable)+ IMAGE_SIZEOF_SYMBOL*(uint64_t)le32(pe_hdr->NumberOfSymbols);
-	  /*@ assert tmp > 0; */
-#ifdef DEBUG_EXE
-	  log_debug("Symboles 0x%lx-0x%lx\n", (long unsigned)le32(pe_hdr->PointerToSymbolTable),
-	      (long unsigned)(tmp-1));
-#endif
-	  if(le32(pe_hdr->NumberOfSymbols)<0x10000)
-	  {
-	    if(sum < tmp)
-	      sum = tmp;
-	  }
-	}
-	/* It's not perfect, EXE overlay are not recovered */
-	file_recovery_new->calculated_file_size=sum;
-      }
-      file_recovery_new->data_check=&data_check_size;
-      file_recovery_new->file_check=&file_check_size;
-      file_recovery_new->file_rename=&file_rename_pe_exe;
-      return 1;
-    }
-  }
-  if(le16(dos_hdr->bytes_in_last_block) <= 512 &&
-      le16(dos_hdr->blocks_in_file) > 0 &&
-      le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
-    )
-  {
-    /* MSDOS EXE */
-    uint64_t coff_offset=le16(dos_hdr->blocks_in_file)*512;
-    if(le16(dos_hdr->bytes_in_last_block))
-      coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
-
-    if(coff_offset < buffer_size-1 &&
-	buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
-    { /*  COFF_I386MAGIC */
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->extension=file_hint_exe.extension;
-      file_recovery_new->min_filesize=coff_offset+2;
-      return 1;
-    }
-#ifdef DEBUG_EXE
-    {
-      const struct exe_reloc *exe_relocs;
-      const unsigned int reloc_table_offset=le16(dos_hdr->reloc_table_offset);
-      const unsigned int num_relocs=le16(dos_hdr->num_relocs);
-      log_info("Maybe a DOS EXE\n");
-      log_info("blocks %llu\n", (long long unsigned)coff_offset);
-      log_info("data start %llx\n", (long long unsigned)16*le16(dos_hdr->header_paragraphs));
-      log_info("reloc %u\n", num_relocs);
-      if(reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size)
-      {
-	unsigned int i;
-	/*@ assert reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size; */
-	exe_relocs=(const struct exe_reloc *)(buffer+reloc_table_offset);
-	/*@ assert \valid_read(exe_relocs + (0 .. num_relocs-1)); */
-	/*@
-	  @ loop invariant 0 <= i <= num_relocs;
-	  @ loop variant num_relocs -i;
-	  @ */
-	for(i=0; i < num_relocs; i++)
-	{
-	  /*@ assert 0 <= i <= num_relocs; */
-	  const struct exe_reloc *exe_reloc=&exe_relocs[i];
-	  /*@ assert \valid_read(exe_reloc); */
-	  log_info("offset %x, segment %x\n",
-	      le16(exe_reloc->offset), le16(exe_reloc->segment));
-	}
-      }
-    }
-#endif
-  }
-  return 0;
-}
 
 struct rsrc_entries_s
 {
@@ -908,6 +715,204 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
     }
   }
   fclose(file);
+}
+
+/*@
+  @ requires buffer_size >= 2;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid_read(file_recovery);
+  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_exe, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_exe.extension || file_recovery_new->extension == extension_dll);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || file_recovery_new->file_rename == &file_rename_pe_exe);
+  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_check_exe(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct dos_image_file_hdr *dos_hdr=(const struct dos_image_file_hdr*)buffer;
+  if(memcmp(buffer,exe_header,sizeof(exe_header))!=0)
+    return 0;
+  if(le32(dos_hdr->e_lfanew)>0 &&
+      le32(dos_hdr->e_lfanew) <= buffer_size-sizeof(struct pe_image_file_hdr))
+  {
+    const struct pe_image_file_hdr *pe_hdr=(const struct pe_image_file_hdr *)(buffer+le32(dos_hdr->e_lfanew));
+    if((le32(pe_hdr->Magic) & 0xffff) == IMAGE_WIN16_SIGNATURE)
+    {
+      /* NE Win16 */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_exe.extension;
+      file_recovery_new->min_filesize=le32(dos_hdr->e_lfanew) + sizeof(struct pe_image_file_hdr);
+      return 1;
+    }
+    if((le32(pe_hdr->Magic) & 0xffff) == IMAGE_NT_SIGNATURE)
+    {
+      /* Windows PE */
+      if(le16(pe_hdr->Characteristics) & 0x2000)
+      {
+	/* Dynamic Link Library */
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension=extension_dll;
+      }
+      else if(le16(pe_hdr->Characteristics) & 0x02)
+      {
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension=file_hint_exe.extension;
+      }
+      else
+      {
+#ifdef DEBUG_EXE
+	log_warning("EXE rejected, bad characteristics %02x\n", le16(pe_hdr->Characteristics));
+#endif
+	return 0;
+      }
+      file_recovery_new->time=le32(pe_hdr->TimeDateStamp);
+#ifdef DEBUG_EXE
+      {
+	const struct pe_image_optional_hdr32 *pe_image_optional32=(const struct pe_image_optional_hdr32 *)
+	  (((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr)));
+	if((const unsigned char*)(pe_image_optional32+1) <= buffer+buffer_size)
+	{
+	  /*@ assert \valid_read(pe_image_optional32); */
+	  if(le16(pe_image_optional32->Magic)==IMAGE_NT_OPTIONAL_HDR_MAGIC)
+	  {
+	    log_debug("SizeOfCode %lx\n", (long unsigned)le32(pe_image_optional32->SizeOfCode));
+	    log_debug("SizeOfImage %lx\n", (long unsigned)le32(pe_image_optional32->SizeOfImage));
+	  }
+	  else if(le16(pe_image_optional32->Magic)==IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+	  {
+	    const struct pe_image_optional_hdr64 *pe_image_optional64=(const struct pe_image_optional_hdr64 *)
+	      (((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr)));
+	  }
+	  log_debug("PE image opt 0x%lx-0x%lx\n", (long unsigned)sizeof(struct pe_image_file_hdr),
+	      (long unsigned)(sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader) - 1));
+	}
+      }
+#endif
+      {
+	unsigned int i;
+	uint64_t sum=le32(dos_hdr->e_lfanew) + sizeof(struct pe_image_file_hdr);
+	const struct pe_image_section_hdr *pe_image_section=(const struct pe_image_section_hdr*)
+	  ((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
+	/*@
+	  @ loop assigns i, pe_image_section, sum;
+	  @*/
+	for(i=0;
+	    i<le16(pe_hdr->NumberOfSections) &&
+	    (const unsigned char*)(pe_image_section+1) <= buffer+buffer_size;
+	    i++,pe_image_section++)
+	{
+	  if(le32(pe_image_section->SizeOfRawData)>0)
+	  {
+	    const uint64_t tmp=(uint64_t)le32(pe_image_section->PointerToRawData) + le32(pe_image_section->SizeOfRawData);
+#ifdef DEBUG_EXE
+	    log_debug("%s 0x%lx-0x%lx\n", pe_image_section->Name,
+		(unsigned long)le32(pe_image_section->PointerToRawData),
+		(unsigned long)(tmp-1));
+#endif
+	    if(le32(pe_image_section->SizeOfRawData)%32==0)
+	    {
+	      if(sum < tmp)
+		sum=tmp;
+	    }
+	  }
+	  if(le16(pe_image_section->NumberOfRelocations)>0)
+	  {
+	    /*@ assert le16(pe_image_section->NumberOfRelocations)>0; */
+	    const uint64_t tmp=(uint64_t)le32(pe_image_section->PointerToRelocations)+ 1*le16(pe_image_section->NumberOfRelocations);
+	    /*@ assert tmp > 0; */
+#ifdef DEBUG_EXE
+	    log_debug("relocations 0x%lx-0x%lx\n",
+		(unsigned long)le32(pe_image_section->PointerToRelocations),
+		(unsigned long)(tmp-1));
+#endif
+	    if(sum < tmp)
+	      sum = tmp;
+	  }
+	}
+	if(le32(pe_hdr->NumberOfSymbols)>0)
+	{
+	  /*@ assert le32(pe_hdr->NumberOfSymbols)>0; */
+	  const uint64_t tmp=(uint64_t)le32(pe_hdr->PointerToSymbolTable)+ IMAGE_SIZEOF_SYMBOL*(uint64_t)le32(pe_hdr->NumberOfSymbols);
+	  /*@ assert tmp > 0; */
+#ifdef DEBUG_EXE
+	  log_debug("Symboles 0x%lx-0x%lx\n", (long unsigned)le32(pe_hdr->PointerToSymbolTable),
+	      (long unsigned)(tmp-1));
+#endif
+	  if(le32(pe_hdr->NumberOfSymbols)<0x10000)
+	  {
+	    if(sum < tmp)
+	      sum = tmp;
+	  }
+	}
+	/* It's not perfect, EXE overlay are not recovered */
+	file_recovery_new->calculated_file_size=sum;
+      }
+      file_recovery_new->data_check=&data_check_size;
+      file_recovery_new->file_check=&file_check_size;
+      file_recovery_new->file_rename=&file_rename_pe_exe;
+      return 1;
+    }
+  }
+  if(le16(dos_hdr->bytes_in_last_block) <= 512 &&
+      le16(dos_hdr->blocks_in_file) > 0 &&
+      le16(dos_hdr->min_extra_paragraphs) <= le16(dos_hdr->max_extra_paragraphs)
+    )
+  {
+    /* MSDOS EXE */
+    uint64_t coff_offset=le16(dos_hdr->blocks_in_file)*512;
+    if(le16(dos_hdr->bytes_in_last_block))
+      coff_offset-=512-le16(dos_hdr->bytes_in_last_block);
+
+    if(coff_offset < buffer_size-1 &&
+	buffer[coff_offset]==0x4c && buffer[coff_offset+1]==0x01)
+    { /*  COFF_I386MAGIC */
+      reset_file_recovery(file_recovery_new);
+      file_recovery_new->extension=file_hint_exe.extension;
+      file_recovery_new->min_filesize=coff_offset+2;
+      return 1;
+    }
+#ifdef DEBUG_EXE
+    {
+      const struct exe_reloc *exe_relocs;
+      const unsigned int reloc_table_offset=le16(dos_hdr->reloc_table_offset);
+      const unsigned int num_relocs=le16(dos_hdr->num_relocs);
+      log_info("Maybe a DOS EXE\n");
+      log_info("blocks %llu\n", (long long unsigned)coff_offset);
+      log_info("data start %llx\n", (long long unsigned)16*le16(dos_hdr->header_paragraphs));
+      log_info("reloc %u\n", num_relocs);
+      if(reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size)
+      {
+	unsigned int i;
+	/*@ assert reloc_table_offset + num_relocs * sizeof(struct exe_reloc) <= buffer_size; */
+	exe_relocs=(const struct exe_reloc *)(buffer+reloc_table_offset);
+	/*@ assert \valid_read(exe_relocs + (0 .. num_relocs-1)); */
+	/*@
+	  @ loop invariant 0 <= i <= num_relocs;
+	  @ loop variant num_relocs -i;
+	  @ */
+	for(i=0; i < num_relocs; i++)
+	{
+	  /*@ assert 0 <= i <= num_relocs; */
+	  const struct exe_reloc *exe_reloc=&exe_relocs[i];
+	  /*@ assert \valid_read(exe_reloc); */
+	  log_info("offset %x, segment %x\n",
+	      le16(exe_reloc->offset), le16(exe_reloc->segment));
+	}
+      }
+    }
+#endif
+  }
+  return 0;
 }
 
 static void register_header_check_exe(file_stat_t *file_stat)
