@@ -117,7 +117,7 @@ static uint64_t ascii2int2(const unsigned char *string, const unsigned int max_l
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
@@ -146,6 +146,8 @@ static uint64_t ascii2int2(const unsigned char *string, const unsigned int max_l
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_fcs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
