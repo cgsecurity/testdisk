@@ -40,6 +40,7 @@ struct fh5_header_s
 } __attribute__ ((gcc_struct, __packed__));
 typedef struct fh5_header_s fh5_header_t;
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_fh5(file_stat_t *file_stat);
 
 const file_hint_t file_hint_fh5= {
@@ -51,6 +52,13 @@ const file_hint_t file_hint_fh5= {
   .register_header_check=&register_header_check_fh5
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->file_check == &file_check_fh5;
+  @ requires valid_file_recovery(file_recovery);
+  @ ensures  valid_file_recovery(file_recovery);
+  @ assigns  file_recovery->file_size;
+  @*/
 static void file_check_fh5(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size < file_recovery->calculated_file_size)
@@ -59,17 +67,28 @@ static void file_check_fh5(file_recovery_t *file_recovery)
     file_recovery->file_size=file_recovery->calculated_file_size+4096;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(fh5_header_t);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_fh5, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_fh5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const fh5_header_t *fh5_buffer=(const fh5_header_t *) buffer;
-  if((const uint32_t)be32(fh5_buffer->datalen) < sizeof(struct fh5_header_s))
+  const unsigned int datalen=be32(fh5_buffer->datalen);
+  if(datalen < sizeof(struct fh5_header_s))
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=4096;
-  file_recovery_new->calculated_file_size=be32(fh5_buffer->datalen);
+  file_recovery_new->calculated_file_size=datalen;
   file_recovery_new->extension=file_hint_fh5.extension;
   file_recovery_new->file_check=&file_check_fh5;
-  //    log_debug("header_check_fh5: Guessed length : %u\n", fh5_file_size);
   return 1;
 }
 
