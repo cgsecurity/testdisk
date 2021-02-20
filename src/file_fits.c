@@ -164,12 +164,13 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
   @ requires (buffer_size&1)==0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->data_check==&data_check_fits;
   @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
   @ requires \separated(buffer, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size, file_recovery->time;
   @*/
-/* assigns file_recovery->calculated_file_size, file_recovery->time; */
 static data_check_t data_check_fits(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
