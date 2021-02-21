@@ -63,6 +63,8 @@ struct flv_tag
   uint8_t	streamID[3];
 } __attribute__ ((gcc_struct, __packed__));
 
+static uint32_t datasize=0;
+
 /*@
   @ requires buffer_size > 0;
   @ requires (buffer_size&1)==0;
@@ -70,13 +72,12 @@ struct flv_tag
   @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_flv;
   @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
+  @ requires \separated(buffer + (..), file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ assigns file_recovery->calculated_file_size, datasize;
   @*/
-// assigns file_recovery->calculated_file_size;
 static data_check_t data_check_flv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  static uint32_t datasize=0;
   /*@
     @ loop assigns file_recovery->calculated_file_size, datasize;
     @*/
