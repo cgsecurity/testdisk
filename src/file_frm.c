@@ -33,9 +33,8 @@
 #include "filegen.h"
 
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_frm(file_stat_t *file_stat);
-static int header_check_frm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_frm(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_frm= {
   .extension="frm",
@@ -46,6 +45,16 @@ const file_hint_t file_hint_frm= {
   .register_header_check=&register_header_check_frm
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(file_recovery->handle);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_frm(file_recovery_t *file_recovery)
 {
   const unsigned char frm_footer[11]= {
@@ -54,6 +63,17 @@ static void file_check_frm(file_recovery_t *file_recovery)
   file_search_footer(file_recovery, frm_footer, sizeof(frm_footer), 1);
 }
 
+/*@
+  @ requires buffer_size >= 18;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_frm, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_frm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(!isprint(buffer[14]) || !isprint(buffer[15]) || !isprint(buffer[16]) || !isprint(buffer[17]))
