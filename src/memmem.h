@@ -27,7 +27,10 @@
 /*@
   @ requires \valid_read((const char *)haystack+(0..haystack_len-1));
   @ requires \valid_read((const char *)needle+(0..needle_len-1));
-  @ assigns \nothing;
+  @ assigns  \nothing;
+  @ ensures result_null_or_in_haystack:
+  @   \result == \null
+  @   || (\subset((char *)\result, (char *)haystack+(0..haystack_len-needle_len)) && \valid_read((char *)\result));
   @*/
 static inline const void *td_memmem(const void *haystack, const unsigned int haystack_len, const void *needle, const unsigned int needle_len)
 {

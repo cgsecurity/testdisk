@@ -35,7 +35,6 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
-#include "memmem.h"
 #include "fat_common.h"
 
 /*@ requires \valid(file_stat); */

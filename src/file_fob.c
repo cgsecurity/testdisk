@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "memmem.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_fob(file_stat_t *file_stat);
-static int header_check_fob(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_fob= {
   .extension="fob",
@@ -44,19 +44,31 @@ const file_hint_t file_hint_fob= {
   .register_header_check=&register_header_check_fob
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_fob, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_fob(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static const unsigned char sign_navnl[5]	= {'N','A','V','N','L'};
   static const unsigned char sign_navw[4]	= {'N','A','V','W'};
+  const char *sbuffer=(const char *)buffer;
   unsigned int tmp=0;
-  const unsigned char *pos1=(const unsigned char *)td_memmem(buffer, buffer_size, sign_navnl, sizeof(sign_navnl));
-  const unsigned char *pos2=(const unsigned char *)td_memmem(buffer, buffer_size, sign_navw, sizeof(sign_navw));
+  const char *pos1=(const char *)td_memmem(buffer, buffer_size, sign_navnl, sizeof(sign_navnl));
+  const char *pos2=(const char *)td_memmem(buffer, buffer_size, sign_navw, sizeof(sign_navw));
   if(pos1==NULL && pos2==NULL)
     return 0;
   if(pos1!=NULL)
-    tmp=pos1-buffer;
-  if(pos2!=NULL && pos2-buffer > tmp)
-    tmp=pos2-buffer;
+    tmp=pos1-sbuffer;
+  if(pos2!=NULL && pos2-sbuffer > tmp)
+    tmp=pos2-sbuffer;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_fob.extension;
   file_recovery_new->min_filesize=tmp;
@@ -66,11 +78,13 @@ static int header_check_fob(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_fob(file_stat_t *file_stat)
 {
   register_header_check(0, "Codeunit ",  	 9, &header_check_fob, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, "Dataport ",  	 9, &header_check_fob, file_stat);
   register_header_check(0, "Form ",		 5, &header_check_fob, file_stat);
   register_header_check(0, "MenuSuite ",	10, &header_check_fob, file_stat);
   register_header_check(0, "Report ",		 7, &header_check_fob, file_stat);
   register_header_check(0, "Table ",		 6, &header_check_fob, file_stat);
   register_header_check(0, "XMLport ",		 8, &header_check_fob, file_stat);
+#endif
 }
 #endif
