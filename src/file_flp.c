@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_flp(file_stat_t *file_stat);
-static int header_check_flp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_flp= {
   .extension="flp",
@@ -55,16 +55,28 @@ struct flp_header
   uint32_t len2;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >=sizeof(struct flp_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_flp, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_flp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct flp_header *hdr=(const struct flp_header *)buffer;
+  const unsigned int len2=le32(hdr->len2);
   if(strncmp(hdr->magic2, "FLdt", 4)!=0)
     return 0;
-  if(le32(hdr->len2)==0)
+  if(len2==0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_flp.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)le32(hdr->len2) + 0x16;
+  file_recovery_new->calculated_file_size=(uint64_t)len2 + 0x16;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
