@@ -39,6 +39,7 @@
 #endif
 
 static const char *extension_pgp="pgp";
+/*@ requires \valid(file_stat); */
 static void register_header_check_gpg(file_stat_t *file_stat);
 
 const file_hint_t file_hint_gpg= {
@@ -308,8 +309,13 @@ static unsigned int file_check_gpg_pubkey(FILE *handle, const uint64_t offset, c
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
-  @ requires \separated(file_recovery, file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_gpg;
+  @ ensures \valid(file_recovery->handle);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_gpg(file_recovery_t *file_recovery)
 {
@@ -320,6 +326,11 @@ static void file_check_gpg(file_recovery_t *file_recovery)
   uint64_t offset=0;
   const uint64_t org_file_size=file_recovery->file_size;
   file_recovery->file_size=0;
+  /*@
+    @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+    @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @*/
   while(stop==0)
   {
     unsigned char buffer[32];
@@ -521,7 +532,9 @@ static void file_check_gpg(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
+//  @ assigns *file_recovery_new;
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   uint64_t i=0;
@@ -532,6 +545,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   memset(packet_tag, 0, sizeof(packet_tag));
   /*@
     @ loop invariant 0 <= nbr <=16;
+    @ loop assigns i, packet_tag[0..nbr], nbr, partial_body_length, stop;
     @*/
   while(nbr<16 && i < buffer_size - 23 && stop==0)
   {
@@ -664,6 +678,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	 * Symmetric-Key Encrypted Session Key packet that precedes the
 	 * Symmetrically Encrypted Data packet.
 	 * PhotoRec assumes it must */
+	/*@ loop assigns j, ok; */
 	for(j=0; j<nbr; j++)
 	{
 	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
@@ -692,6 +707,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	/* The symmetric cipher used MUST be specified in a Public-Key or
 	 * Symmetric-Key Encrypted Session Key packet that precedes the
 	 * Symmetrically Encrypted Data packet. */
+	/*@ loop assigns j, ok; */
 	for(j=0; j<nbr; j++)
 	{
 	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
@@ -778,10 +794,12 @@ static void register_header_check_gpg(file_stat_t *file_stat)
   static const unsigned char gpg_header_seckey[1]= {0x95};
   static const unsigned char gpg_header_pkey[1]= {0x99};
   register_header_check(0, gpg_header_seckey, sizeof(gpg_header_seckey), &header_check_gpg, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, gpg_header_symkey_enc, sizeof(gpg_header_symkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey_enc, sizeof(gpg_header_pkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey, sizeof(gpg_header_pkey), &header_check_gpg, file_stat);
+#endif
 }
 #endif
 
