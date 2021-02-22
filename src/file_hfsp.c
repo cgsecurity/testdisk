@@ -31,8 +31,9 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#include "hfsp.h"
+#include "hfsp_struct.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_hfsp(file_stat_t *file_stat);
 
 const file_hint_t file_hint_hfsp= {
@@ -44,6 +45,17 @@ const file_hint_t file_hint_hfsp= {
   .register_header_check=&register_header_check_hfsp
 };
 
+/*@
+  @ requires buffer_size >= sizeof(struct hfsp_vh);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_hfsp, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_hfsp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct hfsp_vh *vh=(const struct hfsp_vh *)buffer;
@@ -57,7 +69,9 @@ reset_file_recovery(file_recovery_new);
 static void register_header_check_hfsp(file_stat_t *file_stat)
 {
   register_header_check(0, "H+\0\4", 4, &header_check_hfsp, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, "HX\0\5", 4, &header_check_hfsp, file_stat);
+#endif
 }
 
 #endif
