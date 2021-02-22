@@ -31,10 +31,10 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#include "ntfs.h"
+#include "ntfs_struct.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mft(file_stat_t *file_stat);
-static int header_check_mft(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_mft= {
   .extension="mft",
@@ -45,6 +45,10 @@ const file_hint_t file_hint_mft= {
   .register_header_check=&register_header_check_mft
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @*/
 static void file_rename_mft(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
@@ -58,10 +62,28 @@ static void file_rename_mft(file_recovery_t *file_recovery)
   fclose(file);
   if(buffer_size<54)
     return;
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, sizeof(buffer));
+#endif
+  /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
   sprintf(buffer_cluster, "record_%u", (unsigned int)le32(record->mft_record_number));
+#if defined(__FRAMAC__)
+  buffer_cluster[sizeof(buffer_cluster)-1]='\0';
+#endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct ntfs_mft_record);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mft, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_mft(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ntfs_mft_record *mft_rec=(const struct ntfs_mft_record *)buffer;
