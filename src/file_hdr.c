@@ -32,6 +32,7 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_hdr(file_stat_t *file_stat);
 
 const file_hint_t file_hint_hdr= {
@@ -56,21 +57,34 @@ struct hdr_header {
   uint32_t val00000000_bis;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct hdr_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_hdr, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_hdr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct hdr_header *hdr=(const struct hdr_header*)buffer;
+  const unsigned int filesize=le32(hdr->filesize);
   if(le16(hdr->val0100)!=0x100)
     return 0;
   if(le32(hdr->val00000000)!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
-  if(le16(hdr->unk2)==0 && le32(hdr->filesize)==0x200)
+  if(le16(hdr->unk2)==0 && filesize==0x200)
   {
     file_recovery_new->extension="cab";
+    file_recovery_new->min_filesize=0x200;
     return 1;
   }
   file_recovery_new->extension=file_hint_hdr.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)le32(hdr->filesize);
+  file_recovery_new->calculated_file_size=filesize;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
   return 1;
