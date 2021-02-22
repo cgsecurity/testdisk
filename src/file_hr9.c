@@ -30,6 +30,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_hr9(file_stat_t *file_stat);
 
 const file_hint_t file_hint_hr9= {
@@ -41,12 +42,33 @@ const file_hint_t file_hint_hr9= {
   .register_header_check=&register_header_check_hr9
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(file_recovery->handle);
+  @ ensures valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_hr9(file_recovery_t *file_recovery)
 {
   const unsigned char hr9_footer[4]= {0xc0, 0xde, 0xca, 0xfe};
   file_search_footer(file_recovery, hr9_footer, sizeof(hr9_footer), 0x50-4);
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_hr9, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_hr9(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
