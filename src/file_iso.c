@@ -33,8 +33,8 @@
 #include "filegen.h"
 #include "iso9660.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_iso(file_stat_t *file_stat);
-static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_iso= {
   .extension="iso",
@@ -45,7 +45,18 @@ const file_hint_t file_hint_iso= {
   .register_header_check=&register_header_check_iso
 };
 
-static int header_check_db(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_iso, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
+static int header_check_iso(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer_size<0x8000+512)	/* +2048 for the full mapping */
     return 0;
@@ -78,6 +89,6 @@ static int header_check_db(const unsigned char *buffer, const unsigned int buffe
 static void register_header_check_iso(file_stat_t *file_stat)
 {
   static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};
-  register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_db, file_stat);
+  register_header_check(0x8000, iso_header,sizeof(iso_header), &header_check_iso, file_stat);
 }
 #endif
