@@ -35,6 +35,7 @@
 #include "log.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mig(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mig= {
@@ -54,16 +55,35 @@ struct MIG_HDR
   uint32_t unk1;
   uint32_t unk2;
   uint32_t unk3;
+#ifndef __FRAMAC__
   unsigned char fn[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires \initialized(&file_recovery->time);
+  @
+  @ requires file_recovery->file_check == &file_check_mig;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_mig(file_recovery_t *file_recovery)
 {
-  struct MIG_HDR h;
   uint64_t offset=0x34;
   file_recovery->file_size=0;
+  /*@
+    @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns offset;
+    @*/
   while(1)
   {
+    struct MIG_HDR h;
     size_t res;
     if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0)
     {
@@ -95,6 +115,17 @@ static void file_check_mig(file_recovery_t *file_recovery)
   }
 }
 
+/*@
+  @ requires buffer_size > 0x38;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mig, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_mig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(&buffer[0x34], "MRTS", 4)!=0)
