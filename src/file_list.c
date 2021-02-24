@@ -398,7 +398,7 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_acb)
   { .enable=0, .file_hint=&file_hint_acb  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_accdb)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdb)
   { .enable=0, .file_hint=&file_hint_accdb},
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ace)
