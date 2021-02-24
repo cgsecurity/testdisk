@@ -82,6 +82,7 @@ struct atom64_struct
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
+  @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename == &file_rename_mov;
   @*/
