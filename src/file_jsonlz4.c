@@ -32,6 +32,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_jsonlz4(file_stat_t *file_stat);
 
 const file_hint_t file_hint_jsonlz4= {
@@ -43,14 +44,26 @@ const file_hint_t file_hint_jsonlz4= {
   .register_header_check=&register_header_check_jsonlz4
 };
 
+/*@
+  @ requires buffer_size >= 12;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_jsonlz4, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_jsonlz4(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const uint32_t *uncompressed_size=(const uint32_t *)&buffer[8];
-  if(le32(*uncompressed_size)==0)
+  const unsigned int size=le32(*uncompressed_size);
+  if(size==0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_jsonlz4.extension;
-  file_recovery_new->calculated_file_size=le32(*uncompressed_size);
+  file_recovery_new->calculated_file_size=size;
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size_max;
   return 1;
