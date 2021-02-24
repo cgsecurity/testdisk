@@ -32,8 +32,9 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#include "luks.h"
+#include "luks_struct.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_luks(file_stat_t *file_stat);
 
 const file_hint_t file_hint_luks= {
@@ -45,14 +46,22 @@ const file_hint_t file_hint_luks= {
   .register_header_check=&register_header_check_luks
 };
 
-static const unsigned char luks_header[6]=  {
-  'L' , 'U' , 'K' , 'S' , 0xba, 0xbe
-};
-
+/*@
+  @ requires buffer_size >= sizeof(struct luks_phdr);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_luks, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_luks(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct luks_phdr *hdr=(const struct luks_phdr *)buffer;
-  if(be16(hdr->version)<1 || be16(hdr->version)>2)
+  const unsigned int version=be16(hdr->version);
+  if(version<1 || version>2)
     return 0;
   if(!isalpha(hdr->cipherName[0]))
     return 0;
@@ -64,6 +73,9 @@ static int header_check_luks(const unsigned char *buffer, const unsigned int buf
 
 static void register_header_check_luks(file_stat_t *file_stat)
 {
+  static const unsigned char luks_header[6]=  {
+    'L' , 'U' , 'K' , 'S' , 0xba, 0xbe
+  };
   register_header_check(0, luks_header, sizeof(luks_header), &header_check_luks, file_stat);
 }
 #endif
