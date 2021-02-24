@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_mrw(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mrw= {
@@ -47,7 +48,9 @@ const file_hint_t file_hint_mrw= {
 struct hdr {
   uint32_t fourcc;
   uint32_t size;
+#if 0
   char data[0];
+#endif
 }  __attribute__ ((gcc_struct, __packed__));
 
 struct prd {
@@ -69,13 +72,24 @@ struct prd {
 }  __attribute__ ((gcc_struct, __packed__));
 
 /* Minolta */
+/*@
+  @ requires buffer_size >= 2*sizeof(struct hdr) + sizeof(struct prd);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mrw, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_mrw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const unsigned char prd_header[4]= { 0x00,'P','R','D'};
   const struct hdr *mrmhdr = (const struct hdr*)buffer;
-  const struct hdr *prdhdr = (const struct hdr*)&mrmhdr->data;
+  const struct hdr *prdhdr = (const struct hdr*)&buffer[sizeof(struct hdr)];
   /* Picture Raw Dimensions */
-  const struct prd *prd = (const struct prd*)&prdhdr->data;
+  const struct prd *prd = (const struct prd*)&buffer[2*sizeof(struct hdr)];
   if(memcmp(&prdhdr->fourcc, prd_header, sizeof(prd_header))!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
