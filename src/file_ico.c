@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ico(file_stat_t *file_stat);
 
 const file_hint_t file_hint_ico= {
@@ -77,6 +78,17 @@ struct ico_directory
   uint32_t	bitmap_offset;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct ico_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ico, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_ico(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct ico_header *ico=(const struct ico_header*)buffer;
@@ -88,6 +100,9 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
 #endif
   if(le16(ico->reserved)!=0 || le16(ico->type)!=1 || le16(ico->count)==0)
     return 0;
+  /*@
+    @ loop assigns ico_dir, i, fs;
+    @*/
   for(i=0, ico_dir=(const struct ico_directory*)(ico+1);
       (const unsigned char *)(ico_dir+1) <= buffer+buffer_size && i<le16(ico->count);
       i++, ico_dir++)
@@ -147,6 +162,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_ico(file_stat_t *file_stat)
 {
   register_header_check(0, header_ico1, sizeof(header_ico1), &header_check_ico, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, header_ico2, sizeof(header_ico2), &header_check_ico, file_stat);
   register_header_check(0, header_ico3, sizeof(header_ico3), &header_check_ico, file_stat);
   register_header_check(0, header_ico4, sizeof(header_ico4), &header_check_ico, file_stat);
@@ -155,5 +171,6 @@ static void register_header_check_ico(file_stat_t *file_stat)
   register_header_check(0, header_ico7, sizeof(header_ico7), &header_check_ico, file_stat);
   register_header_check(0, header_ico8, sizeof(header_ico8), &header_check_ico, file_stat);
   register_header_check(0, header_ico9, sizeof(header_ico9), &header_check_ico, file_stat);
+#endif
 }
 #endif
