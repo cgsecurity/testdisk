@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_lzh(file_stat_t *file_stat);
 
 const file_hint_t file_hint_lzh= {
@@ -89,6 +90,11 @@ struct lzh_level2
   uint16_t next_header_size;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename==&file_rename_level0;
+  @*/
 static void file_rename_level0(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
@@ -108,6 +114,18 @@ static void file_rename_level0(file_recovery_t *file_recovery)
   file_rename(file_recovery, hdr->filename, i, 0, NULL, 1);
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct lzh_level0);
+  @ requires buffer_size >= sizeof(struct lzh_level1);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_lzh, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_lzh(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   switch(buffer[20])
@@ -148,6 +166,7 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_lzh(file_stat_t *file_stat)
 {
   register_header_check(2, "-lh0-", 5, &header_check_lzh, file_stat);
+#ifndef __FRAMAC__
   register_header_check(2, "-lh1-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lh2-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lh3-", 5, &header_check_lzh, file_stat);
@@ -158,5 +177,6 @@ static void register_header_check_lzh(file_stat_t *file_stat)
   register_header_check(2, "-lhd-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lzs-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lz4-", 5, &header_check_lzh, file_stat);
+#endif
 }
 #endif
