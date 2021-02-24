@@ -174,6 +174,17 @@ static int EBML_read_string(const unsigned char *p, const unsigned int p_size, u
 
 static const unsigned char EBML_header[4]= { 0x1a,0x45,0xdf,0xa3};
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_mkv, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_mkv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(buffer,EBML_header,sizeof(EBML_header))!=0)
