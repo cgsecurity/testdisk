@@ -34,6 +34,7 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_indd(file_stat_t *file_stat);
 static int header_check_indd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 static void file_check_indd(file_recovery_t *file_recovery);
@@ -74,10 +75,21 @@ struct InDesignContigObjMarker {
   uint32_t fChecksum;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires \initialized(&file_recovery->time);
+  @
+  @ requires file_recovery->file_check == &file_check_indd;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_indd(file_recovery_t *file_recovery)
 {
   const uint64_t file_size_org=file_recovery->file_size;
-  struct InDesignContigObjMarker hdr;
   uint64_t offset;
   if(file_recovery->file_size<file_recovery->calculated_file_size)
   {
@@ -85,8 +97,14 @@ static void file_check_indd(file_recovery_t *file_recovery)
     return ;
   }
   offset=file_recovery->calculated_file_size;
+  /*@
+    @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns offset;
+    @*/
   do
   {
+    struct InDesignContigObjMarker hdr;
 #ifdef DEBUG_INDD
     log_info("file_check_indd offset=%llu (0x%llx)\n", (long long unsigned)offset, (long long unsigned)offset);
 #endif
@@ -121,6 +139,16 @@ static void file_check_indd(file_recovery_t *file_recovery)
   return ;
 }
 
+/*@
+  @ requires buffer_size >= 4096 + sizeof(struct InDesignMasterPage);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_indd, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_indd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct InDesignMasterPage *hdr;
