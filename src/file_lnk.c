@@ -28,7 +28,6 @@
 #include <string.h>
 #endif
 #include <stdio.h>
-#include <assert.h>
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
@@ -224,7 +223,7 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
 }
 
 /*@
-  @ requires buffer_size >= 10;
+  @ requires buffer_size >= 0x4c;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
@@ -236,7 +235,6 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
 static int header_check_lnk(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int len;
-  assert(buffer_size >= 0x4c);
   if(memcmp(&buffer[0x42], lnk_reserved, sizeof(lnk_reserved))!=0)
     return 0;
   len=lnk_get_size(buffer, buffer_size);
