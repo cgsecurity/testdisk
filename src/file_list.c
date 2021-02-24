@@ -1253,7 +1253,7 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tpl)
   { .enable=0, .file_hint=&file_hint_tpl  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ts)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_m2ts)
   { .enable=0, .file_hint=&file_hint_ts   },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ttf)
@@ -1401,9 +1401,6 @@ file_enable_t array_file_enable[]=
 		if (!(condition))					\
 			prefix ## suffix();				\
 	} while (0)
-#else
-# define __compiletime_assert(condition, msg, prefix, suffix) do { } while (0)
-#endif
 
 #define _compiletime_assert(condition, msg, prefix, suffix) \
 	__compiletime_assert(condition, msg, prefix, suffix)
@@ -1415,4 +1412,5 @@ static void check_array_file_enable(void)
 {
   compiletime_assert(sizeof(file_enable_t) != sizeof(array_file_enable), "No file format has been enabled");
 }
+#endif
 #endif

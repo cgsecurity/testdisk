@@ -86,6 +86,7 @@ static data_check_t data_check_ts_192(const unsigned char *buffer, const unsigne
 }
 
 /*@
+  @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @*/
 static void file_rename_ts_188(file_recovery_t *file_recovery)
@@ -103,12 +104,19 @@ static void file_rename_ts_188(file_recovery_t *file_recovery)
     return ;
   }
   fclose(file);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
   pid=((buffer[1]<<8)|buffer[2])&0x1fff;
   sprintf(buffer_pid, "pid_%u", pid);
+#if defined(__FRAMAC__)
+  buffer_pid[sizeof(buffer_pid)-1]='\0';
+#endif
   file_rename(file_recovery, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
 }
 
 /*@
+  @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @*/
 static void file_rename_ts_192(file_recovery_t *file_recovery)
@@ -126,8 +134,14 @@ static void file_rename_ts_192(file_recovery_t *file_recovery)
     return ;
   }
   fclose(file);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+#endif
   pid=((buffer[5]<<8)|buffer[6])&0x1fff;
   sprintf(buffer_pid, "pid_%u", pid);
+#if defined(__FRAMAC__)
+  buffer_pid[sizeof(buffer_pid)-1]='\0';
+#endif
   file_rename(file_recovery, (const unsigned char*)buffer_pid, strlen(buffer_pid), 0, NULL, 1);
 }
 
