@@ -32,6 +32,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_oci(file_stat_t *file_stat);
 
 const file_hint_t file_hint_oci= {
@@ -49,12 +50,25 @@ struct oci_header
   uint32_t	size;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_oci;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_oci(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 8; */
     const struct oci_header *hdr=(const struct oci_header *)&buffer[i];
     const unsigned int atom_size=le32(hdr->size);
 #ifdef DEBUG_MOV
@@ -84,14 +98,26 @@ static data_check_t data_check_oci(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct oci_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_oci, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_oci(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct oci_header *hdr=(const struct oci_header *)buffer;
-  if(le32(hdr->size) >= 0x0fffffff0)
+  const unsigned int size=le32(hdr->size);
+  if(size >= 0x0fffffff0)
     return 0;
-  if(8+le32(hdr->size)+8 <= buffer_size)
+  if(8+size+8 <= buffer_size)
   {
-    const struct oci_header *hdr2=(const struct oci_header *)&buffer[8+le32(hdr->size)];
+    const struct oci_header *hdr2=(const struct oci_header *)&buffer[8+size];
     if(!(hdr2->type[0]=='O' &&
 	  (hdr2->type[1]>='A' && hdr2->type[1]<='Z') &&
 	  (hdr2->type[2]>='A' && hdr2->type[2]<='Z') &&
