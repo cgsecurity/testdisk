@@ -31,10 +31,8 @@
 #include "types.h"
 #include "filegen.h"
 
-
+/*@ requires \valid(file_stat); */
 static void register_header_check_njx(file_stat_t *file_stat);
-static int header_check_njx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_njx(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_njx= {
   .extension="njx",
@@ -45,13 +43,33 @@ const file_hint_t file_hint_njx= {
   .register_header_check=&register_header_check_njx
 };
 
-static const unsigned char njx_header[4]= {0x04, 'N', 'j', 0x0f};
-
-static void register_header_check_njx(file_stat_t *file_stat)
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_njx;
+  @ ensures \valid(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
+static void file_check_njx(file_recovery_t *file_recovery)
 {
-  register_header_check(0, njx_header,sizeof(njx_header), &header_check_njx, file_stat);
+  const unsigned char njx_footer[4]= {'N', 'J', '*', 0x04};
+  file_search_footer(file_recovery, njx_footer, sizeof(njx_footer), 0);
 }
 
+/*@
+  @ requires buffer_size >= 12;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_njx, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_njx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[0]==0x04 && buffer[1]=='N' && buffer[2]=='j' && buffer[3]==0x0f &&
@@ -65,9 +83,9 @@ static int header_check_njx(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-static void file_check_njx(file_recovery_t *file_recovery)
+static void register_header_check_njx(file_stat_t *file_stat)
 {
-  const unsigned char njx_footer[4]= {'N', 'J', '*', 0x04};
-  file_search_footer(file_recovery, njx_footer, sizeof(njx_footer), 0);
+  static const unsigned char njx_header[4]= {0x04, 'N', 'j', 0x0f};
+  register_header_check(0, njx_header,sizeof(njx_header), &header_check_njx, file_stat);
 }
 #endif
