@@ -90,10 +90,13 @@ typedef struct {
 
 /*@
   @ requires \valid(fr);
+  @ requires valid_file_recovery(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr, fr->handle);
+  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires fr->file_check == &file_check_nk2;
   @ ensures \valid(fr->handle);
+  @ assigns *fr->handle, errno, fr->file_size, fr->offset_error, fr->offset_ok;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_nk2(file_recovery_t *fr)
 {
@@ -112,6 +115,11 @@ static void file_check_nk2(file_recovery_t *fr)
 #ifdef DEBUG_NK2
   log_info("nk2 item_count=%u\n", (unsigned int)le32(nk2h.items_count));
 #endif
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns i;
+    @*/
   for(i=0; i<le32(nk2h.items_count); i++)
   {
     unsigned int j;
@@ -135,6 +143,11 @@ static void file_check_nk2(file_recovery_t *fr)
 #ifdef DEBUG_NK2
     log_info("nk2  entries_count=%u\n", (unsigned int)le32(itemh.entries_count));
 #endif
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns j;
+    @*/
     for(j=0; j<le32(itemh.entries_count); j++)
     {
       uint64_t size;
@@ -216,13 +229,15 @@ static void file_check_nk2(file_recovery_t *fr)
 }
 
 /*@
-  @ requires buffer_size >= 6;
+  @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_nk2, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_nk2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
