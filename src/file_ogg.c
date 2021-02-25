@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ogg(file_stat_t *file_stat);
-static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_ogg= {
   .extension="ogg",
@@ -47,6 +47,69 @@ const file_hint_t file_hint_ogg= {
 /* header=OggS, version=0 */
 static const unsigned char ogg_header[5]= {'O','g','g','S', 0x00};
 
+/* http://www.ietf.org/rfc/rfc3533.txt */
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_ogg;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
+static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 27 +255 < file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - (27 + 255); */
+    if(memcmp(&buffer[i],ogg_header,sizeof(ogg_header))==0)
+    {
+      const unsigned int number_page_segments=buffer[i+26];
+      const unsigned int header_size = number_page_segments + 27;
+      unsigned int page_size;
+      unsigned int j;
+      page_size=header_size;
+      /*@
+        @ loop invariant page_size <= 255 + 27 + j * 255;
+        @ loop assigns j, page_size;
+	@ */
+      for(j=0; j<number_page_segments; j++)
+        page_size+=buffer[i+27+j];
+      if(page_size<27)
+      {
+        return DC_STOP;
+      }
+      /* By definition, page_size<=27+255+255*255=65307 */
+      file_recovery->calculated_file_size+=page_size;
+      /*
+      log_debug("+0x%x=0x%x\n",page_size,file_recovery->calculated_file_size);
+      */
+    }
+    else
+    {
+      return DC_STOP;
+    }
+  }
+  return DC_CONTINUE;
+}
+
+/*@
+  @ requires buffer_size >= 0x78+7;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ogg, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   static const unsigned char sign_theora[7]= {0x80, 't', 'h', 'e', 'o', 'r', 'a'};
@@ -74,40 +137,6 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
   else
     file_recovery_new->extension=file_hint_ogg.extension;
   return 1;
-}
-
-/* http://www.ietf.org/rfc/rfc3533.txt */
-static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
-      file_recovery->calculated_file_size + 27 +255 < file_recovery->file_size + buffer_size/2)
-  {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
-    if(memcmp(&buffer[i],ogg_header,sizeof(ogg_header))==0)
-    {
-      const unsigned int number_page_segments=buffer[i+26];
-      const unsigned int header_size = number_page_segments + 27;
-      unsigned int page_size;
-      unsigned int j;
-      page_size=header_size;
-      for(j=0;j<number_page_segments;j++)
-        page_size+=buffer[i+27+j];
-      if(page_size<27)
-      {
-        return DC_STOP;
-      }
-      /* By definition, page_size<=27+255+255*255=65307 */
-      file_recovery->calculated_file_size+=page_size;
-      /*
-      log_debug("+0x%x=0x%x\n",page_size,file_recovery->calculated_file_size);
-      */
-    }
-    else
-    {
-      return DC_STOP;
-    }
-  }
-  return DC_CONTINUE;
 }
 
 static void register_header_check_ogg(file_stat_t *file_stat)
