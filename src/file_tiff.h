@@ -109,7 +109,7 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
 void file_check_tiff_le(file_recovery_t *fr);
 #endif
 
-#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2)
+#if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf)
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
@@ -154,7 +154,7 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
 unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);
 #endif
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2)
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf)
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
