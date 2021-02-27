@@ -57,7 +57,16 @@ const file_hint_t file_hint_pdf= {
 /*@
   @ assigns \nothing;
   @*/
-static int hex(int c)
+static int is_hexa(const int c)
+{
+  return ((c>='0' && c<='9') || (c>='A' && c<='F') || (c>='a' && c<='f'));
+}
+
+/*@
+  @ assigns \nothing;
+  @ ensures 0 <= \result <= 15;
+  @*/
+static unsigned int hex(const int c)
 {
   if(c>='0' && c<='9')
     return c-'0';
@@ -65,7 +74,7 @@ static int hex(int c)
     return c-'A'+10;
   if(c>='a' && c<='f')
     return c-'a'+10;
-  return -1;
+  return 0;
 }
 
 /*@
@@ -78,10 +87,11 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
   char title[512];
   const unsigned char pattern[6]={ '/', 'T', 'i', 't', 'l', 'e' };
   off_t offset;
+  uint64_t tmp;
   FILE *handle;
   unsigned char*buffer;
   unsigned int i;
-  unsigned int j;
+  unsigned int l;
   size_t bsize;
   const unsigned char utf16[3]= { 0xfe, 0xff, 0x00};
   if((handle=fopen(file_recovery->filename, "rb"))==NULL)
@@ -101,55 +111,79 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
     fclose(handle);
     return;
   }
-  offset=file_rsearch(handle, offset, pattern, sizeof(pattern));
-  if(offset==0)
+  tmp=file_rsearch(handle, offset, pattern, sizeof(pattern));
+  if(tmp==0 || tmp > PHOTOREC_MAX_FILE_SIZE)
   {
     fclose(handle);
     return;
   }
-  offset+=sizeof(pattern);
+  offset=tmp+sizeof(pattern);
   if(my_fseek(handle, offset, SEEK_SET)<0)
   {
     fclose(handle);
     return ;
   }
   buffer=(unsigned char*)MALLOC(512);
-  if((bsize=fread(buffer, 1, 512, handle)) <= 0)
+  if((bsize=fread(buffer, 1, 512, handle)) <= 2)
   {
     free(buffer);
     fclose(handle);
     return ;
   }
+  /*@ assert 2 < bsize; */
 #if defined(__FRAMAC__)
   Frama_C_make_unknown(buffer, 512);
 #endif
+  /*@ assert \initialized(buffer + (0 .. 512-1)); */
   fclose(handle);
   /* Skip spaces after /Title */
+  /*@
+    @ loop invariant 0 <= i <= bsize;
+    @ loop assigns i;
+    @ */
   for(i=0; i<bsize && buffer[i]==' '; i++);
-  if(i==bsize)
+  if(i + 2 >= bsize)
   {
     /* Too much spaces */
     free(buffer);
     return ;
   }
+  /*@ assert i + 2 < bsize; */
   if(buffer[i]=='<')
   {
-    unsigned int s=i;
+    unsigned int j;
+    unsigned int s;
     /* hexa to ascii */
-    j=s;
-    buffer[j++]='(';
-    for(s++; s+1<bsize && buffer[s]!='>'; s+=2)
-      buffer[j++]=(hex(buffer[s])<<4) | hex(buffer[s+1]);
+    buffer[i]='(';
+    /*@ assert \valid(buffer + (0 .. bsize -1)); */
+    /*@
+      @ loop invariant s <= bsize;
+      @ loop invariant j <= s;
+      @ loop invariant j <  bsize;
+      @ loop assigns s, j, buffer[0 .. 512-1];
+      @ */
+    for(s=i+1, j=i+1;
+	s+1<bsize && is_hexa(buffer[s]) && is_hexa(buffer[s+1]);
+	s+=2, j++)
+      buffer[j]=(hex(buffer[s])<<4) | hex(buffer[s+1]);
     buffer[j]=')';
   }
-  j=0;
+  l=0;
   if(buffer[i]=='(')
   {
+    const char *sbuffer=(const char *)buffer;
+    /*@ assert \valid_read(sbuffer + (0 .. 512-1)); */
+    /*@ assert \initialized(sbuffer + (0 .. 512-1)); */
     i++;	/* Skip '(' */
     if(i+8<bsize && memcmp(&buffer[i], "\\376\\377", 8)==0)
     {
       /* escape utf-16 title */
       i+=8;
+      /*@
+        @ loop invariant l < i;
+        @ loop invariant \initialized(title + (0 .. l-1));
+        @ loop assigns i, l, title[0 .. 512-1];
+	@*/
       while(i<bsize)
       {
 	if(buffer[i]==')')
@@ -158,26 +192,39 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
 	    isdigit(buffer[i+2]) && isdigit(buffer[i+3]))
 	  i+=4;
 	else
-	  title[j++]=buffer[i++];
+	  title[l++]=sbuffer[i++];
       }
+      /*@ assert \initialized(title + (0 .. l-1)); */
     }
     else if(i+3<bsize && memcmp(&buffer[i], &utf16, 3)==0)
     {
       /* utf-16 title */
       i+=2;
-      while(i<bsize)
+      /*@
+        @ loop invariant l < i;
+        @ loop invariant \initialized(title + (0 .. l-1));
+        @ loop assigns i, l, title[0 .. 512-1];
+	@*/
+      while(i+1 < bsize)
       {
 	if(buffer[i]==')')
 	  break;
-	title[j++]=buffer[i+1];
+	title[l++]=sbuffer[i+1];
 	i+=2;
       }
+      /*@ assert \initialized(title + (0 .. l-1)); */
     }
     else
     {
       /* ascii title */
+      /*@
+        @ loop invariant l < i;
+        @ loop invariant \initialized(title + (0 .. l-1));
+        @ loop assigns i, l, title[0 .. 512-1];
+	@*/
       while(i<bsize && buffer[i]!=')')
-	title[j++]=buffer[i++];
+	title[l++]=sbuffer[i++];
+      /*@ assert \initialized(title + (0 .. l-1)); */
     }
   }
   else
@@ -185,21 +232,24 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
     free(buffer);
     return ;
   }
+  /*@ assert \initialized(title + (0 .. l-1)); */
   /* Try to avoid some double-extensions */
-  if(j>4 &&
-      (memcmp(&title[j-4], ".doc", 4)==0 ||
-       memcmp(&title[j-4], ".xls", 4)==0))
-    j-=4;
-  else if(j>5 &&
-      (memcmp(&title[j-5], ".docx", 5)==0 ||
-       memcmp(&title[j-5], ".xlsx", 5)==0))
-    j-=5;
-  file_rename(file_recovery, title, j, 0, NULL, 1);
+  if(l>4 &&
+      (memcmp(&title[l-4], ".doc", 4)==0 ||
+       memcmp(&title[l-4], ".xls", 4)==0))
+    l-=4;
+  else if(l>5 &&
+      (memcmp(&title[l-5], ".docx", 5)==0 ||
+       memcmp(&title[l-5], ".xlsx", 5)==0))
+    l-=5;
+  file_rename(file_recovery, title, l, 0, NULL, 1);
   free(buffer);
 }
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @*/
 static void file_date_pdf(file_recovery_t *file_recovery)
 {
@@ -225,6 +275,11 @@ static void file_date_pdf(file_recovery_t *file_recovery)
       free(buffer);
       return ;
     }
+    /*@
+      @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, buffer + (..));
+      @ loop assigns i, j, *file_recovery->handle, file_recovery->time, buffer[0..21];
+      @ loop assigns errno;
+      @*/
     for(i=0; i<bsize; i++)
     {
       if(buffer[i]==pattern[j])
@@ -234,6 +289,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	  if(my_fseek(file_recovery->handle, offset+i+1, SEEK_SET)>=0 &&
 	      fread(buffer, 1, 22, file_recovery->handle) == 22)
 	  {
+	    /*@ assert \initialized( buffer+ (0 .. 22-1)); */
 	    if(buffer[0]=='=' && (buffer[1]=='\'' || buffer[1]=='"'))
 	    {
 	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[2]);
@@ -260,6 +316,9 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @*/
 static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 {
@@ -297,6 +356,9 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @*/
 static void file_check_pdf(file_recovery_t *file_recovery)
 {
@@ -336,16 +398,18 @@ static uint64_t read_pdf_file_aux(const unsigned char *buffer, unsigned int i)
 
 /*@
   @ requires \valid_read(buffer+(0..512-1));
+  @ assigns  \nothing;
   @*/
 static uint64_t read_pdf_file(const unsigned char *buffer)
 {
   const unsigned char sig_linearized[10]={'L','i','n','e','a','r','i','z','e','d'};
-  const unsigned char *src;
+  const char *src;
   unsigned int i;
-  src=(const unsigned char *)td_memmem(buffer, 512, sig_linearized, sizeof(sig_linearized));
+  const char *sbuffer=(const char *)buffer;
+  src=(const char *)td_memmem(sbuffer, 512, sig_linearized, sizeof(sig_linearized));
   if(src == NULL)
     return 0;
-  i = src - buffer;
+  i = src - sbuffer;
   i+=sizeof(sig_linearized);
   if( i >= 512 -1)
     return 0;
@@ -370,6 +434,8 @@ static uint64_t read_pdf_file(const unsigned char *buffer)
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_pdf, buffer, file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
