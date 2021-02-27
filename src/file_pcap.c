@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_pcap(file_stat_t *file_stat);
 
 const file_hint_t file_hint_pcap= {
@@ -42,6 +43,17 @@ const file_hint_t file_hint_pcap= {
   .register_header_check=&register_header_check_pcap
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pcap, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_pcap(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
@@ -58,6 +70,8 @@ static void register_header_check_pcap(file_stat_t *file_stat)
   static const unsigned char pcap_le_header1[6]	= {0xd4, 0xc3, 0xb2, 0xa1, 0x01, 0x00};
   static const unsigned char pcap_le_header2[6]	= {0xd4, 0xc3, 0xb2, 0xa1, 0x02, 0x00};
   register_header_check(0, pcap_le_header1, sizeof(pcap_le_header1), &header_check_pcap, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, pcap_le_header2, sizeof(pcap_le_header2), &header_check_pcap, file_stat);
+#endif
 }
 #endif
