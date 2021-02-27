@@ -35,8 +35,8 @@
 #include "log.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_pcx(file_stat_t *file_stat);
-static int header_check_pcx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_pcx= {
   .extension="pcx",
@@ -47,7 +47,6 @@ const file_hint_t file_hint_pcx= {
   .register_header_check=&register_header_check_pcx
 };
 
-static const unsigned char pcx_header[1]= {0x0a};
 struct pcx_file_entry {
   uint8_t  Manufacturer; /* should always be 0Ah		*/
   uint8_t  Version;
@@ -78,11 +77,17 @@ struct pcx_file_entry {
   uint8_t  Filler[56];
 } __attribute__ ((gcc_struct, __packed__));
 
-static void register_header_check_pcx(file_stat_t *file_stat)
-{
-  register_header_check(0, pcx_header,sizeof(pcx_header), &header_check_pcx, file_stat);
-}
-
+/*@
+  @ requires buffer_size >= sizeof(struct pcx_file_entry);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pcx, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_pcx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct pcx_file_entry *pcx=(const struct pcx_file_entry *)buffer;
@@ -110,5 +115,11 @@ static int header_check_pcx(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
+}
+
+static void register_header_check_pcx(file_stat_t *file_stat)
+{
+  static const unsigned char pcx_header[1]= {0x0a};
+  register_header_check(0, pcx_header,sizeof(pcx_header), &header_check_pcx, file_stat);
 }
 #endif
