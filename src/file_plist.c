@@ -31,9 +31,12 @@
 #include "types.h"
 #include "filegen.h"
 
+#if !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_qbb;
 extern const file_hint_t file_hint_sqlite;
+#endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_plist(file_stat_t *file_stat);
 
 const file_hint_t file_hint_plist= {
@@ -45,8 +48,19 @@ const file_hint_t file_hint_plist= {
   .register_header_check=&register_header_check_plist
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_plist, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_plist(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+#if !defined(SINGLE_FORMAT)
   if(file_recovery->file_stat!=NULL)
   {
     if( file_recovery->file_stat->file_hint==&file_hint_qbb ||
@@ -56,6 +70,7 @@ static int header_check_plist(const unsigned char *buffer, const unsigned int bu
 	return 0;
     }
   }
+#endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_plist.extension;
   return 1;
