@@ -32,10 +32,12 @@
 #include "common.h"
 #include "log.h"
 
+#if !defined(SINGLE_FORMAT)
 extern const file_hint_t file_hint_indd;
+#endif
+
+/*@ requires \valid(file_stat); */
 static void register_header_check_pct(file_stat_t *file_stat);
-static int header_check_pct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
-static void file_check_pct(file_recovery_t *file_recovery);
 
 const file_hint_t file_hint_pct= {
   .extension="pct",
@@ -80,6 +82,34 @@ struct pct_file_entry {
   uint32_t Reserved2;		/* 0x24 */
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_check == &file_check_pct;
+  @ ensures  valid_file_recovery(file_recovery);
+  @ assigns  file_recovery->file_size;
+  @*/
+static void file_check_pct(file_recovery_t *file_recovery)
+{
+  if(file_recovery->file_size<0x210 ||
+      file_recovery->file_size<file_recovery->min_filesize)
+  {
+    file_recovery->file_size=0;
+    return ;
+  }
+  file_recovery->file_size-=((file_recovery->file_size-file_recovery->min_filesize)&0xFFFF);
+}
+
+/*@
+  @ requires buffer_size >= 0x200+sizeof(struct pct_file_entry);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pct, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_pct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct pct_file_entry *pct=(const struct pct_file_entry *)(&buffer[0x200]);
@@ -95,16 +125,19 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
 	be16(pct->VersionOperator)==0x0011 &&
 	be16(pct->VersionNumber)==0x02ff)
   {
+    const unsigned int min_filesize=(buffer[0x200]<<8)+buffer[0x201];
+#if !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat != NULL &&
 	file_recovery->file_stat->file_hint==&file_hint_indd)
     {
       if(header_ignored_adv(file_recovery, file_recovery_new)==0)
 	return 0;
     }
+#endif
     reset_file_recovery(file_recovery_new);
     file_recovery_new->extension=file_hint_pct.extension;
     /* We only have the low 16bits of the filesystem */
-    file_recovery_new->min_filesize=(buffer[0x200]<<8)+buffer[0x201];
+    file_recovery_new->min_filesize=(min_filesize > 0x200+sizeof(struct pct_file_entry) ? min_filesize : 0x200+sizeof(struct pct_file_entry));
     file_recovery_new->file_check=&file_check_pct;
 #ifdef DEBUG_PCT
     log_info("X %u-%u, Y %u-%u\n",
@@ -117,17 +150,6 @@ static int header_check_pct(const unsigned char *buffer, const unsigned int buff
     return 1;
   }
   return 0;
-}
-
-static void file_check_pct(file_recovery_t *file_recovery)
-{
-  if(file_recovery->file_size<0x210 ||
-      file_recovery->file_size<file_recovery->min_filesize)
-  {
-    file_recovery->file_size=0;
-    return ;
-  }
-  file_recovery->file_size-=((file_recovery->file_size-file_recovery->min_filesize)&0xFFFF);
 }
 
 static void register_header_check_pct(file_stat_t *file_stat)
