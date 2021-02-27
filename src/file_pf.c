@@ -89,8 +89,7 @@ static void file_rename_pf(file_recovery_t *file_recovery)
 /*@
   @ requires buffer_size >= sizeof(struct pf_header);
   @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_pf, buffer+(..), file_recovery, file_recovery_new);
@@ -105,6 +104,7 @@ static void file_rename_pf(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->file_check==&file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename==&file_rename_pf);
   @ ensures \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_pf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -121,9 +121,6 @@ static int header_check_pf(const unsigned char *buffer, const unsigned int buffe
   return 1;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
 static void register_header_check_pf(file_stat_t *file_stat)
 {
   static const unsigned char pf_header[7] = {0x00, 0x00, 0x00, 'S', 'C', 'C', 'A'};
