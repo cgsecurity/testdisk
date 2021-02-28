@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_pzh(file_stat_t *file_stat);
 
 /* Presto http://www.soft.es/ */
@@ -49,6 +50,11 @@ static const unsigned char pzh_header[10]=  {
   0x05, 0x03
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_pzh;
+  @*/
 static void file_rename_pzh(file_recovery_t *file_recovery)
 {
   unsigned char buffer[512];
@@ -67,6 +73,16 @@ static void file_rename_pzh(file_recovery_t *file_recovery)
     file_rename(file_recovery, buffer, buffer_size, 0, "pzh", 0);
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_pzh, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_pzh(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
