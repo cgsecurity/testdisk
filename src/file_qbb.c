@@ -35,6 +35,7 @@
 #include "log.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_qbb(file_stat_t *file_stat);
 
 const file_hint_t file_hint_qbb= {
@@ -72,6 +73,11 @@ struct qbb_header02
 #endif
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename==&file_rename_qbb;
+  @*/
 static void file_rename_qbb(file_recovery_t *file_recovery)
 {
   FILE *file;
@@ -82,24 +88,41 @@ static void file_rename_qbb(file_recovery_t *file_recovery)
     return;
   lu=fread(&buffer, 1, sizeof(buffer), file);
   fclose(file);
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, sizeof(buffer));
+#endif
   while(i+sizeof(struct qbb_header02) < lu)
   {
     const struct qbb_header *hdr=(const struct qbb_header*)&buffer[i];
+    const unsigned int data_len=le16(hdr->data_len);
     if(le16(hdr->magic)!=0x8645)
       return ;
     if(le16(hdr->type)==2)
     {
-      const struct qbb_header02 *hdr2=(const struct qbb_header02 *)hdr;
-      /* FIXME */
-      if(sizeof(struct qbb_header02)+le16(hdr2->title_len) <= sizeof(struct qbb_header)+le16(hdr2->data_len) &&
-	  i+sizeof(struct qbb_header)+le16(hdr->data_len) < lu)
-	file_rename(file_recovery, (const char *)hdr2 + sizeof(struct qbb_header02), le16(hdr2->title_len), 0, NULL, 1);
+      if(i+sizeof(struct qbb_header)+data_len < lu)
+      {
+	const struct qbb_header02 *hdr2=(const struct qbb_header02 *)hdr;
+	const unsigned int title_len=le16(hdr2->title_len);
+	if(sizeof(struct qbb_header02)+title_len <= sizeof(struct qbb_header)+data_len)
+	  file_rename(file_recovery, (const char *)hdr2 + sizeof(struct qbb_header02), title_len, 0, NULL, 1);
+      }
       return ;
     }
-    i+=sizeof(struct qbb_header)+le16(hdr->data_len);
+    i+=sizeof(struct qbb_header)+data_len;
   }
 }
 
+/*@
+  @ requires buffer_size >= 0x10;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct qbb_header *hdr0=(const struct qbb_header*)buffer;
@@ -107,9 +130,13 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
   unsigned int i=0;
   if(buffer[0x0e]!=0x45 || buffer[0x0f]!=0x86)
     return 0;
+  /*@
+    @ loop assigns i, data_size;
+    @*/
   while(i+sizeof(struct qbb_header02) < buffer_size)
   {
     const struct qbb_header *hdr=(const struct qbb_header*)&buffer[i];
+    const unsigned int data_len=le16(hdr->data_len);
     if(le16(hdr->magic)!=0x8645)
       break;
     if(le16(hdr->type)==2)
@@ -118,9 +145,9 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
       data_size=le32(hdr2->size);
     }
 #ifdef DEBUG_QBB
-    log_info("i=0x%x size=0x%lx len=0x%x\n", i, sizeof(struct qbb_header), le16(hdr->data_len));
+    log_info("i=0x%x size=0x%lx len=0x%x\n", i, sizeof(struct qbb_header), data_len);
 #endif
-    i+=sizeof(struct qbb_header)+le16(hdr->data_len);
+    i+=sizeof(struct qbb_header)+data_len;
   }
 #ifdef DEBUG_QBB
   log_info("i=0x%x data_size=0x%lx\n", i, (long unsigned)data_size);
@@ -139,6 +166,17 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+/*@
+  @ requires buffer_size >= 0x64;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_qbw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[0x60]=='M' && buffer[0x61]=='A' && buffer[0x62]=='U' && buffer[0x63]=='I')
@@ -154,6 +192,17 @@ static int header_check_qbw(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
+/*@
+  @ requires buffer_size >= 0x87A + 6;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_qbw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(memcmp(&buffer[0x87A], "Sybase", 6)==0)
