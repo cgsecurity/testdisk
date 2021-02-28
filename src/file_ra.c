@@ -32,6 +32,7 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_ra(file_stat_t *file_stat);
 
 const file_hint_t file_hint_ra= {
@@ -50,7 +51,9 @@ struct ra3_header {
   char unk1[10];
   uint32_t data_size;
   uint8_t title_length;
+#if 0
   char title[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
 struct ra4_header {
@@ -78,9 +81,23 @@ struct ra4_header {
   char	   FourCC_string[4];
   char     unk4[3];
   uint8_t  title_length;
+#if 0
   char     title[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct ra3_header);
+  @ requires buffer_size >= sizeof(struct ra4_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_ra, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_ra(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[4]==0x00 && buffer[5]==0x03)
