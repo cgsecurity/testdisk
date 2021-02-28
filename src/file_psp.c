@@ -32,8 +32,8 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_psp(file_stat_t *file_stat);
-static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_psp= {
   .extension="psp",
@@ -44,23 +44,32 @@ const file_hint_t file_hint_psp= {
   .register_header_check=&register_header_check_psp
 };
 
-static void register_header_check_psp(file_stat_t *file_stat)
-{
-  register_header_check(0, "Paint Shop Pro Image File\n\032\0\0\0\0\0",  32,  &header_check_psp, file_stat);
-}
-
 struct psp_chunk {
   char header[4];
   uint16_t id;
   uint32_t size;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_psp;
+  @ requires \separated(buffer + (..), file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_psp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 10 < file_recovery->file_size + buffer_size/2)
   {
-    const unsigned int i=file_recovery->calculated_file_size - file_recovery->file_size + buffer_size/2;
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i < buffer_size - 10; */
     const struct psp_chunk *chunk=(const struct psp_chunk *)&buffer[i];
     if(memcmp(&buffer[i], "~BK\0", 4) != 0)
       return DC_STOP;
@@ -71,6 +80,17 @@ static data_check_t data_check_psp(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size >= 0x28;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_psp, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_psp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const unsigned int ver_major=buffer[0x20]+(buffer[0x21]<<8);
@@ -85,5 +105,10 @@ static int header_check_psp(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->file_check=&file_check_size;
   }
   return 1;
+}
+
+static void register_header_check_psp(file_stat_t *file_stat)
+{
+  register_header_check(0, "Paint Shop Pro Image File\n\032\0\0\0\0\0",  32,  &header_check_psp, file_stat);
 }
 #endif
