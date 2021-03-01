@@ -32,6 +32,7 @@
 #include "filegen.h"
 
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_rar(file_stat_t *file_stat);
 
 const file_hint_t file_hint_rar= {
@@ -45,12 +46,31 @@ const file_hint_t file_hint_rar= {
 
 #define  MHD_PASSWORD       0x0080U
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_rar15fmt;
+  @ ensures \valid(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_rar15fmt(file_recovery_t *file_recovery)
 {
   static const unsigned char rar15fmt_footer[7]={0xc4, 0x3d, 0x7b, 0x00, 0x40, 0x07, 0x00 };
   file_search_footer(file_recovery, rar15fmt_footer, sizeof(rar15fmt_footer), 0);
 }
 
+/*@
+  @ requires buffer_size >= 0xb;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_rar, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_rar15fmt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
@@ -61,12 +81,31 @@ static int header_check_rar15fmt(const unsigned char *buffer, const unsigned int
   return 1;
 }
 
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_rar50fmt;
+  @ ensures \valid(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_rar50fmt(file_recovery_t *file_recovery)
 {
   static const unsigned char rar50fmt_footer[8]={0x1d, 0x77, 0x56, 0x51, 0x03, 0x05, 0x04, 0x00 };
   file_search_footer(file_recovery, rar50fmt_footer, sizeof(rar50fmt_footer), 0);
 }
 
+/*@
+  @ requires buffer_size >= 0xb;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_rar, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_rar50fmt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
