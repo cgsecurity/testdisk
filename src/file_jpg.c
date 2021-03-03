@@ -55,6 +55,9 @@
 #include "common.h"
 #include "log.h"
 #include "file_jpg.h"
+#if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
+#include "file_riff.h"
+#endif
 #include "file_tiff.h"
 #include "setdate.h"
 #if defined(__FRAMAC__)
@@ -67,7 +70,6 @@ extern const file_hint_t file_hint_indd;
 extern const file_hint_t file_hint_mov;
 extern const file_hint_t file_hint_riff;
 extern const file_hint_t file_hint_rw2;
-extern data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 #endif
 
 /*@ requires \valid(file_stat); */
