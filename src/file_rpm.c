@@ -32,9 +32,8 @@
 #include "common.h"
 #include "filegen.h"
 
-
+/*@ requires \valid(file_stat); */
 static void register_header_check_rpm(file_stat_t *file_stat);
-static int header_check_rpm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_rpm= {
   .extension="rpm",
@@ -56,6 +55,11 @@ struct rpmlead {
   char reserved[16];
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename==&file_rename_rpm;
+  @*/
 static void file_rename_rpm(file_recovery_t *file_recovery)
 {
   FILE *file;
@@ -71,6 +75,16 @@ static void file_rename_rpm(file_recovery_t *file_recovery)
   file_rename(file_recovery, &hdr.name, 66, 0, "rpm", 0);
 }
 
+/*@
+  @ requires buffer_size >= sizeof(struct rpmlead);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_rpm, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_rpm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct rpmlead *hdr=(const struct rpmlead *)buffer;
