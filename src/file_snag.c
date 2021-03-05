@@ -32,6 +32,7 @@
 #include "filegen.h"
 #include "file_doc.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_snag(file_stat_t *file_stat);
 
 const file_hint_t file_hint_snag= {
@@ -43,11 +44,29 @@ const file_hint_t file_hint_snag= {
   .register_header_check=&register_header_check_snag
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle);
+  @ requires file_recovery->file_check == &file_check_snag;
+  @ ensures \valid(file_recovery->handle);
+  @*/
 static void file_check_snag(file_recovery_t *file_recovery)
 {
   file_check_doc_aux(file_recovery, 24);
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_snag, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_snag(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);

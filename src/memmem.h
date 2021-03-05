@@ -55,7 +55,10 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
         !memcmp ((const void *) &begin[1],
                  (const void *) ((const char *) needle + 1),
                  needle_len - 1))
+    {
+      /*@ assert (\subset(begin, (char *)haystack+(0..haystack_len-needle_len)) && \valid_read(begin)); */
       return (const void *) begin;
+    }
   return NULL;
 }
 #endif
