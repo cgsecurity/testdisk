@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_stl(file_stat_t *file_stat);
-static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_stl= {
   .extension="stl",
@@ -44,6 +44,17 @@ const file_hint_t file_hint_stl= {
   .register_header_check=&register_header_check_stl
 };
 
+/*@
+  @ requires buffer_size >= 84;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_stl, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /* STL Binary format
@@ -51,11 +62,12 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   unsigned int i;
   const uint32_t *fs_ptr=(const uint32_t *)&buffer[80];
   const uint64_t filesize=80+4+(uint64_t)le32(*fs_ptr)*50;
-  if(filesize > PHOTOREC_MAX_FILE_SIZE)
-    return 0;
+  /*@ assert filesize < PHOTOREC_MAX_FILE_SIZE; */
+  /*@ loop assigns i; */
   for(i=0; i<80 && buffer[i]!='\0'; i++);
   if(i>64)
     return 0;
+  /*@ loop assigns i; */
   for(i++; i<80 && buffer[i]==' '; i++);
   if(i!=80)
     return 0;
