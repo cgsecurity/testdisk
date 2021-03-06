@@ -36,6 +36,7 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_spe(file_stat_t *file_stat);
 
 const file_hint_t file_hint_spe= {
@@ -260,6 +261,7 @@ struct header_spe
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns file_recovery_new->filename[0];
   @ assigns file_recovery_new->time;
   @ assigns file_recovery_new->file_stat;
