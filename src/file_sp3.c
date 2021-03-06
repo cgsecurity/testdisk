@@ -36,6 +36,7 @@
 #include "file_sp3.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_sp3(file_stat_t *file_stat);
 
 const file_hint_t file_hint_sp3= {
@@ -47,69 +48,104 @@ const file_hint_t file_hint_sp3= {
   .register_header_check=&register_header_check_sp3
 };
 
-static uint64_t file_offset_end(uint64_t offset, uint64_t len)
+/*@ assigns \nothing; */
+static uint64_t file_offset_end(const uint32_t offset, const uint32_t len)
 {
-  return(offset==0 && len==0?0:offset+len-1);
+  return(offset==0 && len==0?0:(uint64_t)offset+len-1);
 }
 
-static int header_check_sp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+/*@
+  @ requires \valid_read(h);
+  @ assigns  \nothing;
+  @*/
+static time_t get_time_from_sp3(const struct SP3FileInfo *h)
 {
-  const struct SP3FileInfo *h=(const struct SP3FileInfo *)buffer;
-  if(le16(h->DataExameAno)>1960 && le16(h->DataExameAno)<2100 &&
+  const unsigned int DataExameAno=le16(h->DataExameAno);
+  if(DataExameAno>1960 && DataExameAno<2100 &&
       h->DataExameMes>=1 && h->DataExameMes<=12 &&
       h->DataExameDia>=1 && h->DataExameDia<=31)
   {
+    /*@ assert DataExameAno>1960; */
     struct tm tm_time;
-    uint64_t filesize=10240;
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_sp3.extension;
-    file_recovery_new->min_filesize=10240;
-    memset(&tm_time, 0, sizeof(tm_time));
+//    memset(&tm_time, 0, sizeof(tm_time));
     tm_time.tm_sec=h->DataExameSegundos;
     tm_time.tm_min=h->DataExameMinutos;
     tm_time.tm_hour=h->DataExameHora;
     tm_time.tm_mday=h->DataExameDia-1;
     tm_time.tm_mon=h->DataExameMes-1;
-    tm_time.tm_year=le16(h->DataExameAno)-1900;
+    tm_time.tm_year=DataExameAno-1900;
     tm_time.tm_isdst = -1;	/* unknown daylight saving time */
-    file_recovery_new->time= mktime(&tm_time);
-    filesize=td_max(filesize, file_offset_end(le32(h->TimeBaseDelta_POS), le32(h->TimeBaseDelta_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->ExtraInfoFlag_POS), le32(h->ExtraInfoFlag_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->FHRa_POS), le32(h->FHRa_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->FHRb_POS), le32(h->FHRb_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->UC_POS), le32(h->UC_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->FM_POS), le32(h->FM_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->MHR_POS), le32(h->MHR_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Fetal_SpO2_POS_POS), le32(h->Fetal_SpO2_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Fetal_SpO2_POS), le32(h->Fetal_SpO2_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Pressure_POS_POS), le32(h->Pressure_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Systolic_BP_POS), le32(h->Pressure_Systolic_BP_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Diastolic_BP_POS), le32(h->Pressure_Diastolic_BP_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Mean_BP_POS), le32(h->Pressure_Mean_BP_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Pressure_NIBP_MHR_POS), le32(h->Pressure_NIBP_MHR_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Maternal_POS_POS), le32(h->Maternal_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Maternal_SpO2_POS), le32(h->Maternal_SpO2_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Maternal_HR_POS), le32(h->Maternal_HR_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Event_POS_POS), le32(h->Event_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Event_TYPE_POS), le32(h->Event_TYPE_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Event_DESC_POS), le32(h->Event_DESC_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->TQRS_POS_POS), le32(h->TQRS_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Status_POS), le32(h->TQRS_Status_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Value_POS), le32(h->TQRS_Value_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Biphasic_POS), le32(h->TQRS_Biphasic_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Error_POS_POS), le32(h->Error_POS_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Error_TYPE_POS), le32(h->Error_TYPE_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Error_DESC_POS), le32(h->Error_DESC_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->CommBUFFER_POS), le32(h->CommBUFFER_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Prove_FHRa_POS), le32(h->Prove_FHRa_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Prove_FHRb_POS), le32(h->Prove_FHRb_LEN)));
-    filesize=td_max(filesize, file_offset_end(le32(h->Prove_UC_POS), le32(h->Prove_UC_LEN)));
-    file_recovery_new->calculated_file_size=filesize;
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
+    return mktime(&tm_time);
   }
-  return 0;
+  return (time_t)0;
+}
+
+/*@
+  @ requires \valid_read(h);
+  @ assigns  \nothing;
+  @*/
+static uint64_t get_size_from_sp3(const struct SP3FileInfo *h)
+{
+  uint64_t filesize=10240;
+  filesize=td_max(filesize, file_offset_end(le32(h->TimeBaseDelta_POS), le32(h->TimeBaseDelta_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->ExtraInfoFlag_POS), le32(h->ExtraInfoFlag_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->FHRa_POS), le32(h->FHRa_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->FHRb_POS), le32(h->FHRb_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->UC_POS), le32(h->UC_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->FM_POS), le32(h->FM_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->MHR_POS), le32(h->MHR_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Fetal_SpO2_POS_POS), le32(h->Fetal_SpO2_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Fetal_SpO2_POS), le32(h->Fetal_SpO2_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Pressure_POS_POS), le32(h->Pressure_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Systolic_BP_POS), le32(h->Pressure_Systolic_BP_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Diastolic_BP_POS), le32(h->Pressure_Diastolic_BP_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Pressure_Mean_BP_POS), le32(h->Pressure_Mean_BP_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Pressure_NIBP_MHR_POS), le32(h->Pressure_NIBP_MHR_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Maternal_POS_POS), le32(h->Maternal_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Maternal_SpO2_POS), le32(h->Maternal_SpO2_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Maternal_HR_POS), le32(h->Maternal_HR_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Event_POS_POS), le32(h->Event_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Event_TYPE_POS), le32(h->Event_TYPE_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Event_DESC_POS), le32(h->Event_DESC_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->TQRS_POS_POS), le32(h->TQRS_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Status_POS), le32(h->TQRS_Status_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Value_POS), le32(h->TQRS_Value_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->TQRS_Biphasic_POS), le32(h->TQRS_Biphasic_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Error_POS_POS), le32(h->Error_POS_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Error_TYPE_POS), le32(h->Error_TYPE_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Error_DESC_POS), le32(h->Error_DESC_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->CommBUFFER_POS), le32(h->CommBUFFER_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Prove_FHRa_POS), le32(h->Prove_FHRa_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Prove_FHRb_POS), le32(h->Prove_FHRb_LEN)));
+  filesize=td_max(filesize, file_offset_end(le32(h->Prove_UC_POS), le32(h->Prove_UC_LEN)));
+  return filesize;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(struct SP3FileInfo);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_sp3, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_check_sp3(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  const struct SP3FileInfo *h=(const struct SP3FileInfo *)buffer;
+  /*@ assert \valid_read(h); */
+  const time_t time=get_time_from_sp3(h);
+  if(time==0 || time==-1)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_sp3.extension;
+  file_recovery_new->min_filesize=10240;
+  file_recovery_new->time=time;
+  file_recovery_new->calculated_file_size=get_size_from_sp3(h);
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_sp3(file_stat_t *file_stat)
