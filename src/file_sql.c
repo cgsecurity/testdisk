@@ -32,8 +32,8 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_sqlite(file_stat_t *file_stat);
-static int header_check_sqlite(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_sqlite= {
   .extension="sqlite",
@@ -72,10 +72,22 @@ struct db_header
  uint32_t version;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct db_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_sqlite, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_sqlite(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct db_header *hdr=(const struct db_header *)buffer;
   unsigned int pagesize=be16(hdr->pagesize);
+  const unsigned int filesize_in_page=be32(hdr->filesize_in_page);
   /* Must be a power of two between 512 and 32768 inclusive, or the value 1 representing a page size of 65536. */
   if(pagesize==1)
     pagesize=65536;
@@ -88,9 +100,9 @@ static int header_check_sqlite(const unsigned char *buffer, const unsigned int b
   file_recovery_new->extension=file_hint_sqlite.extension;
 #endif
   file_recovery_new->min_filesize=sizeof(struct db_header);
-  if(be32(hdr->filesize_in_page)!=0 && be32(hdr->file_change_counter)==be32(hdr->version_valid_for))
+  if(filesize_in_page!=0 && be32(hdr->file_change_counter)==be32(hdr->version_valid_for))
   {
-    file_recovery_new->calculated_file_size=(uint64_t)be32(hdr->filesize_in_page) * pagesize;
+    file_recovery_new->calculated_file_size=(uint64_t)filesize_in_page * pagesize;
     file_recovery_new->data_check=&data_check_size;
     file_recovery_new->file_check=&file_check_size;
   }
