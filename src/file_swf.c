@@ -44,6 +44,7 @@
 #endif
 
 static const char *extension_swc="swc";
+/*@ requires \valid(file_stat); */
 static void register_header_check_swf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_swf= {
@@ -131,6 +132,8 @@ static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigne
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_swc);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_swfc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -221,6 +224,8 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_swf.extension);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_swf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -272,6 +277,8 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_swf.extension);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_swfz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
