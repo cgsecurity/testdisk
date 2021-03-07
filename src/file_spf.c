@@ -33,6 +33,7 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_spf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_spf= {
@@ -46,15 +47,24 @@ const file_hint_t file_hint_spf= {
 
 enum { READ_SIZE=32*512 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle);
+  @ requires file_recovery->file_check == &file_check_spf;
+  @ ensures  \valid(file_recovery->handle);
+  @ assigns  file_recovery->file_size, Frama_C_entropy_source, *file_recovery->handle;
+  @*/
 static void file_check_spf(file_recovery_t *file_recovery)
 {
-  unsigned char*buffer;
+  unsigned char buffer[READ_SIZE];
   file_recovery->file_size=0;
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
     return;
   }
-  buffer=(unsigned char*)MALLOC(READ_SIZE);
+  /*@ loop assigns file_recovery->file_size, Frama_C_entropy_source, buffer[0 .. READ_SIZE-1]; */
   while(1)
   {
     int i;
@@ -62,12 +72,12 @@ static void file_check_spf(file_recovery_t *file_recovery)
     if(taille<512 || taille%512!=0)
     {
       file_recovery->file_size=0;
-      free(buffer);
       return ;
     }
 #ifdef __FRAMAC__
-  Frama_C_make_unknown(buffer, READ_SIZE);
+    Frama_C_make_unknown(buffer, READ_SIZE);
 #endif
+    /*@ loop assigns i, file_recovery->file_size; */
     for(i=0; i<taille; i+=512)
     {
       int j;
@@ -75,22 +85,32 @@ static void file_check_spf(file_recovery_t *file_recovery)
       file_recovery->file_size+=512;
       if(file_recovery->file_size >= PHOTOREC_MAX_FILE_SIZE)
       {
-	free(buffer);
 	return;
       }
+      /*@ loop assigns j, is_valid; */
       for(j=0; j<8; j++)
 	if(buffer[i+j]!=0)
 	  is_valid=1;
+      /*@ loop assigns j; */
       for(j=8; j<512 && buffer[i+j]==0; j++);
       if(is_valid > 0 && j==512)
       {
-	free(buffer);
 	return;
       }
     }
   }
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_spf, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_spf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
