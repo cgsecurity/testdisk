@@ -33,6 +33,11 @@
 #include "filegen.h"
 #include "common.h"
 
+#if defined(__FRAMAC__)
+#undef HAVE_STRPTIME
+#endif
+
+/*@ requires \valid(file_stat); */
 static void register_header_check_steuer(file_stat_t *file_stat);
 static const char *extension_steuer2014="steuer2014";
 static const char *extension_steuer2015="steuer2015";
@@ -59,13 +64,23 @@ struct steuer_header
   char 		date_string[0x18];
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct steuer_header);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_steuer2014, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_steuer(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct steuer_header *h=(const struct steuer_header *)buffer;
   struct tm tm_time;
   if(h->version1!=h->version2)
     return 0;
-  memset(&tm_time, 0, sizeof(struct tm));
   reset_file_recovery(file_recovery_new);
   switch(le32(h->version1))
   {
