@@ -395,9 +395,10 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires valid_file_recovery(fr);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
-  @ requires \separated(&errno, fr);
+  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ requires \valid_read(buffer + (0 .. buffer_size - 1));
   @ ensures \valid(fr);
   @ ensures \valid(fr->handle);
@@ -432,9 +433,10 @@ static uint64_t file_check_tiff_le_aux_next(file_recovery_t *fr, const unsigned 
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires valid_file_recovery(fr);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
-  @ requires \separated(&errno, fr);
+  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \valid(fr);
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
@@ -455,8 +457,8 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
   uint64_t strip_offsets=0;
   uint64_t tile_bytecounts=0;
   uint64_t tile_offsets=0;
-  unsigned int tdir_tag_old=0;
   unsigned int sorted_tag_error=0;
+  unsigned int tdir_tag_old=0;
   const TIFFDirEntry *entries=(const TIFFDirEntry *)&buffer[2];
   const TIFFDirEntry *entry_strip_offsets=NULL;
   const TIFFDirEntry *entry_strip_bytecounts=NULL;
@@ -634,10 +636,6 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 #if defined(__FRAMAC__)
 	    Frama_C_make_unknown((char *)&subifd_offsetp, sizeof(subifd_offsetp));
 #endif
-	    /*X
-	      X loop invariant 0 <= j <= nbr <=32;
-	      X loop variant nbr-j;
-	      X*/
 	    for(j=0; j<nbr; j++)
 	    {
 	      /*@ assert \valid(fr); */

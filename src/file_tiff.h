@@ -100,11 +100,17 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires valid_file_recovery(fr);
   @ requires \valid_read(&fr->extension);
   @ requires valid_read_string(fr->extension);
   @ requires fr->file_check==&file_check_tiff_le;
+  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
+  @ assigns  errno;
+  @ assigns  fr->file_size;
+  @ assigns  *fr->handle;
+  @ assigns  Frama_C_entropy_source;
   @*/
 void file_check_tiff_le(file_recovery_t *fr);
 #endif
@@ -127,9 +133,6 @@ void file_check_tiff_le(file_recovery_t *fr);
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
@@ -138,6 +141,7 @@ void file_check_tiff_le(file_recovery_t *fr);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_le);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
@@ -172,9 +176,6 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsi
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || \valid_function(file_recovery_new->data_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null || \valid_function(file_recovery_new->file_check));
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || \valid_function(file_recovery_new->file_rename));
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
   @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
@@ -182,6 +183,7 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsi
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
