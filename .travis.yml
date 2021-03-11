@@ -1,5 +1,8 @@
 dist: xenial
 
+node_js:
+  - "10"
+
 addons:
   apt:
     packages:
