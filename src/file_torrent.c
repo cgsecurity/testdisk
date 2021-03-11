@@ -31,23 +31,35 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_torrent(file_stat_t *file_stat);
 
-const file_hint_t file_hint_torrent= {
-  .extension="torrent",
-  .description="Torrent",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_torrent
+const file_hint_t file_hint_torrent = {
+  .extension = "torrent",
+  .description = "Torrent",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_torrent
 };
 
+/*@
+  @ requires buffer_size >= 12;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_torrent, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_torrent(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(buffer[11]<'0' || buffer[11]>'9')
+  if(buffer[11] < '0' || buffer[11] > '9')
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_torrent.extension;
+  file_recovery_new->extension = file_hint_torrent.extension;
   return 1;
 }
 
