@@ -31,24 +31,35 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_v2i(file_stat_t *file_stat);
 
-const file_hint_t file_hint_v2i= {
-  .extension="v2i",
-  .description="v2i backup",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_v2i
+const file_hint_t file_hint_v2i = {
+  .extension = "v2i",
+  .description = "v2i backup",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_v2i
 };
 
+/*@
+  @ requires buffer_size >= 0x18 ;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_v2i, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_v2i(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const unsigned char v2i_sign[4]={0x13, 0x04, 0x08, 0x00};
-  if(memcmp(&buffer[0x14], v2i_sign, sizeof(v2i_sign))==0)
+  const unsigned char v2i_sign[4] = { 0x13, 0x04, 0x08, 0x00 };
+  if(memcmp(&buffer[0x14], v2i_sign, sizeof(v2i_sign)) == 0)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_v2i.extension;
+    file_recovery_new->extension = file_hint_v2i.extension;
     return 1;
   }
   return 0;
