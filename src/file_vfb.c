@@ -31,38 +31,49 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_vfb(file_stat_t *file_stat);
 
-const file_hint_t file_hint_vfb= {
-  .extension="vfb",
-  .description="FontLab",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_vfb
+const file_hint_t file_hint_vfb = {
+  .extension = "vfb",
+  .description = "FontLab",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_vfb
 };
 
 static void file_check_vfb(file_recovery_t *file_recovery)
 {
-  const unsigned char vfb_footer[9]= {
+  const unsigned char vfb_footer[9] = {
     0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00,
     0x00
   };
   file_search_footer(file_recovery, vfb_footer, sizeof(vfb_footer), 0);
 }
 
+/*@
+  @ requires buffer_size >= 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_vfb, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_vfb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_vfb.extension;
-  file_recovery_new->file_check=&file_check_vfb;
+  file_recovery_new->extension = file_hint_vfb.extension;
+  file_recovery_new->file_check = &file_check_vfb;
   return 1;
 }
 
 static void register_header_check_vfb(file_stat_t *file_stat)
 {
-  static const unsigned char vfb_header[8]=  {
-    0x1a, 'W' , 'L' , 'F' , '1' , '0' , 0x03, 0x00
+  static const unsigned char vfb_header[8] = {
+    0x1a, 'W', 'L', 'F', '1', '0', 0x03, 0x00
   };
   register_header_check(0, vfb_header, sizeof(vfb_header), &header_check_vfb, file_stat);
 }
