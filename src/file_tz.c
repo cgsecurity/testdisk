@@ -35,45 +35,50 @@
 #include "common.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_tz(file_stat_t *file_stat);
 
-const file_hint_t file_hint_tz= {
-  .extension="tz",
-  .description="Timezone info",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_tz
+const file_hint_t file_hint_tz = {
+  .extension = "tz",
+  .description = "Timezone info",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_tz
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_tz, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_tz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_tz.extension;
+  file_recovery_new->extension = file_hint_tz.extension;
   return 1;
 }
 
 static void register_header_check_tz(file_stat_t *file_stat)
 {
   /* man 5 tzfile */
-  static const unsigned char tz_header[20]=
-  {
-    'T', 'Z', 'i', 'f',
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
+  static const unsigned char tz_header[20] = {
+    'T', 'Z', 'i', 'f', 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
 
-  static const unsigned char tz2_header[20]=
-  {
-    'T', 'Z', 'i', 'f',
-    '2', 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
+  static const unsigned char tz2_header[20] = {
+    'T', 'Z', 'i', 'f', '2', 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
   register_header_check(0, tz_header, sizeof(tz_header), &header_check_tz, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, tz2_header, sizeof(tz2_header), &header_check_tz, file_stat);
+#endif
 }
 #endif
