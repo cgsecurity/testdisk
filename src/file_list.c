@@ -371,7 +371,7 @@ extern const file_hint_t file_hint_zpr;
 
 file_enable_t array_file_enable[]=
 {
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sig)
+#if (!defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sig)) && !defined(__FRAMAC__)
   { .enable=0, .file_hint=&file_hint_sig  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_1cd)
@@ -1190,7 +1190,7 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_snag)
   { .enable=0, .file_hint=&file_hint_snag  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_snz)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
   { .enable=0, .file_hint=&file_hint_snz  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sp3)
@@ -1259,7 +1259,7 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ttf)
   { .enable=0, .file_hint=&file_hint_ttf  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fasttxt)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
   { .enable=0, .file_hint=&file_hint_fasttxt  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
@@ -1295,8 +1295,10 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vmg)
   { .enable=0, .file_hint=&file_hint_vmg  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wallet)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wad)
   { .enable=0, .file_hint=&file_hint_wad  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wallet)
   { .enable=0, .file_hint=&file_hint_wallet  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wdp)
