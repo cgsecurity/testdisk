@@ -249,6 +249,7 @@ void free_header_check(void)
 
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
+  /*@ assert valid_file_recovery(file_recovery); */
   char buffer[4096];
   int taille;
   if(file_recovery->file_size >= 0x8000000000000000-2)
@@ -286,8 +287,10 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
   /*@ assert 0 < footer_length < 4096; */
   memset(&buffer[4096],0,footer_length-1);
   /*@
+    @ loop invariant 0 <= offset <= \at(offset, Pre);
     @ loop assigns errno, *handle, Frama_C_entropy_source;
     @ loop assigns offset, buffer[0 .. 8192-1];
+    @ loop variant offset;
     @*/
   do
   {
@@ -476,6 +479,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   strcpy(file_recovery->filename, new_filename);
 #else
   file_recovery->filename[0]='/';
+  file_recovery->filename[1]='\0';
 #endif
   /*@ assert valid_read_string((const char *)&file_recovery->filename); */
   return 0;
