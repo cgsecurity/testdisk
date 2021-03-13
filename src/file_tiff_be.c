@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg) || defined(SINGLE_FORMAT_rw2) || defined(SINGLE_FORMAT_orf)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff) || defined(SINGLE_FORMAT_jpg) || defined(SINGLE_FORMAT_rw2) || defined(SINGLE_FORMAT_orf) || defined(SINGLE_FORMAT_wdp)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -385,7 +385,7 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
 #endif
 #endif
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf)
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
 static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
 
 /*@
@@ -495,6 +495,10 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
     X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
     X loop variant n-i;
     X*/
+  /*@
+    @ loop invariant valid_file_recovery(fr);
+    @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+    @*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {
     /*@ assert \valid(fr); */
@@ -555,6 +559,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	case TIFFTAG_KODAKIFD:
 	  {
 	    /*@ assert \valid(fr); */
+	    /*@ assert valid_file_recovery(fr); */
 	    /*@ assert \valid(fr->handle); */
 	    /*@ assert \valid_read(&fr->extension); */
 	    /*@ assert valid_read_string(fr->extension); */
@@ -572,6 +577,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	case TIFFTAG_SUBIFD:
 	  {
 	    /*@ assert \valid(fr); */
+	    /*@ assert valid_file_recovery(fr); */
 	    /*@ assert \valid(fr->handle); */
 	    /*@ assert \valid_read(&fr->extension); */
 	    /*@ assert valid_read_string(fr->extension); */
@@ -624,6 +630,10 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 #if defined(__FRAMAC__)
 	    Frama_C_make_unknown((char *)&subifd_offsetp, sizeof(subifd_offsetp));
 #endif
+	    /*@
+	      @ loop invariant valid_file_recovery(fr);
+	      @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+	      @*/
 	    for(j=0; j<nbr; j++)
 	    {
 	      /*@ assert \valid(fr); */
