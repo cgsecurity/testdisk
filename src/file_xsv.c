@@ -32,31 +32,41 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_xsv(file_stat_t *file_stat);
-static int header_check_xsv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
-const file_hint_t file_hint_xsv= {
-  .extension="xsv",
-  .description="XBOX GTA San Andreas Save File",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_xsv
+const file_hint_t file_hint_xsv = {
+  .extension = "xsv",
+  .description = "XBOX GTA San Andreas Save File",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_xsv
 };
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_xsv, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_xsv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_xsv.extension;
-  file_recovery_new->calculated_file_size=202772;
-  file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension = file_hint_xsv.extension;
+  file_recovery_new->calculated_file_size = 202772;
+  file_recovery_new->data_check = &data_check_size;
+  file_recovery_new->file_check = &file_check_size;
   return 1;
 }
 
 static void register_header_check_xsv(file_stat_t *file_stat)
 {
-  static const unsigned char xsv_header[9]= {'B','L','O','C', 'K', 'L', 0xDC, 0x1D, 'd'};
-  register_header_check(20, xsv_header,sizeof(xsv_header), &header_check_xsv, file_stat);
+  static const unsigned char xsv_header[9] = { 'B', 'L', 'O', 'C', 'K', 'L', 0xDC, 0x1D, 'd' };
+  register_header_check(20, xsv_header, sizeof(xsv_header), &header_check_xsv, file_stat);
 }
 #endif
