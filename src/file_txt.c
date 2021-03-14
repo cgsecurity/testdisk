@@ -41,7 +41,7 @@
 #include "filegen.h"
 #include "log.h"
 #include "memmem.h"
-#include "file_txt.h"
+#include "utfsize.h"
 #if defined(__FRAMAC__)
 #include "__fc_builtin.h"
 #endif
@@ -680,90 +680,6 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
   /*@ assert q == buffer_lower + offset_dst; */
   *q = '\0';
   return offset_dst;
-}
-
-int UTFsize(const unsigned char *buffer, const unsigned int buf_len)
-{
-  const unsigned char *p=buffer;	/* pointers to actual position in source buffer */
-  unsigned int i=0;
-  /*@
-    @ loop invariant 0 <= i < buf_len + 3;
-    @ loop invariant p == buffer + i;
-    @ loop assigns i, p;
-    @ loop variant buf_len - 1 - i;
-    @*/
-  while(i<buf_len)
-  {
-    /*@ assert i < buf_len; */
-    /*@ assert p == buffer + i; */
-    const unsigned char c=*p;
-    if(c=='\0')
-      return i;
-    /* Reject some invalid UTF-8 sequences */
-    if(c==0xc0 || c==0xc1 || c==0xf7 || c>=0xfd)
-      return i;
-    /*@ assert i + 1 >= buf_len || \valid_read(p+1); */
-    /*@ assert i + 2 >= buf_len || \valid_read(p+2); */
-    if((c & 0xf0)==0xe0 &&
-	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80) &&
-	(i+2 >= buf_len || (*(p+2) & 0xc0)==0x80))
-    { /* UTF8 l=3 */
-#ifdef DEBUG_TXT
-      log_info("UTFsize i=%u l=3\n", i);
-#endif
-      p+=3;
-      i+=3;
-    }
-    else if((c & 0xe0)==0xc0 &&
-	(i+1 >= buf_len || (*(p+1) & 0xc0)==0x80))
-    { /* UTF8 l=2 */
-#ifdef DEBUG_TXT
-      log_info("UTFsize i=%u l=2\n", i);
-#endif
-      p+=2;
-      i+=2;
-    }
-    else
-    { /* Ascii UCS */
-#ifdef DEBUG_TXT
-      log_info("UTFsize i=%u l=1 ? *p=%c\n", i, c);
-#endif
-      switch(c)
-      {
-	case 0x00:
-	case 0x01:
-	case 0x02:
-	case 0x03:
-	case 0x04:
-	case 0x05:
-	case 0x06:
-	case 0x07:
-	case 0x0b:
-	case 0x0c:
-	case 0x10:
-	case 0x11:
-	case 0x12:
-	case 0x13:
-	case 0x14:
-	case 0x15:
-	case 0x16:
-	case 0x17:
-	case 0x18:
-	case 0x19:
-	case 0x1a:
-	case 0x1b:
-	case 0x1c:
-	case 0x1d:
-	case 0x1e:
-	case 0x1f:
-	case 0x7f:
-	  return i;
-      }
-      p++;
-      i++;
-    }
-  }
-  return (i<buf_len?i:buf_len);
 }
 
 /*@

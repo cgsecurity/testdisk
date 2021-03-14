@@ -387,9 +387,10 @@ file_C			= filegen.c \
 			  file_z2d.c \
 			  file_zcode.c \
 			  file_zip.c \
-			  file_zpr.c
+			  file_zpr.c \
+			  utfsize.c
 
-file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h file_txt.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h
+file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h
 
 photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c
 
@@ -466,6 +467,10 @@ session_tiff_be.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c fileg
 session_tiff_le.framac: file_tiff.c file_tiff_be.c file_tiff_le.c common.c filegen.c log.c
 	$(CC) $(CFLAGS) -DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -I.. $^ -o demo_tiff_le
 	frama-c $^ -cpp-extra-args="-DMAIN_tiff_le -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_tiff -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+
+session_txt.framac: file_txt.c common.c filegen.c log.c utfsize.c
+	$(CC) $(CFLAGS) -DMAIN_txt -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_txt -I.. $^ -o demo_txt
+	frama-c $^ -cpp-extra-args="-DMAIN_txt -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_txt -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_%.framac: file_%.c common.c filegen.c log.c
 	$(CC) $(CFLAGS) -DMAIN_$* -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -I.. $^ -o demo_$*

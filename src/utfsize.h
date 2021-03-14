@@ -1,8 +1,8 @@
 /*
 
-    File: file_txt.h
+    File: utfsize.h
 
-    Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2009-2021 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,8 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-#ifndef _FILE_TXT_H
-#define _FILE_TXT_H
+#ifndef _UTFSIZE_H
+#define _UTFSIZE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
