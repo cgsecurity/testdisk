@@ -42,7 +42,7 @@ base_C			= $(smallbase_C) autoset.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32
 base_H			= $(smallbase_H) alignio.h autoset.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h iso.h iso9660.h lang.h list.h list_sort.h log_part.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h parthumax.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
 
 fs_C			= analyse.c bfs.c bsd.c btrfs.c cramfs.c exfat.c ext2.c fat.c fatx.c f2fs.c jfs.c gfs2.c hfs.c hfsp.c hpfs.c luks.c lvm.c md.c netware.c ntfs.c refs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c vmfs.c wbfs.c xfs.c zfs.c
-fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h fat.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h hfsp_struct.h luks.h luks_struct.h lvm.h md.h netware.h ntfs.h ntfs_struct.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h zfs.h
+fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h fat.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h hfsp_struct.h luks.h luks_struct.h lvm.h md.h netware.h ntfs.h ntfs_struct.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h xfs_struct.h zfs.h
 
 testdisk_ncurses_C	= addpart.c addpartn.c adv.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c dimage.c dirn.c dirpart.c diskacc.c diskcapa.c edit.c ext2_sb.c ext2_sbn.c fat1x.c fat32.c fat_adv.c fat_cluster.c fatn.c geometry.c geometryn.c godmode.c hiddenn.c intrface.c intrfn.c nodisk.c ntfs_adv.c ntfs_fix.c ntfs_udl.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c tanalyse.c tbanner.c tdelete.c tdiskop.c tdisksel.c testdisk.c texfat.c thfs.c tload.c tlog.c tmbrcode.c tntfs.c toptions.c tpartwr.c 
 testdisk_ncurses_H	= addpart.h addpartn.h adv.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h dimage.h dirn.h dirpart.h diskacc.h diskcapa.h edit.h ext2_sb.h ext2_sbn.h fat1x.h fat32.h fat_adv.h fat_cluster.h fatn.h geometry.h geometryn.h godmode.h hiddenn.h intrface.h intrfn.h nodisk.h ntfs_adv.h ntfs_fix.h ntfs_udl.h partgptn.h parti386n.h partmacn.h partsunn.h partxboxn.h tanalyse.h tdelete.h tdiskop.h tdisksel.h texfat.h thfs.h tload.h tlog.h tmbrcode.h tntfs.h toptions.h tpartwr.h
@@ -390,7 +390,7 @@ file_C			= filegen.c \
 			  file_zpr.c \
 			  utfsize.c
 
-file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h
+file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h xfs_struct.h
 
 photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c
 
