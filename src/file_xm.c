@@ -34,187 +34,250 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_xm(file_stat_t *file_stat);
 
-const file_hint_t file_hint_xm= {
-  .extension="xm",
-  .description="FastTrackerII Extended Module",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_xm
+const file_hint_t file_hint_xm = {
+  .extension = "xm",
+  .description = "FastTrackerII Extended Module",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_xm
 };
 
+/*@
+  @ requires \valid(fr);
+  @ requires valid_file_recovery(fr);
+  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(fr->handle);
+  @ assigns *fr->handle, errno, fr->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
 {
-  for(; patterns!=0; patterns--)
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns patterns;
+    @*/
+  for(; patterns != 0; patterns--)
   {
+    char buffer[sizeof(uint32_t)];
+    const uint16_t *p16 = (const uint16_t *)&buffer;
+    const uint32_t *p32 = (const uint32_t *)&buffer;
     uint32_t header_size;
     uint16_t data_size;
-
-    if (fread(&header_size, 4, 1, fr->handle) != 1)
+    if(fread(&buffer, sizeof(uint32_t), 1, fr->handle) != 1)
       return -1;
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&header_size, sizeof(header_size));
+    Frama_C_make_unknown(&buffer, sizeof(uint32_t));
 #endif
-
-    header_size = le32(header_size);
+    header_size = le32(*p32);
+#ifndef __FRAMAC__
     log_debug("xm: pattern header of size %u\n", (unsigned int)header_size);
+#endif
     /* Never seen any xm having anything but 9 here */
-    if (header_size != 9)
+    if(header_size != 9)
       return -1;
 
     /* Packing type + row count skipped */
-    if (fseek(fr->handle, 1+2, SEEK_CUR) == -1)
+    if(fseek(fr->handle, 1 + 2, SEEK_CUR) == -1)
       return -1;
-
-    if (fread(&data_size, 2, 1, fr->handle) != 1)
+    if(fread(&buffer, sizeof(uint16_t), 1, fr->handle) != 1)
       return -1;
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&data_size, sizeof(data_size));
+    Frama_C_make_unknown(&buffer, sizeof(uint16_t));
 #endif
-    data_size = le16(data_size);
+    data_size = le16(*p16);
+#ifndef __FRAMAC__
     log_debug("xm: pattern data of size %u\n", data_size);
+#endif
 
-    if (fseek(fr->handle, data_size, SEEK_CUR) == -1)
+    if(fseek(fr->handle, data_size, SEEK_CUR) == -1)
       return -1;
-    fr->file_size += (uint64_t)header_size+data_size;
+    fr->file_size += (uint64_t)header_size + data_size;
     if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
       return -1;
   }
   return 0;
 }
 
+/*@
+  @ requires \valid(fr);
+  @ requires valid_file_recovery(fr);
+  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
+  @ ensures \valid(fr->handle);
+  @ assigns *fr->handle, errno, fr->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
 {
-  for(; instrs!=0; instrs--)
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns instrs;
+    @*/
+  for(; instrs != 0; instrs--)
   {
+    char buffer[sizeof(uint32_t)];
+    const uint16_t *p16 = (const uint16_t *)&buffer;
+    const uint32_t *p32 = (const uint32_t *)&buffer;
     uint16_t samples;
     uint32_t size;
 
-    if (fread(&size, 4, 1, fr->handle) != 1)
+    if(fread(&buffer, sizeof(uint32_t), 1, fr->handle) != 1)
       return -1;
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&size, sizeof(size));
+    Frama_C_make_unknown(&buffer, sizeof(uint32_t));
 #endif
 
-    size = le32(size);
+    size = le32(*p32);
+#ifndef __FRAMAC__
     log_debug("xm: instrument header of size %u\n", (unsigned int)size);
-    if (size < 29)
+#endif
+    if(size < 29)
       return -1;
 
     /* Fixed string + type skipped               *
      * @todo Verify that fixed string is ASCII ? */
-    if (fseek(fr->handle, 22+1, SEEK_CUR) == -1)
+    if(fseek(fr->handle, 22 + 1, SEEK_CUR) == -1)
       return -1;
 
-    if (fread(&samples, 2, 1, fr->handle) != 1)
+    if(fread(&buffer, sizeof(uint16_t), 1, fr->handle) != 1)
       return -1;
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&samples, sizeof(samples));
+    Frama_C_make_unknown(&buffer, sizeof(uint16_t));
 #endif
-    samples = le16(samples);
+    samples = le16(*p16);
+#ifndef __FRAMAC__
     log_debug("xm: instrument with %u samples\n", samples);
+#endif
 
     fr->file_size += size;
     if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
       return -1;
     /* Never seen any xm having anything but 263 when there are samples */
-    if (samples>0)
+    if(samples > 0)
     {
-      if (size!=263)
+      if(size != 263)
       {
+#ifndef __FRAMAC__
         log_debug("xm: UNEXPECTED HEADER SIZE OF %u, "
-                  " PLEASE REPORT THE FILE!\n", (unsigned int)size);
+                  " PLEASE REPORT THE FILE!\n",
+                  (unsigned int)size);
+#endif
         return -1;
       }
 
       /* 2ndary header skipped */
-      if (fseek(fr->handle, 234, SEEK_CUR) == -1)
+      if(fseek(fr->handle, 234, SEEK_CUR) == -1)
         return -1;
 
-
-      for(; samples!=0; samples--)
+      /*@ loop assigns samples, size, *fr->handle, errno, Frama_C_entropy_source, fr->file_size, buffer[0..3]; */
+      for(; samples != 0; samples--)
       {
-        if (fread(&size, 4, 1, fr->handle) != 1)
+        if(fread(&buffer, sizeof(uint32_t), 1, fr->handle) != 1)
           return -1;
 #if defined(__FRAMAC__)
-	Frama_C_make_unknown(&size, sizeof(size));
+        Frama_C_make_unknown(&buffer, sizeof(uint32_t));
 #endif
-        size = le32(size);
+        size = le32(*p32);
+#ifndef __FRAMAC__
         log_debug("xm: sample with length of %u\n", (unsigned int)size);
+#endif
 
         /* Skip remaining of sample header            *
          * @todo Verify that last 22 bytes are ASCII? */
-        if (fseek(fr->handle, (uint64_t)36+size, SEEK_CUR) == -1)
+        if(fseek(fr->handle, (uint64_t)36 + size, SEEK_CUR) == -1)
           return -1;
 
-        fr->file_size += (uint64_t)40+size;
-	if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
-	  return -1;
+        fr->file_size += (uint64_t)40 + size;
+        if(fr->file_size > PHOTOREC_MAX_FILE_SIZE)
+          return -1;
       }
     }
     /* No sample, account for garbage */
-    else if (fseek(fr->handle, size-29, SEEK_CUR) == -1)
+    else if(fseek(fr->handle, size - 29, SEEK_CUR) == -1)
       return -1;
   }
   return 0;
 }
 
+/*@
+  @ requires \valid(fr);
+  @ requires valid_file_recovery(fr);
+  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
+  @ requires fr->file_check == &file_check_xm;
+  @ ensures \valid(fr->handle);
+  @ assigns *fr->handle, errno, fr->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_xm(file_recovery_t *fr)
 {
   uint16_t patterns, instrs;
 
   fr->file_size = 0;
-  fr->offset_error=0;
-  fr->offset_ok=0;
+  fr->offset_error = 0;
+  fr->offset_ok = 0;
 
-  if (fseek(fr->handle, 70, SEEK_SET) == -1)
+  if(fseek(fr->handle, 70, SEEK_SET) == -1)
     return;
-  if (fread(&patterns, 2, 1, fr->handle) != 1)
+  if(fread(&patterns, 2, 1, fr->handle) != 1)
     return;
-  if (fread(&instrs, 2, 1, fr->handle) != 1)
+  if(fread(&instrs, 2, 1, fr->handle) != 1)
     return;
 #if defined(__FRAMAC__)
   Frama_C_make_unknown(&patterns, sizeof(patterns));
   Frama_C_make_unknown(&instrs, sizeof(instrs));
 #endif
-  instrs   = le16(instrs);
+  instrs = le16(instrs);
   patterns = le16(patterns);
 
+#ifndef __FRAMAC__
   log_debug("xm: %u patterns, %u instruments\n", patterns, instrs);
+#endif
 
   /* Skip flags + tempo + bmp + table */
-  if (fseek(fr->handle, 2+2+2+256, SEEK_CUR) == -1)
+  if(fseek(fr->handle, 2 + 2 + 2 + 256, SEEK_CUR) == -1)
     return;
   fr->file_size = 336;
 
   /* Parse patterns and next instruments */
-  if (parse_patterns(fr, patterns) < 0 ||
-      parse_instruments(fr, instrs) < 0)
+  if(parse_patterns(fr, patterns) < 0 || parse_instruments(fr, instrs) < 0)
   {
+#ifndef __FRAMAC__
     log_debug("xm: lost sync at pos %li\n", ftell(fr->handle));
+#endif
     fr->offset_error = fr->file_size;
     fr->file_size = 0;
     return;
   }
-
   /* ModPlug may insert additional data but it is of little relevance */
 }
 
-
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_xm, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_xm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_xm.extension;
-  file_recovery_new->min_filesize=336 + 29; /* Header + 1 instrument */
-  file_recovery_new->file_check=&file_check_xm;
+  file_recovery_new->extension = file_hint_xm.extension;
+  file_recovery_new->min_filesize = 336 + 29; /* Header + 1 instrument */
+  file_recovery_new->file_check = &file_check_xm;
   return 1;
 }
 
 static void register_header_check_xm(file_stat_t *file_stat)
 {
-  static const unsigned char xm_header[17]  = { 'E','x','t','e','n','d','e','d',' ','M','o','d','u','l','e',':',' '};
-  register_header_check(0, xm_header,sizeof(xm_header), &header_check_xm, file_stat);
+  static const unsigned char xm_header[17] = { 'E', 'x', 't', 'e', 'n', 'd', 'e', 'd', ' ', 'M', 'o', 'd', 'u', 'l', 'e', ':', ' ' };
+  register_header_check(0, xm_header, sizeof(xm_header), &header_check_xm, file_stat);
 }
 #endif
