@@ -32,83 +32,106 @@
 #include "filegen.h"
 #include "log.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_xml(file_stat_t *file_stat);
 
-const file_hint_t file_hint_xml= {
-  .extension="xml",
-  .description="Symantec encrypted xml files",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_xml
+const file_hint_t file_hint_xml = {
+  .extension = "xml",
+  .description = "Symantec encrypted xml files",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_xml
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires file_recovery->file_rename==&file_rename_xml;
+  @*/
 static void file_rename_xml(file_recovery_t *file_recovery)
 {
-  static const char fn[]="<\0f\0i\0l\0e\0n\0a\0m\0e\0>\0";
+  static const char fn[] = "<\0f\0i\0l\0e\0n\0a\0m\0e\0>\0";
   FILE *file;
   char buffer[4096];
   size_t lu;
   unsigned int i;
-  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+  if((file = fopen(file_recovery->filename, "rb")) == NULL)
     return;
-  if((lu=fread(&buffer, 1, sizeof(buffer)-1, file)) <= 0)
+  if((lu = fread(&buffer, 1, sizeof(buffer) - 2, file)) <= 0)
   {
     fclose(file);
-    return ;
+    return;
   }
   fclose(file);
-  buffer[lu]='\0';
-  buffer[lu+1]='\0';
-  buffer[4096-21]='\0';
-  buffer[4096-20]='\0';
-  for(i=0; i+20<lu && !(buffer[i]==0 && buffer[i+1]==0); i+=2)
+  /*@ assert 0 <= lu <= sizeof(buffer)-2; */
+  buffer[lu] = '\0';
+  buffer[lu + 1] = '\0';
+  buffer[4096 - 21] = '\0';
+  buffer[4096 - 20] = '\0';
+  /*@ loop assigns i; */
+  for(i = 0; i + 20 < lu && !(buffer[i] == 0 && buffer[i + 1] == 0); i += 2)
   {
-    if(memcmp(&buffer[i], fn, 20)==0)
+    if(memcmp(&buffer[i], fn, 20) == 0)
     {
-      const char *title=&buffer[i+20];
+      const char *title = &buffer[i + 20];
       int j;
-      for(j=0;
-	  i+20+j+1<lu && !(title[j]==0 && title[j+1]==0) && !(title[j]=='<' && title[j+1]==0);
-	  j+=2)
+      /*@
+        @ loop invariant i+20+j <= lu;
+        @ loop assigns j;
+	@*/
+      for(j = 0;
+          i + 20 + j + 1 < lu && !(title[j] == 0 && title[j + 1] == 0) && !(title[j] == '<' && title[j + 1] == 0);
+          j += 2)
       {
       }
+      /*@ assert i+20+j <= lu; */
       file_rename_unicode(file_recovery, title, j, 0, NULL, 1);
-      return ;
+      return;
     }
   }
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_xml, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_xml.extension;
-  file_recovery_new->min_filesize=512;
-  file_recovery_new->file_rename=&file_rename_xml;
+  file_recovery_new->extension = file_hint_xml.extension;
+  file_recovery_new->min_filesize = 512;
+  file_recovery_new->file_rename = &file_rename_xml;
   return 1;
 }
 
 static void register_header_check_xml(file_stat_t *file_stat)
 {
-  static const unsigned char xml_header[142]=  {
-    0x3c, 0x00, 0x3f, 0x00, 'x' , 0x00, 'm' , 0x00,
-    'l' , 0x00, ' ' , 0x00, 'v' , 0x00, 'e' , 0x00,
-    'r' , 0x00, 's' , 0x00, 'i' , 0x00, 'o' , 0x00,
-    'n' , 0x00, 0x3d, 0x00, 0x22, 0x00, '1' , 0x00,
-    '.' , 0x00, '0' , 0x00, 0x22, 0x00, ' ' , 0x00,
-    'e' , 0x00, 'n' , 0x00, 'c' , 0x00, 'o' , 0x00,
-    'd' , 0x00, 'i' , 0x00, 'n' , 0x00, 'g' , 0x00,
-    0x3d, 0x00, 0x22, 0x00, 'U' , 0x00, 'T' , 0x00,
-    'F' , 0x00, 0x2d, 0x00, '1' , 0x00, '6' , 0x00,
+  static const unsigned char xml_header[142] = {
+    0x3c, 0x00, 0x3f, 0x00, 'x', 0x00, 'm', 0x00,
+    'l', 0x00, ' ', 0x00, 'v', 0x00, 'e', 0x00,
+    'r', 0x00, 's', 0x00, 'i', 0x00, 'o', 0x00,
+    'n', 0x00, 0x3d, 0x00, 0x22, 0x00, '1', 0x00,
+    '.', 0x00, '0', 0x00, 0x22, 0x00, ' ', 0x00,
+    'e', 0x00, 'n', 0x00, 'c', 0x00, 'o', 0x00,
+    'd', 0x00, 'i', 0x00, 'n', 0x00, 'g', 0x00,
+    0x3d, 0x00, 0x22, 0x00, 'U', 0x00, 'T', 0x00,
+    'F', 0x00, 0x2d, 0x00, '1', 0x00, '6', 0x00,
     0x22, 0x00, 0x3f, 0x00, 0x3e, 0x00, 0x3c, 0x00,
-    0x21, 0x00, 0x2d, 0x00, 0x2d, 0x00, 'G' , 0x00,
-    'E' , 0x00, 'T' , 0x00, 'R' , 0x00, 'S' , 0x00,
-    'F' , 0x00, 'i' , 0x00, 'l' , 0x00, 'e' , 0x00,
-    'H' , 0x00, 'e' , 0x00, 'a' , 0x00, 'd' , 0x00,
-    'e' , 0x00, 'r' , 0x00, 'S' , 0x00, 'i' , 0x00,
-    'z' , 0x00, 'e' , 0x00, 0x3d, 0x00, '0' , 0x00,
-    'x' , 0x00, '0' , 0x00, '0' , 0x00, '0' , 0x00,
-    '0' , 0x00, '0' , 0x00, '8' , 0x00
+    0x21, 0x00, 0x2d, 0x00, 0x2d, 0x00, 'G', 0x00,
+    'E', 0x00, 'T', 0x00, 'R', 0x00, 'S', 0x00,
+    'F', 0x00, 'i', 0x00, 'l', 0x00, 'e', 0x00,
+    'H', 0x00, 'e', 0x00, 'a', 0x00, 'd', 0x00,
+    'e', 0x00, 'r', 0x00, 'S', 0x00, 'i', 0x00,
+    'z', 0x00, 'e', 0x00, 0x3d, 0x00, '0', 0x00,
+    'x', 0x00, '0', 0x00, '0', 0x00, '0', 0x00,
+    '0', 0x00, '0', 0x00, '8', 0x00
   };
   register_header_check(0, xml_header, sizeof(xml_header), &header_check_xml, file_stat);
 }
