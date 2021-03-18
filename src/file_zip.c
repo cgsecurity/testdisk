@@ -403,90 +403,88 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 #ifdef DEBUG_ZIP
   log_info("%s\n", filename);
 #endif
-  if(*ext==NULL)
+  if(*ext!=NULL)
+    return 0;
+  if(file_nbr==0)
   {
-    if(file_nbr==0)
+    msoffice=0;
+    sh3d=0;
+    ext_msoffice=NULL;
+  }
+  if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
+    msoffice=1;
+  else if(file_nbr==0)
+  {
+    if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file->extra_length)==0)
     {
-      msoffice=0;
-      sh3d=0;
-      ext_msoffice=NULL;
-    }
-    if(len==19 && memcmp(filename, "[Content_Types].xml", 19)==0)
-      msoffice=1;
-    else if(file_nbr==0)
-    {
-      if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file->extra_length)==0)
+      unsigned char buffer[128];
+      const unsigned int compressed_size=le32(file->compressed_size);
+      const int to_read=(compressed_size < 128 ? compressed_size: 128);
+      if( fread(buffer, to_read, 1, fr->handle)!=1)
       {
-	unsigned char buffer[128];
-	const unsigned int compressed_size=le32(file->compressed_size);
-	const int to_read=(compressed_size < 128 ? compressed_size: 128);
-	if( fread(buffer, to_read, 1, fr->handle)!=1)
-	{
 #ifdef DEBUG_ZIP
-	  log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n",
-	      compressed_size);
+	log_trace("zip: Unexpected EOF in file_entry data: %u bytes expected\n",
+	    compressed_size);
 #endif
-	  return -1;
-	}
-#if defined(__FRAMAC__)
-	Frama_C_make_unknown((char *)buffer, 128);
-#endif
-	if (my_fseek(fr->handle, -to_read, SEEK_CUR) < 0)
-	{
-	  log_info("fseek failed\n");
-	  return -1;
-	}
-	*ext=zip_parse_parse_entry_mimetype((const char *)&buffer, compressed_size);
+	return -1;
       }
-      /* Zipped Keyhole Markup Language (KML) used by Google Earth */
-      else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
-	*ext=extension_kmz;
-      else if(len==4 && memcmp(filename, "Home", 4)==0)
-	sh3d=1;
-      /* Celtx, Screenwriting & Media Pre-production file */
-      else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
-	*ext=extension_celtx;
-      else if(len==13 && memcmp(filename, "document.json", 13)==0)
-	*ext=extension_sketch;
-      else if(len > 16 && memcmp(filename,  "atlases/atlas_ID", 16)==0)
-	*ext=extension_bbdoc;
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown((char *)buffer, 128);
+#endif
+      if (my_fseek(fr->handle, -to_read, SEEK_CUR) < 0)
+      {
+	log_info("fseek failed\n");
+	return -1;
+      }
+      *ext=zip_parse_parse_entry_mimetype((const char *)&buffer, compressed_size);
     }
-    else if(file_nbr==1 && sh3d==1)
-    {
-      if(len==1 && filename[0]=='0')
-	*ext=extension_sh3d;
-    }
-    if(strncmp(filename, "word/", 5)==0)
-      ext_msoffice=extension_docx;
-    else if(strncmp(filename, "xl/", 3)==0)
-      ext_msoffice=extension_xlsx;
-    else if(strncmp(filename, "ppt/", 4)==0)
-      ext_msoffice=extension_pptx;
-    else if(strncmp(filename, "visio/", 6)==0)
-      ext_msoffice=extension_vsdx;
-    if(msoffice && ext_msoffice!=NULL)
-      *ext=ext_msoffice;
+    /* Zipped Keyhole Markup Language (KML) used by Google Earth */
+    else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
+      *ext=extension_kmz;
+    else if(len==4 && memcmp(filename, "Home", 4)==0)
+      sh3d=1;
+    /* Celtx, Screenwriting & Media Pre-production file */
+    else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
+      *ext=extension_celtx;
+    else if(len==13 && memcmp(filename, "document.json", 13)==0)
+      *ext=extension_sketch;
+    else if(len > 16 && memcmp(filename,  "atlases/atlas_ID", 16)==0)
+      *ext=extension_bbdoc;
   }
-  if(*ext==NULL)
+  else if(file_nbr==1 && sh3d==1)
   {
-    /* iWork */
-    if(len==23 && memcmp(filename, "QuickLook/Thumbnail.jpg", 23)==0)
-      *ext=extension_pages;
-    else if(len==20 && strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
-      *ext=extension_jar;
-    else if(len==15 && strncasecmp(filename, "chrome.manifest", 15)==0)
-      *ext=extension_xpi;
-    /* SMART Notebook */
-    else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
-      *ext=extension_notebook;
-    /* Apple Numbers */
-    else if(len==18 && memcmp(filename, "Index/Document.iwa", 18)==0)
-      *ext=extension_numbers;
-    else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
-      *ext=extension_apk;
-    else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
-      *ext=extension_mmap;
+    if(len==1 && filename[0]=='0')
+      *ext=extension_sh3d;
   }
+  if(strncmp(filename, "word/", 5)==0)
+    ext_msoffice=extension_docx;
+  else if(strncmp(filename, "xl/", 3)==0)
+    ext_msoffice=extension_xlsx;
+  else if(strncmp(filename, "ppt/", 4)==0)
+    ext_msoffice=extension_pptx;
+  else if(strncmp(filename, "visio/", 6)==0)
+    ext_msoffice=extension_vsdx;
+  if(msoffice && ext_msoffice!=NULL)
+    *ext=ext_msoffice;
+  if(*ext!=NULL)
+    return 0;
+  /* iWork */
+  if(len==23 && memcmp(filename, "QuickLook/Thumbnail.jpg", 23)==0)
+    *ext=extension_pages;
+  else if(len==20 && strncasecmp(filename, "META-INF/MANIFEST.MF", 20)==0)
+    *ext=extension_jar;
+  else if(len==15 && strncasecmp(filename, "chrome.manifest", 15)==0)
+    *ext=extension_xpi;
+  /* SMART Notebook */
+  else if(len==15 && memcmp(filename, "imsmanifest.xml", 15)==0)
+    *ext=extension_notebook;
+  /* Apple Numbers */
+  else if(len==18 && memcmp(filename, "Index/Document.iwa", 18)==0)
+    *ext=extension_numbers;
+  else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
+    *ext=extension_apk;
+  else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
+    *ext=extension_mmap;
   return 0;
 }
 
