@@ -133,6 +133,54 @@ struct zip64_extra_entry
   uint32_t disk_start_number;	/* Number of the disk on which this file starts  */
 } __attribute__ ((gcc_struct, __packed__));
 
+struct zip_desc
+{
+  uint32_t crc32;                  /** Checksum (CRC32) */
+  uint32_t compressed_size;        /** Compressed size (bytes) */
+  uint32_t uncompressed_size;      /** Uncompressed size (bytes) */
+} __attribute__ ((gcc_struct, __packed__));
+
+struct zip64_loc
+{
+  uint32_t disk_number;       /** Number of the disk with the start of the zip64 end of central directory */
+  uint64_t relative_offset;   /** Relative offset of the zip64 end of central directory record */
+  uint32_t disk_total_number; /** Total number of disks */
+} __attribute__ ((gcc_struct, __packed__));
+
+struct zip_end_central_dir
+{
+  uint16_t number_disk;             /** Number of this disk */
+  uint16_t number_disk2;            /** Number in the central dir */
+  uint16_t total_number_disk;       /** Total number of entries in this disk */
+  uint16_t total_number_disk2;      /** Total number of entries in the central dir */
+  uint32_t size;                    /** Size of the central directory */
+  uint32_t offset;                  /** Offset of start of central directory */
+  uint16_t comment_length;          /** Comment length */
+} __attribute__ ((gcc_struct, __packed__));
+
+struct zip_central_dir
+{
+  /* Fields common with zip_file_entry removed */
+  uint16_t comment_length;          /** Comment length */
+  uint16_t disk_number_start;       /** Disk number start */
+  uint16_t internal_attr;           /** Internal file attributes */
+  uint32_t external_attr;           /** External file attributes */
+  uint32_t offset_header;           /** Relative offset of local header */
+} __attribute__ ((gcc_struct, __packed__));
+
+struct zip64_end_central_dir
+{
+  uint64_t end_size;                /** Size of zip64 end of central directory record */
+  uint16_t version_made;            /** Version made by */
+  uint16_t version_needed;          /** Version needed to extract */
+  uint32_t number_disk;             /** Number of this disk */
+  uint32_t number_disk2;            /** Number of the disk with the start of the central directory */
+  uint64_t number_entries;          /** Total number of entries in the central directory on this disk */
+  uint64_t number_entries2;         /** Total number of entries in the central directory */
+  uint64_t size;                    /** Size of the central directory */
+  uint64_t offset;                  /** Offset of start of central directory */
+} __attribute__ ((gcc_struct, __packed__));
+
 typedef struct zip_file_entry zip_file_entry_t;
 typedef struct zip64_extra_entry zip64_extra_entry_t;
 
@@ -658,14 +706,7 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 {
   zip_file_entry_t  file;
   uint32_t          len;
-  struct {
-    /* Fields common with zip_file_entry removed */
-    uint16_t comment_length;          /** Comment length */
-    uint16_t disk_number_start;       /** Disk number start */
-    uint16_t internal_attr;           /** Internal file attributes */
-    uint32_t external_attr;           /** External file attributes */
-    uint32_t offset_header;           /** Relative offset of local header */
-  } __attribute__ ((gcc_struct, __packed__)) dir;
+  struct zip_central_dir dir;
   if (my_fseek(fr->handle, 2, SEEK_CUR) == -1)
   {
 #ifdef DEBUG_ZIP
@@ -727,17 +768,7 @@ static int zip_parse_central_dir(file_recovery_t *fr)
   @*/
 static int zip64_parse_end_central_dir(file_recovery_t *fr)
 {
-  struct {
-    uint64_t end_size;                /** Size of zip64 end of central directory record */
-    uint16_t version_made;            /** Version made by */
-    uint16_t version_needed;          /** Version needed to extract */
-    uint32_t number_disk;             /** Number of this disk */
-    uint32_t number_disk2;            /** Number of the disk with the start of the central directory */
-    uint64_t number_entries;          /** Total number of entries in the central directory on this disk */
-    uint64_t number_entries2;         /** Total number of entries in the central directory */
-    uint64_t size;                    /** Size of the central directory */
-    uint64_t offset;                  /** Offset of start of central directory */
-  } __attribute__ ((gcc_struct, __packed__)) dir;
+  struct zip64_end_central_dir dir;
 
   if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
   {
@@ -783,15 +814,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
   @*/
 static int zip_parse_end_central_dir(file_recovery_t *fr)
 {
-  struct {
-    uint16_t number_disk;             /** Number of this disk */
-    uint16_t number_disk2;            /** Number in the central dir */
-    uint16_t total_number_disk;       /** Total number of entries in this disk */
-    uint16_t total_number_disk2;      /** Total number of entries in the central dir */
-    uint32_t size;                    /** Size of the central directory */
-    uint32_t offset;                  /** Offset of start of central directory */
-    uint16_t comment_length;          /** Comment length */
-  } __attribute__ ((gcc_struct, __packed__)) dir;
+  struct zip_end_central_dir dir;
 
   if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
   {
@@ -831,11 +854,7 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
   @*/
 static int zip_parse_data_desc(file_recovery_t *fr)
 {
-  struct {
-    uint32_t crc32;                  /** Checksum (CRC32) */
-    uint32_t compressed_size;        /** Compressed size (bytes) */
-    uint32_t uncompressed_size;      /** Uncompressed size (bytes) */
-  } __attribute__ ((gcc_struct, __packed__)) desc;
+  struct zip_desc desc;
 
   if (fread(&desc, sizeof(desc), 1, fr->handle) != 1)
   {
@@ -906,11 +925,7 @@ static int zip_parse_signature(file_recovery_t *fr)
   @*/
 static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 {
-  struct {
-    uint32_t disk_number;       /** Number of the disk with the start of the zip64 end of central directory */
-    uint64_t relative_offset;   /** Relative offset of the zip64 end of central directory record */
-    uint32_t disk_total_number; /** Total number of disks */
-  } __attribute__ ((gcc_struct, __packed__)) loc;
+  struct zip64_loc loc;
 
   if (fread(&loc, sizeof(loc), 1, fr->handle) != 1)
   {
