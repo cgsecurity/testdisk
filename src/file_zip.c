@@ -309,10 +309,9 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \valid(ext);
-  @ requires \valid(krita);
   @ requires fr->file_size < 0x8000000000000000 - 65535;
   @ requires 0 < len <= 65535;
-  @ requires \separated(fr, fr->handle, ext, krita, file, &first_filename[0 .. 256]);
+  @ requires \separated(fr, fr->handle, ext, file, &first_filename[0 .. 256]);
   @ requires *ext == \null ||
      *ext == extension_apk ||
      *ext == extension_bbdoc ||
@@ -377,12 +376,10 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == file_hint_zip.extension;
   @ ensures fr->file_size < 0x8000000000000000;
   @ ensures \result == -1 || \result == 0;
-  @ ensures *krita==0 || *krita==19;
   @*/
-static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const unsigned int file_nbr, const zip_file_entry_t *file, const uint64_t len, unsigned int *krita)
+static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const unsigned int file_nbr, const zip_file_entry_t *file, const uint64_t len)
 {
   char filename[65535+1];
-  *krita=0;
   if (fread(filename, len, 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -440,8 +437,6 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	  return -1;
 	}
 	*ext=zip_parse_parse_entry_mimetype((const char *)&buffer, compressed_size);
-	if(*ext==extension_kra)
-	  *krita=19;
       }
       /* Zipped Keyhole Markup Language (KML) used by Google Earth */
       else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
@@ -569,7 +564,6 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   zip_file_entry_t  file;
   zip64_extra_entry_t extra;
   uint64_t          len;
-  unsigned int krita=0;
   if (fread(&file, sizeof(file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -606,9 +600,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   if (len)
   {
     /*@ assert 0 < len <= 65535; */
-    if(zip_parse_file_entry_fn(fr, ext, file_nbr, &file, len, &krita) < 0)
+    if(zip_parse_file_entry_fn(fr, ext, file_nbr, &file, len) < 0)
       return -1;
-    /*@ assert krita==0 || krita==19; */
     /*@ assert fr->file_size < 0x8000000000000000; */
   }
   /*@ assert fr->file_size < 0x8000000000000000; */
@@ -658,10 +651,9 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       return -1;
   }
   /*@ assert len < 0x8000000000000000; */
-  if(krita>0)
+  if(*ext == extension_kra && len==0x5a495343 && le32(file.uncompressed_size) == 0x5a495355)
   {
-    /*@ assert krita==19; */
-    len=krita;
+    len=19;
     /*@ assert len==19; */
   }
   if (len>0)
