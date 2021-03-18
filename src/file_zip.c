@@ -259,6 +259,53 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
 }
 
 /*@
+  @ requires \valid_read(mime + (0 .. 127));
+  @ requires \initialized(mime + (0 .. 127));
+  @ ensures  \result==extension_epub ||
+	\result==extension_kra ||
+	\result==extension_odg ||
+	\result==extension_odp ||
+	\result==extension_ods ||
+	\result==extension_odt ||
+	\result==extension_ora ||
+	\result==extension_sxc ||
+	\result==extension_sxd ||
+	\result==extension_sxi ||
+	\result==extension_sxw ||
+	\result==extension_xd;
+  @ assigns \nothing;
+  @*/
+static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsigned int len)
+{
+  if(len==16      && memcmp(mime,"image/openraster",16)==0)
+    return extension_ora;
+  else if(len==20 && memcmp(mime,"application/epub+zip",20)==0)
+    return extension_epub;
+  else if(len==28 && memcmp(mime,"application/vnd.sun.xml.calc",28)==0)
+    return extension_sxc;
+  else if(len==28 && memcmp(mime,"application/vnd.sun.xml.draw",28)==0)
+    return extension_sxd;
+  else if(len==30 && memcmp(mime,"application/vnd.sun.xml.writer",30)==0)
+    return extension_sxw;
+  else if(len==31 && memcmp(mime,"application/vnd.sun.xml.impress",31)==0)
+    return extension_sxi;
+  else if(len==39 && memcmp(mime,"application/vnd.oasis.opendocument.text",39)==0)
+    return extension_odt;
+  else if(len==43 && memcmp(mime,"application/vnd.oasis.opendocument.graphics",43)==0)
+    return extension_odg;
+  else if(len==45 && memcmp(mime,"application/vnd.adobe.sparkler.project+dcxucf",45)==0)
+    return extension_xd;
+  else if(len==46 && memcmp(mime,"application/vnd.oasis.opendocument.spreadsheet",46)==0)
+    return extension_ods;
+  else if(len==47 && memcmp(mime,"application/vnd.oasis.opendocument.presentation",47)==0)
+    return extension_odp;
+  else if(len>=19 && memcmp(mime,"application/x-krita",19)==0)
+    return extension_kra;
+  /* default to writer */
+  return extension_sxw;
+}
+
+/*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \valid(ext);
@@ -392,35 +439,9 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	  log_info("fseek failed\n");
 	  return -1;
 	}
-	if(compressed_size==16      && memcmp(buffer,"image/openraster",16)==0)
-	  *ext=extension_ora;
-	else if(compressed_size==20 && memcmp(buffer,"application/epub+zip",20)==0)
-	  *ext=extension_epub;
-	else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.calc",28)==0)
-	  *ext=extension_sxc;
-	else if(compressed_size==28 && memcmp(buffer,"application/vnd.sun.xml.draw",28)==0)
-	  *ext=extension_sxd;
-	else if(compressed_size==31 && memcmp(buffer,"application/vnd.sun.xml.impress",31)==0)
-	  *ext=extension_sxi;
-	else if(compressed_size==30 && memcmp(buffer,"application/vnd.sun.xml.writer",30)==0)
-	  *ext=extension_sxw;
-	else if(compressed_size==39 && memcmp(buffer,"application/vnd.oasis.opendocument.text",39)==0)
-	  *ext=extension_odt;
-	else if(compressed_size==43 && memcmp(buffer,"application/vnd.oasis.opendocument.graphics",43)==0)
-	  *ext=extension_odg;
-	else if(compressed_size==46 && memcmp(buffer,"application/vnd.oasis.opendocument.spreadsheet",46)==0)
-	  *ext=extension_ods;
-	else if(compressed_size==47 && memcmp(buffer,"application/vnd.oasis.opendocument.presentation",47)==0)
-	  *ext=extension_odp;
-	else if(memcmp(buffer,"application/x-krita",19)==0)
-	{
-	  *ext=extension_kra;
+	*ext=zip_parse_parse_entry_mimetype((const char *)&buffer, compressed_size);
+	if(*ext==extension_kra)
 	  *krita=19;
-	}
-	else
-	{ /* default to writer */
-	  *ext=extension_sxw;
-	}
       }
       /* Zipped Keyhole Markup Language (KML) used by Google Earth */
       else if(len==7 && memcmp(filename, "doc.kml", 7)==0)
@@ -1249,35 +1270,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
   if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
   {
     const unsigned int compressed_size=le32(file->compressed_size);
-    /* Mypaint .ora */
-    if(compressed_size==16 && memcmp(&buffer[38],"image/openraster",16)==0)
-      file_recovery_new->extension=extension_ora;
-    else if(compressed_size==20 && memcmp(&buffer[38],"application/epub+zip",20)==0)
-      file_recovery_new->extension=extension_epub;
-    else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.calc",28)==0)
-      file_recovery_new->extension=extension_sxc;
-    else if(compressed_size==28 && memcmp(&buffer[38],"application/vnd.sun.xml.draw",28)==0)
-      file_recovery_new->extension=extension_sxd;
-    else if(compressed_size==31 && memcmp(&buffer[38],"application/vnd.sun.xml.impress",31)==0)
-      file_recovery_new->extension=extension_sxi;
-    else if(compressed_size==30 && memcmp(&buffer[38],"application/vnd.sun.xml.writer",30)==0)
-      file_recovery_new->extension=extension_sxw;
-    else if(compressed_size==39 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.text",39)==0)
-      file_recovery_new->extension=extension_odt;
-    else if(compressed_size==43 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.graphics",43)==0)
-      file_recovery_new->extension=extension_odg;
-    else if(compressed_size==45 && memcmp(&buffer[38],"application/vnd.adobe.sparkler.project+dcxucf",45)==0)
-      file_recovery_new->extension=extension_xd;
-    else if(compressed_size==46 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.spreadsheet",46)==0)
-      file_recovery_new->extension=extension_ods;
-    else if(compressed_size==47 && memcmp(&buffer[38],"application/vnd.oasis.opendocument.presentation",47)==0)
-      file_recovery_new->extension=extension_odp;
-    else if(memcmp(&buffer[38],"application/x-krita",19)==0)
-      file_recovery_new->extension=extension_kra;
-    else
-    { /* default to writer */
-      file_recovery_new->extension=extension_sxw;
-    }
+    file_recovery_new->extension=zip_parse_parse_entry_mimetype((const char *)&buffer[38], compressed_size);
   }
   else if(len==19 && memcmp(&buffer[30],"[Content_Types].xml",19)==0)
   {
