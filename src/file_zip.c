@@ -49,6 +49,10 @@ extern const file_hint_t file_hint_doc;
 static void register_header_check_zip(file_stat_t *file_stat);
 static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int haystack_size, const unsigned char *needle, const unsigned int needle_size);
 static char first_filename[256];
+static uint64_t expected_compressed_size=0;
+static int msoffice=0;
+static int sh3d=0;
+static const char *ext_msoffice=NULL;
 
 const file_hint_t file_hint_zip= {
   .extension="zip",
@@ -183,8 +187,6 @@ struct zip64_end_central_dir
 
 typedef struct zip_file_entry zip_file_entry_t;
 typedef struct zip64_extra_entry zip64_extra_entry_t;
-
-static uint64_t expected_compressed_size=0;
 
 /*@
   @ requires \valid(f);
@@ -359,9 +361,6 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 #endif
   if(*ext==NULL)
   {
-    static int msoffice=0;
-    static int sh3d=0;
-    static const char *ext_msoffice=NULL;
     if(file_nbr==0)
     {
       msoffice=0;
