@@ -562,13 +562,21 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_xpi ||
      *ext == extension_xrns ||
      *ext == file_hint_zip.extension;
+  @ assigns *fr->handle, fr->file_size, *ext;
+  @ assigns fr->time;
+  @ assigns Frama_C_entropy_source, errno;
+  @ assigns first_filename[0 .. 255];
+  @ assigns msoffice, sh3d, ext_msoffice;
+  @ assigns expected_compressed_size;
   @*/
 static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const unsigned int file_nbr)
 {
-  zip_file_entry_t  file;
-  zip64_extra_entry_t extra;
+  char b_file[sizeof(zip_file_entry_t)];
+  char b_extra[sizeof(zip64_extra_entry_t)];
+  const zip_file_entry_t *file=(const zip_file_entry_t *)&b_file;
+  const zip64_extra_entry_t *extra=(const zip64_extra_entry_t *)&b_extra;
   uint64_t          len;
-  if (fread(&file, sizeof(file), 1, fr->handle) != 1)
+  if (fread(b_file, sizeof(b_file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading header of file_entry\n");
@@ -576,22 +584,22 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown(&file, sizeof(file));
+  Frama_C_make_unknown(&b_file, sizeof(zip_file_entry_t));
 #endif
-  fr->file_size += sizeof(file);
+  fr->file_size += sizeof(zip_file_entry_t);
 #ifdef DEBUG_ZIP
   log_info("%u Comp=%u %u CRC32=0x%08X extra_length=%u ",
-      le32(file.compressed_size),
-      le16(file.compression),
-      le32(file.uncompressed_size),
-      le32(file.crc32),
-      le16(file.extra_length));
+      le32(file->compressed_size),
+      le16(file->compression),
+      le32(file->uncompressed_size),
+      le32(file->crc32),
+      le16(file->extra_length));
 #endif
   /* Avoid Jan  1  1980 files */
-  if(le16(file.last_mod_time)!=0 || le16(file.last_mod_date)!=33)
+  if(le16(file->last_mod_time)!=0 || le16(file->last_mod_date)!=33)
   {
     /* Use the more recent file to set the time/date of the recovered archive */
-    const time_t tmp=date_dos2unix(le16(file.last_mod_time), le16(file.last_mod_date));
+    const time_t tmp=date_dos2unix(le16(file->last_mod_time), le16(file->last_mod_date));
     if(fr->time < tmp)
       fr->time=tmp;
   }
@@ -600,11 +608,11 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     return -1;
   }
   /*@ assert fr->file_size < 0x8000000000000000 - 65535; */
-  len = le16(file.filename_length);
+  len = le16(file->filename_length);
   if (len)
   {
     /*@ assert 0 < len <= 65535; */
-    if(zip_parse_file_entry_fn(fr, ext, file_nbr, &file, len) < 0)
+    if(zip_parse_file_entry_fn(fr, ext, file_nbr, file, len) < 0)
       return -1;
     /*@ assert fr->file_size < 0x8000000000000000; */
   }
@@ -612,8 +620,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 #ifdef DEBUG_ZIP
   log_info("\n");
 #endif
-  len = le16(file.extra_length);
-  memset(&extra, 0, sizeof(extra));
+  len = le16(file->extra_length);
+  memset(&b_extra, 0, sizeof(zip64_extra_entry_t));
   if (len>0)
   {
     /*@ assert 0 < len <= 65535; */
@@ -622,14 +630,14 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       return -1;
     }
     /*@ assert fr->file_size < 0x8000000000000000 - 65535; */
-    if (fread(&extra, sizeof(extra), 1, fr->handle) != 1)
+    if (fread(&b_extra, sizeof(zip64_extra_entry_t), 1, fr->handle) != 1)
     {
 #ifdef DEBUG_ZIP
       log_trace("zip: Unexpected EOF in file_entry header: %lu bytes expected\n", len);
 #endif
     }
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown((char *)&extra, sizeof(extra));
+    Frama_C_make_unknown(&b_extra, sizeof(zip64_extra_entry_t));
 #endif
     if (my_fseek(fr->handle, fr->file_size, SEEK_SET) == -1 ||
 	my_fseek(fr->handle, len, SEEK_CUR) == -1)
@@ -643,10 +651,10 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     /*@ assert fr->file_size < 0x8000000000000000; */
   }
   /*@ assert fr->file_size < 0x8000000000000000; */
-  len = le32(file.compressed_size);
-  if(len==0xffffffff && le16(extra.tag)==1)
+  len = le32(file->compressed_size);
+  if(len==0xffffffff && le16(extra->tag)==1)
   {
-    len = le64(extra.compressed_size);
+    len = le64(extra->compressed_size);
     if(len >= 0x8000000000000000)
       return -1;
     /*@ assert len < 0x8000000000000000; */
@@ -655,7 +663,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
       return -1;
   }
   /*@ assert len < 0x8000000000000000; */
-  if(*ext == extension_kra && len==0x5a495343 && le32(file.uncompressed_size) == 0x5a495355)
+  if(*ext == extension_kra && len==0x5a495343 && le32(file->uncompressed_size) == 0x5a495355)
   {
     len=19;
     /*@ assert len==19; */
@@ -683,7 +691,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   }
   /*@ assert fr->file_size < 0x8000000000000000; */
   expected_compressed_size=len;
-  if (file.has_descriptor && (le16(file.compression)==8 || le16(file.compression)==9))
+  if (file->has_descriptor && (le16(file->compression)==8 || le16(file->compression)==9))
   {
     /* The fields crc-32, compressed size and uncompressed size
        are set to zero in the local header.  The correct values
@@ -717,12 +725,16 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
+  @ assigns Frama_C_entropy_source, errno;
+  @ assigns *fr->handle, fr->file_size;
   @*/
 static int zip_parse_central_dir(file_recovery_t *fr)
 {
-  zip_file_entry_t  file;
+  char buf_file[sizeof(zip_file_entry_t)];
+  char buf_dir[sizeof(struct zip_central_dir)];
+  const struct zip_central_dir *dir=(const struct zip_central_dir *)&buf_dir;
+  const zip_file_entry_t *file=(const zip_file_entry_t *)&buf_file;
   uint32_t          len;
-  struct zip_central_dir dir;
   if (my_fseek(fr->handle, 2, SEEK_CUR) == -1)
   {
 #ifdef DEBUG_ZIP
@@ -732,7 +744,7 @@ static int zip_parse_central_dir(file_recovery_t *fr)
   }
   fr->file_size += 2;
 
-  if (fread(&file, sizeof(file), 1, fr->handle) != 1)
+  if (fread(&buf_file, sizeof(zip_file_entry_t), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("Unexpected EOF reading 1st part of central_dir\n");
@@ -740,14 +752,14 @@ static int zip_parse_central_dir(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&file, sizeof(file));
+  Frama_C_make_unknown(&buf_file, sizeof(zip_file_entry_t));
 #endif
-  fr->file_size += sizeof(file);
+  fr->file_size += sizeof(zip_file_entry_t);
 #ifdef DEBUG_ZIP
-  log_trace("zip: Central dir with CRC 0x%08X\n", file.crc32);
+  log_trace("zip: Central dir with CRC 0x%08X\n", file->crc32);
 #endif
 
-  if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
+  if (fread(&buf_dir, sizeof(struct zip_central_dir), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading 2nd part of central_dir\n");
@@ -755,12 +767,12 @@ static int zip_parse_central_dir(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&dir, sizeof(dir));
+  Frama_C_make_unknown(&buf_dir, sizeof(struct zip_central_dir));
 #endif
-  fr->file_size += sizeof(dir);
+  fr->file_size += sizeof(struct zip_central_dir);
 
   /* Rest of the block - could attempt CRC check */
-  len = le16(file.extra_length) + le16(dir.comment_length) + le16(file.filename_length);
+  len = le16(file->extra_length) + le16(dir->comment_length) + le16(file->filename_length);
   if (my_fseek(fr->handle, len, SEEK_CUR) == -1)
   {
 #ifdef DEBUG_ZIP
@@ -780,13 +792,16 @@ static int zip_parse_central_dir(file_recovery_t *fr)
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ requires fr->file_size < 0x8000000000000000;
-  @ ensures \result == -1 || \result == 0;
+  @ ensures  \result == -1 || \result == 0;
+  @ assigns  Frama_C_entropy_source, errno;
+  @ assigns  *fr->handle, fr->file_size;
   @*/
 static int zip64_parse_end_central_dir(file_recovery_t *fr)
 {
-  struct zip64_end_central_dir dir;
+  char buffer[sizeof(struct zip64_end_central_dir)];
+  const struct zip64_end_central_dir *dir=(const struct zip64_end_central_dir *)&buffer;
 
-  if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
+  if (fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading end_central_dir_64\n");
@@ -794,14 +809,14 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&dir, sizeof(dir));
+  Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-  fr->file_size += sizeof(dir);
+  fr->file_size += sizeof(buffer);
 
-  if (dir.end_size > 0)
+  if (dir->end_size > 0)
   {
-    const uint64_t len = le64(dir.end_size);
-    if(len >= 0x8000000000000000 - sizeof(dir) - 4)
+    const uint64_t len = le64(dir->end_size);
+    if(len >= 0x8000000000000000 - sizeof(struct zip64_end_central_dir) - 4)
       return -1;
     /* Avoid endless loop */
     if( fr->file_size + len <= fr->file_size)
@@ -826,13 +841,15 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ ensures \result == -1 || \result == 0;
+  @ ensures  \result == -1 || \result == 0;
+  @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
   @*/
 static int zip_parse_end_central_dir(file_recovery_t *fr)
 {
-  struct zip_end_central_dir dir;
+  char buffer[sizeof(struct zip_end_central_dir)];
+  const struct zip_end_central_dir *dir=(const struct zip_end_central_dir *)&buffer;
 
-  if (fread(&dir, sizeof(dir), 1, fr->handle) != 1)
+  if (fread(&buffer, sizeof(struct zip_end_central_dir), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading header of zip_parse_end_central_dir\n");
@@ -840,13 +857,13 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&dir, sizeof(dir));
+  Frama_C_make_unknown(buffer, sizeof(struct zip_end_central_dir));
 #endif
-  fr->file_size += sizeof(dir);
+  fr->file_size += sizeof(struct zip_end_central_dir);
 
-  if (dir.comment_length)
+  if (dir->comment_length)
   {
-    const uint16_t len = le16(dir.comment_length);
+    const uint16_t len = le16(dir->comment_length);
     if (my_fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -866,13 +883,14 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ ensures \result == -1 || \result == 0;
+  @ ensures  \result == -1 || \result == 0;
+  @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
   @*/
 static int zip_parse_data_desc(file_recovery_t *fr)
 {
-  struct zip_desc desc;
-
-  if (fread(&desc, sizeof(desc), 1, fr->handle) != 1)
+  char buffer[sizeof(struct zip_desc)];
+  const struct zip_desc *desc=(const struct zip_desc *)&buffer;
+  if (fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading header of data_desc\n");
@@ -880,17 +898,17 @@ static int zip_parse_data_desc(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&desc, sizeof(desc));
+  Frama_C_make_unknown(buffer, sizeof(buffer));
 #endif
-  fr->file_size += sizeof(desc);
+  fr->file_size += sizeof(struct zip_desc);
 #ifdef DEBUG_ZIP
   log_info("compressed_size=%u/%u uncompressed_size=%u CRC32=0x%08X\n",
-      le32(desc.compressed_size),
+      le32(desc->compressed_size),
       expected_compressed_size,
-      le32(desc.uncompressed_size),
-      le32(desc.crc32));
+      le32(desc->uncompressed_size),
+      le32(desc->crc32));
 #endif
-  if(le32(desc.compressed_size)!=expected_compressed_size)
+  if(le32(desc->compressed_size)!=expected_compressed_size)
     return -1;
   return 0;
 }
@@ -899,13 +917,15 @@ static int zip_parse_data_desc(file_recovery_t *fr)
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ ensures \result == -1 || \result == 0;
+  @ ensures  \result == -1 || \result == 0;
+  @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
   @*/
 static int zip_parse_signature(file_recovery_t *fr)
 {
-  uint16_t len;
+  char buffer[sizeof(uint16_t)];
+  const uint16_t *len_ptr=(const uint16_t *)&buffer;
 
-  if (fread(&len, 2, 1, fr->handle) != 1)
+  if (fread(&buffer, 2, 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading length of signature\n");
@@ -913,13 +933,13 @@ static int zip_parse_signature(file_recovery_t *fr)
     return -1;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&len, 2);
+  Frama_C_make_unknown(&buffer, 2);
 #endif
   fr->file_size += 2;
 
-  if (len)
+  if (*len_ptr)
   {
-    len = le16(len);
+    const uint16_t len = le16(*len_ptr);
     if (my_fseek(fr->handle, len, SEEK_CUR) == -1)
     {
 #ifdef DEBUG_ZIP
@@ -938,22 +958,19 @@ static int zip_parse_signature(file_recovery_t *fr)
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, &errno);
   @ ensures \result == -1 || \result == 0;
+  @ assigns  *fr->handle, fr->file_size, errno;
   @*/
 static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 {
-  struct zip64_loc loc;
-
-  if (fread(&loc, sizeof(loc), 1, fr->handle) != 1)
+  char buffer[sizeof(struct zip64_loc)];
+  if (fread(&buffer, sizeof(struct zip64_loc), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
     log_trace("zip: Unexpected EOF reading 1st part of end_central_dir_locator\n");
 #endif
     return -1;
   }
-#if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&loc, sizeof(loc));
-#endif
-  fr->file_size += sizeof(loc);
+  fr->file_size += sizeof(struct zip64_loc);
   return 0;
 }
 
@@ -962,6 +979,11 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
   @ requires \valid(fr->handle);
   @ requires fr->file_check==&file_check_zip;
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+  @ assigns *fr->handle, fr->file_size;
+  @ assigns fr->time, fr->offset_ok, fr->offset_error;
+  @ assigns Frama_C_entropy_source, errno;
+  @ assigns first_filename[0 .. 255];
+  @ assigns msoffice, sh3d, ext_msoffice, expected_compressed_size;
   @*/
 static void file_check_zip(file_recovery_t *fr)
 {
@@ -975,9 +997,18 @@ static void file_check_zip(file_recovery_t *fr)
   first_filename[0]='\0';
   if(my_fseek(fr->handle, 0, SEEK_SET) < 0)
     return ;
+  /*@
+    @ loop assigns *fr->handle, fr->file_size, ext, file_nbr;
+    @ loop assigns fr->time, fr->offset_ok, fr->offset_error;
+    @ loop assigns Frama_C_entropy_source, errno;
+    @ loop assigns first_filename[0 .. 255];
+    @ loop assigns msoffice, sh3d, ext_msoffice, expected_compressed_size;
+    @*/
   while (1)
   {
     uint64_t file_size_old;
+    char buf_header[sizeof(uint32_t)];
+    const uint32_t *header_ptr=(const uint32_t *)&buf_header;
     uint32_t header;
     int      status;
     if(file_nbr>=0xffffffff || fr->file_size >= 0x8000000000000000 - 4)
@@ -987,7 +1018,7 @@ static void file_check_zip(file_recovery_t *fr)
       return;
     }
     /*@ assert fr->file_size < 0x8000000000000000 - 4; */
-    if (fread(&header, 4, 1, fr->handle)!=1)
+    if (fread(&buf_header, 4, 1, fr->handle)!=1)
     {
 #ifdef DEBUG_ZIP
       log_trace("Failed to read block header\n");
@@ -997,9 +1028,9 @@ static void file_check_zip(file_recovery_t *fr)
       return;
     }
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown((char *)&header, 4);
+    Frama_C_make_unknown(&buf_header, 4);
 #endif
-    header = le32(header);
+    header = le32(*header_ptr);
 #ifdef DEBUG_ZIP
     log_trace("Header 0x%08X at 0x%llx\n", header, (long long unsigned int)fr->file_size);
     log_flush();
