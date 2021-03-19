@@ -192,7 +192,7 @@ typedef struct zip64_extra_entry zip64_extra_entry_t;
   @ requires \valid(f);
   @ requires 0 < size <= 4096;
   @ requires \valid_read((const char *)needle + (0 .. size-1));
-  @ requires \separated(f,(const char *)needle+(..));
+  @ requires \separated(f, (const char *)needle+(..), &errno, &Frama_C_entropy_source);
   @ assigns *f,errno;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -311,7 +311,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
   @ requires \valid(ext);
   @ requires fr->file_size < 0x8000000000000000 - 65535;
   @ requires 0 < len <= 65535;
-  @ requires \separated(fr, fr->handle, ext, file, &first_filename[0 .. 256]);
+  @ requires \separated(fr, fr->handle, ext, file, &first_filename[0 .. 256], &errno, &Frama_C_entropy_source);
   @ requires *ext == \null ||
      *ext == extension_apk ||
      *ext == extension_bbdoc ||
@@ -376,6 +376,10 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == file_hint_zip.extension;
   @ ensures fr->file_size < 0x8000000000000000;
   @ ensures \result == -1 || \result == 0;
+  @ assigns *fr->handle, fr->file_size, *ext;
+  @ assigns Frama_C_entropy_source, errno;
+  @ assigns first_filename[0 .. 255];
+  @ assigns msoffice, sh3d, ext_msoffice;
   @*/
 static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const unsigned int file_nbr, const zip_file_entry_t *file, const uint64_t len)
 {
@@ -417,7 +421,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   {
     if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file->extra_length)==0)
     {
-      unsigned char buffer[128];
+      char buffer[128];
       const unsigned int compressed_size=le32(file->compressed_size);
       const int to_read=(compressed_size < 128 ? compressed_size: 128);
       if( fread(buffer, to_read, 1, fr->handle)!=1)
@@ -429,11 +433,13 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 	return -1;
       }
 #if defined(__FRAMAC__)
-      Frama_C_make_unknown((char *)buffer, 128);
+      Frama_C_make_unknown(buffer, 128);
 #endif
       if (my_fseek(fr->handle, -to_read, SEEK_CUR) < 0)
       {
+#ifdef DEBUG_ZIP
 	log_info("fseek failed\n");
+#endif
 	return -1;
       }
       *ext=zip_parse_parse_entry_mimetype((const char *)&buffer, compressed_size);
@@ -493,7 +499,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
   @ requires \valid(fr->handle);
   @ requires \valid(ext);
   @ requires fr->file_size < 0x8000000000000000 + 4;
-  @ requires \separated(fr, fr->handle, ext, &first_filename);
+  @ requires \separated(fr, fr->handle, ext, &errno, &Frama_C_entropy_source, first_filename + (..), &msoffice, &sh3d, &ext_msoffice, &expected_compressed_size);
   @ requires *ext == \null ||
      *ext == extension_apk ||
      *ext == extension_bbdoc ||
@@ -709,7 +715,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
   @*/
 static int zip_parse_central_dir(file_recovery_t *fr)
@@ -772,7 +778,7 @@ static int zip_parse_central_dir(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ requires fr->file_size < 0x8000000000000000;
   @ ensures \result == -1 || \result == 0;
   @*/
@@ -819,7 +825,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
   @*/
 static int zip_parse_end_central_dir(file_recovery_t *fr)
@@ -859,7 +865,7 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
   @*/
 static int zip_parse_data_desc(file_recovery_t *fr)
@@ -892,7 +898,7 @@ static int zip_parse_data_desc(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
   @*/
 static int zip_parse_signature(file_recovery_t *fr)
@@ -930,7 +936,7 @@ static int zip_parse_signature(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
-  @ requires \separated(fr,fr->handle);
+  @ requires \separated(fr, fr->handle, &errno);
   @ ensures \result == -1 || \result == 0;
   @*/
 static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
@@ -955,6 +961,7 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
   @ requires fr->file_check==&file_check_zip;
+  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @*/
 static void file_check_zip(file_recovery_t *fr)
 {
@@ -1054,6 +1061,7 @@ static void file_check_zip(file_recovery_t *fr)
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_zip;
+  @ requires \separated(file_recovery, &errno, &Frama_C_entropy_source);
   @*/
 /* TODO ensures  valid_read_string((char*)file_recovery->filename); */
 static void file_rename_zip(file_recovery_t *file_recovery)
@@ -1303,12 +1311,15 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
   @ ensures \result == 1;
   @ ensures file_recovery_new->file_check == &file_check_zip;
   @ ensures file_recovery_new->extension == file_hint_zip.extension;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_winzip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->file_check=&file_check_zip;
   file_recovery_new->extension=file_hint_zip.extension;
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -1343,7 +1354,9 @@ static void register_header_check_zip(file_stat_t *file_stat)
 {
   static const unsigned char zip_header2[8]  = { 'P', 'K', '0', '0', 'P', 'K', 0x03, 0x04}; /* WinZIPv8-compressed files. */
   register_header_check(0, zip_header,sizeof(zip_header), &header_check_zip, file_stat);
+#ifndef __FRAMAC__
   register_header_check(0, zip_header2,sizeof(zip_header2), &header_check_winzip, file_stat);
+#endif
 }
 #endif
 
