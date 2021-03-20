@@ -491,7 +491,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   @ requires 0 <= offset < buffer_size;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @ ensures  valid_read_string((char*)&file_recovery->filename);
+  @ ensures  new_ext==\null || valid_read_string(new_ext);
   @*/
 static int _file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
@@ -608,9 +609,12 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
+  /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
       _file_rename(file_recovery, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
     return 0;
+  /*@ assert valid_read_string((char const *)(&file_recovery->filename)); */
+  /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(new_ext==NULL)
     return 0;
   /* Try without the original filename */
