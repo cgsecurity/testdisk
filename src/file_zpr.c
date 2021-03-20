@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_zpr(file_stat_t *file_stat);
 
 const file_hint_t file_hint_zpr= {
@@ -42,6 +43,17 @@ const file_hint_t file_hint_zpr= {
   .register_header_check=&register_header_check_zpr
 };
 
+/*@
+  @ requires buffer_size >= 0x4f;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_zpr, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_zpr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[0x4c]!='R' || buffer[0x4d]!='P' || buffer[0x4e]!='Z')
