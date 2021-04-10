@@ -33,17 +33,18 @@
 #include "filegen.h"
 #include "file_tar.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_tar(file_stat_t *file_stat);
-static const unsigned char tar_header_gnu[6]	= { 'u','s','t','a','r',0x00};
-static const unsigned char tar_header_posix[8]  = { 'u','s','t','a','r',' ',' ',0x00};
+static const unsigned char tar_header_gnu[6] = { 'u', 's', 't', 'a', 'r', 0x00 };
+static const unsigned char tar_header_posix[8] = { 'u', 's', 't', 'a', 'r', ' ', ' ', 0x00 };
 
-const file_hint_t file_hint_tar= {
-  .extension="tar",
-  .description="tar archive",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_tar
+const file_hint_t file_hint_tar = {
+  .extension = "tar",
+  .description = "tar archive",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_tar
 };
 
 /*@
@@ -53,16 +54,16 @@ const file_hint_t file_hint_tar= {
 static int is_valid_checksum_format(const struct tar_posix_header *h)
 {
   unsigned int i;
-  int space_allowed=1;
-  int all_null=1;
+  int space_allowed = 1;
+  int all_null = 1;
   /* No checksum ? */
   /*@
     @ loop assigns i,all_null;
     @*/
-  for(i=0; i<8; i++)
-    if(h->chksum[i]!=0)
-      all_null=0;
-  if(all_null!=0)
+  for(i = 0; i < 8; i++)
+    if(h->chksum[i] != 0)
+      all_null = 0;
+  if(all_null != 0)
     return 1;
   /*
    * Checksum should be stored as a six digit octal number with leading zeroes followed by a NUL and then a space.
@@ -71,17 +72,17 @@ static int is_valid_checksum_format(const struct tar_posix_header *h)
   /*@
     @ loop assigns i,space_allowed;
     @*/
-  for(i=0; i<6; i++)
+  for(i = 0; i < 6; i++)
   {
     if(h->chksum[i] >= '0' || h->chksum[i] <= '7')
     {
-      space_allowed=0;
+      space_allowed = 0;
       continue;
     }
     if(h->chksum[i] == ' ')
     {
       if(space_allowed == 0)
-	return 0;
+        return 0;
     }
     else
       return 0;
@@ -96,36 +97,39 @@ static int is_valid_checksum_format(const struct tar_posix_header *h)
 int is_valid_tar_header(const struct tar_posix_header *h)
 {
   /* Do not remove this check. */
-  if(memcmp(&h->magic,tar_header_gnu,sizeof(tar_header_gnu))!=0 &&
-      memcmp(&h->magic,tar_header_posix,sizeof(tar_header_posix))!=0)
+  if(memcmp(&h->magic, tar_header_gnu, sizeof(tar_header_gnu)) != 0 && memcmp(&h->magic, tar_header_posix, sizeof(tar_header_posix)) != 0)
     return 0;
-  if(is_valid_checksum_format(h)==0)
+  if(is_valid_checksum_format(h) == 0)
     return 0;
   return 1;
 }
 
 /*@
-  @ requires buffer_size >= 512;
+  @ requires buffer_size >= sizeof(struct tar_posix_header);
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \valid_read(file_recovery);
   @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_tar, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures \result == 0 || \result == 1;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const struct tar_posix_header *h=(const struct tar_posix_header *)buffer;
-  if(is_valid_tar_header(h)==0)
+  const struct tar_posix_header *h = (const struct tar_posix_header *)buffer;
+  if(is_valid_tar_header(h) == 0)
     return 0;
-  if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar)
+  if(file_recovery->file_stat != NULL && file_recovery->file_stat->file_hint == &file_hint_tar)
   {
     /* header_ignored(file_recovery_new); is useless as there is no file check */
     return 0;
   }
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_tar.extension;
-  file_recovery_new->min_filesize=512;
+  file_recovery_new->extension = file_hint_tar.extension;
+  file_recovery_new->min_filesize = 512;
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 
@@ -134,9 +138,9 @@ static int header_check_tar(const unsigned char *buffer, const unsigned int buff
   @*/
 static void register_header_check_tar(file_stat_t *file_stat)
 {
-  register_header_check(0x101, tar_header_gnu,sizeof(tar_header_gnu), &header_check_tar, file_stat);
+  register_header_check(0x101, tar_header_gnu, sizeof(tar_header_gnu), &header_check_tar, file_stat);
 #ifndef __FRAMAC__
-  register_header_check(0x101, tar_header_posix,sizeof(tar_header_posix), &header_check_tar, file_stat);
+  register_header_check(0x101, tar_header_posix, sizeof(tar_header_posix), &header_check_tar, file_stat);
 #endif
 }
 #endif
