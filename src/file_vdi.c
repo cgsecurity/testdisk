@@ -32,15 +32,16 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_vdi(file_stat_t *file_stat);
 
-const file_hint_t file_hint_vdi= {
-  .extension="vdi",
-  .description="Virtual desktop infrastructure 1.1",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_vdi
+const file_hint_t file_hint_vdi = {
+  .extension = "vdi",
+  .description = "Virtual desktop infrastructure 1.1",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_vdi
 };
 
 /* Image version. */
@@ -48,69 +49,81 @@ const file_hint_t file_hint_vdi= {
 
 /* Image type. */
 #define VDI_TYPE_DYNAMIC 1
-#define VDI_TYPE_STATIC  2
+#define VDI_TYPE_STATIC 2
 
 typedef unsigned char uuid_t[16];
 
-typedef struct {
-    char text[0x40];
-    uint32_t signature;
-    uint32_t version;
-    uint32_t header_size;
-    uint32_t image_type;
-    uint32_t image_flags;
-    char description[256];
-    uint32_t offset_bmap;
-    uint32_t offset_data;
-    uint32_t cylinders;         /* disk geometry, unused here */
-    uint32_t heads;             /* disk geometry, unused here */
-    uint32_t sectors;           /* disk geometry, unused here */
-    uint32_t sector_size;
-    uint32_t unused1;
-    uint64_t disk_size;
-    uint32_t block_size;
-    uint32_t block_extra;       /* unused here */
-    uint32_t blocks_in_image;
-    uint32_t blocks_allocated;
-    uuid_t uuid_image;
-    uuid_t uuid_last_snap;
-    uuid_t uuid_link;
-    uuid_t uuid_parent;
-    uint64_t unused2[7];
+typedef struct
+{
+  char text[0x40];
+  uint32_t signature;
+  uint32_t version;
+  uint32_t header_size;
+  uint32_t image_type;
+  uint32_t image_flags;
+  char description[256];
+  uint32_t offset_bmap;
+  uint32_t offset_data;
+  uint32_t cylinders; /* disk geometry, unused here */
+  uint32_t heads;     /* disk geometry, unused here */
+  uint32_t sectors;   /* disk geometry, unused here */
+  uint32_t sector_size;
+  uint32_t unused1;
+  uint64_t disk_size;
+  uint32_t block_size;
+  uint32_t block_extra; /* unused here */
+  uint32_t blocks_in_image;
+  uint32_t blocks_allocated;
+  uuid_t uuid_image;
+  uuid_t uuid_last_snap;
+  uuid_t uuid_link;
+  uuid_t uuid_parent;
+  uint64_t unused2[7];
 } VdiHeader;
 
+/*@
+  @ requires buffer_size >= sizeof(VdiHeader);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_vdi, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_vdi(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const VdiHeader *header=(const VdiHeader *)buffer;
+  const VdiHeader *header = (const VdiHeader *)buffer;
   uint64_t fs;
+  const uint32_t offset_data = le32(header->offset_data);
   if(le32(header->version) != VDI_VERSION_1_1)
     return 0;
-  if(le32(header->offset_data) < sizeof(VdiHeader))
+  if(offset_data < sizeof(VdiHeader))
     return 0;
   if(le32(header->image_type) != VDI_TYPE_STATIC)
   {
     reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_vdi.extension;
-    file_recovery_new->min_filesize=le32(header->offset_data);
+    file_recovery_new->extension = file_hint_vdi.extension;
+    file_recovery_new->min_filesize = offset_data;
     return 1;
   }
-  fs=(uint64_t)le32(header->blocks_in_image) * le32(header->block_size);
+  fs = (uint64_t)le32(header->blocks_in_image) * le32(header->block_size);
   if(fs > PHOTOREC_MAX_FILE_SIZE)
     return 0;
-  fs+=le32(header->offset_data);
+  fs += offset_data;
   if(fs > PHOTOREC_MAX_FILE_SIZE)
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_vdi.extension;
-  file_recovery_new->calculated_file_size=fs;
-  file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension = file_hint_vdi.extension;
+  file_recovery_new->calculated_file_size = fs;
+  file_recovery_new->data_check = &data_check_size;
+  file_recovery_new->file_check = &file_check_size;
   return 1;
 }
 
 static void register_header_check_vdi(file_stat_t *file_stat)
 {
-  static const unsigned char vdi_header[4]= {0x7f, 0x10, 0xda, 0xbe};
-  register_header_check(0x40, vdi_header,sizeof(vdi_header), &header_check_vdi, file_stat);
+  static const unsigned char vdi_header[4] = { 0x7f, 0x10, 0xda, 0xbe };
+  register_header_check(0x40, vdi_header, sizeof(vdi_header), &header_check_vdi, file_stat);
 }
 #endif
