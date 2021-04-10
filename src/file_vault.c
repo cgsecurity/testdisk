@@ -31,15 +31,16 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_vault(file_stat_t *file_stat);
 
-const file_hint_t file_hint_vault= {
-  .extension="vault",
-  .description="McAfee Anti-Theft/FileVault",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_vault
+const file_hint_t file_hint_vault = {
+  .extension = "vault",
+  .description = "McAfee Anti-Theft/FileVault",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_vault
 };
 
 /*
@@ -47,38 +48,61 @@ const file_hint_t file_hint_vault= {
  * 03200bf0  2d 34 36 33 33 2d 61 33  34 66 2d 34 61 66 64 36  |-4633-a34f-4afd6|
  * 03200c00  30 64 61 62 64 64 37 00                           |0dabdd7.|
  * */
+
+/*@
+  @ requires buffer_size >= 2*29;
+  @ requires (buffer_size&1)==0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires \valid(file_recovery);
+  @ requires file_recovery->data_check==&data_check_vault;
+  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
+  @ requires \separated(buffer, file_recovery);
+  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ assigns file_recovery->calculated_file_size;
+  @*/
 static data_check_t data_check_vault(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  if(buffer_size>8)
+  unsigned int i;
+  /*@ loop assigns i, file_recovery->calculated_file_size; */
+  for(i = (buffer_size / 2) - 28; i + 29 <= buffer_size; i++)
   {
-    unsigned int i;
-    for(i=(buffer_size/2)-28;i+28<buffer_size;i++)
+    if(buffer[i] == '-' && buffer[i + 5] == '-' && buffer[i + 10] == '-' && buffer[i + 15] == '-' && buffer[i + 28] == '\0')
     {
-      if(buffer[i]=='-' && buffer[i+5]=='-' && buffer[i+10]=='-' && buffer[i+15]=='-' && buffer[i+28]=='\0')
-      {
-	file_recovery->calculated_file_size=file_recovery->file_size+i+28+1-(buffer_size/2);
-	return DC_STOP;
-      }
+      file_recovery->calculated_file_size = file_recovery->file_size + i + 29 - (buffer_size / 2);
+      return DC_STOP;
     }
   }
-  file_recovery->calculated_file_size=file_recovery->file_size+(buffer_size/2);
+  file_recovery->calculated_file_size = file_recovery->file_size + (buffer_size / 2);
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_vault, buffer+(..), file_recovery, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @*/
 static int header_check_vault(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_vault.extension;
-  file_recovery_new->data_check=&data_check_vault;
-  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension = file_hint_vault.extension;
+  if(file_recovery_new->blocksize >= 29)
+  {
+    file_recovery_new->data_check = &data_check_vault;
+    file_recovery_new->file_check = &file_check_size;
+  }
   return 1;
 }
 
 static void register_header_check_vault(file_stat_t *file_stat)
 {
-  static const unsigned char vault_header[0x12]=  {
-    'S' , 'a' , 'f' , 'e' , 'B' , 'o' , 'o' , 't' ,
-    'E' , 'n' , 'c' , 'V' , 'o' , 'l' , '1' , 0x00,
+  static const unsigned char vault_header[0x12] = {
+    'S', 'a', 'f', 'e', 'B', 'o', 'o', 't',
+    'E', 'n', 'c', 'V', 'o', 'l', '1', 0x00,
     0x01, 0x01
   };
   register_header_check(0, vault_header, sizeof(vault_header), &header_check_vault, file_stat);
