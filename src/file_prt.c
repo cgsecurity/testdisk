@@ -31,38 +31,60 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_prt(file_stat_t *file_stat);
 
-const file_hint_t file_hint_prt= {
-  .extension="prt",
-  .description="Pro/ENGINEER Model",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_prt
+const file_hint_t file_hint_prt = {
+  .extension = "prt",
+  .description = "Pro/ENGINEER Model",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_prt
 };
 
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires file_recovery->file_check == &file_check_prt;
+  @ ensures \valid(file_recovery->handle);
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
+  @*/
 static void file_check_prt(file_recovery_t *file_recovery)
 {
-  const unsigned char prt_footer[11]= {
+  const unsigned char prt_footer[11] = {
     '#', 'E', 'N', 'D', '_', 'O', 'F', '_',
-    'U', 'G', 'C'};
+    'U', 'G', 'C'
+  };
   file_search_footer(file_recovery, prt_footer, sizeof(prt_footer), 1);
 }
 
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_prt, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_prt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->file_check=&file_check_prt;
-  file_recovery_new->extension=file_hint_prt.extension;
+  file_recovery_new->file_check = &file_check_prt;
+  file_recovery_new->extension = file_hint_prt.extension;
   return 1;
 }
 
 static void register_header_check_prt(file_stat_t *file_stat)
 {
-  static const unsigned char prt_header[12]= {
+  static const unsigned char prt_header[12] = {
     '#', 'U', 'G', 'C', ':', '2', ' ', 'P',
-    'A', 'R', 'T', ' '};
-  register_header_check(0, prt_header,sizeof(prt_header), &header_check_prt, file_stat);
+    'A', 'R', 'T', ' '
+  };
+  register_header_check(0, prt_header, sizeof(prt_header), &header_check_prt, file_stat);
 }
 #endif
