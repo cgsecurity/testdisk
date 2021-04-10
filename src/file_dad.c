@@ -105,10 +105,11 @@ static int header_check_dad(const unsigned char *buffer, const unsigned int buff
   if(size<16)
     return 0;
   if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_dad &&
-      (file_recovery->calculated_file_size==file_recovery->file_size ||
-       file_recovery->blocksize < 16))
+      file_recovery->calculated_file_size==file_recovery->file_size)
   {
+    /*@ assert \valid_function(file_recovery->file_check); */
     header_ignored(file_recovery_new);
     return 0;
   }

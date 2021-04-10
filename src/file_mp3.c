@@ -586,7 +586,8 @@ static int header_check_mp3(const unsigned char *buffer, const unsigned int buff
   }
   if(nbr<=1)
     return 0;
-  if(file_recovery->file_stat!=NULL)
+  if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL)
   {
     if(file_recovery->file_stat->file_hint==&file_hint_mp3
 #if !defined(SINGLE_FORMAT)

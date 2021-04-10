@@ -782,16 +782,18 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
     return 0;
   /* Avoid a false positiv with some RAF files */
   if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL &&
 #if !defined(SINGLE_FORMAT)
-    file_recovery->file_stat->file_hint==&file_hint_raf &&
+      file_recovery->file_stat->file_hint==&file_hint_raf &&
 #endif
-    memcmp(buffer, raf_fp, 15)==0)
+      memcmp(buffer, raf_fp, 15)==0)
   {
     header_ignored(file_recovery_new);
     return 0;
   }
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
   if(file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_jpg)
   {
     if(header_ignored_adv(file_recovery, file_recovery_new)==0)

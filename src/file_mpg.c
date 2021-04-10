@@ -232,7 +232,9 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
     {
       return header_mpg_found(file_recovery_new);
     }
-    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_check!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
@@ -266,7 +268,9 @@ static int header_check_mpg_Pack(const unsigned char *buffer, const unsigned int
     { /* SCR=0 */
       return header_mpg_found(file_recovery_new);
     }
-    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_check!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
@@ -310,7 +314,9 @@ static int header_check_mpg_System(const unsigned char *buffer, const unsigned i
   {
     if(is_valid_packet_size(buffer, buffer_size)==0)
       return 0;
-    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_check!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
@@ -347,7 +353,9 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
   {
     if(is_valid_packet_size(buffer, buffer_size)==0)
       return 0;
-    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_check!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;
@@ -381,7 +389,9 @@ static int header_check_mpg4_ElemVideo(const unsigned char *buffer, const unsign
   {
     if(is_valid_packet_size(buffer, buffer_size)==0)
       return 0;
-    if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_mpg)
+    if(file_recovery->file_stat!=NULL &&
+	file_recovery->file_check!=NULL &&
+	file_recovery->file_stat->file_hint==&file_hint_mpg)
     {
       header_ignored(file_recovery_new);
       return 0;

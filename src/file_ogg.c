@@ -117,6 +117,7 @@ static int header_check_ogg(const unsigned char *buffer, const unsigned int buff
   /* Return if not Beginning Of Stream and already saving the file */
   if((buffer[5]&0x02)!=0x02 &&
       file_recovery->file_stat!=NULL &&
+      file_recovery->file_check!=NULL &&
       file_recovery->file_stat->file_hint==&file_hint_ogg)
   {
     header_ignored(file_recovery_new);

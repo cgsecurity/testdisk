@@ -86,8 +86,10 @@ static data_check_t data_check_bvr(const unsigned char *buffer, const unsigned i
 static int header_check_bvr(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(file_recovery->file_stat!=NULL &&
+    file_recovery->file_check!=NULL &&
     file_recovery->file_stat->file_hint==&file_hint_bvr)
   {
+    /*@ assert \valid_function(file_recovery->file_check); */
     header_ignored(file_recovery_new);
     return 0;
   }
