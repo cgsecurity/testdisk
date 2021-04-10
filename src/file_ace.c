@@ -111,10 +111,8 @@ static int check_ace_crc(FILE *handle, const unsigned int len, const unsigned in
 }
 
 /*@
-  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery->handle);
-  @ requires \valid_read(&file_recovery->extension);
-  @ requires valid_read_string(file_recovery->extension);
   @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires \initialized(&file_recovery->time);
   @
@@ -143,9 +141,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
     {
       return ;
     }
-#ifdef __FRAMAC__
-    Frama_C_make_unknown(&buffer, sizeof(buffer));
-#endif
+    /*@ assert \initialized(&buffer + (0 .. sizeof(buffer)-1)); */
 #ifdef DEBUG_ACE
     log_info("file_ace: Block header at 0x%08lx: CRC16=0x%04X size=%u type=%u"
         " flags=0x%04X addsize=%u\n",

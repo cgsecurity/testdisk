@@ -249,6 +249,7 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 #endif
     if(file_recovery->file_check==&file_check_bgzf)
     {
+      /*@ assert \valid_function(file_recovery->file_check); */
       header_ignored(file_recovery_new);
       return 0;
     }

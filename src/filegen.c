@@ -758,7 +758,7 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end)
 /* 0: file_recovery_new->location.start has been taken into account, offset_skipped_header may have been updated
  * 1: file_recovery_new->location.start has been ignored */
 /*@
-  @ requires separation: \separated(file_recovery, file_recovery_new, &errno, &offset_skipped_header);
+  @ requires separation: \separated(file_recovery, file_recovery->handle, file_recovery_new, &errno, &offset_skipped_header);
   @*/
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)
 {

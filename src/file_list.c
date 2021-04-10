@@ -371,7 +371,7 @@ extern const file_hint_t file_hint_zpr;
 
 file_enable_t array_file_enable[]=
 {
-#if (!defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sig)) && !defined(__FRAMAC__)
+#if ((!defined(SINGLE_FORMAT)  && !defined(__FRAMAC__)) || defined(SINGLE_FORMAT_sig))
   { .enable=0, .file_hint=&file_hint_sig  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_1cd)

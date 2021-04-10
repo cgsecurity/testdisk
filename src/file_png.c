@@ -41,6 +41,7 @@
 
 extern const file_hint_t file_hint_doc;
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_png(file_stat_t *file_stat);
 static data_check_t data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 static data_check_t data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);

@@ -31,6 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_EXTENSION(file_stat_t *file_stat);
 
 const file_hint_t file_hint_EXTENSION= {

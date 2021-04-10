@@ -51,9 +51,9 @@ const file_hint_t file_hint_amd= {
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_amd, buffer+(..), file_recovery, file_recovery_new);
-  @ assigns  *file_recovery_new;
   @ ensures \result == 0 || \result == 1;
   @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_amd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -73,9 +73,9 @@ static int header_check_amd(const unsigned char *buffer, const unsigned int buff
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_amd, buffer+(..), file_recovery, file_recovery_new);
-  @ assigns  *file_recovery_new;
   @ ensures \result == 0 || \result == 1;
   @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_amt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {

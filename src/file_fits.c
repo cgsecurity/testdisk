@@ -118,7 +118,7 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
       if(tmp > PHOTOREC_MAX_FILE_SIZE)
 	naxis_size=0;
       else if(tmp>0)
-      {
+      { /* FIXME overflow */
 	naxis_size*=(tmp+8-1)/8;
       }
     }
@@ -135,7 +135,7 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
       if(naxis_val > PHOTOREC_MAX_FILE_SIZE)
 	naxis_size=0;
       else
-      {
+      { /* FIXME overflow */
 	naxis_size*=naxis_val;
       }
     }

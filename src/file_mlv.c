@@ -161,6 +161,7 @@ static void file_check_mlv(file_recovery_t *file_recovery)
 
 /*@
   @ requires valid_file_recovery(file_recovery);
+  @ requires file_recovery->file_rename == &file_rename_mlv;
   @*/
 static void file_rename_mlv(file_recovery_t *file_recovery)
 {

@@ -99,10 +99,8 @@ struct bmp_header
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures *buffer==\old(*buffer);
   @*/
-  /* TODO ensures *file_recovery==\old(*file_recovery); */
+// ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
 static int header_check_bmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct bmp_header *bm=(const struct bmp_header *)buffer;

@@ -66,6 +66,7 @@ static void file_rename_fatdir(file_recovery_t *file_recovery)
   fclose(file);
   if(buffer_size<32)
     return;
+  /*@ assert buffer_size >= 32; */
   cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)&buffer[0]);
   sprintf(buffer_cluster, "cluster_%u", cluster);
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
@@ -109,6 +110,7 @@ static int header_check_dir(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->file_check=&file_check_size;
   file_recovery_new->file_rename=&file_rename_fatdir;
   file_recovery_new->time=date_dos2unix(le16(de->time),le16(de->date));
+  /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }
 

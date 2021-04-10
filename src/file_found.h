@@ -25,6 +25,11 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(current_search_space);
+  @ requires \valid(file_stat);
+  @ requires \separated(current_search_space, file_stat);
+  @*/
 alloc_data_t *file_found(alloc_data_t *current_search_space, const uint64_t offset, file_stat_t *file_stat);
 
 #ifdef __cplusplus

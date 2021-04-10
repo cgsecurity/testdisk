@@ -319,7 +319,7 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end);
 void header_ignored(const file_recovery_t *file_recovery_new);
 
 /*@
-  @ requires separation: \separated(file_recovery, file_recovery_new, &errno);
+  @ requires separation: \separated(file_recovery, file_recovery->handle, file_recovery_new, &errno);
   @ requires \valid_read(file_recovery);
   @ requires \valid_read(file_recovery_new);
   @ requires valid_file_recovery(file_recovery);
@@ -327,7 +327,6 @@ void header_ignored(const file_recovery_t *file_recovery_new);
   @ requires \valid_function(file_recovery->file_check);
   @ requires \initialized(&file_recovery->file_check);
   @ requires \initialized(&file_recovery->handle);
-  @ requires \separated(file_recovery, file_recovery->handle);
   @ ensures \result == 0 || \result == 1;
   @*/
 // ensures  valid_file_recovery(file_recovery);

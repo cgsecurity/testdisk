@@ -34,13 +34,13 @@
 /*@ requires \valid(file_stat); */
 static void register_header_check_tivo(file_stat_t *file_stat);
 
-const file_hint_t file_hint_tivo= {
-  .extension="TiVo",
-  .description="TiVo video record",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_tivo
+const file_hint_t file_hint_tivo = {
+  .extension = "TiVo",
+  .description = "TiVo video record",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_tivo
 };
 
 /*@
@@ -54,7 +54,7 @@ const file_hint_t file_hint_tivo= {
   @*/
 static void file_check_tivo(file_recovery_t *file_recovery)
 {
-  const unsigned char tivo_footer[8]= {
+  const unsigned char tivo_footer[8] = {
     0x00, 0x00, 0x01, 0xb7, 0x00, 0x00, 0x01, 0xb9
   };
   file_search_footer(file_recovery, tivo_footer, sizeof(tivo_footer), 0);
@@ -73,18 +73,18 @@ static void file_check_tivo(file_recovery_t *file_recovery)
   @*/
 static int header_check_tivo(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(memcmp(&buffer[0x1c], "<?xml ", 6)!=0)
+  if(memcmp(&buffer[0x1c], "<?xml ", 6) != 0)
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_tivo.extension;
-  file_recovery_new->file_check=&file_check_tivo;
+  file_recovery_new->extension = file_hint_tivo.extension;
+  file_recovery_new->file_check = &file_check_tivo;
   return 1;
 }
 
 static void register_header_check_tivo(file_stat_t *file_stat)
 {
-  static const unsigned char tivo_header[7]=  {
-    'T' , 'i' , 'V' , 'o' , 0x00, 0x04, 0x00
+  static const unsigned char tivo_header[7] = {
+    'T', 'i', 'V', 'o', 0x00, 0x04, 0x00
   };
   register_header_check(0, tivo_header, sizeof(tivo_header), &header_check_tivo, file_stat);
 }
