@@ -32,49 +32,59 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@ requires \valid(file_stat); */
 static void register_header_check_prc(file_stat_t *file_stat);
 static int header_check_prc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
-const file_hint_t file_hint_prc= {
-  .extension="prc",
-  .description="PalmOS application",
-  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .recover=1,
-  .enable_by_default=1,
-  .register_header_check=&register_header_check_prc
+const file_hint_t file_hint_prc = {
+  .extension = "prc",
+  .description = "PalmOS application",
+  .max_filesize = PHOTOREC_MAX_FILE_SIZE,
+  .recover = 1,
+  .enable_by_default = 1,
+  .register_header_check = &register_header_check_prc
 };
 
-struct DatabaseHdrType_s {
+struct DatabaseHdrType_s
+{
   unsigned char name[32];
-  uint16_t 	attributes;		/* 0x20 */
-  uint32_t      creationDate;		/* 0x22 */
-  uint32_t      modificationDate;	/* 0x26 */
-  uint32_t      lastBackupDate;		/* 0x2a */
-  uint32_t      modificationNumber;	/* 0x2e */
-  unsigned char appInfoID[5];		/* 0x32 */
+  uint16_t attributes;         /* 0x20 */
+  uint32_t creationDate;       /* 0x22 */
+  uint32_t modificationDate;   /* 0x26 */
+  uint32_t lastBackupDate;     /* 0x2a */
+  uint32_t modificationNumber; /* 0x2e */
+  unsigned char appInfoID[5];  /* 0x32 */
   unsigned char sortInfoID[5];
-  uint32_t      type;			/* 0x3c */
-  uint32_t      creator;		/* 0x40 */
-  uint32_t      uniqueIDSeed;		/* 0x44 */
+  uint32_t type;         /* 0x3c */
+  uint32_t creator;      /* 0x40 */
+  uint32_t uniqueIDSeed; /* 0x44 */
   /*  RecordListType recordList; */
-} __attribute__ ((gcc_struct, __packed__));
+} __attribute__((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct DatabaseHdrType_s);
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires file_recovery_new->blocksize > 0;
+  @ requires separation: \separated(&file_hint_prc, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_prc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const struct DatabaseHdrType_s *prc=(const struct DatabaseHdrType_s *)buffer;
-  if(be32(prc->uniqueIDSeed)==0)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_prc.extension;
-    file_recovery_new->time=be32(prc->modificationDate);
-    return 1;
-  }
-  return 0;
+  const struct DatabaseHdrType_s *prc = (const struct DatabaseHdrType_s *)buffer;
+  if(be32(prc->uniqueIDSeed) != 0)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension = file_hint_prc.extension;
+  file_recovery_new->time = be32(prc->modificationDate);
+  return 1;
 }
 
 static void register_header_check_prc(file_stat_t *file_stat)
 {
-  static const unsigned char prc_header[16]= {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,'a','p','p','l'};
-  register_header_check(0x30, prc_header,sizeof(prc_header), &header_check_prc, file_stat);
+  static const unsigned char prc_header[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 'a', 'p', 'p', 'l' };
+  register_header_check(0x30, prc_header, sizeof(prc_header), &header_check_prc, file_stat);
 }
 #endif
