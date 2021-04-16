@@ -586,6 +586,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
   while(ind_stop!=INDSTOP_QUIT && search_location < search_location_max)
   {
     CHS_t start;
+    int ask=0;
     offset2CHS_inline(disk_car,search_location,&start);
 #ifdef HAVE_NCURSES
     if(disk_car->geom.heads_per_cylinder>1)
@@ -598,16 +599,7 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	wprintw(stdscr, "Analyse cylinder %5lu/%lu: %02u%%",
 	    start.cylinder, disk_car->geom.cylinders-1,
 	    (unsigned int)(search_location*100/disk_car->disk_size));
-	wrefresh(stdscr);
-	switch(check_enter_key_or_s(stdscr))
-	{
-	  case 1:
-	    ind_stop=INDSTOP_STOP;
-	    break;
-	  case 2:
-	    ind_stop=INDSTOP_SKIP;
-	    break;
-	}
+	ask=1;
       }
     }
     else if((start.cylinder & 0x7FFF)==0)
@@ -619,10 +611,20 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	  (long long unsigned)((disk_car->disk_size-1)/disk_car->sector_size),
 	    (unsigned int)(search_location*100/disk_car->disk_size));
       wrefresh(stdscr);
+      ask=1;
+    }
+    if(ask!=0)
+    {
+      wrefresh(stdscr);
       switch(check_enter_key_or_s(stdscr))
       {
 	case 1:
-	  ind_stop=INDSTOP_STOP;
+	  if(ask_confirmation("Stop searching for more partitions ? (Y/N)")!=0)
+	    ind_stop=INDSTOP_STOP;
+	  else
+	  {
+	    screen_buffer_to_interface();
+	  }
 	  break;
 	case 2:
 	  ind_stop=INDSTOP_SKIP;
