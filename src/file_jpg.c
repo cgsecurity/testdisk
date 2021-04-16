@@ -919,6 +919,11 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01,
       0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
+    static const unsigned char jpg_header_app0_jfif11_com[0x17]= {
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
+      0x00, 0x48, 0x00, 0x00, 0xff, 0xfe, 0x00
+    };
+
     unsigned int width=0;
     unsigned int height=0;
     jpg_get_size(buffer, buffer_size, &height, &width);
@@ -981,7 +986,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     }
     /* Don't extract jpg inside MOV */
     if( file_recovery->file_stat->file_hint==&file_hint_mov &&
-	memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0)
+	(memcmp(buffer,  jpg_header_app0_jfif11_null, sizeof(jpg_header_app0_jfif11_null))==0 ||
+	memcmp(buffer,  jpg_header_app0_jfif11_com, sizeof(jpg_header_app0_jfif11_com))==0))
     {
       header_ignored(file_recovery_new);
       return 0;
