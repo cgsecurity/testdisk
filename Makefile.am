@@ -26,6 +26,7 @@ EXTRA_DIST = AUTHORS COPYING ChangeLog INFO INSTALL NEWS README.md README_dev_ph
 	src/lang/qphotorec.pt.ts \
 	src/lang/qphotorec.ru.ts \
 	src/lang/qphotorec.zh_TW.ts \
+	win/qt.conf \
 	win/readme.txt win/photorec_win.exe.manifest win/qphotorec_win.exe.manifest \
 	win/testdisk_win.exe.manifest \
 	Android.mk jni/Android.mk \
