@@ -402,6 +402,7 @@ photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtypen.h fat_cluster.h fat
 QT_TS = \
   lang/qphotorec.ca.ts \
   lang/qphotorec.cs.ts \
+  lang/qphotorec.el.ts \
   lang/qphotorec.es.ts \
   lang/qphotorec.fr.ts \
   lang/qphotorec.it.ts \
@@ -485,8 +486,8 @@ session_fidentify.framac: $(fidentify_C_SOURCES)
 	frama-c $^ -cpp-extra-args="-DMAIN_fidentify -DHAVE_CONFIG_H -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_photorec-%.framac: $(photorec_C_SOURCES)
-	$(CC) $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -I.. $^ -o photorec_$*
-	frama-c $^ -cpp-extra-args="-DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
+	$(CC) $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -DSINGLE_PARTITION_TYPE -I.. $^ -o photorec_$*
+	frama-c $^ -cpp-extra-args="-DMAIN_photorec -DHAVE_CONFIG_H -DSINGLE_FORMAT -DSINGLE_FORMAT_$* -DSINGLE_PARTITION_TYPE -D__x86_64__ -I.." $(FRAMA_C_FLAGS) -save $@
 
 session_photorec.framac: $(photorec_C_SOURCES)
 	$(CC) $(CFLAGS) -DMAIN_photorec -DHAVE_CONFIG_H -I.. $^ -o demo_photorec
