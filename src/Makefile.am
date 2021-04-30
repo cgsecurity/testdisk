@@ -127,6 +127,7 @@ file_C			= filegen.c \
 			  file_doc.c \
 			  file_dpx.c \
 			  file_drw.c \
+			  file_drw2.c \
 			  file_ds2.c \
 			  file_ds_store.c \
 			  file_dsc.c \
