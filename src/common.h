@@ -315,6 +315,10 @@ typedef enum errcode_type errcode_type_t;
 
 typedef struct param_disk_struct disk_t;
 typedef struct partition_struct partition_t;
+/*@
+    predicate valid_partition(partition_t *part) = (\valid_read(part)));
+  @*/
+
 typedef struct CHS_struct CHS_t;
 typedef struct
 {
@@ -339,6 +343,9 @@ struct list_part_struct
   list_part_t *next;
   int to_be_removed;
 };
+/*@
+    predicate valid_list_part(list_part_t *list) = ((list == \null) || (\valid_read(list) && valid_list_part(list->next)));
+  @*/
 
 typedef struct list_disk_struct list_disk_t;
 struct list_disk_struct
@@ -347,6 +354,18 @@ struct list_disk_struct
   list_disk_t *prev;
   list_disk_t *next;
 };
+
+/*@
+inductive ld_reachable{L} (list_disk_t* root, list_disk_t* node)
+{
+  case root_ld_reachable{L}:
+    \forall list_disk_t *root; ld_reachable(root,root);
+  case next_ld_reachable{L}:
+    \forall list_disk_t *root, *node; \valid(root) ==> ld_reachable(root->next, node) ==> ld_reachable(root,node);
+}
+*/
+
+/*@ predicate ld_finite{L}(list_disk_t* root) = ld_reachable(root,\null); */
 
 struct systypes {
   const unsigned int part_type;
@@ -377,6 +396,13 @@ struct arch_fnct_struct
 };
 
 typedef struct arch_fnct_struct arch_fnct_t;
+
+/*@
+    predicate valid_arch(arch_fnct_t *arch) = (
+      \valid_read(arch) &&
+      (arch->get_geometry_from_mbr==\null || \valid_function(arch->get_geometry_from_mbr))
+    );
+  @*/
 
 struct param_disk_struct
 {
@@ -412,6 +438,31 @@ struct param_disk_struct
   int unit;
   unsigned int sector_size;
 };
+
+/*@
+    predicate valid_disk(disk_t *disk) = ((disk == \null) ||
+      (\valid_read(disk) &&
+       \freeable(disk) &&
+       valid_read_string(disk->device) &&
+       \freeable(disk->device) &&
+       \valid_function(disk->clean) &&
+       \valid_function(disk->description) &&
+       (disk->model == \null || \freeable(disk->model)) &&
+       (disk->model == \null || valid_read_string(disk->model)) &&
+       (disk->serial_no == \null || \freeable(disk->serial_no)) &&
+       (disk->fw_rev == \null || \freeable(disk->fw_rev)) &&
+       (disk->data == \null || \freeable(disk->data)) &&
+       (disk->rbuffer == \null || (\freeable(disk->rbuffer) && disk->rbuffer_size > 0)) &&
+       (disk->wbuffer == \null || (\freeable(disk->wbuffer) && disk->wbuffer_size > 0)) &&
+       valid_arch(disk->arch) &&
+       disk->sector_size > 0
+      ));
+*/
+
+/*@ predicate valid_list_disk{L}(list_disk_t* root) =
+      \forall list_disk_t *node; \valid(node) && ld_reachable(root,node) ==> \valid(node->disk);
+ */
+
 
 struct partition_struct
 {
@@ -456,6 +507,7 @@ struct my_data_struct
   @ requires size > 0;
   @ ensures \valid(((char *)\result)+(0..size-1));
   @ ensures zero_initialization: \subset(((char *)\result)[0..size-1], {0});
+  @ assigns __fc_heap_status;
   @*/
 void *MALLOC(size_t size);
 
@@ -466,12 +518,14 @@ unsigned int up2power(const unsigned int number);
 
 /*@
   @ requires \valid(partition);
+  @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
   @*/
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
 
 /*@
   @ requires \valid(partition);
+  @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
   @*/
 void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
@@ -496,47 +550,45 @@ time_t td_ntfs2utc (int64_t ntfstime);
 #define	OPENBSD_MAXPARTITIONS	16
 #endif
 
-#ifdef TESTDISK_LSB
-#define le16(x)  (x)             /* x as little endian */
-#define be16(x)  ((((x)&0xff00)>>8)                      | \
-    (((x)&0x00ff)<<8))
-#define le24(x)  (x)
-#define le32(x)  (x)
-#define be32(x)  ((((x)&0xff000000UL)>>24)                | \
-    (((x)&0x00ff0000UL)>>8)                  | \
-    (((x)&0x0000ff00UL)<<8)                  | \
-    (((x)&0x000000ffUL)<<24))
-#define le64(x)  (x)
-#define be64(x)  ((((x)&0xff00000000000000ULL)>>56)       | \
-    (((x)&0x00ff000000000000ULL)>>40)        | \
-    (((x)&0x0000ff0000000000ULL)>>24)        | \
-    (((x)&0x000000ff00000000ULL)>>8)         | \
-    (((x)&0x00000000ff000000ULL)<<8)         | \
-    (((x)&0x0000000000ff0000ULL)<<24)        | \
-    (((x)&0x000000000000ff00ULL)<<40)        | \
-    (((x)&0x00000000000000ffULL)<<56))
-#else /* bigendian */
-#define le16(x)  ((((x)&0xff00)>>8)                      | \
-    (((x)&0x00ff)<<8))
-#define be16(x)  (x)
-#define be24(x)  (x)
-#define le24(x) ((((x) & 0x000000ffUL) << 16) | \
+#define __swab16(x) (((((uint16_t)x)&(uint16_t)0xff00)>>8)                      | \
+    (((uint16_t)(x)&(uint16_t)0x00ff)<<8))
+
+#define __swab24(x) ((((x) & 0x000000ffUL) << 16) | \
     ((x) & 0x0000ff00UL)        | \
     (((x) & 0x00ff0000UL) >> 16))
-#define le32(x)  ((((x)&0xff000000UL)>>24)                | \
-    (((x)&0x00ff0000UL)>>8)                  | \
-    (((x)&0x0000ff00UL)<<8)                  | \
-    (((x)&0x000000ffUL)<<24))
+
+#define __swab32(x)  ((((uint32_t)(x)&(uint32_t)0xff000000UL)>>24)                | \
+    (((uint32_t)(x)&(uint32_t)0x00ff0000UL)>>8)                  | \
+    (((uint32_t)(x)&(uint32_t)0x0000ff00UL)<<8)                  | \
+    (((uint32_t)(x)&(uint32_t)0x000000ffUL)<<24))
+
+#define __swab64(x)  ((((uint64_t)(x)&(uint64_t)0xff00000000000000ULL)>>56)       | \
+    (((uint64_t)(x)&(uint64_t)0x00ff000000000000ULL)>>40)        | \
+    (((uint64_t)(x)&(uint64_t)0x0000ff0000000000ULL)>>24)        | \
+    (((uint64_t)(x)&(uint64_t)0x000000ff00000000ULL)>>8)         | \
+    (((uint64_t)(x)&(uint64_t)0x00000000ff000000ULL)<<8)         | \
+    (((uint64_t)(x)&(uint64_t)0x0000000000ff0000ULL)<<24)        | \
+    (((uint64_t)(x)&(uint64_t)0x000000000000ff00ULL)<<40)        | \
+    (((uint64_t)(x)&(uint64_t)0x00000000000000ffULL)<<56))
+
+#ifdef TESTDISK_LSB
+#define be16(x)  (__swab16(x))
+#define be24(x)  (__swab24(x))
+#define be32(x)  (__swab32(x))
+#define be64(x)  (__swab64(x))
+#define le16(x)  (x)             /* x as little endian */
+#define le24(x)  (x)
+#define le32(x)  (x)
+#define le64(x)  (x)
+#else /* bigendian */
+#define be16(x)  (x)
+#define be24(x)  (x)
 #define be32(x)  (x)
-#define le64(x)  ((((x)&0xff00000000000000ULL)>>56)       | \
-    (((x)&0x00ff000000000000ULL)>>40)        | \
-    (((x)&0x0000ff0000000000ULL)>>24)        | \
-    (((x)&0x000000ff00000000ULL)>>8)         | \
-    (((x)&0x00000000ff000000ULL)<<8)         | \
-    (((x)&0x0000000000ff0000ULL)<<24)        | \
-    (((x)&0x000000000000ff00ULL)<<40)        | \
-    (((x)&0x00000000000000ffULL)<<56))
 #define be64(x)  (x)
+#define le16(x)  (__swab16(x))
+#define le24(x)  (__swab24(x))
+#define le32(x)  (__swab32(x))
+#define le64(x)  (__swab64(x))
 #endif
 #ifndef HAVE_SNPRINTF
 int snprintf(char *str, size_t size, const char *format, ...);
@@ -580,19 +632,20 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
   @ requires valid_read_string(cmd);
-  @ requires \separated(cmd+(..), current_cmd);
+  @ requires \separated(cmd+(..), current_cmd, *current_cmd);
   @ requires strlen(cmd) == n;
   @ assigns  *current_cmd;
-  @ assigns \result \from indirect:(*current_cmd)[0 .. n-1], indirect:cmd[0 ..n-1], indirect:n;
   @ ensures  valid_read_string(*current_cmd);
-  @ ensures  \result == 0 ==> *current_cmd == \old(*current_cmd) + n;
   @ ensures  \result != 0 ==> *current_cmd == \old(*current_cmd);
   @*/
+// ensures  \result == 0 ==> *current_cmd == \old(*current_cmd) + n;
+// assigns \result \from indirect:(*current_cmd)[0 .. n-1], indirect:cmd[0 ..n-1], indirect:n;
 int check_command(char **current_cmd, const char *cmd, const size_t n);
 
 /*@
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
+  @ requires \separated(current_cmd, *current_cmd);
   @ assigns  *current_cmd;
   @ ensures  valid_read_string(*current_cmd);
   @*/
@@ -601,6 +654,7 @@ void skip_comma_in_command(char **current_cmd);
 /*@
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
+  @ requires \separated(current_cmd, *current_cmd);
   @ assigns  *current_cmd;
   @ ensures  valid_read_string(*current_cmd);
   @*/
