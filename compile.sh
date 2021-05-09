@@ -58,7 +58,7 @@ case "$crosscompile_target" in
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
-  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
+  arm-none-linux-gnueabi|powerpc-linux-gnuspe|aarch64-QNAP-linux-gnu)
 	VER_LIBNTFS3G="2014.2.15"
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
@@ -338,7 +338,7 @@ then
 	  arm-marvell-linux-gnu)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ewf --without-ntfs --disable-qt --enable-record-compilation-date
                 ;;
-	  arm-none-linux-gnueabi|powerpc-linux-gnuspe)
+	  arm-none-linux-gnueabi|powerpc-linux-gnuspe|aarch64-QNAP-linux-gnu)
 		$confdir/configure --host=$crosscompile_target --prefix=$prefix $CONFIGUREOPT --without-ntfs --disable-qt --enable-record-compilation-date
                 ;;
           *cygwin*)
