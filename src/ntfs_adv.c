@@ -37,6 +37,7 @@
 #include "intrfn.h"
 #include "dirpart.h"
 #include "ntfs.h"
+#include "ntfs_adv.h"
 #include "lang.h"
 #include "io_redir.h"
 #include "log.h"
