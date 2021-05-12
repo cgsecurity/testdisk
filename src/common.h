@@ -316,7 +316,7 @@ typedef enum errcode_type errcode_type_t;
 typedef struct param_disk_struct disk_t;
 typedef struct partition_struct partition_t;
 /*@
-    predicate valid_partition(partition_t *part) = (\valid_read(part)));
+    predicate valid_partition(partition_t *part) = (\valid_read(part));
   @*/
 
 typedef struct CHS_struct CHS_t;
