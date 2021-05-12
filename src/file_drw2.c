@@ -43,21 +43,20 @@ const file_hint_t file_hint_drw2= {
   .register_header_check=&register_header_check_drw2
 };
 
-/*
-static void file_check_drw2(file_recovery_t *file_recovery)
-{
-  const unsigned char drw2_footer[FOOTER_SIZE]= {
-    FOOTER_MAGIC
-  };
-  file_search_footer(file_recovery, drw2_footer, sizeof(drw2_footer), FOOTER_EXTRA);
-}
-*/
-
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid(file_recovery_new);
+  @ requires separation: \separated(&file_hint_drw2, buffer+(..), file_recovery, file_recovery_new);
+  @ ensures  \result == 1;
+  @ ensures  valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
 static int header_check_drw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_drw2.extension;
-  //file_recovery_new->file_check=&file_check_drw2;
   return 1;
 }
 
@@ -65,7 +64,6 @@ static void register_header_check_drw2(file_stat_t *file_stat)
 {
   static const unsigned char drw2_header[10]=  {
      0x01, 0xff, 0x02, 0x04, 0x03, 0x02, 0x00, 0x02, 0x02, 0x02 
-   // 0x01, 0xff, 0x02, 0x04, 0x03, 0x02, 0x00, 0x02, 0x02, 0x02, 0x21, 0x05, 0x00, 0x04
   };
   register_header_check(0, drw2_header, sizeof(drw2_header), &header_check_drw2, file_stat);
 }
