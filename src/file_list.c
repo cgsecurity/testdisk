@@ -105,6 +105,7 @@ extern const file_hint_t file_hint_dmp;
 extern const file_hint_t file_hint_doc;
 extern const file_hint_t file_hint_dpx;
 extern const file_hint_t file_hint_drw;
+extern const file_hint_t file_hint_drw2;
 extern const file_hint_t file_hint_ds2;
 extern const file_hint_t file_hint_ds_store;
 extern const file_hint_t file_hint_dsc;
@@ -598,6 +599,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw)
   { .enable=0, .file_hint=&file_hint_drw  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw2)
+  { .enable=0, .file_hint=&file_hint_drw2  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
   { .enable=0, .file_hint=&file_hint_doc  },
