@@ -279,7 +279,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
 {
   if(len==16      && memcmp(mime,"image/openraster",16)==0)
     return extension_ora;
-  else if(len==20 && memcmp(mime,"application/epub+zip",20)==0)
+  else if((len==20 || len==22) && memcmp(mime,"application/epub+zip",20)==0)
     return extension_epub;
   else if(len==28 && memcmp(mime,"application/vnd.sun.xml.calc",28)==0)
     return extension_sxc;
@@ -419,11 +419,19 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
     msoffice=1;
   else if(file_nbr==0)
   {
-    if(len==8 && memcmp(filename, "mimetype", 8)==0 && le16(file->extra_length)==0)
+    if(len==8 && memcmp(filename, "mimetype", 8)==0)
     {
       char buffer[128];
       const unsigned int compressed_size=le32(file->compressed_size);
       const int to_read=(compressed_size < 128 ? compressed_size: 128);
+      const int extra_length=le16(file->extra_length);
+      if (my_fseek(fr->handle, extra_length, SEEK_CUR) < 0)
+      {
+#ifdef DEBUG_ZIP
+	log_info("fseek failed\n");
+#endif
+	return -1;
+      }
       if( fread(buffer, to_read, 1, fr->handle)!=1)
       {
 #ifdef DEBUG_ZIP
@@ -435,7 +443,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 #if defined(__FRAMAC__)
       Frama_C_make_unknown(buffer, 128);
 #endif
-      if (my_fseek(fr->handle, -to_read, SEEK_CUR) < 0)
+      if (my_fseek(fr->handle, -(to_read+extra_length), SEEK_CUR) < 0)
       {
 #ifdef DEBUG_ZIP
 	log_info("fseek failed\n");
@@ -575,7 +583,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   char b_extra[sizeof(zip64_extra_entry_t)];
   const zip_file_entry_t *file=(const zip_file_entry_t *)&b_file;
   const zip64_extra_entry_t *extra=(const zip64_extra_entry_t *)&b_extra;
-  uint64_t          len;
+  uint64_t len;
   if (fread(b_file, sizeof(b_file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -902,7 +910,7 @@ static int zip_parse_data_desc(file_recovery_t *fr)
 #endif
   fr->file_size += sizeof(struct zip_desc);
 #ifdef DEBUG_ZIP
-  log_info("compressed_size=%u/%u uncompressed_size=%u CRC32=0x%08X\n",
+  log_info("compressed_size=%u/%lu uncompressed_size=%u CRC32=0x%08X\n",
       le32(desc->compressed_size),
       expected_compressed_size,
       le32(desc->uncompressed_size),
@@ -1296,7 +1304,7 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=30;	/* 4+sizeof(file) == 30 */
   file_recovery_new->file_check=&file_check_zip;
-  if(len==8 && memcmp(&buffer[30],"mimetype",8)==0)
+  if(len==8 && memcmp(&buffer[30],"mimetype",8)==0 && le16(file->extra_length)==0)
   {
     const unsigned int compressed_size=le32(file->compressed_size);
     file_recovery_new->extension=zip_parse_parse_entry_mimetype((const char *)&buffer[38], compressed_size);
