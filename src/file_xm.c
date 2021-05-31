@@ -34,7 +34,7 @@
 #include "filegen.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_xm(file_stat_t *file_stat);
 
 const file_hint_t file_hint_xm = {
@@ -45,6 +45,12 @@ const file_hint_t file_hint_xm = {
   .enable_by_default = 1,
   .register_header_check = &register_header_check_xm
 };
+
+struct xm_hdr
+{
+  uint16_t patterns;
+  uint16_t instrs;
+} __attribute__ ((gcc_struct, __packed__));
 
 /*@
   @ requires \valid(fr);
@@ -210,29 +216,27 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
   @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires fr->file_check == &file_check_xm;
   @ ensures \valid(fr->handle);
-  @ assigns *fr->handle, errno, fr->file_size;
-  @ assigns Frama_C_entropy_source;
+  @ assigns *fr->handle, fr->file_size, fr->offset_error;
+  @ assigns Frama_C_entropy_source, errno;
   @*/
 static void file_check_xm(file_recovery_t *fr)
 {
+  char buffer[4];
+  const struct xm_hdr *hdr=(const struct xm_hdr *)&buffer;
   uint16_t patterns, instrs;
 
   fr->file_size = 0;
   fr->offset_error = 0;
-  fr->offset_ok = 0;
 
   if(fseek(fr->handle, 70, SEEK_SET) == -1)
     return;
-  if(fread(&patterns, 2, 1, fr->handle) != 1)
-    return;
-  if(fread(&instrs, 2, 1, fr->handle) != 1)
+  if(fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
     return;
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown(&patterns, sizeof(patterns));
-  Frama_C_make_unknown(&instrs, sizeof(instrs));
+  Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-  instrs = le16(instrs);
-  patterns = le16(patterns);
+  instrs = le16(hdr->instrs);
+  patterns = le16(hdr->patterns);
 
 #ifndef __FRAMAC__
   log_debug("xm: %u patterns, %u instruments\n", patterns, instrs);
