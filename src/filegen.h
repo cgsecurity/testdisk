@@ -37,6 +37,8 @@ extern "C" {
 #endif
 #define PHOTOREC_MAX_SIZE_16 (((uint64_t)1<<15)-1)
 #define PHOTOREC_MAX_SIZE_32 (((uint64_t)1<<31)-1)
+#define PHOTOREC_MAX_SIG_OFFSET	65535
+#define PHOTOREC_MAX_SIG_SIZE 4095
 
 typedef enum { DC_SCAN=0, DC_CONTINUE=1, DC_STOP=2, DC_ERROR=3} data_check_t;
 typedef struct file_hint_struct file_hint_t;
@@ -91,7 +93,8 @@ struct file_recovery_struct
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
   data_check_t (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, time */
+  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time */
+  /* side effect for data_check_flv */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
   uint64_t checkpoint_offset;
@@ -124,13 +127,9 @@ typedef struct
 
 /*@
    predicate valid_file_hint(file_hint_t *file_hint) = (\valid_read(file_hint) && valid_read_string(file_hint->description));
-  @*/
 
-/*@
    predicate valid_file_stat(file_stat_t *file_stat) = (\valid_read(file_stat) && valid_file_hint(file_stat->file_hint));
-  @*/
 
-/*@
    predicate valid_file_recovery(file_recovery_t *file_recovery) = (\valid_read(file_recovery) &&
         valid_read_string((const char *)file_recovery->filename) &&
 	(file_recovery->file_stat == \null || valid_file_stat(file_recovery->file_stat)) &&
@@ -139,28 +138,94 @@ typedef struct
 	(file_recovery->data_check == \null || \valid_function(file_recovery->data_check)) &&
 	(file_recovery->file_check == \null || \valid_function(file_recovery->file_check)) &&
 	(file_recovery->file_rename == \null || \valid_function(file_recovery->file_rename)) &&
-	\separated(file_recovery, file_recovery->extension)
+	\separated(file_recovery, file_recovery->extension) &&
+	\separated(file_recovery, file_recovery->handle) &&
+	\initialized(&file_recovery->calculated_file_size) &&
+	\initialized(&file_recovery->file_check) &&
+	\initialized(&file_recovery->file_size) &&
+	\initialized(&file_recovery->min_filesize) &&
+	\initialized(&file_recovery->time)
 	);
-  @*/
-/*@
-    predicate valid_list_search_space(alloc_data_t *list) = (\valid_read(list) && \valid(list->list.prev) && \valid_read(list->list.next));
-  @*/
 
+    predicate valid_list_search_space(alloc_data_t *list) = (\valid_read(list) && \valid(list->list.prev) && \valid_read(list->list.next));
+
+    predicate valid_header_check_param(unsigned char *buffer, unsigned int buffer_size, unsigned int safe_header_only, file_recovery_t *file_recovery, file_recovery_t *file_recovery_new) =(
+      buffer_size > 0 &&
+      \valid_read(buffer+(0..buffer_size-1)) &&
+      \initialized(buffer+(0..buffer_size-1)) &&
+      valid_file_recovery(file_recovery) &&
+      \valid(file_recovery_new) &&
+      file_recovery_new->blocksize > 0 &&
+      file_recovery_new->blocksize <= buffer_size &&
+      \separated(buffer+(..), file_recovery, file_recovery_new)
+   );
+
+    predicate valid_header_check_result(int res, file_recovery_t *file_recovery_new) =(
+    (res == 0 || res == 1) &&
+    (res != 0 ==> valid_file_recovery(file_recovery_new)) &&
+    (res != 0 ==> (file_recovery_new->file_stat == \null)) &&
+    (res != 0 ==> (file_recovery_new->handle == \null))
+    );
+
+    predicate valid_file_check_param(file_recovery_t *file_recovery) = (
+      \valid(file_recovery) &&
+      \valid(file_recovery->handle) &&
+      valid_file_recovery(file_recovery) &&
+      \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source)
+    );
+
+    predicate valid_file_check_result(file_recovery_t *file_recovery) = (
+      valid_file_recovery(file_recovery) &&
+      \valid(file_recovery->handle)
+    );
+
+    predicate valid_data_check_param(unsigned char *buffer, unsigned int buffer_size, file_recovery_t *file_recovery) = (
+      buffer_size > 0 &&
+      (buffer_size&1)==0 &&
+      \valid_read(buffer+(0..buffer_size-1)) &&
+      \initialized(buffer+(0..buffer_size-1)) &&
+      \valid(file_recovery) &&
+      valid_file_recovery(file_recovery) &&
+      file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE &&
+      \separated(buffer + (..), file_recovery)
+    );
+
+    predicate valid_data_check_result(data_check_t res, file_recovery_t *file_recovery) = (
+      (res == DC_CONTINUE || res == DC_STOP || res == DC_ERROR) &&
+      valid_file_recovery(file_recovery)
+    );
+
+    predicate valid_file_rename_param(file_recovery_t *file_recovery) = (
+      \valid(file_recovery) &&
+      valid_file_recovery(file_recovery) &&
+      \separated(file_recovery, &errno, &Frama_C_entropy_source)
+    );
+    predicate valid_file_rename_result(file_recovery_t *file_recovery) = (
+      \valid(file_recovery) &&
+      valid_file_recovery(file_recovery)
+    );
+
+    predicate valid_register_header_check(file_stat_t *file_stat) = (
+	\valid(file_stat)
+    );
+  @*/
 void free_header_check(void);
 
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(file_recovery->handle);
   @ requires valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
   @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source);
   @ ensures file_recovery->handle == \old(file_recovery->handle);
   @ assigns *file_recovery->handle, errno, Frama_C_entropy_source, file_recovery->file_size;
   @*/
+//  TODO ensures  valid_file_check_result(file_recovery);
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 
 /*@
   @ requires \valid(handle);
-  @ requires 0 < footer_length < 4096;
+  @ requires 0 < footer_length <4096;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
   @ requires \separated(handle, (char *)footer + (..), &errno, &Frama_C_entropy_source);
   @ assigns *handle, errno, Frama_C_entropy_source;
@@ -168,29 +233,20 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode);
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length);
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
   @ requires 0 < footer_length < 4096;
   @ requires \valid_read((char *)footer+(0..footer_length-1));
   @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
-  @ ensures \valid(file_recovery->handle);
-  @ ensures valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length);
 
 /*@
-  @ requires buffer_size >= 2;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_size;
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \initialized(&file_recovery->file_size);
-  @ requires \initialized(&file_recovery->calculated_file_size);
-  @ ensures  valid_file_recovery(file_recovery);
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures  \result == DC_STOP || \result == DC_CONTINUE;
   @ ensures  file_recovery->data_check == &data_check_size;
   @ assigns  \nothing;
@@ -198,29 +254,26 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 /*@
-  @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size;
-  @ requires valid_file_recovery(file_recovery);
-  @ ensures  valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
 void file_check_size(file_recovery_t *file_recovery);
 
 /*@
-  @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size_min;
-  @ requires valid_file_recovery(file_recovery);
-  @ ensures  valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
 void file_check_size_min(file_recovery_t *file_recovery);
 
 /*@
-  @ requires \valid(file_recovery);
   @ requires file_recovery->file_check == &file_check_size_max;
-  @ requires valid_file_recovery(file_recovery);
-  @ ensures  valid_file_recovery(file_recovery);
-  @ assigns file_recovery->file_size;
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
+  @ assigns  file_recovery->file_size;
   @*/
 void file_check_size_max(file_recovery_t *file_recovery);
 
@@ -273,8 +326,9 @@ void file_check_size_max(file_recovery_t *file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
 
 /*@
-  @ requires offset < 0x80000000;
-  @ requires 0 < length <= 4096;
+  @ requires offset <= PHOTOREC_MAX_SIG_OFFSET;
+  @ requires 0 < length <= PHOTOREC_MAX_SIG_SIZE;
+  @ requires offset + length <= PHOTOREC_MAX_SIG_OFFSET;
   @ requires \valid_read((const char *)value+(0..length-1));
   @ requires \valid_function(header_check);
   @ requires \valid(file_stat);
@@ -291,24 +345,20 @@ file_stat_t * init_file_stats(file_enable_t *files_enable);
 
 /*@
   @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires valid_file_recovery(file_recovery);
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures  valid_read_string((char*)&file_recovery->filename);
+  @ ensures  valid_file_recovery(file_recovery);
   @*/
-// ensures  valid_file_recovery(file_recovery);
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
 /*@
   @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
   @ requires valid_file_recovery(file_recovery);
-  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ ensures  valid_file_recovery(file_recovery);
   @*/
-// ensures  valid_file_recovery(file_recovery);
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
 void header_ignored_cond_reset(uint64_t start, uint64_t end);

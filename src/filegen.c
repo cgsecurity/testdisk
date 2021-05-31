@@ -250,15 +250,20 @@ void free_header_check(void)
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
 {
   /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert valid_file_check_result(file_recovery); */
   char buffer[4096];
   int taille;
   if(file_recovery->file_size >= 0x8000000000000000-2)
+  {
+    /*@ assert valid_file_check_result(file_recovery); */
     return ;
+  }
   /*@ assert \valid(file_recovery->handle); */
   if(my_fseek(file_recovery->handle, file_recovery->file_size,SEEK_SET)<0)
   {
     /*@ assert \valid(file_recovery->handle); */
     /*@ assert valid_file_recovery(file_recovery); */
+    /*@ assert valid_file_check_result(file_recovery); */
     return;
   }
   taille=fread(buffer,1, 4096,file_recovery->handle);
@@ -273,6 +278,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     file_recovery->file_size++;
   /*@ assert \valid(file_recovery->handle); */
   /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const unsigned int footer_length)
@@ -332,14 +338,17 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
   if(file_recovery->file_size > 0)
     file_recovery->file_size+= footer_length + extra_length;
   /*@ assert \valid(file_recovery->handle); */
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
   {
+    /*@ assert valid_file_recovery(file_recovery); */
     return DC_STOP;
   }
+  /*@ assert valid_file_recovery(file_recovery); */
   return DC_CONTINUE;
 }
 
@@ -349,18 +358,21 @@ void file_check_size(file_recovery_t *file_recovery)
     file_recovery->file_size=0;
   else
     file_recovery->file_size=file_recovery->calculated_file_size;
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 void file_check_size_min(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size<file_recovery->calculated_file_size)
     file_recovery->file_size=0;
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 void file_check_size_max(file_recovery_t *file_recovery)
 {
   if(file_recovery->file_size > file_recovery->calculated_file_size)
     file_recovery->file_size=file_recovery->calculated_file_size;
+  /*@ assert valid_file_check_result(file_recovery); */
 }
 
 void reset_file_recovery(file_recovery_t *file_recovery)
@@ -419,16 +431,18 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   }
   sign_nbr=index_header_check();
   file_stats[enable_count-1].file_hint=NULL;
+#ifndef __FRAMAC__
   log_info("%u first-level signatures enabled\n", sign_nbr);
+#endif
   return file_stats;
 }
 
 /*@
   @ requires \valid(file_recovery);
-  @ requires valid_read_string((const char*)&file_recovery->filename);
+  @ requires valid_file_recovery(file_recovery);
   @ requires valid_read_string(new_ext);
   @ requires separation: \separated(file_recovery, new_ext);
-  @ ensures valid_read_string((const char*)&file_recovery->filename);
+  @ ensures  valid_file_recovery(file_recovery);
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
@@ -482,6 +496,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   file_recovery->filename[1]='\0';
 #endif
   /*@ assert valid_read_string((const char *)&file_recovery->filename); */
+  /*@ assert valid_file_recovery(file_recovery); */
   return 0;
 }
 
@@ -491,8 +506,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   @ requires 0 <= offset < buffer_size;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures  valid_read_string((char*)&file_recovery->filename);
   @ ensures  new_ext==\null || valid_read_string(new_ext);
+  @ ensures  valid_file_recovery(file_recovery);
   @*/
 static int _file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
@@ -597,12 +612,14 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
     strcpy(file_recovery->filename, new_filename);
     free(new_filename);
     /*@ assert valid_read_string(&file_recovery->filename[0]); */
+    /*@ assert valid_file_recovery(file_recovery); */
     return 0;
 
   }
   free(new_filename);
 #endif
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
+  /*@ assert valid_file_recovery(file_recovery); */
   return -1;
 }
 
