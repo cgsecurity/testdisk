@@ -63,6 +63,7 @@
 #include "nodisk.h"
 #include "chgarch.h"
 #include "chgarchn.h"
+#include "autoset.h"
 
 #if defined(HAVE_NCURSES)
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -243,6 +244,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	  disk_t *disk=current_disk->disk;
 	  const int hpa_dco=is_hpa_or_dco(disk);
 	  autodetect_arch(disk, &arch_none);
+	  autoset_unit(disk);
 	  params->disk=disk;
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      (options->expert == 0 ||
@@ -271,6 +273,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
   const int resume_session=(params->cmd_device!=NULL && strcmp(params->cmd_device,"resume")==0);
+#ifndef __FRAMAC__
   if(params->cmd_device==NULL || resume_session!=0)
   {
     char *saved_device=NULL;
@@ -306,18 +309,23 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
       rename("photorec.ses", "photorec.se2");
     }
   }
+#endif
   if(params->cmd_device!=NULL && params->cmd_run!=NULL)
   {
+    /*@ assert valid_read_string(params->cmd_run); */
     params->disk=photorec_disk_selection_cli(params->cmd_device, list_disk, &list_search_space);
+    /*@ assert valid_disk(params->disk); */
 #if defined(HAVE_NCURSES)
     if(params->disk==NULL)
     {
       log_critical("No disk found\n");
       return intrf_no_disk_ncurses("PhotoRec");
     }
+    /*@ assert valid_disk(params->disk); */
     if(change_arch_type_cli(params->disk, options->verbose, &params->cmd_run)==0 ||
 	change_arch_type_ncurses(params->disk, options->verbose)==0)
     {
+      autoset_unit(params->disk);
       menu_photorec(params, options, &list_search_space);
     }
     return 0;
@@ -325,13 +333,17 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     if(params->disk==NULL)
     {
       log_critical("No disk found\n");
+      /*@ assert params->cmd_run == \null || valid_read_string(params->cmd_run); */
       return 0;
     }
     change_arch_type_cli(params->disk, options->verbose, &params->cmd_run);
+    autoset_unit(disk);
     menu_photorec(params, options, &list_search_space);
+    /*@ assert params->cmd_run == \null || valid_read_string(params->cmd_run); */
     return 0;
 #endif
   }
+  /*@ assert params->cmd_run == \null || valid_read_string(params->cmd_run); */
 #if defined(HAVE_NCURSES)
   return photorec_disk_selection_ncurses(params, options, list_disk, &list_search_space);
 #else
