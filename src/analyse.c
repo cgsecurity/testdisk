@@ -30,13 +30,15 @@
 #include "types.h"
 #include "common.h"
 #include "analyse.h"
+#include "fat.h"
+#include "exfat.h"
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
+#include "apfs.h"
 #include "bfs.h"
 #include "bsd.h"
 #include "btrfs.h"
 #include "cramfs.h"
-#include "exfat.h"
 #include "ext2.h"
-#include "fat.h"
 #include "fatx.h"
 #include "f2fs_fs.h"
 #include "f2fs.h"
@@ -61,8 +63,9 @@
 #include "wbfs.h"
 #include "xfs.h"
 #include "zfs.h"
-#include "log.h"
+#endif
 #include "parti386.h"
+#include "log.h"
 
 int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
@@ -70,10 +73,12 @@ int search_NTFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partiti
       return -1;
   {
     const struct ntfs_boot_sector *ntfs_header=(const struct ntfs_boot_sector*)buffer;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
     /* NTFS recovery using backup sector */
     if(le16(ntfs_header->marker)==0xAA55 &&
 	recover_NTFS(disk, ntfs_header, partition, verbose, dump_ind, 1)==0)
       return 1;
+#endif
   }
   return 0;
 }
@@ -82,6 +87,7 @@ int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
 {
   if(disk->pread(disk, buffer, 0x400, partition->part_offset)!= 0x400)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   {
     const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)buffer;
     const struct hfsp_vh *vh=(const struct hfsp_vh *)buffer;
@@ -99,6 +105,7 @@ int search_HFS_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
       return 1;
     }
   }
+#endif
   return 0;
 }
 
@@ -135,6 +142,7 @@ int search_FAT_backup(unsigned char *buffer, disk_t *disk, partition_t *partitio
 
 int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   /* Expect a buffer filled with 8k to handle the SWAP detection */
   const pv_disk_t *pv=(const pv_disk_t *)buffer;
   const struct cramfs_super *cramfs=(const struct cramfs_super *)buffer;
@@ -149,6 +157,7 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   const struct xfs_sb *xfs=(const struct xfs_sb *)buffer;
   const union swap_header *swap_header=(const union swap_header *)buffer;
   const struct ReFS_boot_sector *refs_header=(const struct ReFS_boot_sector *)buffer;
+  const nx_superblock_t *apfs=(const nx_superblock_t *)buffer;
   static const uint8_t LUKS_MAGIC[LUKS_MAGIC_L] = {'L','U','K','S', 0xba, 0xbe};
 //  assert(sizeof(union swap_header)<=8*DEFAULT_SECTOR_SIZE);
 //  assert(sizeof(pv_disk_t)<=8*DEFAULT_SECTOR_SIZE);
@@ -162,6 +171,9 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
     log_trace("search_type_0 lba=%lu\n",
 	(long unsigned)(partition->part_offset/disk->sector_size));
   }
+  if(le32(apfs->nx_magic)== 0x4253584e &&
+    recover_APFS(disk, apfs, partition, verbose, dump_ind)==0)
+    return 1;
   if((memcmp(swap_header->magic.magic, "SWAP", 4)==0 ||
 	memcmp(swap_header->magic8k.magic, "SWAP", 4)==0) &&
       recover_Linux_SWAP(swap_header, partition)==0)
@@ -212,16 +224,20 @@ int search_type_0(const unsigned char *buffer, disk_t *disk, partition_t *partit
   if(cramfs->magic==le32(CRAMFS_MAGIC) &&
       recover_cramfs(disk, cramfs, partition, verbose, dump_ind)==0)
     return 1;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
   /* Try to locate logical partition that may host truecrypt encrypted filesystem */
   if(buffer[0x1fe]==0x55 && buffer[0x1ff]==0xAA &&
     recover_i386_logical(disk, buffer, partition)==0 &&
     partition->upart_type==UP_UNK)
       return 1;
+#endif
   return 0;
 }
 
 int search_type_1(const unsigned char *buffer, const disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   const struct disklabel *bsd_header=(const struct disklabel *)(buffer+0x200);
   const struct disk_super_block *beos_block=(const struct disk_super_block*)(buffer+0x200);
   const struct cramfs_super *cramfs=(const struct cramfs_super *)(buffer+0x200);
@@ -256,11 +272,13 @@ int search_type_1(const unsigned char *buffer, const disk_t *disk, partition_t *
   if(le32(sunlabel->magic_start) == SUN_LABEL_MAGIC_START &&
       recover_sun_i386(disk, sunlabel, partition, verbose, dump_ind)==0)
     return 1;
+#endif
   return 0;
 }
 
 int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partition, const int verbose, const int dump_ind)
 {
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   const hfs_mdb_t *hfs_mdb=(const hfs_mdb_t *)(buffer+0x400);
   const struct hfsp_vh *vh=(const struct hfsp_vh *)(buffer+0x400);
   const struct ext2_super_block *sb=(const struct ext2_super_block*)(buffer+0x400);
@@ -286,6 +304,7 @@ int search_type_2(const unsigned char *buffer, disk_t *disk, partition_t *partit
   if(sb_f2fs->magic == le32(F2FS_SUPER_MAGIC) &&
       recover_f2fs(disk, sb_f2fs, partition)==0)
     return 1;
+#endif
   return 0;
 }
 
@@ -298,6 +317,7 @@ int search_type_8(unsigned char *buffer, disk_t *disk,partition_t *partition,con
   }
   if(disk->pread(disk, buffer, 4096, partition->part_offset + 4096) != 4096)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   { /* MD 1.2 */
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
     if(le32(sb1->major_version)==1 &&
@@ -307,6 +327,7 @@ int search_type_8(unsigned char *buffer, disk_t *disk,partition_t *partition,con
       return 1;
     }
   }
+#endif
   return 0;
 }
 
@@ -320,6 +341,7 @@ int search_type_16(unsigned char *buffer, disk_t *disk,partition_t *partition,co
   /* 8k offset */
   if(disk->pread(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 16 * 512) != 3 * DEFAULT_SECTOR_SIZE)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   {
     const struct ufs_super_block *ufs=(const struct ufs_super_block *)buffer;
     const struct vdev_boot_header *zfs=(const struct vdev_boot_header*)buffer;
@@ -332,6 +354,7 @@ int search_type_16(unsigned char *buffer, disk_t *disk,partition_t *partition,co
 	recover_ZFS(disk, zfs, partition, verbose, dump_ind)==0)
       return 1;
   }
+#endif
   return 0;
 }
 
@@ -345,6 +368,7 @@ int search_type_64(unsigned char *buffer, disk_t *disk,partition_t *partition,co
   /* 32k offset */
   if(disk->pread(disk, buffer, 3 * DEFAULT_SECTOR_SIZE, partition->part_offset + 63 * 512) != 3 * DEFAULT_SECTOR_SIZE)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   {
     const struct jfs_superblock* jfs=(const struct jfs_superblock*)(buffer+0x200);
     /* Test JFS */
@@ -352,6 +376,7 @@ int search_type_64(unsigned char *buffer, disk_t *disk,partition_t *partition,co
 	recover_JFS(disk, jfs, partition, verbose, dump_ind)==0)
       return 1;
   }
+#endif
   return 0;
 }
 
@@ -364,6 +389,7 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
   }
   if(disk->pread(disk, buffer, 11 * DEFAULT_SECTOR_SIZE, partition->part_offset + 126 * 512) != 11 * DEFAULT_SECTOR_SIZE)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   {
     const unsigned char *buffer_1024=buffer+0x400;
     const struct reiserfs_super_block *rfs=(const struct reiserfs_super_block *)buffer_1024;
@@ -389,6 +415,7 @@ int search_type_128(unsigned char *buffer, disk_t *disk, partition_t *partition,
 	recover_gfs2(disk, gfs2, partition, dump_ind)==0)
       return 1;
   }
+#endif
   return 0;
 }
 
@@ -401,17 +428,20 @@ int search_type_2048(unsigned char *buffer, disk_t *disk, partition_t *partition
   }
   if(disk->pread(disk, buffer, 2*DEFAULT_SECTOR_SIZE, partition->part_offset + 2048 * 512) != 2*DEFAULT_SECTOR_SIZE)
     return -1;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   {
     const struct vmfs_volume *sb_vmfs=(const struct vmfs_volume *)buffer;
     if(le32(sb_vmfs->magic)==0xc001d00d &&
       recover_VMFS(disk, sb_vmfs, partition, verbose, dump_ind)==0)
       return 1;
   }
+#endif
   return 0;
 }
 
 int check_linux(disk_t *disk, partition_t *partition, const int verbose)
 {
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   if(check_JFS(disk, partition)==0 ||
       check_rfs(disk, partition, verbose)==0 ||
       check_EXT2(disk, partition, verbose)==0 ||
@@ -423,6 +453,7 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose)
       check_gfs2(disk, partition)==0 ||
       check_ZFS(disk, partition)==0)
     return 0;
+#endif
   return 1;
 }
 

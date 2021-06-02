@@ -245,6 +245,7 @@ struct efi_guid_s
 
 enum upart_type {
   UP_UNK=0,
+  UP_APFS,
   UP_BEOS,
   UP_BTRFS,
   UP_CRAMFS,
@@ -458,8 +459,9 @@ struct param_disk_struct
        disk->sector_size > 0
       ));
 */
+/*@ predicate valid_list_disk(list_disk_t* root) = ((root == \null) || (\valid_read(root))); */
 
-/*@ predicate valid_list_disk{L}(list_disk_t* root) =
+/* TODO predicate valid_list_disk{L}(list_disk_t* root) =
       \forall list_disk_t *node; \valid(node) && ld_reachable(root,node) ==> \valid(node->disk);
  */
 

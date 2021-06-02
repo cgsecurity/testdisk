@@ -1,4 +1,4 @@
-.PRECIOUS: session_%.framac session_fidentify-%.framac
+.PRECIOUS: session_%.framac session_fidentify-%.framac session_photorec-%.framac
 FRAMA_C_FLAGS=-machdep x86_64 \
 	  -warn-left-shift-negative \
 	  -warn-right-shift-negative \
@@ -36,13 +36,13 @@ endif
 bin_PROGRAMS		= testdisk photorec fidentify $(QPHOTOREC)
 EXTRA_PROGRAMS		= photorecf fuzzerfidentify
 
-smallbase_C		= common.c crc.c ext2_common.c fat_common.c log.c misc.c setdate.c
-smallbase_H		= common.h crc.h ext2_common.h fat_common.h log.h misc.h setdate.h
+smallbase_C		= common.c crc.c apfs_common.c ext2_common.c fat_common.c log.c misc.c setdate.c
+smallbase_H		= common.h crc.h apfs_common.h ext2_common.h fat_common.h log.h misc.h setdate.h
 base_C			= $(smallbase_C) autoset.c ewf.c fnctdsk.c hdaccess.c hdcache.c hdwin32.c hidden.c hpa_dco.c intrf.c iso.c list_sort.c log_part.c msdos.c parti386.c partgpt.c parthumax.c partmac.c partsun.c partnone.c partxbox.c io_redir.c ntfs_io.c ntfs_utl.c partauto.c sudo.c unicode.c win32.c
 base_H			= $(smallbase_H) alignio.h autoset.h ewf.h fnctdsk.h hdaccess.h hdwin32.h hidden.h guid_cmp.h guid_cpy.h hdcache.h hpa_dco.h intrf.h iso.h iso9660.h lang.h list.h list_sort.h log_part.h types.h io_redir.h msdos.h ntfs_utl.h parti386.h partgpt.h parthumax.h partmac.h partsun.h partxbox.h partauto.h sudo.h unicode.h win32.h
 
-fs_C			= analyse.c bfs.c bsd.c btrfs.c cramfs.c exfat.c ext2.c fat.c fatx.c f2fs.c jfs.c gfs2.c hfs.c hfsp.c hpfs.c luks.c lvm.c md.c netware.c ntfs.c refs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c vmfs.c wbfs.c xfs.c zfs.c
-fs_H			= analyse.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h fat.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h hfsp_struct.h luks.h luks_struct.h lvm.h md.h netware.h ntfs.h ntfs_struct.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h xfs_struct.h zfs.h
+fs_C			= analyse.c apfs.c bfs.c bsd.c btrfs.c cramfs.c exfat.c ext2.c fat.c fatx.c f2fs.c jfs.c gfs2.c hfs.c hfsp.c hpfs.c luks.c lvm.c md.c netware.c ntfs.c refs.c rfs.c savehdr.c sun.c swap.c sysv.c ufs.c vmfs.c wbfs.c xfs.c zfs.c
+fs_H			= analyse.h apfs.h bfs.h bsd.h btrfs.h cramfs.h exfat.h ext2.h fat.h fatx.h f2fs.h f2fs_fs.h jfs_superblock.h jfs.h gfs2.h hfs.h hfsp.h hpfs.h hfsp_struct.h luks.h luks_struct.h lvm.h md.h netware.h ntfs.h ntfs_struct.h refs.h rfs.h savehdr.h sun.h swap.h sysv.h ufs.h vmfs.h wbfs.h xfs.h xfs_struct.h zfs.h
 
 testdisk_ncurses_C	= addpart.c addpartn.c adv.c askloc.c chgarch.c chgarchn.c chgtype.c chgtypen.c dimage.c dirn.c dirpart.c diskacc.c diskcapa.c edit.c ext2_sb.c ext2_sbn.c fat1x.c fat32.c fat_adv.c fat_cluster.c fatn.c geometry.c geometryn.c godmode.c hiddenn.c intrface.c intrfn.c nodisk.c ntfs_adv.c ntfs_fix.c ntfs_udl.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c tanalyse.c tbanner.c tdelete.c tdiskop.c tdisksel.c testdisk.c texfat.c thfs.c tload.c tlog.c tmbrcode.c tntfs.c toptions.c tpartwr.c 
 testdisk_ncurses_H	= addpart.h addpartn.h adv.h askloc.h chgarch.h chgarchn.h chgtype.h chgtypen.h dimage.h dirn.h dirpart.h diskacc.h diskcapa.h edit.h ext2_sb.h ext2_sbn.h fat1x.h fat32.h fat_adv.h fat_cluster.h fatn.h geometry.h geometryn.h godmode.h hiddenn.h intrface.h intrfn.h nodisk.h ntfs_adv.h ntfs_fix.h ntfs_udl.h partgptn.h parti386n.h partmacn.h partsunn.h partxboxn.h tanalyse.h tdelete.h tdiskop.h tdisksel.h texfat.h thfs.h tload.h tlog.h tmbrcode.h tntfs.h toptions.h tpartwr.h

@@ -39,6 +39,9 @@
 #include "analyse.h"
 #include "lang.h"
 #include "intrf.h"
+#include "fat_common.h"
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
+#include "apfs.h"
 #include "bfs.h"
 #include "bsd.h"
 #include "btrfs.h"
@@ -46,7 +49,6 @@
 #include "exfat.h"
 #include "ext2.h"
 #include "fat.h"
-#include "fat_common.h"
 #include "fatx.h"
 #include "f2fs_fs.h"
 #include "f2fs.h"
@@ -73,6 +75,7 @@
 #include "vmfs.h"
 #include "wbfs.h"
 #include "zfs.h"
+#endif
 #include "log.h"
 
 /*@
@@ -91,6 +94,8 @@ static int get_geometry_from_nonembr(const unsigned char *buffer, const int verb
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ ensures  valid_list_part(\result);
   @*/
 static list_part_t *read_part_none(disk_t *disk_car, const int verbose, const int saveheader);
 
@@ -143,6 +148,7 @@ static unsigned int get_part_type_none(const partition_t *partition);
 static const char *get_partition_typename_none(const partition_t *partition);
 
 static const struct systypes none_sys_types[] = {
+  {UP_APFS,	"APFS"},
   {UP_BEOS,	"BeFS"},
   {UP_BTRFS,	"btrfs"},
   {UP_CRAMFS,	"CramFS"},
@@ -257,6 +263,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   partition=partition_new(&arch_none);
   buffer_disk=(unsigned char *)MALLOC(16*DEFAULT_SECTOR_SIZE);
   partition->part_size=disk->disk_size;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   if(recover_MD_from_partition(disk, partition, verbose)==0)
     res=1;
   else
@@ -341,6 +348,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
       }
     }
   }
+#endif
   free(buffer_disk);
   if(res<=0)
     partition_reset(partition,&arch_none);
@@ -350,7 +358,9 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   partition->status=STATUS_PRIM;
   screen_buffer_reset();
   check_part_none(disk, verbose,partition,saveheader);
+#ifndef __FRAMAC__
   aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk, partition);
+#endif
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
   if(insert_error>0)
     free(partition);
@@ -395,8 +405,12 @@ static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, c
 static int check_part_none(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader)
 {
   int ret=0;
+#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
   switch(partition->upart_type)
   {
+    case UP_APFS:
+      ret=check_APFS(disk_car, partition);
+      break;
     case UP_BEOS:
       ret=check_BeFS(disk_car,partition);
       break;
@@ -525,6 +539,7 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
     case UP_UNK:
       break;
   }
+#endif
   return ret;
 }
 

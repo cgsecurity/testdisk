@@ -20,7 +20,7 @@
 
  */
 
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,6 +56,7 @@
 #include "chgtype.h"
 #include "partgpt.h"
 #include "savehdr.h"
+#include "apfs.h"
 #include "bfs.h"
 #include "exfat.h"
 #include "fat.h"
@@ -80,6 +81,7 @@ static int check_part_gpt(disk_t *disk, const int verbose, partition_t *partitio
 
 /*@
   @ requires \valid(disk_car);
+  @ ensures  valid_list_part(\result);
   @*/
 static list_part_t *read_part_gpt(disk_t *disk_car, const int verbose, const int saveheader);
 
@@ -100,7 +102,6 @@ static void set_next_status_gpt(const disk_t *disk_car, partition_t *partition);
 
 /*@
   @ requires list_part == \null || \valid_read(list_part);
-  @ assigns \nothing;
   @*/
 static int test_structure_gpt(const list_part_t *list_part);
 
@@ -201,6 +202,11 @@ arch_fnct_t arch_gpt=
   .is_part_known=&is_part_known_gpt
 };
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
+// ensures  valid_list_part(\result);
 static list_part_t *read_part_gpt_aux(disk_t *disk_car, const int verbose, const int saveheader, const uint64_t hdr_lba)
 {
   struct gpt_hdr *gpt;
@@ -398,7 +404,10 @@ list_part_t *add_partition_gpt_cli(const disk_t *disk_car, list_part_t *list_par
   new_partition=partition_new(&arch_gpt);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-new_partition->part_offset;
-  /*@ loop invariant valid_read_string(*current_cmd); */
+  /*@
+    @ loop invariant valid_list_part(list_part);
+    @ loop invariant valid_read_string(*current_cmd);
+    @ */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -434,19 +443,23 @@ list_part_t *add_partition_gpt_cli(const disk_t *disk_car, list_part_t *list_par
     {
       int insert_error=0;
       list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+      /*@ assert valid_list_part(new_list_part); */
       if(insert_error>0)
       {
         free(new_partition);
+	/*@ assert valid_list_part(new_list_part); */
         return new_list_part;
       }
       new_partition->status=STATUS_PRIM;
       if(test_structure_gpt(list_part)!=0)
         new_partition->status=STATUS_DELETED;
+      /*@ assert valid_list_part(new_list_part); */
       return new_list_part;
     }
     else
     {
       free(new_partition);
+      /*@ assert valid_list_part(list_part); */
       return list_part;
     }
   }
@@ -549,6 +562,12 @@ static int check_part_gpt(disk_t *disk, const int verbose,partition_t *partition
     if(ret!=0)
       screen_buffer_add("No HFS or HFS+ structure\n");
   }
+  else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_MAC_APFS)==0)
+  {
+    ret=check_APFS(disk, partition);
+    if(ret!=0)
+      screen_buffer_add("No valid APFS structure\n");
+  }
   else if(guid_cmp(partition->part_type_gpt, GPT_ENT_TYPE_BEOS_BFS)==0)
   {
     ret=check_BeFS(disk, partition);
@@ -576,6 +595,7 @@ static const char *get_gpt_typename(const efi_guid_t part_type_gpt)
   for(i=0; gpt_sys_types[i].name!=NULL; i++)
     if(guid_cmp(gpt_sys_types[i].part_type, part_type_gpt)==0)
       return gpt_sys_types[i].name;
+#ifndef __FRAMAC__
   log_info("%8x %04x %04x %02x %02x %02x %02x %02x %02x %02x %02x\n",
       part_type_gpt.time_low,
       part_type_gpt.time_mid,
@@ -588,6 +608,7 @@ static const char *get_gpt_typename(const efi_guid_t part_type_gpt)
       part_type_gpt.node[3],
       part_type_gpt.node[4],
       part_type_gpt.node[5]);
+#endif
   return NULL;
 }
 
@@ -595,3 +616,4 @@ static const char *get_partition_typename_gpt(const partition_t *partition)
 {
   return get_gpt_typename(partition->part_type_gpt);
 }
+#endif
