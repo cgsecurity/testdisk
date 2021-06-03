@@ -35,11 +35,16 @@
 #include "apfs_common.h"
 #include "log.h"
 
+/*@
+  @ requires \valid_read((char *)data + (0 .. cnt-1));
+  @ assigns  \nothing;
+  @*/
 static uint64_t fletcher64(const uint32_t *data, const size_t cnt, const uint64_t init)
 {
   size_t k;
   uint64_t sum1 = init & 0xFFFFFFFFU;
   uint64_t sum2 = (init >> 32);
+  /*@ loop assigns k, sum1, sum2; */
   for (k = 0; k < cnt; k++)
   {
     sum1 = (sum1 + le32(data[k]));
@@ -50,6 +55,10 @@ static uint64_t fletcher64(const uint32_t *data, const size_t cnt, const uint64_
   return (sum2 << 32) | sum1;
 }
 
+/*@
+  @ requires \valid_read((char *)block+ (0 .. size-1));
+  @ assigns  \nothing;
+  @*/
 static uint64_t VerifyBlock(const void *block, const size_t size)
 {
   uint64_t cs;
