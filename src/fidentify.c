@@ -67,6 +67,78 @@ extern file_check_list_t file_check_list;
 #define OPT_TIME  2
 
 /*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid_function(file_recovery->data_check);
+  @ requires 0 < blocksize <= READ_SIZE;
+  @ requires READ_SIZE % blocksize == 0;
+  @ requires \separated(file_recovery, &errno);
+  @ ensures  valid_file_recovery(file_recovery);
+  @*/
+static data_check_t data_check(file_recovery_t *file_recovery, const unsigned int blocksize)
+{
+  unsigned char *buffer_start;
+  const unsigned int buffer_size=blocksize + READ_SIZE;
+  if( file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE )
+    return DC_STOP;
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0)
+    return DC_STOP;
+  buffer_start=(unsigned char *)MALLOC(buffer_size);
+  /*@
+    @ loop invariant valid_file_recovery(file_recovery);
+    @ loop invariant file_recovery == \at(file_recovery, Pre);
+    @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
+    @*/
+  while(1)
+  {
+    unsigned char *buffer=buffer_start+blocksize;
+    unsigned int i;
+    size_t lu;
+    memset(buffer, 0, READ_SIZE);
+    lu=fread(buffer, 1, READ_SIZE, file_recovery->handle);
+    if(lu <= 0)
+    {
+      free(buffer_start);
+      return DC_STOP;
+    }
+    /*@ assert 0 < lu <= READ_SIZE; */
+    /*@
+      @ loop invariant valid_file_recovery(file_recovery);
+      @ loop invariant file_recovery == \at(file_recovery, Pre);
+      @ loop invariant \valid_read(buffer_start + (0 .. blocksize + READ_SIZE - 1));
+      @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
+      @ loop invariant \valid_function(file_recovery->data_check);
+      @*/
+    for(i=0; i<lu; i+=blocksize)
+    {
+      /*@ assert i + 2*blocksize <= buffer_size; */
+      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
+      const data_check_t res=file_recovery->data_check(&buffer_start[i], 2*blocksize, file_recovery);
+      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
+      file_recovery->file_size+=blocksize;
+      if(res != DC_CONTINUE || file_recovery->data_check==NULL)
+      {
+	free(buffer_start);
+	return res;
+      }
+      if( file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE ||
+	  file_recovery->file_size >= PHOTOREC_MAX_FILE_SIZE)
+      {
+	free(buffer_start);
+	return DC_STOP;
+      }
+      /*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
+    }
+    if(lu != READ_SIZE)
+    {
+      free(buffer_start);
+      return DC_STOP;
+    }
+    memcpy(buffer_start, &buffer_start[READ_SIZE], blocksize);
+  }
+}
+
+/*@
   @ requires valid_read_string(filename);
   @ requires \separated(filename + (..), &errno, &Frama_C_entropy_source, stdout);
   @*/
@@ -139,7 +211,7 @@ static int file_identify(const char *filename, const unsigned int options)
       }
       if(file_recovery_new.file_stat!=NULL &&
 	  file_recovery_new.file_stat->file_hint!=NULL &&
-	  file_recovery_new.file_check!=NULL &&
+	  (file_recovery_new.file_check!=NULL || file_recovery_new.data_check!=NULL) &&
 #ifdef __FRAMAC__
 	  file_recovery_new.extension != NULL &&
 #endif
@@ -160,14 +232,26 @@ static int file_identify(const char *filename, const unsigned int options)
 	{
 	  file_size=0;
 	}
-	file_recovery_new.file_size=file_size;
-	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
+	if(file_size > 0 && file_recovery_new.data_check!=NULL)
+	{
+	  data_check_t data_check_status=data_check(&file_recovery_new, blocksize);
+	  if(data_check_status==DC_ERROR)
+	    file_recovery_new.file_size=0;
+	  /* Adjust file_size so it's possible to fseek to the end of the file correctly */
+	  if(file_recovery_new.file_size > file_size)
+	    file_recovery_new.file_size=file_size;
+	}
+	if(file_recovery_new.data_check==NULL)
+	{
+	  file_recovery_new.file_size=file_size;
+	  file_recovery_new.calculated_file_size=file_recovery_new.file_size;
+	}
 	/*@ assert \valid(&file_recovery_new); */
 	/*@ assert valid_file_recovery(&file_recovery_new); */
 	/*@ assert \valid(file_recovery_new.handle); */
 	/*@ assert \separated(&file_recovery_new, file_recovery_new.handle, file_recovery_new.extension, &errno, &Frama_C_entropy_source); */
 	/*@ assert valid_file_check_param(&file_recovery_new); */
-	if(file_recovery_new.file_size>0)
+	if(file_recovery_new.file_size>0 && file_recovery_new.file_check!=NULL)
 	{
 	  (file_recovery_new.file_check)(&file_recovery_new);
 	}
@@ -181,7 +265,7 @@ static int file_identify(const char *filename, const unsigned int options)
 	printf("%s: %s", filename,
 	    ((file_recovery_new.extension!=NULL && file_recovery_new.extension[0]!='\0')?
 	     file_recovery_new.extension:file_recovery_new.file_stat->file_hint->description));
-	if((options&OPT_CHECK)!=0 && file_recovery_new.file_check!=NULL)
+	if((options&OPT_CHECK)!=0 && (file_recovery_new.file_check!=NULL || file_recovery_new.data_check!=NULL))
 	  printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
 	if((options&OPT_TIME)!=0 && file_recovery_new.time!=0 && file_recovery_new.time!=(time_t)-1)
 #ifdef __FRAMAC__
