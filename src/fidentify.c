@@ -52,7 +52,6 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
-#include "phcfg.h"
 #include "misc.h"
 #include "file_jpg.h"
 #include "file_gz.h"
@@ -69,10 +68,12 @@ extern file_check_list_t file_check_list;
 
 /*@
   @ requires valid_read_string(filename);
+  @ requires \separated(filename + (..), &errno, &Frama_C_entropy_source, stdout);
   @*/
 static int file_identify(const char *filename, const unsigned int options)
 {
   const unsigned int blocksize=65536;
+  /*@ assert blocksize <= READ_SIZE; */
   const unsigned int buffer_size=blocksize + READ_SIZE;
   unsigned char *buffer_start;
   unsigned char *buffer;
@@ -101,23 +102,34 @@ static int file_identify(const char *filename, const unsigned int options)
       reset_file_recovery(&file_recovery_new);
       file_recovery.blocksize=blocksize;
       file_recovery_new.blocksize=blocksize;
+      /*@ assert valid_file_recovery(&file_recovery); */
+      /*@ assert valid_file_recovery(&file_recovery_new); */
       /*@ assert file_recovery_new.file_stat==NULL; */
+      /*@
+        @ loop invariant \valid_read(tmpl);
+	@ loop invariant valid_file_recovery(&file_recovery);
+	@*/
       td_list_for_each(tmpl, &file_check_list.list)
       {
 	const struct td_list_head *tmp;
 	const file_check_list_t *pos=td_list_entry_const(tmpl, const file_check_list_t, list);
+	/*@ assert \valid_read(pos); */
+	/*@ assert pos->offset < READ_SIZE; */
 	const struct td_list_head *tmp_list=&pos->file_checks[buffer[pos->offset]].list;
+	/*@ loop invariant \valid_read(tmp); */
 	td_list_for_each(tmp, tmp_list)
 	{
 	  /*TODO assert tmp!=tmp_list; */
 	  const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
+	  /*@ assert \valid_read(file_check); */
 	  if(
 #ifdef __FRAMAC__
 	    file_check->header_check!=NULL &&
 #endif
 	    (file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
-	      file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
+	    file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
 	  {
+	    /*@ assert valid_file_recovery(&file_recovery_new); */
 	    file_recovery_new.file_stat=file_check->file_stat;
 	    break;
 	  }
@@ -137,15 +149,28 @@ static int file_identify(const char *filename, const unsigned int options)
 	off_t file_size;
 	/*@ assert valid_read_string(file_recovery_new.extension); */
 	file_recovery_new.handle=file;
+	/*@ assert valid_file_recovery(&file_recovery_new); */
 	my_fseek(file_recovery_new.handle, 0, SEEK_END);
 #if defined(HAVE_FTELLO)
 	file_size=ftello(file_recovery_new.handle);
 #else
 	file_size=ftell(file_recovery_new.handle);
 #endif
-	file_recovery_new.file_size=(file_size==-1?0:file_size);
+	if(file_size<=0)
+	{
+	  file_size=0;
+	}
+	file_recovery_new.file_size=file_size;
 	file_recovery_new.calculated_file_size=file_recovery_new.file_size;
-	(file_recovery_new.file_check)(&file_recovery_new);
+	/*@ assert \valid(&file_recovery_new); */
+	/*@ assert valid_file_recovery(&file_recovery_new); */
+	/*@ assert \valid(file_recovery_new.handle); */
+	/*@ assert \separated(&file_recovery_new, file_recovery_new.handle, file_recovery_new.extension, &errno, &Frama_C_entropy_source); */
+	/*@ assert valid_file_check_param(&file_recovery_new); */
+	if(file_recovery_new.file_size>0)
+	{
+	  (file_recovery_new.file_check)(&file_recovery_new);
+	}
 	if(file_recovery_new.file_size < file_recovery_new.min_filesize)
 	  file_recovery_new.file_size=0;
 	if(file_recovery_new.file_size==0)
