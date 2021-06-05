@@ -287,6 +287,12 @@ static int file_identify(const char *filename, const unsigned int options)
 	}
 #endif
 	printf("\n");
+#ifdef __FRAMAC__
+	if(file_recovery_new.file_rename!=NULL)
+	{
+	  file_recovery_new.file_rename(&file_recovery_new);
+	}
+#endif
       }
       else
       {
