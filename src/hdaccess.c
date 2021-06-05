@@ -261,32 +261,15 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
   }
 #elif defined(__CYGWIN__) || defined(__MINGW32__)
   {
-    int do_insert=0;
     char device_hd[]="\\\\.\\PhysicalDrive00";
     char device_cdrom[]="\\\\.\\C:";
-#if defined(__CYGWIN__)
-    char device_scsi[]="/dev/sda";
     /* Disk */
-    for(i=0;i<16;i++)
+    for(i=0;i<64;i++)
     {
-      device_scsi[strlen(device_scsi)-1]='a'+i;
-      list_disk=insert_new_disk(list_disk, file_test_availability(device_scsi, verbose, testdisk_mode));
-    }
-#endif
-    /* Disk */
-    if(list_disk==NULL)
-      do_insert=1;
-    {
-      for(i=0;i<64;i++)
-      {
-	disk_t *disk_car;
-	sprintf(device_hd,"\\\\.\\PhysicalDrive%u", i);
-	disk_car=file_test_availability_win32(device_hd, verbose, testdisk_mode);
-	if(do_insert>0 || (testdisk_mode&TESTDISK_O_ALL)==TESTDISK_O_ALL)
-	  list_disk=insert_new_disk(list_disk,disk_car);
-	else
-	  list_disk=insert_new_disk_nodup(list_disk,disk_car,device_hd, verbose);
-      }
+      disk_t *disk_car;
+      sprintf(device_hd,"\\\\.\\PhysicalDrive%u", i);
+      disk_car=file_test_availability_win32(device_hd, verbose, testdisk_mode);
+      list_disk=insert_new_disk(list_disk,disk_car);
     }
     /* cdrom and digital camera */
     for(i='C';i<='Z';i++)
