@@ -31,7 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_axp(file_stat_t *file_stat);
 
 const file_hint_t file_hint_axp= {
@@ -52,12 +52,8 @@ const unsigned char axp_footer[34]= {
 };
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
-  @ ensures \valid(file_recovery->handle);
-  @ ensures valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -67,14 +63,10 @@ static void file_check_axp(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires buffer_size >= 2*sizeof(axp_footer);
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_axp;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires buffer_size >= 2*sizeof(axp_footer);
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_axp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -98,14 +90,10 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_axp, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_axp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
