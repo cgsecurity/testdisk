@@ -188,12 +188,6 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   return fat;
 }
 
-/*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ ensures \valid(file_recovery->handle);
-  @*/
 void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 {
   unsigned char buffer_header[512];
@@ -349,7 +343,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_doc(file_stat_t *file_stat);
 
@@ -374,12 +368,9 @@ const char WilcomDesignInformationDDD[56]=
 };
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle);
   @ requires file_recovery->file_check == &file_check_doc;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @*/
 static void file_check_doc(file_recovery_t *file_recovery)
 {
@@ -1481,9 +1472,9 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename==&file_rename_doc;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_doc(file_recovery_t *file_recovery)
 {
@@ -1719,21 +1710,14 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= sizeof(struct OLE_HDR);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_doc, buffer, file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_doc);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_doc);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_doc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
