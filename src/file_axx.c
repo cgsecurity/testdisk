@@ -33,7 +33,7 @@
 #include "common.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_axx(file_stat_t *file_stat);
 
 const file_hint_t file_hint_axx= {
@@ -52,53 +52,53 @@ struct SHeader
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires valid_file_recovery(fr);
-  @ requires \valid(fr->handle);
-  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires fr->file_check == &file_check_axx;
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
   @ assigns *fr->handle, errno, fr->file_size;
   @ assigns Frama_C_entropy_source;
-  @
-  @ ensures \valid(fr->handle);
   @*/
 static void file_check_axx(file_recovery_t *fr)
 {
   uint64_t	offset=0x10;
   /*@
     @ loop assigns *fr->handle, errno, fr->file_size;
-    @ loop assigns offset;
+    @ loop assigns offset, Frama_C_entropy_source;
     @ */
   while(offset < 0x8000000000000000)
   {
-    struct SHeader header;
+    char buffer[sizeof(struct SHeader)];
+    const struct SHeader *header=(const struct SHeader *)&buffer;
     unsigned int len;
     if(my_fseek(fr->handle, offset, SEEK_SET) < 0)
       return ;
-    if (fread(&header, sizeof(header), 1, fr->handle)!=1)
+    if (fread(&buffer, sizeof(buffer), 1, fr->handle)!=1)
       return ;
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&header, sizeof(header));
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-    len=le32(header.aoLength);
+    len=le32(header->aoLength);
 #ifdef DEBUG_AAX
-    log_info("axx 0x%llx 0x%x 0x%x/%d\n", (long long int)offset, len, header.oType, header.oType);
+    log_info("axx 0x%llx 0x%x 0x%x/%d\n", (long long int)offset, len, header->oType, header->oType);
 #endif
     if(len<5)
       return ;
     offset+=len;
     if(offset >= 0x8000000000000000)
       break;
-    if(header.oType==63) // eData
+    if(header->oType==63) // eData
     {
+      char buf[sizeof(uint64_t)];
+      const uint64_t *fsize_ptr=(const uint64_t *)&buf;
       uint64_t fsize;
       if(len!=13)
 	return ;
-      if (fread(&fsize, sizeof(fsize), 1, fr->handle)!=1)
+      if (fread(&buf, sizeof(buf), 1, fr->handle)!=1)
 	return ;
 #if defined(__FRAMAC__)
-      Frama_C_make_unknown(&fsize, sizeof(fsize));
+      Frama_C_make_unknown(&buf, sizeof(buf));
 #endif
-      fsize=le64(fsize);
+      fsize=le64(*fsize_ptr);
       if(fsize >= 0x8000000000000000)
 	break;
       offset+=fsize;
@@ -111,13 +111,10 @@ static void file_check_axx(file_recovery_t *fr)
 
 /*@
   @ requires buffer_size > 0x25+sizeof(struct SHeader);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_axx, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_axx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
