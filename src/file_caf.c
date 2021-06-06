@@ -36,7 +36,7 @@
 #include "log.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_caf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_caf= {
@@ -58,17 +58,11 @@ struct chunk_struct
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_caf;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size,file_recovery->data_check,file_recovery->file_check;
   @*/
-/* requires file_recovery->calculated_file_size > 0; */
 static data_check_t data_check_caf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
@@ -114,13 +108,9 @@ static data_check_t data_check_caf(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_caf, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures  \result!=0 && file_recovery_new->data_check==&data_check_caf ==> file_recovery_new->calculated_file_size == 8;
   @ assigns  *file_recovery_new;
   @*/
