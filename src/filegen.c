@@ -113,6 +113,8 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   /*@
     @ loop unroll 256;
     @ loop invariant 0 <= i <= 256;
+    @ loop invariant \forall integer j; (0 <= j < i) ==> newe->file_checks[j].list.prev == &newe->file_checks[j].list;
+    @ loop invariant \forall integer j; (0 <= j < i) ==> newe->file_checks[j].list.next == &newe->file_checks[j].list;
     @ loop assigns i, newe->file_checks[0 .. i-1].list.prev, newe->file_checks[0 .. i-1].list.next;
     @ loop variant 255-i;
     @*/
@@ -398,6 +400,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->checkpoint_offset=0;
   file_recovery->flags=0;
   file_recovery->extra=0;
+  file_recovery->data_check_tmp=0;
 }
 
 file_stat_t * init_file_stats(file_enable_t *files_enable)

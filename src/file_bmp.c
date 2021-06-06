@@ -35,6 +35,9 @@
 #include "__fc_builtin.h"
 #endif
 
+/*@
+  @ requires valid_register_header_check(file_stat);
+  @*/
 static void register_header_check_bmp(file_stat_t *file_stat);
 
 const file_hint_t file_hint_bmp= {
@@ -59,12 +62,19 @@ struct bmp_header
 
 /*@
   @ requires buffer_size >= 18;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_bmp, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bmp.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 65);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 65);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ assigns file_recovery_new->filename[0];
   @ assigns file_recovery_new->time;
   @ assigns file_recovery_new->file_stat;
@@ -86,19 +96,7 @@ struct bmp_header
   @ assigns file_recovery_new->checkpoint_offset;
   @ assigns file_recovery_new->flags;
   @ assigns file_recovery_new->extra;
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bmp.extension);
-  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 65);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 65);
-  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ assigns file_recovery_new->data_check_tmp;
   @*/
 // ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
 static int header_check_bmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -136,9 +134,6 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
   return 0;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
 static void register_header_check_bmp(file_stat_t *file_stat)
 {
   register_header_check(0, bmp_header,sizeof(bmp_header), &header_check_bmp, file_stat);

@@ -101,6 +101,7 @@ struct file_recovery_struct
   int checkpoint_status;	/* 0=suspend at offset_checkpoint if offset_checkpoint>0, 1=resume at offset_checkpoint */
   unsigned int blocksize;
   unsigned int flags;
+  unsigned int data_check_tmp;
 };
 
 typedef struct
@@ -300,6 +301,7 @@ void file_check_size_max(file_recovery_t *file_recovery);
   ensures file_recovery->checkpoint_offset==0;
   ensures file_recovery->flags==0;
   ensures file_recovery->extra==0;
+  ensures file_recovery->data_check_tmp==0;
   assigns file_recovery->filename[0];
   assigns file_recovery->time;
   assigns file_recovery->file_stat;
@@ -321,6 +323,7 @@ void file_check_size_max(file_recovery_t *file_recovery);
   assigns file_recovery->checkpoint_offset;
   assigns file_recovery->flags;
   assigns file_recovery->extra;
+  assigns file_recovery->data_check_tmp;
 */
 //  ensures valid_file_recovery(file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
