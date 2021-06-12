@@ -37,7 +37,7 @@
 #include "log.h"
 #include "fat_common.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_fat(file_stat_t *file_stat);
 
 const file_hint_t file_hint_fat= {
@@ -50,14 +50,28 @@ const file_hint_t file_hint_fat= {
 };
 
 /*@
-  @ requires buffer_size >= sizeof(struct fat_boot_sector);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
   @ requires \valid(file_recovery_new);
   @ requires file_recovery_new->blocksize > 0;
+  @ requires part_size <= 0xffffffff;
+  @ requires sector_size <= 65535;
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_check_fat_aux(file_recovery_t *file_recovery_new, const unsigned int part_size, const unsigned int sector_size)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_fat.extension;
+  file_recovery_new->calculated_file_size=(uint64_t)part_size * sector_size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
+}
+
+/*@
+  @ requires buffer_size >= sizeof(struct fat_boot_sector);
   @ requires separation: \separated(&file_hint_fat, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_fat(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -134,14 +148,7 @@ static int header_check_fat(const unsigned char *buffer, const unsigned int buff
   }
   if(fat_length<fat_length_calc)
     return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_fat.extension;
-  file_recovery_new->calculated_file_size=(uint64_t)
-    (fat_sectors(fat_header)>0?fat_sectors(fat_header):le32(fat_header->total_sect)) *
-    sector_size;
-  file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size;
-  return 1;
+  return header_check_fat_aux(file_recovery_new, part_size, sector_size);
 }
 
 static void register_header_check_fat(file_stat_t *file_stat)
