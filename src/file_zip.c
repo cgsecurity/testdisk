@@ -71,6 +71,7 @@ static const char *extension_epub="epub";
 static const char *extension_jar="jar";
 static const char *extension_kmz="kmz";
 static const char *extension_kra="kra";
+static const char *extension_indd="indd";
 static const char *extension_mmap="mmap";
 static const char *extension_notebook="notebook";
 static const char *extension_numbers="numbers";
@@ -262,6 +263,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
   @ requires \valid_read(mime + (0 .. 127));
   @ requires \initialized(mime + (0 .. 127));
   @ ensures  \result==extension_epub ||
+	\result==extension_indd ||
 	\result==extension_kra ||
 	\result==extension_odg ||
 	\result==extension_odp ||
@@ -291,6 +293,8 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
     return extension_sxi;
   else if(len==39 && memcmp(mime,"application/vnd.oasis.opendocument.text",39)==0)
     return extension_odt;
+  else if(len==43 && memcmp(mime,"application/vnd.adobe.indesign-idml-package",43)==0)
+    return extension_indd;
   else if(len==43 && memcmp(mime,"application/vnd.oasis.opendocument.graphics",43)==0)
     return extension_odg;
   else if(len==45 && memcmp(mime,"application/vnd.adobe.sparkler.project+dcxucf",45)==0)
@@ -318,6 +322,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
@@ -349,6 +354,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
@@ -514,6 +520,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
@@ -545,6 +552,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
@@ -1097,12 +1105,10 @@ static void file_check_zip(file_recovery_t *fr)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_zip;
-  @ requires \separated(file_recovery, &errno, &Frama_C_entropy_source);
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
-/* TODO ensures  valid_read_string((char*)file_recovery->filename); */
 static void file_rename_zip(file_recovery_t *file_recovery)
 {
   const char *ext=NULL;
@@ -1251,6 +1257,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_zip.extension ||
       file_recovery_new->extension == extension_docx ||
       file_recovery_new->extension == extension_epub ||
+      file_recovery_new->extension == extension_indd ||
       file_recovery_new->extension == extension_kra ||
       file_recovery_new->extension == extension_numbers ||
       file_recovery_new->extension == extension_odg ||
@@ -1387,7 +1394,7 @@ static unsigned int pos_in_mem(const unsigned char *haystack, const unsigned int
 }
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_zip(file_stat_t *file_stat)
 {
