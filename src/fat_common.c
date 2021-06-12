@@ -31,13 +31,25 @@
 #include "fat_common.h"
 
 unsigned int fat_sector_size(const struct fat_boot_sector *fat_header)
-{ return (fat_header->sector_size[1]<<8)+fat_header->sector_size[0]; }
+{
+  const unsigned int res=(fat_header->sector_size[1]<<8)+fat_header->sector_size[0];
+  /*@ assert res <= 65535; */
+  return res;
+}
 
 unsigned int get_dir_entries(const struct fat_boot_sector *fat_header)
-{ return (fat_header->dir_entries[1]<<8)+fat_header->dir_entries[0]; }
+{
+  const unsigned int res=(fat_header->dir_entries[1]<<8)+fat_header->dir_entries[0];
+  /*@ assert res <= 65535; */
+  return res;
+}
 
 unsigned int fat_sectors(const struct fat_boot_sector *fat_header)
-{ return (fat_header->sectors[1]<<8)+fat_header->sectors[0]; }
+{
+  const unsigned int res=(fat_header->sectors[1]<<8)+fat_header->sectors[0];
+  /*@ assert res <= 65535; */
+  return res;
+}
 
 unsigned int fat_get_cluster_from_entry(const struct msdos_dir_entry *entry)
 {
