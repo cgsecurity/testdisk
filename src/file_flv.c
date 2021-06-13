@@ -33,7 +33,7 @@
 #include "common.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_flv(file_stat_t *file_stat);
 
 const file_hint_t file_hint_flv= {
@@ -63,23 +63,16 @@ struct flv_tag
   uint8_t	streamID[3];
 } __attribute__ ((gcc_struct, __packed__));
 
-static uint32_t datasize=0;
-
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_flv;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer + (..), file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
-  @ assigns file_recovery->calculated_file_size, datasize;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
+  @ assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
   @*/
 static data_check_t data_check_flv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   /*@
-    @ loop assigns file_recovery->calculated_file_size, datasize;
+    @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 15 < file_recovery->file_size + buffer_size/2)
@@ -89,20 +82,20 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
     const struct flv_tag *tag=(const struct flv_tag *)&buffer[i];
     /*@ assert \valid_read(tag); */
 #ifdef DEBUG_FLV
-    log_info("cfs=0x%llx datasize=%u\n", (long long unsigned)file_recovery->calculated_file_size, datasize);
+    log_info("cfs=0x%llx file_recovery->data_check_tmp=%u\n", (long long unsigned)file_recovery->calculated_file_size, file_recovery->data_check_tmp);
 #endif
     if((be32(tag->prev_tag_size)==0 && file_recovery->calculated_file_size < buffer_size/2) ||
-      be32(tag->prev_tag_size)==11+datasize)
+      be32(tag->prev_tag_size)==11+file_recovery->data_check_tmp)
     {
-      datasize=(tag->data_size[0]<<16) | (tag->data_size[1]<<8) | tag->data_size[2];
-      if((tag->info&0xc0)!=0 || datasize==0
+      file_recovery->data_check_tmp=(tag->data_size[0]<<16) | (tag->data_size[1]<<8) | tag->data_size[2];
+      if((tag->info&0xc0)!=0 || file_recovery->data_check_tmp==0
 	  || tag->streamID[0]!=0 || tag->streamID[1]!=0 || tag->streamID[2]!=0 )
       {
 	file_recovery->calculated_file_size+=4;
 	return DC_STOP;
       }
       /* 4+11=15*/
-      file_recovery->calculated_file_size+=(uint64_t)15+datasize;
+      file_recovery->calculated_file_size+=(uint64_t)15+file_recovery->data_check_tmp;
     }
     else
       return DC_ERROR;
@@ -112,13 +105,10 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
 
 /*@
   @ requires buffer_size >= sizeof(struct flv_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_flv, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_flv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
