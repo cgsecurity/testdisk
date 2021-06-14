@@ -32,7 +32,7 @@
 #include "filegen.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_gif(file_stat_t *file_stat);
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
@@ -46,18 +46,11 @@ const file_hint_t file_hint_gif= {
 };
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires \valid_read(&file_recovery->extension);
-  @ requires valid_read_string(file_recovery->extension);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
-  @ requires \initialized(&file_recovery->time);
-  @
   @ requires file_recovery->file_check == &file_check_gif;
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
-  @
-  @ ensures \valid(file_recovery->handle);
   @*/
 static void file_check_gif(file_recovery_t *file_recovery)
 {
@@ -83,14 +76,9 @@ static void file_check_gif(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_gif;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
   @*/
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -114,6 +102,7 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 	file_recovery->calculated_file_size+=2;
 	if(file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE)
 	  return DC_STOP;
+	/*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
 	file_recovery->data_check=&data_check_gif2;
 	return data_check_gif2(buffer, buffer_size, file_recovery);
       case 0x2c:
@@ -150,14 +139,9 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_gif2;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
   @*/
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -175,6 +159,7 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
     file_recovery->calculated_file_size+=(uint64_t)1+buffer[i];
     if(file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE)
       return DC_STOP;
+    /*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
     if(buffer[i]==0)
     {
       file_recovery->data_check=&data_check_gif;
@@ -186,26 +171,16 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
 
 /*@
   @ requires buffer_size >= 6+7+(3<<8)+1;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_gif, buffer+(..), file_recovery, file_recovery_new);
-  @ assigns  *file_recovery_new;
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
-  @ ensures (\result != 0) ==> file_recovery_new->extension != \null;
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_gif.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->calculated_file_size >= 6+7);
-  @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->extension == file_hint_gif.extension);
+  @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->data_check == &data_check_gif);
   @ ensures (\result == 1 && file_recovery_new->blocksize>=2) ==> (file_recovery_new->file_check == &file_check_gif);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_gif(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
