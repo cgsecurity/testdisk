@@ -39,7 +39,7 @@
 #endif
 
 static const char *extension_pgp="pgp";
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_gpg(file_stat_t *file_stat);
 
 const file_hint_t file_hint_gpg= {
@@ -102,6 +102,7 @@ static unsigned int openpgp_packet_tag(const unsigned char buf)
 /*@ requires \valid_read(buf+(0..5));
   @ requires \valid(length_type);
   @ requires \valid(indeterminate_length);
+  @ requires \separated(buf+(..), indeterminate_length, length_type);
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==3)|| (*length_type==5);
   @ assigns *length_type, *indeterminate_length;
  */
@@ -283,6 +284,7 @@ static int is_valid_S2K(const unsigned int algo)
 /*@
   @ requires \valid(handle);
   @ requires offset + tmp2 < 0x8000000000000000;
+  @ requires \separated(handle, &errno, &Frama_C_entropy_source);
   @ assigns *handle, errno;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -307,13 +309,10 @@ static unsigned int file_check_gpg_pubkey(FILE *handle, const uint64_t offset, c
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_gpg;
-  @ ensures \valid(file_recovery->handle);
-  @ ensures valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -328,12 +327,15 @@ static void file_check_gpg(file_recovery_t *file_recovery)
   file_recovery->file_size=0;
   /*@
     @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+    @ loop invariant valid_file_recovery(file_recovery);
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source;
+    @ loop assigns tag, nbr, partial_body_length, stop, offset;
     @*/
   while(stop==0)
   {
-    unsigned char buffer[32];
+    char sbuffer[32];
+    const unsigned char *buffer=(const unsigned char *)&sbuffer;
     unsigned int i=0;
     unsigned int length_type=0;
     unsigned int length;
@@ -342,16 +344,15 @@ static void file_check_gpg(file_recovery_t *file_recovery)
       return;
     /*@ assert offset < 0x7000000000000000; */
     if(my_fseek(file_recovery->handle, offset, SEEK_SET) < 0 ||
-	fread(&buffer, sizeof(buffer), 1, file_recovery->handle) != 1)
+	fread(&sbuffer, sizeof(sbuffer), 1, file_recovery->handle) != 1)
     {
       if(nbr>=2 && offset <= org_file_size)
 	file_recovery->file_size=org_file_size;
       return;
     }
 #ifdef __FRAMAC__
-    Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+    Frama_C_make_unknown(&sbuffer, sizeof(sbuffer));
 #endif
-
     if(partial_body_length==0)
     {
       if((buffer[0]&0x80)==0)
@@ -389,9 +390,12 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     i+=length_type;
     /*@ assert 0 < i <= 6; */
     offset+=length_type;
-    if(offset >= 0x7000000000000000 || offset + length >= 0x7000000000000000)
+    if(offset >= 0x7000000000000000)
       return ;
     /*@ assert offset < 0x7000000000000000; */
+    /*@ assert length < 0x7000000000000000; */
+    if(offset + length >= 0x7000000000000000)
+      return ;
     /*@ assert offset + length < 0x7000000000000000; */
     if(old_partial_body_length==0)
     {
@@ -513,15 +517,8 @@ static void file_check_gpg(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 23;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_gpg.extension || file_recovery_new->extension == extension_pgp);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
@@ -530,11 +527,8 @@ static void file_check_gpg(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_gpg);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
-//  @ assigns *file_recovery_new;
+//  X assigns *file_recovery_new;
 static int header_check_gpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   uint64_t i=0;
@@ -543,6 +537,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   int partial_body_length=0;
   int stop=0;
   memset(packet_tag, 0, sizeof(packet_tag));
+  /*@ assert \initialized(packet_tag + (0 .. 15)); */
   /*@
     @ loop invariant 0 <= nbr <=16;
     @ loop assigns i, packet_tag[0..nbr], nbr, partial_body_length, stop;
@@ -745,30 +740,29 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=extension_pgp;
     return 1;
   }
-  if( /* encrypted_data.gpg */
-      ((packet_tag[0]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
+  /* encrypted_data.gpg */
+  if(((packet_tag[0]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
 	packet_tag[0]==OPENPGP_TAG_SYMKEY_ENC_SESSION_KEY) &&
-       (packet_tag[1]==OPENPGP_TAG_SYM_ENC_DATA ||
-	packet_tag[1]==OPENPGP_TAG_SYM_ENC_INTEGRITY)) ||
-       /* pubring.gpg */
-      (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
-       packet_tag[1]==OPENPGP_TAG_USER_ID &&
-       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
-       packet_tag[3]==OPENPGP_TAG_TRUST) ||
-      (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
-       packet_tag[1]==OPENPGP_TAG_USER_ID &&
-       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
-       packet_tag[3]==OPENPGP_TAG_PUB_SUBKEY) ||
-       /* secring.gpg */
-      (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
-       packet_tag[1]==OPENPGP_TAG_USER_ID &&
-       packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
-       packet_tag[3]==OPENPGP_TAG_TRUST) ||
-      (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
-       packet_tag[1]==61 &&
-       packet_tag[2]==61 &&
-       packet_tag[3]==61)
-    )
+      (packet_tag[1]==OPENPGP_TAG_SYM_ENC_DATA ||
+       packet_tag[1]==OPENPGP_TAG_SYM_ENC_INTEGRITY)) ||
+    /* pubring.gpg */
+    (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
+     packet_tag[1]==OPENPGP_TAG_USER_ID &&
+     packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+     packet_tag[3]==OPENPGP_TAG_TRUST) ||
+    (packet_tag[0]==OPENPGP_TAG_PUB_KEY &&
+     packet_tag[1]==OPENPGP_TAG_USER_ID &&
+     packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+     packet_tag[3]==OPENPGP_TAG_PUB_SUBKEY) ||
+    /* secring.gpg */
+    (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
+     packet_tag[1]==OPENPGP_TAG_USER_ID &&
+     packet_tag[2]==OPENPGP_TAG_SIGNATURE &&
+     packet_tag[3]==OPENPGP_TAG_TRUST) ||
+    (packet_tag[0]==OPENPGP_TAG_SEC_KEY &&
+     packet_tag[1]==61 &&
+     packet_tag[2]==61 &&
+     packet_tag[3]==61))
   {
     reset_file_recovery(file_recovery_new);
     file_recovery_new->file_check=&file_check_gpg;
@@ -785,7 +779,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_gpg(file_stat_t *file_stat)
 {
