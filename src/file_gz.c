@@ -43,9 +43,8 @@
 #include "filegen.h"
 #include "common.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_gz(file_stat_t *file_stat);
-static void file_rename_gz(file_recovery_t *file_recovery);
 #ifndef SINGLE_FORMAT
 extern const file_hint_t file_hint_doc;
 #endif
@@ -85,6 +84,43 @@ struct gzip_header
 #define GZ_FNAME	8
 #define GZ_FCOMMENT     0x10
 
+/*@
+  @ requires file_recovery->file_rename==&file_rename_gz;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
+  @*/
+static void file_rename_gz(file_recovery_t *file_recovery)
+{
+  unsigned char buffer[512];
+  FILE *file;
+  int buffer_size;
+  if((file=fopen(file_recovery->filename, "rb"))==NULL)
+    return;
+  buffer_size=fread(buffer, 1, sizeof(buffer), file);
+  fclose(file);
+  if(buffer_size<10)
+    return;
+  /*@ assert \initialized(buffer+(0..10)); */
+  if(!(buffer[0]==0x1F && buffer[1]==0x8B && buffer[2]==0x08 && (buffer[3]&0xe0)==0))
+    return ;
+  {
+    const unsigned int flags=buffer[3];
+    int off=10;
+    if((flags&GZ_FEXTRA)!=0)
+    {
+      if(buffer_size<12)
+	return;
+      /*@ assert \initialized(buffer + (0 .. 12)); */
+      off+=2;
+      off+=buffer[10]|(buffer[11]<<8);
+    }
+    if((flags&GZ_FNAME)!=0)
+    {
+      file_rename(file_recovery, buffer, buffer_size, off, NULL, 1);
+    }
+  }
+}
+
 #if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
 /*@ assigns \nothing; */
 static void file_check_bgzf(file_recovery_t *file_recovery)
@@ -97,9 +133,10 @@ static void file_check_bgzf(file_recovery_t *file_recovery)
   @ requires \valid_read(buffer_uncompr + (0 .. 4-1));
   @ requires \valid(file_recovery_new);
   @ requires separation: \separated(buffer+(..), file_recovery_new);
-  @ assigns  *file_recovery_new;
+  @ requires valid_file_recovery(file_recovery_new);
   @ ensures  \result == 1;
-  @ ensures  valid_file_recovery(file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ assigns  *file_recovery_new;
   @*/
 static int header_check_bgzf(const unsigned char *buffer, const unsigned char *buffer_uncompr, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
 {
@@ -138,13 +175,9 @@ static int header_check_bgzf(const unsigned char *buffer, const unsigned char *b
 
 /*@
   @ requires buffer_size >= 16;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_gz, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @*/
 static int header_check_gz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -367,39 +400,6 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
 #endif
   file_recovery_new->extension=file_hint_gz.extension;
   return 1;
-}
-
-/*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires file_recovery->file_rename==&file_rename_gz;
-  @*/
-static void file_rename_gz(file_recovery_t *file_recovery)
-{
-  unsigned char buffer[512];
-  FILE *file;
-  int buffer_size;
-  if((file=fopen(file_recovery->filename, "rb"))==NULL)
-    return;
-  buffer_size=fread(buffer, 1, sizeof(buffer), file);
-  fclose(file);
-  if(buffer_size<10)
-    return;
-  if(!(buffer[0]==0x1F && buffer[1]==0x8B && buffer[2]==0x08 && (buffer[3]&0xe0)==0))
-    return ;
-  {
-    const unsigned int flags=buffer[3];
-    int off=10;
-    if((flags&GZ_FEXTRA)!=0)
-    {
-      off+=2;
-      off+=buffer[10]|(buffer[11]<<8);
-    }
-    if((flags&GZ_FNAME)!=0)
-    {
-      file_rename(file_recovery, buffer, buffer_size, off, NULL, 1);
-    }
-  }
 }
 
 static void register_header_check_gz(file_stat_t *file_stat)
