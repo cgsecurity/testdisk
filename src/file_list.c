@@ -81,6 +81,7 @@ extern const file_hint_t file_hint_cdt;
 extern const file_hint_t file_hint_che;
 extern const file_hint_t file_hint_chm;
 extern const file_hint_t file_hint_class;
+extern const file_hint_t file_hint_clip;
 extern const file_hint_t file_hint_cm;
 extern const file_hint_t file_hint_compress;
 extern const file_hint_t file_hint_cow;
@@ -533,6 +534,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_class)
   { .enable=0, .file_hint=&file_hint_class },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_clip)
+  { .enable=0, .file_hint=&file_hint_clip  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cm)
   { .enable=0, .file_hint=&file_hint_cm  },

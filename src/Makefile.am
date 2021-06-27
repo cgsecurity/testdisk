@@ -103,6 +103,7 @@ file_C			= filegen.c \
 			  file_che.c \
 			  file_chm.c \
 			  file_class.c \
+			  file_clip.c \
 			  file_cm.c \
 			  file_compress.c \
 			  file_cow.c \
