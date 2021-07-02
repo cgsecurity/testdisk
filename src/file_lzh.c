@@ -33,7 +33,7 @@
 #include "filegen.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_lzh(file_stat_t *file_stat);
 
 const file_hint_t file_hint_lzh= {
@@ -57,7 +57,9 @@ struct lzh_level0
   uint8_t  level;
   uint8_t  filename_len;
   /* Size should be 0, be carefull when using sizeof to decrement */
-  uint8_t  filename[1];
+#ifndef __FRAMAC__
+  uint8_t  filename[0];
+#endif
 } __attribute__ ((gcc_struct, __packed__));
 
 struct lzh_level1
@@ -91,9 +93,9 @@ struct lzh_level2
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename==&file_rename_level0;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_level0(file_recovery_t *file_recovery)
 {
@@ -102,28 +104,31 @@ static void file_rename_level0(file_recovery_t *file_recovery)
   size_t buffer_size;
   unsigned int i;
   const struct lzh_level0 *hdr=(const struct lzh_level0 *)&buffer;
+  const char *fn=(const char *)hdr + sizeof(struct lzh_level0);
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   buffer_size=fread(buffer, 1, sizeof(buffer), file);
   fclose(file);
-  if(buffer_size < sizeof(struct lzh_level0) - 1)
+  if(buffer_size < sizeof(struct lzh_level0))
     return;
-  if(buffer_size < sizeof(struct lzh_level0) - 1 + hdr->filename_len)
+  if(buffer_size < sizeof(struct lzh_level0) + hdr->filename_len)
     return;
-  for(i=0; i< hdr->filename_len && hdr->filename[i]!=0 && hdr->filename[i]!='.'; i++);
-  file_rename(file_recovery, hdr->filename, i, 0, NULL, 1);
+  /*@ assert sizeof(struct lzh_level0) + hdr->filename_len <= buffer_size; */
+  /*@
+    @ loop invariant 0 <= i <= hdr->filename_len;
+    @ loop variant i;
+    @*/
+  for(i=0; i< hdr->filename_len && fn[i]!=0 && fn[i]!='.'; i++);
+  /*@ assert 0 <= i <= hdr->filename_len; */
+  file_rename(file_recovery, fn, i, 0, NULL, 1);
 }
 
 /*@
   @ requires buffer_size >= sizeof(struct lzh_level0);
   @ requires buffer_size >= sizeof(struct lzh_level1);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_lzh, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_lzh(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
