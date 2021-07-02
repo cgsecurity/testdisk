@@ -36,7 +36,7 @@
 #include "__fc_builtin.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_mlv(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mlv= {
@@ -89,14 +89,9 @@ static int is_valid_type(const mlv_hdr_t *hdr)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(fr);
   @ requires fr->data_check==&data_check_mlv;
-  @ requires fr->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, fr);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, fr);
+  @ ensures  valid_data_check_result(\result, fr);
   @ assigns fr->calculated_file_size;
   @*/
 static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *fr)
@@ -120,78 +115,79 @@ static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires \separated(file_recovery, file_recovery->handle);
   @ requires file_recovery->file_check == &file_check_mlv;
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
-  @ ensures \valid(file_recovery->handle);
   @*/
 static void file_check_mlv(file_recovery_t *file_recovery)
 {
   uint64_t fs=0;
   /*@
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
-    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns Frama_C_entropy_source, fs;
     @*/
   while(fs < 0x8000000000000000)
   {
-    mlv_hdr_t hdr;
+    char buffer[sizeof(mlv_hdr_t)];
+    const mlv_hdr_t *hdr=(const mlv_hdr_t *)&buffer;
     if(my_fseek(file_recovery->handle, fs, SEEK_SET)<0 ||
-	fread(&hdr, sizeof(hdr), 1, file_recovery->handle)!=1)
+	fread(&buffer, sizeof(buffer), 1, file_recovery->handle)!=1)
     {
       file_recovery->file_size=(fs <= file_recovery->blocksize ? 0 : fs);
       return;
     }
 #if defined(__FRAMAC__)
-    Frama_C_make_unknown(&hdr, sizeof(mlv_hdr_t));
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-    if(le32(hdr.blockSize)<0x10 ||
-	!is_valid_type(&hdr) ||
-	fs + le32(hdr.blockSize) > file_recovery->file_size)
+    if(le32(hdr->blockSize)<0x10 ||
+	!is_valid_type(hdr) ||
+	fs + le32(hdr->blockSize) > file_recovery->file_size)
     {
       file_recovery->file_size=(fs <= file_recovery->blocksize ? 0 : fs);
       return;
     }
-    fs+=le32(hdr.blockSize);
+    fs+=le32(hdr->blockSize);
   }
   file_recovery->file_size=0;
 }
 
 /*@
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename == &file_rename_mlv;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_mlv(file_recovery_t *file_recovery)
 {
   FILE *file;
-  mlv_file_hdr_t hdr;
+  char buffer[sizeof(mlv_file_hdr_t)];
+  const mlv_file_hdr_t *hdr=(const mlv_file_hdr_t *)&buffer;
   char ext[16];
+  const char *ext_ptr=(const char *)&ext;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(my_fseek(file, 0, SEEK_SET) < 0 ||
-      fread(&hdr, sizeof(hdr), 1, file) != 1)
+      fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);
     return ;
   }
   fclose(file);
-  sprintf(ext, "M%02u", le16(hdr.fileNum));
-  file_rename(file_recovery, NULL, 0, 0, ext, 1);
+  sprintf(ext, "M%02u", le16(hdr->fileNum));
+#if defined(__FRAMAC__)
+  ext[sizeof(ext)-1]='\0';
+#endif
+  /*@ assert valid_read_string(ext_ptr); */
+  file_rename(file_recovery, NULL, 0, 0, ext_ptr, 1);
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @
   @ requires buffer_size >= sizeof(mlv_file_hdr_t);
   @ requires separation: \separated(&file_hint_mlv, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
