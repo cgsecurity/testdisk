@@ -33,7 +33,7 @@
 #include "common.h"
 #include "log.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_par2(file_stat_t *file_stat);
 
 const file_hint_t file_hint_par2= {
@@ -50,12 +50,9 @@ static const unsigned char par2_header[8]=  {
 };
 
 /*@
-  @ requires buffer_size >= 2 && (buffer_size&1)==0;
-  @ requires \valid(file_recovery);
-  @ requires \valid_read(buffer + ( 0 .. buffer_size-1));
   @ requires file_recovery->data_check == &data_check_par2;
-  @ requires separation: \separated(buffer+(..), file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_par2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -77,9 +74,9 @@ static data_check_t data_check_par2(const unsigned char *buffer, const unsigned 
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename==&file_rename_par2;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_par2(file_recovery_t *file_recovery)
 {
@@ -87,7 +84,8 @@ static void file_rename_par2(file_recovery_t *file_recovery)
   uint64_t offset=0;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
-  while(1)
+  /*@ loop invariant valid_file_rename_param(file_recovery); */
+  while(offset <= PHOTOREC_MAX_FILE_SIZE)
   {
     uint64_t length;
     size_t buffer_size;
@@ -105,7 +103,7 @@ static void file_rename_par2(file_recovery_t *file_recovery)
       return;
     }
     length=le64(*lengthp);
-    if(length % 4 !=0 || length < 16 ||
+    if(length % 4 !=0 || length < 16 || length >= PHOTOREC_MAX_FILE_SIZE ||
 	memcmp(&buffer, &par2_header, sizeof(par2_header))!=0)
     {
       fclose(file);
@@ -121,17 +119,15 @@ static void file_rename_par2(file_recovery_t *file_recovery)
     }
     offset+=length;
   }
+  fclose(file);
+  return;
 }
 
 /*@
   @ requires buffer_size >= 16;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_par2, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @*/
 static int header_check_par2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
