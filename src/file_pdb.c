@@ -31,7 +31,7 @@
 #include "types.h"
 #include "filegen.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_pdb(file_stat_t *file_stat);
 
 const file_hint_t file_hint_pdb= {
@@ -44,12 +44,9 @@ const file_hint_t file_hint_pdb= {
 };
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_pdb;
-  @ ensures  \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns  file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_pdb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -67,15 +64,15 @@ static data_check_t data_check_pdb(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_check == &file_check_pdb;
-  @ ensures  valid_file_recovery(file_recovery);
-  @ assigns  file_recovery->file_size;
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
+  @ assigns  *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns  Frama_C_entropy_source;
   @*/
 static void file_check_pdb(file_recovery_t *file_recovery)
 {
-  unsigned char buffer[512];
+  char buffer[512];
   if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, 1, sizeof(buffer), file_recovery->handle) < 82)
     return ;
@@ -92,13 +89,9 @@ static void file_check_pdb(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 70;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_pdb, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_pdb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
