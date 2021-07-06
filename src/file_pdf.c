@@ -41,7 +41,7 @@
 #include "common.h"
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_pdf(file_stat_t *file_stat);
 
@@ -78,9 +78,9 @@ static unsigned int hex(const int c)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_pdf;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_pdf(file_recovery_t *file_recovery)
 {
@@ -315,10 +315,8 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 #define PDF_READ_SIZE 20
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @*/
 static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 {
@@ -355,10 +353,8 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @*/
 static void file_check_pdf(file_recovery_t *file_recovery)
 {
@@ -428,13 +424,9 @@ static uint64_t read_pdf_file(const unsigned char *buffer)
 
 /*@
   @ requires buffer_size >= 512;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(&file_hint_pdf, buffer, file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires separation: \separated(&file_hint_pdf, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_pdf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
