@@ -36,7 +36,7 @@
 #include "__fc_builtin.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_pf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_pf= {
@@ -60,21 +60,21 @@ struct pf_header
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename==&file_rename_pf;
-  @ ensures valid_read_string((char*)&file_recovery->filename);
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_pf(file_recovery_t *file_recovery)
 {
   FILE *file;
-  struct pf_header hdr;
+  char buffer[sizeof(struct pf_header)];
+  const struct pf_header *hdr=(const struct pf_header*)&buffer;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
   {
     /*@ assert valid_read_string((char*)&file_recovery->filename); */
     return;
   }
-  if(fread(&hdr, sizeof(hdr), 1, file) != 1)
+  if(fread(&buffer, sizeof(buffer), 1, file) != 1)
   {
     fclose(file);
     /*@ assert valid_read_string((char*)&file_recovery->filename); */
@@ -82,20 +82,15 @@ static void file_rename_pf(file_recovery_t *file_recovery)
   }
   fclose(file);
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
-  file_rename_unicode(file_recovery, &hdr.name, sizeof(hdr.name), 0, "pf", 0);
+  file_rename_unicode(file_recovery, &hdr->name, sizeof(hdr->name), 0, "pf", 0);
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
 }
 
 /*@
   @ requires buffer_size >= sizeof(struct pf_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_pf, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_pf.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= sizeof(struct pf_header));
@@ -103,7 +98,6 @@ static void file_rename_pf(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->data_check==&data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check==&file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename==&file_rename_pf);
-  @ ensures \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_pf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
