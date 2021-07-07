@@ -38,7 +38,7 @@
 
 /* https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/ */
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_psd(file_stat_t *file_stat);
 
 const file_hint_t file_hint_psd= {
@@ -73,9 +73,9 @@ static uint32_t get_be32(const void *buffer, const unsigned int offset)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->data_check==&psd_skip_image_data;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures  file_recovery->data_check==\null;
   @ ensures  \result == DC_CONTINUE;
   @ assigns  file_recovery->data_check, file_recovery->calculated_file_size;
@@ -88,12 +88,9 @@ static data_check_t psd_skip_image_data(const unsigned char *buffer, const unsig
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->data_check==&psd_skip_layer_info;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check==&psd_skip_layer_info || file_recovery->data_check==\null;
   @ ensures  \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
@@ -109,7 +106,7 @@ static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsig
 #ifdef DEBUG_PHOTOSHOP
     log_info("Layer info at 0x%lx, l=0x%x\n", (long unsigned)file_recovery->calculated_file_size, l);
 #endif
-    file_recovery->calculated_file_size+=l+4;
+    file_recovery->calculated_file_size+=(uint64_t)l+4;
 #ifdef DEBUG_PHOTOSHOP
     log_info("Image data at 0x%lx\n", (long unsigned)file_recovery->calculated_file_size);
 #endif
@@ -120,12 +117,9 @@ static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsig
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->data_check==&psd_skip_image_resources;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check==&psd_skip_image_resources || file_recovery->data_check==&psd_skip_layer_info || file_recovery->data_check==\null;
   @ ensures  \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
@@ -141,7 +135,7 @@ static data_check_t psd_skip_image_resources(const unsigned char *buffer, const 
 #ifdef DEBUG_PHOTOSHOP
     log_info("Image resource at 0x%lx, l=0x%x\n", (long unsigned)file_recovery->calculated_file_size, l);
 #endif
-    file_recovery->calculated_file_size+=l+4;
+    file_recovery->calculated_file_size+=(uint64_t)l+4;
 #ifdef DEBUG_PHOTOSHOP
     log_info("Layer info at 0x%lx\n", (long unsigned)file_recovery->calculated_file_size);
 #endif
@@ -153,11 +147,9 @@ static data_check_t psd_skip_image_resources(const unsigned char *buffer, const 
 
 /*@
   @ requires buffer_size >= 32;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&psd_skip_color_mode;
-  @ ensures \result == DC_CONTINUE || \result == DC_ERROR ||  \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check==&psd_skip_color_mode || file_recovery->data_check==&psd_skip_image_resources || file_recovery->data_check==&psd_skip_layer_info || file_recovery->data_check==\null;
   @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
   @*/
@@ -193,13 +185,9 @@ static data_check_t psd_skip_color_mode(const unsigned char *buffer, const unsig
 
 /*@
   @ requires buffer_size >= sizeof(struct psd_file_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_psd, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_psd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
