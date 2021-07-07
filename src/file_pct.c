@@ -36,7 +36,7 @@
 extern const file_hint_t file_hint_indd;
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_pct(file_stat_t *file_stat);
 
 const file_hint_t file_hint_pct= {
@@ -83,32 +83,30 @@ struct pct_file_entry {
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_check == &file_check_pct;
-  @ ensures  valid_file_recovery(file_recovery);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
 static void file_check_pct(file_recovery_t *file_recovery)
 {
+  uint64_t diff;
   if(file_recovery->file_size<0x210 ||
       file_recovery->file_size<file_recovery->min_filesize)
   {
     file_recovery->file_size=0;
     return ;
   }
-  file_recovery->file_size-=((file_recovery->file_size-file_recovery->min_filesize)&0xFFFF);
+  /*@ assert file_recovery->file_size >= file_recovery->min_filesize; */
+  diff=file_recovery->file_size-file_recovery->min_filesize;
+  file_recovery->file_size=file_recovery->min_filesize + (diff&0xffffffffffff0000);
 }
 
 /*@
   @ requires buffer_size >= 0x200+sizeof(struct pct_file_entry);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_pct, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @*/
 static int header_check_pct(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
