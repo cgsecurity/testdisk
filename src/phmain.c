@@ -164,13 +164,15 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=array_file_enable
+    .list_file_format=array_file_enable,
+    .report_only=0
   };
   struct ph_param params;
   params.recup_dir=NULL;
   params.cmd_device=NULL;
   params.cmd_run=NULL;
   params.carve_free_space_only=0;
+  params.report_only=0;
   /* random (weak is ok) is need fot GPT */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
