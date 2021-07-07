@@ -35,7 +35,7 @@
 #include "log.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_qbb(file_stat_t *file_stat);
 
 const file_hint_t file_hint_qbb= {
@@ -74,25 +74,33 @@ struct qbb_header02
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_file_recovery(file_recovery);
   @ requires file_recovery->file_rename==&file_rename_qbb;
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_qbb(file_recovery_t *file_recovery)
 {
   FILE *file;
   unsigned int i=0;
-  unsigned char buffer[4096];
+  char buffer[4096];
+  /*@ assert \valid((char *)&buffer + (0 .. sizeof(buffer)-1)); */
   size_t lu;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   lu=fread(&buffer, 1, sizeof(buffer), file);
   fclose(file);
+  if(lu <= 0)
+    return;
+  /*@ assert 0 < lu <= sizeof(buffer); */
 #if defined(__FRAMAC__)
   Frama_C_make_unknown(buffer, sizeof(buffer));
 #endif
-  while(i+sizeof(struct qbb_header02) < lu)
+  /*@ assert \valid_read((char *)&buffer + (0 .. lu-1)); */
+  /*@ loop assigns i; */
+  while(i+sizeof(struct qbb_header02) <= lu)
   {
+    /*@ assert i+sizeof(struct qbb_header02) <= lu; */
+    /*@ assert i+sizeof(struct qbb_header) <= lu; */
     const struct qbb_header *hdr=(const struct qbb_header*)&buffer[i];
     const unsigned int data_len=le16(hdr->data_len);
     if(le16(hdr->magic)!=0x8645)
@@ -101,10 +109,14 @@ static void file_rename_qbb(file_recovery_t *file_recovery)
     {
       if(i+sizeof(struct qbb_header)+data_len < lu)
       {
-	const struct qbb_header02 *hdr2=(const struct qbb_header02 *)hdr;
+	const struct qbb_header02 *hdr2=(const struct qbb_header02 *)&buffer[i];
+	/*@ assert \valid_read(hdr2); */
 	const unsigned int title_len=le16(hdr2->title_len);
 	if(sizeof(struct qbb_header02)+title_len <= sizeof(struct qbb_header)+data_len)
-	  file_rename(file_recovery, (const char *)hdr2 + sizeof(struct qbb_header02), title_len, 0, NULL, 1);
+	{
+	  const char *title=&buffer[i+sizeof(struct qbb_header02)];
+	  file_rename(file_recovery, title, title_len, 0, NULL, 1);
+	}
       }
       return ;
     }
@@ -114,13 +126,9 @@ static void file_rename_qbb(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 0x10;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_qbb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -168,13 +176,9 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= 0x64;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_qbw(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -194,13 +198,9 @@ static int header_check_qbw(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= 0x87A + 6;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_qbw2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -213,7 +213,6 @@ static int header_check_qbw2(const unsigned char *buffer, const unsigned int buf
   }
   return 0;
 }
-
 
 static void register_header_check_qbb(file_stat_t *file_stat)
 {
