@@ -41,7 +41,7 @@
 
 extern const file_hint_t file_hint_doc;
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_png(file_stat_t *file_stat);
 
 const file_hint_t file_hint_png= {
@@ -108,11 +108,9 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
 }
 
 /*@
-  @ requires \valid(fr);
-  @ requires valid_file_recovery(fr);
-  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires fr->file_check == &file_check_png;
-  @ ensures \valid(fr->handle);
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
   @ assigns *fr->handle, errno, fr->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -141,6 +139,9 @@ static void file_check_png(file_recovery_t *fr)
       fr->file_size=0;
       return ;
     }
+#ifdef __FRAMAC__
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
+#endif
     length = be32(chunk->length);
     fr->file_size+=(uint64_t)12 + length;
     if(fr->file_size >= 0x8000000000000000)
@@ -149,9 +150,17 @@ static void file_check_png(file_recovery_t *fr)
       return ;
     if(memcmp(&buffer[4], "IHDR", 4) == 0)
     {
-      struct png_ihdr ihdr;
-      if(fread(&ihdr, sizeof(ihdr), 1, fr->handle) != 1 ||
-	  png_check_ihdr(&ihdr)==0)
+      char buf_ihdr[sizeof(struct png_ihdr)];
+      const struct png_ihdr *ihdr=(const struct png_ihdr *)&buf_ihdr;
+      if(fread(&buf_ihdr, sizeof(buf_ihdr), 1, fr->handle) != 1)
+      {
+	fr->file_size=0;
+	return ;
+      }
+#ifdef __FRAMAC__
+      Frama_C_make_unknown(&buf_ihdr, sizeof(buf_ihdr));
+#endif
+      if(png_check_ihdr(ihdr)==0)
       {
 	fr->file_size=0;
 	return ;
@@ -161,12 +170,9 @@ static void file_check_png(file_recovery_t *fr)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mng;
-  @ ensures  \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns  file_recovery->calculated_file_size, file_recovery->offset_ok, file_recovery->offset_error;
   @*/
 static data_check_t data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -202,12 +208,9 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_png;
-  @ ensures  \result == DC_CONTINUE || \result == DC_STOP || \result == DC_ERROR;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns  file_recovery->calculated_file_size, file_recovery->offset_ok, file_recovery->offset_error;
   @*/
 static data_check_t data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -246,12 +249,9 @@ static data_check_t data_check_png(const unsigned char *buffer, const unsigned i
 
 /*@
   @ requires buffer_size >= 16;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_png, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_jng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -278,12 +278,9 @@ static int header_check_jng(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= 16;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_png, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_mng(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -310,12 +307,9 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= 16 + sizeof(struct png_ihdr);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_png, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
