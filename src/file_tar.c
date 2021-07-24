@@ -33,7 +33,7 @@
 #include "filegen.h"
 #include "file_tar.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_tar(file_stat_t *file_stat);
 static const unsigned char tar_header_gnu[6] = { 'u', 's', 't', 'a', 'r', 0x00 };
 static const unsigned char tar_header_posix[8] = { 'u', 's', 't', 'a', 'r', ' ', ' ', 0x00 };
@@ -106,14 +106,9 @@ int is_valid_tar_header(const struct tar_posix_header *h)
 
 /*@
   @ requires buffer_size >= sizeof(struct tar_posix_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_tar, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -134,7 +129,7 @@ static int header_check_tar(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_tar(file_stat_t *file_stat)
 {
