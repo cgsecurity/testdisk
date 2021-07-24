@@ -36,7 +36,7 @@
 #include "log.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_riff(file_stat_t *file_stat);
 
 const file_hint_t file_hint_riff= {
@@ -169,11 +169,9 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
 }
 
 /*@
-  @ requires \valid(fr);
-  @ requires valid_file_recovery(fr);
-  @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires fr->file_check == &file_check_avi;
-  @ ensures \valid(fr->handle);
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
   @ assigns *fr->handle, errno, fr->file_size;
   @ assigns fr->offset_error, fr->offset_ok;
   @ assigns Frama_C_entropy_source;
@@ -191,34 +189,38 @@ static void file_check_avi(file_recovery_t *fr)
   while(fr->file_size!=fr->calculated_file_size)
   {
     const uint64_t file_size=fr->file_size;
-    riff_list_header_t list_header;
     uint64_t calculated_file_size;
+    char buffer[sizeof(riff_list_header_t)];
+    const riff_list_header_t *list_header=(const riff_list_header_t *)&buffer;
     if(my_fseek(fr->handle, fr->file_size, SEEK_SET)<0)
     {
       fr->file_size=0;
       return ;
     }
-    if (fread(&list_header, sizeof(list_header), 1, fr->handle)!=1)
+    if (fread(&buffer, sizeof(buffer), 1, fr->handle)!=1)
     {
       fr->file_size=0;
       return;
     }
-#ifdef DEBUG_RIFF
-    log_riff_list(file_size, 0, &list_header);
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
-    if(memcmp(&list_header.dwList, "RIFF", 4) != 0)
+#ifdef DEBUG_RIFF
+    log_riff_list(file_size, 0, list_header);
+#endif
+    if(memcmp(&list_header->dwList, "RIFF", 4) != 0)
     {
       fr->offset_error=fr->file_size;
       return;
     }
-    calculated_file_size=file_size + 8 + le32(list_header.dwSize);
+    calculated_file_size=file_size + 8 + le32(list_header->dwSize);
     if(calculated_file_size > PHOTOREC_MAX_FILE_SIZE)
     {
       fr->file_size=0;
       return;
     }
     /*@ assert calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
-    check_riff_list(fr, 1, file_size + sizeof(list_header), calculated_file_size - 1);
+    check_riff_list(fr, 1, file_size + sizeof(riff_list_header_t), calculated_file_size - 1);
     if(fr->offset_error > 0)
     {
       fr->file_size=0;
@@ -229,14 +231,9 @@ static void file_check_avi(file_recovery_t *fr)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_avi;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -282,12 +279,9 @@ data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned i
 
 /*@
   @ requires buffer_size >= 12;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_riff, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_riff(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -393,12 +387,9 @@ static int header_check_riff(const unsigned char *buffer, const unsigned int buf
 
 /*@
   @ requires buffer_size >= 12;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_riff, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_rifx(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
