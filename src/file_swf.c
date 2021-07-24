@@ -44,7 +44,7 @@
 #endif
 
 static const char *extension_swc="swc";
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_swf(file_stat_t *file_stat);
 
 const file_hint_t file_hint_swf= {
@@ -117,22 +117,13 @@ static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigne
 
 /*@
   @ requires buffer_size >= 512;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size_max);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_swc);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_swfc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -209,22 +200,13 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
 
 /*@
   @ requires buffer_size >= sizeof(struct swf_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_swf.extension);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_swf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -262,22 +244,13 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= sizeof(struct swfz_header);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size_max);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_swf.extension);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_swfz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -297,7 +270,7 @@ static int header_check_swfz(const unsigned char *buffer, const unsigned int buf
 }
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_swf(file_stat_t *file_stat)
 {
