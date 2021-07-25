@@ -35,9 +35,8 @@
 #include "filegen.h"
 #include "common.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_tib(file_stat_t *file_stat);
-static int header_check_tib(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 
 const file_hint_t file_hint_tib= {
   .extension="tib",
@@ -51,13 +50,9 @@ const file_hint_t file_hint_tib= {
 static const unsigned char tib2_footer[7]= {0x00, 0x00, 0x20, 0xa2, 0xb9, 0x24, 0xce};
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_tib2;
-  @ requires \separated(buffer + (..), file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
 static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -76,16 +71,14 @@ static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned 
 }
 
 /*@
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_tib2;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_tib2(file_recovery_t *file_recovery)
 {
-  unsigned char buffer[512];
   int64_t file_size;
   if(file_recovery->calculated_file_size < 512)
   {
@@ -94,27 +87,31 @@ static void file_check_tib2(file_recovery_t *file_recovery)
   }
   file_size=file_recovery->calculated_file_size-512;
   file_recovery->file_size = file_recovery->calculated_file_size;
-  if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
-      fread(buffer, 1, 512, file_recovery->handle) != 512)
   {
-    file_recovery->file_size=0;
-    return;
-  }
+    char buffer[512];
+    if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
+	fread(buffer, 1, 512, file_recovery->handle) != 512)
+    {
+      file_recovery->file_size=0;
+      return;
+    }
 #ifdef __FRAMAC__
-  Frama_C_make_unknown(buffer, 512);
+    Frama_C_make_unknown(buffer, 512);
 #endif
-  if(memcmp(&buffer[512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
-  {
-    return;
+    if(memcmp(&buffer[512 - sizeof(tib2_footer)], tib2_footer, sizeof(tib2_footer))==0)
+    {
+      return;
+    }
   }
 
 /*@
-  @ assigns *file_recovery->handle, errno, file_size;
-  @ assigns Frama_C_entropy_source;
+  @ loop assigns *file_recovery->handle, errno, file_size;
+  @ loop assigns Frama_C_entropy_source;
   @*/
   for(; file_size>0; file_size-=512)
   {
     unsigned int i;
+    char buffer[512];
     if(my_fseek(file_recovery->handle, file_size, SEEK_SET) < 0 ||
 	fread(buffer, 1, 512, file_recovery->handle) != 512)
     {
@@ -132,14 +129,9 @@ static void file_check_tib2(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_tib, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_tib(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -150,14 +142,9 @@ static int header_check_tib(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_tib, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result == 0 || \result == 1;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
