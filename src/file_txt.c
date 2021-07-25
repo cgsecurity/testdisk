@@ -62,17 +62,18 @@ typedef struct
   const char *extension;
 } txt_header_t;
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_fasttxt(file_stat_t *file_stat);
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_snz(file_stat_t *file_stat);
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_txt(file_stat_t *file_stat);
 
 static const char *extension_asp="asp";
 static const char *extension_bat="bat";
 static const char *extension_c="c";
 static const char *extension_csv="csv";
+static const char *extension_cdxml="cdxml";
 static const char *extension_dc="dc";
 static const char *extension_emlx="emlx";
 static const char *extension_ers="ers";
@@ -105,6 +106,7 @@ static const char *extension_jsp="jsp";
 static const char *extension_ldif="ldif";
 static const char *extension_ly="ly";
 static const char *extension_mbox="mbox";
+static const char *extension_mol2="mol2";
 static const char *extension_php="php";
 static const char *extension_pl="pl";
 #ifdef DJGPP
@@ -683,12 +685,10 @@ static int UTF2Lat(unsigned char *buffer_lower, const unsigned char *buffer, con
 }
 
 /*@
-  @ requires buffer_size >= 2 && (buffer_size&1)==0;
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_html;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
-  @ ensures \result == DC_STOP || \result == DC_CONTINUE;
   @*/
 static data_check_t data_check_html(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -729,12 +729,10 @@ static data_check_t data_check_html(const unsigned char *buffer, const unsigned 
 }
 
 /*@
-  @ requires buffer_size >= 2 && (buffer_size&1)==0;
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_ttd;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
-  @ ensures \result == DC_STOP || \result == DC_CONTINUE;
   @*/
 static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -757,12 +755,10 @@ static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size >= 2 && (buffer_size&1)==0;
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_txt;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
-  @ ensures \result == DC_STOP || \result == DC_CONTINUE;
   @*/
 static data_check_t data_check_txt(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -778,13 +774,12 @@ static data_check_t data_check_txt(const unsigned char *buffer, const unsigned i
 }
 
 /*@
-  @ requires buffer_size >= 10 && (buffer_size&1)==0;
-  @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check == &data_check_xml_utf8;
-  @ assigns file_recovery->calculated_file_size,file_recovery->data_check;
-  @ ensures \result == DC_STOP || \result == DC_CONTINUE;
+  @ requires buffer_size >= 10;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures \result == DC_CONTINUE ==> (file_recovery->data_check==&data_check_txt);
+  @ assigns file_recovery->calculated_file_size,file_recovery->data_check;
   @*/
 static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
@@ -803,10 +798,9 @@ static data_check_t data_check_xml_utf8(const unsigned char *buffer, const unsig
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_fods;
-  @ ensures valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_fods(file_recovery_t *file_recovery)
 {
@@ -827,6 +821,9 @@ static void file_rename_fods(file_recovery_t *file_recovery)
     /*@ assert valid_read_string((char*)file_recovery->filename); */
     return ;
   }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, sizeof(buffer)-1);
+#endif
   fclose(file);
   buffer[lu]='\0';
 #ifndef __FRAMAC__
@@ -857,10 +854,9 @@ static void file_rename_fods(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires valid_read_string((char*)file_recovery->filename);
   @ requires file_recovery->file_rename==&file_rename_html;
-  @ ensures valid_read_string((char*)file_recovery->filename);
+  @ requires valid_file_rename_param(file_recovery);
+  @ ensures  valid_file_rename_result(file_recovery);
   @*/
 static void file_rename_html(file_recovery_t *file_recovery)
 {
@@ -880,6 +876,9 @@ static void file_rename_html(file_recovery_t *file_recovery)
     /*@ assert valid_read_string((char*)file_recovery->filename); */
     return ;
   }
+#if defined(__FRAMAC__)
+  Frama_C_make_unknown(buffer, sizeof(buffer)-1);
+#endif
   fclose(file);
   buffer[lu]='\0';
 #ifndef __FRAMAC__
@@ -909,12 +908,9 @@ static void file_rename_html(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_emlx;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -931,12 +927,9 @@ static void file_check_emlx(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_ers;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -947,12 +940,9 @@ static void file_check_ers(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_gpx;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -963,12 +953,9 @@ static void file_check_gpx(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_svg;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -979,12 +966,9 @@ static void file_check_svg(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_smil;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -995,12 +979,9 @@ static void file_check_smil(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_vbm;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -1011,12 +992,9 @@ static void file_check_vbm(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires \valid(file_recovery->handle);
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
   @ requires file_recovery->file_check == &file_check_xml;
-  @ ensures \valid(file_recovery->handle);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
   @ assigns *file_recovery->handle, errno, file_recovery->file_size;
   @ assigns Frama_C_entropy_source;
   @*/
@@ -1027,17 +1005,9 @@ static void file_check_xml(file_recovery_t *file_recovery)
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures  (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures  (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures  (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures  (\result == 1) ==> (file_recovery_new->extension == extension_dc);
   @ ensures  (\result == 1) ==> (file_recovery_new->file_size == 0);
@@ -1045,9 +1015,6 @@ static void file_check_xml(file_recovery_t *file_recovery)
   @ ensures  (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures  (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures  (\result == 1) ==> (file_recovery_new->file_rename == \null);
-  @ ensures  (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures  (\result == 1) ==> (\separated(file_recovery_new, file_recovery_new->extension));
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_dc(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1070,17 +1037,10 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures \result == 1;
-  @ ensures  file_recovery_new->file_stat == \null;
-  @ ensures  file_recovery_new->handle == \null;
   @ ensures  file_recovery_new->calculated_file_size == 0;
   @ ensures  file_recovery_new->extension == extension_ers;
   @ ensures  file_recovery_new->file_size == 0;
@@ -1088,9 +1048,6 @@ static int header_check_dc(const unsigned char *buffer, const unsigned int buffe
   @ ensures  file_recovery_new->data_check == &data_check_txt;
   @ ensures  file_recovery_new->file_check == &file_check_ers;
   @ ensures  file_recovery_new->file_rename == \null;
-  @ ensures  valid_read_string(file_recovery_new->extension);
-  @ ensures  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_ers(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1107,26 +1064,15 @@ static int header_check_ers(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize > 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1167,17 +1113,9 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_html);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
@@ -1185,9 +1123,6 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_html);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_html);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_html(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1213,26 +1148,15 @@ static int header_check_html(const unsigned char *buffer, const unsigned int buf
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_ics);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_ics(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -1269,6 +1193,10 @@ static int header_check_ics(const unsigned char *buffer, const unsigned int buff
 }
 
 #ifdef UTF16
+/*@
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @*/
 static int header_check_le16_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i;
@@ -1300,26 +1228,15 @@ static int header_check_le16_txt(const unsigned char *buffer, const unsigned int
 #endif
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_mbox);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_mbox(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1356,26 +1273,37 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_mol2);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ assigns  *file_recovery_new;
+  @*/
+static int header_check_mol2(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+{
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->data_check=&data_check_txt;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->extension=extension_mol2;
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
+}
+
+/*@
+  @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_java || file_recovery_new->extension == extension_pm);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_perlm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1410,26 +1338,15 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_rtf);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_rtf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1460,26 +1377,15 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_smil);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_smil);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_smil(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1497,25 +1403,14 @@ static int header_check_smil(const unsigned char *buffer, const unsigned int buf
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_snz, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_snz.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_snz(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1537,26 +1432,15 @@ static int header_check_snz(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_stl);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_stl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1577,26 +1461,16 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_svg);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_svg);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_svg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1612,26 +1486,15 @@ static int header_check_svg(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_mbox);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_thunderbird(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1658,25 +1521,15 @@ static int header_check_thunderbird(const unsigned char *buffer, const unsigned 
 }
 
 /*@
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_ttd);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_ttd);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size_max);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_ttd(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -1694,26 +1547,15 @@ static int header_check_ttd(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null || file_recovery_new->data_check == &data_check_html || file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_emlx || file_recovery_new->file_check == &file_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null || file_recovery_new->file_rename == &file_rename_html);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_txt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -2066,26 +1908,15 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_vbm);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_vbm);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_vbm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -2101,17 +1932,10 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures  \result == 1;
-  @ ensures  file_recovery_new->file_stat == \null;
-  @ ensures  file_recovery_new->handle == \null;
   @ ensures  file_recovery_new->calculated_file_size == 0;
   @ ensures  file_recovery_new->file_size == 0;
   @ ensures  file_recovery_new->min_filesize == 0;
@@ -2125,9 +1949,6 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
   @ ensures  file_recovery_new->file_rename == \null ||
 				file_recovery_new->file_rename == &file_rename_fods ||
 				file_recovery_new->file_rename == &file_rename_html;
-  @ ensures  valid_read_string(file_recovery_new->extension);
-  @ ensures  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -2181,6 +2002,12 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
       /* Scalable Vector Graphics */
       file_recovery_new->extension=extension_svg;
       file_recovery_new->file_check=&file_check_svg;
+      free(buf);
+      return 1;
+    }
+    else if(strncasecmp(tmp, "<!DOCTYPE CDXML", 15)==0)
+    {
+      file_recovery_new->extension=extension_cdxml;
       free(buf);
       return 1;
     }
@@ -2240,17 +2067,10 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures  \result == 1;
-  @ ensures  file_recovery_new->file_stat == \null;
-  @ ensures  file_recovery_new->handle == \null;
   @ ensures  file_recovery_new->extension == extension_ghx || file_recovery_new->extension == extension_xml;
   @ ensures  file_recovery_new->calculated_file_size == 0;
   @ ensures  file_recovery_new->file_size == 0;
@@ -2258,9 +2078,6 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
   @ ensures  (buffer_size >= 10) ==> (file_recovery_new->data_check == &data_check_xml_utf8);
   @ ensures  (buffer_size < 10) ==> file_recovery_new->data_check == \null;
   @ ensures  file_recovery_new->file_check == &file_check_xml;
-  @ ensures  valid_read_string(file_recovery_new->extension);
-  @ ensures  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -2300,26 +2117,15 @@ static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_xml);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == \null);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_xml_utf16(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -2340,26 +2146,15 @@ static int header_check_xml_utf16(const unsigned char *buffer, const unsigned in
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == extension_xmp);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_txt);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
-  @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_xmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -2385,9 +2180,7 @@ static int header_check_xmp(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_fasttxt(file_stat_t *file_stat)
 {
   static const unsigned char header_xml_utf8[17]	= {0xef, 0xbb, 0xbf, '<', '?', 'x', 'm', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '='};
@@ -2433,11 +2226,10 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   register_header_check(0, "FF 09 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FFFF 00", 55, &header_check_ttd, file_stat);
   register_header_check(0, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"", 35, &header_check_xmp, file_stat);
   register_header_check(0, "<svg xmlns=\"http://www.w3.org/2000/svg\"", 39, &header_check_svg, file_stat);
+  register_header_check(0, "@<TRIPOS>MOLECULE", 17, &header_check_mol2, file_stat);
 }
 
-/*@
-  @ requires \valid(file_stat);
-  @*/
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_snz(file_stat_t *file_stat)
 {
   register_header_check(0, "DEFAULT\n",   8, &header_check_snz, file_stat);
@@ -2445,7 +2237,7 @@ static void register_header_check_snz(file_stat_t *file_stat)
 }
 
 /*@
-  @ requires \valid(file_stat);
+  @ requires valid_register_header_check(file_stat);
   @*/
 static void register_header_check_txt(file_stat_t *file_stat)
 {
@@ -2483,15 +2275,23 @@ static int main_dc()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+
+  /*@ assert valid_read_string((const char *)file_recovery.filename); */
+  /*@ assert (file_recovery.file_stat == \null || valid_file_stat(file_recovery.file_stat)); */
+  /*@ assert (file_recovery.handle == \null || \valid(file_recovery.handle)); */
+  /*@ assert (file_recovery.extension == \null || valid_read_string(file_recovery.extension)); */
+  /*@ assert (file_recovery.data_check == \null || \valid_function(file_recovery.data_check)); */
+  /*@ assert (file_recovery.file_check == \null || \valid_function(file_recovery.file_check)); */
+  /*@ assert (file_recovery.file_rename == \null || \valid_function(file_recovery.file_rename)); */
+  /*@ assert \separated(&file_recovery, file_recovery.extension); */
+  /*@ assert \initialized(&file_recovery.calculated_file_size); */
+  /*@ assert \initialized(&file_recovery.file_check); */
+  /*@ assert \initialized(&file_recovery.file_size); */
+  /*@ assert \initialized(&file_recovery.min_filesize); */
+  /*@ assert \initialized(&file_recovery.time); */
+
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -2547,6 +2347,22 @@ static int main_dc()
     /*@ assert file_recovery_new.extension == extension_dc; */
     /*@ assert valid_read_string(extension_dc); */
     /*@ assert valid_read_string((char *)file_recovery_new.filename); */
+
+    /*@ assert valid_read_string((const char *)file_recovery_new.filename); */
+    /*@ assert (file_recovery_new.file_stat == \null || valid_file_stat(file_recovery_new.file_stat)); */
+    /*@ assert (file_recovery_new.handle == \null || \valid(file_recovery_new.handle)); */
+    /*@ assert (file_recovery_new.extension == \null || valid_read_string(file_recovery_new.extension)); */
+    /*@ assert (file_recovery_new.data_check == \null || \valid_function(file_recovery_new.data_check)); */
+    /*@ assert (file_recovery_new.file_check == \null || \valid_function(file_recovery_new.file_check)); */
+    /*@ assert (file_recovery_new.file_rename == \null || \valid_function(file_recovery_new.file_rename)); */
+    /*@ assert \separated(&file_recovery_new, file_recovery_new.extension); */
+    /*@ assert \initialized(&file_recovery_new.calculated_file_size); */
+    /*@ assert \initialized(&file_recovery_new.file_check); */
+    /*@ assert \initialized(&file_recovery_new.file_size); */
+    /*@ assert \initialized(&file_recovery_new.min_filesize); */
+    /*@ assert \initialized(&file_recovery_new.time); */
+
+
     header_check_dc(buffer, BLOCKSIZE, 0, &file_recovery_new, &file_recovery_new2);
   }
   /*@ assert valid_read_string((char *)file_recovery_new.filename); */
@@ -2577,15 +2393,8 @@ static int main_ers()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -2671,15 +2480,8 @@ static int main_fasttxt()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -2764,15 +2566,8 @@ static int main_html()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -2859,15 +2654,8 @@ static int main_ics()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -2952,15 +2740,8 @@ static int main_mbox()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3044,15 +2825,8 @@ static int main_perlm()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3133,15 +2907,8 @@ static int main_rtf()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3221,14 +2988,8 @@ static int main_smail()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3308,15 +3069,8 @@ static int main_snz()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_snz;
   file_stats.not_recovered=0;
@@ -3396,15 +3150,8 @@ static int main_stl()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3484,14 +3231,8 @@ static int main_svg()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3636,15 +3377,8 @@ static int main_ttd()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3722,15 +3456,8 @@ static int main_txt()
   /*@ assert file_recovery.extension == \null; */
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_txt;
   file_stats.not_recovered=0;
@@ -3818,14 +3545,8 @@ static int main_vbm()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -3905,14 +3626,8 @@ static int main_xml()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -4004,14 +3719,8 @@ static int main_xml_utf8()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -4091,14 +3800,8 @@ static int main_xml_utf16()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
@@ -4151,15 +3854,8 @@ static int main_xmp()
   reset_file_recovery(&file_recovery);
   /*@ assert file_recovery.file_stat == \null; */
   file_recovery.blocksize=BLOCKSIZE;
+  reset_file_recovery(&file_recovery_new);
   file_recovery_new.blocksize=BLOCKSIZE;
-  file_recovery_new.data_check=NULL;
-  file_recovery_new.extension=NULL;
-  file_recovery_new.file_stat=NULL;
-  file_recovery_new.file_check=NULL;
-  file_recovery_new.file_rename=NULL;
-  file_recovery_new.calculated_file_size=0;
-  file_recovery_new.file_size=0;
-  file_recovery_new.location.start=0;
 
   file_stats.file_hint=&file_hint_fasttxt;
   file_stats.not_recovered=0;
