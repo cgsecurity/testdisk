@@ -43,7 +43,7 @@
 #include "__fc_builtin.h"
 #endif
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_tiff(file_stat_t *file_stat);
 
 const file_hint_t file_hint_tiff= {

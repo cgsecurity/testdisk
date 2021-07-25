@@ -98,15 +98,9 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
 
 #if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
 /*@
-  @ requires \valid(fr);
-  @ requires \valid(fr->handle);
-  @ requires valid_file_recovery(fr);
-  @ requires \valid_read(&fr->extension);
-  @ requires valid_read_string(fr->extension);
   @ requires fr->file_check==&file_check_tiff_le;
-  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ ensures \valid(fr->handle);
-  @ ensures valid_read_string(fr->extension);
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
   @ assigns  errno;
   @ assigns  fr->file_size;
   @ assigns  *fr->handle;
@@ -117,31 +111,16 @@ void file_check_tiff_le(file_recovery_t *fr);
 
 #if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @
   @ requires buffer_size >= 15;
-  @
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
-  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
-  @
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_tiff_le);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif
@@ -160,30 +139,15 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsi
 
 #if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @
   @ requires buffer_size >= 15;
-  @
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->time);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->calculated_file_size);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
-  @ ensures (\result == 1) ==> \initialized(&file_recovery_new->min_filesize);
   @ ensures (\result == 1) ==> (file_recovery_new->extension != \null);
   @ ensures (\result == 1) ==>  valid_read_string(file_recovery_new->extension);
-  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
-  @
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename== \null);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @*/
 int header_check_tiff_be(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
 #endif

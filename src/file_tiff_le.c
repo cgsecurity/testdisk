@@ -726,19 +726,20 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 void file_check_tiff_le(file_recovery_t *fr)
 {
   static uint64_t calculated_file_size=0;
-  TIFFHeader header;
+  char buffer[sizeof(TIFFHeader)];
+  const TIFFHeader *header=(const TIFFHeader *)&buffer;
   calculated_file_size = 0;
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
-      fread(&header, sizeof(TIFFHeader), 1, fr->handle) != 1)
+      fread(&buffer, sizeof(TIFFHeader), 1, fr->handle) != 1)
   {
     fr->file_size=0;
     return;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&header, sizeof(TIFFHeader));
+  Frama_C_make_unknown(&buffer, sizeof(TIFFHeader));
 #endif
-  if(header.tiff_magic==TIFF_LITTLEENDIAN)
-    calculated_file_size=file_check_tiff_le_aux(fr, le32(header.tiff_diroff), 0, 0);
+  if(header->tiff_magic==TIFF_LITTLEENDIAN)
+    calculated_file_size=file_check_tiff_le_aux(fr, le32(header->tiff_diroff), 0, 0);
   /*@ assert \valid(fr->handle); */
 #ifdef DEBUG_TIFF
   log_info("TIFF Current   %llu\n", (unsigned long long)fr->file_size);
