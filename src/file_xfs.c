@@ -33,7 +33,7 @@
 #include "xfs_struct.h"
 #include "filegen.h"
 
-/*@ requires \valid(file_stat); */
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_xfs(file_stat_t *file_stat);
 
 const file_hint_t file_hint_xfs = {
@@ -47,12 +47,9 @@ const file_hint_t file_hint_xfs = {
 
 /*@
   @ requires buffer_size >= sizeof(struct xfs_sb);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_xfs, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_xfs_sb(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -71,20 +68,20 @@ static int header_check_xfs_sb(const unsigned char *buffer, const unsigned int b
   return 1;
 }
 
-/*@ assigns \nothing; */
+/*@
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
+  @ assigns \nothing;
+  @*/
 static data_check_t data_check_stopasap(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   return DC_STOP;
 }
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_xfs, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_save_xfs(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
@@ -139,12 +136,9 @@ typedef struct xfs_dinode_core
 
 /*@
   @ requires buffer_size >= sizeof(xfs_dinode_core_t);
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires valid_file_recovery(file_recovery);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_xfs, buffer+(..), file_recovery, file_recovery_new);
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_xfs_inode(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
