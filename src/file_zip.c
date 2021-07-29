@@ -991,10 +991,9 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 }
 
 /*@
-  @ requires \valid(fr);
-  @ requires \valid(fr->handle);
   @ requires fr->file_check==&file_check_zip;
-  @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
   @ assigns *fr->handle, fr->file_size;
   @ assigns fr->time, fr->offset_ok, fr->offset_error;
   @ assigns Frama_C_entropy_source, errno;
@@ -1237,16 +1236,9 @@ static void file_rename_zip(file_recovery_t *file_recovery)
 
 /*@
   @ requires buffer_size >= 85;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->extension);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(&file_hint_zip, file_recovery, file_recovery_new);
-  @ ensures \result == 0 || \result == 1;
-  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
-  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ requires separation: \separated(&file_hint_zip, buffer +(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 30);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
@@ -1276,7 +1268,6 @@ static void file_rename_zip(file_recovery_t *file_recovery)
       file_recovery_new->extension == extension_xlsx ||
       file_recovery_new->extension == extension_xrns );
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
-  @ ensures (\result == 1) ==> \separated(file_recovery_new, file_recovery_new->extension);
   @*/
 static int header_check_zip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
@@ -1348,16 +1339,12 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
 
 /*@
   @ requires buffer_size >= 85;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
-  @ requires separation: \separated(&file_hint_zip, file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_zip, buffer +(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures \result == 1;
   @ ensures file_recovery_new->file_check == &file_check_zip;
   @ ensures file_recovery_new->extension == file_hint_zip.extension;
-  @ ensures  \result!=0 ==> valid_file_recovery(file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
 static int header_check_winzip(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
