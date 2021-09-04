@@ -1006,6 +1006,9 @@ int ask_confirmation(const char*_format, ...)
   vaff_txt(4, window, _format, ap);
   va_end(ap);
   res=ask_YN(window);
+  wmove(window, 4, 0);
+  wclrtoeol(window);
+  wrefresh(window);
   delwin(window);
   (void) clearok(stdscr, TRUE);
 #ifdef HAVE_TOUCHWIN
@@ -1076,7 +1079,11 @@ static void get_newterm(const char *prog_name)
   tmp=strdup(prog_name);
   dirname_prog= dirname(tmp);
   dirs=(char *)MALLOC(strlen(dirname_prog)+2+1);
+#if defined(TARGET_LINUX)
+  sprintf(dirs, "%s:./", dirname_prog);
+#else
   sprintf(dirs, "%s:.", dirname_prog);
+#endif
   setenv("TERMINFO_DIRS", dirs, 1);
   get_newterm_aux();
   free(dirs);
