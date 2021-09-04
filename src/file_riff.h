@@ -26,14 +26,9 @@ extern "C" {
 #endif
 
 /*@
-  @ requires buffer_size > 0;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_avi_stream;
-  @ requires file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE;
-  @ requires \separated(buffer, file_recovery);
-  @ ensures \result == DC_CONTINUE || \result == DC_STOP;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
 data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
