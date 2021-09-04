@@ -17,6 +17,7 @@ Patch1:		progsreiserfs-file-read.patch
 URL:		https://www.cgsecurity.org/wiki/TestDisk
 BuildRequires:	desktop-file-utils
 BuildRequires:	e2fsprogs-devel
+BuildRequires:	make
 BuildRequires:	libewf-devel
 BuildRequires:	libjpeg-devel
 BuildRequires:	libuuid-devel
