@@ -48,9 +48,9 @@
 #include "guid_cpy.h"
 #include "partgpt.h"
 
+extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const struct systypes_gtp gpt_sys_types[];
 
@@ -382,12 +382,24 @@ void change_part_type_ncurses(const disk_t *disk_car, partition_t *partition)
     partition->arch=&arch_gpt;
     return ;
   }
+  if(partition->arch==&arch_i386)
+  {
+    change_part_type_int_ncurses(disk_car, partition);
+    log_info("Change partition type:\n");
+    log_partition(disk_car,partition);
+    partition->arch=&arch_none;
+    change_part_type_list_ncurses(disk_car, partition);
+    log_info("Change partition type:\n");
+    log_partition(disk_car,partition);
+    partition->arch=&arch_i386;
+    return ;
+  }
   if(partition->arch->set_part_type==NULL)
   {
     log_error("change_part_type set_part_type==NULL\n");
     return;
   }
-  if(partition->arch==&arch_i386 || partition->arch==&arch_sun)
+  if(partition->arch==&arch_sun)
     change_part_type_int_ncurses(disk_car, partition);
   else
     change_part_type_list_ncurses(disk_car, partition);
