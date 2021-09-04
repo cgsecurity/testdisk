@@ -265,11 +265,9 @@ static unsigned int search_MMT(const unsigned char *buffer, const unsigned int i
 
 /*@
   @ requires buffer_size >= 32;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_mp3;
-  @ requires \separated(buffer + (..), file_recovery);
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -402,10 +400,9 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
 
 /*@
   @ requires buffer_size >= 32;
-  @ requires (buffer_size&1)==0;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid(file_recovery);
   @ requires file_recovery->data_check==&data_check_id3;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures \result == DC_CONTINUE || \result == DC_STOP;
   @ ensures file_recovery->data_check==&data_check_id3 || file_recovery->data_check==&data_check_mp3;
   @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
