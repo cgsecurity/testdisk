@@ -101,6 +101,8 @@ int signature_cmp(const struct td_list_head *a, const struct td_list_head *b);
   @ ensures newe->next == next;
   @ ensures newe->prev == prev;
   @ ensures prev->next == newe;
+  @ ensures newe->next->prev == newe;
+  @ ensures newe->prev->next == newe;
   @ assigns next->prev,newe->next,newe->prev,prev->next;
   @*/
 static inline void __td_list_add(struct td_list_head *newe,
@@ -153,8 +155,8 @@ static inline void td_list_add(struct td_list_head *newe, struct td_list_head *h
   @ requires \valid(newe);
   @ requires \valid(head);
   @ requires \valid(head->prev);
-  @ requires separation: \separated(newe, head);
-  @ requires head->prev == head || \separated(head->prev,head);
+  @ requires \separated(newe, \union(head->prev, head));
+  @ requires head->prev == head || \separated(head->prev, head, newe);
   @ ensures head->prev == newe;
   @ ensures newe->next == head;
   @ ensures newe->prev == \old(head->prev);
@@ -484,14 +486,13 @@ static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_
   struct td_list_head *pos;
   /*@
     @ loop invariant pos == head || \separated(pos, head);
+    @ loop invariant compar == signature_cmp || compar == file_check_cmp;
     @*/
   td_list_for_each(pos, head)
   {
     /*@ assert compar == signature_cmp || compar == file_check_cmp; */
     /*@ assert \valid_read(newe); */
     /*@ assert \valid_read(pos); */
-    /*X calls signature_cmp, file_check_cmp; */
-    /*@ calls file_check_cmp; */
     if(compar(newe,pos)<0)
     {
       __td_list_add(newe, pos->prev, pos);
@@ -513,6 +514,8 @@ static inline int td_list_add_sorted_uniq(struct td_list_head *newe, struct td_l
   struct td_list_head *pos;
   /*@
     @ loop invariant pos == head || \separated(pos, head);
+    @ loop invariant \valid_function(compar);
+    @ loop assigns pos;
     @*/
   td_list_for_each(pos, head)
   {

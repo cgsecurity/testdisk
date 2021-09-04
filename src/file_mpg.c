@@ -355,11 +355,6 @@ static int header_check_mpg_Sequence(const unsigned char *buffer, const unsigned
 
 /*@
   @ requires buffer_size >= 6;
-  @ requires \valid_read(buffer+(0..buffer_size-1));
-  @ requires \valid_read(file_recovery);
-  @ requires file_recovery->file_stat==\null || valid_read_string((char*)file_recovery->filename);
-  @ requires \valid(file_recovery_new);
-  @ requires file_recovery_new->blocksize > 0;
   @ requires separation: \separated(&file_hint_mpg, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
