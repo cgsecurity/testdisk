@@ -92,11 +92,11 @@ static const char *extension_wdb="wdb";
   @ requires (9 == uSectorShift) || (12 == uSectorShift);
   @ requires \valid( buf + (0 .. (1<<uSectorShift)-1));
   @ requires separation: \separated(buf+(..), IN, &errno, &Frama_C_entropy_source);
-  @ assigns \result, *IN, errno;
-  @ assigns *((char *)buf + (0 .. (1 << uSectorShift) - 1));
-  @ assigns Frama_C_entropy_source;
   @ ensures \result == -1 || \result == 0;
   @ ensures \result == 0 ==> \initialized(buf + (0 .. (1<<uSectorShift)-1));
+  @ assigns *IN, errno;
+  @ assigns *((char *)buf + (0 .. (1 << uSectorShift) - 1));
+  @ assigns Frama_C_entropy_source;
   @*/
 static int OLE_read_block(FILE *IN, char *buf, const unsigned int uSectorShift, const unsigned int block, const uint64_t offset)
 {
@@ -129,6 +129,7 @@ static int OLE_read_block(FILE *IN, char *buf, const unsigned int uSectorShift, 
   @ requires le32(header->num_FAT_blocks) <= 109+le32(header->num_extra_FAT_blocks)*((1<<le16(header->uSectorShift))/4-1);
   @ requires \separated(IN, header);
   @ ensures \result==\null || \valid_read((const char *)\result + ( 0 .. (le32(header->num_FAT_blocks)<<le16(header->uSectorShift))-1));
+  @ ensures \result==\null || \initialized((char *)\result + (0 .. (le32(header->num_FAT_blocks)<<le16(header->uSectorShift))-1));
   @*/
 static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint64_t offset)
 {
@@ -154,10 +155,15 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   if(num_extra_FAT_blocks > 0)
   { /* Load DIF*/
     unsigned long int i;
+    /*@
+      @ loop invariant 0 <= i <= num_extra_FAT_blocks;
+      @*/
     for(i=0; i<num_extra_FAT_blocks; i++)
     {
-      const unsigned int block=(i==0 ? le32(header->FAT_next_block): le32(dif[109+i*(((1<<uSectorShift)/4)-1)]));
+      /*@ assert i < num_extra_FAT_blocks; */
       const unsigned int data_offset=(109*4) + i * ((1<<uSectorShift)-4);
+      /*@ assert data_offset + 4 <= dif_size; */
+      const unsigned int block=(i==0 ? le32(header->FAT_next_block): le32(dif[data_offset/4]));
       if(OLE_read_block(IN, &data[data_offset], uSectorShift, block, offset) < 0)
       {
 	free(data);
@@ -174,6 +180,11 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   /*@ assert \valid((char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1)); */
   { /* Load FAT */
     unsigned int j;
+    /*@
+      @ loop invariant 0 <= j <= num_FAT_blocks;
+      @ loop invariant j > 0 ==> \initialized((char *)fat + (0 .. (j<<uSectorShift)-1));
+      @ loop variant num_FAT_blocks - j;
+      @*/
     for(j=0; j<num_FAT_blocks; j++)
     {
       if(OLE_read_block(IN, (char*)fat + (j<<uSectorShift), uSectorShift, le32(dif[j]), offset)<0)
@@ -184,6 +195,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
       }
     }
   }
+  /*@ assert \initialized((char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1)); */
   free(data);
   return fat;
 }
@@ -625,7 +637,6 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
   return NULL;
 }
 
-
 /*@
   @ requires \valid(IN);
   @ requires \valid_read(fat + (0 .. fat_entries-1));
@@ -633,6 +644,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
   @ requires 0 < len <= 1024*1024;
   @ requires \separated(IN, fat + (..), &errno, &Frama_C_entropy_source);
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. len - 1));
+  @ ensures \result!=\null ==> \initialized((char *)\result + (0 .. len - 1));
   @*/
 static void *OLE_read_stream(FILE *IN,
     const uint32_t *fat, const unsigned int fat_entries, const unsigned int uSectorShift,
@@ -652,6 +664,7 @@ static void *OLE_read_stream(FILE *IN,
   /*@
     @ loop invariant 0 <= i <= i_max;
     @ loop invariant i > 0 ==> \initialized(dataPt + ((i-1)<<uSectorShift) + (0 .. (1<<uSectorShift)- 1));
+    @ loop invariant i > 0 ==> \initialized(dataPt + (0 .. (i<<uSectorShift)- 1));
     @ loop variant i_max - i;
     @*/
   for(i=0, block=block_start;
@@ -671,6 +684,8 @@ static void *OLE_read_stream(FILE *IN,
     /*@ assert \initialized(dataPt + ((i<<uSectorShift) .. (i<<uSectorShift) + (1<<uSectorShift)- 1)); */
     /*@ assert \initialized(dataPt + (i<<uSectorShift) + (0 .. (1<<uSectorShift)- 1)); */
   }
+  /*@ assert \initialized(dataPt + (0 .. (i_max<<uSectorShift)- 1)); */
+  /*@ assert \initialized(dataPt + (0 .. len - 1)); */
   /*@ assert \valid(dataPt + (0 .. len - 1)); */
   return dataPt;
 }
@@ -682,6 +697,7 @@ static void *OLE_read_stream(FILE *IN,
   @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
   @ requires 0 < le32(header->csectMiniFat) <= 2048;
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift)) - 1));
+  @ ensures \result!=\null ==> \initialized((char *)\result + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift)) - 1));
   @*/
 static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const uint32_t *fat, const unsigned int fat_entries, const uint64_t offset)
 {
@@ -704,6 +720,8 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   block=le32(header->MiniFat_block);
   /*@
     @ loop invariant 0 <= i <= csectMiniFat;
+    @ loop invariant i > 0 ==> \initialized(minifat + ((i-1)<<uSectorShift) + (0 .. (1<<uSectorShift)- 1));
+    @ loop invariant i > 0 ==> \initialized(minifat + (0 .. (i<<uSectorShift)- 1));
     @ loop variant csectMiniFat-i;
     @*/
   for(i=0; i < csectMiniFat; i++)
@@ -720,6 +738,8 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
     }
     block=le32(fat[block]);
   }
+  /*@ assert \initialized(minifat + (0 .. (csectMiniFat<<uSectorShift)- 1)); */
+  /*@ assert \initialized(minifat + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift))- 1)); */
   return (uint32_t *)minifat;
 }
 
@@ -1333,9 +1353,12 @@ static void OLE_parse_summary_aux(const char *dataPt, const unsigned int dirLen,
 /*@
   @ requires \valid_read(ministream + (0 .. ministream_size-1));
   @ requires \valid_read(minifat + (0 .. minifat_entries-1));
+  @ requires \initialized(ministream + (0 .. ministream_size-1));
+  @ requires \initialized(minifat + (0 .. minifat_entries-1));
   @ requires uMiniSectorShift==6;
   @ requires 48 <= len <= 1024*1024;
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. len-1));
+  @ ensures \result!=\null ==> \initialized((char *)\result + (0 .. len-1));
   @*/
 static void *OLE_read_ministream(const unsigned char *ministream,
     const uint32_t *minifat, const unsigned int minifat_entries, const unsigned int uMiniSectorShift,
@@ -1350,6 +1373,11 @@ static void *OLE_read_ministream(const unsigned char *ministream,
   const unsigned int len_aligned=(len+(1<<uMiniSectorShift)-1) / (1<<uMiniSectorShift) * (1<<uMiniSectorShift);
 #endif
   dataPt=(unsigned char *)MALLOC(len_aligned);
+  /*@
+    @ loop invariant 0 <= size_read < len + (1<<uMiniSectorShift);
+    @ loop invariant size_read > 0 ==> \initialized(dataPt + size_read - (1<<uMiniSectorShift) + (0 .. (1<<uMiniSectorShift)- 1));
+    @ loop invariant size_read > 0 ==> \initialized(dataPt + (0 .. size_read - 1));
+    @*/
   for(size_read=0;
       size_read < len;
       size_read+=(1<<uMiniSectorShift))
@@ -1359,19 +1387,16 @@ static void *OLE_read_ministream(const unsigned char *ministream,
       free(dataPt);
       return NULL;
     }
-    /* TODO assert mblock < minifat_entries; */
     if(mblock >= ministream_size>>uMiniSectorShift)
     {
       free(dataPt);
       return NULL;
     }
     memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
-#ifdef __FRAMAC__
-    mblock=Frama_C_interval(0, minifat_entries);
-#else
+    /*@ assert \initialized(dataPt + size_read + (0 .. (1<<uMiniSectorShift)-1)); */
     mblock=le32(minifat[mblock]);
-#endif
   }
+  /*@ assert \initialized(dataPt + (0 .. len - 1)); */
   return dataPt;
 }
 
@@ -1431,6 +1456,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
 	/*@ assert valid_string(title); */
 	return ;
       }
+      /*@ assert \initialized((char *)minifat + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift)) - 1)); */
       ministream=(unsigned char *)OLE_read_stream(file,
 	  fat, fat_entries, uSectorShift,
 	  ministream_block, ministream_size, offset);
@@ -1439,34 +1465,27 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
 	summary=(char*)OLE_read_ministream(ministream,
 	    minifat, mini_fat_entries, le16(header->uMiniSectorShift),
 	    block, len, ministream_size);
+	/*@ assert summary == \null || \initialized(summary + (0 .. len-1)); */
 	free(ministream);
       }
       free(minifat);
     }
   }
   else
+  {
     summary=(char *)OLE_read_stream(file,
 	fat, fat_entries, uSectorShift,
 	block, len, offset);
-#if defined(__FRAMAC__)
-  {
-    free(summary);
-    /* OK: 48, 512, 4096, 1024*1024 */
-    summary=MALLOC(512);
-    Frama_C_make_unknown(summary, 512);
-    /*@ assert \initialized((char *)summary + (0 .. 512 - 1)); */
-    OLE_parse_summary_aux(summary, 512, ext, title, file_time);
-    free(summary);
+    /*@ assert summary == \null || \initialized(summary + (0 .. len-1)); */
   }
-#else
+  /*@ assert summary == \null || \initialized(summary + (0 .. len-1)); */
   if(summary!=NULL)
   {
-    /*@ assert \initialized(summary + (0 .. len)); */
+    /*@ assert \initialized(summary + (0 .. len-1)); */
     OLE_parse_summary_aux(summary, len, ext, title, file_time);
     /*@ assert valid_string(title); */
     free(summary);
   }
-#endif
   /*@ assert *ext == \null || valid_read_string(*ext); */
   /*@ assert valid_string(title); */
 }
