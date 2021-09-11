@@ -572,18 +572,26 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     return;
   }
 #if defined(HAVE_FTRUNCATE)
-  fflush(file_recovery->handle);
-  if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
+  if(!params->report_only)
   {
-    log_critical("ftruncate failed.\n");
+    fflush(file_recovery->handle);
+    if(ftruncate(fileno(file_recovery->handle), file_recovery->file_size)<0)
+    {
+      log_critical("ftruncate failed.\n");
+    }
   }
 #endif
   fclose(file_recovery->handle);
   file_recovery->handle=NULL;
-  if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
-    set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
-  if(file_recovery->file_rename!=NULL)
-    file_recovery->file_rename(file_recovery);
+  if(params->report_only)
+    unlink(file_recovery->filename);
+  else
+  {
+    if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
+      set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
+    if(file_recovery->file_rename!=NULL)
+      file_recovery->file_rename(file_recovery);
+  }
   if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
   {
     params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);

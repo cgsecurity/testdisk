@@ -293,6 +293,8 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       case 'O':
 	{
 	  interface_options_photorec_ncurses(options);
+	  /* So we get it downstream in file_finish_*. */
+	  params->report_only=options->report_only;
 	  menu=1;
 	}
 	break;
