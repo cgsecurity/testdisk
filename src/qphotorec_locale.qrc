@@ -9,8 +9,9 @@
 <file>lang/qphotorec.ja.qm</file>
 <file>lang/qphotorec.pt.qm</file>
 <file>lang/qphotorec.ru.qm</file>
+<file>lang/qphotorec.sv_SE.qm</file>
 <file>lang/qphotorec.tr.qm</file>
+<file>lang/qphotorec.zh_CN.qm</file>
 <file>lang/qphotorec.zh_TW.qm</file>
 </qresource>
 </RCC>
-

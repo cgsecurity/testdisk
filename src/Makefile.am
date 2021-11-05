@@ -411,7 +411,9 @@ QT_TS = \
   lang/qphotorec.ja.ts \
   lang/qphotorec.pt.ts \
   lang/qphotorec.ru.ts \
+  lang/qphotorec.sv_SE.ts \
   lang/qphotorec.tr.ts \
+  lang/qphotorec.zh_CN.ts \
   lang/qphotorec.zh_TW.ts
 
 photorec_C_SOURCES	= $(photorec_C) $(file_C) $(base_C) $(fs_C) $(photorec_ncurses_C) suspend_no.c
