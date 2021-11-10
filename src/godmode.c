@@ -53,11 +53,11 @@
 #define RO 1
 #define RW 0
 #define MAX_SEARCH_LOCATION 1024
+extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 #ifdef HAVE_NCURSES
@@ -189,11 +189,11 @@ static int interface_part_bad_ncurses(disk_t *disk_car, list_part_t *list_part)
     char buffer_disk_size_found[100];
     size_to_unit(disk_car->disk_size, buffer_disk_size);
     size_to_unit(disk_size, buffer_disk_size_found);
-    wprintw(stdscr,"The harddisk (%s) seems too small! (< %s)",
+    wprintw(stdscr,"The hard disk (%s) seems too small! (< %s)",
 	buffer_disk_size, buffer_disk_size_found);
   }
   wmove(stdscr,7,0);
-  wprintw(stdscr,"Check the harddisk size: HD jumper settings, BIOS detection...");
+  wprintw(stdscr,"Check the hard disk size: HD jumper settings, BIOS detection...");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(disk_car->disk_size<=((uint64_t)1<<(28-1)) && disk_size>=((uint64_t)1<<(28-1)))
   {
@@ -312,7 +312,7 @@ static int interface_part_bad_log(disk_t *disk_car, list_part_t *list_part)
     }
   }
   log_warning("%s\n",disk_car->description(disk_car));
-  log_warning("Check the harddisk size: HD jumper settings, BIOS detection...\n");
+  log_warning("Check the hard disk size: HD jumper settings, BIOS detection...\n");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   if(disk_car->disk_size<=((uint64_t)1<<(28-1)) && disk_size>=((uint64_t)1<<(28-1)))
   {
@@ -324,7 +324,7 @@ static int interface_part_bad_log(disk_t *disk_car, list_part_t *list_part)
     char buffer_disk_size_found[100];
     size_to_unit(disk_car->disk_size, buffer_disk_size);
     size_to_unit(disk_size, buffer_disk_size_found);
-    log_warning("The harddisk (%s) seems too small! (< %s)\n",
+    log_warning("The hard disk (%s) seems too small! (< %s)\n",
 	buffer_disk_size, buffer_disk_size_found);
   }
   if(list_part->next==NULL)
@@ -1344,6 +1344,13 @@ static void warning_geometry(const list_part_t *list_part, disk_t *disk, const i
   }
 }
 
+/*@
+  @ requires valid_list_part(list_part_org);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(current_cmd);
+  @ requires \valid(menu);
+  @ requires \valid(fast_mode);
+  @*/
 static int ask_write_partition_table(const list_part_t *list_part_org, disk_t *disk_car, const int verbose, const int dump_ind, const int ask_part_order, const unsigned int expert, char **current_cmd, unsigned int *menu, int *fast_mode)
 {
   int res_interface_write;

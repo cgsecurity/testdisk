@@ -99,7 +99,7 @@ typedef struct hfsp_vh {
 
         uint32_t         blocksize;	// 28
          // must be multiple of HFSPLUS_SECTOR_SIZE,
-         // should be a multiple of 4k for harddisk
+         // should be a multiple of 4k for hard disk
         uint32_t         total_blocks;	// 2C
         uint32_t         free_blocks;	// 30
          // The total number of unused allocation blocks on the disk.

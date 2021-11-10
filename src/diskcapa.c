@@ -48,7 +48,7 @@ static int interface_check_disk_capacity_ncurses(disk_t *disk_car)
   wmove(stdscr,4,0);
   wprintw(stdscr,"%s\n",disk_car->description(disk_car));
   wmove(stdscr,6,0);
-  wprintw(stdscr,"The Harddisk size seems to be 137GB.");
+  wprintw(stdscr,"The Hard disk size seems to be 137GB.");
   wmove(stdscr,7,0);
   wprintw(stdscr,"Support for 48-bit Logical Block Addressing (LBA) is needed to access");
   wmove(stdscr,8,0);

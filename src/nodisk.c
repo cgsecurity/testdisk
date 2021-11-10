@@ -50,7 +50,7 @@ int intrf_no_disk_ncurses(const char *prog_name)
   wmove(stdscr,5,0);
   wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
   wmove(stdscr,7,0);
-  wprintw(stdscr,"No harddisk found\n");
+  wprintw(stdscr,"No hard disk found\n");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   wmove(stdscr,8,0);
   wprintw(stdscr,"You need to be administrator to use %s.\n", prog_name);
