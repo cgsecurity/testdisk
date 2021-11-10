@@ -34,15 +34,20 @@
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="377"/>
-        <source>No harddisk found</source>
+        <source>No hard disk found</source>
+        <oldsource>No harddisk found</oldsource>
         <translation>Aucun disque trouvé</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="379"/>
-        <source>No harddisk found
+        <source>No hard disk found
 You need to be administrator to use this program.
 Under Win9x, use the DOS version instead.
 Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</source>
+        <oldsource>No harddisk found
+You need to be administrator to use this program.
+Under Win9x, use the DOS version instead.
+Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</oldsource>
         <translation>Aucun disque trouvé.
 Il faut être administrateur pour utiliser ce programme.
 Sous Win9x, utiliser la version DOS plutôt.
@@ -50,8 +55,10 @@ Sous Vista et suivant, lancer ce programme en utilisant le clique droit &quot;Ex
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="388"/>
-        <source>No harddisk found
+        <source>No hard disk found
 You need to be root to use PhotoRec.</source>
+        <oldsource>No harddisk found
+You need to be root to use PhotoRec.</oldsource>
         <translation>Aucun disque trouvé.
 Il faut être root pour utiliser ce programme.</translation>
     </message>
@@ -221,11 +228,16 @@ Si un disque listé ci dessus a une taille incorrecte, vérifier le paramétrage
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="927"/>
-        <source>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+        <source>QPhotoRec is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+
+QPhotoRec is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
+        <oldsource>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
 
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
+You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</oldsource>
         <translation>QPhotoRec est un logiciel libre: vous pouvez le redistribuer et/ou le modifier sous les termes de la Licence Publique Générale GNU telle que publiée par la Free Software Foundation ; soit la version 2 de la licence, ou (à votre discrétion) toute version ultérieure.
 
 QPhotoRec est distribué dans l&apos;espoir qu&apos;il sera utile, mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de VALEUR MARCHANDE ou D&apos;ADÉQUATION À UN BESOIN PARTICULIER. Pour plus de détails, voir la Licence Publique Générale GNU.

@@ -34,15 +34,20 @@
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="377"/>
-        <source>No harddisk found</source>
+        <source>No hard disk found</source>
+        <oldsource>No harddisk found</oldsource>
         <translation>Δεν βρέθηκε σκληρός δίσκος</translation>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="379"/>
-        <source>No harddisk found
+        <source>No hard disk found
 You need to be administrator to use this program.
 Under Win9x, use the DOS version instead.
 Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</source>
+        <oldsource>No harddisk found
+You need to be administrator to use this program.
+Under Win9x, use the DOS version instead.
+Under Vista or later, select this program, right-click and choose &quot;Run as administrator&quot;.</oldsource>
         <translation>Δεν βρέθηκε σκληρός δίσκος
 Πρέπει να είστε διαχειριστής ώστε να χρησιμοποιήσετε αυτό το πρόγραμμα.
 Για Win9x, χρησιμοποιήστε την έκδοση DOS.
@@ -50,8 +55,10 @@ Under Vista or later, select this program, right-click and choose &quot;Run as a
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="388"/>
-        <source>No harddisk found
+        <source>No hard disk found
 You need to be root to use PhotoRec.</source>
+        <oldsource>No harddisk found
+You need to be root to use PhotoRec.</oldsource>
         <translation>Δεν βρέθηκε σκληρός δίσκος
 Πρέπει να είστε διαχειριστής root για να χρησιμοποιήσετε το PhotoRec.</translation>
     </message>
@@ -222,11 +229,16 @@ detection, and install the latest OS patches and disk drivers.</source>
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="927"/>
-        <source>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+        <source>QPhotoRec is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+
+QPhotoRec is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
+        <oldsource>QPhotoRec is is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
 
 QPhotoRec is is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</source>
+You should have received a copy of the GNU General Public License along with QPhotoRec.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</oldsource>
         <translation>Το QPhotoRec είναι ελεύθερο λογισμικό: μπορείτε να το αναδιανείμετε ή/και να το τροποποιήσετε σύμφωνα με τους όρους της Γενικής Άδειας Δημόσιας Χρήσης GNU, όπως δημοσιεύθηκε από το Ίδρυμα Ελεύθερου Λογισμικού, είτε με βάση την έκδοση 2 της Άδειας, είτε (κατά την επιλογή σας) οποιαδήποτε νεότερη έκδοση.
 
 Το QPhotoRec διανέμεται με την ελπίδα ότι θα είναι χρήσιμο, αλλά ΧΩΡΙΣ ΚΑΜΙΑ ΕΓΓΥΗΣΗ, χωρίς ούτε τη σιωπηρή εγγύηση ΕΜΠΟΡΙΚΟΤΗΤΑΣ ή ΚΑΤΑΛΛΗΛΟΤΗΤΑΣ ΓΙΑ ΕΙΔΙΚΟ ΣΚΟΠΟ. Για περισσότερες λεπτομέρειες, ανατρέξτε στην άδεια Γενικής Άδειας Δημόσιας Χρήσης GNU.
