@@ -27,6 +27,7 @@ extern "C" {
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ assigns disk_car->unit;
   @*/
 void autoset_unit(disk_t *disk_car);

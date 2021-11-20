@@ -70,6 +70,14 @@ static int is_fat16(const partition_t *partition);
   @*/
 static int is_fat32(const partition_t *partition);
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid_read(fat_header);
+  @ requires \separated(disk_car, partition, fat_header);
+  @*/
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)
 {
   partition->fsname[0]='\0';
@@ -112,6 +120,12 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   return 0;
 }
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires \valid_read(fat_header);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, fat_header, partition);
+  @*/
 static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_header, partition_t *partition)
 {
   uint64_t start_fat1;
@@ -160,6 +174,9 @@ static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_hea
   }
 }
 
+/*@
+  @ requires \valid_read(fh1);
+  @*/
 static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size)
 {
   log_info("sector_size  %u\n", fat_sector_size(fh1));
@@ -280,6 +297,13 @@ int check_FAT(disk_t *disk_car, partition_t *partition, const int verbose)
   return 0;
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk, partition);
+  @*/
 static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
   unsigned int next_cluster;
@@ -303,6 +327,13 @@ static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *part
   return next_cluster;
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk, partition);
+  @*/
 static unsigned int get_next_cluster_fat16(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
   unsigned int next_cluster;
@@ -324,6 +355,13 @@ static unsigned int get_next_cluster_fat16(disk_t *disk, const partition_t *part
   return next_cluster;
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk, partition);
+  @*/
 static unsigned int get_next_cluster_fat32(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
   unsigned int next_cluster;
@@ -818,6 +856,13 @@ unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const uns
   return le32(fsinfo->nextfree);
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk, partition);
+  @*/
 static int fat_has_EFI_entry(disk_t *disk, const partition_t *partition, const int verbose)
 {
   dir_data_t dir_data;
@@ -920,6 +965,34 @@ int recover_FAT(disk_t *disk_car, const struct fat_boot_sector*fat_header, parti
   return 0;
 }
 
+/*@
+  @ requires \valid_read(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(fat_header);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @*/
+static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind)
+{
+  const char*buffer=(const char*)fat_header;
+  if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)
+  {
+#ifndef __FRAMAC__
+    if(verbose||dump_ind)
+    {
+      log_info("OS2MB at %u/%u/%u\n",
+	  offset2cylinder(disk, partition->part_offset),
+	  offset2head(disk, partition->part_offset),
+	  offset2sector(disk, partition->part_offset));
+    }
+#endif
+    if(dump_ind)
+      dump_log(buffer, DEFAULT_SECTOR_SIZE);
+    return 0;
+  }
+  return 1;
+}
+
 int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose)
 {
   unsigned char *buffer=(unsigned char *)MALLOC(disk->sector_size);
@@ -956,25 +1029,6 @@ int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, p
   partition->fsname[0]='\0';
   partition->info[0]='\0';
   return 0;
-}
-
-static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind)
-{
-  const char*buffer=(const char*)fat_header;
-  if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)
-  {
-    if(verbose||dump_ind)
-    {
-      log_info("OS2MB at %u/%u/%u\n",
-	  offset2cylinder(disk, partition->part_offset),
-	  offset2head(disk, partition->part_offset),
-	  offset2sector(disk, partition->part_offset));
-    }
-    if(dump_ind)
-      dump_log(buffer, DEFAULT_SECTOR_SIZE);
-    return 0;
-  }
-  return 1;
 }
 
 int is_fat(const partition_t *partition)
@@ -1124,6 +1178,9 @@ int fat32_free_info(disk_t *disk_car,const partition_t *partition, const unsigne
 int check_VFAT_volume_name(const char *name, const unsigned int max_size)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i;
+    @*/
   for(i=0; i<max_size && name[i]!='\0'; i++)
   {
     if(name[i] < 0x20)

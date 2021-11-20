@@ -25,6 +25,12 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires \separated(disk_car, partition, dir_data, current_cmd);
+  @*/
 int dir_partition_aff(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, char **current_cmd);
 
 #ifdef __cplusplus

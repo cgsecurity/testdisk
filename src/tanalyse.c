@@ -62,6 +62,7 @@ static list_part_t *interface_analyse_ncurses(disk_t *disk_car, const int verbos
   wrefresh(stdscr);
 #endif
   list_part=disk_car->arch->read_part(disk_car,verbose,saveheader);
+  /*@ assert valid_list_part(list_part); */
   log_info("Current partition structure:\n");
   screen_buffer_to_log();
 #ifdef HAVE_NCURSES

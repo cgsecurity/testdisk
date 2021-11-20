@@ -25,6 +25,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires valid_disk(disk_car);
+  @ requires valid_list_part(list_part);
+  @*/
 int interface_write(disk_t *disk_car,list_part_t *list_part,const int can_search_deeper, const int can_ask_minmax_ext, int *no_confirm, char **current_cmd, unsigned int *menu);
 
 #ifdef __cplusplus

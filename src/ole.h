@@ -1,6 +1,6 @@
 /*
 
-    File: common.c
+    File: ole.h
 
     Copyright (C) 2006 Christophe GRENIER <grenier@cgsecurity.org>
   

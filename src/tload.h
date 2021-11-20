@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires valid_disk(disk_car);
+  @ requires valid_list_part(list_part);
+  @*/
 list_part_t *interface_load(disk_t *disk_car,list_part_t *list_part, const int verbose);
 
 #ifdef __cplusplus

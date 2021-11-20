@@ -201,6 +201,7 @@ static int file_identify(const char *filename, const unsigned int options)
 	    (file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 	    file_check->header_check(buffer, blocksize, 0, &file_recovery, &file_recovery_new)!=0)
 	  {
+	    /*@ assert valid_file_check_node(file_check); */
 	    /*@ assert valid_file_recovery(&file_recovery_new); */
 	    file_recovery_new.file_stat=file_check->file_stat;
 	    break;

@@ -55,8 +55,19 @@ struct info_io_redir
   list_redir_t *list_redir;
 };
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid((char *)buffer + (0 .. count-1));
+  @ requires separation: \separated(disk_car, (char *)buffer + (0 .. count-1));
+  @*/
 static int io_redir_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
-static void io_redir_clean(disk_t *clean);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
+static void io_redir_clean(disk_t *disk_car);
 
 int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsigned int size, const uint64_t new_offset, const void *mem)
 {

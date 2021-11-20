@@ -25,7 +25,17 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 dir_partition_t dir_partition_ntfs_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose, const int expert);
+
+/*@
+  @ assigns \nothing;
+  @*/
 const char*td_ntfs_version(void);
 
 #ifdef __cplusplus

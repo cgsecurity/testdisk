@@ -25,6 +25,12 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid(partition);
+  @ requires \separated(disk, partition);
+  @*/
 void change_part_type_ncurses(const disk_t *disk, partition_t *partition);
 
 #ifdef __cplusplus

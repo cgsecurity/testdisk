@@ -60,7 +60,7 @@ void interface_list(disk_t *disk, const int verbose, const int saveheader, const
   printf("%s\n", disk->description(disk));
   printf(msg_PART_HEADER_LONG);
   list_part=disk->arch->read_part(disk,verbose,saveheader);
-
+  /*@ assert valid_list_part(list_part); */
   for(parts=list_part; parts!=NULL; parts=parts->next)
   {
     const char *msg;

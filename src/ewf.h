@@ -30,8 +30,13 @@ extern "C" {
 #endif
 
 #if defined(HAVE_LIBEWF_H) && defined(HAVE_LIBEWF)
+/*@
+  @ requires valid_read_string(device);
+  @ ensures  valid_disk(\result);
+  @*/
 disk_t *fewf_init(const char *device, const int testdisk_mode);
 #endif
+/*@ assigns \nothing; */
 const char*td_ewf_version(void);
 
 #ifdef __cplusplus

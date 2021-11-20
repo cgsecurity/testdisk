@@ -25,8 +25,19 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(files_enable);
+  @*/
 void reset_array_file_enable(file_enable_t *files_enable);
+
+/*@
+  @ requires \valid_read(files_enable);
+  @*/
 int file_options_save(const file_enable_t *files_enable);
+
+/*@
+  @ requires \valid(files_enable);
+  @*/
 int file_options_load(file_enable_t *files_enable);
 
 #ifdef __cplusplus

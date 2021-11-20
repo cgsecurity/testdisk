@@ -25,6 +25,13 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_read_string(image_dd);
+  @ requires \separated(disk_car, partition, image_dd);
+  @*/
 int disk_image(disk_t *disk_car, const partition_t *partition, const char *image_dd);
 
 #ifdef __cplusplus

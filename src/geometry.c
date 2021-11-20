@@ -79,7 +79,9 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
   int geo_modified=0;
   if(*current_cmd==NULL)
     return 0;
+#ifndef __FRAMAC__
   log_info("Current geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
+#endif
   /*@ loop invariant valid_read_string(*current_cmd); */
   while (done==0)
   {
@@ -94,8 +96,10 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	if(geo_modified==0)
 	  geo_modified=1;
       }
+#ifndef __FRAMAC__
       else
 	log_error("Illegal cylinders value\n");
+#endif
     }
     else if(check_command(current_cmd,"H,",2)==0)
     {
@@ -108,8 +112,10 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	if(cyl_modified==0)
 	  set_cylinders_from_size_up(disk_car);
       }
+#ifndef __FRAMAC__
       else
 	log_error("Illegal heads value\n");
+#endif
     }
     else if(check_command(current_cmd,"S,",2)==0)
     {
@@ -121,16 +127,21 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
 	  geo_modified=1;
 	if(cyl_modified==0)
 	  set_cylinders_from_size_up(disk_car);
-      } else
+      }
+#ifndef __FRAMAC__
+      else
 	log_error("Illegal sectors value\n");
+#endif
     }
     else if(check_command(current_cmd,"N,",2)==0)
     {
       tmp_val = get_int_from_command(current_cmd);
-      if(change_sector_size(disk_car, cyl_modified, tmp_val))
-	  log_error("Illegal sector size\n");
-      else
+      if(change_sector_size(disk_car, cyl_modified, tmp_val)==0)
 	geo_modified=2;
+#ifndef __FRAMAC__
+      else
+	  log_error("Illegal sector size\n");
+#endif
     }
     else
     {
@@ -139,6 +150,7 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
     if(cyl_modified!=0)
       disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
   }
+  /*@ assert valid_read_string(*current_cmd); */
   if(geo_modified!=0)
   {
     disk_car->disk_size=(uint64_t)disk_car->geom.cylinders*disk_car->geom.heads_per_cylinder*disk_car->geom.sectors_per_head*disk_car->sector_size;
@@ -146,12 +158,16 @@ int change_geometry_cli(disk_t *disk_car, char ** current_cmd)
     /* On MacOSX if HD contains some bad sectors, the disk size may not be correctly detected */
     disk_car->disk_real_size=disk_car->disk_size;
 #endif
+#ifndef __FRAMAC__
     log_info("New geometry\n%s sector_size=%u\n", disk_car->description(disk_car), disk_car->sector_size);
+#endif
     autoset_unit(disk_car);
     if(geo_modified==2)
     {
+      /*@ assert valid_read_string(*current_cmd); */
       return 1;
     }
   }
+  /*@ assert valid_read_string(*current_cmd); */
   return 0;
 }

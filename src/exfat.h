@@ -94,10 +94,42 @@ struct exfat_alloc_bitmap_entry
   uint64_t data_length;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires \valid_read(exfat_header);
+  @ assigns \nothing;
+  @*/
 uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, const unsigned int cluster);
+
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires \valid_read(exfat_header);
+  @ requires \separated(disk, partition, exfat_header, (char *)buffer);
+  @*/
 int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster);
+
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid(partition);
+  @ requires \separated(disk, partition);
+  @*/
 int check_exFAT(disk_t *disk, partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk, exfat_header, partition);
+  @*/
 int recover_exFAT(const disk_t *disk, const struct exfat_super_block *exfat_header, partition_t *partition);
+
+/*@
+  @ requires \valid_read(exfat_header);
+  @ assigns \nothing;
+  @*/
 int test_exFAT(const struct exfat_super_block *exfat_header);
 
 #ifdef __cplusplus

@@ -58,6 +58,11 @@ extern const file_hint_t file_hint_tar;
 extern file_check_list_t file_check_list;
 extern int need_to_stop;
 
+/*@
+  @ requires \valid(dst);
+  @ requires \valid_read(src);
+  @ requires \separated(src, dst);
+  @*/
 static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));

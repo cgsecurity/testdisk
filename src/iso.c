@@ -37,8 +37,18 @@
 #include "log.h"
 #include "guid_cpy.h"
 
+/*@
+  @ requires \valid_read(iso);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(iso, partition);
+  @*/
 static void set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *partition);
 
+/*@
+  @ requires \valid_read(iso);
+  @ assigns  \nothing;
+  @*/
 static int test_ISO(const struct iso_primary_descriptor *iso)
 {
   static const unsigned char iso_header[6]= { 0x01, 'C', 'D', '0', '0', '1'};

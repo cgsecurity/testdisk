@@ -255,6 +255,7 @@ static inline uint64_t md_event(mdp_super_t *sb) {
 /* TestDisk */
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/
@@ -262,6 +263,7 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(sb);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, sb, partition);
@@ -270,6 +272,7 @@ int recover_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, partit
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/

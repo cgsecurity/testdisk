@@ -1,6 +1,6 @@
 /*
 
-    File: ntfs.h
+    File: ntfs_adv.h
 
     Copyright (C) 1998-2006,2008 Christophe GRENIER <grenier@cgsecurity.org>
 

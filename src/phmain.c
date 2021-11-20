@@ -34,6 +34,7 @@
 #undef HAVE_NCURSES
 #undef ENABLE_DFXML
 #undef HAVE_SETLOCALE
+#undef HAVE_GETEUID
 #endif
 
 #include <stdio.h>

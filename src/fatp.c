@@ -37,6 +37,14 @@
 #include "fat_common.h"
 #include "log.h"
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(list_search_space);
+  @ requires \separated(disk, partition, list_search_space);
+  @*/
 static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
   unsigned char *buffer;
@@ -86,6 +94,14 @@ static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, a
     del_search_space(list_search_space, start_free, end_free);
 }
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(list_search_space);
+  @ requires \separated(disk_car, partition, list_search_space);
+  @*/
 static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
   unsigned char *buffer;
@@ -130,6 +146,14 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
     del_search_space(list_search_space, start_free, end_free);
 }
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(list_search_space);
+  @ requires \separated(disk_car, partition, list_search_space);
+  @*/
 static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
   unsigned char *buffer;

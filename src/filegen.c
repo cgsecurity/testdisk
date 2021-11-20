@@ -147,13 +147,24 @@ void register_header_check(const unsigned int offset, const void *value, const u
   file_check_new->offset=offset;
   file_check_new->header_check=header_check;
   file_check_new->file_stat=file_stat;
+
+  /*@ assert \valid_read(file_check_new); */
+  /*@ assert \initialized(&file_check_new->offset); */
+  /*@ assert \initialized(&file_check_new->length); */
+  /*@ assert file_check_new->offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert 0 < file_check_new->length <= PHOTOREC_MAX_SIG_SIZE; */
+  /*@ assert file_check_new->offset + file_check_new->length <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert \valid_read((const char *)file_check_new->value+(0..file_check_new->length-1)); */
+  /*@ assert \valid_function(file_check_new->header_check); */
+  /*@ assert \valid(file_check_new->file_stat); */
+
+  /*@ assert valid_file_check_node(file_check_new); */
   td_list_add_sorted(&file_check_new->list, &file_check_plist.list, file_check_cmp);
 }
 
 /*@
   @ requires \valid(file_check_new);
-  @ requires initialization: \initialized(&file_check_new->offset) && \initialized(&file_check_new->length);
-  @ requires \valid_function(file_check_new->header_check);
+  @ requires valid_file_check_node(file_check_new);
   @*/
 static void index_header_check_aux(file_check_t *file_check_new)
 {
@@ -194,6 +205,7 @@ static unsigned int index_header_check(void)
   {
     file_check_t *current_check;
     current_check=td_list_entry(tmp, file_check_t, list);
+    /*@ assert valid_file_check_node(current_check); */
     /* dettach current_check from file_check_plist */
     td_list_del(tmp);
     /*@ assert \initialized(&current_check->offset) && \initialized(&current_check->length); */
@@ -228,6 +240,7 @@ void free_header_check(void)
 #endif
 	file_check_t *current_check;
 	current_check=td_list_entry(tmp, file_check_t, list);
+	/*@ assert valid_file_check_node(current_check); */
 #ifdef DEBUG_HEADER_CHECK
 	data=(const char *)current_check->value;
 	log_info("[%u]=%02x length=%u offset=%u", pos->offset, i, current_check->length, current_check->offset);

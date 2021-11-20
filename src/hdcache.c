@@ -62,13 +62,9 @@ struct cache_struct
   unsigned int  last_io_error_nbr;
 };
 
-static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
-static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int count, const uint64_t offset);
-static int cache_sync(disk_t *disk);
-static void cache_clean(disk_t *disk);
-
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid((char *)buffer + (0 .. count-1));
   @ requires separation: \separated(disk_car, (char *)buffer + (0 .. count-1));
   @*/
@@ -182,6 +178,7 @@ static int cache_pread_aux(disk_t *disk_car, void *buffer, const unsigned int co
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid((char *)buffer + (0 .. count-1));
   @ requires separation: \separated(disk_car, (char *)buffer + (0 .. count-1));
   @*/
@@ -193,6 +190,7 @@ static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count,
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read((char *)buffer + (0 .. count-1));
   @ requires separation: \separated(disk_car, (const char *)buffer + (0 .. count-1));
   @*/
@@ -215,6 +213,7 @@ static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @*/
 static void cache_clean(disk_t *disk_car)
 {
@@ -267,6 +266,7 @@ static void dup_geometry(CHSgeometry_t * CHS_dst, const CHSgeometry_t * CHS_sour
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ ensures valid_read_string(\result);
   @*/
 static const char *cache_description(disk_t *disk_car)
@@ -282,6 +282,7 @@ static const char *cache_description(disk_t *disk_car)
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ ensures valid_read_string(\result);
   @*/
 static const char *cache_description_short(disk_t *disk_car)

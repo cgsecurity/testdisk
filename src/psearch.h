@@ -22,6 +22,9 @@
 #ifndef _PSEARCH_H
 #define _PSEARCH_H
 
+/*@
+  @ requires \valid(data);
+  @*/
 static inline alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t offset, const unsigned int content)
 {
   if(!(data->start <= offset && offset <= data->end))
@@ -48,6 +51,12 @@ static inline alloc_data_t *file_add_data(alloc_data_t *data, const uint64_t off
   }
 }
 
+/*@
+  @ requires \valid(dst);
+  @ requires \valid_read(src);
+  @ requires \separated(dst, src);
+  @*/
+// assigns  *dst;
 static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t *src)
 {
   memcpy(dst, src, sizeof(*dst));
@@ -56,6 +65,11 @@ static inline void file_recovery_cpy(file_recovery_t *dst, const file_recovery_t
 }
 
 /* Check if the block looks like an indirect/double-indirect block */
+/*@
+  @ requires blocksize >= 8;
+  @ requires \valid_read(buffer + (0 .. blocksize-1));
+  @ assigns \result;
+  @*/
 static inline int ind_block(const unsigned char *buffer, const unsigned int blocksize)
 {
   const uint32_t *p32=(const uint32_t *)buffer;
@@ -65,6 +79,9 @@ static inline int ind_block(const unsigned char *buffer, const unsigned int bloc
     return 0;
   if(le32(p32[1])==le32(p32[0])+blocksize/4+1)
     diff=blocksize/4+1;	/* DIND: Double Indirect block */
+  /*@
+    @ loop assigns i;
+    @*/
   for(i=0;i<blocksize/4-1 && le32(p32[i+1])!=0;i++)
   {
     if(le32(p32[i+1])!=le32(p32[i])+diff)
@@ -73,6 +90,9 @@ static inline int ind_block(const unsigned char *buffer, const unsigned int bloc
     }
   }
   i++;
+  /*@
+    @ loop assigns i;
+    @*/
   for(;i<blocksize/4 && le32(p32[i])==0;i++);
   if(i<blocksize/4)
   {

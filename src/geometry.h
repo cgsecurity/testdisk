@@ -27,6 +27,7 @@ extern "C" {
 
 /*@
   @ requires \valid(disk);
+  @ requires valid_disk(disk);
   @ requires 0 < disk->geom.sectors_per_head;
   @ requires 0 < disk->geom.heads_per_cylinder;
   @ assigns disk->geom.cylinders;
@@ -35,19 +36,20 @@ void set_cylinders_from_size_up(disk_t *disk);
 
 /*@
   @ requires \valid(disk);
+  @ requires valid_disk(disk);
   @ assigns disk->sector_size, disk->geom.cylinders;
   @*/
 int change_sector_size(disk_t *disk, const int cyl_modified, const unsigned int sector_size);
 
 /*@
   @ requires \valid(disk);
+  @ requires valid_disk(disk);
   @ requires \valid_function(disk->description);
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
-  @ requires separation: \separated(disk, current_cmd);
-  @ requires \valid_function(disk->description);
-  @ ensures  valid_read_string(*current_cmd);
+  @ requires separation: \separated(disk, current_cmd, *current_cmd);
   @*/
+// ensures  valid_read_string(*current_cmd);
 int change_geometry_cli(disk_t *disk, char **current_cmd);
 
 #ifdef __cplusplus

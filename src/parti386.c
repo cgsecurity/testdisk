@@ -144,6 +144,8 @@ static int diff(const unsigned char buffer[DEFAULT_SECTOR_SIZE], const unsigned 
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ ensures  valid_list_part(\result);
   @*/
 static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const int saveheader);
 
@@ -528,6 +530,7 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
   CHSgeometry_t geometry;
   list_part_t *new_list_part=NULL;
   unsigned char *buffer=(unsigned char *)MALLOC(disk_car->sector_size);
+  /*@ assert valid_list_part(new_list_part); */
   screen_buffer_reset();
   if((unsigned)disk_car->pread(disk_car, buffer, disk_car->sector_size, (uint64_t)0) != disk_car->sector_size)
   {
@@ -544,6 +547,9 @@ static list_part_t *read_part_i386(disk_t *disk_car, const int verbose, const in
     free(buffer);
     return NULL;
   }
+  /*@
+    @ loop invariant valid_list_part(new_list_part);
+    @*/
   for(i=0;i<4;i++)
   {
     const struct partition_dos *p=pt_offset(buffer,i);
@@ -1183,27 +1189,27 @@ static void partition2_i386_entry(const disk_t *disk_car, const uint64_t pos, co
   if(start.cylinder>1023)
   { /* Partition Magic 5 uses CHS=(1023,0,1) if extended or last logical *
      * Linux fdisk and TestDisk use CHS=(1023,lastH,lastS)               */
-    p->head=(unsigned char)disk_car->geom.heads_per_cylinder-1;
-    p->sector=(unsigned char)(disk_car->geom.sectors_per_head | ((1023>>8)<<6));
-    p->cyl=(unsigned char)1023;
+    p->head=(disk_car->geom.heads_per_cylinder-1)&0xff;
+    p->sector=(disk_car->geom.sectors_per_head | ((1023>>8)<<6))&0xff;
+    p->cyl=1023&0xff;
   }
   else
   {
-    p->head=(unsigned char)start.head;
-    p->sector=(unsigned char)(start.sector|((start.cylinder>>8)<<6));
-    p->cyl=(unsigned char)(start.cylinder);
+    p->head=start.head&0xff;
+    p->sector=(start.sector|((start.cylinder>>8)<<6))&0xff;
+    p->cyl=start.cylinder&0xff;
   }
   if(end.cylinder>1023)
   {
-    p->end_head=(unsigned char)disk_car->geom.heads_per_cylinder-1;
-    p->end_sector=(unsigned char)(disk_car->geom.sectors_per_head | ((1023>>8)<<6));
-    p->end_cyl=(unsigned char)1023;
+    p->end_head=(disk_car->geom.heads_per_cylinder-1)&0xff;
+    p->end_sector=(disk_car->geom.sectors_per_head | ((1023>>8)<<6))&0xff;
+    p->end_cyl=1023&0xff;
   }
   else
   {
-    p->end_head=(unsigned char)end.head;
-    p->end_sector=(unsigned char)(end.sector|((end.cylinder>>8)<<6));
-    p->end_cyl=(unsigned char)end.cylinder;
+    p->end_head=end.head&0xff;
+    p->end_sector=(end.sector|((end.cylinder>>8)<<6))&0xff;
+    p->end_cyl=end.cylinder&0xff;
   }
   if((partition->part_size/disk_car->sector_size)<=0xFFFFFFFF)
     set_nr_sects(p,partition->part_size/disk_car->sector_size);
@@ -1405,7 +1411,10 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
-  /*@ loop invariant valid_read_string(*current_cmd); */
+  /*@
+    @ loop invariant valid_list_part(list_part);
+    @ loop invariant valid_read_string(*current_cmd);
+    @ */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -1449,9 +1458,12 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
     {
       int insert_error=0;
       list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+      /*@ assert valid_list_part(new_list_part); */
       if(insert_error>0)
       {
 	free(new_partition);
+	/*@ assert valid_read_string(*current_cmd); */
+	/*@ assert valid_list_part(new_list_part); */
 	return new_list_part;
       }
       if(test_structure_i386(list_part)==0)
@@ -1460,21 +1472,37 @@ list_part_t *add_partition_i386_cli(disk_t *disk_car, list_part_t *list_part, ch
 	{
 	  new_partition->status=STATUS_LOG;
 	  if(test_structure_i386(new_list_part)==0)
+	  {
+	    /*@ assert valid_read_string(*current_cmd); */
+	    /*@ assert valid_list_part(new_list_part); */
 	    return new_list_part;
+	  }
 	}
 	new_partition->status=STATUS_PRIM_BOOT;
 	if(test_structure_i386(new_list_part)==0)
+	{
+	  /*@ assert valid_read_string(*current_cmd); */
+	  /*@ assert valid_list_part(new_list_part); */
 	  return new_list_part;
+	}
 	new_partition->status=STATUS_PRIM;
 	if(test_structure_i386(new_list_part)==0)
+	{
+	  /*@ assert valid_read_string(*current_cmd); */
+	  /*@ assert valid_list_part(new_list_part); */
 	  return new_list_part;
+	}
       }
       new_partition->status=STATUS_DELETED;
+      /*@ assert valid_read_string(*current_cmd); */
+      /*@ assert valid_list_part(new_list_part); */
       return new_list_part;
     }
     else
     {
       free(new_partition);
+      /*@ assert valid_read_string(*current_cmd); */
+      /*@ assert valid_list_part(list_part); */
       return list_part;
     }
   }

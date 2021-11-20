@@ -34,6 +34,11 @@ struct info_disk_struct
 };
 
 disk_t *hd_identify(const int verbose, const unsigned int disk, const int testdisk_mode);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 const char *disk_description(disk_t *disk_car);
 
 #ifdef __cplusplus

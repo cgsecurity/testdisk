@@ -27,6 +27,7 @@ extern "C" {
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ ensures \valid(\result);
   @*/
 disk_t *new_diskcache(disk_t *disk_car, const unsigned int cache_size_min);

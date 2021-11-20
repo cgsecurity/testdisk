@@ -218,6 +218,7 @@ uint64_t td_ext2fs_free_blocks_count(const struct ext2_super_block *super);
 
 /*@
   @ requires \valid_read(sb);
+  @ requires \initialized(sb);
   @ requires partition==\null || (\valid_read(partition) && valid_partition(partition));
   @ requires \separated(sb, partition);
   @ assigns  \nothing;

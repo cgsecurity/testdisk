@@ -78,6 +78,7 @@ struct hfs_mdb {
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/
@@ -85,6 +86,7 @@ int check_HFS(disk_t *disk_car, partition_t *partition, const int verbose);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(hfs_mdb);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, hfs_mdb, partition);
@@ -93,6 +95,7 @@ int test_HFS(const disk_t *disk_car, const hfs_mdb_t *hfs_mdb, const partition_t
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(hfs_mdb);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, hfs_mdb, partition);

@@ -337,7 +337,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
       return 0;
     }
     change_arch_type_cli(params->disk, options->verbose, &params->cmd_run);
-    autoset_unit(disk);
+    autoset_unit(params->disk);
     menu_photorec(params, options, &list_search_space);
     /*@ assert params->cmd_run == \null || valid_read_string(params->cmd_run); */
     return 0;

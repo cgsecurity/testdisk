@@ -50,6 +50,11 @@ int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct 
       partition->part_offset + exfat_cluster_to_offset(exfat_header, cluster));
 }
 
+/*@
+  @ requires \valid(partition);
+  @ requires \valid_read(exfat_header);
+  @ requires \separated(partition, exfat_header);
+  @*/
 static void set_exFAT_info(partition_t *partition, const struct exfat_super_block*exfat_header)
 {
   partition->upart_type=UP_EXFAT;

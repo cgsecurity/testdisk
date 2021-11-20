@@ -92,14 +92,18 @@ typedef struct {
 #define pv_disk_t pv_disk_v2_t
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
   @*/
 int check_LVM(disk_t *disk_car, partition_t *partition, const int verbose);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(pv);
   @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
   @*/
 int recover_LVM(const disk_t *disk_car, const pv_disk_t *pv, partition_t *partition, const int verbose, const int dump_ind);
 
@@ -130,6 +134,7 @@ struct lvm2_pv_header {
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/
@@ -137,6 +142,7 @@ int check_LVM2(disk_t *disk_car, partition_t *partition, const int verbose);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(buf);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, buf, partition);

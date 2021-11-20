@@ -27,12 +27,16 @@ extern "C" {
 
 /*@
   @ requires \valid(params);
+  @ requires valid_ph_param(params);
   @ requires \valid(options);
-  @ requires list_disk == \null || \valid_read(list_disk);
+  @ requires list_disk == \null || (\valid_read(list_disk) && valid_disk(list_disk->disk));
   @ requires params->cmd_device==\null || valid_read_string(params->cmd_device);
   @ requires params->cmd_run==\null || valid_read_string(params->cmd_run);
+  @ requires params->disk==\null;
+  @ requires \separated(params, options, list_disk);
   @ ensures  params->cmd_run==\null || valid_read_string(params->cmd_run);
   @*/
+// ensures  params->disk==\null || valid_disk(params->disk);
 int do_curses_photorec(struct ph_param *params, struct ph_options *options, const list_disk_t *list_disk);
 
 #ifdef __cplusplus

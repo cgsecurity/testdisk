@@ -25,6 +25,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 int interface_check_disk_capacity(disk_t *disk_car);
 
 #ifdef __cplusplus

@@ -25,6 +25,11 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \separated(disk_car, current_cmd);
+  @*/
 int interface_check_disk_access(disk_t *disk_car, char **current_cmd);
 
 #ifdef __cplusplus

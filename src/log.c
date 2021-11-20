@@ -54,14 +54,10 @@
 static FILE *log_handle=NULL;
 static int f_status=0;
 
-/*@
-  @ requires valid_read_string(_format);
-  @*/
-static int log_handler(const char *_format, va_list ap) __attribute__((format(printf, 1, 0)));
-
 /* static unsigned int log_levels=LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL; */
 static unsigned int log_levels=LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL;
 
+/*@ assigns log_levels; */
 unsigned int log_set_levels(const unsigned int levels)
 {
   const unsigned int old_levels=log_levels;
@@ -69,6 +65,11 @@ unsigned int log_set_levels(const unsigned int levels)
   return old_levels;
 }
 
+/*@
+  @ requires separation: \separated(default_filename, errsv, log_handle, &errno);
+  @ assigns log_handle;
+  @ assigns \result,errno,*errsv;
+  @*/
 int log_open(const char*default_filename, const int mode, int *errsv)
 {
   log_handle=fopen(default_filename,(mode==TD_LOG_CREATE?"w":"a"));
@@ -93,6 +94,11 @@ int log_open(const char*default_filename, const int mode, int *errsv)
   return 1;
 }
 
+/*@
+  @ requires separation: \separated(default_filename, errsv, log_handle, &errno);
+  @ assigns log_handle;
+  @ assigns \result,errno,*errsv;
+  @*/
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
@@ -124,6 +130,9 @@ int log_open_default(const char*default_filename, const int mode, int *errsv)
 #else
 int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
+#ifdef __FRAMAC__
+  return log_open(default_filename, mode, errsv);
+#else
   char*filename;
   char *path;
   int result;
@@ -137,13 +146,25 @@ int log_open_default(const char*default_filename, const int mode, int *errsv)
   result=log_open(filename, mode, errsv);
   free(filename);
   return result;
+#endif
 }
 #endif
 
+/*@
+  @ requires log_handle==\null || \valid(log_handle);
+  @*/
 int log_flush(void)
 {
   return fflush(log_handle);
 }
+
+/*@
+  @ requires \valid(log_handle);
+  @ requires valid_read_string(_format);
+  @ assigns f_status, *log_handle;
+  @*/
+// assigns *log_handle \from _format[..], ap;
+static int log_handler(const char *_format, va_list ap) __attribute__((format(printf, 1, 0)));
 
 static int log_handler(const char *_format, va_list ap)
 {
@@ -164,6 +185,11 @@ static int log_handler(const char *_format, va_list ap)
   return res;
 }
 
+/*@
+  @ requires log_handle == \null || \valid(log_handle);
+  @ assigns \result,errno,log_handle;
+  @ assigns f_status;
+  @*/
 int log_close(void)
 {
   if(log_handle!=NULL)
@@ -175,6 +201,11 @@ int log_close(void)
   return f_status;
 }
 
+/*@
+  @ requires log_handle == \null || \valid(log_handle);
+  @ assigns *log_handle;
+  @ assigns f_status;
+  @*/
 int log_redirect(const unsigned int level, const char *format, ...)
 {
   if((log_levels & level)==0)
@@ -191,7 +222,7 @@ int log_redirect(const unsigned int level, const char *format, ...)
   }
 }
 
-void dump_log(const void *nom_dump,unsigned int lng)
+void dump_log(const void *nom_dump, const unsigned int lng)
 {
   unsigned int i,j;
   unsigned int nbr_line;

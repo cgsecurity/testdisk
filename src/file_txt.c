@@ -493,6 +493,7 @@ static double is_random(const unsigned char *buffer, const unsigned int buffer_s
     @ loop invariant \forall integer j; (0 <= j < i) ==> stats[j] == 0;
     @ loop invariant \initialized(&stats[0 .. i-1]);
     @ loop assigns i, stats[0 ..i];
+    @ loop variant 256-i;
     @ */
   for(i=0; i < 256; i++)
     stats[i] = 0;

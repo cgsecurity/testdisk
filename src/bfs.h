@@ -88,12 +88,14 @@ struct disk_super_block          /* super block as it is on disk */
 /*@
   @ requires \valid(disk_car);
   @ requires \valid(partition);
+  @ requires valid_disk(disk_car);
   @ requires separation: \separated(disk_car, partition);
   @*/
 int check_BeFS(disk_t *disk_car, partition_t *partition);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(beos_block);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, beos_block, partition);

@@ -25,7 +25,16 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 int io_redir_add_redir(disk_t *disk_car, const uint64_t org_offset, const unsigned int size, const uint64_t new_offset, const void *mem);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 int io_redir_del_redir(disk_t *disk_car, uint64_t org_offset);
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

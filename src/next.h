@@ -25,6 +25,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 void search_location_init(const disk_t *disk_car, const unsigned int location_boundary, const int fast_mode);
 uint64_t search_location_update(const uint64_t location);
 

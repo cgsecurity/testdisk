@@ -40,6 +40,10 @@ disk_t *photorec_disk_selection_cli(const char *cmd_device, const list_disk_t *l
 {
   const list_disk_t *element_disk;
   disk_t *disk=NULL;
+  /*@
+    @ loop invariant valid_disk(disk);
+    @ loop assigns element_disk, disk;
+    @*/
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {
     if(strcmp(element_disk->disk->device, cmd_device)==0)

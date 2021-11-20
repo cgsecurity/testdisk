@@ -27,9 +27,13 @@ extern "C" {
 #endif
 
 /*@
+  @ requires \valid(current_cmd);
   @ requires \valid(disk);
+  @ requires \separated(disk, current_cmd);
+  @ requires valid_disk(disk);
   @ requires current_cmd == \null || valid_read_string(*current_cmd);
   @ ensures  current_cmd == \null || valid_read_string(*current_cmd);
+  @ ensures  valid_disk(disk);
   @*/
 int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd);
 

@@ -71,7 +71,19 @@
 uint64_t gpfh_nbr=0;
 
 static void update_search_space_aux(alloc_data_t *list_search_space, uint64_t start, uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset);
+
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires valid_list_search_space(list_search_space);
+  @ requires \separated(file_recovery, list_search_space);
+  @*/
 static void file_block_truncate_zero(const file_recovery_t *file_recovery, alloc_data_t *list_search_space);
+
+/*@
+  @ requires valid_file_recovery(file_recovery);
+  @ requires valid_list_search_space(list_search_space);
+  @ requires \separated(file_recovery, list_search_space);
+  @*/
 static int file_block_truncate(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, const unsigned int blocksize);
 
 void file_block_log(const file_recovery_t *file_recovery, const unsigned int sector_size)
@@ -79,6 +91,7 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
   struct td_list_head *tmp;
   if(file_recovery->filename[0]=='\0')
     return;
+#ifndef __FRAMAC__
   log_info("%s\t",file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
   {
@@ -89,6 +102,7 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
       log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
   }
   log_info("\n");
+#endif
 }
 
 void del_search_space(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end)
@@ -253,14 +267,15 @@ void free_list_search_space(alloc_data_t *list_search_space)
 
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num)
 {
-  char working_recup_dir[2048];
   int dir_ok=0;
   int dir_num=initial_dir_num;
 #ifdef DJGPP
   int i=0;
 #endif
+  /*@ loop invariant valid_read_string(recup_dir); */
   do
   {
+    char working_recup_dir[2048];
     snprintf(working_recup_dir,sizeof(working_recup_dir)-1,"%s.%d",recup_dir,dir_num);
 #ifdef HAVE_MKDIR
 #ifdef __MINGW32__
@@ -291,6 +306,10 @@ unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_di
   return dir_num;
 }
 
+/*@
+  @ requires \separated(list_search_space, current_search_space, offset, &gpfh_nbr);
+  @ assigns  gpfh_nbr, *current_search_space, *offset;
+  @ */
 int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset)
 {
   int nbr;
@@ -298,17 +317,22 @@ int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **c
   uint64_t size=0;
   gpfh_nbr++;
   /* Search backward the first fragment of a file not successfully recovered
-   * Limit the search to 10 fragments or 1GB */
+   * Limit the search to 3 fragments or 200MB */
+  /*@
+    @ loop assigns nbr, file_space, *current_search_space, *offset;
+    @*/
   for(nbr=0; nbr<3 && size < (uint64_t)200*1024*1024; nbr++)
   {
     file_space=td_list_prev_entry(file_space, list);
     if(file_space==list_search_space)
       return -1;
+    /*@ assert file_space->end > file_space->start; */
     size+=file_space->end - file_space->start + 1;
     if(file_space->file_stat!=NULL)
     {
       *current_search_space=file_space;
       *offset=file_space->start;
+      /*@ assert *current_search_space!=list_search_space && *offset == (*current_search_space)->start; */
       return 0;
     }
   }
@@ -363,6 +387,9 @@ void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space)
   struct td_list_head *search_walker = NULL;
   int i;
   /* Reset */
+  /*@
+    @ loop assigns i, file_stats[i].not_recovered;
+    @*/
   for(i=0;file_stats[i].file_hint!=NULL;i++)
     file_stats[i].not_recovered=0;
   /* Update */
@@ -434,10 +461,11 @@ partition_t *new_whole_disk(const disk_t *disk_car)
   return fake_partition;
 }
 
-unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int default_blocksize, uint64_t *offset)
+unsigned int find_blocksize(const alloc_data_t *list_search_space, const unsigned int default_blocksize, uint64_t *offset)
 {
+  /* NTFS cluster size can be 2 MB since Windows 10 Creators edition */
+  // FIXME unsigned int blocksize=2*1024*1024;
   unsigned int blocksize=128*512;
-  struct td_list_head *search_walker = NULL;
   int run_again;
   *offset=0;
   if(td_list_empty(&list_search_space->list))
@@ -445,6 +473,7 @@ unsigned int find_blocksize(alloc_data_t *list_search_space, const unsigned int 
   *offset=(td_list_first_entry(&list_search_space->list, alloc_data_t, list))->start % blocksize;
   do
   {
+    const struct td_list_head *search_walker = NULL;
     run_again=0;
     td_list_for_each(search_walker, &list_search_space->list)
     {
@@ -479,6 +508,7 @@ void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_sp
   td_list_for_each_prev_safe(search_walker,search_walker_prev,&list_search_space->list)
   {
     alloc_data_t *current_search_space=td_list_entry(search_walker, alloc_data_t, list);
+    /*@ assert current_search_space->start >= offset; */
     const uint64_t aligned_start=(current_search_space->start-offset%blocksize+blocksize-1)/blocksize*blocksize+offset%blocksize;
     if(current_search_space->start!=aligned_start)
     {
@@ -519,7 +549,10 @@ void update_blocksize(const unsigned int blocksize, alloc_data_t *list_search_sp
 
 uint64_t free_list_allocation_end=0;
 
-void file_block_free(alloc_list_t *list_allocation)
+/*@
+  @ requires \valid(list_allocation);
+  @*/
+static void file_block_free(alloc_list_t *list_allocation)
 {
   struct td_list_head *tmp = NULL;
   struct td_list_head *tmp_next = NULL;
@@ -537,14 +570,20 @@ void file_block_free(alloc_list_t *list_allocation)
 /*@
   @ requires \valid(file_recovery);
   @ requires \valid(params);
+  @ requires valid_ph_param(params);
   @ requires \valid(file_recovery->handle);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \separated(file_recovery, params, file_recovery->handle);
   @*/
 static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid)
 {
+  /*@ assert valid_file_recovery(file_recovery); */
   if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
       params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING &&
       file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
     { /* Check if recovered file is valid */
+      /*@ assert file_recovery->file_check != \null; */
+      /*@ assert \valid_function(file_recovery->file_check); */
       file_recovery->file_check(file_recovery);
     }
   /* FIXME: need to adapt read_size to volume size to avoid this */
@@ -555,10 +594,12 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
       file_recovery->file_size < file_recovery->min_filesize)
   { 
+#ifndef __FRAMAC__
     log_info("%s File too small ( %llu < %llu), reject it\n",
 	file_recovery->filename,
 	(long long unsigned) file_recovery->file_size,
 	(long long unsigned) file_recovery->min_filesize);
+#endif
     file_recovery->file_size=0;
   }
   if(file_recovery->file_size==0)
@@ -568,6 +609,7 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
     /* File is zero-length; erase it */
+    /*@ assert valid_read_string((const char *)file_recovery->filename); */
     unlink(file_recovery->filename);
     return;
   }
@@ -582,8 +624,13 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   file_recovery->handle=NULL;
   if(file_recovery->time!=0 && file_recovery->time!=(time_t)-1)
     set_date(file_recovery->filename, file_recovery->time, file_recovery->time);
+  /*@ assert valid_file_recovery(file_recovery); */
   if(file_recovery->file_rename!=NULL)
+  {
+    /*@ assert file_recovery->file_rename != \null; */
+    /*@ assert \valid_function(file_recovery->file_rename); */
     file_recovery->file_rename(file_recovery);
+  }
   if((++params->file_nbr)%MAX_FILES_PER_DIR==0)
   {
     params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num+1);
@@ -643,6 +690,7 @@ void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *para
   {
     fclose(file_recovery->handle);
     file_recovery->handle=NULL;
+    /*@ assert valid_file_recovery(file_recovery); */
     /* File is zero-length; erase it */
     unlink(file_recovery->filename);
   }
@@ -675,6 +723,7 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
 
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose)
 {
+#ifndef __FRAMAC__
   struct td_list_head *search_walker = NULL;
   unsigned long int nbr_headers=0;
   uint64_t sectors_with_unknown_data=0;
@@ -703,6 +752,7 @@ void info_list_search_space(const alloc_data_t *list_search_space, const alloc_d
   log_info("%llu sectors contain unknown data, %lu invalid files found %s.\n",
       (long long unsigned)sectors_with_unknown_data, (long unsigned)nbr_headers,
       (keep_corrupted_file>0?"but saved":"and rejected"));
+#endif
 }
 
 void free_search_space(alloc_data_t *list_search_space)
@@ -738,9 +788,18 @@ void set_filename(file_recovery_t *file_recovery, struct ph_param *params)
   }
 }
 
+/*@
+  @ requires \valid(new_current_search_space);
+  @ requires \valid(list_search_space);
+  @ requires \separated(new_current_search_space, list_search_space);
+  @ assigns  *new_current_search_space;
+  @*/
 static void set_search_start_aux(alloc_data_t **new_current_search_space, alloc_data_t *list_search_space, const uint64_t offset)
 {
   struct td_list_head *search_walker = NULL;
+  /*@
+    @ loop assigns search_walker, *new_current_search_space;
+    @*/
   td_list_for_each(search_walker, &list_search_space->list)
   {
     alloc_data_t *current_search_space;
@@ -759,7 +818,7 @@ static void set_search_start_aux(alloc_data_t **new_current_search_space, alloc_
 uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space)
 {
   uint64_t offset=(*new_current_search_space)->start;
-  if(params->offset!=-1)
+  if(params->offset!=PH_INVALID_OFFSET)
   {
     offset=params->offset;
     set_search_start_aux(new_current_search_space, list_search_space, offset);
@@ -786,7 +845,7 @@ void params_reset(struct ph_param *params, const struct ph_options *options)
   params->real_start_time=time(NULL);
   params->dir_num=1;
   params->file_stats=init_file_stats(options->list_file_format);
-  params->offset=-1;
+  params->offset=PH_INVALID_OFFSET;
   if(params->blocksize==0)
     params->blocksize=params->disk->sector_size;
 }
@@ -819,7 +878,7 @@ const char *status_to_name(const photorec_status_t status)
 
 void status_inc(struct ph_param *params, const struct ph_options *options)
 {
-  params->offset=-1;
+  params->offset=PH_INVALID_OFFSET;
   switch(params->status)
   {
     case STATUS_UNFORMAT:
@@ -869,16 +928,24 @@ list_part_t *init_list_part(disk_t *disk, const struct ph_options *options)
   list_part_t *list_part;
   partition_t *partition_wd;
   list_part=disk->arch->read_part(disk, (options!=NULL?options->verbose:0), 0);
+  /*@ assert valid_list_part(list_part); */
   partition_wd=new_whole_disk(disk);
   list_part=insert_new_partition(list_part, partition_wd, 0, &insert_error);
   if(insert_error>0)
   {
     free(partition_wd);
   }
+  /*@ assert valid_list_part(list_part); */
   return list_part;
 }
 
 /* file_block_remove_from_sp: remove block from list_search_space, update offset and new_current_search_space in consequence */
+/*@
+  @ requires \valid(tmp);
+  @ requires \valid(new_current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(tmp, new_current_search_space, offset);
+  @*/
 static inline void file_block_remove_from_sp_aux(alloc_data_t *tmp, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   if(tmp->start == *offset)
@@ -917,6 +984,12 @@ static inline void file_block_remove_from_sp_aux(alloc_data_t *tmp, alloc_data_t
   }
 }
 
+/*@
+  @ requires \valid(list_search_space);
+  @ requires \valid(new_current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(list_search_space, new_current_search_space, offset);
+  @*/
 static inline void file_block_remove_from_sp(alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   struct td_list_head *search_walker = &(*new_current_search_space)->list;
@@ -945,6 +1018,11 @@ static inline void file_block_remove_from_sp(alloc_data_t *list_search_space, al
   exit(1);
 }
 
+/*@
+  @ requires \valid(list);
+  @ requires \valid(list->list.prev);
+  @ requires offset + blocksize < 0xffffffffffffffff;
+  @*/
 static inline void file_block_add_to_file(alloc_list_t *list, const uint64_t offset, const uint64_t blocksize, const unsigned int data)
 {
   if(!td_list_empty(&list->list))
@@ -971,6 +1049,9 @@ void file_block_append(file_recovery_t *file_recovery, alloc_data_t *list_search
   file_block_remove_from_sp(list_search_space, new_current_search_space, offset, blocksize);
 }
 
+/*@
+  @ requires \valid(list_search_space);
+  @*/
 static void file_block_truncate_aux(const uint64_t start, const uint64_t end, alloc_data_t *list_search_space)
 {
   struct td_list_head *search_walker = NULL;
@@ -1017,6 +1098,11 @@ static void file_block_truncate_aux(const uint64_t start, const uint64_t end, al
   }
 }
 
+/*@
+  @ requires \valid(list_search_space);
+  @ requires \valid(file_stat);
+  @ requires \separated(list_search_space, file_stat);
+  @*/
 static void file_block_truncate_zero_aux(const uint64_t start, const uint64_t end, alloc_data_t *list_search_space, file_stat_t *file_stat)
 {
   struct td_list_head *search_walker = NULL;
@@ -1111,6 +1197,10 @@ static int file_block_truncate(const file_recovery_t *file_recovery, alloc_data_
   return file_truncated;
 }
 
+/*@
+  @ requires \valid_read(file_recovery);
+  @ assigns  \nothing;
+  @*/
 static uint64_t file_offset_end(const file_recovery_t *file_recovery)
 {
   const struct td_list_head *tmp=file_recovery->location.list.prev;
@@ -1118,10 +1208,19 @@ static uint64_t file_offset_end(const file_recovery_t *file_recovery)
   return element->end;
 }
 
+/*@
+  @ requires \valid_read(file_recovery);
+  @ requires \valid(list_search_space);
+  @ requires \valid(new_current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(file_recovery, list_search_space, new_current_search_space, offset);
+  @ assigns  *new_current_search_space, *offset;
+  @*/
 static void file_block_move(const file_recovery_t *file_recovery, alloc_data_t *list_search_space, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
   const uint64_t end=file_offset_end(file_recovery);
   struct td_list_head *tmp;
+  /*@ loop assigns tmp; */
   td_list_for_each(tmp, &list_search_space->list)
   {
     alloc_data_t *element=td_list_entry(tmp, alloc_data_t, list);
@@ -1156,6 +1255,8 @@ void file_block_truncate_and_move(file_recovery_t *file_recovery, alloc_data_t *
       if(fread(block_buffer, blocksize, 1, file_recovery->handle) != 1)
 	return ;
       file_recovery->data_check(buffer, 2*blocksize, file_recovery);
+      if(file_recovery->data_check==NULL)
+	return ;
       memcpy(buffer, block_buffer, blocksize);
     }
   }

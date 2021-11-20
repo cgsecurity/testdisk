@@ -36,6 +36,7 @@ struct disk_netware
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/
@@ -43,6 +44,7 @@ int check_netware(disk_t *disk_car, partition_t *partition);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(netware_block);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, netware_block, partition);

@@ -25,8 +25,28 @@
 extern "C" {
 #endif
 
-int rebuild_FAT_BS(disk_t *disk_car,partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char**current_cmd);
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
+int rebuild_FAT_BS(disk_t *disk_car, partition_t *partition, const int verbose, const int dump_ind, const unsigned int expert, char**current_cmd);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 int FAT_init_rootdir(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 int repair_FAT_table(disk_t *disk_car, partition_t *partition, const int verbose, char **current_cmd);
 
 #ifdef __cplusplus

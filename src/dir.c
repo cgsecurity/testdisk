@@ -57,8 +57,9 @@
 const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
-static char ftypelet (unsigned int bits);
-
+/*@
+  @ assigns \result;
+  @*/
 static char ftypelet (unsigned int bits)
 {
 #ifdef LINUX_S_ISBLK
@@ -195,6 +196,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
   {
     log_info("Directory %s\n",dir_data->current_directory);
   }
+#ifndef __FRAMAC__
   td_list_for_each(file_walker, &dir_list->list)
   {
     const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
@@ -222,11 +224,13 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
     }
     log_info("%s\n", current_file->name);
   }
+#endif
   return test_date;
 }
 
 void log_list_file(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
 {
+#ifndef __FRAMAC__
   struct td_list_head *tmp;
   log_partition(disk, partition);
   if(dir_data!=NULL)
@@ -250,6 +254,7 @@ void log_list_file(const disk_t *disk, const partition_t *partition, const dir_d
     log_info("%9llu", (long long unsigned int)current_file->st_size);
     log_info(" %s %s\n", datestr, current_file->name);
   }
+#endif
 }
 
 unsigned int delete_list_file(file_info_t *file_info)
@@ -269,6 +274,11 @@ unsigned int delete_list_file(file_info_t *file_info)
   return nbr;
 }
 
+/*@
+  @ requires \valid_read(current_file);
+  @ requires \valid_read(inode_known + (0 .. dir_nbr-1));
+  @ assigns \nothing;
+  @*/
 static int is_inode_valid(const file_info_t *current_file, const unsigned int dir_nbr, const unsigned long int *inode_known)
 {
   const unsigned long int new_inode=current_file->st_ino;
@@ -277,12 +287,21 @@ static int is_inode_valid(const file_info_t *current_file, const unsigned int di
     return 0;
   if(strcmp(current_file->name, "..")==0)
     return 0;
+  /*@ loop assigns i; */
   for(i=0; i<dir_nbr; i++)
     if(new_inode==inode_known[i]) /* Avoid loop */
       return 0;
   return 1;
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(dir_data);
+  @ requires \separated(disk, partition, dir_data);
+  @*/
 static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
 {
   struct td_list_head *file_walker = NULL;
@@ -325,6 +344,16 @@ int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data
   return dir_whole_partition_log_aux(disk, partition, dir_data, inode);
 }
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(dir_data);
+  @ requires \valid(copy_ok);
+  @ requires \valid(copy_bad);
+  @ requires \separated(disk, partition, dir_data, copy_ok, copy_bad);
+  @*/
 static int dir_whole_partition_copy_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   struct td_list_head *file_walker = NULL;
@@ -450,11 +479,14 @@ static struct {
   { 0, 0 }
 };
 
+/*@
+  @ assigns \nothing;
+  @*/
 static mode_t mode_xlate(unsigned int lmode)
 {
   mode_t  mode = 0;
   int     i;
-
+  /*@ loop assigns i, mode; */
   for (i=0; mode_table[i].lmask; i++) {
     if (lmode & mode_table[i].lmask)
       mode |= mode_table[i].mask;
@@ -481,6 +513,9 @@ int set_mode(const char *pathname, unsigned int mode)
 #endif
 }
 
+/*@
+  @ requires valid_string(fn);
+  @*/
 static void strip_fn(char *fn)
 {
   unsigned int i;
@@ -642,9 +677,17 @@ static unsigned int filename_convert(char *dst, const char*src, const unsigned i
   return j;
 }
 #else
+/*@
+  @ requires \valid(dst + (0 .. n));
+  @ requires \valid_read(src + (0 .. n-1));
+  @ requires \separated(dst + (..), src + (..));
+  @*/
 static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i, dst[i];
+    @*/
   for(i=0;i<n && src[i]!='\0';i++)
     dst[i]=src[i];
   dst[i]='\0';

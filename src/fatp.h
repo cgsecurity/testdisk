@@ -25,6 +25,15 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires valid_list_search_space(list_search_space);
+  @ requires \separated(disk_car, partition, list_search_space);
+  @*/
+// ensures  valid_list_search_space(list_search_space);
 unsigned int fat_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space);
 
 #ifdef __cplusplus

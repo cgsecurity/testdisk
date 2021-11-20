@@ -25,6 +25,12 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk);
+  @ requires valid_disk(disk);
+  @ requires valid_list_part(list_part);
+  @ ensures  valid_list_part(list_part);
+  @*/
 list_part_t *add_partition_gpt_ncurses(disk_t *disk, list_part_t *list_part);
 
 #ifdef __cplusplus

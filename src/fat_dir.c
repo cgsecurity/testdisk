@@ -55,14 +55,42 @@ struct fat_dir_struct
   struct fat_boot_sector*boot_sector;
 };
 
-
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid_read(dir_data);
+  @ requires \valid_read(fat_header);
+  @ requires \valid(dir_list);
+  @ requires \separated(disk_car, partition, dir_data, fat_header, dir_list);
+  @*/
 static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header, file_info_t *dir_list);
-static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid_read(dir_data);
+  @ requires \valid(file);
+  @ requires \separated(disk_car, partition, dir_data, file);
+  @*/
 static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+
+/*@
+  @ requires \valid(dir_data);
+  @*/
 static void dir_partition_fat_close(dir_data_t *dir_data);
 
+/*@
+  @ requires len > 0;
+  @ requires \valid_read(src + (0 .. 2*len-1));
+  @ requires \valid((char *)dst + (0 .. 2*len-1));
+  @*/
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 {
+	/*@ loop assigns len, *dst, dst, src; */
 	while (len--) {
 		*dst++ = src[0] | (src[1] << 8);
 		src += 2;
@@ -271,16 +299,16 @@ RecEnd:
 #endif
 	  if(sizec <= 0)
 	  {
-	    new_file->name[o++]=(char) unicode[i];
+	    new_file->name[o++]=unicode[i];
 	    utf8=0;
 	  }
 	  else
 	    o += sizec;
 	}
 	else
-	  new_file->name[o++]=(char) unicode[i];
+	  new_file->name[o++]=unicode[i];
       }
-      new_file->name[o]=0;
+      new_file->name[o]='\0';
       new_file->st_ino=inode;
       new_file->st_mode = MSDOS_MKMODE(de->attr,(LINUX_S_IRWXUGO & ~(LINUX_S_IWGRP|LINUX_S_IWOTH)));
       new_file->st_uid=0;
@@ -302,6 +330,7 @@ RecEnd:
 
 typedef enum {FAT_FOLLOW_CLUSTER, FAT_NEXT_FREE_CLUSTER, FAT_NEXT_CLUSTER} fat_method_t;
 
+/*@ assigns \nothing; */
 static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
 {
   if(upart_type==UP_FAT12)
@@ -313,6 +342,16 @@ static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
 }
 
 #define NBR_ENTRIES_MAX 65536
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid_read(dir_data);
+  @ requires \valid(dir_list);
+  @ requires \separated(disk_car, partition, dir_data, dir_list);
+  @*/
 static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list)
 {
   const struct fat_dir_struct *ls=(const struct fat_dir_struct*)dir_data->private_dir_data;
@@ -482,6 +521,15 @@ static void dir_partition_fat_close(dir_data_t *dir_data)
   free(ls);
 }
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(dir_data);
+  @ requires \valid_read(file);
+  @ requires \separated(disk_car, partition, dir_data, file);
+  @*/
 static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   char *new_file;	

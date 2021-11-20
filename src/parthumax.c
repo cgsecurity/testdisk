@@ -45,11 +45,14 @@
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @*/
+// ensures  valid_list_part(\result);
 static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const int saveheader);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(list_part);
   @ requires separation: \separated(disk_car, list_part);
   @*/
@@ -72,7 +75,6 @@ static void set_next_status_humax(const disk_t *disk_car, partition_t *partition
 
 /*@
   @ requires list_part == \null || \valid_read(list_part);
-  @ assigns \nothing;
   @*/
 static int test_structure_humax(const list_part_t *list_part);
 
@@ -160,6 +162,7 @@ static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const i
   list_part_t *new_list_part=NULL;
   uint32_t *p32;
   unsigned char *buffer;
+  /*@ assert valid_list_part(new_list_part); */
   if(disk_car->sector_size < DEFAULT_SECTOR_SIZE)
     return NULL;
   buffer=(unsigned char *)MALLOC(disk_car->sector_size);
@@ -181,6 +184,9 @@ static list_part_t *read_part_humax(disk_t *disk_car, const int verbose, const i
     free(buffer);
     return NULL;
   }
+  /*@
+    @ loop invariant valid_list_part(new_list_part);
+    @*/
   for(i=0;i<4;i++)
   {
      if (humaxlabel->partitions[i].num_sectors > 0)
@@ -241,10 +247,14 @@ list_part_t *add_partition_humax_cli(const disk_t *disk_car,list_part_t *list_pa
   end.cylinder=disk_car->geom.cylinders-1;
   end.head=disk_car->geom.heads_per_cylinder-1;
   end.sector=disk_car->geom.sectors_per_head;
-  /*@ loop invariant valid_read_string(*current_cmd); */
+  /*@
+    @ loop invariant valid_list_part(list_part);
+    @ loop invariant valid_read_string(*current_cmd);
+    @ */
   while(1)
   {
     skip_comma_in_command(current_cmd);
+    /*@ assert valid_read_string(*current_cmd); */
     if(check_command(current_cmd,"c,",2)==0)
     {
       start.cylinder=ask_number_cli(current_cmd, start.cylinder,0,disk_car->geom.cylinders-1,"Enter the starting cylinder ");
@@ -262,19 +272,25 @@ list_part_t *add_partition_humax_cli(const disk_t *disk_car,list_part_t *list_pa
     {
       int insert_error=0;
       list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+      /*@ assert valid_list_part(new_list_part); */
       if(insert_error>0)
       {
 	free(new_partition);
+	/*@ assert valid_list_part(new_list_part); */
 	return new_list_part;
       }
       new_partition->status=STATUS_PRIM;
       if(test_structure_humax(list_part)!=0)
 	new_partition->status=STATUS_DELETED;
+      /*@ assert valid_read_string(*current_cmd); */
+      /*@ assert valid_list_part(new_list_part); */
       return new_list_part;
     }
     else
     {
       free(new_partition);
+      /*@ assert valid_read_string(*current_cmd); */
+      /*@ assert valid_list_part(list_part); */
       return list_part;
     }
   }

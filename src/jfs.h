@@ -30,6 +30,7 @@ extern "C" {
 #define L2BPERDMAP 13      /* l2 num of blks per dmap */
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
   @*/
@@ -37,6 +38,7 @@ int check_JFS(disk_t *disk_car, partition_t *partition);
 
 /*@
   @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
   @ requires \valid_read(sb);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, sb, partition);

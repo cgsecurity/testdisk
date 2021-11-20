@@ -26,7 +26,19 @@ extern "C" {
 #endif
 
 typedef enum part_offset part_offset_t;
-int interface_recovery(disk_t *disk_car, const list_part_t * list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires valid_list_part(list_part_org);
+  @ requires \separated(disk_car, list_part_org);
+  @*/
+int interface_recovery(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int align, const int ask_part_order, const unsigned int expert, char **current_cmd);
+
+/*@
+  @ requires valid_list_part(list_part);
+  @ requires valid_list_part(part_boot);
+  @*/
 void only_one_bootable( list_part_t *list_part, const list_part_t *part_boot);
 
 #ifdef __cplusplus

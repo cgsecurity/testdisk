@@ -79,8 +79,21 @@ struct gfs2_sb {
 	uint8_t sb_uuid[16]; /* The UUID, maybe 0 for backwards compat */
 };
 
-//
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 int check_gfs2(disk_t *disk_car, partition_t *partition);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(sb);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, sb, partition);
+  @*/
 int recover_gfs2(const disk_t *disk_car, const struct gfs2_sb *sb, partition_t *partition, const int dump_ind);
 
 #ifdef __cplusplus

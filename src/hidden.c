@@ -40,11 +40,14 @@ int is_hpa_or_dco(const disk_t *disk)
   }
   else if(disk->dco > 0 && disk->user_max < disk->dco+1)
   {
+#ifndef __FRAMAC__
     log_info("user_max=%llu dco=%llu\n",
 	(long long unsigned) disk->user_max,
 	(long long unsigned) disk->dco);
+#endif
     res|=2;
   }
+#ifndef __FRAMAC__
   if(res>0)
   {
     if(res&1)
@@ -53,5 +56,6 @@ int is_hpa_or_dco(const disk_t *disk)
       log_warning("%s: Device Configuration Overlay (DCO) present.\n", disk->device);
     log_flush();
   }
+#endif
   return res;
 }

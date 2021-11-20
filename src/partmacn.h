@@ -27,6 +27,11 @@ extern "C" {
 #endif
 
 void write_part_mac_warning_ncurses(void);
+/*@
+  @ requires valid_disk(disk);
+  @ requires valid_list_part(list_part);
+  @ ensures  valid_list_part(list_part);
+  @*/
 list_part_t *add_partition_mac_ncurses(disk_t *disk, list_part_t *list_part);
 
 #ifdef __cplusplus

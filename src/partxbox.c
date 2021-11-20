@@ -53,7 +53,9 @@ static int check_part_xbox(disk_t *disk_car, const int verbose,partition_t *part
 
 /*@
   @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
   @*/
+// ensures  valid_list_part(\result);
 static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const int saveheader);
 
 /*@
@@ -80,7 +82,6 @@ static void set_next_status_xbox(const disk_t *disk_car, partition_t *partition)
 
 /*@
   @ requires list_part == \null || \valid_read(list_part);
-  @ assigns \nothing;
   @*/
 static int test_structure_xbox(const list_part_t *list_part);
 
@@ -156,6 +157,7 @@ static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const in
 {
   unsigned char buffer[0x800];
   list_part_t *new_list_part=NULL;
+  /*@ assert valid_list_part(new_list_part); */
   screen_buffer_reset();
   if(disk_car->pread(disk_car, &buffer, sizeof(buffer), 0) != sizeof(buffer))
     return new_list_part;
@@ -168,6 +170,9 @@ static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const in
       screen_buffer_add("\nBad XBOX partition, invalid signature\n");
       return NULL;
     }
+    /*@
+      @ loop invariant valid_list_part(new_list_part);
+      @*/
     for(i=0;i<sizeof(offsets)/sizeof(uint64_t);i++)
     {
       if(offsets[i]<disk_car->disk_size)
@@ -190,6 +195,7 @@ static list_part_t *read_part_xbox(disk_t *disk_car, const int verbose, const in
       }
     }
   }
+  /*@ assert valid_list_part(new_list_part); */
   return new_list_part;
 }
 
@@ -212,7 +218,10 @@ list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_par
   assert(current_cmd!=NULL);
   new_partition->part_offset=disk_car->sector_size;
   new_partition->part_size=disk_car->disk_size-disk_car->sector_size;
-  /*@ loop invariant valid_read_string(*current_cmd); */
+  /*@
+    @ loop invariant valid_list_part(list_part);
+    @ loop invariant valid_read_string(*current_cmd);
+    @ */
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -248,19 +257,23 @@ list_part_t *add_partition_xbox_cli(const disk_t *disk_car,list_part_t *list_par
     {
       int insert_error=0;
       list_part_t *new_list_part=insert_new_partition(list_part, new_partition, 0, &insert_error);
+      /*@ assert valid_list_part(new_list_part); */
       if(insert_error>0)
       {
 	free(new_partition);
+	/*@ assert valid_list_part(new_list_part); */
 	return new_list_part;
       }
       new_partition->status=STATUS_PRIM;
       if(test_structure_xbox(list_part)!=0)
 	new_partition->status=STATUS_DELETED;
+      /*@ assert valid_list_part(new_list_part); */
       return new_list_part;
     }
     else
     {
       free(new_partition);
+      /*@ assert valid_list_part(list_part); */
       return list_part;
     }
   }

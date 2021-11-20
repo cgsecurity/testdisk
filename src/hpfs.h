@@ -26,7 +26,21 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(hpfs_header);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, hpfs_header, partition);
+  @*/
 int recover_HPFS(const disk_t *disk_car, const struct fat_boot_sector *hpfs_header, partition_t *partition, const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 int check_HPFS(disk_t *disk_car,partition_t *partition, const int verbose);
 
 #ifdef __cplusplus

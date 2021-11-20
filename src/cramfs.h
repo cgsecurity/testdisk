@@ -84,7 +84,21 @@ struct cramfs_super {
 };
 
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @*/
 int check_cramfs(disk_t *disk_car,partition_t *partition,const int verbose);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires \separated(disk_car, partition, sb);
+  @ requires \valid_read(sb);
+  @*/
 int recover_cramfs(const disk_t *disk_car, const struct cramfs_super *sb, partition_t *partition, const int verbose, const int dump_ind);
 
 #ifdef __cplusplus

@@ -26,6 +26,10 @@ extern "C" {
 #endif
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
+/*@
+  @ requires \valid(dev);
+  @ requires valid_disk(dev);
+  @*/
 void file_win32_disk_get_model(HANDLE handle, disk_t *dev, const int verbose);
 #endif
 

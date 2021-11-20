@@ -26,7 +26,22 @@ extern "C" {
 #endif
 #include "dir_common.h"
 
+/*@
+  @ requires \valid_read(buffer + (0 .. size-1));
+  @ requires \initialized(buffer + (0 .. size-1));
+  @ requires \valid(dir_list);
+  @ requires \separated(dir_list, buffer+(..));
+  @*/
 int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(dir_data);
+  @ requires \separated(disk_car, partition, dir_data);
+  @*/
 dir_partition_t dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 
 #ifdef __cplusplus

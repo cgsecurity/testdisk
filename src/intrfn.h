@@ -43,8 +43,20 @@ extern "C" {
 
 void aff_copy(WINDOW *window);
 void aff_copy_short(WINDOW *window);
+
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 void aff_LBA2CHS(const disk_t *disk_car, const unsigned long int pos_LBA);
+
+/*@
+  @ requires \valid(window);
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 void aff_part(WINDOW *window, const unsigned int newline, const disk_t *disk_car, const partition_t *partition);
+
 uint64_t ask_number(const uint64_t val_cur, const uint64_t val_min, const uint64_t val_max, const char * _format, ...) __attribute__ ((format (printf, 4, 5)));
 int ask_YN(WINDOW *window);
 int ask_confirmation(const char*_format, ...) __attribute__ ((format (printf, 1, 2)));
@@ -69,7 +81,10 @@ uint64_t ask_int_ncurses(const char *string);
 const char *ask_string_ncurses(const char *string);
 #endif
 
+/*@ assigns \nothing; */
 const char *td_curses_version(void);
+
+/*@ requires valid_read_string(msg); */
 void display_message(const char*msg);
 
 #ifdef __cplusplus

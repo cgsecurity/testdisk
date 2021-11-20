@@ -25,6 +25,10 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @*/
 void disk_get_hpa_dco(const int hd_h, disk_t *disk_car);
 
 #ifdef __cplusplus

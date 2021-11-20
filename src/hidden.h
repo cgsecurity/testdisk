@@ -25,6 +25,11 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid_read(disk);
+  @ requires valid_disk(disk);
+  @ assigns  \nothing;
+  @*/
 int is_hpa_or_dco(const disk_t *disk);
 
 #ifdef __cplusplus

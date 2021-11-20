@@ -25,6 +25,14 @@
 extern "C" {
 #endif
 
+/*@
+  @ requires \valid_read(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid(current_cmd);
+  @ requires \separated(disk_car, partition, current_cmd);
+  @*/
 void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **current_cmd);
 
 #ifdef __cplusplus

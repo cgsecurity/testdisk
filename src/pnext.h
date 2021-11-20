@@ -23,6 +23,13 @@
 #define _PNEXT_H
 
 /* #define DEBUG_GET_NEXT_SECTOR */
+/*@
+  @ requires \valid_read(list_search_space);
+  @ requires \valid(current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(list_search_space, current_search_space, offset);
+  @ assigns  *current_search_space, *offset;
+  @*/
 static
 #ifndef DEBUG_GET_NEXT_SECTOR
 inline
@@ -40,6 +47,13 @@ void get_next_header(const alloc_data_t *list_search_space, alloc_data_t **curre
   *offset=(*current_search_space)->start;
 }
 
+/*@
+  @ requires \valid_read(list_search_space);
+  @ requires \valid(current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(list_search_space, current_search_space, offset);
+  @ assigns  *current_search_space, *offset;
+  @*/
 static
 #ifndef DEBUG_GET_NEXT_SECTOR
 inline
@@ -74,6 +88,13 @@ void get_next_sector(const alloc_data_t *list_search_space, alloc_data_t **curre
     get_next_header(list_search_space, current_search_space, offset);
 }
 
+/*@
+  @ requires \valid_read(list_search_space);
+  @ requires \valid(current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(list_search_space, current_search_space, offset);
+  @ assigns  *current_search_space, *offset;
+  @*/
 static inline void get_prev_header(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   if((*current_search_space) != list_search_space)
@@ -81,6 +102,13 @@ static inline void get_prev_header(const alloc_data_t *list_search_space, alloc_
   *offset=(*current_search_space)->end + 1 - blocksize;
 }
 
+/*@
+  @ requires \valid_read(list_search_space);
+  @ requires \valid(current_search_space);
+  @ requires \valid(offset);
+  @ requires \separated(list_search_space, current_search_space, offset);
+  @ assigns  *current_search_space, *offset;
+  @*/
 static inline void get_prev_sector(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const unsigned int blocksize)
 {
   if((*current_search_space) == list_search_space)

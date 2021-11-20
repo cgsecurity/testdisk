@@ -93,8 +93,7 @@ struct file_recovery_struct
   uint64_t extra;	/* extra bytes between offset_ok and offset_error */
   uint64_t calculated_file_size;
   data_check_t (*data_check)(const unsigned char*buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
-  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time */
-  /* side effect for data_check_flv */
+  /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time, data_check_tmp */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
   uint64_t checkpoint_offset;
@@ -114,6 +113,19 @@ typedef struct
       const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new);
   file_stat_t *file_stat;
 } file_check_t;
+
+/*@
+   predicate valid_file_check_node(file_check_t *node) = (\valid_read(node) &&
+     \initialized(&node->offset) &&
+     \initialized(&node->length) &&
+     node->offset <= PHOTOREC_MAX_SIG_OFFSET &&
+     0 < node->length <= PHOTOREC_MAX_SIG_SIZE &&
+     node->offset + node->length <= PHOTOREC_MAX_SIG_OFFSET &&
+     \valid_read((const char *)node->value+(0..node->length-1)) &&
+     \valid_function(node->header_check) &&
+     \valid(node->file_stat)
+   );
+   @*/
 
 typedef struct
 {
@@ -335,6 +347,7 @@ void reset_file_recovery(file_recovery_t *file_recovery);
   @ requires \valid_read((const char *)value+(0..length-1));
   @ requires \valid_function(header_check);
   @ requires \valid(file_stat);
+  @ ensures  \valid_read((const char *)value+(0..length-1));
   @*/
 void register_header_check(const unsigned int offset, const void *value, const unsigned int length,
     int (*header_check)(const unsigned char *buffer, const unsigned int buffer_size,

@@ -40,6 +40,7 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
   if (needle_len == 0)
     /* The first occurrence of the empty string is deemed to occur at
        the beginning of the string.  */
+    /*@ assert (\subset((char *)haystack, (char *)haystack+(0..haystack_len-needle_len)) && \valid_read((char *)haystack)); */
     return (const void *) haystack;
 
   /* Sanity check, otherwise the loop might search through the whole
@@ -48,9 +49,12 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
     return NULL;
 
   /*@
+    @ loop invariant \valid_read(begin);
+    @ loop invariant \subset(begin, (char *)haystack+(0..haystack_len-needle_len+1));
     @ loop assigns begin;
     @*/
   for (begin = (const char *) haystack; begin <= last_possible; ++begin)
+  {
     if (begin[0] == ((const char *) needle)[0] &&
         !memcmp ((const void *) &begin[1],
                  (const void *) ((const char *) needle + 1),
@@ -59,6 +63,7 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
       /*@ assert (\subset(begin, (char *)haystack+(0..haystack_len-needle_len)) && \valid_read(begin)); */
       return (const void *) begin;
     }
+  }
   return NULL;
 }
 #endif
