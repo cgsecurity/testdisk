@@ -126,6 +126,7 @@ file_C			= filegen.c \
 			  file_djv.c \
 			  file_dmp.c \
 			  file_doc.c \
+			  file_dovecot.c \
 			  file_dpx.c \
 			  file_drw.c \
 			  file_drw2.c \
