@@ -17,7 +17,7 @@ photorec \- 从硬盘，数码相机或光盘中恢复丢失的文件
 .B /debug
 增加 debug 信息
 .SH SEE ALSO
-.BR testdisk(8),
+.BR testdisk (8),
 .BR fdisk (8).
 .BR
 .SH TRANSLATION

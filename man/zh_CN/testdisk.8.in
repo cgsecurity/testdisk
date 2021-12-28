@@ -54,7 +54,7 @@ testdisk \- 扫描和恢复硬盘分区
 显示当前的分区
 .SH SEE ALSO
 .BR fdisk (8),
-.BR photorec(8).
+.BR photorec (8).
 .BR
 .SH TRANSLATION
 Zhou Mo <cdluminate@gmail.com>
