@@ -17,7 +17,9 @@ fidentify \- Determine file type using PhotoRec database
 .B --check
 check the file format like PhotoRec does by default
 .SH SEE ALSO
-.BR photorec(8), testdisk(8), file(1)
+.BR photorec (8),
+.BR testdisk (8),
+.BR file (1)
 .BR
 .SH AUTHOR
 PhotoRec @VERSION@, Data Recovery Utility, @TESTDISKDATE@

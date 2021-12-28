@@ -54,7 +54,7 @@ dump raw sectors
 display current partitions
 .SH SEE ALSO
 .BR fdisk (8),
-.BR photorec(8).
+.BR photorec (8).
 .BR
 .SH AUTHOR
 TestDisk @VERSION@, Data Recovery Utility, @TESTDISKDATE@

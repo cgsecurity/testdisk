@@ -17,7 +17,7 @@ create a photorec.log file
 .B /debug
 add debug information
 .SH SEE ALSO
-.BR testdisk(8),
+.BR testdisk (8),
 .BR fdisk (8).
 .BR
 .SH AUTHOR
