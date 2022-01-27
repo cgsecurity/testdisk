@@ -168,6 +168,8 @@ int main( int argc, char **argv )
     .list_file_format=array_file_enable
   };
   struct ph_param params;
+  if(argc <= 0)
+    return 1;
   params.recup_dir=NULL;
   params.cmd_device=NULL;
   params.cmd_run=NULL;

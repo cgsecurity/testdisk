@@ -233,6 +233,8 @@ int main( int argc, char **argv )
   const char *logfile="testdisk.log";
   int log_opened=0;
   int log_errno=0;
+  if(argc <= 0)
+    return 1;
   /* srand needed for GPT creation (weak is ok) */
   srand(time(NULL));
 #ifdef HAVE_SIGACTION
