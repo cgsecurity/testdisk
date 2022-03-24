@@ -66,9 +66,8 @@ TestDisk and PhotoRec run under:
 
 Both are under GNU General Public License.
 
+See [latest documentation](https://github.com/cgsecurity/testdisk_documentation)
 To build from source, read [INSTALL](INSTALL)
-
-See also [latest documentation](https://github.com/cgsecurity/testdisk_documentation)
 
 Christophe GRENIER
 [grenier@cgsecurity.org](mailto:grenier@cgsecurity.org)
