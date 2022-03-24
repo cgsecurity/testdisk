@@ -136,6 +136,7 @@ extern const file_hint_t file_hint_ext2_fs;
 extern const file_hint_t file_hint_fat;
 extern const file_hint_t file_hint_fbf;
 extern const file_hint_t file_hint_fbk;
+extern const file_hint_t file_hint_fbx;
 extern const file_hint_t file_hint_fcp;
 extern const file_hint_t file_hint_fcs;
 extern const file_hint_t file_hint_fdb;
@@ -171,6 +172,7 @@ extern const file_hint_t file_hint_gpx;
 extern const file_hint_t file_hint_gsm;
 extern const file_hint_t file_hint_gz;
 extern const file_hint_t file_hint_hdf;
+extern const file_hint_t file_hint_hdf5;
 extern const file_hint_t file_hint_hdr;
 extern const file_hint_t file_hint_hds;
 extern const file_hint_t file_hint_hfsp;
@@ -202,6 +204,7 @@ extern const file_hint_t file_hint_lnk;
 extern const file_hint_t file_hint_lso;
 extern const file_hint_t file_hint_luks;
 extern const file_hint_t file_hint_lxo;
+extern const file_hint_t file_hint_lz;
 extern const file_hint_t file_hint_lzh;
 extern const file_hint_t file_hint_lzo;
 extern const file_hint_t file_hint_m2ts;
@@ -701,6 +704,9 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbk)
   { .enable=0, .file_hint=&file_hint_fbk  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbx)
+  { .enable=0, .file_hint=&file_hint_fbx  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fcp)
   { .enable=0, .file_hint=&file_hint_fcp  },
 #endif
@@ -803,6 +809,9 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf)
   { .enable=0, .file_hint=&file_hint_hdf  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf5)
+  { .enable=0, .file_hint=&file_hint_hdf5  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdr)
   { .enable=0, .file_hint=&file_hint_hdr  },
 #endif
@@ -897,6 +906,7 @@ file_enable_t array_file_enable[]=
   { .enable=0, .file_hint=&file_hint_lxo  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzh)
+  { .enable=0, .file_hint=&file_hint_lz  },
   { .enable=0, .file_hint=&file_hint_lzh  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzo)

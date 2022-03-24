@@ -158,6 +158,7 @@ file_C			= filegen.c \
 			  file_fat.c \
 			  file_fbf.c \
 			  file_fbk.c \
+			  file_fbx.c \
 			  file_fcp.c \
 			  file_fcs.c \
 			  file_fdb.c \
@@ -192,6 +193,7 @@ file_C			= filegen.c \
 			  file_gsm.c \
 			  file_gz.c \
 			  file_hdf.c \
+			  file_hdf5.c \
 			  file_hdr.c \
 			  file_hds.c \
 			  file_hfsp.c \
@@ -223,6 +225,7 @@ file_C			= filegen.c \
 			  file_lso.c \
 			  file_luks.c \
 			  file_lxo.c \
+			  file_lz.c \
 			  file_lzh.c \
 			  file_lzo.c \
 			  file_m2ts.c \
