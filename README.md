@@ -1,13 +1,13 @@
 **TestDisk** checks the partition and boot sectors of your disks.
 It is very useful in recovering lost partitions.
 
-It works with :
+It works with:
 
 - DOS/Windows FAT12, FAT16 and FAT32
-- NTFS ( Windows NT/2K/XP )
+- NTFS (Windows NT/2K/XP)
 - Linux Ext2 and Ext3
-- BeFS ( BeOS )
-- BSD disklabel ( FreeBSD/OpenBSD/NetBSD )
+- BeFS (BeOS)
+- BSD disklabel (FreeBSD/OpenBSD/NetBSD)
 - CramFS (Compressed File System)
 - HFS and HFS+, Hierarchical File System
 - JFS, IBM's Journaled File System
@@ -21,9 +21,10 @@ It works with :
 - XFS, SGI's Journaled File System
 
 **PhotoRec** is file data recovery software designed to recover
-lost pictures from digital camera memory or even Hard Disks.
+lost pictures from digital camera memory or even hard disks.
 It has been extended to search also for non audio/video headers.
-It searches for
+
+It searches for:
 
 - Sun/NeXT audio data (.au)
 - RIFF audio/video (.avi/.wav)
@@ -50,24 +51,24 @@ It searches for
 - Rollei picture (.rdc)
 - Rich Text Format (.rtf)
 - Shell script (.sh)
-- Tar archive (.tar )
+- Tar archive (.tar)
 - Tag Image File Format (.tiff)
 - Microsoft ASF (.wma)
 - Sigma/Foveon X3 raw picture (.x3f)
-- zip archive (.zip)
+- Zip archive (.zip)
 
-TestDisk and PhotoRec run under:
+TestDisk and PhotoRec run on:
 
-- Dos, Win9x
+- DOS, Win 9x
 - Windows
 - Linux
 - FreeBSD, NetBSD, OpenBSD
 - SunOS
 
-Both are under GNU General Public License.
+Both are licensed under the GNU General Public License.
 
-See [latest documentation](https://github.com/cgsecurity/testdisk_documentation)
-To build from source, read [INSTALL](INSTALL)
+See the [latest documentation](https://github.com/cgsecurity/testdisk_documentation)
+To build from source, read [INSTALL](INSTALL).
 
 Christophe GRENIER
 [grenier@cgsecurity.org](mailto:grenier@cgsecurity.org)
