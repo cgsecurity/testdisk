@@ -410,6 +410,7 @@ QT_TS = \
   lang/qphotorec.cs.ts \
   lang/qphotorec.el.ts \
   lang/qphotorec.es.ts \
+  lang/qphotorec.fi.ts \
   lang/qphotorec.fr.ts \
   lang/qphotorec.it.ts \
   lang/qphotorec.ja.ts \
