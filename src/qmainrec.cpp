@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
   p->show();
   int ret=a.exec();
   delete p;
+  log_info("QPhotoRec exited normally.\n");
   log_close();
   return ret;
 }
