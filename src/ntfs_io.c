@@ -159,6 +159,7 @@ static int ntfs_device_testdisk_io_stat(struct ntfs_device *dev, struct stat *bu
 	return -1;
 }
 
+#ifdef HAVE_LIBNTFS
 static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
 		void *argp)
 {
@@ -168,6 +169,17 @@ static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
 #endif
 	return -1;
 }
+#else
+static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, unsigned long request,
+		void *argp)
+{
+	log_warning( "ntfs_device_testdisk_io_ioctl() unimplemented\n");
+#ifdef ENOTSUP
+	errno = ENOTSUP;
+#endif
+	return -1;
+}
+#endif
 
 /**
  * Device operations for working with unix style devices and files.
