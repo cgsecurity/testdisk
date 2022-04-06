@@ -3,12 +3,13 @@ Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
 Summary(fr.UTF8):	Outil pour vérifier et restaurer des partitions
 Summary(ru_RU.UTF8): Программа для проверки и восстановления разделов диска
 Name:		testdisk
-Version:	7.2
+Version:	{{{ git_dir_version }}}
 Release:	0%{?dist}
 License:	GPLv2+
 Group:		Applications/System
-Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+Source0:	{{{ git_dir_pack }}}
 URL:		https://www.cgsecurity.org/wiki/TestDisk
+VCS:		{{{ git_dir_vcs }}}
 BuildRequires:	libtool autoconf automake
 BuildRequires:	make
 BuildRequires:	desktop-file-utils
@@ -22,7 +23,7 @@ BuildRequires:	ntfs-3g-devel
 BuildRequires:	zlib-devel
 %if  0%{?rhel} != 5
 BuildRequires:	libuuid-devel
-BuildRequires:  qt5-linguist
+BuildRequires:	qt5-linguist
 BuildRequires:	qt5-qtbase-devel
 %endif
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -71,7 +72,7 @@ OpenOffice documents.
 %endif
 
 %prep
-%setup -q
+{{{ git_dir_setup_macro }}}
 
 %build
 autoreconf -vif -I config -W all

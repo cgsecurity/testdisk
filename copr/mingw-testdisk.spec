@@ -1,7 +1,7 @@
 %{?mingw_package_header}
 
 Name:		mingw-testdisk
-Version:	7.2
+Version:	{{{ git_dir_version }}}
 Release:	0%{?dist}
 Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
@@ -10,7 +10,8 @@ Summary(ru_RU.UTF8): Программа для проверки и восста�
 License:	GPLv2+
 Group:		Applications/System
 URL:		https://www.cgsecurity.org/wiki/TestDisk
-Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+VCS:		{{{ git_dir_vcs }}}
+Source0:	{{{ git_dir_pack }}}
 
 BuildArch:	noarch
 BuildRequires:	libtool autoconf automake
@@ -119,7 +120,7 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?mingw_debug_package}
 
 %prep
-%setup -q
+{{{ git_dir_setup_macro }}}
 
 %build
 autoreconf -vif -I config -W all

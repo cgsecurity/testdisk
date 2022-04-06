@@ -1,7 +1,7 @@
 %{?cygwin_package_header}
 
 Name:		cygwin-testdisk
-Version:	7.2
+Version:	{{{ git_dir_version }}}
 Release:	0%{?dist}
 Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
 Summary(pl.UTF8):	Narzędzie sprawdzające i odzyskujące partycje
@@ -10,7 +10,8 @@ Summary(ru_RU.UTF8): Программа для проверки и восста�
 License:	GPLv2+
 Group:		Applications/System
 URL:		https://www.cgsecurity.org/wiki/TestDisk
-Source0:	https://www.cgsecurity.org/testdisk-%{version}.tar.bz2
+VCS:		{{{ git_dir_vcs }}}
+Source0:	{{{ git_dir_pack }}}
 
 BuildArch:	noarch
 BuildRequires:	libtool autoconf automake
@@ -26,7 +27,7 @@ BuildRequires:	cygwin32-libjpeg-turbo
 BuildRequires:	cygwin32-ntfsprogs
 BuildRequires:	cygwin32-ncurses
 BuildRequires:	cygwin32-zlib
-BuildRequires:  cygwin32-pkg-config
+BuildRequires:	cygwin32-pkg-config
 
 BuildRequires:	cygwin64-binutils
 BuildRequires:	cygwin64-filesystem >= 9
@@ -38,7 +39,7 @@ BuildRequires:	cygwin64-ntfsprogs
 BuildRequires:	cygwin64-ncurses
 BuildRequires:	cygwin64-libiconv
 BuildRequires:	cygwin64-zlib
-BuildRequires:  cygwin64-pkg-config
+BuildRequires:	cygwin64-pkg-config
 
 %description
 Cygwin compiled testdisk.
@@ -112,7 +113,7 @@ PhotoRec is a signature based file recovery utility. It handles more than
 %{?cygwin_debug_package}
 
 %prep
-%setup -q
+{{{ git_dir_setup_macro }}}
 
 %build
 autoreconf -vif -I config -W all
