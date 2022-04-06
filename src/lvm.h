@@ -95,6 +95,7 @@ typedef struct {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_LVM(disk_t *disk_car, partition_t *partition, const int verbose);
 
@@ -129,7 +130,9 @@ struct lvm2_pv_header {
   uint64_t device_size_xl;        /* Bytes */
   /* NULL-terminated list of data areas followed by */
   /* NULL-terminated list of metadata area headers */
+#if !defined(__FRAMAC__)
   struct lvm2_disk_locn disk_areas_xl[0];      /* Two lists */
+#endif
 } __attribute__ ((packed));
 
 /*@
@@ -137,6 +140,7 @@ struct lvm2_pv_header {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_LVM2(disk_t *disk_car, partition_t *partition, const int verbose);
 

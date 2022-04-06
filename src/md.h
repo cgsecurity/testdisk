@@ -242,7 +242,9 @@ struct mdp_superblock_1 {
 	 * into the 'roles' value.  If a device is spare or faulty, then it doesn't
 	 * have a meaningful role.
 	 */
+#if !defined(__FRAMAC__)
 	uint16_t	dev_roles[0];	/* role in array, or 0xffff for a spare, or 0xfffe for faulty */
+#endif
 };
 
 #if 0

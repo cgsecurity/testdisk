@@ -199,7 +199,9 @@ typedef struct {
 /* 40*/	uint8_t file_name_length;			/* Length of file name in
 						   (Unicode) characters. */
 /* 41*/	uint8_t file_name_type;	/* Namespace of the file name.*/
+#if !defined(__FRAMAC__)
 /* 42*/	char *file_name[0];			/* File name in Unicode. */
+#endif
 } __attribute__((gcc_struct, __packed__)) TD_FILE_NAME_ATTR;
 
 

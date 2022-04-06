@@ -36,10 +36,12 @@
 #include "fnctdsk.h"
 #include "log.h"
 
+#ifndef __FRAMAC__
 static int test_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, const partition_t *partition, const int dump_ind)
 {
   if(le32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
     return 1;
+#ifndef __FRAMAC__
   log_info("\nRaid magic value at %u/%u/%u\n",
       offset2cylinder(disk_car,partition->part_offset),
       offset2head(disk_car,partition->part_offset),
@@ -50,6 +52,7 @@ static int test_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, co
     /* chunk_size may be 0 */
     log_info("Raid chunk size: %llu bytes\n", (long long unsigned)le32(sb->chunk_size));
   }
+#endif
   if(le32(sb->major_version)>1)
     return 1;
   if(dump_ind!=0)
@@ -64,6 +67,7 @@ static int test_MD_be(const disk_t *disk_car, const struct mdp_superblock_s *sb,
 {
   if(be32(sb->md_magic)!=(unsigned int)MD_SB_MAGIC)
     return 1;
+#ifndef __FRAMAC__
   log_info("\nRaid magic value at %u/%u/%u\n",
       offset2cylinder(disk_car,partition->part_offset),
       offset2head(disk_car,partition->part_offset),
@@ -74,6 +78,7 @@ static int test_MD_be(const disk_t *disk_car, const struct mdp_superblock_s *sb,
     /* chunk_size may be 0 */
     log_info("Raid chunk size: %llu bytes\n",(long long unsigned)be32(sb->chunk_size));
   }
+#endif
   if(be32(sb->major_version)>1)
     return 1;
   if(dump_ind!=0)
@@ -122,6 +127,7 @@ static void set_MD_info(const struct mdp_superblock_s *sb, partition_t *partitio
 	(unsigned int)le32(sb1->major_version),
 	(unsigned int)le32(sb1->level),
 	(long unsigned)le32(sb1->dev_number));
+#ifndef __FRAMAC__
     if(le32(sb1->max_dev) <= 384)
     {
       unsigned int i,d;
@@ -143,9 +149,12 @@ static void set_MD_info(const struct mdp_superblock_s *sb, partition_t *partitio
       }
       strcat(partition->info, ")");
     }
+#endif
   }
+#ifndef __FRAMAC__
   if(verbose>0)
     log_info("%s %s\n", partition->fsname, partition->info);
+#endif
 }
 
 static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *partition, const int verbose)
@@ -186,6 +195,7 @@ static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *parti
 	(unsigned int)be32(sb1->major_version),
 	(unsigned int)be32(sb1->level),
 	(long unsigned)be32(sb1->dev_number));
+#if !defined(__FRAMAC__)
     if(be32(sb1->max_dev) <= 384)
     {
       unsigned int i,d;
@@ -207,13 +217,18 @@ static void set_MD_info_be(const struct mdp_superblock_s *sb, partition_t *parti
       }
       strcat(partition->info, ")");
     }
+#endif
   }
+#ifndef __FRAMAC__
   if(verbose>0)
     log_info("%s %s\n", partition->fsname, partition->info);
+#endif
 }
+#endif
 
 int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 {
+#ifndef __FRAMAC__
   unsigned char *buffer=(unsigned char*)MALLOC(MD_SB_BYTES);
   /* MD version 1.1 */
   if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset) == MD_SB_BYTES)
@@ -224,7 +239,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 	le64(sb1->super_offset)==0 &&
 	test_MD(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
     {
+#ifndef __FRAMAC__
       log_info("check_MD 1.1\n");
+#endif
       set_MD_info((struct mdp_superblock_s*)buffer, partition, verbose);
       free(buffer);
       return 0;
@@ -234,7 +251,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 	 be64(sb1->super_offset)==0 &&
         test_MD_be(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
     {
+#ifndef __FRAMAC__
       log_info("check_MD 1.1 (BigEndian)\n");
+#endif
       set_MD_info_be((struct mdp_superblock_s*)buffer, partition, verbose);
       free(buffer);
       return 0;
@@ -249,7 +268,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
         le64(sb1->super_offset)==8 &&
         test_MD(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
     {
+#ifndef __FRAMAC__
       log_info("check_MD 1.2\n");
+#endif
       set_MD_info((struct mdp_superblock_s*)buffer, partition, verbose);
       free(buffer);
       return 0;
@@ -259,7 +280,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
         be64(sb1->super_offset)==8 &&
         test_MD_be(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
     {
+#ifndef __FRAMAC__
       log_info("check_MD 1.2 (BigEndian)\n");
+#endif
       set_MD_info_be((struct mdp_superblock_s*)buffer, partition, verbose);
       free(buffer);
       return 0;
@@ -269,17 +292,21 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
   {
     const struct mdp_superblock_s *sb=(const struct mdp_superblock_s *)buffer;
     const uint64_t offset=MD_NEW_SIZE_SECTORS(partition->part_size/512)*512;
+#ifndef __FRAMAC__
     if(verbose>1)
     {
       log_verbose("Raid md 0.90 offset %llu\n", (long long unsigned)offset/512);
     }
+#endif
     if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       if(le32(sb->md_magic)==(unsigned int)MD_SB_MAGIC &&
 	  le32(sb->major_version)==0 &&
 	  test_MD(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
       {
+#ifndef __FRAMAC__
         log_info("check_MD 0.90\n");
+#endif
         set_MD_info((struct mdp_superblock_s*)buffer, partition, verbose);
         free(buffer);
         return 0;
@@ -288,7 +315,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
 	  be32(sb->major_version)==0 &&
 	  test_MD_be(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
       {
+#ifndef __FRAMAC__
         log_info("check_MD 0.90 (BigEndian)\n");
+#endif
         set_MD_info_be((struct mdp_superblock_s*)buffer, partition, verbose);
         free(buffer);
         return 0;
@@ -299,10 +328,12 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
   if(partition->part_size > 8*2*512)
   {
     const uint64_t offset=(uint64_t)(((partition->part_size/512)-8*2) & ~(4*2-1))*512;
+#ifndef __FRAMAC__
     if(verbose>1)
     {
       log_verbose("Raid md 1.0 offset %llu\n", (long long unsigned)offset/512);
     }
+#endif
     if(disk_car->pread(disk_car, buffer, MD_SB_BYTES, partition->part_offset + offset) == MD_SB_BYTES)
     {
       const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
@@ -311,7 +342,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
           le64(sb1->super_offset)==(offset/512) &&
           test_MD(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
       {
+#ifndef __FRAMAC__
         log_info("check_MD 1.0\n");
+#endif
         set_MD_info((struct mdp_superblock_s*)buffer, partition, verbose);
         free(buffer);
         return 0;
@@ -321,7 +354,9 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
           be64(sb1->super_offset)==(offset/512) &&
           test_MD_be(disk_car, (struct mdp_superblock_s*)buffer, partition, 0)==0)
       {
+#ifndef __FRAMAC__
         log_info("check_MD 1.0 (BigEndian)\n");
+#endif
         set_MD_info_be((struct mdp_superblock_s*)buffer, partition, verbose);
         free(buffer);
         return 0;
@@ -329,11 +364,13 @@ int check_MD(disk_t *disk_car, partition_t *partition, const int verbose)
     }
   }
   free(buffer);
+#endif
   return 1;
 }
 
 int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const int verbose)
 {
+#ifndef __FRAMAC__
   unsigned char *buffer=(unsigned char*)MALLOC(MD_SB_BYTES);
   /* MD version 0.90 */
   {
@@ -365,11 +402,13 @@ int recover_MD_from_partition(disk_t *disk_car, partition_t *partition, const in
   }
   /* md 1.1 & 1.2 don't need special operation to be recovered */
   free(buffer);
+#endif
   return 1;
 }
 
 int recover_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, partition_t *partition, const int verbose, const int dump_ind)
 {
+#ifndef __FRAMAC__
   if(test_MD(disk_car, sb, partition, dump_ind)==0)
   {
     set_MD_info(sb, partition, verbose);
@@ -410,5 +449,6 @@ int recover_MD(const disk_t *disk_car, const struct mdp_superblock_s *sb, partit
     }
     return 0;
   }
+#endif
   return 1;
 }
