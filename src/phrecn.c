@@ -88,7 +88,6 @@
 /* #define DEBUG_BF */
 #define DEFAULT_IMAGE_NAME "image_remaining.dd"
 
-extern file_check_list_t file_check_list;
 extern int need_to_stop;
 
 static int interface_cannot_create_file(void);
@@ -194,12 +193,18 @@ static int interface_cannot_create_file(void)
   return 1;
 }
 #else
+/*@ assigns \nothing; */
 static int interface_cannot_create_file(void)
 {
   return 1;
 }
 #endif
 
+#ifdef HAVE_NCURSES
+/*@
+  @ requires valid_read_string(filename);
+  @ requires \valid_read(list_search_space);
+  @*/
 static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *list_search_space)
 {
   struct td_list_head *search_walker = NULL;
@@ -233,15 +238,20 @@ static void gen_image(const char *filename, disk_t *disk, const alloc_data_t *li
   free(buffer);
   fclose(out);
 }
+#endif
 
 int photorec(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   pstatus_t ind_stop=PSTATUS_OK;
   const unsigned int blocksize_is_known=params->blocksize;
+  /*@ assert valid_read_string(params->recup_dir); */
   params_reset(params, options);
+  /*@ assert valid_read_string(params->recup_dir); */
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     skip_comma_in_command(&params->cmd_run);
+    /*@ assert valid_read_string(params->recup_dir); */
+#ifndef __FRAMAC__
     if(check_command(&params->cmd_run,"status=unformat",15)==0)
     {
       params->status=STATUS_UNFORMAT;
@@ -274,6 +284,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     {
       params->status=STATUS_EXT2_OFF;
     }
+#endif
   }
   else
   {
@@ -283,11 +294,13 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       params->status=STATUS_UNFORMAT;
 #endif
   }
-
+  /*@ assert valid_read_string(params->recup_dir); */
   screen_buffer_reset();
+#ifndef __FRAMAC__
   log_info("\nAnalyse\n");
   log_partition(params->disk, params->partition);
-
+#endif
+  /*@ assert valid_read_string(params->recup_dir); */
   /* make the first recup_dir */
   params->dir_num=photorec_mkdir(params->recup_dir, params->dir_num);
 
@@ -297,11 +310,16 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   xml_setup(params->disk, params->partition);
 #endif
   
+  /*@
+    @ loop invariant valid_ph_param(params);
+    @*/
   for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
   {
     const unsigned int old_file_nbr=params->file_nbr;
+#ifndef __FRAMAC__
     log_info("Pass %u (blocksize=%u) ", params->pass, params->blocksize);
     log_info("%s\n", status_to_name(params->status));
+#endif
 
 #ifdef HAVE_NCURSES
     aff_copy(stdscr);
@@ -325,6 +343,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	params->blocksize=blocksize_is_known;
 	break;
       case STATUS_FIND_OFFSET:
+#ifndef __FRAMAC__
 	{
 	  uint64_t start_offset=0;
 	  if(blocksize_is_known>0)
@@ -344,6 +363,9 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #endif
 	  update_blocksize(params->blocksize, list_search_space, start_offset);
 	}
+#else
+	params->blocksize=512;
+#endif
 	break;
       case STATUS_EXT2_ON_BF:
       case STATUS_EXT2_OFF_BF:
@@ -417,6 +439,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  unlink("photorec.ses");
 	break;
     }
+#ifndef __FRAMAC__
     {
       const time_t current_time=time(NULL);
       log_info("Elapsed time %uh%02um%02us\n",
@@ -431,6 +454,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
       write_stats_log(params->file_stats);
     }
     log_flush();
+#endif
   }
 #ifdef HAVE_NCURSES
   if(options->expert>0 && !td_list_empty(&list_search_space->list))

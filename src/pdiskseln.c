@@ -314,7 +314,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
   {
     /*@ assert valid_read_string(params->cmd_run); */
     params->disk=photorec_disk_selection_cli(params->cmd_device, list_disk, &list_search_space);
-    /*@ assert valid_disk(params->disk); */
+    /*@ assert params->disk == \null || valid_disk(params->disk); */
 #if defined(HAVE_NCURSES)
     if(params->disk==NULL)
     {
@@ -336,6 +336,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
       /*@ assert params->cmd_run == \null || valid_read_string(params->cmd_run); */
       return 0;
     }
+    /*@ assert valid_disk(params->disk); */
     change_arch_type_cli(params->disk, options->verbose, &params->cmd_run);
     autoset_unit(params->disk);
     menu_photorec(params, options, &list_search_space);

@@ -92,6 +92,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
   list_part=init_list_part(params->disk, options);
   if(list_part==NULL)
     return;
+  /*@ assert valid_list_part(list_part); */
   log_all_partitions(params->disk, list_part);
   if(params->cmd_run!=NULL)
   {
@@ -117,7 +118,10 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	}
       }
       if(params->recup_dir!=NULL)
+      {
+	/*@ assert valid_read_string(params->recup_dir); */
 	photorec(params, options, list_search_space);
+      }
     }
   }
   if(params->cmd_run!=NULL)
@@ -262,10 +266,12 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
 	      if(strcmp(params->recup_dir,"/")!=0)
 		strcat(params->recup_dir,"/");
 	      strcat(params->recup_dir,DEFAULT_RECUP_DIR);
+	      /*@ assert valid_read_string(params->recup_dir); */
 	    }
 	  }
 	  if(params->recup_dir!=NULL)
 	  {
+	    /*@ assert valid_read_string(params->recup_dir); */
 	    if(td_list_empty(&list_search_space->list))
 	    {
 	      init_search_space(list_search_space, params->disk, params->partition);
