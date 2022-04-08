@@ -411,42 +411,6 @@ void ask_location(char *dst_directory, const unsigned int dst_size, const char *
         {
 	  const int command=wgetch(window);
           quit=ASK_LOCATION_WAITKEY;
-#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
-	  if(command==KEY_MOUSE)
-	  {
-	    MEVENT event;
-	    if(getmouse(&event) == OK)
-	    {	/* When the user clicks left mouse button */
-	      if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
-	      {
-		if(event.y => line_base - 1 && event.y < old_LINES)
-		{
-		  const int pos_num_old=pos_num;
-		  /* Disk selection */
-		  while(pos_num > event.y - (line_base - offset) && current_file->prev!=&dir_list.list)
-		  {
-		    current_file=current_file->prev;
-		    pos_num--;
-		  }
-		  while(pos_num < event.y - (line_base - offset) && current_file->next!=&dir_list.list)
-		  {
-		    current_file=current_file->next;
-		    pos_num++;
-		  }
-		  quit=ASK_LOCATION_UPDATE;
-		  if(((event.bstate & BUTTON1_CLICKED) && pos_num==pos_num_old) ||
-		      (event.bstate & BUTTON1_DOUBLE_CLICKED))
-		    command=KEY_ENTER;
-		}
-#if 0
-		else if(file_walker!=&dir_list.list && file_walker->next!=&dir_list.list)
-		{
-		}
-#endif
-	      }
-	    }
-	  }
-#endif
           switch(command)
           {
             case 'y':
@@ -595,4 +559,3 @@ static int aff_txt(const int line, WINDOW *window, const char *_format, ...)
   return next_line;
 }
 #endif
-

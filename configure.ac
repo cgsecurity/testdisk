@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.2-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="May 2021"
+TESTDISKDATE="April 2022"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -212,15 +212,6 @@ AC_ARG_ENABLE([qt],
        *) AC_MSG_ERROR([bad value ${enableval} for --enable-qt]) ;;
      esac],
      [use_qt=true])
-
-AC_ARG_ENABLE([ncmouse],
-    AS_HELP_STRING([--enable-ncmouse],[enable use of mouse in ncurses(default is NO)]),
-    [case "${enableval}" in
-       yes) use_ncmouse=true ;;
-       no)  use_ncmouse=false ;;
-       *) AC_MSG_ERROR([bad value ${enableval} for --enable-mouse]) ;;
-     esac],
-     [use_ncmouse=false])
 
 AC_ARG_ENABLE([dfxml],
     AS_HELP_STRING([--disable-dfxml]),
@@ -570,17 +561,6 @@ if test "x$with_ncurses" != "xno"; then
      photorec_LDADD="$photorec_LDADD -l${tinfo_lib}"
    fi
  fi
-  if test "$use_ncmouse" = "true";
-  then
-    ac_save_LIBS="$LIBS"
-    LIBS="$LIBS $photorec_LDADD"
-    AC_CHECK_FUNCS(mousemask)
-    LIBS="$ac_save_LIBS"
-    if test "$ac_cv_func_mousemask" = "yes";
-    then
-      AC_DEFINE([ENABLE_MOUSE],1,[Define to 1 if the ncurses mouse interface is enabled])
-    fi
-  fi
   ac_save_LIBS="$LIBS"
   LIBS="$LIBS $photorec_LDADD"
   AC_CHECK_FUNCS([assume_default_colors])
@@ -779,7 +759,7 @@ then
   then
     AC_MSG_WARN(No uuid_create or uuid_generate function in library libuuid or uuidgen function present)
   else
-    AC_MSG_ERROR(No uuid_create or uuid_generate function in library libuuid or uuidgen function present)
+    AC_MSG_ERROR(No uuid_create or uuid_generate function in library libuuid or uuidgen function present. Either fix it or use "--enable-missing-uuid-ok")
   fi
 fi
 
@@ -841,7 +821,7 @@ if test "x$have_ewf" != "xyes"; then
   fi
 fi
 #-Wconversion -Wmissing-noreturn -ffunction-sections -Wl,--gc-sections -Wl,--print-gc-sections
-for option in -Wdeclaration-after-statement -Wall -Wextra -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wunreachable-code -Wvla
+for option in -Wdeclaration-after-statement -Wall -Wextra -MD -Wpointer-arith -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wwrite-strings -W -Wcast-align -Waggregate-return -Wbad-function-cast -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wnested-externs -Winline -Wdisabled-optimization -Wfloat-equal -Wmissing-format-attribute -Wmultichar -Wc++-compat -Wformat=2 -Wtrampolines -Wunreachable-code -Wvla
 do
   SAVE_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $option"
@@ -856,7 +836,7 @@ done
 unset option
 
 AC_LANG_PUSH([C++])
-for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC -Wvla
+for option in -Wall -MD -Wpointer-arith -Wmissing-declarations -Wshadow -Wwrite-strings -W -Wcast-align -Wcast-qual -Wundef -Wredundant-decls -Wsign-compare -Wdisabled-optimization -Wmissing-format-attribute -Wmultichar -Wformat=2 -fvisibility=hidden -fvisibility-inlines-hidden -fPIC -Wtrampolines -Wvla
 do
   SAVE_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $option"

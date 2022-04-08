@@ -272,74 +272,6 @@ static int wmenuUpdate(WINDOW *window, const int yinfo, int y, int x, const stru
   return y;
 }
 
-#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
-int menu_to_command(const unsigned int yinfo, const unsigned int y_org, const unsigned int x_org, const struct MenuItem *menuItems, const unsigned int itemLength, const char *available, const int menuType, const unsigned int y_real, const unsigned int x_real)
-{
-  unsigned int y=y_org;
-  unsigned int x=x_org;
-  unsigned int i;
-  const unsigned int lmargin = x;
-  const unsigned int ymargin = y;
-  unsigned int lenNameMax=0;
-  for( i = 0; menuItems[i].key!=0; i++ )
-    if(strchr(available, menuItems[i].key)!=NULL )
-    {
-      const unsigned int lenName = strlen( menuItems[i].name );
-      if(lenNameMax<lenName && lenName < itemLength)
-        lenNameMax=lenName;
-    }
-  /* Print available buttons */
-  for( i = 0; menuItems[i].key!=0; i++ )
-  {
-    unsigned int lenName;
-    const char *mi;
-    const unsigned int x_old=x;
-    const unsigned int y_old=y;
-    /* Search next available button */
-    while( menuItems[i].key!=0 && strchr(available, menuItems[i].key)==NULL )
-    {
-      i++;
-    }
-    if( menuItems[i].key==0 ) break; /* No more menu items */
-
-    mi = menuItems[i].name;
-    lenName = strlen( mi );
-
-    /* Calculate position for the next item */
-    if( menuType & MENU_VERT )
-    {
-      y += 1;
-      if( y >= yinfo - 1)
-      {
-	y = ymargin;
-	x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
-	if( menuType & MENU_BUTTON ) x += 2;
-      }
-      if(y_old==y_real && x_old <= x_real && x_real < x+(lenName < itemLength?itemLength:lenName) + MENU_SPACING)
-      {
-	return menuItems[i].key;
-      }
-    }
-    else
-    {
-      x += (lenName < itemLength?itemLength:lenName) + MENU_SPACING;
-      if( menuType & MENU_BUTTON ) x += 2;
-      if(y_old==y_real && x_old <= x_real && x_real < x)
-      {
-	return menuItems[i].key;
-      }
-      if( x + lmargin + 12 > COLUMNS )
-      {
-	x = lmargin;
-	y ++ ;
-      }
-    }
-  }
-  log_info("menu_to_command not found\n");
-  return 0;
-}
-#endif
-
 /* This function takes a list of menu items, lets the user choose one *
  * and returns the value keyboard shortcut of the selected menu item  */
 
@@ -372,10 +304,6 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y, const int x, c
       *current = 0;
     }
   }
-#if defined(ALL_MOUSE_EVENTS) && defined(ENABLE_MOUSE)
-  if((menuType & MENU_ACCEPT_OTHERS)==0 )
-    mousemask(ALL_MOUSE_EVENTS, NULL);
-#endif
 
   /* Repeat until allowable choice has been made */
   while( key==0 )
@@ -413,22 +341,6 @@ int wmenuSelect_ext(WINDOW *window, const int yinfo, const int y, const int x, c
     /* Cursor keys */
     switch(key)
     {
-#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
-      case KEY_MOUSE:
-	if((menuType & MENU_ACCEPT_OTHERS)==0 )
-	{
-	  MEVENT event;
-	  if(getmouse(&event) == OK)
-	  {	/* When the user clicks left mouse button */
-	    if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
-	    {
-	      key = menu_to_command(yinfo, y_org, x_org, menuItems, itemLength,
-		  available, menuType, event.y, event.x);
-	    }
-	  }
-	}
-	break;
-#endif
       case KEY_UP:
         if( (menuType & MENU_VERT)!=0 )
         {
@@ -1219,18 +1131,6 @@ int check_enter_key_or_s(WINDOW *window)
 {
   switch(wgetch_nodelay(window))
   {
-#if defined(KEY_MOUSE) && defined(ENABLE_MOUSE)
-    case KEY_MOUSE:
-      {
-	MEVENT event;
-	if(getmouse(&event) == OK)
-	{	/* When the user clicks left mouse button */
-	  if((event.bstate & BUTTON1_CLICKED) || (event.bstate & BUTTON1_DOUBLE_CLICKED))
-	    return 1;
-	}
-      }
-      break;
-#endif
     case KEY_ENTER:
 #ifdef PADENTER
     case PADENTER:
