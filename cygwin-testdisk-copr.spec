@@ -1,6 +1,6 @@
 %{?cygwin_package_header}
 
-Name:		cygwin-testdisk
+Name:		{{{ git_name name=cygwin-testdisk }}}
 Version:	{{{ git_dir_version }}}
 Release:	0%{?dist}
 Summary:	TestDisk checks and undeletes partitions, PhotoRec recovers lost files
