@@ -130,9 +130,6 @@ autoreconf -vif -I config -W all
 rm -rf $RPM_BUILD_ROOT
 %mingw_make install DESTDIR=$RPM_BUILD_ROOT
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 %files -n mingw32-testdisk
 %{mingw32_docdir}/testdisk/AUTHORS
 %{mingw32_docdir}/testdisk/ChangeLog
@@ -200,7 +197,7 @@ rm -rf $RPM_BUILD_ROOT
 * Sun Oct 06 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.2-1mdk
 - 4.2
 
-* Mon Sep 02 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.1-1mdk 
+* Mon Sep 02 2002 Olivier Thauvin <thauvin@aerov.jussieu.fr> 4.1-1mdk
 - By Pascal Terjan <pascal.terjan@free.fr>
 	- first mdk release, adapted from PLD.
 	- gz to bz2 compression.

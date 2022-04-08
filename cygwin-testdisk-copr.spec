@@ -123,9 +123,6 @@ autoreconf -vif -I config -W all
 rm -rf $RPM_BUILD_ROOT
 %cygwin_make install DESTDIR=$RPM_BUILD_ROOT
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 %files -n cygwin32-testdisk
 %{cygwin32_docdir}/testdisk/AUTHORS
 %{cygwin32_docdir}/testdisk/ChangeLog

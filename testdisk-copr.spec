@@ -86,9 +86,6 @@ make %{?_smp_mflags}
 rm -rf %{buildroot}
 make DESTDIR="%{buildroot}" install
 
-%clean
-rm -rf %{buildroot}
-
 %if  0%{?rhel} != 5
 %check
 desktop-file-validate %{buildroot}/%{_datadir}/applications/qphotorec.desktop
