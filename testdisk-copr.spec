@@ -7,7 +7,7 @@ Version:	{{{ git_dir_version }}}
 Release:	0%{?dist}
 License:	GPLv2+
 Group:		Applications/System
-Source0:	{{{ git_dir_pack }}}
+Source0:	{{{ git_dir_pack name=testdisk }}}
 URL:		https://www.cgsecurity.org/wiki/TestDisk
 VCS:		{{{ git_dir_vcs }}}
 BuildRequires:	libtool autoconf automake

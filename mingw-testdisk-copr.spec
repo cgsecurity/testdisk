@@ -11,7 +11,7 @@ License:	GPLv2+
 Group:		Applications/System
 URL:		https://www.cgsecurity.org/wiki/TestDisk
 VCS:		{{{ git_dir_vcs }}}
-Source0:	{{{ git_dir_pack }}}
+Source0:	{{{ git_dir_pack name=mingw-testdisk }}}
 
 BuildArch:	noarch
 BuildRequires:	libtool autoconf automake
