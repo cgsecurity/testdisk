@@ -20,7 +20,7 @@
 
  */
 
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -186,7 +186,7 @@ static list_part_t *read_part_mac(disk_t *disk_car, const int verbose, const int
   }
   for(i=1;i<=limit;i++)
   {
-    mac_DPME *dpme=(mac_DPME *)buffer;
+    const mac_DPME *dpme=(const mac_DPME *)buffer;
     if(disk_car->pread(disk_car, &buffer, sizeof(buffer), (uint64_t)i * PBLOCK_SIZE) != sizeof(buffer))
       return new_list_part;
     if(be16(dpme->dpme_signature) != DPME_SIGNATURE)
@@ -473,3 +473,4 @@ static const char *get_partition_typename_mac(const partition_t *partition)
 {
   return get_partition_typename_mac_aux(partition->part_type_mac);
 }
+#endif

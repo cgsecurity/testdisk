@@ -25,7 +25,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
 
 #define	BLOCK0_SIGNATURE	0x4552	/* Signature value.         */
 
@@ -83,20 +83,35 @@ struct dpme {
 #endif
     uint32_t     dpme_boot_block         ;
     uint32_t     dpme_boot_bytes         ;
-    uint8_t     *dpme_load_addr          ;
-    uint8_t     *dpme_load_addr_2        ;
-    uint8_t     *dpme_goto_addr          ;
-    uint8_t     *dpme_goto_addr_2        ;
+    uint32_t	 dpme_load_addr          ;
+    uint32_t	 dpme_load_addr_2        ;
+    uint32_t	 dpme_goto_addr          ;
+    uint32_t	 dpme_goto_addr_2        ;
     uint32_t     dpme_checksum           ;
     char    	dpme_process_id[16]     ;
     uint32_t     dpme_boot_args[32]      ;
     uint32_t     dpme_reserved_3[62]     ;
-};
+} __attribute__ ((gcc_struct, __packed__));
 typedef struct dpme mac_DPME;
 
+/*@
+  @ requires valid_list_part(list_part);
+  @*/
 int test_structure_mac(const list_part_t *list_part);
+
+/*@
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(disk_car);
+  @ requires valid_list_part(list_part);
+  @ requires \valid(current_cmd);
+  @ requires separation: \separated(disk_car, list_part, current_cmd, *current_cmd);
+  @ requires valid_read_string(*current_cmd);
+  @*/
+// ensures  valid_list_part(\result);
+// ensures  valid_read_string(*current_cmd);
 list_part_t *add_partition_mac_cli(disk_t *disk_car,list_part_t *list_part, char **current_cmd);
 
+#endif
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif
