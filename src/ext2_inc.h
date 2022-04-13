@@ -22,7 +22,7 @@
 #ifndef _EXT2_INC_H
 #define _EXT2_INC_H
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LIBEXT2FS
 #endif
 

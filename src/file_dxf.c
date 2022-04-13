@@ -112,7 +112,7 @@ static void register_header_check_dxf(file_stat_t *file_stat)
     'S', 'E', 'C', 'T', 'I', 'O', 'N'};
 
   register_header_check(0, header_dxf, sizeof(header_dxf), &header_check_dxf, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, header_dxf_dos, sizeof(header_dxf_dos), &header_check_dxf, file_stat);
   register_header_check(0, header_dxflib, sizeof(header_dxflib), &header_check_dxf, file_stat);
   register_header_check(0, header_dxflib_dos, sizeof(header_dxflib_dos), &header_check_dxf, file_stat);

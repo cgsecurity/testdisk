@@ -47,7 +47,7 @@
 #include "common.h"
 #include "log.h"
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_DUP2
 #endif
 
@@ -130,7 +130,7 @@ int log_open_default(const char*default_filename, const int mode, int *errsv)
 #else
 int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   return log_open(default_filename, mode, errsv);
 #else
   char*filename;

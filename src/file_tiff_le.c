@@ -221,7 +221,7 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
       le16(entry_strip_bytecounts->tdir_type)!=4)
     return TIFF_ERROR;
   /*@ assert 0 < nbr <= 2048; */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   offsetp=(uint32_t *)MALLOC(2048*sizeof(*offsetp));
 #else
   offsetp=(uint32_t *)MALLOC(nbr*sizeof(*offsetp));
@@ -232,7 +232,7 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
     free(offsetp);
     return TIFF_ERROR;
   }
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   sizep=(uint32_t *)MALLOC(2048*sizeof(*sizep));
 #else
   sizep=(uint32_t *)MALLOC(nbr*sizeof(*sizep));

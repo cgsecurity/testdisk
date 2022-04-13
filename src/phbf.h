@@ -24,9 +24,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if !defined(DISABLED_FOR_FRAMAC)
 
 pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 
+#endif
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
 #endif

@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_FTELLO
 #undef HAVE_FSEEKO
 #endif
@@ -63,13 +63,18 @@ file_check_list_t file_check_list={
   @ requires \valid_read(b);
   @ assigns \nothing;
   @*/
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 static
 #endif
 int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
+#ifdef DISABLED_FOR_FRAMAC
+  return 1;
+#else
   const file_check_t *fc_a=td_list_entry_const(a, const file_check_t, list);
   const file_check_t *fc_b=td_list_entry_const(b, const file_check_t, list);
+  /*@ requires valid_file_check_node(fc_a); */
+  /*@ requires valid_file_check_node(fc_b); */
   int res;
   unsigned int min_length;
   /*@ assert \valid_read(fc_a); */
@@ -97,12 +102,14 @@ int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
   if(res!=0)
     return res;
   return (int)fc_b->length-(int)fc_a->length;
+#endif
 }
 
 /*@
   @ requires \valid(file_check_new);
   @ requires \valid(pos);
   @ requires initialization: \initialized(&file_check_new->offset) && \initialized(&file_check_new->length);
+  @ requires valid_file_check_node(file_check_new);
   @*/
 static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t *pos)
 {
@@ -131,7 +138,7 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   td_list_add_tail(&newe->list, &pos->list);
 }
 
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 /*@
   @ requires separation: \separated(file_stat, &file_check_plist);
   @*/
@@ -217,6 +224,7 @@ static unsigned int index_header_check(void)
 
 void free_header_check(void)
 {
+#ifndef DISABLED_FOR_FRAMAC
   struct td_list_head *tmpl;
   struct td_list_head *nextl;
   td_list_for_each_safe(tmpl, nextl, &file_check_list.list)
@@ -232,6 +240,7 @@ void free_header_check(void)
     {
       struct td_list_head *tmp;
       struct td_list_head *next;
+      /* TODO loop invariant \valid(next); */
       td_list_for_each_safe(tmp, next, &pos->file_checks[i].list)
       {
 #ifdef DEBUG_HEADER_CHECK
@@ -260,6 +269,7 @@ void free_header_check(void)
     td_list_del(tmpl);
     free(pos);
   }
+#endif
 }
 
 void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
@@ -447,7 +457,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   }
   sign_nbr=index_header_check();
   file_stats[enable_count-1].file_hint=NULL;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_info("%u first-level signatures enabled\n", sign_nbr);
 #endif
   return file_stats;
@@ -462,7 +472,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   char new_filename[sizeof(file_recovery->filename)];
   char *dst;
   char *dst_dir_sep;
@@ -538,7 +548,7 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
   len+=buffer_size-offset+1;
   if(new_ext!=NULL)
     len+=strlen(new_ext);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   new_filename=(char*)MALLOC(len);
   dst=new_filename;
   directory_sep=new_filename;
@@ -677,7 +687,7 @@ static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buff
   len+=buffer_size-offset;
   if(new_ext!=NULL)
     len+=strlen(new_ext);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   new_filename=(char*)MALLOC(len);
   dst=new_filename;
   dst_dir_sep=dst;
@@ -790,11 +800,9 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end)
 
 /* 0: file_recovery_new->location.start has been taken into account, offset_skipped_header may have been updated
  * 1: file_recovery_new->location.start has been ignored */
-/*@
-  @ requires separation: \separated(file_recovery, file_recovery->handle, file_recovery_new, &errno, &offset_skipped_header);
-  @*/
 int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery_t *file_recovery_new)
 {
+  /*@ assert \separated(file_recovery, file_recovery->handle, file_recovery_new, &errno, &offset_skipped_header); */
   file_recovery_t fr_test;
   off_t offset;
   assert(file_recovery!=NULL);

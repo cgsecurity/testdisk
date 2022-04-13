@@ -25,7 +25,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_SYS_UUID_H
 #undef HAVE_UUID_H
 #undef HAVE_UUID_UUID_H
@@ -595,7 +595,7 @@ static const char *get_gpt_typename(const efi_guid_t part_type_gpt)
   for(i=0; gpt_sys_types[i].name!=NULL; i++)
     if(guid_cmp(gpt_sys_types[i].part_type, part_type_gpt)==0)
       return gpt_sys_types[i].name;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_info("%8x %04x %04x %02x %02x %02x %02x %02x %02x %02x %02x\n",
       part_type_gpt.time_low,
       part_type_gpt.time_mid,

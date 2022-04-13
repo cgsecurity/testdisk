@@ -71,7 +71,7 @@ static void register_header_check_dta(file_stat_t *file_stat)
   static const unsigned char dta_header_71le[3]= {0x71, 0x02, 0x01};
   static const unsigned char dta_header_72le[3]= {0x72, 0x02, 0x01};
   register_header_check(0, dta_header_71le,sizeof(dta_header_71le), &header_check_dta, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, dta_header_72le,sizeof(dta_header_72le), &header_check_dta, file_stat);
 #endif
 }

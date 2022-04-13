@@ -150,7 +150,7 @@ static void register_header_check_sp3(file_stat_t *file_stat)
   static const unsigned char sp31_header[8]=  { 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   static const unsigned char sp32_header[8]=  { 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   register_header_check(0, sp31_header,  sizeof(sp31_header),  &header_check_sp3, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, sp32_header,  sizeof(sp32_header),  &header_check_sp3, file_stat);
 #endif
 }

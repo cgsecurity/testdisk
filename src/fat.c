@@ -46,11 +46,12 @@
 #include "dir.h"
 #include "fat_dir.h"
 
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
 extern const arch_fnct_t arch_i386;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
 extern const arch_fnct_t arch_mac;
-
-static int log_fat_info(const struct fat_boot_sector*fh1, const upart_type_t upart_type, const unsigned int sector_size);
-static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_header, const partition_t *partition, const int verbose, const int dump_ind);
+#endif
 
 /*@
   @ requires \valid_read(partition);
@@ -77,6 +78,7 @@ static int is_fat32(const partition_t *partition);
   @ requires valid_partition(partition);
   @ requires \valid_read(fat_header);
   @ requires \separated(disk_car, partition, fat_header);
+  @ decreases 0;
   @*/
 static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const struct fat_boot_sector*fat_header)
 {
@@ -303,6 +305,7 @@ int check_FAT(disk_t *disk_car, partition_t *partition, const int verbose)
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
@@ -333,6 +336,7 @@ static unsigned int get_next_cluster_fat12(disk_t *disk, const partition_t *part
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 static unsigned int get_next_cluster_fat16(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
@@ -361,6 +365,7 @@ static unsigned int get_next_cluster_fat16(disk_t *disk, const partition_t *part
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 static unsigned int get_next_cluster_fat32(disk_t *disk, const partition_t *partition, const int offset, const unsigned int cluster)
 {
@@ -862,6 +867,7 @@ unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const uns
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 static int fat_has_EFI_entry(disk_t *disk, const partition_t *partition, const int verbose)
 {
@@ -977,7 +983,7 @@ static int test_OS2MB(const disk_t *disk, const struct fat_boot_sector *fat_head
   const char*buffer=(const char*)fat_header;
   if(le16(fat_header->marker)==0xAA55 && memcmp(buffer+FAT_NAME1,"FAT     ",8)==0)
   {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     if(verbose||dump_ind)
     {
       log_info("OS2MB at %u/%u/%u\n",
@@ -1043,6 +1049,7 @@ int is_part_fat(const partition_t *partition)
 
 int is_part_fat12(const partition_t *partition)
 {
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
   if(partition->arch==&arch_i386)
   {
     switch(partition->part_type_i386)
@@ -1054,13 +1061,7 @@ int is_part_fat12(const partition_t *partition)
         break;
     }
   }
-  /*
-  else if(partition->arch==&arch_gpt)
-  {
-     if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-     return 1;
-  }
-  */
+#endif
   return 0;
 }
 
@@ -1071,6 +1072,7 @@ static int is_fat12(const partition_t *partition)
 
 int is_part_fat16(const partition_t *partition)
 {
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
   if(partition->arch==&arch_i386)
   {
     switch(partition->part_type_i386)
@@ -1086,13 +1088,7 @@ int is_part_fat16(const partition_t *partition)
         break;
     }
   }
-  /*
-  else if(partition->arch==&arch_gpt)
-  {
-    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-      return 1;
-  }
-   */
+#endif
   return 0;
 }
 
@@ -1103,6 +1099,7 @@ static int is_fat16(const partition_t *partition)
 
 int is_part_fat32(const partition_t *partition)
 {
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
   if(partition->arch==&arch_i386)
   {
     switch(partition->part_type_i386)
@@ -1116,18 +1113,14 @@ int is_part_fat32(const partition_t *partition)
         break;
     }
   }
-  else if(partition->arch==&arch_mac)
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
+  if(partition->arch==&arch_mac)
   {
     if(partition->part_type_mac==PMAC_FAT32)
       return 1;
   }
-  /*
-  else if(partition->arch==&arch_gpt)
-  {
-    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-      return 1;
-  }
-   */
+#endif
   return 0;
 }
 

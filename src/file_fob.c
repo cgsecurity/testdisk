@@ -73,7 +73,7 @@ static int header_check_fob(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_fob(file_stat_t *file_stat)
 {
   register_header_check(0, "Codeunit ",  	 9, &header_check_fob, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, "Dataport ",  	 9, &header_check_fob, file_stat);
   register_header_check(0, "Form ",		 5, &header_check_fob, file_stat);
   register_header_check(0, "MenuSuite ",	10, &header_check_fob, file_stat);

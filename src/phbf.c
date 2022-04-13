@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(DISABLED_FOR_FRAMAC)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -180,6 +181,7 @@ pstatus_t photorec_bf(struct ph_param *params, const struct ph_options *options,
 	    td_list_for_each(tmp, &pos->file_checks[buffer[pos->offset]].list)
 	    {
 	      const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
+	      /*@ assert valid_file_check_node(file_check); */
 	      if((file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
 		  file_check->header_check(buffer, read_size, 0, &file_recovery, &file_recovery_new)!=0)
 	      {
@@ -751,3 +753,4 @@ static pstatus_t photorec_bf_aux(struct ph_param *params, file_recovery_t *file_
 	return PSTATUS_OK;
   }
 }
+#endif

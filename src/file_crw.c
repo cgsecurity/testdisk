@@ -81,7 +81,7 @@ static void register_header_check_crw(file_stat_t *file_stat)
   static const unsigned char crw_header_be[2]= {'I','I'};
   static const unsigned char crw_header_le[2]= {'M','M'};
   register_header_check(0, crw_header_be, sizeof(crw_header_be), &header_check_crw, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, crw_header_le, sizeof(crw_header_le), &header_check_crw, file_stat);
 #endif
 }

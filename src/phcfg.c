@@ -81,7 +81,7 @@ static FILE *file_options_save_aux(void)
     }
   }
 #endif
-#if !defined(DJGPP) && !defined(__FRAMAC__)
+#if !defined(DJGPP) && !defined(DISABLED_FOR_FRAMAC)
   if(filename==NULL)
   {
     char *home;
@@ -145,7 +145,7 @@ static FILE *file_options_load_aux(void)
     }
   }
 #endif
-#if !defined(DJGPP) && !defined(__FRAMAC__)
+#if !defined(DJGPP) && !defined(DISABLED_FOR_FRAMAC)
   {
     char *home;
     home = getenv("HOME");

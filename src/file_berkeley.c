@@ -76,7 +76,7 @@ static void register_header_check_berkeley_le(file_stat_t *file_stat)
   static unsigned char berkeley_db_btree_8[8]={0x62, 0x31, 0x05, 0x00, 0x08, 0x00, 0x00, 0x00};
   static unsigned char berkeley_db_btree_9[8]={0x62, 0x31, 0x05, 0x00, 0x09, 0x00, 0x00, 0x00};
   register_header_check(0xC, berkeley_db_hash_8, 8, &header_check_berkeley_le, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0xC, berkeley_db_hash_9, 8, &header_check_berkeley_le, file_stat);
   register_header_check(0xC, berkeley_db_btree_8, 8, &header_check_berkeley_le, file_stat);
   register_header_check(0xC, berkeley_db_btree_9, 8, &header_check_berkeley_le, file_stat);

@@ -33,7 +33,7 @@
 #include "filegen.h"
 #include "common.h"
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_STRPTIME
 #endif
 

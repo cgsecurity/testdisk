@@ -40,7 +40,7 @@
 #include "lang.h"
 #include "intrf.h"
 #include "fat_common.h"
-#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
+#if !defined(DISABLED_FOR_FRAMAC)
 #include "apfs.h"
 #include "bfs.h"
 #include "bsd.h"
@@ -263,7 +263,7 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   partition=partition_new(&arch_none);
   buffer_disk=(unsigned char *)MALLOC(16*DEFAULT_SECTOR_SIZE);
   partition->part_size=disk->disk_size;
-#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
+#if !defined(DISABLED_FOR_FRAMAC)
   if(recover_MD_from_partition(disk, partition, verbose)==0)
     res=1;
   else
@@ -358,10 +358,11 @@ static list_part_t *read_part_none(disk_t *disk, const int verbose, const int sa
   partition->status=STATUS_PRIM;
   screen_buffer_reset();
   check_part_none(disk, verbose,partition,saveheader);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   aff_part_buffer(AFF_PART_ORDER|AFF_PART_STATUS,disk, partition);
 #endif
   list_part=insert_new_partition(NULL, partition, 0, &insert_error);
+  /*@ assert valid_list_part(list_part); */
   if(insert_error>0)
     free(partition);
   return list_part;
@@ -405,7 +406,7 @@ static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, c
 static int check_part_none(disk_t *disk_car,const int verbose,partition_t *partition, const int saveheader)
 {
   int ret=0;
-#if !defined(__FRAMAC__) && !defined(MAIN_photorec)
+#if !defined(DISABLED_FOR_FRAMAC)
   switch(partition->upart_type)
   {
     case UP_APFS:

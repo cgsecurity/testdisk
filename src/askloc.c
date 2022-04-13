@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_GETCWD
 #endif
 

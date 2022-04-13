@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LINUX_TYPES_H
 #undef HAVE_LINUX_HDREG_H
 #undef HAVE_SCSI_SG_H

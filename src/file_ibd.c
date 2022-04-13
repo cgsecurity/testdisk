@@ -50,7 +50,7 @@ const file_hint_t file_hint_ibd= {
 #define FIL_PAGE_TYPE_FSP_HDR	8	/* File space header */
 #define DICT_TF_BITS            6       /* number of flag bits */
 #define DICT_TF_FORMAT_SHIFT    5       /* file format */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #define DICT_TF_FORMAT_MASK     0x20
 #else
 #define DICT_TF_FORMAT_MASK     \

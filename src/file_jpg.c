@@ -25,7 +25,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(SINGLE_FORMAT) || defined(MAIN_fidentify)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LIBJPEG
 #undef DEBUG_JPEG
 #undef HAVE_JPEGLIB_H
@@ -756,7 +756,7 @@ static void file_check_mpo(file_recovery_t *fr)
   }
   if(file_check_mpo_aux(fr->handle, buffer+8, offset+8, size-8) == 0)
   {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_info("file_check_mpo  %s failed, limiting to first jpeg: %llu\n", fr->filename, (long long unsigned)jpg_fs);
 #endif
     fr->file_size=jpg_fs;
@@ -925,7 +925,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       if( file_recovery->file_size <= 1024 &&
 	buffer[3]==0xec)		/* APP12 */
       {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	log_info("jpg %llu %llu\n",
 	    (long long unsigned)file_recovery->calculated_file_size,
 	    (long long unsigned)file_recovery->file_size);
@@ -1986,7 +1986,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
 	)
       {
 	file_recovery->extra=tmp - offset_error;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	if(file_recovery->extra % file_recovery->blocksize != 0)
 	{
 	  log_info("jpg_search_marker %s extra=%llu\n",
@@ -2022,16 +2022,16 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
   /*@ assert valid_read_string(&thumbname[0]); */
   sep=strrchr(thumbname,'/');
   if(sep!=NULL
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
       && *(sep+1)=='f'
 #endif
     )
   {
     FILE *out;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     *(sep+1)='t';
 #endif
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     if((out=fopen(thumbname,"wb"))!=NULL)
     {
       /*@ assert \valid_read(buffer + (0 .. nbytes - 1)); */
@@ -2047,7 +2047,7 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
       /*@ assert \valid_read(thumb_char + (0 .. thumb_size - 1)); */
       if(fwrite(&buffer[thumb_offset], thumb_size, 1, out) < 1)
       {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	log_error("Can't write to %s: %s\n", thumbname, strerror(errno));
 #endif
       }
@@ -2057,7 +2057,7 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
     }
     else
     {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
       log_error("fopen %s failed\n", thumbname);
 #endif
     }
@@ -2221,7 +2221,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       }
       else
       {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	log_info("%s thumb unknown marker 0x%02x at 0x%x\n", file_recovery->filename, buffer[j+1], j);
 #endif
 	file_recovery->offset_error=j;
@@ -2703,6 +2703,16 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
   return DC_CONTINUE;
 }
 
+/*@
+  @ requires valid_register_header_check(file_stat);
+  @*/
+static void register_header_check_jpg(file_stat_t *file_stat)
+{
+  static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
+  register_header_check(0, jpg_header, sizeof(jpg_header), &header_check_jpg, file_stat);
+}
+#endif
+
 const char*td_jpeg_version(void)
 {
 #if defined(HAVE_LIBJPEG)
@@ -2723,17 +2733,6 @@ const char*td_jpeg_version(void)
   return "none";
 #endif
 }
-
-
-/*@
-  @ requires valid_register_header_check(file_stat);
-  @*/
-static void register_header_check_jpg(file_stat_t *file_stat)
-{
-  static const unsigned char jpg_header[3]= { 0xff,0xd8,0xff};
-  register_header_check(0, jpg_header, sizeof(jpg_header), &header_check_jpg, file_stat);
-}
-#endif
 
 #if defined(MAIN_jpg)
 #define BLOCKSIZE 65536u

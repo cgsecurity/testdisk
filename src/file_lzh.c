@@ -57,7 +57,7 @@ struct lzh_level0
   uint8_t  level;
   uint8_t  filename_len;
   /* Size should be 0, be carefull when using sizeof to decrement */
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   uint8_t  filename[0];
 #endif
 } __attribute__ ((gcc_struct, __packed__));
@@ -73,7 +73,7 @@ struct lzh_level1
   uint8_t  reserved_20;
   uint8_t  level;
   uint8_t  filename_len;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   uint8_t  filename[0];
 #endif
 } __attribute__ ((gcc_struct, __packed__));
@@ -171,7 +171,7 @@ static int header_check_lzh(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_lzh(file_stat_t *file_stat)
 {
   register_header_check(2, "-lh0-", 5, &header_check_lzh, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(2, "-lh1-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lh2-", 5, &header_check_lzh, file_stat);
   register_header_check(2, "-lh3-", 5, &header_check_lzh, file_stat);

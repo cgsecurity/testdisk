@@ -788,7 +788,7 @@ static void register_header_check_gpg(file_stat_t *file_stat)
   static const unsigned char gpg_header_seckey[1]= {0x95};
   static const unsigned char gpg_header_pkey[1]= {0x99};
   register_header_check(0, gpg_header_seckey, sizeof(gpg_header_seckey), &header_check_gpg, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, gpg_header_symkey_enc, sizeof(gpg_header_symkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, gpg_header_pkey_enc, sizeof(gpg_header_pkey_enc), &header_check_gpg, file_stat);
   register_header_check(0, pgp_header, sizeof(pgp_header), &header_check_gpg, file_stat);

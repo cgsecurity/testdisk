@@ -31,6 +31,8 @@ extern "C" {
   @ requires \valid_read(options);
   @ requires \valid(list_search_space);
   @ requires \separated(params, options, list_search_space);
+  @ decreases 0;
+  @ ensures  valid_ph_param(params);
   @*/
 pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 

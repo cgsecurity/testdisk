@@ -97,7 +97,7 @@ static int header_check_dpx(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_dpx(file_stat_t *file_stat)
 {
   register_header_check(0, "SDPX", 4, &header_check_dpx, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, "XPDS", 4, &header_check_dpx, file_stat);
 #endif
 }

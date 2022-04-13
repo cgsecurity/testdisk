@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_UTIME
 #endif
 

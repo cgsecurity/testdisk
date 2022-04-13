@@ -24,10 +24,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_NCURSES
 #endif
-#if  defined(__FRAMAC__) && defined(HAVE_STRING_H)
+#if  defined(DISABLED_FOR_FRAMAC) && defined(HAVE_STRING_H)
 #include <string.h>
 #endif
 
@@ -344,8 +344,15 @@ struct list_part_struct
   list_part_t *next;
   int to_be_removed;
 };
+
 /*@
-    predicate valid_list_part(list_part_t *list) = ((list == \null) || (\valid_read(list) && valid_list_part(list->next)));
+inductive valid_list_part{L} (list_part_t *list)
+{
+  case list_null{L}:
+    valid_list_part(\null);
+  case list_not_null{L}:
+    \forall list_part_t *list; \valid_read(list) ==> valid_list_part(list->next) ==> valid_list_part(list);
+}
   @*/
 
 typedef struct list_disk_struct list_disk_t;
@@ -441,7 +448,7 @@ struct param_disk_struct
 };
 
 /*@
-    predicate valid_disk(disk_t *disk) = ((disk == \null) ||
+    predicate valid_disk(disk_t *disk) =
       (\valid_read(disk) &&
        \freeable(disk) &&
        valid_read_string(disk->device) &&
@@ -457,13 +464,18 @@ struct param_disk_struct
        (disk->wbuffer == \null || (\freeable(disk->wbuffer) && disk->wbuffer_size > 0)) &&
        valid_arch(disk->arch) &&
        disk->sector_size > 0
-      ));
+      );
 */
-/*@ predicate valid_list_disk(list_disk_t* root) = ((root == \null) || (\valid_read(root))); */
 
-/* TODO predicate valid_list_disk{L}(list_disk_t* root) =
-      \forall list_disk_t *node; \valid(node) && ld_reachable(root,node) ==> \valid(node->disk);
- */
+/*@
+inductive valid_list_disk{L} (list_disk_t *list)
+{
+  case list_null{L}:
+    valid_list_disk(\null);
+  case list_not_null{L}:
+    \forall list_disk_t *list; \valid_read(list) ==> valid_disk(list->disk) && valid_list_disk(list->next) ==> valid_list_disk(list);
+}
+  @*/
 
 
 struct partition_struct
@@ -605,7 +617,7 @@ int strncasecmp(const char * s1, const char * s2, size_t len);
 #ifndef HAVE_STRCASESTR
 char * strcasestr (const char *haystack, const char *needle);
 #endif
-#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__) && !defined(__FRAMAC__)
+#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__) && !defined(DISABLED_FOR_FRAMAC)
 /*@
   @ requires valid_timer: \valid_read(timep);
   @ requires \valid(result);

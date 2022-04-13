@@ -37,8 +37,16 @@
 void interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
 {
   if(*current_cmd==NULL)
+  {
+  /*@ assert valid_read_string(*current_cmd); */
     return ;
-  /*@ loop invariant valid_read_string(*current_cmd); */
+  }
+  /*@
+    @ loop invariant valid_read_string(*current_cmd);
+    @ loop assigns *current_cmd;
+    @ loop assigns options->paranoid, options->keep_corrupted_file, options->mode_ext2;
+    @ loop assigns options->expert, options->lowmem;
+    @*/
   while(1)
   {
     skip_comma_in_command(current_cmd);
@@ -81,7 +89,10 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     }
     else
     {
+#ifndef DISABLED_FOR_FRAMAC
       interface_options_photorec_log(options);
+#endif
+      /*@ assert valid_read_string(*current_cmd); */
       return ;
     }
   }

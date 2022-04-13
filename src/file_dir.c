@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir) || defined(MAIN_photorec)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -69,7 +69,7 @@ static void file_rename_fatdir(file_recovery_t *file_recovery)
   /*@ assert buffer_size >= 32; */
   cluster=fat_get_cluster_from_entry((const struct msdos_dir_entry *)&buffer[0]);
   sprintf(buffer_cluster, "cluster_%u", cluster);
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);

@@ -34,14 +34,27 @@
 #include "log.h"
 #include "log_part.h"
 
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_none;
+#endif
 
+/*@
+  @ requires \valid(current_cmd);
+  @ requires valid_read_string(*current_cmd);
+  @ ensures  valid_read_string(*current_cmd);
+  @*/
+// TODO assigns  *current_cmd;
 static int get_hex_from_command(char **current_cmd)
 {
   const int tmp=strtol(*current_cmd, NULL, 16);
+  /*@
+    @ loop invariant valid_read_string(*current_cmd);
+    @ loop assigns *current_cmd;
+    @*/
   while(*current_cmd[0]!=',' && *current_cmd[0]!='\0')
     (*current_cmd)++;
+  /*@ assert valid_read_string(*current_cmd); */
   return tmp;
 }
 
@@ -53,6 +66,7 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
     return ;
   if(partition->arch==NULL)
     return;
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
   if(partition->arch==&arch_gpt)
   {
     partition->arch=&arch_none;
@@ -61,11 +75,14 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
       const int tmp_val=get_hex_from_command(current_cmd);
       partition->arch->set_part_type(partition,tmp_val);
     }
+#ifndef DISABLED_FOR_FRAMAC
     log_info("Change partition type:\n");
     log_partition(disk_car,partition);
+#endif
     partition->arch=&arch_gpt;
     return;
   }
+#endif
   if(partition->arch->set_part_type==NULL)
     return ;
   skip_comma_in_command(current_cmd);
@@ -73,7 +90,9 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
     const int tmp_val=get_hex_from_command(current_cmd);
     partition->arch->set_part_type(partition,tmp_val);
   }
+#ifndef DISABLED_FOR_FRAMAC
   log_info("Change partition type:\n");
   log_partition(disk_car,partition);
+#endif
   return ;
 }

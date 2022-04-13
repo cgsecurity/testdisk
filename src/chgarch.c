@@ -38,33 +38,76 @@
 #include "hdaccess.h"
 #include "chgarch.h"
 
-extern const arch_fnct_t arch_i386;
-extern const arch_fnct_t arch_gpt;
-extern const arch_fnct_t arch_humax;
-extern const arch_fnct_t arch_mac;
 extern const arch_fnct_t arch_none;
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
+extern const arch_fnct_t arch_gpt;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_HUMAX)
+extern const arch_fnct_t arch_humax;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
+extern const arch_fnct_t arch_i386;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
+extern const arch_fnct_t arch_mac;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_SUN)
 extern const arch_fnct_t arch_sun;
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_XBOX)
 extern const arch_fnct_t arch_xbox;
-
+#endif
 
 /* return 1 if user need to give the partition table type */
 int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd)
 {
-  const arch_fnct_t *arch_list[]={&arch_i386, &arch_gpt, &arch_humax, &arch_mac, &arch_none, &arch_sun, &arch_xbox, NULL};
+#ifndef DISABLED_FOR_FRAMAC
+  const arch_fnct_t *arch_list[]={
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
+    &arch_i386,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
+    &arch_gpt,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_HUMAX)
+    &arch_humax,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_MAC)
+    &arch_mac,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_NONE)
+    &arch_none,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_SUN)
+    &arch_sun,
+#endif
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_XBOX)
+    &arch_xbox,
+#endif
+    NULL};
   int keep_asking;
   if(*current_cmd==NULL)
     return 1;
+  /*@ assert valid_read_string(*current_cmd); */
+  /*@
+    loop invariant valid_read_string(*current_cmd);
+    */
   do
   {
     int i;
     keep_asking=0;
     skip_comma_in_command(current_cmd);
-    for(i=0;arch_list[i]!=NULL;i++)
+    /*@
+      loop unroll 10;
+      @*/
+    for(i=0; arch_list[i]!=NULL; i++)
+    {
       if(check_command(current_cmd, arch_list[i]->part_name_option, strlen(arch_list[i]->part_name_option))==0)
       {
 	disk->arch=arch_list[i];
 	keep_asking=1;
       }
+    }
     if(check_command(current_cmd, "ask_type", 8)==0)
     {
       return 1;
@@ -74,5 +117,7 @@ int change_arch_type_cli(disk_t *disk, const int verbose, char**current_cmd)
   hd_update_geometry(disk, verbose);
   log_info("%s\n",disk->description_short(disk));
   log_info("Partition table type: %s\n", disk->arch->part_name);
+#endif
+  /*@ assert valid_disk(disk); */
   return 0;
 }

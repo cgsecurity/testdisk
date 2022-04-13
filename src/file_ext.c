@@ -72,7 +72,7 @@ static void file_rename_ext(file_recovery_t *file_recovery)
   /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
   block_nr=(unsigned long int)le32(sb->s_first_data_block) + (unsigned long int)le16(sb->s_block_group_nr)*le32(sb->s_blocks_per_group);
   sprintf(buffer_cluster, "sb_%lu", block_nr);
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);
@@ -136,7 +136,7 @@ static void file_rename_extdir(file_recovery_t *file_recovery)
 #endif
   /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
   sprintf(buffer_cluster, "inode_%u", (unsigned int)le32(*inode));
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);

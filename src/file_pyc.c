@@ -88,7 +88,7 @@ static void register_header_check_pyc(file_stat_t *file_stat)
   static const unsigned char pyc_33_magic[4]= { 0x9e, 0x0c, '\r', '\n'};
   static const unsigned char pyc_34_magic[4]= { 0xee, 0x0c, '\r', '\n'};
   register_header_check(0, pyc_15_magic, sizeof(pyc_15_magic), &header_check_pyc, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, pyc_20_magic, sizeof(pyc_20_magic), &header_check_pyc, file_stat);
   register_header_check(0, pyc_21_magic, sizeof(pyc_21_magic), &header_check_pyc, file_stat);
   register_header_check(0, pyc_22_magic, sizeof(pyc_22_magic), &header_check_pyc, file_stat);

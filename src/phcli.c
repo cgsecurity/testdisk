@@ -19,6 +19,8 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+extern int need_to_stop;
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -41,7 +43,6 @@
 #include "poptions.h"
 #include "phcli.h"
 
-extern int need_to_stop;
 typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 
 /*@
@@ -60,10 +61,18 @@ static int spacerange_cmp(const struct td_list_head *a, const struct td_list_hea
   return space_a->end - space_b->end;
 }
 
+#ifndef DISABLED_FOR_FRAMAC
+/*@
+  @ requires \valid(files_enable);
+  @ requires valid_read_string(*current_cmd);
+  @ requires \separated(files_enable, current_cmd, *current_cmd);
+  @ ensures  valid_read_string(*current_cmd);
+  @*/
 static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
 {
   int keep_asking;
   log_info("\nInterface File Select\n");
+  /*@ loop invariant valid_read_string(*current_cmd); */
   do
   {
     file_enable_t *file_enable;
@@ -131,12 +140,20 @@ static int file_select_cli(file_enable_t *files_enable, char**current_cmd)
   } while(keep_asking>0);
   return 0;
 }
+#endif
 
 int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph_options *options, alloc_data_t*list_search_space)
 {
   unsigned int user_blocksize=0;
   init_mode_t mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
   params->partition=(list_part->next!=NULL ? list_part->next->part : list_part->part);
+  /*@ assert valid_partition(params->partition); */
+  /*@
+    @ loop invariant valid_read_string(params->cmd_run);
+    @ loop invariant \valid_function(params->disk->description);
+    @ loop invariant valid_list_search_space(list_search_space);
+    @ loop invariant valid_disk(params->disk);
+    @*/
   while(1)
   {
     skip_comma_in_command(&params->cmd_run);
@@ -146,6 +163,7 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
       return 0;
     if(check_command(&params->cmd_run,"search",6)==0)
     {
+#ifndef DISABLED_FOR_FRAMAC
       if(mode_init_space==INIT_SPACE_EXT2_GROUP)
       {
 	params->blocksize=ext2_fix_group(list_search_space, params->disk, params->partition);
@@ -164,6 +182,7 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
 	  return -1;
 	}
       }
+#endif
       if(td_list_empty(&list_search_space->list))
       {
 	init_search_space(list_search_space, params->disk, params->partition);
@@ -176,6 +195,7 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
 	params->blocksize=user_blocksize;
       return 1;
     }
+#ifndef DISABLED_FOR_FRAMAC
     else if(check_command(&params->cmd_run,"options",7)==0)
     {
       interface_options_photorec_cli(options, &params->cmd_run);
@@ -193,11 +213,13 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
     {
       change_geometry_cli(params->disk, &params->cmd_run);
     }
+#endif
     else if(check_command(&params->cmd_run,"inter",5)==0)
     {	/* Start interactive mode */
       params->cmd_run=NULL;
       return 0;
     }
+#ifndef DISABLED_FOR_FRAMAC
     else if(check_command(&params->cmd_run,"wholespace",10)==0)
     {
       params->carve_free_space_only=0;
@@ -254,9 +276,12 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
       if(element!=NULL)
 	params->partition=element->part;
     }
+#endif
     else
     {
+#ifndef DISABLED_FOR_FRAMAC
       log_critical("Syntax error in command line: %s\n", params->cmd_run);
+#endif
       return -1;
     }
   }

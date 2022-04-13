@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_NCURSES
 #endif
  
@@ -44,11 +44,11 @@
 #include "autoset.h"
 #include "chgarchn.h"
 
+extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_i386;
 extern const arch_fnct_t arch_gpt;
 extern const arch_fnct_t arch_humax;
 extern const arch_fnct_t arch_mac;
-extern const arch_fnct_t arch_none;
 extern const arch_fnct_t arch_sun;
 extern const arch_fnct_t arch_xbox;
 

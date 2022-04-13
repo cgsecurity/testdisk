@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#if defined(HAVE_NCURSES) && !defined(MAIN_photorec)
+#if defined(HAVE_NCURSES)
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #elif defined(HAVE_NCURSESW_NCURSES_H)

@@ -137,7 +137,7 @@ static void register_header_check_gsm(file_stat_t *file_stat)
   static const unsigned char gsm_header16[1]={ 0xdf };
 
   register_header_check(0, gsm_header1, sizeof(gsm_header1), &header_check_gsm, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, gsm_header2, sizeof(gsm_header2), &header_check_gsm, file_stat);
   register_header_check(0, gsm_header3, sizeof(gsm_header3), &header_check_gsm, file_stat);
   register_header_check(0, gsm_header4, sizeof(gsm_header4), &header_check_gsm, file_stat);

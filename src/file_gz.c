@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#if defined(MAIN_fidentify) || defined(MAIN_photorec) || defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LIBZ
 #undef HAVE_ZLIB_H
 #endif

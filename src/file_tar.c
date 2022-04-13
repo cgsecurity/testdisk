@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar) || defined(MAIN_photorec)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -134,7 +134,7 @@ static int header_check_tar(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_tar(file_stat_t *file_stat)
 {
   register_header_check(0x101, tar_header_gnu, sizeof(tar_header_gnu), &header_check_tar, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0x101, tar_header_posix, sizeof(tar_header_posix), &header_check_tar, file_stat);
 #endif
 }

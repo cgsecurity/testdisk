@@ -175,7 +175,7 @@ static void file_rename_mlv(file_recovery_t *file_recovery)
   }
   fclose(file);
   sprintf(ext, "M%02u", le16(hdr->fileNum));
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
   ext[sizeof(ext)-1]='\0';
 #endif
   /*@ assert valid_read_string(ext_ptr); */

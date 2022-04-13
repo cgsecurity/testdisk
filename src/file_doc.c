@@ -142,7 +142,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   /*@ assert uSectorShift == le16(header->uSectorShift); */
   /*@ assert num_FAT_blocks==le32(header->num_FAT_blocks); */
   /*@ assert num_FAT_blocks <= 109+le32(header->num_extra_FAT_blocks)*((1<<uSectorShift)/4-1); */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   const unsigned int dif_size=109*4+(50<<12);
 #else
   const unsigned int dif_size=109*4+(num_extra_FAT_blocks<<uSectorShift);
@@ -171,7 +171,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
       }
     }
   }
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   /*@ assert (109+50*((1<<12)/4-1))<<12 >= num_FAT_blocks<<uSectorShift; */
   fat=(uint32_t*)MALLOC((109+50*((1<<12)/4-1))<<12);
 #else
@@ -307,7 +307,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	free(fat);
 	return ;
       }
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
       dir_entries=(struct OLE_DIR *)MALLOC(1<<12);
 #else
       dir_entries=(struct OLE_DIR *)MALLOC(1<<uSectorShift);
@@ -655,7 +655,7 @@ static void *OLE_read_stream(FILE *IN,
   unsigned int block;
   unsigned int i;
   const unsigned int i_max=((len+(1<<uSectorShift)-1) >> uSectorShift);
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   dataPt=(char *)MALLOC(((1024*1024+(1<<uSectorShift)-1) >> uSectorShift) << uSectorShift);
 #else
   dataPt=(char *)MALLOC(i_max << uSectorShift);
@@ -712,7 +712,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
     return NULL;
   /*@ assert 0 < csectMiniFat; */
   /*@ assert 0 < csectMiniFat <= 2048; */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   minifat=(char *)MALLOC(2048 << 12);
 #else
   minifat=(char *)MALLOC(minifat_length);
@@ -1067,7 +1067,7 @@ static void OLE_parse_title_entry(const char *buffer, const unsigned int size, c
     /*@ assert \valid_read((char*)(src + offset_tmp)) && \valid_read(((char*)(src+offset_tmp))+(1..count-1)); */
     /*@ assert valid_read_or_empty((void const *)(src + offset_tmp), count); */
     /*@ assert valid_read_or_empty((void const *)(src + offset_tmp), count); */
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     if(count < 1024)
     {
       memcpy(title, &src[offset_tmp], count);
@@ -1300,7 +1300,7 @@ static void OLE_parse_summary_aux(const char *dataPt, const unsigned int dirLen,
 {
   unsigned int pos;
   const unsigned char *udataPt=(const unsigned char *)dataPt;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   assert(dirLen >= 48 && dirLen<=1024*1024);
 #endif
   /*@ assert *ext == \null || valid_read_string(*ext); */
@@ -1367,7 +1367,7 @@ static void *OLE_read_ministream(const unsigned char *ministream,
   unsigned char *dataPt;
   unsigned int mblock=miniblock_start;
   unsigned int size_read;
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   const unsigned int len_aligned=(1024*1024+(1<<uMiniSectorShift)-1) / (1<<uMiniSectorShift) * (1<<uMiniSectorShift);
 #else
   const unsigned int len_aligned=(len+(1<<uMiniSectorShift)-1) / (1<<uMiniSectorShift) * (1<<uMiniSectorShift);
@@ -1576,7 +1576,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     {
       /*@ assert valid_string(&title[0]); */
       struct OLE_DIR *dir_entries;
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
       dir_entries=(struct OLE_DIR *)MALLOC(1<<12);
 #else
       dir_entries=(struct OLE_DIR *)MALLOC(1<<uSectorShift);

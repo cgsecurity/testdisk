@@ -152,7 +152,7 @@ static void register_header_check_dump(file_stat_t *file_stat)
   static const unsigned char dump_header_le_old_fs[4]  = { 0x6b, 0xea, 0x00, 0x00};
   static const unsigned char dump_header_le_new_fs[4]  = { 0x6c, 0xea, 0x00, 0x00};
   register_header_check(0x18, dump_header_le_old_fs,sizeof(dump_header_le_old_fs), &header_check_dump, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0x18, dump_header_le_new_fs,sizeof(dump_header_le_new_fs), &header_check_dump, file_stat);
 #endif
 }

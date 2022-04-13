@@ -24,8 +24,9 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_NCURSES
+#undef ENABLE_DFXML
 #endif
 
 #include <stdio.h>
@@ -236,7 +237,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   {
     skip_comma_in_command(&params->cmd_run);
     /*@ assert valid_read_string(params->recup_dir); */
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     if(check_command(&params->cmd_run,"status=unformat",15)==0)
     {
       params->status=STATUS_UNFORMAT;
@@ -281,7 +282,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   }
   /*@ assert valid_read_string(params->recup_dir); */
   screen_buffer_reset();
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_info("\nAnalyse\n");
   log_partition(params->disk, params->partition);
 #endif
@@ -301,7 +302,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   for(params->pass=0; params->status!=STATUS_QUIT; params->pass++)
   {
     const unsigned int old_file_nbr=params->file_nbr;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_info("Pass %u (blocksize=%u) ", params->pass, params->blocksize);
     log_info("%s\n", status_to_name(params->status));
 #endif
@@ -322,13 +323,13 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     switch(params->status)
     {
       case STATUS_UNFORMAT:
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	ind_stop=fat_unformat(params, options, list_search_space);
 #endif
 	params->blocksize=blocksize_is_known;
 	break;
       case STATUS_FIND_OFFSET:
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	{
 	  uint64_t start_offset=0;
 	  if(blocksize_is_known>0)
@@ -354,7 +355,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	break;
       case STATUS_EXT2_ON_BF:
       case STATUS_EXT2_OFF_BF:
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
 	ind_stop=photorec_bf(params, options, list_search_space);
 #endif
 	break;
@@ -424,7 +425,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 	  unlink("photorec.ses");
 	break;
     }
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     {
       const time_t current_time=time(NULL);
       log_info("Elapsed time %uh%02um%02us\n",

@@ -20,7 +20,7 @@
 
  */
 
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_SUN)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -176,7 +176,7 @@ static unsigned int get_part_type_sun(const partition_t *partition)
 static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   const sun_disklabel *sunlabel=(const sun_disklabel*)buffer;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   if(verbose>1)
   {
     log_trace("get_geometry_from_sunmbr\n");
@@ -185,7 +185,7 @@ static int get_geometry_from_sunmbr(const unsigned char *buffer, const int verbo
   geometry->cylinders=0;
   geometry->heads_per_cylinder=be16(sunlabel->ntrks);
   geometry->sectors_per_head=be16(sunlabel->nsect);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   if(geometry->sectors_per_head>0)
   {
     log_info("Geometry from SUN MBR: head=%u sector=%u\n",
@@ -475,3 +475,4 @@ static const char *get_partition_typename_sun(const partition_t *partition)
 {
   return get_partition_typename_sun_aux(partition->part_type_sun);
 }
+#endif

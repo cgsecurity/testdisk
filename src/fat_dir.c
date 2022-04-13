@@ -64,6 +64,7 @@ struct fat_dir_struct
   @ requires \valid_read(fat_header);
   @ requires \valid(dir_list);
   @ requires \separated(disk_car, partition, dir_data, fat_header, dir_list);
+  @ decreases 0;
   @*/
 static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const dir_data_t *dir_data, const struct fat_boot_sector*fat_header, file_info_t *dir_list);
 
@@ -109,6 +110,7 @@ int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsig
   if(wctomb(NULL, 0) < 0)
     utf8=0;
 #endif
+#ifndef DISABLED_FOR_FRAMAC
 GetNew:
   status=0;
   long_slots = 0;
@@ -325,6 +327,7 @@ RecEnd:
   if((const void *)de<(const void *)(buffer+size-1) &&
       de->name[0] != (int8_t) 0)
     goto GetNew;
+#endif
   return 0;
 }
 
@@ -351,6 +354,7 @@ static int is_EOC(const unsigned int cluster, const upart_type_t upart_type)
   @ requires \valid_read(dir_data);
   @ requires \valid(dir_list);
   @ requires \separated(disk_car, partition, dir_data, dir_list);
+  @ decreases 0;
   @*/
 static int fat_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list)
 {
@@ -529,6 +533,7 @@ static void dir_partition_fat_close(dir_data_t *dir_data)
   @ requires \valid(dir_data);
   @ requires \valid_read(file);
   @ requires \separated(disk_car, partition, dir_data, file);
+  @ decreases 0;
   @*/
 static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {

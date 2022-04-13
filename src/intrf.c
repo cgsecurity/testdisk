@@ -102,6 +102,11 @@ int screen_buffer_add(const char *_format, ...)
   return 0;
 }
 
+/*@
+  @ ensures intr_nbr_line == 0;
+  @ assigns intr_nbr_line;
+  @ assigns intr_buffer_screen[0 .. MAX_LINES-1][ 0 .. BUFFER_LINE_LENGTH];
+  @*/
 void screen_buffer_reset(void)
 {
   intr_nbr_line=0;
@@ -145,6 +150,10 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
     return msg;
   }
   msg[sizeof(msg)-1]=0;
+#ifdef DISABLED_FOR_FRAMAC
+  msg[0]='T';
+  msg[1]='\0';
+#else
   if((newline&AFF_PART_ORDER)==AFF_PART_ORDER)
   {
     if(partition->status!=STATUS_EXT_IN_EXT && partition->order!=NO_ORDER)
@@ -189,6 +198,7 @@ const char *aff_part_aux(const unsigned int newline, const disk_t *disk_car, con
     pos+=snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->partname);
   if(partition->fsname[0]!='\0')
     snprintf(&msg[pos],sizeof(msg)-pos-1, " [%s]",partition->fsname);
+#endif
   return msg;
 }
 
@@ -221,7 +231,7 @@ uint64_t ask_number_cli(char **current_cmd, const uint64_t val_cur, const uint64
     /*@ assert valid_read_string(*current_cmd); */
     if (val_min==val_max || (tmp_val >= val_min && tmp_val <= val_max))
       return tmp_val;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     else
     {
       char res[200];

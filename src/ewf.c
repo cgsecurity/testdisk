@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LIBEWF
 #endif
 

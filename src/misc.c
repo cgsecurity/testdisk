@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_STRPTIME
 #undef HAVE_SYS_UTSNAME_H
 #undef HAVE_UNAME
@@ -233,6 +233,10 @@ https://msdn.microsoft.com/en-us/library/windows/desktop/ms724834%28v=vs.85%29.a
   return "Apple";
 #elif defined(__OS2__)
   return "OS2";
+#elif defined(DISABLED_FOR_FRAMAC)
+  const char *res="Frama-C";
+  /*@ assert valid_read_string(res); */
+  return res;
 #else
   return "unknown";
 #endif
@@ -286,6 +290,8 @@ const char *get_compiler(void)
 #else
   return "unknown compiler";
 #endif
+  buffer[99]='\0';
+  /*@ assert valid_read_string(&buffer[0]); */
   return buffer;
 }
 

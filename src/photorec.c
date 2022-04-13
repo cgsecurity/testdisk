@@ -24,11 +24,12 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_FTRUNCATE
 #undef HAVE_LIBEXT2FS
 #undef HAVE_LIBNTFS
 #undef HAVE_LIBNTFS3G
+#undef ENABLE_DFXML
 #endif
 
 #include <stdio.h>
@@ -51,6 +52,7 @@
 #if defined(__FRAMAC__)
 #include "__fc_builtin.h"
 #endif
+#include <limits.h>
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
@@ -91,7 +93,7 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
   struct td_list_head *tmp;
   if(file_recovery->filename[0]=='\0')
     return;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_info("%s\t",file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
   {
@@ -114,6 +116,7 @@ void del_search_space(alloc_data_t *list_search_space, const uint64_t start, con
   @ requires \valid(list_search_space);
   @ requires new_current_search_space == \null || \valid(*new_current_search_space);
   @ requires offset == \null || \valid(offset);
+  @ decreases end-start;
   @*/
 static void update_search_space_aux(alloc_data_t *list_search_space, const uint64_t start, const uint64_t end, alloc_data_t **new_current_search_space, uint64_t *offset)
 {
@@ -267,43 +270,46 @@ void free_list_search_space(alloc_data_t *list_search_space)
 
 unsigned int photorec_mkdir(const char *recup_dir, const unsigned int initial_dir_num)
 {
-  int dir_ok=0;
-  int dir_num=initial_dir_num;
+  unsigned int dir_num=initial_dir_num;
 #ifdef DJGPP
   int i=0;
+  /*@ assert valid_read_string(recup_dir); */
 #endif
-  /*@ loop invariant valid_read_string(recup_dir); */
-  do
+  /*@
+    @ loop invariant \separated(recup_dir, &errno);
+    @ loop assigns errno, dir_num;
+    @*/
+  while(1)
   {
     char working_recup_dir[2048];
-    snprintf(working_recup_dir,sizeof(working_recup_dir)-1,"%s.%d",recup_dir,dir_num);
+    snprintf(working_recup_dir, sizeof(working_recup_dir)-1, "%s.%u", recup_dir, dir_num);
+    working_recup_dir[sizeof(working_recup_dir)-1]='\0';
+    /*@ assert valid_read_string(&working_recup_dir[0]); */
 #ifdef HAVE_MKDIR
 #ifdef __MINGW32__
-    if(mkdir(working_recup_dir)!=0 && errno==EEXIST)
+    if(mkdir(working_recup_dir)==0 || errno!=EEXIST)
+      return dir_num;
 #else
-      if(mkdir(working_recup_dir, 0775)!=0 && errno==EEXIST)
+    if(mkdir(working_recup_dir, 0775)==0 || errno!=EEXIST)
+      return dir_num;
 #endif
 #else
 #warning "You need a mkdir function!"
 #endif
-      {
-	dir_num++;
-      }
-      else
-      {
-	dir_ok=1;
-      }
+    if(dir_num == UINT_MAX)
+      dir_num=0;
+    else
+      dir_num++;
 #ifdef DJGPP
   /* Avoid endless loop in Dos version of Photorec after 999 directories if working with short name */
     i++;
-    if(dir_ok==0 && i==1000)
+    if(i==1000)
     {
       dir_num=initial_dir_num;
-      dir_ok=1;
+      return dir_num;
     }
 #endif
-  } while(dir_ok==0);
-  return dir_num;
+  }
 }
 
 /*@
@@ -365,6 +371,7 @@ void forget(const alloc_data_t *list_search_space, alloc_data_t *current_search_
 
 unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, alloc_data_t *list_search_space)
 {
+#ifndef DISABLED_FOR_FRAMAC
   if( partition->upart_type==UP_FAT12 ||
       partition->upart_type==UP_FAT16 || 
       partition->upart_type==UP_FAT32)
@@ -378,6 +385,7 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
 #if defined(HAVE_LIBEXT2FS)
   else if(partition->upart_type==UP_EXT2 || partition->upart_type==UP_EXT3 || partition->upart_type==UP_EXT4)
     return ext2_remove_used_space(disk_car, partition, list_search_space);
+#endif
 #endif
   return 0;
 }
@@ -406,10 +414,14 @@ void update_stats(file_stat_t *file_stats, alloc_data_t *list_search_space)
 
 void write_stats_log(const file_stat_t *file_stats)
 {
+#ifndef DISABLED_FOR_FRAMAC
   unsigned int file_nbr=0;
   unsigned int i;
   unsigned int nbr;
   file_stat_t *new_file_stats;
+  /*@
+    @ loop assigns i;
+    @*/
   for(i=0;file_stats[i].file_hint!=NULL;i++);
   if(i==0)
     return ;
@@ -437,6 +449,7 @@ void write_stats_log(const file_stat_t *file_stats)
   {
     log_info("Total: %u file found\n\n",file_nbr);
   }
+#endif
 }
 
 int sorfile_stat_ts(const void *p1, const void *p2)
@@ -574,10 +587,12 @@ static void file_block_free(alloc_list_t *list_allocation)
   @ requires \valid(file_recovery->handle);
   @ requires valid_file_recovery(file_recovery);
   @ requires \separated(file_recovery, params, file_recovery->handle);
+  @ decreases 0;
   @*/
 static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid)
 {
   /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert file_recovery->file_check == \null || \valid_function(file_recovery->file_check); */
   if(params->status!=STATUS_EXT2_ON_SAVE_EVERYTHING &&
       params->status!=STATUS_EXT2_OFF_SAVE_EVERYTHING &&
       file_recovery->file_stat!=NULL && file_recovery->file_check!=NULL && paranoid>0)
@@ -594,7 +609,7 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
   if(file_recovery->file_stat!=NULL && file_recovery->file_size> 0 &&
       file_recovery->file_size < file_recovery->min_filesize)
   { 
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_info("%s File too small ( %llu < %llu), reject it\n",
 	file_recovery->filename,
 	(long long unsigned) file_recovery->file_size,
@@ -723,7 +738,7 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
 
 void info_list_search_space(const alloc_data_t *list_search_space, const alloc_data_t *current_search_space, const unsigned int sector_size, const int keep_corrupted_file, const int verbose)
 {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   struct td_list_head *search_walker = NULL;
   unsigned long int nbr_headers=0;
   uint64_t sectors_with_unknown_data=0;
@@ -838,16 +853,42 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
   return offset;
 }
 
-void params_reset(struct ph_param *params, const struct ph_options *options)
+/*@
+  @ requires valid_ph_param(params);
+  @ requires params->disk->sector_size > 0;
+  @ requires valid_read_string(params->recup_dir);
+  @ assigns params->file_nbr;
+  @ assigns params->status;
+  @ assigns params->real_start_time;
+  @ assigns params->dir_num;
+  @ assigns params->offset;
+  @ assigns params->blocksize;
+  @ ensures  valid_ph_param(params);
+  @ ensures  params->file_nbr == 0;
+  @ ensures  params->status == STATUS_FIND_OFFSET;
+  @ ensures  params->dir_num == 1;
+  @ ensures  params->offset == PH_INVALID_OFFSET;
+  @ ensures  params->blocksize > 0;
+  @ ensures  valid_read_string(params->recup_dir);
+  @*/
+static void params_reset_aux(struct ph_param *params)
 {
   params->file_nbr=0;
   params->status=STATUS_FIND_OFFSET;
   params->real_start_time=time(NULL);
   params->dir_num=1;
-  params->file_stats=init_file_stats(options->list_file_format);
   params->offset=PH_INVALID_OFFSET;
   if(params->blocksize==0)
     params->blocksize=params->disk->sector_size;
+  /*@ assert params->blocksize > 0; */
+}
+
+void params_reset(struct ph_param *params, const struct ph_options *options)
+{
+  /*@ assert valid_ph_param(params); */
+  params->file_stats=init_file_stats(options->list_file_format);
+  /*@ assert valid_ph_param(params); */
+  params_reset_aux(params);
 }
 
 const char *status_to_name(const photorec_status_t status)

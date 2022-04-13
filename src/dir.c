@@ -23,7 +23,7 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_CHMOD
 #endif
  
@@ -115,6 +115,7 @@ static char ftypelet (unsigned int bits)
 
 void mode_string (const unsigned int mode, char *str)
 {
+#ifndef DISABLED_FOR_FRAMAC
   str[0] = ftypelet(mode);
   str[1] = (mode & LINUX_S_IRUSR) ? 'r' : '-';
   str[2] = (mode & LINUX_S_IWUSR) ? 'w' : '-';
@@ -156,6 +157,7 @@ void mode_string (const unsigned int mode, char *str)
       str[9] = 't';
   }
 #endif
+#endif
 }
 
 int set_datestr(char *datestr, size_t n, const time_t timev)
@@ -169,7 +171,7 @@ int set_datestr(char *datestr, size_t n, const time_t timev)
     strncpy(datestr, "                 ", n);
     return 0;
   }
-#if defined(__MINGW32__) || defined(__FRAMAC__)
+#if defined(__MINGW32__) || defined(DISABLED_FOR_FRAMAC)
   tm_p=localtime(&timev);
 #else
   tm_p=localtime_r(&timev, &tmp);
@@ -196,7 +198,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
   {
     log_info("Directory %s\n",dir_data->current_directory);
   }
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   td_list_for_each(file_walker, &dir_list->list)
   {
     const file_info_t *current_file=td_list_entry_const(file_walker, const file_info_t, list);
@@ -230,7 +232,7 @@ int dir_aff_log(const dir_data_t *dir_data, const file_info_t *dir_list)
 
 void log_list_file(const disk_t *disk, const partition_t *partition, const dir_data_t *dir_data, const file_info_t*list)
 {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   struct td_list_head *tmp;
   log_partition(disk, partition);
   if(dir_data!=NULL)
@@ -301,6 +303,7 @@ static int is_inode_valid(const file_info_t *current_file, const unsigned int di
   @ requires valid_partition(partition);
   @ requires \valid(dir_data);
   @ requires \separated(disk, partition, dir_data);
+  @ decreases 0;
   @*/
 static int dir_whole_partition_log_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode)
 {
@@ -353,6 +356,7 @@ int dir_whole_partition_log(disk_t *disk, const partition_t *partition, dir_data
   @ requires \valid(copy_ok);
   @ requires \valid(copy_bad);
   @ requires \separated(disk, partition, dir_data, copy_ok, copy_bad);
+  @ decreases 0;
   @*/
 static int dir_whole_partition_copy_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, unsigned int *copy_ok, unsigned int *copy_bad)
 {

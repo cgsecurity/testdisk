@@ -65,7 +65,7 @@ static int header_check_hfsp(const unsigned char *buffer, const unsigned int buf
 static void register_header_check_hfsp(file_stat_t *file_stat)
 {
   register_header_check(0, "H+\0\4", 4, &header_check_hfsp, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, "HX\0\5", 4, &header_check_hfsp, file_stat);
 #endif
 }

@@ -55,6 +55,7 @@
 #include "fat_common.h"
 #include <assert.h>
 
+#ifndef DISABLED_FOR_FRAMAC
 extern int need_to_stop;
 
 #define READ_SIZE 4*1024*1024
@@ -440,3 +441,4 @@ pstatus_t fat_unformat(struct ph_param *params, const struct ph_options *options
   /* start_data is relative to the disk */
   return fat_unformat_aux(params, options, start_data, list_search_space);
 }
+#endif

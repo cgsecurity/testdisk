@@ -21,6 +21,7 @@
  */
 
 
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -68,7 +69,6 @@ static int is_extended(const unsigned int part_type);
 
 /*@
   @ requires list_part == \null || \valid_read(list_part);
-  @ assigns \nothing;
   @*/
 static int test_structure_i386(const list_part_t *list_part);
 
@@ -104,8 +104,8 @@ static void log_dos_entry(const struct partition_dos*);
   @ requires geometry->cylinders==0;
   @ requires geometry->heads_per_cylinder==0;
   @ requires geometry->sectors_per_head==0;
-  @ assigns geometry->sectors_per_head, geometry->heads_per_cylinder, geometry->bytes_per_sector;
   @*/
+// assigns geometry->sectors_per_head, geometry->heads_per_cylinder, geometry->bytes_per_sector;
 static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry);
 
 /*@
@@ -446,7 +446,7 @@ static void set_start_sect(struct partition_dos *p, unsigned int start_sect)
 static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verbose, CHSgeometry_t *geometry)
 {
   unsigned int i;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   if(verbose>1)
   {
     log_trace("get_geometry_from_i386mbr\n");
@@ -479,14 +479,14 @@ static int get_geometry_from_i386mbr(const unsigned char *buffer, const int verb
 	 geometry->heads_per_cylinder==240 ||
 	 geometry->heads_per_cylinder==255)))
   {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_info("Geometry from i386 MBR: head=%u sector=%u\n",
 	geometry->heads_per_cylinder, geometry->sectors_per_head);
 #endif
   }
   else
   {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     if(geometry->sectors_per_head>0)
       log_warning("Geometry from i386 MBR: head=%u sector=%u\n",geometry->heads_per_cylinder, geometry->sectors_per_head);
 #endif
@@ -1855,3 +1855,4 @@ static const char *get_partition_typename_i386(const partition_t *partition)
 {
   return get_partition_typename_i386_aux(partition->part_type_i386);
 }
+#endif

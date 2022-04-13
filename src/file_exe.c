@@ -428,7 +428,7 @@ static void pe_resource_language(FILE *file, const unsigned int base, const unsi
   if(count==0 || count > 1024)
     return ;
   /*@ assert 0 < count <= 1024; */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(1024 * sizeof(struct rsrc_entries_s));
 #else
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(count * sizeof(struct rsrc_entries_s));
@@ -489,7 +489,7 @@ static void pe_resource_id(FILE *file, const unsigned int base, const unsigned i
   if(count==0 || count > 1024)
     return ;
   /*@ assert 0 < count <= 1024; */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(1024 * sizeof(struct rsrc_entries_s));
 #else
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(count * sizeof(struct rsrc_entries_s));
@@ -559,7 +559,7 @@ static void pe_resource_type(FILE *file, const unsigned int base, const unsigned
   if(count==0 || count > 1024)
     return ;
   /*@ assert 0 < count <= 1024; */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(1024 * sizeof(struct rsrc_entries_s));
 #else
   rsrc_entries=(struct rsrc_entries_s *)MALLOC(count * sizeof(struct rsrc_entries_s));

@@ -79,7 +79,7 @@ static int header_check_xcf(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_xcf(file_stat_t *file_stat)
 {
   register_header_check(0, "gimp xcf file", 13, &header_check_xcf, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, "gimp xcf v001", 13, &header_check_xcf, file_stat);
   register_header_check(0, "gimp xcf v002", 13, &header_check_xcf, file_stat);
 #endif

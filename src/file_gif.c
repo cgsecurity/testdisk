@@ -210,7 +210,7 @@ static void register_header_check_gif(file_stat_t *file_stat)
   static const unsigned char gif_header[6]=  { 'G','I','F','8','7','a'};
   static const unsigned char gif_header2[6]= { 'G','I','F','8','9','a'};
   register_header_check(0, gif_header,sizeof(gif_header), &header_check_gif, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, gif_header2,sizeof(gif_header2), &header_check_gif, file_stat);
 #endif
 }

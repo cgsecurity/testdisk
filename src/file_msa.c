@@ -85,7 +85,7 @@ static void register_header_check_msa(file_stat_t *file_stat)
     0xfc, 0xff, 0xff, 0xff
   };
   register_header_check(0, msa_header_fb, sizeof(msa_header_fb), &header_check_msa, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, msa_header_fc, sizeof(msa_header_fc), &header_check_msa, file_stat);
 #endif
 }

@@ -238,7 +238,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
 	{
 	  if(my_fseek(f, (off_t)count-(off_t)read_size, SEEK_CUR)<0)
 	  {
-#if !defined(__FRAMAC__)
+#if !defined(DISABLED_FOR_FRAMAC)
 	    log_trace("zip: file_get_pos count-read failed\n");
 #endif
 	    return -1;
@@ -250,7 +250,7 @@ static int64_t file_get_pos(FILE *f, const void* needle, const unsigned int size
     }
     if(feof(f) || my_fseek(f, (off_t)1-size, SEEK_CUR)<0)
     {
-#if !defined(__FRAMAC__)
+#if !defined(DISABLED_FOR_FRAMAC)
       log_trace("zip: file_get_pos 1-size failed\n");
 #endif
       return -1;
@@ -1387,7 +1387,7 @@ static void register_header_check_zip(file_stat_t *file_stat)
 {
   static const unsigned char zip_header2[8]  = { 'P', 'K', '0', '0', 'P', 'K', 0x03, 0x04}; /* WinZIPv8-compressed files. */
   register_header_check(0, zip_header,sizeof(zip_header), &header_check_zip, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, zip_header2,sizeof(zip_header2), &header_check_winzip, file_stat);
 #endif
 }

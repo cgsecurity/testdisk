@@ -19,6 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
+#if !defined(DISABLED_FOR_FRAMAC)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -193,6 +194,7 @@ static int cache_pread(disk_t *disk_car, void *buffer, const unsigned int count,
   @ requires valid_disk(disk_car);
   @ requires \valid_read((char *)buffer + (0 .. count-1));
   @ requires separation: \separated(disk_car, (const char *)buffer + (0 .. count-1));
+  @ decreases 0;
   @*/
 static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int count, const uint64_t offset)
 {
@@ -214,6 +216,7 @@ static int cache_pwrite(disk_t *disk_car, const void *buffer, const unsigned int
 /*@
   @ requires \valid(disk_car);
   @ requires valid_disk(disk_car);
+  @ decreases 0;
   @*/
 static void cache_clean(disk_t *disk_car)
 {
@@ -241,6 +244,7 @@ static void cache_clean(disk_t *disk_car)
 
 /*@
   @ requires \valid(disk_car);
+  @ decreases 0;
   @*/
 static int cache_sync(disk_t *disk_car)
 {
@@ -267,6 +271,7 @@ static void dup_geometry(CHSgeometry_t * CHS_dst, const CHSgeometry_t * CHS_sour
 /*@
   @ requires \valid(disk_car);
   @ requires valid_disk(disk_car);
+  @ decreases 0;
   @ ensures valid_read_string(\result);
   @*/
 static const char *cache_description(disk_t *disk_car)
@@ -283,6 +288,7 @@ static const char *cache_description(disk_t *disk_car)
 /*@
   @ requires \valid(disk_car);
   @ requires valid_disk(disk_car);
+  @ decreases 0;
   @ ensures valid_read_string(\result);
   @*/
 static const char *cache_description_short(disk_t *disk_car)
@@ -339,3 +345,4 @@ disk_t *new_diskcache(disk_t *disk_car, const unsigned int testdisk_mode)
   }
   return new_disk_car;
 }
+#endif

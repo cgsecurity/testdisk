@@ -80,7 +80,7 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
     Frama_C_make_unknown(&buffer, sizeof(uint32_t));
 #endif
     header_size = le32(*p32);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_debug("xm: pattern header of size %u\n", (unsigned int)header_size);
 #endif
     /* Never seen any xm having anything but 9 here */
@@ -96,7 +96,7 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
     Frama_C_make_unknown(&buffer, sizeof(uint16_t));
 #endif
     data_size = le16(*p16);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_debug("xm: pattern data of size %u\n", data_size);
 #endif
 
@@ -139,7 +139,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
 #endif
 
     size = le32(*p32);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_debug("xm: instrument header of size %u\n", (unsigned int)size);
 #endif
     if(size < 29)
@@ -156,7 +156,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
     Frama_C_make_unknown(&buffer, sizeof(uint16_t));
 #endif
     samples = le16(*p16);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_debug("xm: instrument with %u samples\n", samples);
 #endif
 
@@ -168,7 +168,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
     {
       if(size != 263)
       {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
         log_debug("xm: UNEXPECTED HEADER SIZE OF %u, "
                   " PLEASE REPORT THE FILE!\n",
                   (unsigned int)size);
@@ -189,7 +189,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
         Frama_C_make_unknown(&buffer, sizeof(uint32_t));
 #endif
         size = le32(*p32);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
         log_debug("xm: sample with length of %u\n", (unsigned int)size);
 #endif
 
@@ -236,7 +236,7 @@ static void file_check_xm(file_recovery_t *fr)
   instrs = le16(hdr->instrs);
   patterns = le16(hdr->patterns);
 
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_debug("xm: %u patterns, %u instruments\n", patterns, instrs);
 #endif
 
@@ -248,7 +248,7 @@ static void file_check_xm(file_recovery_t *fr)
   /* Parse patterns and next instruments */
   if(parse_patterns(fr, patterns) < 0 || parse_instruments(fr, instrs) < 0)
   {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
     log_debug("xm: lost sync at pos %li\n", ftell(fr->handle));
 #endif
     fr->offset_error = fr->file_size;

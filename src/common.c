@@ -25,7 +25,7 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_POSIX_MEMALIGN
 #undef HAVE_MEMALIGN
 #undef HAVE_NCURSES
@@ -84,13 +84,23 @@ void *MALLOC(size_t size)
     }
   }
 #endif
+#ifdef DISABLED_FOR_FRAMAC
+  if((res=calloc(1,size))==NULL)
+  {
+    exit(EXIT_FAILURE);
+  }
+#else
   if((res=malloc(size))==NULL)
   {
+#ifndef DISABLED_FOR_FRAMAC
     log_critical("\nCan't allocate %lu bytes of memory.\n", (long unsigned)size);
     log_close();
+#endif
     exit(EXIT_FAILURE);
   }
   memset(res,0,size);
+#endif
+  /*@ assert \valid((char *)res + (0 .. size - 1)); */
   return res;
 }
 
@@ -171,7 +181,7 @@ char * strcasestr (const char *haystack, const char *needle)
 }
 #endif
 
-#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__) && !defined(__FRAMAC__)
+#if ! defined(HAVE_LOCALTIME_R) && ! defined(__MINGW32__) && !defined(DISABLED_FOR_FRAMAC)
 struct tm *localtime_r(const time_t *timep, struct tm *result)
 {
   return localtime(timep);
@@ -179,6 +189,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result)
 #endif
 
 /*@
+  @ decreases number;
   @ assigns \nothing;
   @*/
 static unsigned int up2power_aux(const unsigned int number)
@@ -312,7 +323,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
 void set_secwest(void)
 {
   const time_t t = time(NULL);
-#if defined(__MINGW32__) || defined(__FRAMAC__)
+#if defined(__MINGW32__) || defined(DISABLED_FOR_FRAMAC)
   const struct  tm *tmptr = localtime(&t);
 #else
   struct  tm tmp;
@@ -359,14 +370,21 @@ int check_command(char **current_cmd, const char *cmd, const size_t n)
   const int res=strncmp(*current_cmd, cmd, n);
   if(res==0)
   {
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
+    const char *src=*current_cmd;
     unsigned int i;
     /*@
-      @ loop invariant valid_read_string(*current_cmd);
-      @ loop assigns i, *current_cmd;
+      @ loop invariant valid_read_string(src);
+      @ loop assigns i, src;
       @*/
-    for(i=0; i<n && *current_cmd!='\0'; i++)
-      (*current_cmd)++;
+    for(i=0; i<n && src[0]!='\0'; i++)
+    {
+      /*@ assert valid_read_string(src); */
+      /*@ assert src[0]!= '\0'; */
+      src++;
+      /*@ assert valid_read_string(src); */
+    }
+    *current_cmd=src;
 #else
     (*current_cmd)+=n;
 #endif

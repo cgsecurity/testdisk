@@ -300,7 +300,7 @@ static int header_check_spe(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_spe.extension;
   file_recovery_new->min_filesize=4100;
   file_recovery_new->calculated_file_size=tmp;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   log_debug("spe xdim=%u ydim=%u NumFrames=%u datatype=%u size=%llu\n",
       le16(spe->xdim), le16(spe->ydim), (unsigned int)le32(spe->NumFrames), le16(spe->datatype),
       (long long unsigned) file_recovery_new->calculated_file_size);

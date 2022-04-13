@@ -167,6 +167,7 @@ static const txt_header_t fasttxt_headers[] = {
   /* Unix shell */
   { "#!/bin/bash", 					11, "sh"},
   { "#!/bin/ksh",					10, "sh"},
+#ifndef DISABLED_FOR_FRAMAC
   { "#!/bin/sh",					 9, "sh"},
   { "#! /bin/bash", 					12, "sh"},
   { "#! /bin/ksh",					11, "sh"},
@@ -273,6 +274,7 @@ static const txt_header_t fasttxt_headers[] = {
   { "[.ShellClassInfo]",				17, "Desktop.ini" },
   /* Fotobook */
   { "<fotobook ",					10, "mcf"}, 
+#endif
   {NULL, 0, NULL}
 };
 
@@ -430,7 +432,7 @@ static unsigned int is_fortran(const char *buffer)
     if(str==NULL)
       return 0;
     /*@ assert valid_read_string(str); */
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
     if(*str=='\0')
       return 0;
 #endif
@@ -486,7 +488,7 @@ static double is_random(const unsigned char *buffer, const unsigned int buffer_s
   double ind;
   if(buffer_size < 2)
     return 1;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   memset(&stats, 0, sizeof(stats));
 #else
   /*@
@@ -827,7 +829,7 @@ static void file_rename_fods(file_recovery_t *file_recovery)
 #endif
   fclose(file);
   buffer[lu]='\0';
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   /*@
     @ loop invariant tmp==\null || valid_read_string(tmp);
     @ loop assigns tmp;
@@ -882,7 +884,7 @@ static void file_rename_html(file_recovery_t *file_recovery)
 #endif
   fclose(file);
   buffer[lu]='\0';
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   tmp=strchr(buffer,'<');
   while(tmp!=NULL)
   {
@@ -1819,7 +1821,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
     else if((str=strstr(buffer_lower, "\nimport "))!=NULL)
     {
       /*@ assert valid_read_string(str); */
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
       str+=8;
 #endif
       /*@ assert valid_read_string(str); */

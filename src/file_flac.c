@@ -111,7 +111,7 @@ static void register_header_check_flac(file_stat_t *file_stat)
   static const unsigned char flac_header[5]= {'f', 'L', 'a', 'C', 0x00};
   static const unsigned char flac_header2[5]= {'f', 'L', 'a', 'C', 0x80};
   register_header_check(0, flac_header,sizeof(flac_header), &header_check_flac, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, flac_header2,sizeof(flac_header2), &header_check_flac, file_stat);
 #endif
 }

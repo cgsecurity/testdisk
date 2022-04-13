@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 #undef HAVE_FTELLO
 #endif
 
@@ -67,6 +67,110 @@ extern file_check_list_t file_check_list;
 #define OPT_TIME  2
 
 /*@
+  @ requires \valid_function(file_recovery->data_check);
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ decreases 0;
+  @ ensures  valid_file_recovery(file_recovery);
+  @ ensures  valid_data_check_result(\result, file_recovery);
+  @ assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
+  @ assigns file_recovery->data_check, file_recovery->file_check, file_recovery->offset_error, file_recovery->offset_ok, file_recovery->time, file_recovery->data_check_tmp;
+  @*/
+static data_check_t data_check_wrapper(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  data_check_t tmp;
+  //@ split file_recovery->data_check;
+  tmp=file_recovery->data_check(buffer, buffer_size, file_recovery);
+  /*@ assert valid_data_check_result(tmp, file_recovery); */
+  return tmp;
+}
+
+/*@
+  @ requires \valid(file_recovery);
+  @ requires valid_file_recovery(file_recovery);
+  @ requires \valid_function(file_recovery->data_check);
+  @ requires 0 < blocksize <= READ_SIZE;
+  @ requires READ_SIZE % blocksize == 0;
+  @ requires \valid(buffer_start + (0 .. blocksize + READ_SIZE -1));
+  @ requires \separated(file_recovery, &errno, buffer_start + (..));
+  @ decreases 0;
+  @ ensures  valid_file_recovery(file_recovery);
+  @ assigns *file_recovery->handle, errno;
+  @ assigns buffer_start[0 .. blocksize + READ_SIZE -1];
+  @ assigns file_recovery->file_size;
+  @ assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
+  @ assigns file_recovery->data_check, file_recovery->file_check, file_recovery->offset_error, file_recovery->offset_ok, file_recovery->time, file_recovery->data_check_tmp;
+  @*/
+static data_check_t data_check_aux(file_recovery_t *file_recovery, const unsigned int blocksize, char *buffer_start)
+{
+  /*@ ghost const unsigned int buffer_size=blocksize + READ_SIZE; */
+  /*@
+    @ loop invariant valid_file_recovery(file_recovery);
+    @ loop invariant file_recovery == \at(file_recovery, Pre);
+    @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
+    @ loop invariant \separated(file_recovery, &errno, buffer_start + (..));
+    @ loop assigns *file_recovery->handle, errno;
+    @ loop assigns buffer_start[0 .. blocksize + READ_SIZE -1];
+    @ loop assigns file_recovery->file_size;
+    @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
+    @ loop assigns file_recovery->data_check, file_recovery->file_check, file_recovery->offset_error, file_recovery->offset_ok, file_recovery->time, file_recovery->data_check_tmp;
+    @*/
+  while(1)
+  {
+    char *buffer=buffer_start+blocksize;
+    unsigned int i;
+    size_t lu=0;
+    memset(buffer, 0, READ_SIZE);
+    lu=fread(buffer, 1, READ_SIZE, file_recovery->handle);
+    if(lu <= 0)
+    {
+      /*@ assert valid_file_recovery(file_recovery); */
+      return DC_STOP;
+    }
+    /*@ assert 0 < lu <= READ_SIZE; */
+    /*@
+      @ loop invariant valid_file_recovery(file_recovery);
+      @ loop invariant file_recovery == \at(file_recovery, Pre);
+      @ loop invariant \valid_read(buffer_start + (0 .. blocksize + READ_SIZE - 1));
+      @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
+      @ loop invariant \valid_function(file_recovery->data_check);
+      @ loop invariant \separated(file_recovery, &errno, buffer_start + (..));
+      @ loop assigns i, file_recovery->file_size;
+      @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
+      @ loop assigns file_recovery->data_check, file_recovery->file_check, file_recovery->offset_error, file_recovery->offset_ok, file_recovery->time, file_recovery->data_check_tmp;
+      @*/
+    for(i=0; i<lu; i+=blocksize)
+    {
+      /*@ assert i + 2*blocksize <= buffer_size; */
+      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
+      const data_check_t res=data_check_wrapper((const unsigned char *) &buffer_start[i], 2*blocksize, file_recovery);
+      /*@ assert valid_data_check_result(res, file_recovery); */
+      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
+      file_recovery->file_size+=blocksize;
+      if(res != DC_CONTINUE || file_recovery->data_check==NULL)
+      {
+	/*@ assert valid_file_recovery(file_recovery); */
+	return res;
+      }
+      if( file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE ||
+	  file_recovery->file_size >= PHOTOREC_MAX_FILE_SIZE)
+      {
+	/*@ assert valid_file_recovery(file_recovery); */
+	return DC_STOP;
+      }
+      /*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
+    }
+    if(lu != READ_SIZE)
+    {
+      /*@ assert valid_file_recovery(file_recovery); */
+      return DC_STOP;
+    }
+    memcpy(buffer_start, &buffer_start[READ_SIZE], blocksize);
+    /*@ assert valid_file_recovery(file_recovery); */
+  }
+  /*@ assert valid_file_recovery(file_recovery); */
+}
+
+/*@
   @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @ requires \valid_function(file_recovery->data_check);
@@ -77,70 +181,31 @@ extern file_check_list_t file_check_list;
   @*/
 static data_check_t data_check(file_recovery_t *file_recovery, const unsigned int blocksize)
 {
-  unsigned char *buffer_start;
+  char *buffer_start;
   const unsigned int buffer_size=blocksize + READ_SIZE;
+  data_check_t res;
   if( file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE )
-    return DC_STOP;
-  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0)
-    return DC_STOP;
-  buffer_start=(unsigned char *)MALLOC(buffer_size);
-  /*@
-    @ loop invariant valid_file_recovery(file_recovery);
-    @ loop invariant file_recovery == \at(file_recovery, Pre);
-    @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
-    @*/
-  while(1)
   {
-    unsigned char *buffer=buffer_start+blocksize;
-    unsigned int i;
-    size_t lu;
-    memset(buffer, 0, READ_SIZE);
-    lu=fread(buffer, 1, READ_SIZE, file_recovery->handle);
-    if(lu <= 0)
-    {
-      free(buffer_start);
-      return DC_STOP;
-    }
-    /*@ assert 0 < lu <= READ_SIZE; */
-    /*@
-      @ loop invariant valid_file_recovery(file_recovery);
-      @ loop invariant file_recovery == \at(file_recovery, Pre);
-      @ loop invariant \valid_read(buffer_start + (0 .. blocksize + READ_SIZE - 1));
-      @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
-      @ loop invariant \valid_function(file_recovery->data_check);
-      @*/
-    for(i=0; i<lu; i+=blocksize)
-    {
-      /*@ assert i + 2*blocksize <= buffer_size; */
-      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
-      const data_check_t res=file_recovery->data_check(&buffer_start[i], 2*blocksize, file_recovery);
-      /*@ assert \valid_read(&buffer_start[i] + (0 .. 2*blocksize-1)); */
-      file_recovery->file_size+=blocksize;
-      if(res != DC_CONTINUE || file_recovery->data_check==NULL)
-      {
-	free(buffer_start);
-	return res;
-      }
-      if( file_recovery->calculated_file_size >= PHOTOREC_MAX_FILE_SIZE ||
-	  file_recovery->file_size >= PHOTOREC_MAX_FILE_SIZE)
-      {
-	free(buffer_start);
-	return DC_STOP;
-      }
-      /*@ assert file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE; */
-    }
-    if(lu != READ_SIZE)
-    {
-      free(buffer_start);
-      return DC_STOP;
-    }
-    memcpy(buffer_start, &buffer_start[READ_SIZE], blocksize);
+    /*@ assert valid_file_recovery(file_recovery); */
+    return DC_STOP;
   }
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0)
+  {
+    /*@ assert valid_file_recovery(file_recovery); */
+    return DC_STOP;
+  }
+  buffer_start=(char *)MALLOC(buffer_size);
+  res=data_check_aux(file_recovery, blocksize, buffer_start);
+  /*@ assert valid_file_recovery(file_recovery); */
+  free(buffer_start);
+  /*@ assert valid_file_recovery(file_recovery); */
+  return res;
 }
 
 /*@
   @ requires valid_read_string(filename);
   @ requires \separated(filename + (..), &errno, &Frama_C_entropy_source, stdout);
+  @ decreases 0;
   @*/
 static int file_identify(const char *filename, const unsigned int options)
 {
@@ -194,8 +259,9 @@ static int file_identify(const char *filename, const unsigned int options)
 	  /*TODO assert tmp!=tmp_list; */
 	  const file_check_t *file_check=td_list_entry_const(tmp, const file_check_t, list);
 	  /*@ assert \valid_read(file_check); */
+	  /* TODO assert valid_file_check_node(file_check); */
 	  if(
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 	    file_check->header_check!=NULL &&
 #endif
 	    (file_check->length==0 || memcmp(buffer + file_check->offset, file_check->value, file_check->length)==0) &&
@@ -213,7 +279,7 @@ static int file_identify(const char *filename, const unsigned int options)
       if(file_recovery_new.file_stat!=NULL &&
 	  file_recovery_new.file_stat->file_hint!=NULL &&
 	  (file_recovery_new.file_check!=NULL || file_recovery_new.data_check!=NULL) &&
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 	  file_recovery_new.extension != NULL &&
 #endif
 	  ((options&OPT_CHECK)!=0 || ((options&OPT_TIME)!=0 && file_recovery_new.time==0))
@@ -269,14 +335,14 @@ static int file_identify(const char *filename, const unsigned int options)
 	if((options&OPT_CHECK)!=0 && (file_recovery_new.file_check!=NULL || file_recovery_new.data_check!=NULL))
 	  printf(" file_size=%llu", (long long unsigned)file_recovery_new.file_size);
 	if((options&OPT_TIME)!=0 && file_recovery_new.time!=0 && file_recovery_new.time!=(time_t)-1)
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
 	{
 	  printf(" time=%lld", (long long)file_recovery_new.time);
 	}
 #else
 	{
 	  char outstr[200];
-#if defined(__MINGW32__) || defined(__FRAMAC__)
+#if defined(__MINGW32__) || defined(DISABLED_FOR_FRAMAC)
 	  const struct  tm *tmp = localtime(&file_recovery_new.time);
 #else
 	  struct tm tm_tmp;
@@ -306,7 +372,7 @@ static int file_identify(const char *filename, const unsigned int options)
   return 0;
 }
 
-#if !defined(__AFL_COMPILER) && !defined(MAIN_fidentify)
+#if !defined(__AFL_COMPILER) && !defined(DISABLED_FOR_FRAMAC)
 static void file_identify_dir(const char *current_dir, const unsigned int options)
 {
   DIR *dir;
@@ -359,7 +425,7 @@ static void display_version(void)
 #ifdef RECORD_COMPILATION_DATE
   printf("Compilation date: %s\n", get_compilation_date());
 #endif
-#ifndef MAIN_fidentify
+#ifndef DISABLED_FOR_FRAMAC
   printf("libjpeg: %s, zlib: %s\n", td_jpeg_version(), td_zlib_version());
   printf("OS: %s\n" , get_os());
 #endif
@@ -368,7 +434,7 @@ static void display_version(void)
 int main(int argc, char **argv)
 {
   int i;
-#ifdef MAIN_fidentify
+#ifdef DISABLED_FOR_FRAMAC
   unsigned int options=OPT_CHECK|OPT_TIME;
 #else
   unsigned int options=0;
@@ -378,7 +444,7 @@ int main(int argc, char **argv)
   int scan_dir=1;
   file_stat_t *file_stats;
   log_set_levels(LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL);
-#ifndef MAIN_fidentify
+#ifndef DISABLED_FOR_FRAMAC
   for(i=1; i<argc; i++)
   {
     if( strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0)
@@ -412,7 +478,7 @@ int main(int argc, char **argv)
     log_info("\n\n%s",ctime(&my_time));
   }
   log_info("Command line: fidentify");
-#ifndef MAIN_fidentify
+#ifndef DISABLED_FOR_FRAMAC
   for(i=1;i<argc;i++)
     log_info(" %s", argv[i]);
 #endif
@@ -420,7 +486,7 @@ int main(int argc, char **argv)
   log_info("fidentify %s, Data Recovery Utility, %s\nChristophe GRENIER <grenier@cgsecurity.org>\nhttps://www.cgsecurity.org\n", VERSION, TESTDISKDATE);
   log_flush();
 #endif
-#ifndef MAIN_fidentify
+#ifndef DISABLED_FOR_FRAMAC
   for(i=1; i<argc; i++)
   {
     file_enable_t *file_enable;
@@ -442,7 +508,7 @@ int main(int argc, char **argv)
       file_enable->enable=1;
   }
   file_stats=init_file_stats(array_file_enable);
-#ifndef MAIN_fidentify
+#ifndef DISABLED_FOR_FRAMAC
   for(i=1; i<argc; i++)
   {
     if(strcmp(argv[i], "/check")==0 || strcmp(argv[i], "-check")==0 || strcmp(argv[i], "--check")==0 ||

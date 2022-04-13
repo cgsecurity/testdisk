@@ -28,7 +28,7 @@
 #undef SUDO_BIN
 #endif
 
-#if defined(__FRAMAC__) || defined(MAIN_photorec)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_NCURSES
 #endif
 
@@ -237,7 +237,7 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     .list = TD_LIST_HEAD_INIT(list_search_space.list)
   };
   const int resume_session=(params->cmd_device!=NULL && strcmp(params->cmd_device,"resume")==0);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   if(params->cmd_device==NULL || resume_session!=0)
   {
     char *saved_device=NULL;

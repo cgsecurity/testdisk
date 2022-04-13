@@ -64,7 +64,7 @@ struct partition_pack_next
   uint64_t body_offset;
   uint32_t body_SID;
   char	   op_pattern[16];
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   char     essence_container[0];
 #endif
 } __attribute__ ((gcc_struct, __packed__));

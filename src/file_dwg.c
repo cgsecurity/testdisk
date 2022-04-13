@@ -68,7 +68,7 @@ static void register_header_check_dwg(file_stat_t *file_stat)
   static const unsigned char dwg_header_24[11]= {'A', 'C', '1', '0', '2', '4', 0x00, 0x00, 0x00, 0x00, 0x00};
   static const unsigned char dwg_header_27[11]= {'A', 'C', '1', '0', '2', '7', 0x00, 0x00, 0x00, 0x00, 0x00};
   register_header_check(0, dwg_header_12,sizeof(dwg_header_12), &header_check_dwg, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, dwg_header_13,sizeof(dwg_header_13), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_14,sizeof(dwg_header_14), &header_check_dwg, file_stat);
   register_header_check(0, dwg_header_15,sizeof(dwg_header_15), &header_check_dwg, file_stat);

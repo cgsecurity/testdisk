@@ -85,7 +85,7 @@ static data_check_t data_check_bac(const unsigned char *buffer, const unsigned i
 #endif
     if(memcmp(hdr->ID, "BB02", 4)!=0 || block_size<0x18)
     {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
       log_error("file_bac.c: invalid block at %llu\n",
 	  (long long unsigned)file_recovery->calculated_file_size);
 #endif

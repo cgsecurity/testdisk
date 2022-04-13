@@ -73,7 +73,7 @@ static void register_header_check_tz(file_stat_t *file_stat)
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
   register_header_check(0, tz_header, sizeof(tz_header), &header_check_tz, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, tz2_header, sizeof(tz2_header), &header_check_tz, file_stat);
 #endif
 }

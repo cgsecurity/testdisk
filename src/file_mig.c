@@ -55,7 +55,7 @@ struct MIG_HDR
   uint32_t unk1;
   uint32_t unk2;
   uint32_t unk3;
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   unsigned char fn[0];
 #endif
 } __attribute__ ((gcc_struct, __packed__));

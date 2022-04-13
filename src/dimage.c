@@ -126,7 +126,7 @@ int disk_image(disk_t *disk, const partition_t *partition, const char *image_dd)
     free(buffer);
     return -1;
   }
-#if !defined(__FRAMAC__)
+#if !defined(DISABLED_FOR_FRAMAC)
   if(fstat(disk_dst, &stat_buf)==0)
   {
     int res=1;

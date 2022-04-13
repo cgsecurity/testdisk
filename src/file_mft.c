@@ -67,7 +67,7 @@ static void file_rename_mft(file_recovery_t *file_recovery)
 #endif
   /*@ assert \initialized(buffer + (0 .. sizeof(buffer)-1)); */
   sprintf(buffer_cluster, "record_%u", (unsigned int)le32(record->mft_record_number));
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
   buffer_cluster[sizeof(buffer_cluster)-1]='\0';
 #endif
   file_rename(file_recovery, buffer_cluster, strlen(buffer_cluster), 0, NULL, 1);

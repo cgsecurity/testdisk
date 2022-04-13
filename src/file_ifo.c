@@ -74,7 +74,7 @@ static void register_header_check_ifo(file_stat_t *file_stat)
   static const unsigned char ifo_header_vmg[12]=  { 'D', 'V', 'D', 'V', 'I', 'D', 'E', 'O', '-', 'V', 'M', 'G'};
   static const unsigned char ifo_header_vts[12]=  { 'D', 'V', 'D', 'V', 'I', 'D', 'E', 'O', '-', 'V', 'T', 'S'};
   register_header_check(0, ifo_header_vmg, sizeof(ifo_header_vmg), &header_check_ifo, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, ifo_header_vts, sizeof(ifo_header_vts), &header_check_ifo, file_stat);
 #endif
 }

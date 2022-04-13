@@ -112,7 +112,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     };
     if(object_size < 0x18)
     {
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
       log_info("header_check_asf object_size too small %llu\n", (long long unsigned)object_size);
 #endif
       return 0;

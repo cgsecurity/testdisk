@@ -25,7 +25,16 @@
 extern "C" {
 #endif
 
+#ifndef DISABLED_FOR_FRAMAC
+/*@
+  @ requires \valid(params);
+  @ requires \valid_read(options);
+  @ requires valid_list_search_space(list_search_space);
+  @ requires \separated(params, options, list_search_space);
+  @ ensures  valid_list_search_space(list_search_space);
+  @*/
 pstatus_t fat_unformat(struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
+#endif
 
 #ifdef __cplusplus
 } /* closing brace for extern "c" */

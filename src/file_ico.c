@@ -158,7 +158,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
 static void register_header_check_ico(file_stat_t *file_stat)
 {
   register_header_check(0, header_ico1, sizeof(header_ico1), &header_check_ico, file_stat);
-#ifndef __FRAMAC__
+#ifndef DISABLED_FOR_FRAMAC
   register_header_check(0, header_ico2, sizeof(header_ico2), &header_check_ico, file_stat);
   register_header_check(0, header_ico3, sizeof(header_ico3), &header_check_ico, file_stat);
   register_header_check(0, header_ico4, sizeof(header_ico4), &header_check_ico, file_stat);

@@ -65,10 +65,22 @@ struct signature_s
 {
   struct td_list_head list;
   const char *extension;
-  unsigned char *sig;
+  const unsigned char *sig;
   unsigned int sig_size;
   unsigned int offset;
 };
+
+/*@
+   predicate valid_signature(signature_t *sig) = (\valid_read(sig) &&
+     valid_read_string(sig->extension) &&
+     \initialized(&sig->offset) &&
+     \initialized(&sig->sig_size) &&
+     sig->offset <= PHOTOREC_MAX_SIG_OFFSET &&
+     0 < sig->sig_size <= PHOTOREC_MAX_SIG_SIZE &&
+     sig->offset + sig->sig_size <= PHOTOREC_MAX_SIG_OFFSET &&
+     \valid_read((const char *)sig->sig+(0..sig->sig_size-1))
+   );
+   @*/
 
 static signature_t signatures={
   .list = TD_LIST_HEAD_INIT(signatures.list)
@@ -82,6 +94,8 @@ int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
   const signature_t *sig_a=td_list_entry_const(a, const signature_t, list);
   const signature_t *sig_b=td_list_entry_const(b, const signature_t, list);
   int res;
+  /*@ assert valid_signature(sig_a); */
+  /*@ assert valid_signature(sig_b); */
   if(sig_a->sig_size==0 && sig_b->sig_size!=0)
     return -1;
   if(sig_a->sig_size!=0 && sig_b->sig_size==0)
@@ -105,27 +119,64 @@ int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
   }
 }
 
-static void signature_insert(const char *extension, unsigned int offset, unsigned char *sig, unsigned int sig_size)
+/*@
+  @ requires offset <= PHOTOREC_MAX_SIG_OFFSET;
+  @ requires 0 < sig_size <= PHOTOREC_MAX_SIG_SIZE;
+  @ requires offset + sig_size <= PHOTOREC_MAX_SIG_OFFSET;
+  @ requires \valid_read((const char *)sig + (0 .. sig_size-1));
+  @ requires valid_read_string(ext);
+  @*/
+static void signature_insert(const char *ext, unsigned int offset, const void*sig, unsigned int sig_size)
 {
-  /* FIXME: small memory leak */
-  signature_t *newsig=(signature_t*)MALLOC(sizeof(*newsig));
-  newsig->extension=extension;
-  newsig->sig=sig;
+  /* FIXME: memory leak for newsig */
+  signature_t *newsig;
+  /*@ assert \valid_read((const char *)sig+(0..sig_size-1)); */
+  /*@ assert valid_read_string(ext); */
+  newsig=(signature_t*)MALLOC(sizeof(*newsig));
+  newsig->extension=ext;
+  newsig->sig=(const unsigned char *)sig;
   newsig->sig_size=sig_size;
   newsig->offset=offset;
+  /*@ assert newsig->sig_size == sig_size; */
+
+  /*@ assert \valid_read(newsig); */
+  /*@ assert valid_read_string(newsig->extension); */
+  /*@ assert \initialized(&newsig->offset); */
+  /*@ assert \initialized(&newsig->sig_size); */
+  /*@ assert newsig->offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert 0 < newsig->sig_size <= PHOTOREC_MAX_SIG_SIZE; */
+  /*@ assert newsig->offset + newsig->sig_size <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert \valid_read((const char *)sig+(0..sig_size-1)); */
+  /*@ assert \valid_read((const char *)sig+(0..newsig->sig_size-1)); */
+  /*@ assert (const char *)newsig->sig ==(const char *)sig; */
+  /*@ assert \valid_read((const char *)newsig->sig+(0..0)); */
+  /*@ assert \valid_read((const char *)newsig->sig+(0..newsig->sig_size-1)); */
+
+  /*@ assert valid_signature(newsig); */
   td_list_add_sorted(&newsig->list, &signatures.list, signature_cmp);
 }
 
+/*@
+  @ requires separation: \separated(&file_hint_sig, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures  valid_header_check_result(\result, file_recovery_new);
+  @ assigns *file_recovery_new;
+  @*/
 static int header_check_sig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   struct td_list_head *pos;
+  /*@ loop assigns pos; */
   td_list_for_each(pos, &signatures.list)
   {
     const signature_t *sig = td_list_entry(pos, signature_t, list);
+    /*@ assert sig->offset + sig->sig_size <= buffer_size; */
+    /*@ assert valid_read_string(sig->extension); */
+    /*@ assert valid_signature(sig); */
     if(memcmp(&buffer[sig->offset], sig->sig, sig->sig_size)==0)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension=sig->extension;
+      /*@ assert valid_file_recovery(file_recovery_new); */
       return 1;
     }
   }
@@ -164,13 +215,27 @@ static FILE *open_signature_file(void)
     if (home != NULL)
     {
       FILE*handle;
-      char *filename=(char*)MALLOC(strlen(home)+strlen(DOT_PHOTOREC_SIG)+1);
+      char *filename;
+      size_t len_home;
+      const size_t len_sig=strlen(DOT_PHOTOREC_SIG);
+      size_t fn_size=len_sig;
+#ifndef DISABLED_FOR_FRAMAC
+      len_home=strlen(home);
+      fn_size+=len_home;
+#endif
+      filename=(char*)MALLOC(fn_size + 1);
+#ifndef DISABLED_FOR_FRAMAC
       strcpy(filename, home);
+#else
+      filename[0]='\0';
+#endif
       strcat(filename, DOT_PHOTOREC_SIG);
       handle=fopen(filename,"rb");
       if(handle!=NULL)
       {
+#ifndef DISABLED_FOR_FRAMAC
 	log_info("Open signature file %s\n", filename);
+#endif
 	free(filename);
 	return handle;
       }
@@ -182,241 +247,385 @@ static FILE *open_signature_file(void)
     FILE *handle=fopen(PHOTOREC_SIG,"rb");
     if(handle!=NULL)
     {
+#ifndef DISABLED_FOR_FRAMAC
       log_info("Open signature file %s\n", PHOTOREC_SIG);
+#endif
       return handle;
     }
   }
   return NULL;
 }
 
-static char *str_uint(char *src, unsigned int *resptr)
+/*@
+  @ requires \valid(ptr);
+  @ requires valid_read_string(*ptr);
+  @ ensures  \initialized(ptr);
+  @ ensures  valid_read_string(*ptr);
+  @ assigns  *ptr;
+  @*/
+static unsigned int str_uint_hex(char **ptr)
 {
+  char *src=*ptr;
   unsigned int res=0;
-  if(*src=='0' && (*(src+1)=='x' || *(src+1)=='X'))
+  /*@
+    @ loop invariant valid_read_string(src);
+    @ loop invariant res < 0x10000000;
+    @ loop assigns src, res;
+    @*/
+  for(;;src++)
   {
-    for(src+=2;;src++)
+    const char c=*src;
+    if(c>='0' && c<='9')
+      res=res*16+(c-'0');
+    else if(c>='A' && c<='F')
+      res=res*16+(c-'A'+10);
+    else if(c>='a' && c<='f')
+      res=res*16+(c-'a'+10);
+    else
     {
-      if(*src>='0' && *src<='9')
-	res=res*16+(*src)-'0';
-      else if(*src>='A' && *src<='F')
-	res=res*16+(*src)-'A'+10;
-      else if(*src>='a' && *src<='f')
-	res=res*16+(*src)-'a'+10;
-      else
-      {
-	*resptr=res;
-	return src;
-      }
+      *ptr=src;
+      return res;
     }
-  }
-  else
-  {
-    for(;*src>='0' && *src<='9';src++)
-      res=res*10+(*src)-'0';
-    *resptr=res;
-    return src;
+    if(res >= 0x10000000)
+    {
+      *ptr=src;
+      return res;
+    }
   }
 }
 
+/*@
+  @ requires \valid(ptr);
+  @ requires valid_read_string(*ptr);
+  @ ensures  \initialized(ptr);
+  @ ensures  valid_read_string(*ptr);
+  @ assigns  *ptr;
+  @*/
+static unsigned int str_uint_dec(char **ptr)
+{
+  char *src=*ptr;
+  unsigned int res=0;
+  /*@
+    @ loop invariant valid_read_string(src);
+    @ loop invariant res < 0x10000000;
+    @ loop assigns src, res;
+    @*/
+  for(;*src>='0' && *src<='9';src++)
+  {
+    res=res*10+(*src)-'0';
+    if(res >= 0x10000000)
+    {
+      *ptr=src;
+      return res;
+    }
+  }
+  *ptr=src;
+  return res;
+}
+
+/*@
+  @ requires \valid(ptr);
+  @ requires valid_read_string(*ptr);
+  @ ensures  \initialized(ptr);
+  @ ensures  valid_read_string(*ptr);
+  @ assigns  *ptr;
+  @*/
+static unsigned int str_uint(char **ptr)
+{
+  const char *src=*ptr;
+  if(*src=='0' && (*(src+1)=='x' || *(src+1)=='X'))
+  {
+    (*ptr)+=2;
+    return str_uint_hex(ptr);
+  }
+  return str_uint_dec(ptr);
+}
+
+/*@
+  @ assigns  \nothing;
+  @ */
+static unsigned char escaped_char(const unsigned char c)
+{
+  switch(c)
+  {
+    case 'b':
+      return '\b';
+    case 'n':
+      return '\n';
+    case 't':
+      return '\t';
+    case 'r':
+      return '\r';
+    case '0':
+      return '\0';
+    default:
+      return c;
+  }
+}
+
+/*@
+  @ ensures 0 <= \result <= 0x10;
+  @ assigns \nothing;
+  @*/
+static unsigned int load_hex1(const unsigned char c)
+{
+  if(c>='0' && c<='9')
+    return c-'0';
+  else if(c>='A' && c<='F')
+    return c-'A'+10;
+  else if(c>='a' && c<='f')
+    return c-'a'+10;
+  return 0x10;
+}
+
+/*@
+  @ ensures 0 <= \result <= 0x100;
+  @ assigns \nothing;
+  @*/
+static unsigned int load_hex2(const unsigned char c1, const unsigned char c2)
+{
+  unsigned int val1=load_hex1(c1);
+  unsigned int val2=load_hex1(c2);
+  if(val1 >= 0x10 || val2 >=0x10)
+    return 0x100;
+  return (val1*16)+val2;
+}
+
+/*@
+  @ requires \valid(*ptr);
+  @ requires valid_string(*ptr);
+  @ requires \valid(tmp + (0 .. PHOTOREC_MAX_SIG_SIZE-1));
+  @ ensures  valid_string(*ptr);
+  @ ensures  \initialized(tmp + (0 .. \result-1));
+  @*/
+/* TODO assigns  *ptr, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1]; */
+static unsigned int load_signature(char **ptr, unsigned char *tmp)
+{
+  unsigned int signature_size=0;
+  char *pos=*ptr;
+  /*@
+    @ loop invariant \valid(*ptr);
+    @ loop invariant valid_string(pos);
+    @ loop invariant signature_size <= PHOTOREC_MAX_SIG_SIZE;
+    @ loop invariant \valid(tmp + (0 .. PHOTOREC_MAX_SIG_SIZE-1));
+    @ loop assigns pos, signature_size, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1];
+    @*/
+  while(*pos!='\n' && *pos!='\0')
+  {
+    if(signature_size>=PHOTOREC_MAX_SIG_SIZE)
+      return 0;
+    /*@ assert signature_size < PHOTOREC_MAX_SIG_SIZE; */
+    if(*pos ==' ' || *pos=='\t' || *pos=='\r' || *pos==',')
+      pos++;
+    else if(*pos== '\'')
+    {
+      pos++;
+      if(*pos=='\0')
+	return 0;
+      if(*pos=='\\')
+      {
+	pos++;
+	if(*pos=='\0')
+	  return 0;
+	tmp[signature_size++]=escaped_char(*(unsigned char *)pos);
+      }
+      else
+      {
+	tmp[signature_size++]=*(unsigned char *)pos;
+      }
+      pos++;
+      if(*pos!='\'')
+	return 0;
+      pos++;
+    }
+    else if(*pos=='"')
+    {
+      pos++;
+      /*@
+	@ loop invariant valid_string(pos);
+	@ loop invariant signature_size <= PHOTOREC_MAX_SIG_SIZE;
+	@ loop assigns pos, signature_size, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1];
+	@*/
+      while(*pos!='"')
+      {
+	if(*pos=='\0')
+	  return 0;
+	if(signature_size>=PHOTOREC_MAX_SIG_SIZE)
+	  return 0;
+	if(*pos=='\\')
+	{
+	  pos++;
+	  if(*pos=='\0')
+	    return 0;
+	  tmp[signature_size++]=escaped_char(*(unsigned char *)pos);
+	}
+	else
+	  tmp[signature_size++]=*(unsigned char *)pos;
+	pos++;
+      }
+      /*@ assert *pos=='"'; */
+      pos++;
+    }
+    else if(*pos=='0' && (*(pos+1)=='x' || *(pos+1)=='X'))
+    {
+      pos+=2;
+      /*@ assert valid_string(pos); */
+      /*@
+	@ loop invariant valid_string(pos);
+	@ loop invariant signature_size <= PHOTOREC_MAX_SIG_SIZE;
+	@ loop assigns pos, signature_size, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1];
+	@*/
+      while(
+#ifdef DISABLED_FOR_FRAMAC
+	  *pos!='\0' && *(pos+1)!='\0'
+#else
+	  isxdigit(*pos) && isxdigit(*(pos+1))
+#endif
+	  )
+      {
+	unsigned int val;
+	if(signature_size>=PHOTOREC_MAX_SIG_SIZE)
+	  return 0;
+	/*@ assert valid_string(pos); */
+	/*@ assert valid_string(pos+1); */
+	val=load_hex2(*(unsigned char *)pos, *(unsigned char *)(pos+1));
+	if(val >= 0x100)
+	  break;
+	pos+=2;
+	tmp[signature_size++]=val;
+      }
+    }
+    else
+    {
+      return 0;
+    }
+    /*@ assert valid_string(pos); */
+  }
+  *ptr=pos;
+  return signature_size;
+}
+
+/*@
+  @ requires valid_register_header_check(file_stat);
+  @ requires valid_file_stat(file_stat);
+  @ requires valid_string(pos);
+  @ ensures  valid_string(\result);
+  @*/
+static char *parse_signature_line(file_stat_t *file_stat, char *pos)
+{
+  /* each line is composed of "extension sig_offset signature" */
+  const char *sig_ext=pos;
+  unsigned char *sig_sig=NULL;
+  unsigned int sig_offset=0;
+  unsigned int sig_size;
+  /* Read the extension */
+  /*@
+    @ loop invariant valid_read_string(sig_ext);
+    @ loop invariant valid_string(pos);
+    @ loop assigns pos;
+    @*/
+  while(*pos!=' ' && *pos!='\t')
+  {
+    if(*pos=='\0' || *pos=='\n' || *pos=='\r')
+      return pos;
+    pos++;
+  }
+  *pos='\0';
+  pos++;
+  /*@ assert valid_string(pos); */
+#ifndef DISABLED_FOR_FRAMAC
+  log_info("register a signature for %s\n", sig_ext);
+#endif
+  /* skip spaces */
+  /*@
+    @ loop invariant valid_string(pos);
+    @ loop assigns pos;
+    @*/
+  while(*pos=='\t' || *pos==' ')
+  {
+    /*@ assert *pos == '\t' || *pos== ' '; */
+    /*@ assert valid_string(pos); */
+    pos++;
+  }
+  sig_offset=str_uint(&pos);
+  if(sig_offset > PHOTOREC_MAX_SIG_OFFSET)
+  {
+    /* Invalid sig_offset */
+    return pos;
+  }
+  /*@ assert sig_offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  /* read signature */
+  sig_sig=(unsigned char *)MALLOC(PHOTOREC_MAX_SIG_SIZE);
+  /*@ assert valid_string(pos); */
+  sig_size=load_signature(&pos, sig_sig);
+  if(sig_size==0)
+  {
+    free(sig_sig);
+    return pos;
+  }
+  if(*pos=='\n')
+    pos++;
+  /*@ assert sig_offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert sig_size <= PHOTOREC_MAX_SIG_SIZE; */
+  if(sig_size>0 && sig_offset + sig_size <= PHOTOREC_MAX_SIG_OFFSET )
+  {
+    /* FIXME: memory leak for signature */
+    void *signature;
+    /*@ assert sig_size > 0; */
+    /*@ assert sig_offset + sig_size <= PHOTOREC_MAX_SIG_OFFSET; */
+    signature=(void *)MALLOC(sig_size);
+    /*@ assert \valid((char *)signature + (0 .. sig_size - 1)); */
+    memcpy(signature, sig_sig, sig_size);
+#ifndef DISABLED_FOR_FRAMAC
+    signature_insert(sig_ext, sig_offset, signature, sig_size);
+    register_header_check(sig_offset, signature, sig_size, &header_check_sig, file_stat);
+#endif
+  }
+  free(sig_sig);
+  return pos;
+}
+
+/*@
+  @ requires valid_register_header_check(file_stat);
+  @ requires valid_file_stat(file_stat);
+  @ requires valid_string(pos);
+  @ ensures  valid_string(\result);
+  @*/
 static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 {
-  const unsigned int signatures_empty=td_list_empty(&signatures.list);
+#ifndef DISABLED_FOR_FRAMAC
+  /*@
+    @ loop invariant valid_file_stat(file_stat);
+    @ loop invariant valid_string(pos);
+    @*/
   while(*pos!='\0')
+#endif
   {
     /* skip comments */
+    /*@
+      @ loop invariant valid_string(pos);
+      @ loop assigns pos;
+      @*/
     while(*pos=='#')
     {
+      /*@
+	@ loop invariant valid_string(pos);
+	@ loop assigns pos;
+	@*/
       while(*pos!='\0' && *pos!='\n')
 	pos++;
       if(*pos=='\0')
 	return pos;
       pos++;
     }
-    /* each line is composed of "extension offset signature" */
-    {
-      char *extension;
-      unsigned int offset=0;
-      unsigned char *tmp=NULL;
-      unsigned int signature_max_size=512;
-      unsigned int signature_size=0;
-      {
-	const char *extension_start=pos;
-	while(*pos!='\0' && !isspace(*pos))
-	  pos++;
-	if(*pos=='\0')
-	  return pos;
-	*pos='\0';
-	extension=strdup(extension_start);
-	pos++;
-      }
-      /* skip space */
-      while(isspace(*pos))
-	pos++;
-      /* read offset */
-      pos=str_uint(pos, &offset);
-      /* read signature */
-      tmp=(unsigned char *)MALLOC(signature_max_size);
-      while(*pos!='\n' && *pos!='\0')
-      {
-	if(signature_size==signature_max_size)
-	{
-	  unsigned char *tmp_old=tmp;
-	  signature_max_size*=2;
-	  tmp=(unsigned char *)realloc(tmp, signature_max_size);
-	  if(tmp==NULL)
-	  {
-	    free(extension);
-	    free(tmp_old);
-	    return pos;
-	  }
-	}
-	if(isspace(*pos) || *pos=='\r' || *pos==',')
-	  pos++;
-	else if(*pos== '\'')
-	{
-	  pos++;
-	  if(*pos=='\0')
-	  {
-	    free(extension);
-	    free(tmp);
-	    return pos;
-	  }
-	  else if(*pos=='\\')
-	  {
-	    pos++;
-	    if(*pos=='\0')
-	    {
-	      free(extension);
-	    free(tmp);
-	      return pos;
-	    }
-	    else if(*pos=='b')
-	      tmp[signature_size++]='\b';
-	    else if(*pos=='n')
-	      tmp[signature_size++]='\n';
-	    else if(*pos=='t')
-	      tmp[signature_size++]='\t';
-	    else if(*pos=='r')
-	      tmp[signature_size++]='\r';
-	    else if(*pos=='0')
-	      tmp[signature_size++]='\0';
-	    else
-	      tmp[signature_size++]=*pos;
-	    pos++;
-	  }
-	  else
-	  {
-	    tmp[signature_size++]=*pos;
-	    pos++;
-	  }
-	  if(*pos!='\'')
-	  {
-	    free(extension);
-	    free(tmp);
-	    return pos;
-	  }
-	  pos++;
-	}
-	else if(*pos=='"')
-	{
-	  pos++;
-	  for(; *pos!='"' && *pos!='\0'; pos++)
-	  {
-	    if(signature_size==signature_max_size)
-	    {
-	      unsigned char *tmp_old=tmp;
-	      signature_max_size*=2;
-	      tmp=(unsigned char *)realloc(tmp, signature_max_size);
-	      if(tmp==NULL)
-	      {
-		free(extension);
-		free(tmp_old);
-		return pos;
-	      }
-	    }
-	    if(*pos=='\\')
-	    {
-	      pos++;
-	      if(*pos=='\0')
-	      {
-		free(extension);
-		free(tmp);
-		return pos;
-	      }
-	      else if(*pos=='b')
-		tmp[signature_size++]='\b';
-	      else if(*pos=='n')
-		tmp[signature_size++]='\n';
-	      else if(*pos=='r')
-		tmp[signature_size++]='\r';
-	      else if(*pos=='t')
-		tmp[signature_size++]='\t';
-	      else if(*pos=='0')
-		tmp[signature_size++]='\0';
-	      else
-		tmp[signature_size++]=*pos;
-	    }
-	    else
-	      tmp[signature_size++]=*pos;;
-	  }
-	  if(*pos!='"')
-	  {
-	    free(extension);
-	    free(tmp);
-	    return pos;
-	  }
-	  pos++;
-	}
-	else if(*pos=='0' && (*(pos+1)=='x' || *(pos+1)=='X'))
-	{
-	  pos+=2;
-	  while(isxdigit(*pos) && isxdigit(*(pos+1)))
-	  {
-	    unsigned int val=(*pos);
-	    if(*pos>='0' && *pos<='9')
-	      val-='0';
-	    else if(*pos>='A' && *pos<='F')
-	      val=val-'A'+10;
-	    else if(*pos>='a' && *pos<='f')
-	      val=val-'a'+10;
-	    pos++;
-	    val*=16;
-	    val+=(*pos);
-	    if(*pos>='0' && *pos<='9')
-	      val-='0';
-	    else if(*pos>='A' && *pos<='F')
-	      val=val-'A'+10;
-	    else if(*pos>='a' && *pos<='f')
-	      val=val-'a'+10;
-	    pos++;
-	    tmp[signature_size++]=val;
-	  }
-	}
-	else
-	{
-	  free(extension);
-	  free(tmp);
-	  return pos;
-	}
-      }
-      if(*pos=='\n')
-	pos++;
-      if(signature_size>0)
-      {
-	/* FIXME: Small memory leak */
-	unsigned char *signature=(unsigned char *)MALLOC(signature_size);
-	log_info("register a signature for %s\n", extension);
-	memcpy(signature, tmp, signature_size);
-	register_header_check(offset, signature, signature_size, &header_check_sig, file_stat);
-	if(signatures_empty)
-	  signature_insert(extension, offset, signature, signature_size);
-      }
-      else
-      {
-	free(extension);
-      }
-      free(tmp);
-    }
+    /* skip empty lines */
+    /*@
+      @ loop invariant valid_string(pos);
+      @ loop assigns pos;
+      @*/
+    while(*pos=='\n' || *pos=='\r')
+      pos++;
+    pos=parse_signature_line(file_stat, pos);
   }
   return pos;
 }
@@ -424,14 +633,17 @@ static char *parse_signature_file(file_stat_t *file_stat, char *pos)
 static void register_header_check_sig(file_stat_t *file_stat)
 {
   char *pos;
-  char *buffer;
+  static char *buffer=NULL;
   size_t buffer_size;
   struct stat stat_rec;
   FILE *handle;
+//  if(!td_list_empty(&signatures.list))
+  if(buffer!=NULL)
+    return ;
   handle=open_signature_file();
   if(!handle)
     return;
-#ifdef __FRAMAC__
+#ifdef DISABLED_FOR_FRAMAC
   buffer_size=1024*1024;
 #else
   if(fstat(fileno(handle), &stat_rec)<0 || stat_rec.st_size>100*1024*1024)
@@ -457,8 +669,10 @@ static void register_header_check_sig(file_stat_t *file_stat)
   pos=parse_signature_file(file_stat, pos);
   if(*pos!='\0')
   {
+#ifndef DISABLED_FOR_FRAMAC
     log_warning("Can't parse signature: %s\n", pos);
+#endif
   }
-  free(buffer);
+//  free(buffer);
 }
 #endif

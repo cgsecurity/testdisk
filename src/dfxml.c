@@ -24,7 +24,7 @@
 #include <config.h>
 #endif
 
-#if defined(__FRAMAC__)
+#if defined(DISABLED_FOR_FRAMAC)
 #undef HAVE_LIBEWF
 #undef HAVE_SYS_UTSNAME_H
 #undef ENABLE_DFXML
@@ -206,13 +206,11 @@ void xml_add_DFXML_creator(const char *package, const char *version)
 #ifdef RECORD_COMPILATION_DATE
   xml_out2s("compilation_date", get_compilation_date());
 #endif
-#ifndef MAIN_photorec
   xml_printf("<library name='libext2fs' version='%s'/>\n", td_ext2fs_version());
   xml_printf("<library name='libewf' version='%s'/>\n", td_ewf_version());
   xml_printf("<library name='libjpeg' version='%s'/>\n", td_jpeg_version());
   xml_printf("<library name='libntfs' version='%s'/>\n", td_ntfs_version());
   xml_printf("<library name='zlib' version='%s'/>\n", td_zlib_version());
-#endif
   xml_pop("build_environment");
   xml_push("execution_environment","");
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -247,11 +245,11 @@ void xml_add_DFXML_creator(const char *package, const char *version)
 #ifdef HAVE_GETEUID
   xml_out2i("uid", geteuid());
 #endif
-#if !defined(__FRAMAC__)
+#if !defined(DISABLED_FOR_FRAMAC)
   {
     char outstr[200];
     const time_t t = time(NULL);
-#if defined(__MINGW32__) || defined(__FRAMAC__)
+#if defined(__MINGW32__) || defined(DISABLED_FOR_FRAMAC)
     const struct  tm *tmp = localtime(&t);
 #else
     struct tm tm_tmp;
