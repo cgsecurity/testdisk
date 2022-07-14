@@ -679,6 +679,9 @@ extern const file_hint_t file_hint_one;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
 extern const file_hint_t file_hint_orf;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pa)
+extern const file_hint_t file_hint_pa;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_paf)
 extern const file_hint_t file_hint_paf;
 #endif
@@ -1719,6 +1722,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
   { .enable=0, .file_hint=&file_hint_orf  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pa)
+  { .enable=0, .file_hint=&file_hint_pa  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_paf)
   { .enable=0, .file_hint=&file_hint_paf  },

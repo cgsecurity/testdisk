@@ -265,6 +265,7 @@ file_C			= filegen.c \
 			  file_ogg.c \
 			  file_one.c \
 			  file_orf.c \
+			  file_pa.c \
 			  file_paf.c \
 			  file_pap.c \
 			  file_par2.c \
