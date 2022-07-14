@@ -64,8 +64,6 @@ void change_part_type_cli(const disk_t *disk_car,partition_t *partition, char **
   assert(partition!=NULL);
   if(*current_cmd==NULL || partition->arch==NULL)
     return ;
-  if(partition->arch==NULL)
-    return;
 #if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
   if(partition->arch==&arch_gpt)
   {
