@@ -181,7 +181,9 @@ static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, 
   const struct PE_index *PE_index;
   unsigned int pos;
   unsigned int len;
+#ifdef DEBUG_EXE
   unsigned int val_len;
+#endif
   if(6 > end)
   {
     return -1;
@@ -189,17 +191,15 @@ static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, 
   PE_index=(const struct PE_index*)buffer;
   /*@ assert \valid_read(PE_index); */
   len=le16(PE_index->len);
-  val_len=le16(PE_index->val_len);
 #ifdef DEBUG_EXE
+  val_len=le16(PE_index->val_len);
   log_info("parse_StringTable len=%u val_len=%u type=%u\n", len, val_len, le16(PE_index->type));
 #endif
   if(len > end)
     return -1;
   /* szKey: language identifier + code page */
+  /* No need to add padding, pos&0x03 == 0 */
   pos = 6 + 2*8 + 2;
-  /* Padding */
-  if((pos & 0x03)!=0)
-    pos+=2;
   if(pos > len)
     return -1;
   /* An array of one or more String structures */
@@ -241,10 +241,8 @@ static int parse_StringFileInfo(file_recovery_t *file_recovery, const char*buffe
     return 0;
   if(val_len!=0)
     return -1;
+  /* No need to add padding, pos&0x03 == 0 */
   pos=6 + sizeof(StringFileInfo);
-  /* Padding */
-  if((pos & 0x03)!=0)
-    pos+=2;
   if(pos > len)
     return -1;
   return parse_StringTable(file_recovery, &buffer[pos], len - pos, needle, needle_len, force_ext);
