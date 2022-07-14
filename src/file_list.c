@@ -28,356 +28,1048 @@
 #include "types.h"
 #include "filegen.h"
 
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_1cd)
 extern const file_hint_t file_hint_1cd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_3dm)
 extern const file_hint_t file_hint_3dm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_3ds)
 extern const file_hint_t file_hint_3ds;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_7z)
 extern const file_hint_t file_hint_7z;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_DB)
 extern const file_hint_t file_hint_DB;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_a)
 extern const file_hint_t file_hint_a;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_abr)
 extern const file_hint_t file_hint_abr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_acb)
 extern const file_hint_t file_hint_acb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdb)
 extern const file_hint_t file_hint_accdb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ace)
 extern const file_hint_t file_hint_ace;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_addressbook)
 extern const file_hint_t file_hint_addressbook;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ado)
 extern const file_hint_t file_hint_ado;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_afdesign)
 extern const file_hint_t file_hint_afdesign;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ahn)
 extern const file_hint_t file_hint_ahn;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_aif)
 extern const file_hint_t file_hint_aif;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_all)
 extern const file_hint_t file_hint_all;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_als)
 extern const file_hint_t file_hint_als;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_amd)
 extern const file_hint_t file_hint_amd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_amr)
 extern const file_hint_t file_hint_amr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_apa)
 extern const file_hint_t file_hint_apa;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ape)
 extern const file_hint_t file_hint_ape;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_apple)
 extern const file_hint_t file_hint_apple;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ari)
 extern const file_hint_t file_hint_ari;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arj)
 extern const file_hint_t file_hint_arj;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asf)
 extern const file_hint_t file_hint_asf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asl)
 extern const file_hint_t file_hint_asl;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asm)
 extern const file_hint_t file_hint_asm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_atd)
 extern const file_hint_t file_hint_atd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_au)
 extern const file_hint_t file_hint_au;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_axp)
 extern const file_hint_t file_hint_axp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_axx)
 extern const file_hint_t file_hint_axx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bac)
 extern const file_hint_t file_hint_bac;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bdm)
 extern const file_hint_t file_hint_bdm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_berkeley)
 extern const file_hint_t file_hint_berkeley;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bfa)
 extern const file_hint_t file_hint_bfa;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bim)
 extern const file_hint_t file_hint_bim;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bin)
 extern const file_hint_t file_hint_bin;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_binvox)
 extern const file_hint_t file_hint_binvox;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bkf)
 extern const file_hint_t file_hint_bkf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_blend)
 extern const file_hint_t file_hint_blend;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bmp)
 extern const file_hint_t file_hint_bmp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bpg)
 extern const file_hint_t file_hint_bpg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bvr)
 extern const file_hint_t file_hint_bvr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_bz2)
 extern const file_hint_t file_hint_bz2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_c4d)
 extern const file_hint_t file_hint_c4d;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cab)
 extern const file_hint_t file_hint_cab;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_caf)
 extern const file_hint_t file_hint_caf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cam)
 extern const file_hint_t file_hint_cam;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_catdrawing)
 extern const file_hint_t file_hint_catdrawing;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cdt)
 extern const file_hint_t file_hint_cdt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_che)
 extern const file_hint_t file_hint_che;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_chm)
 extern const file_hint_t file_hint_chm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_class)
 extern const file_hint_t file_hint_class;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_clip)
 extern const file_hint_t file_hint_clip;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cm)
 extern const file_hint_t file_hint_cm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_compress)
 extern const file_hint_t file_hint_compress;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cow)
 extern const file_hint_t file_hint_cow;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cpi)
 extern const file_hint_t file_hint_cpi;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_crw)
 extern const file_hint_t file_hint_crw;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_csh)
 extern const file_hint_t file_hint_csh;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ctg)
 extern const file_hint_t file_hint_ctg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_cwk)
 extern const file_hint_t file_hint_cwk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_d2s)
 extern const file_hint_t file_hint_d2s;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dad)
 extern const file_hint_t file_hint_dad;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dar)
 extern const file_hint_t file_hint_dar;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dat)
 extern const file_hint_t file_hint_dat;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dbf)
 extern const file_hint_t file_hint_dbf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dbn)
 extern const file_hint_t file_hint_dbn;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dcm)
 extern const file_hint_t file_hint_dcm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ddf)
 extern const file_hint_t file_hint_ddf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dex)
 extern const file_hint_t file_hint_dex;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dim)
 extern const file_hint_t file_hint_dim;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
 extern const file_hint_t file_hint_dir;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_djv)
 extern const file_hint_t file_hint_djv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dmp)
 extern const file_hint_t file_hint_dmp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw)
 extern const file_hint_t file_hint_doc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw2)
 extern const file_hint_t file_hint_dovecot;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
 extern const file_hint_t file_hint_dpx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dovecot)
 extern const file_hint_t file_hint_drw;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dpx)
 extern const file_hint_t file_hint_drw2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ds2)
 extern const file_hint_t file_hint_ds2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ds_store)
 extern const file_hint_t file_hint_ds_store;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dsc)
 extern const file_hint_t file_hint_dsc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dss)
 extern const file_hint_t file_hint_dss;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dst)
 extern const file_hint_t file_hint_dst;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dta)
 extern const file_hint_t file_hint_dta;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dump)
 extern const file_hint_t file_hint_dump;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dv)
 extern const file_hint_t file_hint_dv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dvi)
 extern const file_hint_t file_hint_dvi;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dvr)
 extern const file_hint_t file_hint_dvr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dwg)
 extern const file_hint_t file_hint_dwg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dxf)
 extern const file_hint_t file_hint_dxf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_e01)
 extern const file_hint_t file_hint_e01;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ecryptfs)
 extern const file_hint_t file_hint_ecryptfs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_edb)
 extern const file_hint_t file_hint_edb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_elf)
 extern const file_hint_t file_hint_elf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_emf)
 extern const file_hint_t file_hint_emf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ess)
 extern const file_hint_t file_hint_ess;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_evt)
 extern const file_hint_t file_hint_evt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_evtx)
 extern const file_hint_t file_hint_evtx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_exe)
 extern const file_hint_t file_hint_exe;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_exr)
 extern const file_hint_t file_hint_exr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_exs)
 extern const file_hint_t file_hint_exs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ext2_sb)
 extern const file_hint_t file_hint_ext2_sb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ext2_fs)
 extern const file_hint_t file_hint_ext2_fs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fat)
 extern const file_hint_t file_hint_fat;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbf)
 extern const file_hint_t file_hint_fbf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbk)
 extern const file_hint_t file_hint_fbk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fbx)
 extern const file_hint_t file_hint_fbx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fcp)
 extern const file_hint_t file_hint_fcp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fcs)
 extern const file_hint_t file_hint_fcs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fdb)
 extern const file_hint_t file_hint_fdb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fds)
 extern const file_hint_t file_hint_fds;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fh10)
 extern const file_hint_t file_hint_fh10;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fh5)
 extern const file_hint_t file_hint_fh5;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_filevault)
 extern const file_hint_t file_hint_filevault;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fits)
 extern const file_hint_t file_hint_fits;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fit)
 extern const file_hint_t file_hint_fit;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flac)
 extern const file_hint_t file_hint_flac;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
 extern const file_hint_t file_hint_fasttxt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flp)
 extern const file_hint_t file_hint_flp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_flv)
 extern const file_hint_t file_hint_flv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fm)
 extern const file_hint_t file_hint_fm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fob)
 extern const file_hint_t file_hint_fob;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fos)
 extern const file_hint_t file_hint_fos;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fp5)
 extern const file_hint_t file_hint_fp5;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fp7)
 extern const file_hint_t file_hint_fp7;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_freeway)
 extern const file_hint_t file_hint_freeway;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_frm)
 extern const file_hint_t file_hint_frm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fs)
 extern const file_hint_t file_hint_fs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fwd)
 extern const file_hint_t file_hint_fwd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
 extern const file_hint_t file_hint_gam;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
 extern const file_hint_t file_hint_gct;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gho)
 extern const file_hint_t file_hint_gho;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gi)
 extern const file_hint_t file_hint_gi;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gif)
 extern const file_hint_t file_hint_gif;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gm6)
 extern const file_hint_t file_hint_gm6;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gp2)
 extern const file_hint_t file_hint_gp2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gp5)
 extern const file_hint_t file_hint_gp5;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gpg)
 extern const file_hint_t file_hint_gpg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gpx)
 extern const file_hint_t file_hint_gpx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gsm)
 extern const file_hint_t file_hint_gsm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 extern const file_hint_t file_hint_gz;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf)
 extern const file_hint_t file_hint_hdf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf5)
 extern const file_hint_t file_hint_hdf5;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdr)
 extern const file_hint_t file_hint_hdr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hds)
 extern const file_hint_t file_hint_hds;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hfsp)
 extern const file_hint_t file_hint_hfsp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hm)
 extern const file_hint_t file_hint_hm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hr9)
 extern const file_hint_t file_hint_hr9;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_http)
 extern const file_hint_t file_hint_http;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ibd)
 extern const file_hint_t file_hint_ibd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_icc)
 extern const file_hint_t file_hint_icc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_icns)
 extern const file_hint_t file_hint_icns;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ico)
 extern const file_hint_t file_hint_ico;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_idx)
 extern const file_hint_t file_hint_idx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ifo)
 extern const file_hint_t file_hint_ifo;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_imb)
 extern const file_hint_t file_hint_imb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_indd)
 extern const file_hint_t file_hint_indd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_info)
 extern const file_hint_t file_hint_info;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_iso)
 extern const file_hint_t file_hint_iso;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_it)
 extern const file_hint_t file_hint_it;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_itunes)
 extern const file_hint_t file_hint_itunes;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jks)
 extern const file_hint_t file_hint_jks;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
 extern const file_hint_t file_hint_jpg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)
 extern const file_hint_t file_hint_jsonlz4;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_kdb)
 extern const file_hint_t file_hint_kdb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_kdbx)
 extern const file_hint_t file_hint_kdbx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_key)
 extern const file_hint_t file_hint_key;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ldf)
 extern const file_hint_t file_hint_ldf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lit)
 extern const file_hint_t file_hint_lit;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_logic)
 extern const file_hint_t file_hint_logic;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lnk)
 extern const file_hint_t file_hint_lnk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lso)
 extern const file_hint_t file_hint_lso;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_luks)
 extern const file_hint_t file_hint_luks;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lxo)
 extern const file_hint_t file_hint_lxo;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lz)
 extern const file_hint_t file_hint_lz;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzh)
 extern const file_hint_t file_hint_lzh;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzo)
 extern const file_hint_t file_hint_lzo;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_m2ts)
 extern const file_hint_t file_hint_m2ts;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mat)
 extern const file_hint_t file_hint_mat;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_max)
 extern const file_hint_t file_hint_max;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mb)
 extern const file_hint_t file_hint_mb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mcd)
 extern const file_hint_t file_hint_mcd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdb)
 extern const file_hint_t file_hint_mdb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdf)
 extern const file_hint_t file_hint_mdf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mdp)
 extern const file_hint_t file_hint_mdp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mfa)
 extern const file_hint_t file_hint_mfa;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mfg)
 extern const file_hint_t file_hint_mfg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mft)
 extern const file_hint_t file_hint_mft;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mid)
 extern const file_hint_t file_hint_mid;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mig)
 extern const file_hint_t file_hint_mig;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mk5)
 extern const file_hint_t file_hint_mk5;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mkv)
 extern const file_hint_t file_hint_mkv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mlv)
 extern const file_hint_t file_hint_mlv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mobi)
 extern const file_hint_t file_hint_mobi;
-extern const file_hint_t file_hint_mov;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mov_mdat)
 extern const file_hint_t file_hint_mov_mdat;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mov)
+extern const file_hint_t file_hint_mov;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mp3)
 extern const file_hint_t file_hint_mp3;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mpg)
 extern const file_hint_t file_hint_mpg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mpl)
 extern const file_hint_t file_hint_mpl;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mrw)
 extern const file_hint_t file_hint_mrw;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_msa)
 extern const file_hint_t file_hint_msa;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mus)
 extern const file_hint_t file_hint_mus;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mxf)
 extern const file_hint_t file_hint_mxf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_myo)
 extern const file_hint_t file_hint_myo;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mysql)
 extern const file_hint_t file_hint_mysql;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nd2)
 extern const file_hint_t file_hint_nd2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nds)
 extern const file_hint_t file_hint_nds;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nes)
 extern const file_hint_t file_hint_nes;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_njx)
 extern const file_hint_t file_hint_njx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nk2)
 extern const file_hint_t file_hint_nk2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nsf)
 extern const file_hint_t file_hint_nsf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_oci)
 extern const file_hint_t file_hint_oci;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ogg)
 extern const file_hint_t file_hint_ogg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_one)
 extern const file_hint_t file_hint_one;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
 extern const file_hint_t file_hint_orf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_paf)
 extern const file_hint_t file_hint_paf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pap)
 extern const file_hint_t file_hint_pap;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_par2)
 extern const file_hint_t file_hint_par2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcap)
 extern const file_hint_t file_hint_pcap;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcb)
 extern const file_hint_t file_hint_pcb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pct)
 extern const file_hint_t file_hint_pct;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcx)
 extern const file_hint_t file_hint_pcx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pdb)
 extern const file_hint_t file_hint_pdb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pdf)
 extern const file_hint_t file_hint_pdf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pds)
 extern const file_hint_t file_hint_pds;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pf)
 extern const file_hint_t file_hint_pf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pfx)
 extern const file_hint_t file_hint_pfx;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pgdump)
 extern const file_hint_t file_hint_pgdump;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_plist)
 extern const file_hint_t file_hint_plist;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_plr)
 extern const file_hint_t file_hint_plr;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_plt)
 extern const file_hint_t file_hint_plt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_png)
 extern const file_hint_t file_hint_png;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pnm)
 extern const file_hint_t file_hint_pnm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_prc)
 extern const file_hint_t file_hint_prc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_prd)
 extern const file_hint_t file_hint_prd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_prt)
 extern const file_hint_t file_hint_prt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ps)
 extern const file_hint_t file_hint_ps;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psb)
 extern const file_hint_t file_hint_psb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psd)
 extern const file_hint_t file_hint_psd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psf)
 extern const file_hint_t file_hint_psf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_psp)
 extern const file_hint_t file_hint_psp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pst)
 extern const file_hint_t file_hint_pst;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ptb)
 extern const file_hint_t file_hint_ptb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ptf)
 extern const file_hint_t file_hint_ptf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pyc)
 extern const file_hint_t file_hint_pyc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pzf)
 extern const file_hint_t file_hint_pzf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pzh)
 extern const file_hint_t file_hint_pzh;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qbb)
 extern const file_hint_t file_hint_qbb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qdf)
 extern const file_hint_t file_hint_qdf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qkt)
 extern const file_hint_t file_hint_qkt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_qxd)
 extern const file_hint_t file_hint_qxd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_r3d)
 extern const file_hint_t file_hint_r3d;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ra)
 extern const file_hint_t file_hint_ra;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_raf)
 extern const file_hint_t file_hint_raf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rar)
 extern const file_hint_t file_hint_rar;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_raw)
 extern const file_hint_t file_hint_raw;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rdc)
 extern const file_hint_t file_hint_rdc;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_reg)
 extern const file_hint_t file_hint_reg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_res)
 extern const file_hint_t file_hint_res;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rfp)
 extern const file_hint_t file_hint_rfp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_riff)
 extern const file_hint_t file_hint_riff;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rlv)
 extern const file_hint_t file_hint_rlv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rm)
 extern const file_hint_t file_hint_rm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rns)
 extern const file_hint_t file_hint_rns;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rpm)
 extern const file_hint_t file_hint_rpm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rw2)
 extern const file_hint_t file_hint_rw2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rx2)
 extern const file_hint_t file_hint_rx2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_save)
 extern const file_hint_t file_hint_save;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sdsk)
 extern const file_hint_t file_hint_sdsk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ses)
 extern const file_hint_t file_hint_ses;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sgcta)
 extern const file_hint_t file_hint_sgcta;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shn)
 extern const file_hint_t file_hint_shn;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sib)
 extern const file_hint_t file_hint_sib;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sig)
 extern const file_hint_t file_hint_sig;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sit)
 extern const file_hint_t file_hint_sit;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_skd)
 extern const file_hint_t file_hint_skd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_skp)
 extern const file_hint_t file_hint_skp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_snag)
 extern const file_hint_t file_hint_snag;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
 extern const file_hint_t file_hint_snz;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sp3)
 extern const file_hint_t file_hint_sp3;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_spe)
 extern const file_hint_t file_hint_spe;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_spf)
 extern const file_hint_t file_hint_spf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_spss)
 extern const file_hint_t file_hint_spss;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlite)
 extern const file_hint_t file_hint_sqlite;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqm)
 extern const file_hint_t file_hint_sqm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_steuer2014)
 extern const file_hint_t file_hint_steuer2014;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_stl)
 extern const file_hint_t file_hint_stl;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_studio)
 extern const file_hint_t file_hint_studio;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_stuffit)
 extern const file_hint_t file_hint_stuffit;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_swf)
 extern const file_hint_t file_hint_swf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar)
 extern const file_hint_t file_hint_tar;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tax)
 extern const file_hint_t file_hint_tax;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tg)
 extern const file_hint_t file_hint_tg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tib)
 extern const file_hint_t file_hint_tib;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tiff)
 extern const file_hint_t file_hint_tiff;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tivo)
 extern const file_hint_t file_hint_tivo;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_torrent)
 extern const file_hint_t file_hint_torrent;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tph)
 extern const file_hint_t file_hint_tph;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tpl)
 extern const file_hint_t file_hint_tpl;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_m2ts)
 extern const file_hint_t file_hint_ts;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ttf)
 extern const file_hint_t file_hint_ttf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_txt)
 extern const file_hint_t file_hint_txt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tz)
 extern const file_hint_t file_hint_tz;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_v2i)
 extern const file_hint_t file_hint_v2i;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vault)
 extern const file_hint_t file_hint_vault;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdi)
 extern const file_hint_t file_hint_vdi;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdj)
 extern const file_hint_t file_hint_vdj;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_veg)
 extern const file_hint_t file_hint_veg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vfb)
 extern const file_hint_t file_hint_vfb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vib)
 extern const file_hint_t file_hint_vib;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vmdk)
 extern const file_hint_t file_hint_vmdk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vmg)
 extern const file_hint_t file_hint_vmg;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wad)
 extern const file_hint_t file_hint_wad;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wallet)
 extern const file_hint_t file_hint_wallet;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wdp)
 extern const file_hint_t file_hint_wdp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wee)
 extern const file_hint_t file_hint_wee;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wim)
 extern const file_hint_t file_hint_wim;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_win)
 extern const file_hint_t file_hint_win;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wks)
 extern const file_hint_t file_hint_wks;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wld)
 extern const file_hint_t file_hint_wld;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wmf)
 extern const file_hint_t file_hint_wmf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wnk)
 extern const file_hint_t file_hint_wnk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_woff)
 extern const file_hint_t file_hint_woff;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wpb)
 extern const file_hint_t file_hint_wpb;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wpd)
 extern const file_hint_t file_hint_wpd;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wtv)
 extern const file_hint_t file_hint_wtv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_wv)
 extern const file_hint_t file_hint_wv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_x3f)
 extern const file_hint_t file_hint_x3f;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_x3i)
 extern const file_hint_t file_hint_x3i;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_x4a)
 extern const file_hint_t file_hint_x4a;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xar)
 extern const file_hint_t file_hint_xar;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xcf)
 extern const file_hint_t file_hint_xcf;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xfi)
 extern const file_hint_t file_hint_xfi;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xfs)
 extern const file_hint_t file_hint_xfs;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xm)
 extern const file_hint_t file_hint_xm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xml)
 extern const file_hint_t file_hint_xml;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xsv)
 extern const file_hint_t file_hint_xsv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xpt)
 extern const file_hint_t file_hint_xpt;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xv)
 extern const file_hint_t file_hint_xv;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_xz)
 extern const file_hint_t file_hint_xz;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_z2d)
 extern const file_hint_t file_hint_z2d;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_zcode)
 extern const file_hint_t file_hint_zcode;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_zip)
 extern const file_hint_t file_hint_zip;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_zpr)
 extern const file_hint_t file_hint_zpr;
+#endif
 
 file_enable_t array_file_enable[]=
 {
-#if ((!defined(SINGLE_FORMAT)  && !defined(__FRAMAC__)) || defined(SINGLE_FORMAT_sig))
+#if !defined(SINGLE_FORMAT)  || defined(SINGLE_FORMAT_sig)
   { .enable=0, .file_hint=&file_hint_sig  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_1cd)
@@ -905,8 +1597,10 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lxo)
   { .enable=0, .file_hint=&file_hint_lxo  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzh)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lz)
   { .enable=0, .file_hint=&file_hint_lz  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzh)
   { .enable=0, .file_hint=&file_hint_lzh  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_lzo)
@@ -987,14 +1681,14 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mus)
   { .enable=0, .file_hint=&file_hint_mus  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mxf)
+  { .enable=0, .file_hint=&file_hint_mxf  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_myo)
   { .enable=0, .file_hint=&file_hint_myo  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mysql)
   { .enable=0, .file_hint=&file_hint_mysql },
-#endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mxf)
-  { .enable=0, .file_hint=&file_hint_mxf  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nd2)
   { .enable=0, .file_hint=&file_hint_nd2  },
@@ -1296,17 +1990,17 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vault)
   { .enable=0, .file_hint=&file_hint_vault  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdj)
-  { .enable=0, .file_hint=&file_hint_vdj  },
-#endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vfb)
-  { .enable=0, .file_hint=&file_hint_vfb  },
-#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdi)
   { .enable=0, .file_hint=&file_hint_vdi  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vdj)
+  { .enable=0, .file_hint=&file_hint_vdj  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_veg)
   { .enable=0, .file_hint=&file_hint_veg  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vfb)
+  { .enable=0, .file_hint=&file_hint_vfb  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_vib)
   { .enable=0, .file_hint=&file_hint_vib  },
