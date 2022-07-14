@@ -70,9 +70,7 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
       break;
   }
   {
-    const unsigned int sizeof_buffer=512;
     struct ext2_dir_struct *ls=(struct ext2_dir_struct *)dir_data.private_dir_data;
-    unsigned char *buffer;
     uint64_t start_free=0;
     uint64_t end_free=0;
     unsigned long int block;
@@ -95,7 +93,6 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
     end=bitmap->end;
 #endif
     log_trace("ext2_remove_used_space %lu-%lu\n", start, end);
-    buffer=(unsigned char *)MALLOC(sizeof_buffer);
     for(block=start;block<=end;block++)
     {
 #ifdef HAVE_EXT2FS_GET_GENERIC_BITMAP_START
@@ -116,7 +113,6 @@ unsigned int ext2_remove_used_space(disk_t *disk, const partition_t *partition, 
 	}
       }
     }
-    free(buffer);
     if(start_free != end_free)
       del_search_space(list_search_space, start_free, end_free);
     dir_data.close(&dir_data);
