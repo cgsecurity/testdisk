@@ -59,8 +59,6 @@ static int header_check_ptf(const unsigned char *buffer, const unsigned int buff
       file_recovery_new->extension=file_hint_ptf.extension;
       return 1;
     case 5:
-      if(memcmp(&buffer[0x2d], "Pro Tools", 9)!=0)
-	return 0;
       reset_file_recovery(file_recovery_new);
       file_recovery_new->extension="ptx";
       return 1;
