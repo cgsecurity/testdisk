@@ -60,12 +60,14 @@ struct info_io_redir
   @ requires valid_disk(disk_car);
   @ requires \valid((char *)buffer + (0 .. count-1));
   @ requires separation: \separated(disk_car, (char *)buffer + (0 .. count-1));
+  @ decreases 0;
   @*/
 static int io_redir_pread(disk_t *disk_car, void *buffer, const unsigned int count, const uint64_t offset);
 
 /*@
   @ requires \valid(disk_car);
   @ requires valid_disk(disk_car);
+  @ decreases 0;
   @*/
 static void io_redir_clean(disk_t *disk_car);
 

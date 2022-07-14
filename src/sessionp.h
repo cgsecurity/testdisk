@@ -37,9 +37,11 @@ extern "C" {
 int session_load(char **cmd_device, char **current_cmd, alloc_data_t *list_free_space);
 
 /*@
-  @ requires list_free_space==\null || \valid_read(list_free_space);
-  @ requires params==\null || \valid_read(params);
-  @ requires options==\null || \valid_read(options);
+  @ requires \valid_read(list_free_space);
+  @ requires valid_ph_param(params);
+  @ requires \valid_read(options);
+  @ requires \separated(list_free_space, params, options);
+  @ ensures  valid_ph_param(params);
   @*/
 int session_save(const alloc_data_t *list_free_space, const struct ph_param *params, const struct ph_options *options);
 

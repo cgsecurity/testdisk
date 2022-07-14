@@ -475,6 +475,7 @@ struct ufs_super_block {
   @ requires \valid(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_ufs(disk_t *disk_car,partition_t *partition,const int verbose);
 

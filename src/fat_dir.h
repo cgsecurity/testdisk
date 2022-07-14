@@ -41,6 +41,7 @@ int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsig
   @ requires valid_partition(partition);
   @ requires \valid(dir_data);
   @ requires \separated(disk_car, partition, dir_data);
+  @ decreases 0;
   @*/
 dir_partition_t dir_partition_fat_init(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const int verbose);
 

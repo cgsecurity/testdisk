@@ -41,7 +41,7 @@ disk_t *photorec_disk_selection_cli(const char *cmd_device, const list_disk_t *l
   const list_disk_t *element_disk;
   disk_t *disk=NULL;
   /*@
-    @ loop invariant valid_disk(disk);
+    @ loop invariant disk==\null || valid_disk(disk);
     @ loop assigns element_disk, disk;
     @*/
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
@@ -51,6 +51,7 @@ disk_t *photorec_disk_selection_cli(const char *cmd_device, const list_disk_t *l
   }
   if(disk==NULL)
     return NULL;
+  /*@ assert valid_disk(disk); */
   {
     /* disk sector size is now known, fix the sector ranges */
     struct td_list_head *search_walker = NULL;

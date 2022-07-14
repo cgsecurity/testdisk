@@ -42,6 +42,7 @@ struct vdev_boot_header {
   @ requires \valid(disk);
   @ requires \valid(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 int check_ZFS(disk_t *disk, partition_t *partition);
 

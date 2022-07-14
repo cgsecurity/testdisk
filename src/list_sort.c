@@ -36,6 +36,9 @@
  * to chaining of merge() calls: null-terminated, no reserved or
  * sentinel head node, "prev" links not maintained.
  */
+/*@
+  @ decreases 0;
+  @*/
 static struct td_list_head *merge(
     int (*cmp)(const struct td_list_head *a, const struct td_list_head *b),
     struct td_list_head *a, struct td_list_head *b)
@@ -64,6 +67,9 @@ static struct td_list_head *merge(
  * prev-link restoration pass, or maintaining the prev links
  * throughout.
  */
+/*@
+  @ decreases 0;
+  @*/
 static void merge_and_restore_back_links(
     int (*cmp)(const struct td_list_head *a, const struct td_list_head *b),
     struct td_list_head *head,

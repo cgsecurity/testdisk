@@ -356,6 +356,7 @@ void register_header_check(const unsigned int offset, const void *value, const u
 
 /*@
   @ requires \valid(files_enable);
+  @ decreases 0;
   @*/
 file_stat_t * init_file_stats(file_enable_t *files_enable);
 
@@ -393,6 +394,7 @@ void header_ignored(const file_recovery_t *file_recovery_new);
   @ requires \valid_function(file_recovery->file_check);
   @ requires \initialized(&file_recovery->file_check);
   @ requires \initialized(&file_recovery->handle);
+  @ decreases 0;
   @ ensures \result == 0 || \result == 1;
   @*/
 // ensures  valid_file_recovery(file_recovery);

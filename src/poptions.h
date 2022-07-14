@@ -30,6 +30,7 @@ extern "C" {
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
   @ requires \valid(options);
+  @ requires \separated(options, current_cmd, *current_cmd);
   @ ensures  valid_read_string(*current_cmd);
   @ */
 void interface_options_photorec_cli(struct ph_options *options, char**current_cmd);

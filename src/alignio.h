@@ -33,6 +33,7 @@
   @ requires offset < 0x8000000000000000;
   @ requires \valid((char *)buf + (0 .. count -1));
   @ requires \separated(disk_car, (char *)buf);
+  @ decreases 0;
   @ ensures  valid_disk(disk_car);
   @*/
 static int align_pread(int (*fnct_pread)(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),
@@ -90,6 +91,7 @@ static int align_pread(int (*fnct_pread)(const disk_t *disk_car, void *buf, cons
   @ requires offset < 0x8000000000000000;
   @ requires \valid_read((char *)buf + (0 .. count -1));
   @ requires \separated(disk_car, (char *)buf);
+  @ decreases 0;
   @ ensures  valid_disk(disk_car);
   @*/
 static int align_pwrite(int (*fnct_pread)(const disk_t *disk_car, void *buf, const unsigned int count, const uint64_t offset),

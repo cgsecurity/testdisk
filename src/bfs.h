@@ -90,6 +90,7 @@ struct disk_super_block          /* super block as it is on disk */
   @ requires \valid(partition);
   @ requires valid_disk(disk_car);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_BeFS(disk_t *disk_car, partition_t *partition);
 

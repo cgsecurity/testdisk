@@ -30,6 +30,7 @@ extern "C" {
   @ requires valid_disk(disk);
   @ requires \valid(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 int check_f2fs(disk_t *disk, partition_t *partition);
 

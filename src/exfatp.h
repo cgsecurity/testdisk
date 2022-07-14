@@ -32,6 +32,7 @@ extern "C" {
   @ requires valid_partition(partition);
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(disk, partition, list_search_space);
+  @ decreases 0;
   @*/
 // ensures  valid_list_search_space(list_search_space);
 unsigned int exfat_remove_used_space(disk_t *disk, const partition_t *partition, alloc_data_t *list_search_space);

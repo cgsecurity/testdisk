@@ -37,17 +37,20 @@ typedef struct
 /*@
   @ requires valid_disk(disk_car);
   @ requires valid_partition(partition);
+  @ decreases 0;
   @*/
 int save_header(disk_t *disk_car, const partition_t *partition, const int verbose);
 
 /*@
   @ requires valid_disk(disk_car);
   @ requires valid_list_part(list_part);
+  @ decreases 0;
   @*/
 int partition_save(disk_t *disk_car, const list_part_t *list_part, const int verbose);
 
 /*@
   @ requires valid_disk(disk_car);
+  @ decreases 0;
   @*/
 backup_disk_t *partition_load(const disk_t *disk_car, const int verbose);
 

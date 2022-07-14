@@ -29,7 +29,7 @@ extern "C" {
   @ requires \valid(params);
   @ requires valid_ph_param(params);
   @ requires \valid(options);
-  @ requires list_disk == \null || (\valid_read(list_disk) && valid_disk(list_disk->disk));
+  @ requires valid_list_disk(list_disk);
   @ requires params->cmd_device==\null || valid_read_string(params->cmd_device);
   @ requires params->cmd_run==\null || valid_read_string(params->cmd_run);
   @ requires params->disk==\null;

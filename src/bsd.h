@@ -174,6 +174,7 @@ struct disklabel {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_BSD(disk_t *disk_car, partition_t *partition, const int verbose, const unsigned int max_partitions);
 

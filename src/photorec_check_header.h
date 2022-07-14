@@ -24,8 +24,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar)
 extern const file_hint_t file_hint_tar;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
 extern const file_hint_t file_hint_dir;
+#endif
 extern file_check_list_t file_check_list;
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -122,7 +126,7 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 	(unsigned long)(file_recovery->location.start/params->disk->sector_size));
   }
 #endif
-#ifndef __FRAMAC__
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
   if(file_recovery->file_stat->file_hint==&file_hint_dir && options->verbose > 0)
   { /* FAT directory found, list the file */
     const unsigned int blocksize=params->blocksize;
@@ -160,6 +164,7 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
   @ requires \valid_read(buffer + (0 .. params->blocksize -1));
   @ requires \valid(file_recovered);
   @ requires \separated(file_recovery, params, options, list_search_space, buffer, file_recovered);
+  @ decreases 0;
   @ ensures  valid_file_recovery(file_recovery);
   @*/
 // ensures  valid_list_search_space(list_search_space);
@@ -172,6 +177,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
   /*@ assert valid_file_recovery(file_recovery); */
   file_recovery_new.blocksize=blocksize;
   file_recovery_new.location.start=offset;
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar)
   if(file_recovery->file_stat!=NULL && file_recovery->file_stat->file_hint==&file_hint_tar &&
       is_valid_tar_header((const struct tar_posix_header *)(buffer-0x200)))
   { /* Currently saving a tar, do not check the data for know header */
@@ -182,8 +188,10 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
 	  (unsigned long)((offset-params->partition->part_offset)/params->disk->sector_size));
     }
 #endif
+    /*@ assert valid_file_recovery(file_recovery); */
     return PSTATUS_OK;
   }
+#endif
   file_recovery_new.file_stat=NULL;
   file_recovery_new.location.start=offset;
   /*@ loop invariant valid_file_recovery(file_recovery); */
@@ -205,6 +213,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
       }
     }
   }
+  /*@ assert valid_file_recovery(file_recovery); */
   return PSTATUS_OK;
 }
 #ifdef __cplusplus

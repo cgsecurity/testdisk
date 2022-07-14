@@ -33,6 +33,7 @@ extern "C" {
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 int comp_FAT(disk_t *disk, const partition_t *partition, const unsigned long int fat_size, const unsigned long int sect_res);
 
@@ -57,6 +58,7 @@ unsigned int get_next_cluster(disk_t *disk, const partition_t *partition, const 
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 int set_next_cluster(disk_t *disk, const partition_t *partition, const upart_type_t upart_type, const int offset, const unsigned int cluster, const unsigned int next_cluster);
 
@@ -96,6 +98,7 @@ int is_part_fat32(const partition_t *partition);
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 unsigned int fat32_get_prev_cluster(disk_t *disk, const partition_t *partition, const unsigned int fat_offset, const unsigned int cluster, const unsigned int no_of_cluster);
 
@@ -107,6 +110,7 @@ unsigned int fat32_get_prev_cluster(disk_t *disk, const partition_t *partition, 
   @ requires separation: \separated(disk, partition);
   @ requires \valid(next_free);
   @ requires \valid(free_count);
+  @ decreases 0;
   @*/
 int fat32_free_info(disk_t *disk, const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int *free_count);
 
@@ -138,6 +142,7 @@ int recover_FAT(disk_t *disk, const struct fat_boot_sector*fat_header, partition
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 int check_FAT(disk_t *disk, partition_t *partition, const int verbose);
 
@@ -167,6 +172,7 @@ int recover_OS2MB(const disk_t *disk, const struct fat_boot_sector*fat_header, p
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk, partition);
+  @ decreases 0;
   @*/
 int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose);
 

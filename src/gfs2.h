@@ -84,6 +84,7 @@ struct gfs2_sb {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_gfs2(disk_t *disk_car, partition_t *partition);
 

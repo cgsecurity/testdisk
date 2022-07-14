@@ -31,6 +31,7 @@ extern "C" {
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_ISO(disk_t *disk_car, partition_t *partition);
 

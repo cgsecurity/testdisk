@@ -43,10 +43,30 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "log.h"
-/* #include "guid_cmp.h" */
-extern const arch_fnct_t arch_i386;
 
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
+extern const arch_fnct_t arch_i386;
+#endif
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid_read(ntfs_header);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \separated(disk_car, ntfs_header, partition);
+  @*/
 static void set_NTFS_info(disk_t *disk_car, const struct ntfs_boot_sector*ntfs_header, partition_t *partition);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
+  @ requires valid_partition(partition);
+  @ requires \valid_read(ntfs_header);
+  @ requires \separated(disk_car, partition, ntfs_header);
+  @ decreases 0;
+  @*/
 static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const struct ntfs_boot_sector*ntfs_header);
 
 unsigned int ntfs_sector_size(const struct ntfs_boot_sector *ntfs_header)
@@ -369,6 +389,7 @@ static void ntfs_get_volume_name(disk_t *disk_car, partition_t *partition, const
 
 int is_part_ntfs(const partition_t *partition)
 {
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
   if(partition->arch==&arch_i386)
   {
     switch(partition->part_type_i386)
@@ -380,13 +401,7 @@ int is_part_ntfs(const partition_t *partition)
         break;
     }
   }
-  /*
-  else if(partition->arch==&arch_gpt)
-  {
-    if(guid_cmp(partition->part_type_gpt,GPT_ENT_TYPE_MS_BASIC_DATA)==0)
-      return 1;
-  }
-  */
+#endif
   return 0;
 }
 

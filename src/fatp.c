@@ -44,6 +44,7 @@
   @ requires valid_partition(partition);
   @ requires \valid(list_search_space);
   @ requires \separated(disk, partition, list_search_space);
+  @ decreases 0;
   @*/
 static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
@@ -101,6 +102,7 @@ static void fat12_remove_used_space(disk_t *disk,const partition_t *partition, a
   @ requires valid_partition(partition);
   @ requires \valid(list_search_space);
   @ requires \separated(disk_car, partition, list_search_space);
+  @ decreases 0;
   @*/
 static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {
@@ -153,6 +155,7 @@ static void fat16_remove_used_space(disk_t *disk_car,const partition_t *partitio
   @ requires valid_partition(partition);
   @ requires \valid(list_search_space);
   @ requires \separated(disk_car, partition, list_search_space);
+  @ decreases 0;
   @*/
 static void fat32_remove_used_space(disk_t *disk_car,const partition_t *partition, alloc_data_t *list_search_space, const unsigned int fat_offset, const unsigned int no_of_cluster, const unsigned int start_data, const unsigned int cluster_size, const unsigned int sector_size)
 {

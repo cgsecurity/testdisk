@@ -225,6 +225,15 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
   @ requires valid_ph_param(params);
   @ requires \valid_read(options);
   @ requires \separated(params, options);
+  @ requires params->disk->sector_size > 0;
+  @ requires valid_read_string(params->recup_dir);
+  @ ensures  valid_ph_param(params);
+  @ ensures  params->file_nbr == 0;
+  @ ensures  params->status == STATUS_FIND_OFFSET;
+  @ ensures  params->dir_num == 1;
+  @ ensures  params->offset == PH_INVALID_OFFSET;
+  @ ensures  params->blocksize > 0;
+  @ ensures  valid_read_string(params->recup_dir);
   @*/
 void params_reset(struct ph_param *params, const struct ph_options *options);
 
@@ -238,6 +247,7 @@ const char *status_to_name(const photorec_status_t status);
   @ requires valid_ph_param(params);
   @ requires \valid_read(options);
   @ requires \separated(params, options);
+  @ ensures  valid_ph_param(params);
   @ assigns  params->offset, params->status, params->file_nbr;
   @*/
 void status_inc(struct ph_param *params, const struct ph_options *options);
@@ -249,6 +259,7 @@ void status_inc(struct ph_param *params, const struct ph_options *options);
   @ requires \valid_function(disk->arch->read_part);
   @ requires \valid_read(options);
   @ requires \separated(disk, options);
+  @ decreases 0;
   @ ensures  valid_disk(disk);
   @*/
 // ensures  valid_list_part(\result);
@@ -276,6 +287,7 @@ void file_block_append(file_recovery_t *file_recovery, alloc_data_t *list_search
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(file_recovery, list_search_space, new_current_search_space, offset, buffer + (..));
   @ requires new_current_search_space==\null || (\valid(*new_current_search_space) && valid_list_search_space(*new_current_search_space));
+  @ decreases 0;
   @*/
 // ensures  new_current_search_space==\null || (\valid(*new_current_search_space) && valid_list_search_space(*new_current_search_space));
 // ensures  valid_file_recovery(file_recovery);

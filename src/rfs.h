@@ -111,6 +111,7 @@ struct format40_super {
   @ requires \valid(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_rfs(disk_t *disk_car, partition_t *partition, const int verbose);
 

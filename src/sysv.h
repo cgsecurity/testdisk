@@ -202,6 +202,9 @@ struct coh_super_block {
 	uint32_t		s_unique;	/* zero, not used */
 };
 
+/*@
+  @ decreases 0;
+  @*/
 int check_sysv(disk_t *disk_car,partition_t *partition,const int verbose);
 int recover_sysv(const disk_t *disk_car, const struct sysv4_super_block *sbd, partition_t *partition,const int verbose, const int dump_ind);
 

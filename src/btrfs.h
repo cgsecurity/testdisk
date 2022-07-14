@@ -145,6 +145,7 @@ struct btrfs_super_block {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_btrfs(disk_t *disk_car, partition_t *partition);
 

@@ -32,6 +32,7 @@ extern "C" {
   @ requires \valid(disk);
   @ requires \valid_read(partition);
   @ requires \separated(list_search_space, disk, partition);
+  @ decreases 0;
   @ ensures  valid_disk(disk);
   @*/
 // ensures  valid_list_search_space(list_search_space);
@@ -45,6 +46,7 @@ unsigned int ext2_fix_group(alloc_data_t *list_search_space, disk_t *disk, const
   @ requires \valid(disk);
   @ requires \valid_read(partition);
   @ requires \separated(list_search_space, disk, partition);
+  @ decreases 0;
   @ ensures  valid_disk(disk);
   @*/
 // ensures  valid_list_search_space(list_search_space);

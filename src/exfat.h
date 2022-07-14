@@ -106,6 +106,7 @@ uint64_t exfat_cluster_to_offset(const struct exfat_super_block *exfat_header, c
   @ requires \valid_read(partition);
   @ requires \valid_read(exfat_header);
   @ requires \separated(disk, partition, exfat_header, (char *)buffer);
+  @ decreases 0;
   @*/
 int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct exfat_super_block*exfat_header, void *buffer, const unsigned int cluster);
 
@@ -114,6 +115,7 @@ int exfat_read_cluster(disk_t *disk, const partition_t *partition, const struct 
   @ requires valid_disk(disk);
   @ requires \valid(partition);
   @ requires \separated(disk, partition);
+  @ decreases 0;
   @*/
 int check_exFAT(disk_t *disk, partition_t *partition);
 

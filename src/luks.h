@@ -32,6 +32,7 @@ extern "C" {
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
   @ requires \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_LUKS(disk_t *disk_car, partition_t *partition);
 

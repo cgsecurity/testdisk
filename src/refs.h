@@ -38,6 +38,9 @@ struct ReFS_boot_sector {
   uint16_t	checksum;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ decreases 0;
+  @*/
 int check_ReFS(disk_t *disk, partition_t *partition);
 int recover_ReFS(const disk_t *disk, const struct ReFS_boot_sector *refs_header, partition_t *partition);
 

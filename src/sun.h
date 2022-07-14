@@ -91,6 +91,7 @@ int recover_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel,
   @ requires \valid(disk_car);
   @ requires \valid(partition);
   @ requires separation: \separated(disk_car, partition);
+  @ decreases 0;
   @*/
 int check_sun_i386(disk_t *disk_car, partition_t *partition, const int verbose);
 
