@@ -66,8 +66,8 @@ static int ncurses_ntfs_info(const struct ntfs_boot_sector *ntfs_header)
 {
   wprintw(stdscr,"filesystem size           %llu\n", (long long unsigned)(le64(ntfs_header->sectors_nbr)+1));
   wprintw(stdscr,"sectors_per_cluster       %u\n",ntfs_header->sectors_per_cluster);
-  wprintw(stdscr,"mft_lcn                   %lu\n",(long unsigned int)le64(ntfs_header->mft_lcn));
-  wprintw(stdscr,"mftmirr_lcn               %lu\n",(long unsigned int)le64(ntfs_header->mftmirr_lcn));
+  wprintw(stdscr,"mft_lcn                   %llu\n", (long long unsigned int)le64(ntfs_header->mft_lcn));
+  wprintw(stdscr,"mftmirr_lcn               %llu\n", (long long unsigned int)le64(ntfs_header->mftmirr_lcn));
   wprintw(stdscr,"clusters_per_mft_record   %d\n",ntfs_header->clusters_per_mft_record);
   wprintw(stdscr,"clusters_per_index_record %d\n",ntfs_header->clusters_per_index_record);
   return 0;
@@ -79,12 +79,12 @@ static int ncurses_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct n
       (long long unsigned)(le64(nh1->sectors_nbr)+1),
       (long long unsigned)(le64(nh2->sectors_nbr)+1));
   wprintw(stdscr,"sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
-  wprintw(stdscr,"mft_lcn                   %lu %lu\n",
-      (long unsigned int)le64(nh1->mft_lcn),
-      (long unsigned int)le64(nh2->mft_lcn));
-  wprintw(stdscr,"mftmirr_lcn               %lu %lu\n",
-      (long unsigned int)le64(nh1->mftmirr_lcn),
-      (long unsigned int)le64(nh2->mftmirr_lcn));
+  wprintw(stdscr,"mft_lcn                   %llu %llu\n",
+      (long long unsigned int)le64(nh1->mft_lcn),
+      (long long unsigned int)le64(nh2->mft_lcn));
+  wprintw(stdscr,"mftmirr_lcn               %llu %llu\n",
+      (long long unsigned int)le64(nh1->mftmirr_lcn),
+      (long long unsigned int)le64(nh2->mftmirr_lcn));
   wprintw(stdscr,"clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
   wprintw(stdscr,"clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
   return 0;
@@ -421,8 +421,8 @@ static int read_mft_info(disk_t *disk_car, const partition_t *partition, const u
   {
     log_warning("read_mft_info failed\n");
     log_warning("ntfs_find_mft: sectors_per_cluster invalid\n");
-    log_warning("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)*mft_lcn);
-    log_warning("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)*mftmirr_lcn);
+    log_warning("ntfs_find_mft: mft_lcn             %llu\n", (long long unsigned int)*mft_lcn);
+    log_warning("ntfs_find_mft: mftmirr_lcn         %llu\n", (long long unsigned int)*mftmirr_lcn);
     log_warning("ntfs_find_mft: mft_record_size     %u\n",*mft_record_size);
     log_warning("\n");
   }
@@ -484,15 +484,15 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	if(res==1)
 	{
 	  int tmp;
-	  log_info("mft at %lu\n",(long unsigned)sector);
+	  log_info("mft at %llu\n", (long long unsigned)sector);
 	  tmp=read_mft_info(disk_car, partition, sector, verbose, &sectors_per_cluster, &mft_lcn, &mftmirr_lcn, &mft_record_size);
 	  if(tmp==0)
 	  {
-	    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
-	    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
+	    log_info("ntfs_find_mft: mft_lcn             %llu\n", (long long unsigned int)mft_lcn);
+	    log_info("ntfs_find_mft: mftmirr_lcn         %llu\n", (long long unsigned int)mftmirr_lcn);
 	    if(expert==0
 #ifdef HAVE_NCURSES
-		|| ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0
+		|| ask_confirmation("Use MFT from %llu, confirm ? (Y/N)", (long long unsigned int)mft_lcn)!=0
 #endif
 	      )
 	      ind_stop=1;
@@ -518,13 +518,13 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     {
       wmove(stdscr,9,0);
       wclrtoeol(stdscr);
-      wprintw(stdscr,"Search mft %10lu/%lu", (long unsigned)sector,
-	  (long unsigned)(partition->part_size/disk_car->sector_size));
+      wprintw(stdscr,"Search mft %10llu/%llu", (long long unsigned)sector,
+	  (long long unsigned)(partition->part_size/disk_car->sector_size));
       wrefresh(stdscr);
       if(check_enter_key_or_s(stdscr))
       {
-	log_info("Search mft stopped: %10lu/%lu\n", (long unsigned)sector,
-	    (long unsigned)(partition->part_size/disk_car->sector_size));
+	log_info("Search mft stopped: %10llu/%llu\n", (long long unsigned)sector,
+	    (long long unsigned)(partition->part_size/disk_car->sector_size));
 	ind_stop=1;
       }
     }
@@ -552,15 +552,15 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
 	if(res==1)
 	{
 	  int tmp;
-	  log_info("mft at %lu\n", (long unsigned)sector);
+	  log_info("mft at %llu\n", (long long unsigned)sector);
 	  tmp=read_mft_info(disk_car, partition, sector, verbose, &sectors_per_cluster, &mft_lcn, &mftmirr_lcn, &mft_record_size);
 	  if(tmp==0)
 	  {
-	    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
-	    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
+	    log_info("ntfs_find_mft: mft_lcn             %llu\n", (long long unsigned int)mft_lcn);
+	    log_info("ntfs_find_mft: mftmirr_lcn         %llu\n", (long long unsigned int)mftmirr_lcn);
 	    if(expert==0
 #ifdef HAVE_NCURSES
-	      || ask_confirmation("Use MFT from %lu, confirm ? (Y/N)",(long unsigned int)mft_lcn)!=0
+	      || ask_confirmation("Use MFT from %llu, confirm ? (Y/N)", (long long unsigned int)mft_lcn)!=0
 #endif
 	      )
 	      ind_stop=1;
@@ -633,8 +633,8 @@ int rebuild_NTFS_BS(disk_t *disk_car, partition_t *partition, const int verbose,
     const ntfs_attribheader *attr90;
     unsigned int index_block_size=4096;
     log_info("ntfs_find_mft: sectors_per_cluster %u\n",sectors_per_cluster);
-    log_info("ntfs_find_mft: mft_lcn             %lu\n",(long unsigned int)mft_lcn);
-    log_info("ntfs_find_mft: mftmirr_lcn         %lu\n",(long unsigned int)mftmirr_lcn);
+    log_info("ntfs_find_mft: mft_lcn             %llu\n", (long long unsigned int)mft_lcn);
+    log_info("ntfs_find_mft: mftmirr_lcn         %llu\n", (long long unsigned int)mftmirr_lcn);
     log_info("ntfs_find_mft: mft_record_size     %u bytes\n",mft_record_size);
     /* Read "root directory" in MFT */
     if((unsigned)disk_car->pread(disk_car, &buffer, mft_record_size, partition->part_offset + (uint64_t)mft_lcn * sectors_per_cluster * disk_car->sector_size + 5 * (uint64_t)mft_record_size) != mft_record_size)
@@ -697,8 +697,8 @@ int log_ntfs2_info(const struct ntfs_boot_sector *nh1, const struct ntfs_boot_se
       (long long unsigned)(le64(nh1->sectors_nbr)+1),
       (long long unsigned)(le64(nh2->sectors_nbr)+1));
   log_info("sectors_per_cluster       %u %u\n",nh1->sectors_per_cluster,nh2->sectors_per_cluster);
-  log_info("mft_lcn                   %lu %lu\n",(long unsigned int)le64(nh1->mft_lcn),(long unsigned int)le64(nh2->mft_lcn));
-  log_info("mftmirr_lcn               %lu %lu\n",(long unsigned int)le64(nh1->mftmirr_lcn),(long unsigned int)le64(nh2->mftmirr_lcn));
+  log_info("mft_lcn                   %llu %llu\n", (long long unsigned int)le64(nh1->mft_lcn), (long long unsigned int)le64(nh2->mft_lcn));
+  log_info("mftmirr_lcn               %llu %llu\n", (long long unsigned int)le64(nh1->mftmirr_lcn), (long long unsigned int)le64(nh2->mftmirr_lcn));
   log_info("clusters_per_mft_record   %d %d\n",nh1->clusters_per_mft_record,nh2->clusters_per_mft_record);
   log_info("clusters_per_index_record %d %d\n",nh1->clusters_per_index_record,nh2->clusters_per_index_record);
   return 0;
