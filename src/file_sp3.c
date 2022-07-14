@@ -132,13 +132,13 @@ static int header_check_sp3(const unsigned char *buffer, const unsigned int buff
 {
   const struct SP3FileInfo *h=(const struct SP3FileInfo *)buffer;
   /*@ assert \valid_read(h); */
-  const time_t time=get_time_from_sp3(h);
-  if(time==0 || time==-1)
+  const time_t file_time=get_time_from_sp3(h);
+  if(file_time==0 || file_time==-1)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_sp3.extension;
   file_recovery_new->min_filesize=10240;
-  file_recovery_new->time=time;
+  file_recovery_new->time=file_time;
   file_recovery_new->calculated_file_size=get_size_from_sp3(h);
   file_recovery_new->data_check=&data_check_size;
   file_recovery_new->file_check=&file_check_size;
