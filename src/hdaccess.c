@@ -535,13 +535,12 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
   @*/
 static unsigned int disk_get_sector_size(const int hd_h, const char *device, const int verbose)
 {
-  unsigned int sector_size=0;
 #ifdef BLKSSZGET
   {
     int arg=0;
     if (ioctl(hd_h, BLKSSZGET, &arg) == 0)
     {
-      sector_size=arg;
+      const unsigned int sector_size=arg;
       if(verbose>1)
       {
 	log_verbose("disk_get_sector_size BLKSSZGET %s sector_size=%u\n", device, sector_size);
@@ -556,7 +555,7 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
     unsigned int arg=0;
     if(ioctl(hd_h,DIOCGSECTORSIZE,&arg)==0)
     {
-      sector_size=arg;
+      const unsigned int sector_size=arg;
       if(verbose>1)
       {
 	log_verbose("disk_get_sector_size DIOCGSECTORSIZE %s sector_size=%u\n",device,sector_size);
@@ -571,7 +570,7 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
     struct disklabel geometry;
     if (ioctl(hd_h, DIOCGDINFO, &geometry)==0)
     { /* I can get the geometry */
-      sector_size=geometry.d_secsize;
+      const unsigned int sector_size=geometry.d_secsize;
       if(verbose>1)
       {
 	log_verbose("disk_get_sector_size DIOCGDINFO %s Ok\n",device);
@@ -587,7 +586,7 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
     uint32_t arg=0;
     if(ioctl(hd_h,DKIOCGETBLOCKSIZE,&arg)==0)
     {
-      sector_size=arg;
+      const unsigned int sector_size=arg;
       if(verbose>1)
       {
 	log_verbose("disk_get_sector_size DKIOCGETBLOCKSIZE %s sector_size=%u\n",
@@ -610,7 +609,7 @@ static unsigned int disk_get_sector_size(const int hd_h, const char *device, con
 	  &dwFreeClusters, 
 	  &dwTotalClusters)!=0)
     {
-      sector_size=dwBytesPerSect;
+      const unsigned int sector_size=dwBytesPerSect;
       if(verbose>1)
       {
 	log_verbose("disk_get_sector_size GetDiskFreeSpaceA %s Ok\n",device);
