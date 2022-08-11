@@ -53,7 +53,7 @@ const file_hint_t file_hint_ext2_sb= {
   @*/
 static void file_rename_ext(file_recovery_t *file_recovery)
 {
-  unsigned char buffer[512];
+  unsigned char buffer[1024];
   char buffer_cluster[32];
   FILE *file;
   const struct ext2_super_block *sb=(const struct ext2_super_block *)&buffer;
