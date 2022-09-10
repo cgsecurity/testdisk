@@ -88,7 +88,6 @@ static int check_FAT_dir_entry(const unsigned char *entry, const unsigned int en
 static unsigned long int get_subdirectory(disk_t *disk_car,const uint64_t hd_offset, const unsigned long int i);
 
 #ifdef HAVE_NCURSES
-static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate);
 static int fat32_create_rootdir(disk_t *disk_car,const partition_t *partition, const unsigned int reserved, const unsigned int fat_length, const unsigned int root_cluster, const unsigned int sectors_per_cluster, const int verbose, file_info_t *rootdir_list, const unsigned int fats);
 static upart_type_t select_fat_info(const info_offset_t *info_offset, const unsigned int nbr_offset,unsigned int*reserved, unsigned int*fat_length, const unsigned long int max_sector_offset, unsigned int *fats);
 #endif
@@ -562,7 +561,7 @@ static unsigned int fat32_find_root_cluster(disk_t *disk_car,const partition_t *
 
 #ifdef HAVE_NCURSES
 
-static void fat_date_unix2dos(int unix_date,unsigned short *mstime, unsigned short *msdate)
+static void fat_date_unix2dos(time_t unix_date,unsigned short *mstime, unsigned short *msdate)
 {
   static const int day_n[] = { 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0,0 };
                           /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */

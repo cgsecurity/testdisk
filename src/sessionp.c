@@ -225,8 +225,8 @@ int session_save(const alloc_data_t *list_free_space, const struct ph_param *par
     {
       log_trace("session_save\n");
     }
-    fprintf(f_session,"#%u\n%s %s,%u,",
-	(unsigned int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order);
+    fprintf(f_session,"#%lu\n%s %s,%u,",
+	(unsigned long int)time(NULL), params->disk->device, params->disk->arch->part_name_option, params->partition->order);
     if(params->blocksize>0)
       fprintf(f_session,"blocksize,%u,", params->blocksize);
     fprintf(f_session,"fileopt,");

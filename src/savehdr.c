@@ -216,7 +216,7 @@ int partition_save(disk_t *disk_car, const list_part_t *list_part, const int ver
     log_critical("Can't create backup.log file: %s\n",strerror(errno));
     return -1;
   }
-  fprintf(f_backup,"#%u %s\n",(unsigned int)time(NULL), disk_car->description(disk_car));
+  fprintf(f_backup,"#%lu %s\n",(unsigned long int)time(NULL), disk_car->description(disk_car));
   for(parts=list_part;parts!=NULL;parts=parts->next)
   {
     char status='D';
