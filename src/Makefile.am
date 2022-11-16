@@ -180,6 +180,7 @@ file_C			= filegen.c \
 			  file_frm.c \
 			  file_fs.c \
 			  file_fwd.c \
+			  file_fxp.c \
 			  file_gam.c \
 			  file_gct.c \
 			  file_gho.c \

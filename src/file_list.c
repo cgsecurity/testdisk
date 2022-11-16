@@ -422,6 +422,7 @@ extern const file_hint_t file_hint_fs;
 extern const file_hint_t file_hint_fwd;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
+extern const file_hint_t file_hint_fxp;
 extern const file_hint_t file_hint_gam;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
@@ -1466,6 +1467,7 @@ file_enable_t array_file_enable[]=
   { .enable=0, .file_hint=&file_hint_fwd  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
+  { .enable=0, .file_hint=&file_hint_fxp  },
   { .enable=0, .file_hint=&file_hint_gam  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
