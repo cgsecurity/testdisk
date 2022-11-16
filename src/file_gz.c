@@ -36,10 +36,10 @@
 #include "types.h"
 #include "file_gz.h"
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 #ifdef HAVE_ZLIB_H
 #include <zlib.h>
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gz)
 #include "filegen.h"
 #include "common.h"
 
