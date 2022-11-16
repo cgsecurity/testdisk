@@ -72,6 +72,7 @@ static const char *extension_jar="jar";
 static const char *extension_kmz="kmz";
 static const char *extension_kra="kra";
 static const char *extension_indd="indd";
+static const char *extension_mctx="mctx";
 static const char *extension_mmap="mmap";
 static const char *extension_notebook="notebook";
 static const char *extension_numbers="numbers";
@@ -326,6 +327,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
+     *ext == extension_mctx ||
      *ext == extension_mmap ||
      *ext == extension_notebook ||
      *ext == extension_numbers ||
@@ -358,6 +360,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
+     *ext == extension_mctx ||
      *ext == extension_mmap ||
      *ext == extension_notebook ||
      *ext == extension_numbers ||
@@ -503,6 +506,8 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
     *ext=extension_numbers;
   else if(len==19 && memcmp(filename, "AndroidManifest.xml", 19)==0)
     *ext=extension_apk;
+  else if(len==21 && memcmp(filename, "mathcad/worksheet.xml", 21)==0)
+    *ext=extension_mctx;
   else if(len==30 && memcmp(filename, "xsd/MindManagerApplication.xsd", 30)==0)
     *ext=extension_mmap;
   return 0;
@@ -524,6 +529,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
+     *ext == extension_mctx ||
      *ext == extension_mmap ||
      *ext == extension_notebook ||
      *ext == extension_numbers ||
@@ -556,6 +562,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_jar ||
      *ext == extension_kmz ||
      *ext == extension_kra ||
+     *ext == extension_mctx ||
      *ext == extension_mmap ||
      *ext == extension_notebook ||
      *ext == extension_numbers ||
