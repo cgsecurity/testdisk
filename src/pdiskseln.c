@@ -113,7 +113,7 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
     wmove(stdscr,5,0);
     wprintw(stdscr,"comes with ABSOLUTELY NO WARRANTY.");
     wmove(stdscr,7,0);
-    wprintw(stdscr,"Select a media (use Arrow keys, then press Enter):");
+    wprintw(stdscr,"Select a media and choose 'Proceed' using arrow keys:");
     for(i=0,element_disk=list_disk;
 	element_disk!=NULL && i<offset+NBR_DISK_MAX;
 	i++, element_disk=element_disk->next)
