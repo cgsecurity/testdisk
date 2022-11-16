@@ -39,7 +39,7 @@ case "$crosscompile_target" in
 	VER_LIBEWF=
   ;;
   *-msdosdjgpp)
-	VER_LIBNTFS3G="2014.2.15"
+	VER_LIBNTFS3G="2022.5.17"
 	VER_NTFSPROGS=
 	VER_E2FSPROGS="1.42.8"
   ;;
@@ -184,7 +184,7 @@ if [ ! -e "$compiledir"/ntfsprogs-$VER_LIBNTFS3G/configure ];
 then
   if [ ! -e ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz ];
   then
-	$WGET http://tuxera.com/opensource/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz
+	$WGET https://tuxera.com/opensource/ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz
   fi
   if [ -e ntfs-3g_ntfsprogs-$VER_LIBNTFS3G.tgz ];
   then
