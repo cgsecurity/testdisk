@@ -20,6 +20,7 @@
 
  */
 
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -35,4 +36,4 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
     return -1;
   return 0;
 }
-
+#endif

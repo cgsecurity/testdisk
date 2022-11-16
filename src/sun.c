@@ -39,7 +39,9 @@
 #include "log_part.h"
 
 #define SUN_LABEL_MAGIC          0xDABE
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_SUN)
 extern const arch_fnct_t arch_sun;
+#endif
 
 static void set_sun_info_i386(partition_t *partition);
 static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunlabel, const partition_t *partition, const int verbose);
@@ -73,6 +75,7 @@ static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunla
 	offset2cylinder(disk_car,partition->part_offset),
 	offset2head(disk_car,partition->part_offset),
 	offset2sector(disk_car,partition->part_offset));
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_SUN)
   {
     int i;
     partition_t *new_partition=partition_new(NULL);
@@ -93,6 +96,7 @@ static int test_sun_i386(const disk_t *disk_car, const sun_partition_i386 *sunla
     }
     free(new_partition);
   }
+#endif
   return 0;
 }
 

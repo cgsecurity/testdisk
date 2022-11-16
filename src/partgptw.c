@@ -20,7 +20,7 @@
 
  */
 
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_GPT)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -310,3 +310,4 @@ int write_part_gpt(disk_t *disk_car, const list_part_t *list_part, const int ro,
   disk_car->sync(disk_car);
   return 0;
 }
+#endif

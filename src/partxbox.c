@@ -20,7 +20,7 @@
 
  */
 
-
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_XBOX)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -389,3 +389,4 @@ static const char *get_partition_typename_xbox(const partition_t *partition)
 {
   return get_partition_typename_xbox_aux(partition->part_type_xbox);
 }
+#endif

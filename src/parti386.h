@@ -21,6 +21,7 @@
  */
 #ifndef _PARTI386_H
 #define _PARTI386_H
+#if !defined(SINGLE_PARTITION_TYPE) || defined(SINGLE_PARTITION_I386)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,5 +55,6 @@ int recover_i386_logical(disk_t *disk, const unsigned char *buffer, partition_t 
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
+#endif
 #endif
 #endif
