@@ -667,6 +667,21 @@ Returns
 0: all files has been copied
 */
 #define MAX_DIR_NBR 256
+
+static int can_copy_dir(const file_info_t *current_file, const unsigned long int inode_known[MAX_DIR_NBR], const unsigned int dir_nbr)
+{
+  const unsigned long int new_inode=current_file->st_ino;
+  unsigned int i;
+  if(new_inode<2)
+    return 0;
+  if(strcmp(current_file->name,"..")==0 || strcmp(current_file->name,".")==0)
+    return 0;
+  for(i=0; i<dir_nbr; i++)
+    if(new_inode == inode_known[i]) /* Avoid loop */
+      return 0;
+  return 1;
+}
+
 static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   static unsigned int dir_nbr=0;
@@ -694,17 +709,7 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
       strcat(dir_data->current_directory,current_file->name);
       if(LINUX_S_ISDIR(current_file->st_mode)!=0)
       {
-	const unsigned long int new_inode=current_file->st_ino;
-	unsigned int new_inode_ok=1;
-	unsigned int i;
-	if(new_inode<2)
-	  new_inode_ok=0;
-	if(strcmp(current_file->name,"..")==0 || strcmp(current_file->name,".")==0)
-	  new_inode_ok=0;
-	for(i=0;i<dir_nbr && new_inode_ok!=0;i++)
-	  if(new_inode==inode_known[i]) /* Avoid loop */
-	    new_inode_ok=0;
-	if(new_inode_ok>0)
+	if(can_copy_dir(current_file, &inode_known[0], dir_nbr) > 0)
 	{
 	  copy_stopped=copy_dir(window, disk, partition, dir_data, current_file, copy_ok, copy_bad);
 	}
