@@ -144,7 +144,16 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	use_sudo=1;
 #endif
       }
+      else
 #endif
+      if(current_disk != NULL && current_disk->disk->serial_no != NULL)
+      {
+        if(has_colors())
+          wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(2));
+	wprintw(stdscr, "Serial number %s", current_disk->disk->serial_no);
+        if(has_colors())
+          wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      }
       wmove(stdscr, INTER_NOTE_Y+1, 0);
       wprintw(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
       wmove(stdscr, INTER_NOTE_Y+2, 0);

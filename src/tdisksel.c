@@ -114,8 +114,7 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
       }
     }
     {
-      int line=INTER_NOTE_Y;
-      mvwaddstr(stdscr,line++,0,"Note: ");
+      mvwaddstr(stdscr, INTER_NOTE_Y, 0, "Note: ");
 #if defined(HAVE_GETEUID) && !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(DJGPP)
       if(geteuid()!=0)
       {
@@ -124,17 +123,26 @@ static int testdisk_disk_selection_ncurses(int verbose,int dump_ind, const list_
         waddstr(stdscr,"Some disks won't appear unless you are root user.");
         if(has_colors())
           wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-        wmove(stdscr,line++,0);
 #ifdef SUDO_BIN
 	use_sudo=1;
 #endif
       }
+      else
 #endif
-      waddstr(stdscr,"Disk capacity must be correctly detected for a successful recovery.");
-      wmove(stdscr,line++,0);
-      wprintw(stdscr,"If a disk listed above has an incorrect size, check HD jumper settings and BIOS");
-      wmove(stdscr,line,0);
-      wprintw(stdscr,"detection, and install the latest OS patches and disk drivers."); 
+      if(current_disk != NULL && current_disk->disk->serial_no != NULL)
+      {
+        if(has_colors())
+          wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(2));
+	wprintw(stdscr, "Serial number %s", current_disk->disk->serial_no);
+        if(has_colors())
+          wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      }
+      wmove(stdscr, INTER_NOTE_Y+1, 0);
+      waddstr(stdscr, "Disk capacity must be correctly detected for a successful recovery.");
+      wmove(stdscr, INTER_NOTE_Y+2, 0);
+      wprintw(stdscr, "If a disk listed above has an incorrect size, check HD jumper settings and BIOS");
+      wmove(stdscr, INTER_NOTE_Y+3, 0);
+      wprintw(stdscr, "detection, and install the latest OS patches and disk drivers.");
     }
 #ifdef SUDO_BIN
     if(use_sudo > 0)
