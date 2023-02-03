@@ -854,6 +854,9 @@ extern const file_hint_t file_hint_sgcta;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shn)
 extern const file_hint_t file_hint_shn;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shp)
+extern const file_hint_t file_hint_shp;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sib)
 extern const file_hint_t file_hint_sib;
 #endif
@@ -1898,6 +1901,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shn)
   { .enable=0, .file_hint=&file_hint_shn  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_shp)
+  { .enable=0, .file_hint=&file_hint_shp  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sib)
   { .enable=0, .file_hint=&file_hint_sib  },
