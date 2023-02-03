@@ -32,11 +32,14 @@
 #include "filegen.h"
 #include "common.h"
 
+/*@
+  @ requires valid_register_header_check(file_stat);
+  @*/
 static void register_header_check_shp(file_stat_t *file_stat);
 
 const file_hint_t file_hint_shp= {
   .extension="shp",
-  .description="Shapefile",
+  .description="ESRI Shapefile",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -55,26 +58,60 @@ struct shp_header
   int32_t shape_type;
 } __attribute__ ((gcc_struct, __packed__));
 
+/*@
+  @ requires buffer_size >= sizeof(struct shp_header);
+  @ requires separation: \separated(&file_hint_shp, buffer+(..), file_recovery, file_recovery_new);
+  @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ ensures valid_header_check_result(\result, file_recovery_new);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
+  @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_shp.extension);
+  @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size >= 100);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
+  @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 100);
+  @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
+  @ ensures (\result == 1) ==> (file_recovery_new->file_rename == \null);
+  @ assigns file_recovery_new->filename[0];
+  @ assigns file_recovery_new->time;
+  @ assigns file_recovery_new->file_stat;
+  @ assigns file_recovery_new->handle;
+  @ assigns file_recovery_new->file_size;
+  @ assigns file_recovery_new->location.list.prev;
+  @ assigns file_recovery_new->location.list.next;
+  @ assigns file_recovery_new->location.end;
+  @ assigns file_recovery_new->location.data;
+  @ assigns file_recovery_new->extension;
+  @ assigns file_recovery_new->min_filesize;
+  @ assigns file_recovery_new->calculated_file_size;
+  @ assigns file_recovery_new->data_check;
+  @ assigns file_recovery_new->file_check;
+  @ assigns file_recovery_new->file_rename;
+  @ assigns file_recovery_new->offset_error;
+  @ assigns file_recovery_new->offset_ok;
+  @ assigns file_recovery_new->checkpoint_status;
+  @ assigns file_recovery_new->checkpoint_offset;
+  @ assigns file_recovery_new->flags;
+  @ assigns file_recovery_new->extra;
+  @ assigns file_recovery_new->data_check_tmp;
+  @*/
 static int header_check_shp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct shp_header *shp=(const struct shp_header *)buffer;
-  (void) buffer_size;
-  (void) safe_header_only;
-  (void) file_recovery;
+  const uint64_t size = 2 * be32(shp->size);
 
-  if(buffer[0]!=0 || buffer[1]!=0 || buffer[2]!=0x27 || buffer[3]!=0x0a)
+  if(le32(shp->version) != 1000)
     return 0;
-  if(be32(shp->size) >= 100)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_shp.extension;
-    file_recovery_new->min_filesize=100;
-    file_recovery_new->calculated_file_size=(uint64_t)be32(shp->size);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    return 1;
-  }
-  return 0;
+  if(size < 100)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_shp.extension;
+  file_recovery_new->min_filesize=100;
+  file_recovery_new->calculated_file_size=size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  return 1;
 }
 
 static void register_header_check_shp(file_stat_t *file_stat)
