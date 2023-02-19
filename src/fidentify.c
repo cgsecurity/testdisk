@@ -427,6 +427,13 @@ static void display_version(void)
 #endif
 #ifndef DISABLED_FOR_FRAMAC
   printf("libjpeg: %s, zlib: %s\n", td_jpeg_version(), td_zlib_version());
+#endif
+#ifdef HAVE_ICONV
+  printf("iconv support: yes\n");
+#else
+  printf("iconv support: no\n");
+#endif
+#ifndef DISABLED_FOR_FRAMAC
   printf("OS: %s\n" , get_os());
 #endif
 }
