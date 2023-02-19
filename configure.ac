@@ -574,9 +574,13 @@ if test "x$with_ext2fs" != "xno"; then
   AC_CHECK_LIB(com_err,com_err,[
       AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
       if test "${com_err_lib_a}" = ""; then
-        LIBS="-lcom_err $LIBS"
+        photorec_LDADD="-lcom_err $photorec_LDADD"
+        qphotorec_LDADD="-lcom_err $qphotorec_LDADD"
+        testdisk_LDADD="-lcom_err $testdisk_LDADD"
       else
-        LIBS="${com_err_lib_a} $LIBS"
+        photorec_LDADD="${com_err_lib_a} $photorec_LDADD"
+        qphotorec_LDADD="${com_err_lib_a} $qphotorec_LDADD"
+        testdisk_LDADD="${com_err_lib_a} $testdisk_LDADD"
       fi
       have_com_err=yes
       ], AC_MSG_WARN(No com_err library detected))
@@ -584,13 +588,20 @@ if test "x$with_ext2fs" != "xno"; then
   AC_CHECK_LIB(ext2fs,ext2fs_open,[
       AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
       if test "${ext2fs_lib_a}" = ""; then
-        LIBS="-lext2fs $LIBS"
+        photorec_LDADD="-lext2fs $photorec_LDADD"
+        qphotorec_LDADD="-lext2fs $qphotorec_LDADD"
+        testdisk_LDADD="-lext2fs $testdisk_LDADD"
       else
-        LIBS="${ext2fs_lib_a} $LIBS"
+        photorec_LDADD="${ext2fs_lib_a} $photorec_LDADD"
+        qphotorec_LDADD="${ext2fs_lib_a} $qphotorec_LDADD"
+        testdisk_LDADD="${ext2fs_lib_a} $testdisk_LDADD"
       fi
       have_ext2fs=yes
       ],AC_MSG_WARN(No ext2fs library detected))
+  ac_save_LIBS="$LIBS"
+  LIBS="$LIBS $testdisk_LDADD"
   AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
+  LIBS="$ac_save_LIBS"
 else
   AC_MSG_WARN(Use of ext2fs library disabled)
 fi
@@ -636,9 +647,13 @@ if test "x$with_ntfs3g" != "xno"; then
   [
     AC_DEFINE([HAVE_LIBNTFS3G],1,[Define to 1 if you have the ntfs3g library (-lntfs3g).])
     if test "${ntfs3g_lib_a}" = ""; then
-      LIBS="-lntfs-3g $LIBS"
+      photorec_LDADD="-lntfs-3g $photorec_LDADD"
+      qphotorec_LDADD="-lntfs-3g $qphotorec_LDADD"
+      testdisk_LDADD="-lntfs-3g $testdisk_LDADD"
     else
-      LIBS="${ntfs3g_lib_a} $LIBS"
+      photorec_LDADD="${ntfs3g_lib_a} $photorec_LDADD"
+      qphotorec_LDADD="${ntfs3g_lib_a} $qphotorec_LDADD"
+      testdisk_LDADD="${ntfs3g_lib_a} $testdisk_LDADD"
     fi
     have_ntfs3g=yes
     use_ntfs=no
@@ -662,9 +677,13 @@ if test "x$with_ntfs" != "xno"; then
   [
     AC_DEFINE([HAVE_LIBNTFS],1,[Define to 1 if you have the ntfs library (-lntfs).])
     if test "${ntfs_lib_a}" = ""; then
-      LIBS="-lntfs $LIBS"
+      photorec_LDADD="-lntfs $photorec_LDADD"
+      qphotorec_LDADD="-lntfs $qphotorec_LDADD"
+      testdisk_LDADD="-lntfs $testdisk_LDADD"
     else
-      LIBS="${ntfs_lib_a} $LIBS"
+      photorec_LDADD="${ntfs_lib_a} $photorec_LDADD"
+      qphotorec_LDADD="${ntfs_lib_a} $qphotorec_LDADD"
+      testdisk_LDADD="${ntfs_lib_a} $testdisk_LDADD"
     fi
     have_ntfs=yes
   ],
@@ -672,9 +691,13 @@ if test "x$with_ntfs" != "xno"; then
     [
       AC_DEFINE([HAVE_LIBNTFS],1,[Define to 1 if you have the ntfs library (-lntfs).])
       if test "${ntfs_lib_a}" = ""; then
-        LIBS="-lntfs $LIBS"
+	photorec_LDADD="-lntfs $photorec_LDADD"
+	qphotorec_LDADD="-lntfs $qphotorec_LDADD"
+	testdisk_LDADD="-lntfs $testdisk_LDADD"
       else
-        LIBS="${ntfs_lib_a} $LIBS"
+	photorec_LDADD="${ntfs_lib_a} $photorec_LDADD"
+	qphotorec_LDADD="${ntfs_lib_a} $qphotorec_LDADD"
+	testdisk_LDADD="${ntfs_lib_a} $testdisk_LDADD"
       fi
       have_ntfs=yes
     ],AC_MSG_WARN(No ntfs library detected))
@@ -734,23 +757,34 @@ AC_CHECK_HEADERS([sys/uuid.h uuid/uuid.h uuid.h])
 found_uuid_function=yes
 AC_CHECK_FUNCS([uuidgen],,[found_uuid_function=no])
 if test "x$with_uuid" != "xno"; then
-  if test "${found_uuid_function}" = "no";
+  if test "x${found_uuid_function}" != "xyes";
   then
-    found_uuid_function=yes
-    AC_SEARCH_LIBS(uuid_generate, uuid, , [ found_uuid_function=no ])
+    AC_CHECK_LIB(uuid_generate, uuid, [
+      AC_DEFINE([HAVE_LIBUUID],1,[Define to 1 if you have the uuid library (-luuid).])
+      testdisk_LDADD="-luuid $testdisk_LDADD"
+      have_uuid=yes
+      found_uuid_function=yes
+    ])
   fi
-
-  if test "${found_uuid_function}" = "no";
+  if test "x$found_uuid_function" != "xyes";
   then
     found_uuid_function=yes
-    AC_SEARCH_LIBS(uuid_create, uuid, , [found_uuid_function=no])
+    AC_CHECK_LIB(uuid_create, uuid, [
+      AC_DEFINE([HAVE_LIBUUID],1,[Define to 1 if you have the uuid library (-luuid).])
+      testdisk_LDADD="-luuid $testdisk_LDADD"
+      have_uuid=yes
+      found_uuid_function=yes
+    ])
   fi
 fi
 
 if test "${found_uuid_function}" = "yes";
 then
+  OLDLIBS="$LIBS"
+  LIBS="$OLDLIBS $testdisk_LDADD"
   AC_CHECK_FUNCS([uuid_create])
   AC_CHECK_FUNCS([uuid_generate])
+  LIBS="$OLDLIBS"
 fi
 
 if test "${found_uuid_function}" = "no";
@@ -784,11 +818,17 @@ if test "x$with_ewf" != "xno"; then
   AC_CHECK_LIB(ewf,libewf_check_file_signature,[
   AC_DEFINE([HAVE_LIBEWF],1,[Define to 1 if you have the ewf library (-lewf).])
   if test "${ewf_lib_a}" = ""; then
-    LIBS="-lewf $LIBS"
+    photorec_LDADD="-lewf $photorec_LDADD"
+    qphotorec_LDADD="-lewf $qphotorec_LDADD"
+    testdisk_LDADD="-lewf $testdisk_LDADD"
   else
-    LIBS="${ewf_lib_a} $LIBS"
+    photorec_LDADD="${ewf_lib_a} $photorec_LDADD"
+    qphotorec_LDADD="${ewf_lib_a} $qphotorec_LDADD"
+    testdisk_LDADD="${ewf_lib_a} $testdisk_LDADD"
   fi
   have_ewf=yes
+  OLDLIBS="$LIBS"
+  LIBS="$OLDLIBS $photorec_LDADD"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <libewf.h>]],
       [[ libewf_get_bytes_per_sector(NULL,NULL); ]])],
     [ac_cv_c_libewf_get_bytes_per_sector_have_two_arguments=yes],
@@ -810,6 +850,7 @@ if test "x$with_ewf" != "xno"; then
   ],[
   AC_MSG_WARN(No ewf library detected)
   ],[])
+  LIBS="$OLDLIBS"
 else
   AC_MSG_WARN(Use of ewf library disabled)
 fi
