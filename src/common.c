@@ -212,6 +212,7 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
   unsigned int i;
   /*@
     @ loop assigns i, partition->fsname[i];
+    @ loop invariant 0 <= i < sizeof(partition->fsname);
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
@@ -223,6 +224,7 @@ void set_part_name_chomp(partition_t *partition, const unsigned char *src, const
   unsigned int i;
   /*@
     @ loop assigns i, partition->fsname[i];
+    @ loop invariant 0 <= i < sizeof(partition->fsname);
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
@@ -375,6 +377,7 @@ int check_command(char **current_cmd, const char *cmd, const size_t n)
     unsigned int i;
     /*@
       @ loop invariant valid_read_string(src);
+      @ loop invariant 0 <= i <= n;
       @ loop assigns i, src;
       @*/
     for(i=0; i<n && src[0]!='\0'; i++)

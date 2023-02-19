@@ -227,6 +227,7 @@ void dump_log(const void *nom_dump, const unsigned int lng)
   unsigned int i,j;
   unsigned int nbr_line;
   unsigned char car;
+  /*@ assert lng < UINT_MAX - 0x10; */
   nbr_line=(lng+0x10-1)/0x10;
   /* write dump to log file*/
   for (i=0; (i<nbr_line); i++)
@@ -266,6 +267,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
 {
   unsigned int i,j;
   unsigned int nbr_line;
+  /*@ requires lng < UINT_MAX - 0x08; */
   nbr_line=(lng+0x08-1)/0x08;
   /* write dump to log file*/
   for (i=0; (i<nbr_line); i++)

@@ -58,7 +58,7 @@ static int header_check_dst(const unsigned char *buffer, const unsigned int buff
   buf[7]='\0';
   if(memcmp(buffer, "LA:",3)!=0 || memcmp(&buffer[30], "\rCO:", 4)!=0)
     return 0;
-  if(sscanf(&buf, "%u", &stitch_count) < 0)
+  if(sscanf(&buf[0], "%u", &stitch_count) < 0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_dst.extension;

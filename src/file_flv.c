@@ -66,6 +66,7 @@ struct flv_tag
 /*@
   @ requires file_recovery->data_check==&data_check_flv;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ ensures  valid_data_check_param(buffer, buffer_size, file_recovery);
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
   @*/
