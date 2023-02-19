@@ -144,6 +144,11 @@ static void display_version(void)
 #endif
   printf("ext2fs lib: %s, ntfs lib: %s, ewf lib: %s, libjpeg: %s, curses lib: %s, zlib: %s\n",
       td_ext2fs_version(), td_ntfs_version(), td_ewf_version(), td_jpeg_version(), td_curses_version(), td_zlib_version());
+#ifdef HAVE_ICONV
+  printf("iconv support: yes\n");
+#else
+  printf("iconv support: no\n");
+#endif
   printf("OS: %s\n" , get_os());
 }
 #endif
