@@ -74,7 +74,7 @@ int test_APFS(const nx_superblock_t *sb, const partition_t *partition)
 {
   if(le32(sb->nx_magic)!=0x4253584e)
     return 1;
-  if(le32(sb->nx_xp_desc_blocks) + le32(sb->nx_xp_data_blocks) > le64(sb->nx_block_count))
+  if((uint64_t)le32(sb->nx_xp_desc_blocks) + le32(sb->nx_xp_data_blocks) > le64(sb->nx_block_count))
     return 2;
   if(le32(sb->nx_block_size) < NX_MINIMUM_BLOCK_SIZE ||
       le32(sb->nx_block_size) > NX_MAXIMUM_BLOCK_SIZE)
