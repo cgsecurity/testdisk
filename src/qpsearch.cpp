@@ -151,7 +151,7 @@ pstatus_t QPhotorec::photorec_aux(alloc_data_t *list_search_space)
 	{
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
 	  { 
-	    log_critical("Cannot write to file %s: %s\n", file_recovery.filename, strerror(errno));
+	    log_critical("Cannot write to file %s after %llu bytes: %s\n", file_recovery.filename, (long long unsigned)file_recovery.file_size, strerror(errno));
 	    if(errno==EFBIG)
 	    {
 	      /* File is too big for the destination filesystem */
