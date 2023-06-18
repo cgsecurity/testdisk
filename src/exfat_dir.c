@@ -99,6 +99,73 @@ static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned 
   *outp = '\0';
   return 0;
 }
+#else
+/*
+ *              Convert a UTF-16LE text to UTF-8
+ *      Note : wcstombs() not used because on Linux it fails for characters
+ *      not present in current locale
+ *      Returns size or zero for invalid input
+ */
+
+static unsigned int makeutf8(char *utf8, const char *utf16, int length)
+{
+        int i;
+        unsigned int size;
+        unsigned int rem;
+        enum { BASE, SURR, ERR } state;
+
+        size = 0;
+        rem = 0;
+        state = BASE;
+        for (i=0; i<2*length; i+=2) {
+                switch (state) {
+                case BASE :
+                        if (utf16[i+1] & 0xf8) {
+                                if ((utf16[i+1] & 0xf8) == 0xd8) {
+                                        if (utf16[i+1] & 4)
+                                                state = ERR;
+                                        else {
+                                                utf8[size++] = 0xf0 + (utf16[i+1] & 7)
+                                                                    + ((utf16[i] & 0xc0) == 0xc0);
+                                                utf8[size++] = 0x80 + (((utf16[i] + 64) >> 2) & 63);
+                                                rem = utf16[i] & 3;
+                                                state = SURR;
+                                        }
+                                } else {
+                                        utf8[size++] = 0xe0 + ((utf16[i+1] >> 4) & 15);
+                                        utf8[size++] = 0x80
+                                                + ((utf16[i+1] & 15) << 2)
+                                                + ((utf16[i] >> 6) & 3);
+                                        utf8[size++] = 0x80 + (utf16[i] & 63);
+                                }
+                        } else
+                                if ((utf16[i] & 0x80) || utf16[i+1]) {
+                                        utf8[size++] = 0xc0
+                                                + ((utf16[i+1] & 15) << 2)
+                                                + ((utf16[i] >> 6) & 3);
+                                        utf8[size++] = 0x80 + (utf16[i] & 63);
+                                } else
+                                        utf8[size++] = utf16[i];
+                        break;
+                case SURR :
+                        if ((utf16[i+1] & 0xfc) == 0xdc) {
+                                utf8[size++] = 0x80 + (rem << 4)
+                                                 + ((utf16[i+1] & 3) << 2)
+                                                 + ((utf16[i] >> 6) & 3);
+                                utf8[size++] = 0x80 + (utf16[i] & 63);
+                                state = BASE;
+                        } else
+                                state = ERR;
+                        break;
+                case ERR :
+                        break;
+                }
+        }
+        utf8[size] = 0;
+        if (state != BASE)
+                state = ERR;
+        return (state == ERR ? 0 : size);
+}
 #endif
 
 #define ATTR_RO      1  /* read-only */
@@ -132,7 +199,9 @@ static unsigned int exfat_get_next_cluster(disk_t *disk_car,const partition_t *p
 
 static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, const dir_data_t *dir_data, file_info_t *dir_list)
 {
+#ifdef HAVE_ICONV
   const struct exfat_dir_struct *ls=(const struct exfat_dir_struct*)dir_data->private_dir_data;
+#endif
   /*
    * 0x83 Volume label
    * 0x81 Allocation bitmap
@@ -187,27 +256,27 @@ static int dir_exfat_aux(const unsigned char*buffer, const unsigned int size, co
       }
       else if((buffer[offset]&0x7f)==0x41)
       {
-#ifdef HAVE_ICONV
 	char *outs;
-#endif
 	unsigned int i;
 	unsigned int j;
 	for(j=0;
 	    j<255 && current_file->name[j]!='\0';
 	    j++);
-#ifdef HAVE_ICONV
 	for(i=2;
 	    i<32 && (buffer[offset+i]!=0 || buffer[offset+i+1]!=0);
 	    i+=2);
 	i-=2;
 	outs=&current_file->name[j];
+#ifdef HAVE_ICONV
 	if(exfat_ucstoutf8(ls->cd, &buffer[offset+2], i, &outs, 512-j) < 0)
-#endif
 	{
 	  for(i=2; i<32; i+=2)
 	    current_file->name[j++]=buffer[offset+i];
 	  current_file->name[j]='\0';
 	}
+#else
+	makeutf8(outs, &buffer[offset+2], i);
+#endif
       }
       sec_count--;
     }
