@@ -74,7 +74,7 @@ static errcode_t my_read_blk64(io_channel channel, unsigned long long block, int
 static errcode_t my_write_blk64(io_channel channel, unsigned long long block, int count, const void *buf);
 
 static void dir_partition_ext2_close(dir_data_t *dir_data);
-static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+static copy_file_t ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 
 static struct struct_io_manager my_struct_manager = {
         .magic = EXT2_ET_MAGIC_IO_MANAGER,
@@ -289,9 +289,9 @@ static void dir_partition_ext2_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
+static copy_file_t ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
-  int error=0;
+  copy_file_t error=CP_OK;
   FILE *f_out;
   const struct ext2_dir_struct *ls = (const struct ext2_dir_struct *)dir_data->private_dir_data;
   char *new_file;
@@ -300,7 +300,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
   {
     log_critical("Can't create file %s: %s\n", new_file, strerror(errno));
     free(new_file);
-    return -4;
+    return CP_CREATE_FAILED;
   }
   {
     errcode_t retval;
@@ -312,7 +312,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
     {
       free(new_file);
       fclose(f_out);
-      return -1;
+      return CP_STAT_FAILED;
     }
 
     retval = ext2fs_file_open(ls->current_fs, file->st_ino, 0, &e2_file);
@@ -320,9 +320,9 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       log_error("Error while opening ext2 file %s\n", dir_data->current_directory);
       free(new_file);
       fclose(f_out);
-      return -2;
+      return CP_OPEN_FAILED;
     }
-    while (1)
+    while (error!=CP_NOSPACE)
     {
       int             nbytes; 
       unsigned int    got;
@@ -330,7 +330,7 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       if (retval)
       {
 	log_error("Error while reading ext2 file %s\n", dir_data->current_directory);
-	error = -3;
+	error = CP_READ_FAILED;
       }
       if (got == 0)
 	break;
@@ -338,14 +338,14 @@ static int ext2_copy(disk_t *disk_car, const partition_t *partition, dir_data_t 
       if ((unsigned) nbytes != got)
       {
 	log_error("Error while writing file %s\n", new_file);
-      error = -5;
+	error = CP_NOSPACE;
       }
     }
     retval = ext2fs_file_close(e2_file);
     if (retval)
     {
       log_error("Error while closing ext2 file\n");
-      error = -6;
+      error = CP_CLOSE_FAILED;
     }
     fclose(f_out);
     set_date(new_file, file->td_atime, file->td_mtime);

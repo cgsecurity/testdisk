@@ -39,8 +39,10 @@ extern "C" {
 #define CAPA_LIST_DELETED	1
 #define CAPA_LIST_ADS		2
 
+typedef enum { CP_OK=0, CP_STAT_FAILED=-1, CP_OPEN_FAILED=-2, CP_READ_FAILED=-3, CP_CREATE_FAILED=-4, CP_NOSPACE=-5, CP_CLOSE_FAILED=-6, CP_NOMEM=-7} copy_file_t;
 typedef enum { DIR_PART_ENOIMP=-3, DIR_PART_ENOSYS=-2, DIR_PART_EIO=-1, DIR_PART_OK=0} dir_partition_t;
 typedef struct dir_data dir_data_t;
+
 typedef struct
 {
   struct td_list_head list;
@@ -65,7 +67,7 @@ struct dir_data
   unsigned int param;
   unsigned int capabilities;
   int(*get_dir)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_inode, file_info_t*list);
-  int (*copy_file)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+  copy_file_t (*copy_file)(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
   void (*close)(dir_data_t *dir_data);
   char *local_dir;
   void *private_dir_data;

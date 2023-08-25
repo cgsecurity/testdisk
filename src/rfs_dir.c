@@ -471,20 +471,20 @@ static void dir_partition_reiser_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
+static copy_file_t reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   reiserfs_file_t *in;
   FILE *f_out;
   char *new_file;
   struct rfs_dir_struct *ls=(struct rfs_dir_struct*)dir_data->private_dir_data;
-  int error=0;
+  copy_file_t error=CP_OK;
   uint64_t file_size;
   f_out=fopen_local(&new_file, dir_data->local_dir, dir_data->current_directory);
   if(!f_out)
   {
     log_critical("Can't create file %s: %s\n", new_file, strerror(errno));
     free(new_file);
-    return -4;
+    return CP_CREATE_FAILED;
   }
   log_error("Try to open rfs file %s\n", dir_data->current_directory);
   log_flush();
@@ -494,7 +494,7 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
     log_error("Error while opening rfs file %s\n", dir_data->current_directory);
     free(new_file);
     fclose(f_out);
-    return -1;
+    return CP_OPEN_FAILED;
   }
   log_error("open rfs file %s done\n", dir_data->current_directory);
   log_flush();
@@ -506,12 +506,12 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
     if (reiserfs_file_read(in, buf, file_size) != file_size)
     {
       log_error("Error while reading rfs file %s\n", dir_data->current_directory);
-      error = -3;
+      error = CP_READ_FAILED;
     }
     else if (fwrite(buf, file_size, 1, f_out) != 1)
     {
       log_error("Error while writing file %s\n", new_file);
-      error = -5;
+      error = CP_NOSPACE;
     }
     free(buf);
   }
@@ -525,12 +525,12 @@ static int reiser_copy(disk_t *disk_car, const partition_t *partition, dir_data_
       if (reiserfs_file_read(in, buf, read_size) == 0)
       {
 	log_error("Error while reading rfs file %s\n", dir_data->current_directory);
-	error = -3;
+	error = CP_READ_FAILED;
       }
       else if (fwrite(buf, read_size, 1, f_out) != 1)
       {
 	log_error("Error while writing file %s\n", new_file);
-	error = -5;
+	error = CP_NOSPACE;
       }
       file_size -= read_size;
     }

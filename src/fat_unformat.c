@@ -152,7 +152,7 @@ static void strip_fn(char *fn)
   fn[i]='\0';
 }
 
-static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_info_t *file)
+static copy_file_t fat_copy_file(disk_t *disk, const partition_t *partition, const unsigned int cluster_size, const uint64_t start_data, const char *recup_dir, const unsigned int dir_num, const unsigned int inode_num, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;
@@ -188,7 +188,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
     log_critical("Can't create file %s: \n",new_file);
     free(new_file);
     free(buffer_file);
-    return -1;
+    return CP_CREATE_FAILED;
   }
   while(cluster>=2 && cluster<=no_of_cluster+2 && file_size>0)
   {
@@ -207,7 +207,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
       set_date(new_file, file->td_atime, file->td_mtime);
       free(new_file);
       free(buffer_file);
-      return -1;
+      return CP_NOSPACE;
     }
     file_size -= toread;
     cluster++;
@@ -216,7 +216,7 @@ static int fat_copy_file(disk_t *disk, const partition_t *partition, const unsig
   set_date(new_file, file->td_atime, file->td_mtime);
   free(new_file);
   free(buffer_file);
-  return 0;
+  return CP_OK;
 }
 
 static pstatus_t fat_unformat_aux(struct ph_param *params, const struct ph_options *options, const uint64_t start_data, alloc_data_t *list_search_space)

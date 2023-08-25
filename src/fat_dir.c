@@ -77,7 +77,7 @@ static int fat1x_rootdir(disk_t *disk_car, const partition_t *partition, const d
   @ requires \valid(file);
   @ requires \separated(disk_car, partition, dir_data, file);
   @*/
-static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+static copy_file_t fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 
 /*@
   @ requires \valid(dir_data);
@@ -535,7 +535,7 @@ static void dir_partition_fat_close(dir_data_t *dir_data)
   @ requires \separated(disk_car, partition, dir_data, file);
   @ decreases 0;
   @*/
-static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
+static copy_file_t fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;
@@ -555,7 +555,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
     log_critical("Can't create file %s: \n",new_file);
     free(new_file);
     free(buffer_file);
-    return -1;
+    return CP_CREATE_FAILED;
   }
   cluster = file->st_ino;
   fat_length=le16(fat_header->fat_length)>0?le16(fat_header->fat_length):le32(fat_header->fat32_length);
@@ -585,7 +585,7 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
       set_date(new_file, file->td_atime, file->td_mtime);
       free(new_file);
       free(buffer_file);
-      return -1;
+      return CP_NOSPACE;
     }
     file_size -= toread;
     if(file_size>0)
@@ -613,5 +613,5 @@ static int fat_copy(disk_t *disk_car, const partition_t *partition, dir_data_t *
   set_date(new_file, file->td_atime, file->td_mtime);
   free(new_file);
   free(buffer_file);
-  return 0;
+  return CP_OK;
 }

@@ -63,7 +63,7 @@ struct exfat_dir_struct
 
 
 static int exfat_dir(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int first_cluster, file_info_t *dir_list);
-static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
+static copy_file_t exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file);
 static void dir_partition_exfat_close(dir_data_t *dir_data);
 
 #if 0
@@ -426,7 +426,7 @@ static void dir_partition_exfat_close(dir_data_t *dir_data)
   free(ls);
 }
 
-static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
+static copy_file_t exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *file)
 {
   char *new_file;	
   FILE *f_out;
@@ -446,7 +446,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
     log_critical("Can't create file %s: \n",new_file);
     free(new_file);
     free(buffer_file);
-    return -1;
+    return CP_CREATE_FAILED;
   }
   cluster = file->st_ino;
   start_exfat1=(uint64_t)le32(exfat_header->fat_blocknr) << exfat_header->blocksize_bits;
@@ -473,7 +473,7 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
       set_date(new_file, file->td_atime, file->td_mtime);
       free(new_file);
       free(buffer_file);
-      return -1;
+      return CP_NOSPACE;
     }
     file_size -= toread;
     if(file_size>0)
@@ -501,5 +501,5 @@ static int exfat_copy(disk_t *disk, const partition_t *partition, dir_data_t *di
   set_date(new_file, file->td_atime, file->td_mtime);
   free(new_file);
   free(buffer_file);
-  return 0;
+  return CP_OK;
 }

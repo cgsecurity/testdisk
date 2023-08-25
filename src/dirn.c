@@ -49,8 +49,9 @@
 #include "askloc.h"
 #include "setdate.h"
 
-static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
-static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad);
+typedef enum { CD_FINISHED = 0, CD_STOPPED = 1, CD_NOSPACE = 2 } copy_dir_t;
+static copy_dir_t copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad);
+static copy_dir_t copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad);
 
 #define INTER_DIR (LINES-25+15)
 #define MAX_DIR_NBR 256
@@ -79,7 +80,7 @@ static int copy_progress(WINDOW *window, const unsigned int copy_ok, const unsig
   return check_enter_key_or_s(window);
 }
 
-static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad, const unsigned int copy_stopped)
+static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned int copy_bad, const copy_dir_t copy_stopped)
 {
   wmove(window,5,0);
   wclrtoeol(window);
@@ -90,8 +91,10 @@ static void copy_done(WINDOW *window, const unsigned int copy_ok, const unsigned
     else
       wbkgdset(window,' ' | A_BOLD | COLOR_PAIR(2));
   }
-  if(copy_stopped)
+  if(copy_stopped == CD_STOPPED)
     wprintw(window,"Copy stopped! %u ok, %u failed", copy_ok, copy_bad);
+  else if(copy_stopped == CD_NOSPACE)
+    wprintw(window,"Copy stopped! %u ok, %u failed - Not enough space", copy_ok, copy_bad);
   else
     wprintw(window,"Copy done! %u ok, %u failed", copy_ok, copy_bad);
   if(has_colors())
@@ -434,7 +437,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		{
 		  unsigned int copy_bad=0;
 		  unsigned int copy_ok=0;
-		  unsigned int copy_stopped=0;
+		  copy_dir_t copy_stopped=CD_FINISHED;
 		  aff_copy(window);
 		  wmove(window,3,0);
 		  aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
@@ -450,8 +453,12 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 		  }
 		  else if(LINUX_S_ISREG(tmp->st_mode)!=0)
 		  {
+		    copy_file_t res;
 		    copy_progress(window, copy_ok, copy_bad);
-		    if(dir_data->copy_file(disk, partition, dir_data, tmp)==0)
+		    res=dir_data->copy_file(disk, partition, dir_data, tmp);
+		    if(res==CP_NOSPACE)
+		      copy_stopped=CD_NOSPACE;
+		    if(res==CP_OK)
 		      copy_ok++;
 		    else
 		      copy_bad++;
@@ -487,7 +494,7 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
 	      {
 		unsigned int copy_bad=0;
 		unsigned int copy_ok=0;
-		unsigned int copy_stopped;
+		copy_dir_t copy_stopped;
 		aff_copy(window);
 		wmove(window,3,0);
 		aff_part(window, AFF_PART_ORDER|AFF_PART_STATUS, disk, partition);
@@ -682,7 +689,7 @@ static int can_copy_dir(const file_info_t *current_file, const unsigned long int
   return 1;
 }
 
-static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
+static copy_dir_t copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   static unsigned int dir_nbr=0;
   static unsigned long int inode_known[MAX_DIR_NBR];
@@ -692,7 +699,7 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
   struct td_list_head *file_walker = NULL;
   TD_INIT_LIST_HEAD(&dir_list.list);
   if(dir_data->get_dir==NULL || dir_data->copy_file==NULL)
-    return 0;
+    return CD_FINISHED;
   inode_known[dir_nbr++]=dir->st_ino;
   dir_name=mkdir_local(dir_data->local_dir, dir_data->current_directory);
   dir_data->get_dir(disk, partition, dir_data, (const unsigned long int)dir->st_ino, &dir_list);
@@ -703,7 +710,7 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
     dir_data->current_directory[current_directory_namelength]='\0';
     if(current_directory_namelength+1+strlen(current_file->name)<sizeof(dir_data->current_directory)-1)
     {
-      int copy_stopped=0;
+      copy_dir_t copy_stopped=CD_FINISHED;
       if(strcmp(dir_data->current_directory,"/"))
 	strcat(dir_data->current_directory,"/");
       strcat(dir_data->current_directory,current_file->name);
@@ -716,20 +723,27 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
       }
       else if(LINUX_S_ISREG(current_file->st_mode)!=0)
       {
-	copy_stopped=copy_progress(window, *copy_ok, *copy_bad);
-	if(dir_data->copy_file(disk, partition, dir_data, current_file)==0)
-	  (*copy_ok)++;
+	if(copy_progress(window, *copy_ok, *copy_bad))
+	  copy_stopped=CD_STOPPED;
 	else
-	  (*copy_bad)++;
+	{
+	  const copy_file_t res=dir_data->copy_file(disk, partition, dir_data, current_file);
+	  if(res==CP_NOSPACE)
+	    copy_stopped=CD_NOSPACE;
+	  if(res==CP_OK)
+	    (*copy_ok)++;
+	  else
+	    (*copy_bad)++;
+	}
       }
-      if(copy_stopped)
+      if(copy_stopped != CD_FINISHED)
       {
 	dir_data->current_directory[current_directory_namelength]='\0';
 	delete_list_file(&dir_list);
 	set_date(dir_name, dir->td_atime, dir->td_mtime);
 	free(dir_name);
 	dir_nbr--;
-	return 1;
+	return copy_stopped;
       }
     }
   }
@@ -738,15 +752,16 @@ static int copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, 
   set_date(dir_name, dir->td_atime, dir->td_mtime);
   free(dir_name);
   dir_nbr--;
-  return 0;
+  return CD_FINISHED;
 }
 
-static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad)
+static copy_dir_t copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, unsigned int *copy_ok, unsigned int *copy_bad)
 {
   const unsigned int current_directory_namelength=strlen(dir_data->current_directory);
   struct td_list_head *tmpw=NULL;
   td_list_for_each(tmpw, &dir_list->list)
   {
+    copy_dir_t copy_stopped=CD_FINISHED;
     file_info_t *tmp=td_list_entry(tmpw, file_info_t, list);
     if((tmp->status&FILE_STATUS_MARKED)!=0 &&
 	current_directory_namelength + 1 + strlen(tmp->name) <
@@ -759,23 +774,30 @@ static int copy_selection(file_info_t*dir_list, WINDOW *window, disk_t *disk, co
 	strcat(dir_data->current_directory,tmp->name);
       if(LINUX_S_ISDIR(tmp->st_mode)!=0)
       {
-	if(copy_dir(window, disk, partition, dir_data, tmp, copy_ok, copy_bad))
+	copy_stopped=copy_dir(window, disk, partition, dir_data, tmp, copy_ok, copy_bad);
+	if(copy_stopped!=CD_FINISHED)
 	{
 	  dir_data->current_directory[current_directory_namelength]='\0';
-	  return 1;
+	  return copy_stopped;
 	}
       }
       else if(LINUX_S_ISREG(tmp->st_mode)!=0)
       {
+	copy_file_t res;
 	copy_progress(window, *copy_ok, *copy_bad);
-	if(dir_data->copy_file(disk, partition, dir_data, tmp) == 0)
+	res=dir_data->copy_file(disk, partition, dir_data, tmp);
+	if(res==CP_NOSPACE)
+	  copy_stopped=CD_NOSPACE;
+	if(res == CP_OK)
 	  (*copy_ok)++;
 	else
 	  (*copy_bad)++;
       }
     }
     dir_data->current_directory[current_directory_namelength]='\0';
+    if(copy_stopped!=CD_FINISHED)
+      return copy_stopped;
   }
-  return 0;
+  return CD_FINISHED;
 }
 #endif
