@@ -335,7 +335,8 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	  memcmp(&buffer[i+8], "mp42", 4)==0 ||
 	  memcmp(&buffer[i+8], "mmp4", 4)==0 ||
 	  memcmp(&buffer[i+8], "M4B", 3)==0 ||
-	  memcmp(&buffer[i+8], "M4P", 3)==0)
+	  memcmp(&buffer[i+8], "M4P", 3)==0 ||
+	  memcmp(&buffer[i+8], "XAVC", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
 	file_recovery_new->extension=extension_mp4;
