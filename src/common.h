@@ -529,6 +529,7 @@ void *MALLOC(size_t size);
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
+  @ requires \separated(partition, src);
   @*/
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
 
@@ -536,8 +537,9 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
+  @ requires \separated(partition, src);
   @*/
-void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size);
+void set_part_name_chomp(partition_t *partition, const char *src, const unsigned int max_size);
 
 /*@
   @ requires valid_read_string(str);
@@ -545,7 +547,11 @@ void set_part_name_chomp(partition_t *partition, const unsigned char *src, const
   @*/
 char* strip_dup(char* str);
 
-/*@ assigns \nothing; */
+/*@
+  @ requires f_time <= 0xffffffff;
+  @ requires f_date <= 0xffffffff;
+  @ assigns \nothing;
+  @*/
 time_t date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 
 void set_secwest(void);

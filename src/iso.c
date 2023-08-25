@@ -82,7 +82,7 @@ static void set_ISO_info(const struct iso_primary_descriptor *iso, partition_t *
   const unsigned int logical_block_size_le=le16(iso->logical_block_size_le);
   const unsigned int logical_block_size_be=be16(iso->logical_block_size_be);
   partition->upart_type=UP_ISO;
-  set_part_name_chomp(partition, (const unsigned char*)iso->volume_id, 32);
+  set_part_name_chomp(partition, (const char*)iso->volume_id, 32);
   if(volume_space_size_le==volume_space_size_be && logical_block_size_le==logical_block_size_be)
   {
     partition->blocksize=logical_block_size_le;

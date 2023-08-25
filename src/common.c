@@ -194,45 +194,54 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
   /*@
     @ loop assigns i, partition->fsname[i];
     @ loop invariant 0 <= i < sizeof(partition->fsname);
+    @ loop invariant 0 <= i <= max_size;
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   partition->fsname[i]='\0';
 }
 
-void set_part_name_chomp(partition_t *partition, const unsigned char *src, const unsigned int max_size)
+void set_part_name_chomp(partition_t *partition, const char *src, const unsigned int max_size)
 {
   unsigned int i;
   /*@
     @ loop assigns i, partition->fsname[i];
     @ loop invariant 0 <= i < sizeof(partition->fsname);
+    @ loop invariant 0 <= i <= max_size;
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   /*@
     @ loop assigns i;
+    @ loop invariant 0 <= i < sizeof(partition->fsname);
     @*/
-  while(i>0 && src[i-1]==' ')
+  while(i>0 && partition->fsname[i-1]==' ')
     i--;
   partition->fsname[i]='\0';
 }
 
 char* strip_dup(char* str)
 {
-  unsigned int i;
   char *end;
+  char *tmp;
   /*@
+    @ loop invariant valid_string(str);
     @ loop assigns str;
     @*/
   while(isspace(*str))
     str++;
   end=str;
+  /*@ assert valid_string(end); */
   /*@
-    @ loop assigns i, end;
+    @ loop invariant valid_string(tmp);
+    @ loop invariant valid_string(end);
+    @ loop invariant end == str || *end != '\0';
+    @ loop assigns end;
     @*/
-  for (i = 0; str[i] != 0; i++)
-    if (!isspace (str[i]))
-      end=&str[i];
+  for(tmp = str; *tmp != 0; tmp++)
+    if(!isspace(*tmp))
+      end=tmp;
+  /*@ assert valid_string(end); */
   if(str == end)
     return NULL;
   *(end+1) = 0;
@@ -259,48 +268,117 @@ char* strip_dup(char* str)
 #define YEAR_2100	120
 #define IS_LEAP_YEAR(y)	(!((y) & 3) && (y) != YEAR_2100)
 
-time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
+/*@
+  @ requires 0 <= year <= 127;
+  @ ensures 0 <= \result <= 32;
+  @ assigns \nothing;
+  @*/
+static _date_get_leap_day(const unsigned long int year, const unsigned long int month)
 {
-  static const unsigned int days_in_year[] = { 0, 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0 };
-  /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
-
-  unsigned long int day,leap_day,month,year,days;
-  unsigned long int secs;
-  year  = f_date >> 9;
-  /*@ assert 0 <= year <= 127; */
-  month = td_max(1, (f_date >> 5) & 0xf);
-  /*@ assert 1 <= month <= 15; */
-  day   = td_max(1, f_date & 0x1f) - 1;
-  /*@ assert 0 <= day <= 30; */
-
-  if (year > YEAR_2100)		/* 2100 isn't leap year */
+  unsigned long int leap_day;
+  if (year > YEAR_2100)         /* 2100 isn't leap year */
   {
-    /*@ assert year > YEAR_2100; */
+    /*@ assert YEAR_2100 < year <= 127; */
     leap_day = (year + 3) / 4;
-    /*@ assert (YEAR_2100 + 3)/4 < leap_day <= 32; */
+    /*@ assert (YEAR_2100 + 3)/4 == leap_day; */
+    /*@ assert leap_day <= 32; */
     leap_day--;
-    /*@ assert (YEAR_2100 + 3)/4 <= leap_day < 32; */
+    /*@ assert leap_day < 32; */
   }
   else
   {
     /*@ assert year <= YEAR_2100; */
     leap_day = (year + 3) / 4;
-    /*@ assert 0 <= leap_day <= (YEAR_2100 + 3)/4; */
+    /*@ assert (YEAR_2100 + 3)/4 == leap_day; */
+    /*@ assert leap_day <= (YEAR_2100 + 3)/4; */
   }
   /*@ assert 0 <= leap_day < 32; */
   if (IS_LEAP_YEAR(year) && month > 2)
     leap_day++;
   /*@ assert 0 <= leap_day <= 32; */
+  return leap_day;
+}
+
+/*@
+  @ requires 0 <= days <= 334;
+  @ requires 0 <= year <= 127;
+  @ requires 0 <= leap_day <= 32;
+  @ requires 0 <= day <= 30;
+  @ ensures 0 <= \result <= 334 + 127 * 365 + 32 + 30 + DAYS_DELTA;
+  @ assigns \nothing;
+  @*/
+static unsigned long int _date_get_days(const unsigned long int days, const unsigned long int year, const unsigned long int leap_day, const unsigned long int day)
+{
+  return days + year * 365 + leap_day + day + DAYS_DELTA;
+}
+/*@
+  @ requires 0 <= seconds2 <= 31;
+  @ ensures 0 <= \result <= 62;
+  @ assigns \nothing;
+  @*/
+static unsigned long int _date_get_seconds(const unsigned long int seconds2)
+{
+  return seconds2 << 1;
+}
+
+/*@
+  @ requires 0 <= m <= 0x3f;
+  @ ensures 0 <= \result <= 0x3f * SECS_PER_MIN;
+  @ assigns \nothing;
+  @*/
+static unsigned long int _date_min_to_seconds(const unsigned long int m)
+{
+  return m * SECS_PER_MIN;
+}
+
+/*@
+  @ requires 0 <= h <= 0x3f;
+  @ ensures 0 <= \result <= 0x3f * SECS_PER_HOUR;
+  @ assigns \nothing;
+  @*/
+static unsigned long int _date_hours_to_seconds(const unsigned long int h)
+{
+  return h * SECS_PER_HOUR;
+}
+
+/*@
+  @ requires -14*3600 <= secwest <= 12*3600;
+  @ requires f_time <= 0xffffffff;
+  @ requires f_date <= 0xffffffff;
+  @ assigns \nothing;
+  @*/
+time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
+{
+  static const unsigned int days_in_year[] = { 0, 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0 };
+  /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
+
+  unsigned long int day,leap_day,month,year,days,tmp1,tmp2;
+  unsigned long int secs;
+  year  = f_date >> 9;
+  /*@ assert 0 <= year <= 127; */
+  month = td_max(1, (f_date >> 5) & 0xf);
+  /*@ assert 1 <= month <= 15; */
+   day   = td_max(1, f_date & 0x1f) - 1;
+  /*@ assert 0 <= day <= 30; */
+  leap_day = _date_get_leap_day(year, month);
+  /*@ assert 0 <= leap_day <= 32; */
   days = days_in_year[month];
-  /*@ assert days <= 334; */
-  days += year * 365 + leap_day + day + DAYS_DELTA;
-
-  secs = (f_time & 0x1f)<<1;
-  secs += ((f_time >> 5) & 0x3f) * SECS_PER_MIN;
-  secs += (f_time >> 11)* SECS_PER_HOUR;
+  /*@ assert 0 <= days <= 334; */
+  days = _date_get_days(days, year, leap_day, day);
+  /*@ assert 0 <= days <= 334 + 127 * 365 + 32 + 30 + DAYS_DELTA; */
+  secs = _date_get_seconds(f_time &0x1f);
+  /*@ assert secs <= 62; */
+  secs += _date_min_to_seconds((f_time >> 5) & 0x3f);
+  /*@ assert secs <= 0x3f * SECS_PER_MIN + 62; */
+  secs += _date_hours_to_seconds(f_time >> 11);
+  /*@ assert secs <= 0x3f * SECS_PER_HOUR + 0x3f * SECS_PER_MIN + 62; */
   secs += days * SECS_PER_DAY;
-
+  /*@ assert secs <= 334 * SECS_PER_DAY + 0x3f * SECS_PER_HOUR + 0x3f * SECS_PER_MIN + 62; */
+#if defined(__FRAMAC__)
+  return secs;
+#else
   return secs+secwest;
+#endif
 }
 
 void set_secwest(void)

@@ -100,7 +100,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
       { /* Test attribut volume name and check if the volume name is erased or not */
         if(((buffer[i*0x20+0xB] & ATTR_EXT) !=ATTR_EXT) && ((buffer[i*0x20+0xB] & ATTR_VOLUME) !=0) && (buffer[i*0x20]!=0xE5))
         {
-          set_part_name_chomp(partition,&buffer[i*0x20],11);
+          set_part_name_chomp(partition, (const char *)&buffer[i*0x20],11);
           if(check_VFAT_volume_name(partition->fsname, 11))
             partition->fsname[0]='\0';
         }
@@ -115,7 +115,7 @@ static int fat32_set_part_name(disk_t *disk_car, partition_t *partition, const s
   if(partition->fsname[0]=='\0')
   {
     log_info("set_FAT_info: name from BS used\n");
-    set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT32_PART_NAME,11);
+    set_part_name_chomp(partition, (const char*)fat_header + FAT32_PART_NAME, 11);
     if(check_VFAT_volume_name(partition->fsname, 11))
       partition->fsname[0]='\0';
   }
@@ -149,7 +149,7 @@ static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_hea
     snprintf(partition->info, sizeof(partition->info), "FAT12, blocksize=%u", partition->blocksize);
     if(buffer[38]==0x29)	/* BS_BootSig */
     {
-      set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+      set_part_name_chomp(partition, buffer+FAT1X_PART_NAME, 11);
       if(check_VFAT_volume_name(partition->fsname, 11))
 	partition->fsname[0]='\0';
     }
@@ -160,7 +160,7 @@ static void set_FAT_info(disk_t *disk_car, const struct fat_boot_sector *fat_hea
     snprintf(partition->info, sizeof(partition->info), "FAT16, blocksize=%u", partition->blocksize);
     if(buffer[38]==0x29)	/* BS_BootSig */
     {
-      set_part_name_chomp(partition,((const unsigned char*)fat_header)+FAT1X_PART_NAME,11);
+      set_part_name_chomp(partition, buffer+FAT1X_PART_NAME, 11);
       if(check_VFAT_volume_name(partition->fsname, 11))
 	partition->fsname[0]='\0';
     }
