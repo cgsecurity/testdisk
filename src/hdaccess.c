@@ -81,6 +81,9 @@
 #ifdef HAVE_SYS_DKIO_H
 #include <sys/dkio.h>
 #endif
+#ifdef HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
+#endif
 /* linux/fs.h may not be needed because sys/mount.h is present */
 /* #ifdef HAVE_LINUX_FS_H */
 /* #include <linux/fs.h> */
@@ -1117,6 +1120,53 @@ static int scsi_query_product_info (const int sg_fd, char **vendor, char **produ
   @*/
 static void disk_get_model(const int hd_h, disk_t *dev, const unsigned int verbose)
 {
+#if defined(TARGET_LINUX) && defined(HAVE_SYS_SYSMACROS_H)
+  struct stat stat_rec;
+  if(fstat(hd_h,&stat_rec)>=0 && S_ISBLK(stat_rec.st_mode))
+  {
+    FILE *f;
+    char name_buf[4096];
+    if(dev->model==NULL)
+    {
+      snprintf(name_buf, sizeof(name_buf), "/sys/dev/block/%u:%u/device/model", major(stat_rec.st_rdev), minor(stat_rec.st_rdev));
+      if((f = fopen(name_buf, "r")) != NULL)
+      {
+	char tmp[41];
+	if (fgets(tmp, 40, f) != NULL)
+	{
+	  dev->model=strip_dup(tmp);
+	}
+	fclose(f);
+      }
+    }
+    if(dev->serial_no == NULL)
+    {
+      snprintf(name_buf, sizeof(name_buf), "/sys/dev/block/%u:%u/device/serial", major(stat_rec.st_rdev), minor(stat_rec.st_rdev));
+      if((f = fopen(name_buf, "r")) != NULL)
+      {
+	char tmp[41];
+	if (fgets(tmp, 40, f) != NULL)
+	{
+	  dev->serial_no=strip_dup(tmp);
+	}
+	fclose(f);
+      }
+    }
+    if(dev->fw_rev== NULL)
+    {
+      snprintf(name_buf, sizeof(name_buf), "/sys/dev/block/%u:%u/device/rev", major(stat_rec.st_rdev), minor(stat_rec.st_rdev));
+      if((f = fopen(name_buf, "r")) != NULL)
+      {
+	char tmp[41];
+	if (fgets(tmp, 40, f) != NULL)
+	{
+	  dev->fw_rev=strip_dup(tmp);
+	}
+	fclose(f);
+      }
+    }
+  }
+#endif
 #ifdef HDIO_GET_IDENTITY
   if(dev->model!=NULL)
     return;
