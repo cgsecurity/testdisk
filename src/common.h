@@ -526,11 +526,6 @@ struct my_data_struct
 void *MALLOC(size_t size);
 
 /*@
-  @ assigns \nothing;
-  @*/
-unsigned int up2power(const unsigned int number);
-
-/*@
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));

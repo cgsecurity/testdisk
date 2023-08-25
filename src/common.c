@@ -188,25 +188,6 @@ struct tm *localtime_r(const time_t *timep, struct tm *result)
 }
 #endif
 
-/*@
-  @ decreases number;
-  @ assigns \nothing;
-  @*/
-static unsigned int up2power_aux(const unsigned int number)
-{
-  if(number==0)
-	return 0;
-  else
-	return(1+up2power_aux(number/2));
-}
-
-unsigned int up2power(const unsigned int number)
-{
-  if(number==0)
-    return 1;
-  return (1<<up2power_aux(number-1));
-}
-
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size)
 {
   unsigned int i;

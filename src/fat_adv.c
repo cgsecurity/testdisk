@@ -1260,6 +1260,29 @@ static void create_fat_boot_sector(disk_t *disk_car, partition_t *partition, con
   free(newboot);
 }
 
+/*@
+  @ decreases number;
+  @ assigns \nothing;
+  @*/
+static unsigned int up2power_aux(const unsigned int number)
+{
+  if(number==0)
+	return 0;
+  else
+	return(1+up2power_aux(number/2));
+}
+
+/*@
+  @ assigns \nothing;
+  @*/
+static unsigned int up2power(const unsigned int number)
+{
+  if(number==0)
+    return 1;
+  return (1<<up2power_aux(number-1));
+}
+
+
 static int calcul_sectors_per_cluster(const upart_type_t upart_type, const unsigned long int data_size, const unsigned int fat_length, const unsigned int sector_size)
 {
   /* log_info("calcul_sectors_per_cluster data_size=%lu, fat_length=%u, sector_size=%u\n",data_size,fat_length,sector_size); */
