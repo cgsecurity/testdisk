@@ -200,14 +200,83 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   return fat;
 }
 
+/*@
+  @ requires num_FAT_blocks > 0;
+  @ requires 9 == uSectorShift || 12 == uSectorShift;
+  @ requires \valid_read((const char *)fat + ( 0 .. (num_FAT_blocks<<uSectorShift)-1));
+  @ requires \initialized((const char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1));
+  @ requires num_FAT_blocks <= 109+50*((1<<uSectorShift)/4-1);
+  @ assigns \nothing;
+  @*/
+static uint64_t fat2size(const unsigned int num_FAT_blocks, const unsigned int uSectorShift, const uint32_t *fat, const uint64_t offset)
+{
+  /* Search how many entries are not used at the end of the FAT */
+  /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
+  /*@ assert num_FAT_blocks <= 109+50*((1<<uSectorShift)/4-1); */
+  const unsigned int val_max=(num_FAT_blocks<<uSectorShift)/4-1;
+  unsigned int freesect_count=0;
+  unsigned int block;
+  /*@ assert \valid_read((char *)fat + ( 0 .. val_max)); */
+  /*@
+    @ loop invariant 0 <= freesect_count <= val_max;
+    @ loop assigns freesect_count;
+    @ loop variant val_max - freesect_count;
+    @*/
+  for(freesect_count=0; freesect_count < val_max; freesect_count++)
+  {
+    const unsigned j=val_max-freesect_count;
+    /*@ assert 0 <= j <= val_max; */
+    if(fat[j]!=0xFFFFFFFF)
+      break;
+  }
+  block = val_max - freesect_count + 1;
+  return offset + (((uint64_t)1+block)<<uSectorShift);
+}
+
+/*@
+  @ requires 9 == uSectorShift || 12 == uSectorShift;
+  @ requires \valid_read((const char *)dir_entries + (0 .. (1<<uSectorShift)-1));
+  @ requires \initialized((const char *)dir_entries + (0 .. (1<<uSectorShift)-1));
+  @ requires offset <= 4006;
+  @ assigns \nothing;
+  @*/
+static int doc_check_entries(const unsigned int uSectorShift, const struct OLE_DIR *dir_entries, const unsigned int miniSectorCutoff, const unsigned int fat_entries, const uint64_t doc_file_size, const uint64_t offset)
+{
+  unsigned int sid;
+  /*@
+    @ loop assigns sid;
+    @*/
+  for(sid=0;
+      sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
+      sid++)
+  {
+    const struct OLE_DIR *dir_entry=&dir_entries[sid];
+    /*@ assert \valid_read(dir_entry); */
+    if(dir_entry->type==NO_ENTRY)
+      break;
+    if(offset + le32(dir_entry->start_block) > 0 &&
+	le32(dir_entry->size) > 0 &&
+	((le32(dir_entry->size) >= miniSectorCutoff && le32(dir_entry->start_block) > fat_entries) ||
+	 le32(dir_entry->size) > doc_file_size))
+    {
+#ifdef DEBUG_OLE
+      log_info("error at sid %u\n", sid);
+#endif
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 {
+  /*@ assert \valid(file_recovery); */
   unsigned char buffer_header[512];
   uint64_t doc_file_size;
   uint32_t *fat;
   unsigned long int i;
-  unsigned int freesect_count=0;
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
+  /*@ assert \valid_read(header); */
   const uint64_t doc_file_size_org=file_recovery->file_size;
   unsigned int uSectorShift;
   unsigned int num_FAT_blocks;
@@ -246,37 +315,12 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 #endif
     return ;
   }
-  /* Search how many entries are not used at the end of the FAT */
-  {
-    const unsigned int val_max=(num_FAT_blocks<<uSectorShift)/4-1;
-    /*@ assert \valid_read((char *)fat + ( 0 .. val_max)); */
-    /*@
-      @ loop invariant 0 <= freesect_count <= val_max;
-      @ loop assigns freesect_count;
-      @ loop variant val_max - freesect_count;
-      @*/
-    for(freesect_count=0; freesect_count < val_max; freesect_count++)
-    {
-      const unsigned j=val_max-freesect_count;
-      /*@ assert 0 <= j <= val_max; */
-      if(fat[j]!=0xFFFFFFFF)
-	break;
-    }
-  }
-  /*@ assert 0 <= freesect_count <= (num_FAT_blocks<<uSectorShift)/4-1; */
-  {
-    const unsigned int block=(num_FAT_blocks<<uSectorShift)/4-freesect_count;
-    doc_file_size=offset + (((uint64_t)1+block)<<uSectorShift);
-  }
+  doc_file_size=fat2size(num_FAT_blocks, uSectorShift, fat, offset);
   if(doc_file_size > doc_file_size_org)
   {
 #ifdef DEBUG_OLE
-    log_info("doc_file_size=%llu + (1+(%u<<%u)/4-%u)<<%u\n",
-	(unsigned long long)offset,
-	num_FAT_blocks, uSectorShift,
-	freesect_count, uSectorShift);
     log_info("doc_file_size %llu > doc_file_size_org %llu\n",
-    (unsigned long long)doc_file_size, (unsigned long long)doc_file_size_org);
+      (unsigned long long)doc_file_size, (unsigned long long)doc_file_size_org);
 #endif
     free(fat);
     return ;
@@ -294,6 +338,9 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 #endif
     /* FFFFFFFE = ENDOFCHAIN
      * Use a loop count i to avoid endless loop */
+    /*@
+      @ loop invariant 9 == uSectorShift || 12 == uSectorShift;
+      @*/
     for(block=le32(header->root_start_block), i=0;
 	block!=0xFFFFFFFE && i<fat_entries;
 	block=le32(fat[block]), i++)
@@ -321,29 +368,11 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
 	free(fat);
 	return ;
       }
+      if(doc_check_entries(uSectorShift, dir_entries, le32(header->miniSectorCutoff), fat_entries, doc_file_size, offset))
       {
-	unsigned int sid;
-	for(sid=0;
-	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
-	    sid++)
-	{
-	  const struct OLE_DIR *dir_entry=&dir_entries[sid];
-	  if(dir_entry->type==NO_ENTRY)
-	    break;
-	  if(offset +
-		le32(dir_entry->start_block) > 0 && le32(dir_entry->size) > 0 &&
-		((le32(dir_entry->size) >= le32(header->miniSectorCutoff)
-		  && le32(dir_entry->start_block) > fat_entries) ||
-		 le32(dir_entry->size) > doc_file_size))
-	  {
-#ifdef DEBUG_OLE
-	    log_info("error at sid %u\n", sid);
-#endif
-	    free(dir_entries);
-	    free(fat);
-	    return ;
-	  }
-	}
+	free(dir_entries);
+	free(fat);
+	return ;
       }
       free(dir_entries);
     }
@@ -509,6 +538,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
   unsigned int block;
   unsigned int i;
   const unsigned int uSectorShift=le16(header->uSectorShift);
+  /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
   unsigned int fat_size;
   if(buffer_size<512)
     return NULL;
@@ -550,6 +580,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
 	  sid++)
       {
 	const struct OLE_DIR *dir_entry=&dir_entries[sid];
+	/*@ assert \valid_read(dir_entry); */
 	if(dir_entry->type==NO_ENTRY)
 	  break;
 #ifdef DEBUG_OLE
@@ -654,6 +685,7 @@ static void *OLE_read_stream(FILE *IN,
   char *dataPt;
   unsigned int block;
   unsigned int i;
+  /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
   const unsigned int i_max=((len+(1<<uSectorShift)-1) >> uSectorShift);
 #ifdef DISABLED_FOR_FRAMAC
   dataPt=(char *)MALLOC(((1024*1024+(1<<uSectorShift)-1) >> uSectorShift) << uSectorShift);
@@ -695,7 +727,7 @@ static void *OLE_read_stream(FILE *IN,
   @ requires \valid_read(header);
   @ requires \valid_read(fat);
   @ requires 9 == le16(header->uSectorShift) || 12 == le16(header->uSectorShift);
-  @ requires 0 < le32(header->csectMiniFat) <= 2048;
+  @ requires le32(header->csectMiniFat) <= 2048;
   @ ensures \result!=\null ==> \valid((char *)\result + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift)) - 1));
   @ ensures \result!=\null ==> \initialized((char *)\result + (0 .. (le32(header->csectMiniFat) << le16(header->uSectorShift)) - 1));
   @*/
@@ -705,8 +737,9 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
   unsigned int block;
   unsigned int i;
   const unsigned int uSectorShift=le16(header->uSectorShift);
-  /*@ assert uSectorShift==9 || uSectorShift==12; */
   const unsigned int csectMiniFat=le32(header->csectMiniFat);
+  /*@ assert uSectorShift==9 || uSectorShift==12; */
+  /*@ assert csectMiniFat <= 2048; */
   const unsigned int minifat_length=csectMiniFat << uSectorShift;
   if(csectMiniFat==0)
     return NULL;
@@ -756,6 +789,7 @@ static uint32_t get32u(const void *buffer, const unsigned int offset)
   /*@ assert \valid_read(ptr + (0 .. 4-1)); */
   /*@ assert \initialized(ptr + (0 .. 4-1)); */
   const uint32_t *val=(const uint32_t *)ptr;
+  /*@ assert \valid_read(val); */
   return le32(*val);
 }
 
@@ -770,6 +804,7 @@ static uint64_t get64u(const void *buffer, const unsigned int offset)
   const char *ptr=(const char *)buffer + offset;
   /*@ assert \valid_read(ptr + (0 .. 7)); */
   const uint64_t *val=(const uint64_t *)ptr;
+  /*@ assert \valid_read(val); */
   return le64(*val);
 }
 
@@ -901,6 +936,7 @@ struct summary_entry
 
 /*@
   @ requires 8 <= size <= 1024*1024;
+  @ requires offset <= 1024*1024;
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(ext);
@@ -966,6 +1002,7 @@ static void OLE_parse_software_entry(const char *buffer, const unsigned int size
 
 /*@
   @ requires 8 <= size <= 1024*1024;
+  @ requires offset <= size;
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(ext);
@@ -1025,6 +1062,7 @@ static void OLE_parse_uni_software_entry(const char *buffer, const unsigned int 
 
 /*@
   @ requires 8 <= size <= 1024*1024;
+  @ requires offset <= size;
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \valid(title + (0 .. 1024-1));
   @ requires valid_string(title);
@@ -1090,6 +1128,7 @@ static void OLE_parse_title_entry(const char *buffer, const unsigned int size, c
 
 /*@
   @ requires 8 <= size <= 1024*1024;
+  @ requires offset <= size;
   @ requires \valid_read(buffer+ (0 .. size-1));
   @ requires \initialized(buffer+ (0 .. size-1));
   @ requires \valid(file_time);
@@ -1308,6 +1347,7 @@ static void OLE_parse_summary_aux(const char *dataPt, const unsigned int dirLen,
 #ifdef DEBUG_OLE
   dump_log(dataPt, dirLen);
 #endif
+  /*@ assert \valid_read(udataPt + (0 .. dirLen-1)); */
   if(udataPt[0]!=0xfe || udataPt[1]!=0xff)
     return ;
   pos=get32u(dataPt, 44);
@@ -1367,6 +1407,7 @@ static void *OLE_read_ministream(const unsigned char *ministream,
   unsigned char *dataPt;
   unsigned int mblock=miniblock_start;
   unsigned int size_read;
+  /*@ assert uMiniSectorShift==6; */
 #ifdef DISABLED_FOR_FRAMAC
   const unsigned int len_aligned=(1024*1024+(1<<uMiniSectorShift)-1) / (1<<uMiniSectorShift) * (1<<uMiniSectorShift);
 #else
@@ -1374,6 +1415,8 @@ static void *OLE_read_ministream(const unsigned char *ministream,
 #endif
   dataPt=(unsigned char *)MALLOC(len_aligned);
   /*@
+    @ loop invariant uMiniSectorShift==6;
+    @ loop invariant 48 <= len <= 1024*1024;
     @ loop invariant 0 <= size_read < len + (1<<uMiniSectorShift);
     @ loop invariant size_read > 0 ==> \initialized(dataPt + size_read - (1<<uMiniSectorShift) + (0 .. (1<<uMiniSectorShift)- 1));
     @ loop invariant size_read > 0 ==> \initialized(dataPt + (0 .. size_read - 1));
@@ -1392,8 +1435,10 @@ static void *OLE_read_ministream(const unsigned char *ministream,
       free(dataPt);
       return NULL;
     }
+    /*@ assert mblock < ministream_size>>uMiniSectorShift; */
     memcpy(&dataPt[size_read], &ministream[mblock<<uMiniSectorShift], (1<<uMiniSectorShift));
     /*@ assert \initialized(dataPt + size_read + (0 .. (1<<uMiniSectorShift)-1)); */
+    /*@ assert \valid_read(minifat + mblock); */
     mblock=le32(minifat[mblock]);
   }
   /*@ assert \initialized(dataPt + (0 .. len - 1)); */
@@ -1421,6 +1466,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
     const uint64_t offset)
 {
   const unsigned int uSectorShift=le16(header->uSectorShift);
+  /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
   char *summary=NULL;
   /*@ assert *ext == \null || valid_read_string(*ext); */
   /*@ assert valid_string(title); */
@@ -1446,6 +1492,7 @@ static void OLE_parse_summary(FILE *file, const uint32_t *fat, const unsigned in
       return ;
     }
     /*@ assert 0 < le32(header->csectMiniFat) <= 2048; */
+    /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
     {
       const unsigned int mini_fat_entries=(le32(header->csectMiniFat) << uSectorShift) / 4;
       uint32_t *minifat;
@@ -1503,6 +1550,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
   unsigned char buffer_header[512];
   uint32_t *fat;
   const struct OLE_HDR *header=(const struct OLE_HDR*)&buffer_header;
+  /*@ assert \valid_read(header); */
   time_t file_time=0;
   unsigned int fat_entries;
   unsigned int uSectorShift;
@@ -1559,6 +1607,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     fclose(file);
     return ;
   }
+  /*@ assert num_FAT_blocks <= 109 + 50 *((1<<uSectorShift)/4-1); */
+  /*@ assert 9 == uSectorShift || 12 == uSectorShift; */
   fat_entries=(num_FAT_blocks==0 ? 109 : (num_FAT_blocks<<uSectorShift)/4);
   {
     unsigned int ministream_block=0;
@@ -1570,6 +1620,10 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 #ifdef DEBUG_OLE
     log_info("file_rename_doc root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
+    /*@
+      @ loop invariant \valid_read(header);
+      @ loop invariant valid_string(&title[0]);
+      */
     for(block=le32(header->root_start_block), i=0;
 	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
 	block=le32(fat[block]), i++)
@@ -1598,16 +1652,20 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	if(i==0)
 	{
 	  const struct OLE_DIR *dir_entry=dir_entries;
+	  /*@ assert \valid_read(dir_entry); */
 	  ministream_block=le32(dir_entry->start_block);
 	  ministream_size=le32(dir_entry->size);
 	}
-	/*@ assert valid_string(&title[0]); */
+	/*@
+	  @ loop invariant valid_string(&title[0]);
+	  @*/
 	for(sid=0;
 	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
 	    sid++)
 	{
 	  /*@ assert valid_string(&title[0]); */
 	  const struct OLE_DIR *dir_entry=&dir_entries[sid];
+	  /*@ assert \valid_read(dir_entry); */
 	  if(dir_entry->type!=NO_ENTRY)
 	  {
 	    const char SummaryInformation[40]=
