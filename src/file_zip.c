@@ -315,6 +315,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
   @ requires \valid(fr->handle);
   @ requires \valid(ext);
   @ requires fr->file_size < 0x8000000000000000 - 65535;
+  @ requires \valid_read(file);
   @ requires 0 < len <= 65535;
   @ requires \separated(fr, fr->handle, ext, file, &first_filename[0 .. 256], &errno, &Frama_C_entropy_source);
   @ requires *ext == \null ||
@@ -431,6 +432,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
     if(len==8 && memcmp(filename, "mimetype", 8)==0)
     {
       char buffer[128];
+      /*@ assert \valid_read(file); */
       const unsigned int compressed_size=le32(file->compressed_size);
       const int to_read=(compressed_size < 128 ? compressed_size: 128);
       const int extra_length=le16(file->extra_length);
@@ -598,6 +600,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   char b_extra[sizeof(zip64_extra_entry_t)];
   const zip_file_entry_t *file=(const zip_file_entry_t *)&b_file;
   const zip64_extra_entry_t *extra=(const zip64_extra_entry_t *)&b_extra;
+  /*@ assert \valid_read(file); */
+  /*@ assert \valid_read(extra); */
   uint64_t len;
   if (fread(b_file, sizeof(b_file), 1, fr->handle) != 1)
   {
@@ -746,6 +750,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_size < 0x8000000000000000;
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures \result == -1 || \result == 0;
   @ assigns Frama_C_entropy_source, errno;
@@ -756,7 +761,9 @@ static int zip_parse_central_dir(file_recovery_t *fr)
   char buf_file[sizeof(zip_file_entry_t)];
   char buf_dir[sizeof(struct zip_central_dir)];
   const struct zip_central_dir *dir=(const struct zip_central_dir *)&buf_dir;
+  /*@ assert \valid_read(dir); */
   const zip_file_entry_t *file=(const zip_file_entry_t *)&buf_file;
+  /*@ assert \valid_read(file); */
   uint32_t          len;
   if (my_fseek(fr->handle, 2, SEEK_CUR) == -1)
   {
@@ -823,7 +830,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 {
   char buffer[sizeof(struct zip64_end_central_dir)];
   const struct zip64_end_central_dir *dir=(const struct zip64_end_central_dir *)&buffer;
-
+  /*@ assert \valid_read(dir); */
   if (fread(&buffer, sizeof(buffer), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -863,6 +870,7 @@ static int zip64_parse_end_central_dir(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_size < 0x8000000000000000;
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures  \result == -1 || \result == 0;
   @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
@@ -905,6 +913,7 @@ static int zip_parse_end_central_dir(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_size < 0x8000000000000000;
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures  \result == -1 || \result == 0;
   @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
@@ -939,6 +948,7 @@ static int zip_parse_data_desc(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_size < 0x8000000000000000;
   @ requires \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
   @ ensures  \result == -1 || \result == 0;
   @ assigns  *fr->handle, fr->file_size, errno, Frama_C_entropy_source;
@@ -979,6 +989,7 @@ static int zip_parse_signature(file_recovery_t *fr)
 /*@
   @ requires \valid(fr);
   @ requires \valid(fr->handle);
+  @ requires fr->file_size < 0x8000000000000000;
   @ requires \separated(fr, fr->handle, &errno);
   @ ensures \result == -1 || \result == 0;
   @ assigns  *fr->handle, fr->file_size, errno;
