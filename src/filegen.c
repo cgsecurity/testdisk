@@ -46,6 +46,57 @@
 #include "filegen.h"
 #include "log.h"
 
+static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b);
+
+#ifndef __FRAMAC__
+#include "list_add_sorted.h"
+/*@ requires compar == file_check_cmp; */
+static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
+    int (*compar)(const struct td_list_head *a, const struct td_list_head *b));
+#else
+
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires separation: \separated(newe, head);
+  @ requires list_separated(head->prev, newe);
+  @ requires list_separated(head, newe);
+  @ requires finite(head->prev);
+  @ requires finite(head);
+  @*/
+static inline void td_list_add_sorted_fcc(struct td_list_head *newe, struct td_list_head *head)
+{
+  struct td_list_head *pos;
+  /*@
+    @ loop invariant \valid(pos);
+    @ loop invariant \valid(pos->prev);
+    @ loop invariant \valid(pos->next);
+    @ loop invariant pos == head || \separated(pos, head);
+    @ loop assigns pos;
+    @*/
+  td_list_for_each(pos, head)
+  {
+    /*@ assert \valid_read(newe); */
+    /*@ assert \valid_read(pos); */
+    if(file_check_cmp(newe,pos)<0)
+      break;
+  }
+  if(pos != head)
+  {
+      __td_list_add(newe, pos->prev, pos);
+  }
+  else
+  {
+    /*@ assert finite(head->prev); */
+    /*@ assert finite(head); */
+    /*@ assert list_separated(head->prev, newe); */
+    /*@ assert list_separated(head, newe); */
+    td_list_add_tail(newe, head);
+  }
+}
+#endif
+
+
 uint64_t gpls_nbr=0;
 static uint64_t offset_skipped_header=0;
 
@@ -57,16 +108,12 @@ file_check_list_t file_check_list={
     .list = TD_LIST_HEAD_INIT(file_check_list.list)
 };
 
-//  X requires \valid_read(b);
 /*@
   @ requires \valid_read(a);
   @ requires \valid_read(b);
   @ assigns \nothing;
   @*/
-#ifndef DISABLED_FOR_FRAMAC
-static
-#endif
-int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
+static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
 #ifdef DISABLED_FOR_FRAMAC
   return 1;
@@ -149,6 +196,7 @@ void register_header_check(const unsigned int offset, const void *value, const u
     file_stat_t *file_stat)
 {
   file_check_t *file_check_new=(file_check_t *)MALLOC(sizeof(*file_check_new));
+  /*@ assert \valid(file_check_new); */
   file_check_new->value=value;
   file_check_new->length=length;
   file_check_new->offset=offset;
@@ -166,7 +214,11 @@ void register_header_check(const unsigned int offset, const void *value, const u
   /*@ assert \valid(file_check_new->file_stat); */
 
   /*@ assert valid_file_check_node(file_check_new); */
+#ifdef __FRAMAC__
+  td_list_add_sorted_fcc(&file_check_new->list, &file_check_plist.list);
+#else
   td_list_add_sorted(&file_check_new->list, &file_check_plist.list, file_check_cmp);
+#endif
 }
 
 /*@
@@ -187,9 +239,14 @@ static void index_header_check_aux(file_check_t *file_check_new)
       if(pos->offset >= file_check_new->offset &&
 	  pos->offset < file_check_new->offset+file_check_new->length)
       {
+#ifdef __FRAMAC__
+	td_list_add_sorted_fcc(&file_check_new->list,
+	    &pos->file_checks[((const unsigned char *)file_check_new->value)[pos->offset-file_check_new->offset]].list);
+#else
 	td_list_add_sorted(&file_check_new->list,
 	    &pos->file_checks[((const unsigned char *)file_check_new->value)[pos->offset-file_check_new->offset]].list,
 	    file_check_cmp);
+#endif
 	return ;
       }
       if(pos->offset>file_check_new->offset)
@@ -319,6 +376,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
   memset(&buffer[4096],0,footer_length-1);
   /*@
     @ loop invariant 0 <= offset <= \at(offset, Pre);
+    @ loop invariant offset <= PHOTOREC_MAX_FILE_SIZE;
     @ loop assigns errno, *handle, Frama_C_entropy_source;
     @ loop assigns offset, buffer[0 .. 8192-1];
     @ loop variant offset;
@@ -333,6 +391,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
       offset-=4096;
     else
       offset=offset-(offset%4096);
+    /*@ assert offset + 4096 <= PHOTOREC_MAX_FILE_SIZE; */
     if(my_fseek(handle,offset,SEEK_SET)<0)
       return 0;
     taille=fread(&buffer, 1, 4096, handle);
@@ -342,9 +401,13 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 #ifdef __FRAMAC__
     Frama_C_make_unknown(&buffer, 4096);
 #endif
-    /*@ loop assigns i; */
+    /*@
+      @ loop invariant -1 <= i < taille;
+      @ loop assigns i;
+      @*/
     for(i=taille-1;i>=0;i--)
     {
+      /*@ assert offset + i <= PHOTOREC_MAX_FILE_SIZE; */
       if(buffer[i]==*(const char *)footer && memcmp(&buffer[i],footer,footer_length)==0)
       {
         return offset + i;
@@ -357,17 +420,25 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
 
 void file_search_footer(file_recovery_t *file_recovery, const void*footer, const unsigned int footer_length, const unsigned int extra_length)
 {
+  /*@ assert \valid(file_recovery); */
   if(footer_length==0 || file_recovery->file_size <= extra_length)
     return ;
   file_recovery->file_size=file_rsearch(file_recovery->handle, file_recovery->file_size-extra_length, footer, footer_length);
+  /*@ assert 0 < footer_length < 4096; */
+  /*@ assert extra_length <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size < 0x8000000000000000; */
   if(file_recovery->file_size > 0)
-    file_recovery->file_size+= footer_length + extra_length;
+    file_recovery->file_size+= (uint64_t)footer_length + extra_length;
   /*@ assert \valid(file_recovery->handle); */
   /*@ assert valid_file_check_result(file_recovery); */
 }
 
 data_check_t data_check_size(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert \valid_read(file_recovery); */
+  /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->file_size + buffer_size/2 >= file_recovery->calculated_file_size)
   {
     /*@ assert valid_file_recovery(file_recovery); */
@@ -379,6 +450,7 @@ data_check_t data_check_size(const unsigned char *buffer, const unsigned int buf
 
 void file_check_size(file_recovery_t *file_recovery)
 {
+  /*@ assert \valid(file_recovery); */
   if(file_recovery->file_size<file_recovery->calculated_file_size)
     file_recovery->file_size=0;
   else
@@ -388,6 +460,7 @@ void file_check_size(file_recovery_t *file_recovery)
 
 void file_check_size_min(file_recovery_t *file_recovery)
 {
+  /*@ assert \valid(file_recovery); */
   if(file_recovery->file_size<file_recovery->calculated_file_size)
     file_recovery->file_size=0;
   /*@ assert valid_file_check_result(file_recovery); */
@@ -395,6 +468,7 @@ void file_check_size_min(file_recovery_t *file_recovery)
 
 void file_check_size_max(file_recovery_t *file_recovery)
 {
+  /*@ assert \valid(file_recovery); */
   if(file_recovery->file_size > file_recovery->calculated_file_size)
     file_recovery->file_size=file_recovery->calculated_file_size;
   /*@ assert valid_file_check_result(file_recovery); */
@@ -528,11 +602,14 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 
 /*@
   @ requires \valid(file_recovery);
+  @ requires strlen((char*)&file_recovery->filename) < 1<<30;
+  @ requires valid_file_recovery(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires 0 <= offset < buffer_size;
+  @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires new_ext==\null || valid_read_string(new_ext);
-  @ ensures  new_ext==\null || valid_read_string(new_ext);
+  @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
+  @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
 static int _file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
@@ -542,7 +619,7 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
   const char *ext=NULL;
   char *dst;
   char *directory_sep;
-  int len;
+  size_t len;
   len=strlen(src)+1;
   /*@ assert offset < buffer_size; */
   len+=buffer_size-offset+1;
@@ -667,11 +744,14 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
 /* The original filename begins at offset in buffer and is null terminated */
 /*@
   @ requires \valid(file_recovery);
+  @ requires strlen((char*)&file_recovery->filename) < 1<<30;
   @ requires valid_file_recovery(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires 0 <= offset < buffer_size;
+  @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
-  @ requires new_ext==\null || valid_read_string(new_ext);
+  @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
+  @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  valid_read_string((char*)&file_recovery->filename);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
@@ -682,7 +762,7 @@ static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buff
   const char *src_ext=src;
   char *dst;
   char *dst_dir_sep;
-  int len=strlen(src)+1;
+  size_t len=strlen(src)+1;
   /*@ assert offset < buffer_size; */
   len+=buffer_size-offset;
   if(new_ext!=NULL)
@@ -855,6 +935,7 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
 }
 
 /*@
+  @ requires file_recovery_new == \null || \valid_read(file_recovery_new);
   @ requires \separated(file_recovery_new, &offset_skipped_header);
   @ assigns offset_skipped_header;
   @*/
@@ -865,6 +946,7 @@ void header_ignored(const file_recovery_t *file_recovery_new)
     offset_skipped_header=0;
     return ;
   }
+  /*@ assert \valid_read(file_recovery_new); */
   if(file_recovery_new->location.start < offset_skipped_header || offset_skipped_header==0)
     offset_skipped_header=file_recovery_new->location.start;
 }
@@ -878,13 +960,18 @@ void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t
   alloc_data_t *file_space=*current_search_space;
   if(offset_skipped_header==0)
     return ;
+#ifndef __FRAMAC__
   gpls_nbr++;
+#endif
   /*@
+    @ loop invariant \valid_read(file_space);
+    @ loop invariant \separated(file_space, current_search_space, offset);
     @ loop assigns file_space, offset_skipped_header, *current_search_space, *offset;
     @*/
   while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
+    /*@ assert \valid_read(file_space); */
     if(file_space==list_search_space)
       break;
     if(file_space->start <= offset_skipped_header && offset_skipped_header < file_space->end)
@@ -903,11 +990,14 @@ void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t
       (long long unsigned)(*offset/512));
 #endif
   /*@
+    @ loop invariant \valid_read(file_space);
+    @ loop invariant \separated(file_space, current_search_space, offset);
     @ loop assigns file_space, offset_skipped_header, *current_search_space, *offset;
     @*/
   while(1)
   {
     file_space=td_list_prev_entry(file_space, list);
+    /*@ assert \valid_read(file_space); */
     if(file_space==list_search_space)
     {
       offset_skipped_header=0;

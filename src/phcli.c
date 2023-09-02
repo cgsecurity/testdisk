@@ -42,6 +42,7 @@ extern int need_to_stop;
 #include "geometry.h"
 #include "poptions.h"
 #include "phcli.h"
+#include "list_add_sorted_uniq.h"
 
 typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 

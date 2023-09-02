@@ -45,6 +45,72 @@
 #include "common.h"
 #include "log.h"
 
+static int signature_cmp(const struct td_list_head *a, const struct td_list_head *b);
+
+#ifndef __FRAMAC__
+#include "list_add_sorted.h"
+/*@ requires compar == signature_cmp; */
+static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
+    int (*compar)(const struct td_list_head *a, const struct td_list_head *b));
+#else
+/*@
+  @ requires \valid(newe);
+  @ requires \valid(head);
+  @ requires separation: \separated(newe, head);
+  @ requires list_separated(head->prev, newe);
+  @ requires list_separated(head, newe);
+  @ requires finite(head->prev);
+  @ requires finite(head);
+  @*/
+static inline void td_list_add_sorted_sig(struct td_list_head *newe, struct td_list_head *head)
+{
+  struct td_list_head *pos;
+  /*@
+    @ loop invariant \valid(pos);
+    @ loop invariant \valid(pos->prev);
+    @ loop invariant \valid(pos->next);
+    @ loop invariant pos == head || \separated(pos, head);
+    @ loop assigns pos;
+    @*/
+  td_list_for_each(pos, head)
+  {
+    /*@ assert \valid_read(newe); */
+    /*@ assert \valid_read(pos); */
+    if(signature_cmp(newe,pos)<0)
+      break;
+  }
+  if(pos != head)
+  {
+      __td_list_add(newe, pos->prev, pos);
+  }
+  else
+  {
+    /*@ assert finite(head->prev); */
+    /*@ assert finite(head); */
+    /*@ assert list_separated(head->prev, newe); */
+    /*@ assert list_separated(head, newe); */
+    td_list_add_tail(newe, head);
+  }
+}
+#endif
+
+#if 0
+/*@ requires valid_string_s: valid_read_string(s);
+  @ ensures  valid_string(\result);
+  @*/
+static char *td_strdup(const char *s)
+{
+  size_t l = strlen(s) + 1;
+  char *p = (char *)MALLOC(l);
+  /*@ assert valid_read_string(s); */
+  memcpy(p, s, l);
+  p[l-1]='\0';
+  /*@ assert valid_read_string(p); */
+  return p;
+}
+#endif
+
+/*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_sig(file_stat_t *file_stat);
 
 const file_hint_t file_hint_sig= {
@@ -65,7 +131,7 @@ struct signature_s
 {
   struct td_list_head list;
   const char *extension;
-  const unsigned char *sig;
+  const char *sig;
   unsigned int sig_size;
   unsigned int offset;
 };
@@ -86,21 +152,25 @@ static signature_t signatures={
   .list = TD_LIST_HEAD_INIT(signatures.list)
 };
 
-#ifndef __FRAMAC__
-static
-#endif
-int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
+/*@
+  @ assigns \nothing;
+  @*/
+static int signature_cmp(const struct td_list_head *a, const struct td_list_head *b)
 {
   const signature_t *sig_a=td_list_entry_const(a, const signature_t, list);
   const signature_t *sig_b=td_list_entry_const(b, const signature_t, list);
   int res;
+  /*@ assert \valid_read(sig_a); */
+  /*@ assert \valid_read(sig_b); */
   /*@ assert valid_signature(sig_a); */
   /*@ assert valid_signature(sig_b); */
   if(sig_a->sig_size==0 && sig_b->sig_size!=0)
     return -1;
   if(sig_a->sig_size!=0 && sig_b->sig_size==0)
     return 1;
-  res=sig_a->offset-sig_b->offset;
+  /*@ assert 0 <= sig_a->offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  /*@ assert 0 <= sig_b->offset <= PHOTOREC_MAX_SIG_OFFSET; */
+  res=(int)sig_a->offset - (int)sig_b->offset;
   if(res!=0)
     return res;
   if(sig_a->sig_size<=sig_b->sig_size)
@@ -133,8 +203,9 @@ static void signature_insert(const char *ext, unsigned int offset, const void*si
   /*@ assert \valid_read((const char *)sig+(0..sig_size-1)); */
   /*@ assert valid_read_string(ext); */
   newsig=(signature_t*)MALLOC(sizeof(*newsig));
+  /*@ assert \valid(newsig); */
   newsig->extension=ext;
-  newsig->sig=(const unsigned char *)sig;
+  newsig->sig=(const char *)sig;
   newsig->sig_size=sig_size;
   newsig->offset=offset;
   /*@ assert newsig->sig_size == sig_size; */
@@ -153,7 +224,11 @@ static void signature_insert(const char *ext, unsigned int offset, const void*si
   /*@ assert \valid_read((const char *)newsig->sig+(0..newsig->sig_size-1)); */
 
   /*@ assert valid_signature(newsig); */
+#ifdef __FRAMAC__
+  td_list_add_sorted_sig(&newsig->list, &signatures.list);
+#else
   td_list_add_sorted(&newsig->list, &signatures.list, signature_cmp);
+#endif
 }
 
 /*@
@@ -165,10 +240,14 @@ static void signature_insert(const char *ext, unsigned int offset, const void*si
 static int header_check_sig(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   struct td_list_head *pos;
-  /*@ loop assigns pos; */
+  /*@
+    @ loop invariant \valid(pos);
+    @ loop assigns pos;
+    @*/
   td_list_for_each(pos, &signatures.list)
   {
     const signature_t *sig = td_list_entry(pos, signature_t, list);
+    /*@ assert \valid_read(sig); */
     /*@ assert sig->offset + sig->sig_size <= buffer_size; */
     /*@ assert valid_read_string(sig->extension); */
     /*@ assert valid_signature(sig); */
