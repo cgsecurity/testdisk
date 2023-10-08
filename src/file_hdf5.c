@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -66,6 +66,7 @@ struct hdf5_superblock
 static int header_check_hdf5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct hdf5_superblock *sb=(const struct hdf5_superblock*)&buffer[0];
+  /*@ assert \valid_read(sb); */
   if(sb->version > 2)
     return 0;
   reset_file_recovery(file_recovery_new);
