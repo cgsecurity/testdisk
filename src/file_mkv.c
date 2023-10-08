@@ -55,6 +55,7 @@ const file_hint_t file_hint_mkv= {
 
 /*@
   @ requires \valid_read(p + (0 .. p_size-1));
+  @ requires \initialized(p + (0 .. p_size-1));
   @ requires \valid(uint64);
   @ requires \separated(p + (..), uint64);
   @ ensures -1 == \result || (1 <= \result <= 8);
@@ -66,14 +67,16 @@ static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size,
 {
   unsigned char test_bit = 0x80;
   unsigned int i, bytes = 1;
+  /*@ assert \valid_read(p); */
   const unsigned char c=*p;
   uint64_t val;
   if(p_size==0 || c== 0x00)
     return -1;
-  /*@ assert c != 0; */
+  /*@ assert 0 < c < 0x100; */
   /*@
     @ loop invariant test_bit > 0;
     @ loop invariant test_bit == (0x100 >> bytes);
+    @ loop invariant 1 <= bytes <= 8;
     @ loop assigns test_bit, bytes;
     @ loop unroll 8;
     @*/
@@ -85,11 +88,12 @@ static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size,
   }
   /*@ assert (c & test_bit) == test_bit; */
   /*@ assert 1 <= bytes <= 8; */
-  /*@ assert c >= test_bit; */
   if(p_size < bytes)
     return -1;
   /*@ assert bytes <= p_size; */
-  val = c - test_bit; //eliminate first bit, val < 0x80
+//  val = c & !test_bit; //eliminate first bit, val < 0x80
+  /*@ assert test_bit > 0; */
+  val = c & ~test_bit;
   /*@ assert val <= 0xfe; */
   /*@
     @ loop assigns i, val;
@@ -108,8 +112,10 @@ static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size,
 
 /*@
   @ requires EBML_size > 0;
+  @ requires \initialized(buffer + (0 .. buffer_size-1));
   @ requires \valid_read(buffer + (0 .. buffer_size-1));
   @ requires \valid_read(EBML_Header + (0 .. EBML_size-1));
+  @ requires \initialized(EBML_Header + (0 .. EBML_size-1));
   @ assigns \result;
   @*/
 static int EBML_find(const unsigned char *buffer, const unsigned int buffer_size, const unsigned char *EBML_Header, const unsigned int EBML_size)
@@ -146,6 +152,7 @@ static int EBML_find(const unsigned char *buffer, const unsigned int buffer_size
 
 /*@
   @ requires \valid_read(p + (0 .. p_size-1));
+  @ requires \initialized(p + (0 .. p_size-1));
   @ requires \valid(strlength);
   @ requires \separated(p + (..), strlength);
   @ ensures -1 == \result || (1 <= \result <= 8);
