@@ -39,6 +39,9 @@
 #include "filegen.h"
 #include "memmem.h"
 #include "common.h"
+#if defined(__FRAMAC__)
+#include "__fc_builtin.h"
+#endif
 
 /*@
   @ requires valid_register_header_check(file_stat);
@@ -111,6 +114,8 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
     fclose(handle);
     return;
   }
+  if(offset > PHOTOREC_MAX_FILE_SIZE)
+    offset = PHOTOREC_MAX_FILE_SIZE;
   tmp=file_rsearch(handle, offset, pattern, sizeof(pattern));
   if(tmp==0 || tmp > PHOTOREC_MAX_FILE_SIZE)
   {
@@ -250,33 +255,44 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
   @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
   @ requires \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source);
+  @ assigns *file_recovery->handle, file_recovery->time;
+  @ assigns errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_date_pdf(file_recovery_t *file_recovery)
 {
   const unsigned char pattern[14]={'x', 'a', 'p', ':', 'C', 'r', 'e', 'a', 't', 'e', 'D', 'a', 't', 'e'};
   uint64_t offset=0;
   unsigned int j=0;
-  unsigned char*buffer;
+  char buffer[4096];
   if(file_recovery->file_size > PHOTOREC_MAX_FILE_SIZE)
     return ;
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  buffer=(unsigned char*)MALLOC(4096);
   if(my_fseek(file_recovery->handle, 0, SEEK_SET)<0)
   {
-    free(buffer);
     return ;
   }
+  /*@
+    @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, buffer + (..));
+    @ loop assigns offset, j, *file_recovery->handle, file_recovery->time, buffer[0..4095];
+    @ loop assigns errno;
+    @ loop assigns Frama_C_entropy_source;
+    @*/
   while(offset < file_recovery->file_size)
   {
     int i;
     const int bsize=fread(buffer, 1, 4096, file_recovery->handle);
     if(bsize<=0)
     {
-      free(buffer);
       return ;
     }
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(buffer, bsize);
+#endif
     /*@
+      @ loop invariant \initialized(buffer + (0 .. bsize-1));
       @ loop invariant \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, buffer + (..));
+      @ loop invariant 0 <= i <= bsize;
       @ loop assigns i, j, *file_recovery->handle, file_recovery->time, buffer[0..21];
       @ loop assigns errno;
       @*/
@@ -292,14 +308,13 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 	    /*@ assert \initialized( buffer+ (0 .. 22-1)); */
 	    if(buffer[0]=='=' && (buffer[1]=='\'' || buffer[1]=='"'))
 	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[2]);
+	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer[2]);
 	    }
 	    else if(buffer[0]=='>')
 	    {
-	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS(&buffer[1]);
+	      file_recovery->time=get_time_from_YYYY_MM_DD_HH_MM_SS((const unsigned char *)&buffer[1]);
 	    }
 	  }
-	  free(buffer);
 	  return ;
 	}
       }
@@ -308,7 +323,6 @@ static void file_date_pdf(file_recovery_t *file_recovery)
     }
     offset+=bsize;
   }
-  free(buffer);
 }
 
 
@@ -317,10 +331,13 @@ static void file_date_pdf(file_recovery_t *file_recovery)
 /*@
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
+  @ assigns *file_recovery->handle, file_recovery->time, file_recovery->file_size;
+  @ assigns errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 {
-  unsigned char buffer[PDF_READ_SIZE + 3];
+  char buffer[PDF_READ_SIZE + 3];
   int i;
   int taille;
   if( file_recovery->file_size < file_recovery->calculated_file_size ||
@@ -339,8 +356,14 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
   }
   taille=fread(buffer, 1, PDF_READ_SIZE, file_recovery->handle);
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)&buffer, sizeof(buffer));
+  Frama_C_make_unknown(&buffer, sizeof(buffer));
 #endif
+  /*@
+    @ loop assigns i;
+    @ loop assigns *file_recovery->handle, file_recovery->time;
+    @ loop assigns errno;
+    @ loop assigns Frama_C_entropy_source;
+  @*/
   for(i=taille-4;i>=0;i--)
   {
     if(buffer[i]=='%' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
@@ -355,6 +378,9 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
 /*@
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
+  @ assigns  *file_recovery->handle, file_recovery->time, file_recovery->file_size;
+  @ assigns errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_pdf(file_recovery_t *file_recovery)
 {
