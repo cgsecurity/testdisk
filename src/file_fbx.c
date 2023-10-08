@@ -46,7 +46,8 @@ const file_hint_t file_hint_fbx= {
 /*@
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
-  @ assigns  *file_recovery_new;
+  @ assigns *file_recovery->handle, errno, file_recovery->file_size;
+  @ assigns Frama_C_entropy_source;
   @*/
 static void file_check_fbx(file_recovery_t *file_recovery)
 {
