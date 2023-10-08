@@ -45,6 +45,33 @@ const file_hint_t file_hint_xml = {
 };
 
 /*@
+  @ requires valid_file_rename_param(file_recovery);
+  @ requires \valid_read(title + (0 .. size-1));
+  @ requires \initialized(title + (0 .. size-1));
+  @ ensures  valid_file_rename_result(file_recovery);
+  @*/
+static void file_rename_xml_aux(file_recovery_t *file_recovery, const char *title, const unsigned int size)
+{
+
+  unsigned int j;
+  if(size < 2)
+    return;
+  /*@
+    @ loop invariant j <= size;
+    @ loop assigns j;
+    @*/
+  for(j = 0; j < size-1; j += 2)
+  {
+      if((title[j] == 0 && title[j + 1] == 0) || (title[j] == '<' && title[j + 1] == 0))
+      {
+	file_rename_unicode(file_recovery, title, j, 0, NULL, 1);
+	return ;
+      }
+  }
+  file_rename_unicode(file_recovery, title, size, 0, NULL, 1);
+}
+
+/*@
   @ requires file_recovery->file_rename==&file_rename_xml;
   @ requires valid_file_rename_param(file_recovery);
   @ ensures  valid_file_rename_result(file_recovery);
@@ -64,29 +91,23 @@ static void file_rename_xml(file_recovery_t *file_recovery)
     return;
   }
   fclose(file);
-  /*@ assert 0 <= lu <= sizeof(buffer)-2; */
+  if(lu <= 20)
+    return ;
+  /*@ assert 20 <= lu <= sizeof(buffer)-2; */
+  /*@ assert \valid(buffer + (0 .. lu+1)); */
   buffer[lu] = '\0';
   buffer[lu + 1] = '\0';
-  buffer[4096 - 21] = '\0';
-  buffer[4096 - 20] = '\0';
-  /*@ loop assigns i; */
-  for(i = 0; i + 20 < lu && !(buffer[i] == 0 && buffer[i + 1] == 0); i += 2)
+  /*@
+    @ loop invariant 0 <= i <= lu - 20 + 1;
+    @ loop assigns i;
+    @*/
+  for(i = 0; i < lu - 20 && !(buffer[i] == 0 && buffer[i + 1] == 0); i += 2)
   {
     if(memcmp(&buffer[i], fn, 20) == 0)
     {
-      const char *title = &buffer[i + 20];
-      int j;
-      /*@
-        @ loop invariant i+20+j <= lu;
-        @ loop assigns j;
-	@*/
-      for(j = 0;
-          i + 20 + j + 1 < lu && !(title[j] == 0 && title[j + 1] == 0) && !(title[j] == '<' && title[j + 1] == 0);
-          j += 2)
-      {
-      }
-      /*@ assert i+20+j <= lu; */
-      file_rename_unicode(file_recovery, title, j, 0, NULL, 1);
+      /*@ assert \valid_read(buffer + (0 .. lu+1)); */
+      /*@ assert \valid_read(buffer + (20 + i.. lu+1)); */
+      file_rename_xml_aux(file_recovery, &buffer[i+20], lu + 1 - 20 - i );
       return;
     }
   }
