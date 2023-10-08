@@ -1147,7 +1147,10 @@ static void file_rename_zip(file_recovery_t *file_recovery)
     /*@ assert valid_read_string((char*)file_recovery->filename); */
     return ;
   }
-  /*@ loop invariant valid_read_string((char*)file_recovery->filename); */
+  /*@
+    @ loop invariant valid_read_string((char*)file_recovery->filename);
+    @ loop invariant strlen(&file_recovery->filename[0]) > 0;
+    @*/
   while (1)
   {
     uint32_t header;
