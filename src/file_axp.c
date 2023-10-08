@@ -72,6 +72,8 @@ static void file_check_axp(file_recovery_t *file_recovery)
 static data_check_t data_check_axp(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int j;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns j, file_recovery->calculated_file_size;
     @*/

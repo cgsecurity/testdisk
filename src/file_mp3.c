@@ -278,6 +278,8 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
       (long long unsigned)file_recovery->file_size,
       (long long unsigned)file_recovery->calculated_file_size);
 #endif
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @*/
@@ -409,6 +411,8 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
   @*/
 static data_check_t data_check_id3(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->data_check, file_recovery->calculated_file_size;
     @*/

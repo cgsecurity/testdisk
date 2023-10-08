@@ -55,6 +55,8 @@ const file_hint_t file_hint_flac= {
   @*/
 static data_check_t data_check_flac_metadata(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size, file_recovery->data_check; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)

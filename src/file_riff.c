@@ -238,6 +238,8 @@ static void file_check_avi(file_recovery_t *fr)
   @*/
 static data_check_t data_check_avi(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 <= file_recovery->file_size + buffer_size/2)
@@ -255,6 +257,8 @@ static data_check_t data_check_avi(const unsigned char *buffer, const unsigned i
 
 data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)

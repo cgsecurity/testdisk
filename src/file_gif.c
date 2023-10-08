@@ -58,6 +58,7 @@ static void file_check_gif(file_recovery_t *file_recovery)
   char buffer[2];
   /* file_recovery->calculated_file_size is always >= */
   if(file_recovery->calculated_file_size < 2 ||
+    file_recovery->calculated_file_size >= 0x8000000000000000 ||
       my_fseek(file_recovery->handle, file_recovery->calculated_file_size-2, SEEK_SET)<0 ||
       fread(buffer, 2, 1, file_recovery->handle)!=1)
   {
@@ -83,6 +84,8 @@ static void file_check_gif(file_recovery_t *file_recovery)
   @*/
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
@@ -146,6 +149,8 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
   @*/
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size, file_recovery->data_check; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)

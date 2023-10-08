@@ -67,6 +67,8 @@ static const unsigned char sdvs_header[4] = { 'S','D','V','S'};
   @*/
 static data_check_t data_check_ts_192(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
@@ -202,6 +204,8 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   @*/
 static data_check_t data_check_ts_188(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)

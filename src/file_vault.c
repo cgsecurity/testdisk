@@ -59,6 +59,8 @@ const file_hint_t file_hint_vault = {
 static data_check_t data_check_vault(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns i, file_recovery->calculated_file_size; */
   for(i = (buffer_size / 2) - 28; i + 29 <= buffer_size; i++)
   {

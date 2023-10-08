@@ -60,6 +60,8 @@ struct atom_struct
   @*/
 static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @*/

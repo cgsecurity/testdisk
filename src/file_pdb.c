@@ -52,6 +52,8 @@ const file_hint_t file_hint_pdb= {
 static data_check_t data_check_pdb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns i; */
   for(i=buffer_size/2; i<buffer_size; i++)
     if(buffer[i]==0)

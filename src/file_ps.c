@@ -69,6 +69,8 @@ static void file_check_ps(file_recovery_t *file_recovery)
 static data_check_t data_check_ps(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns i, file_recovery->calculated_file_size;
     @*/

@@ -75,6 +75,8 @@ struct blend8_block
   @*/
 static data_check_t data_check_blend4le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
@@ -108,6 +110,8 @@ static data_check_t data_check_blend4le(const unsigned char *buffer, const unsig
   @*/
 static data_check_t data_check_blend8le(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x18 < file_recovery->file_size + buffer_size/2)
@@ -141,6 +145,8 @@ static data_check_t data_check_blend8le(const unsigned char *buffer, const unsig
   @*/
 static data_check_t data_check_blend4be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
@@ -175,6 +181,8 @@ static data_check_t data_check_blend4be(const unsigned char *buffer, const unsig
   @*/
 static data_check_t data_check_blend8be(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
     @ */

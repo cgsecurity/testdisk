@@ -178,6 +178,8 @@ static void file_check_png(file_recovery_t *fr)
 static data_check_t data_check_mng(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   static const unsigned char mng_footer[4]= {'M','E','N','D'};
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->offset_ok;
     @*/
@@ -215,6 +217,8 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
   @*/
 static data_check_t data_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->offset_ok;
     @*/

@@ -57,6 +57,8 @@ static const unsigned char tib2_footer[7]= {0x00, 0x00, 0x20, 0xa2, 0xb9, 0x24, 
   @*/
 static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 512 <= file_recovery->file_size + buffer_size/2)

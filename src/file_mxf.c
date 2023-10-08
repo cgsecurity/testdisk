@@ -77,6 +77,8 @@ struct partition_pack_next
   @*/
 static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   static const unsigned char mxf_header[4]= { 0x06, 0x0e, 0x2b, 0x34 };
   /*@ loop assigns file_recovery->calculated_file_size; */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&

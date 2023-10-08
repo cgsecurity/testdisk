@@ -96,6 +96,8 @@ static int is_valid_type(const mlv_hdr_t *hdr)
   @*/
 static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *fr)
 {
+  /*@ assert fr->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert fr->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns fr->calculated_file_size;
     @*/
