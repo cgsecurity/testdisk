@@ -348,16 +348,21 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     /*@ assert valid_file_check_result(file_recovery); */
     return;
   }
+  /*@ assert valid_file_recovery(file_recovery); */
   taille=fread(buffer,1, 4096,file_recovery->handle);
+  /*@ assert valid_file_recovery(file_recovery); */
 #ifdef __FRAMAC__
   Frama_C_make_unknown(&buffer, 4096);
 #endif
+  /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert file_recovery->file_size < 0x8000000000000000-2; */
   if(taille > 0 && buffer[0]=='\n' && (nl_mode&NL_BARENL)==NL_BARENL)
     file_recovery->file_size++;
   else if(taille > 1 && buffer[0]=='\r' && buffer[1]=='\n' && (nl_mode&NL_CRLF)==NL_CRLF)
     file_recovery->file_size+=2;
   else if(taille > 0 && buffer[0]=='\r' && (nl_mode&NL_BARECR)==NL_BARECR)
     file_recovery->file_size++;
+  /*@ assert file_recovery->file_size < 0x8000000000000000; */
   /*@ assert \valid(file_recovery->handle); */
   /*@ assert valid_file_recovery(file_recovery); */
   /*@ assert valid_file_check_result(file_recovery); */
@@ -376,7 +381,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
   memset(&buffer[4096],0,footer_length-1);
   /*@
     @ loop invariant 0 <= offset <= \at(offset, Pre);
-    @ loop invariant offset <= PHOTOREC_MAX_FILE_SIZE;
+    @ loop invariant offset < 0x8000000000000000;
     @ loop assigns errno, *handle, Frama_C_entropy_source;
     @ loop assigns offset, buffer[0 .. 8192-1];
     @ loop variant offset;
@@ -391,7 +396,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
       offset-=4096;
     else
       offset=offset-(offset%4096);
-    /*@ assert offset + 4096 <= PHOTOREC_MAX_FILE_SIZE; */
+    /*@ assert offset + 4096 <= 0x8000000000000000; */
     if(my_fseek(handle,offset,SEEK_SET)<0)
       return 0;
     taille=fread(&buffer, 1, 4096, handle);
@@ -407,7 +412,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
       @*/
     for(i=taille-1;i>=0;i--)
     {
-      /*@ assert offset + i <= PHOTOREC_MAX_FILE_SIZE; */
+      /*@ assert offset + i <= 0x8000000000000000; */
       if(buffer[i]==*(const char *)footer && memcmp(&buffer[i],footer,footer_length)==0)
       {
         return offset + i;
@@ -540,42 +545,62 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
+  @ requires strlen(&file_recovery->filename[0]) > 0;
   @ requires valid_read_string(new_ext);
   @ requires separation: \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
-#ifndef DISABLED_FOR_FRAMAC
+  /*@ assert valid_string((char *)&file_recovery->filename); */
   char new_filename[sizeof(file_recovery->filename)];
   char *dst;
   char *dst_dir_sep;
-  unsigned int len=strlen(file_recovery->filename)+1;
-  len+=strlen(new_ext);
+  const unsigned int len=strlen(file_recovery->filename)+1+strlen(new_ext)+1;
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
   if(len > sizeof(file_recovery->filename))
   {
-    /*@ assert valid_read_string((const char *)&file_recovery->filename); */
+    /*@ assert valid_string((char *)&file_recovery->filename); */
     return -1;
   }
   /*@ assert len <= sizeof(file_recovery->filename); */
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
-  strcpy(new_filename, (char *)&file_recovery->filename);
-  /*@ assert valid_string((char *)&new_filename); */
+  /*@ assert \initialized((char *)&file_recovery->filename +(0..strlen(&file_recovery->filename[0]))); */
+  memcpy(new_filename, (char *)&file_recovery->filename, sizeof(file_recovery->filename));
+  /*@ assert valid_string(&new_filename[0]); */
+  /*@ assert \initialized((char *)&new_filename[0] +(0..strlen(&new_filename[0]))); */
+#ifdef DISABLED_FOR_FRAMAC
+  dst_dir_sep=new_filename;
+#else
   dst_dir_sep=strrchr(new_filename, '/');
+  /*@ assert dst_dir_sep==\null || valid_string(dst_dir_sep); */
+  /*@ assert dst_dir_sep==\null || \subset(dst_dir_sep, &new_filename[0] +(0..strlen(&new_filename[0]))); */
+  /*@ assert dst_dir_sep==\null || \initialized(dst_dir_sep +(0..strlen(dst_dir_sep))); */
+  if(dst_dir_sep==NULL)
+    dst_dir_sep=new_filename;
+#endif
   /*@ assert valid_string(dst_dir_sep); */
+  /*@ assert \initialized((char *)dst_dir_sep +(0..strlen(dst_dir_sep))); */
   dst=dst_dir_sep;
+  /*@ assert valid_string(dst); */
+  /*@ assert \initialized(dst); */
+  /*@ ghost char *odst = dst; */
+  /*@
+    @ loop invariant valid_string(dst);
+    @ loop invariant \initialized(dst);
+    @ loop invariant odst <= dst <= odst + strlen(odst);
+    @ loop assigns dst;
+    @ loop variant strlen(dst);
+    @*/
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add extension */
-  {
-    const char *src;
-    src=new_ext;
-    *dst++ = '.';
-    while(*src!='\0')
-      *dst++ = *src++;
-    *dst='\0';
-  }
+  *dst++ = '.';
+#ifdef DISABLED_FOR_FRAMAC
+  memcpy(dst, new_ext, strlen(new_ext)+1);
+#else
+  strcpy(dst, new_ext);
+#endif
   /*@ assert valid_string(&new_filename[0]); */
   if(strlen(new_filename) >= sizeof(file_recovery->filename))
   {
@@ -589,33 +614,30 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
     /*@ assert valid_read_string((const char *)&file_recovery->filename); */
     return -1;
   }
+  /*@ assert valid_file_recovery(file_recovery); */
   /*@ assert valid_read_string(&new_filename[0]); */
-  strcpy(file_recovery->filename, new_filename);
-#else
-  file_recovery->filename[0]='/';
-  file_recovery->filename[1]='\0';
-#endif
+  memcpy(file_recovery->filename, new_filename, sizeof(file_recovery->filename));
   /*@ assert valid_read_string((const char *)&file_recovery->filename); */
   /*@ assert valid_file_recovery(file_recovery); */
   return 0;
 }
 
 /*@
-  @ requires \valid(file_recovery);
-  @ requires strlen((char*)&file_recovery->filename) < 1<<30;
-  @ requires valid_file_recovery(file_recovery);
-  @ requires valid_read_string((char*)&file_recovery->filename);
+  @ requires valid_string(filename);
+  @ requires \valid(filename +(0..2047));
+  @ requires 0 < strlen(filename) < 1<<30;
   @ requires 0 <= offset < buffer_size;
   @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
-  @ ensures  valid_file_recovery(file_recovery);
+  @ ensures  valid_string(filename);
+  @ ensures 0 < strlen(filename) < 1<<30;
   @*/
-static int _file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
+static int _file_rename(char *filename, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
   char *new_filename;
-  const char *src=file_recovery->filename;
+  const char *src=filename;
   const char *ext=NULL;
   char *dst;
   char *directory_sep;
@@ -624,11 +646,25 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
   /*@ assert offset < buffer_size; */
   len+=buffer_size-offset+1;
   if(new_ext!=NULL)
-    len+=strlen(new_ext);
+    len+=strlen(new_ext)+1;
 #ifndef DISABLED_FOR_FRAMAC
   new_filename=(char*)MALLOC(len);
   dst=new_filename;
-  directory_sep=new_filename;
+  directory_sep=dst;
+  strcpy(dst, src);
+  /*@ ghost char *osrc = src; */
+  /*@ ghost char *odst = dst; */
+  /*@ assert valid_read_string(osrc); */
+  //X loop assigns src, dst, odst[0..strlen(osrc)];
+  //X loop assigns directory_sep, ext;
+  /*@ loop invariant osrc <= src <= osrc + strlen(osrc);
+    loop invariant odst <= dst <= odst + strlen(osrc);
+    loop invariant valid_read_string(src);
+    loop invariant dst - odst == src - osrc;
+    loop invariant strlen(src) == strlen(osrc) - (src - osrc);
+    loop invariant \forall integer i; 0 <= i < src - osrc ==> odst[i] == osrc[i];
+    loop variant strlen(osrc) - (src - osrc);
+    */
   while(*src!='\0')
   {
     if(*src=='/')
@@ -641,20 +677,31 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
     *dst++ = *src++;
   }
   *dst='\0';
+  //@ assert *dst == '\0' && *src == '\0';
+  //@ assert valid_string(odst);
   dst=directory_sep;
+  /*@
+    @ loop invariant valid_string(dst);
+    @ loop assigns dst;
+    @*/
   while(*dst!='.' && *dst!='\0')
     dst++;
   /* Add original filename */
   {
     char *dst_old=dst;
+    /*@ assert valid_string(dst_old); */
     int off;
     int ok=0;
     int bad=0;
     *dst++ = '_';
-    src=&((const char *)buffer)[offset];
-    for(off=offset; off<buffer_size && *src!='\0'; off++, src++)
+    /*@
+      @ loop invariant offset <= off <= buffer_size;
+      @ loop invariant valid_read_string(src);
+      @*/
+    for(off=offset; off<buffer_size && *src!='\0'; off++)
     {
-      switch(*src)
+      const char c=((const char *)buffer)[off];
+      switch(c)
       {
 	case '/':
 	case '\\':
@@ -669,9 +716,9 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
 	  bad++;
 	  break;
 	default:
-	  if(isprint(*src) && !isspace(*src) && !ispunct(*src) && !iscntrl(*src))
+	  if(isprint(c) && !isspace(c) && !ispunct(c) && !iscntrl(c))
 	  {
-	    *dst++ = *src;
+	    *dst++ = c;
 	    ok++;
 	  }
 	  else
@@ -687,6 +734,10 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
       dst=dst_old;
     else
     {
+      /*@
+        @ loop invariant dst_old <= dst;
+        @ loop assigns dst;
+	@*/
       while(dst > dst_old && *(dst-1)=='_')
 	dst--;
     }
@@ -694,46 +745,43 @@ static int _file_rename(file_recovery_t *file_recovery, const void *buffer, cons
   /* Add extension */
   if(new_ext!=NULL)
   {
-    src=new_ext;
     *dst++ = '.';
-    while(*src!='\0')
-      *dst++ = *src++;
+    strcpy(dst, new_ext);
   }
   else if(append_original_ext>0)
   {
     if(ext!=NULL)
     {
-      while(*ext!='\0')
-	*dst++ = *ext++;
+      strcpy(dst, ext);
     }
   }
-  *dst='\0';
   /*@ assert valid_read_string(new_filename); */
-  /*@ assert valid_read_string(&file_recovery->filename[0]); */
-  if(strlen(new_filename)<sizeof(file_recovery->filename) && rename(file_recovery->filename, new_filename)==0)
+  /*@ assert valid_string(filename); */
+  if(strlen(new_filename)<2048 && rename(filename, new_filename)==0)
   {
-    strcpy(file_recovery->filename, new_filename);
+    strcpy(filename, new_filename);
     free(new_filename);
-    /*@ assert valid_read_string(&file_recovery->filename[0]); */
-    /*@ assert valid_file_recovery(file_recovery); */
+    /*@ assert valid_string(filename); */
     return 0;
 
   }
   free(new_filename);
 #endif
-  /*@ assert valid_read_string(&file_recovery->filename[0]); */
-  /*@ assert valid_file_recovery(file_recovery); */
+  /*@ assert valid_string(filename); */
   return -1;
 }
 
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
+  if(file_recovery->filename[0] == 0)
+    return 0;
+  /*@ assert strlen((char *)&file_recovery->filename) > 0; */
   /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
-      _file_rename(file_recovery, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
+      _file_rename(file_recovery->filename, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
     return 0;
-  /*@ assert valid_read_string((char const *)(&file_recovery->filename)); */
+  /*@ assert valid_string((char *)(&file_recovery->filename)); */
   /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(new_ext==NULL)
     return 0;
