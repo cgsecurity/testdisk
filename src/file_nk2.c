@@ -100,6 +100,8 @@ static void file_check_nk2(file_recovery_t *fr)
   char buf_nk2h[sizeof(nk2Header)];
   const nk2Header *nk2h=(const nk2Header *)&buf_nk2h;
   unsigned int i;
+  /*@ assert \valid(fr); */
+  /*@ assert \valid_read(nk2h); */
   fr->file_size = 0;
   fr->offset_error=0;
   fr->offset_ok=0;
@@ -123,6 +125,7 @@ static void file_check_nk2(file_recovery_t *fr)
     unsigned int j;
     char buf_itemh[sizeof(itemHeader)];
     const itemHeader *itemh=(const itemHeader *)&buf_itemh;
+    /*@ assert \valid_read(itemh); */
     if(fr->file_size >= NK2_MAX_FILESIZE)
     {
       fr->file_size=0;
@@ -152,6 +155,7 @@ static void file_check_nk2(file_recovery_t *fr)
       uint64_t size;
       char buf_entryh[sizeof(entryHeader)];
       const entryHeader *entryh=(const entryHeader *)&buf_entryh;
+      /*@ assert \valid_read(entryh); */
       if (fread(&buf_entryh, sizeof(entryHeader), 1, fr->handle)!=1)
       {
 	fr->offset_error=fr->file_size;
@@ -174,6 +178,7 @@ static void file_check_nk2(file_recovery_t *fr)
 	  {
 	    char buf_entry_size[sizeof(uint32_t)];
 	    const uint32_t *entry_size=(const uint32_t *)&buf_entry_size;
+	    /*@ assert \valid_read(entry_size); */
 	    if (fread(&buf_entry_size, sizeof(uint32_t), 1, fr->handle)!=1)
 	    {
 	      fr->offset_error=fr->file_size;
@@ -187,9 +192,11 @@ static void file_check_nk2(file_recovery_t *fr)
 	  }
 	  break;
 	default:
+#ifndef DISABLED_FOR_FRAMAC
 	  log_info("nk2   entry %04x size=? at 0x%llx\n",
 	      le16(entryh->value_type),
 	      (long long unsigned)fr->file_size);
+#endif
 	  fr->offset_error=fr->file_size;
 	  fr->file_size=0;
 	  return;
