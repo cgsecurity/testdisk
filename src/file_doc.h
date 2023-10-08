@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 /*@
+  @ requires offset <= 4006;
   @ requires valid_file_check_param(file_recovery);
   @ ensures  valid_file_check_result(file_recovery);
   @*/
