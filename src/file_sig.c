@@ -471,13 +471,15 @@ static unsigned int load_hex2(const unsigned char c1, const unsigned char c2)
 }
 
 /*@
+  @ requires \valid(ptr);
   @ requires \valid(*ptr);
   @ requires valid_string(*ptr);
   @ requires \valid(tmp + (0 .. PHOTOREC_MAX_SIG_SIZE-1));
+  @ requires \separated(ptr, tmp + (..));
   @ ensures  valid_string(*ptr);
   @ ensures  \initialized(tmp + (0 .. \result-1));
+  @ assigns  *ptr, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1];
   @*/
-/* TODO assigns  *ptr, tmp[0 .. PHOTOREC_MAX_SIG_SIZE-1]; */
 static unsigned int load_signature(char **ptr, unsigned char *tmp)
 {
   unsigned int signature_size=0;
@@ -649,14 +651,14 @@ static char *parse_signature_line(file_stat_t *file_stat, char *pos)
   if(sig_size>0 && sig_offset + sig_size <= PHOTOREC_MAX_SIG_OFFSET )
   {
     /* FIXME: memory leak for signature */
-    void *signature;
+    char *signature;
     /*@ assert sig_size > 0; */
     /*@ assert sig_offset + sig_size <= PHOTOREC_MAX_SIG_OFFSET; */
-    signature=(void *)MALLOC(sig_size);
-    /*@ assert \valid((char *)signature + (0 .. sig_size - 1)); */
+    signature=(char*)MALLOC(sig_size);
+    /*@ assert \valid(signature + (0 .. sig_size - 1)); */
     memcpy(signature, sig_sig, sig_size);
-#ifndef DISABLED_FOR_FRAMAC
     signature_insert(sig_ext, sig_offset, signature, sig_size);
+#ifndef DISABLED_FOR_FRAMAC
     register_header_check(sig_offset, signature, sig_size, &header_check_sig, file_stat);
 #endif
   }
