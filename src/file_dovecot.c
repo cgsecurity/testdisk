@@ -52,9 +52,8 @@ const file_hint_t file_hint_dovecot= {
   @*/
 static data_check_t data_check_dovecot2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  /*@
-    @ loop assigns file_recovery->data_check;
-    @*/
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 2 <= file_recovery->file_size + buffer_size/2)
   {
