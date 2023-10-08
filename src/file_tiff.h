@@ -101,13 +101,11 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
   @ requires fr->file_check==&file_check_tiff_le;
   @ requires valid_file_check_param(fr);
   @ ensures  valid_file_check_result(fr);
+  @ assigns  errno;
+  @ assigns  fr->file_size;
+  @ assigns  *fr->handle;
+  @ assigns  Frama_C_entropy_source;
   @*/
-/*X FIXME: parse_strip_le calls MALLOC()
-  X assigns  errno;
-  X assigns  fr->file_size;
-  X assigns  *fr->handle;
-  X assigns  Frama_C_entropy_source;
-  X*/
 void file_check_tiff_le(file_recovery_t *fr);
 #endif
 

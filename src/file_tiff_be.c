@@ -197,6 +197,8 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
   @ requires \valid_read(entry_strip_offsets);
   @ requires \valid_read(entry_strip_bytecounts);
   @ requires \separated(handle, &errno, &Frama_C_entropy_source, &__fc_heap_status, \union(entry_strip_offsets, entry_strip_bytecounts));
+  @ assigns *handle, errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_offsets, const TIFFDirEntry *entry_strip_bytecounts)
 {
@@ -205,8 +207,8 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
       2048);
   /*@ assert nbr <= 2048; */
   unsigned int i;
-  uint32_t *offsetp;
-  uint32_t *sizep;
+  char offsetp_buf[2048*sizeof(uint32_t)];
+  char sizep_buf[2048*sizeof(uint32_t)];
   uint64_t max_offset=0;
   /* be32() isn't required to compare the 2 values */
   if(entry_strip_offsets->tdir_count != entry_strip_bytecounts->tdir_count)
@@ -217,51 +219,50 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
       be16(entry_strip_bytecounts->tdir_type)!=4)
     return TIFF_ERROR;
   /*@ assert 0 < nbr <= 2048; */
-#ifdef DISABLED_FOR_FRAMAC
-  offsetp=(uint32_t *)MALLOC(2048*sizeof(*offsetp));
-#else
-  offsetp=(uint32_t *)MALLOC(nbr*sizeof(*offsetp));
-#endif
   if(fseek(handle, be32(entry_strip_offsets->tdir_offset), SEEK_SET) < 0 ||
-      fread(offsetp, sizeof(*offsetp), nbr, handle) != nbr)
+      fread(&offsetp_buf, sizeof(uint32_t), nbr, handle) != nbr)
   {
-    free(offsetp);
     return TIFF_ERROR;
   }
-#ifdef DISABLED_FOR_FRAMAC
-  sizep=(uint32_t *)MALLOC(2048*sizeof(*sizep));
-#else
-  sizep=(uint32_t *)MALLOC(nbr*sizeof(*sizep));
-#endif
   if(fseek(handle, be32(entry_strip_bytecounts->tdir_offset), SEEK_SET) < 0 ||
-      fread(sizep, sizeof(*sizep), nbr, handle) != nbr)
+      fread(&sizep_buf, sizeof(uint32_t), nbr, handle) != nbr)
   {
-    free(sizep);
-    free(offsetp);
     return TIFF_ERROR;
   }
 #if defined(__FRAMAC__)
-  Frama_C_make_unknown((char *)offsetp, nbr*sizeof(*offsetp));
-  Frama_C_make_unknown((char *)sizep, nbr*sizeof(*sizep));
+  Frama_C_make_unknown(offsetp_buf, 2048*sizeof(uint32_t));
+  Frama_C_make_unknown(sizep_buf, 2048*sizeof(uint32_t));
 #endif
-  /*@
-    @ loop assigns i, max_offset;
-    @*/
-  for(i=0; i<nbr; i++)
+  /*@ assert \initialized(offsetp_buf + (0 .. nbr*sizeof(uint32_t)-1)); */
+  /*@ assert \initialized(sizep_buf + (0 .. nbr*sizeof(uint32_t)-1)); */
   {
-    const uint64_t tmp=(uint64_t)be32(offsetp[i]) + be32(sizep[i]);
-    if(max_offset < tmp)
-      max_offset=tmp;
+    const uint32_t *offsetp=(const uint32_t *)&offsetp_buf;
+    const uint32_t *sizep=(const uint32_t *)&sizep_buf;
+    /*@ assert \initialized(offsetp + (0 .. nbr-1)); */
+    /*@ assert \initialized(sizep + (0 .. nbr-1)); */
+    /*@
+      @ loop invariant \valid_read(offsetp + (0 .. nbr-1));
+      @ loop invariant \valid_read(sizep + (0 .. nbr-1));
+      @ loop assigns i, max_offset;
+      @*/
+    for(i=0; i<nbr; i++)
+    {
+      /*@ assert 0 <= i < nbr; */
+      const uint64_t tmp=(uint64_t)be32(offsetp[i]) + be32(sizep[i]);
+      if(max_offset < tmp)
+	max_offset=tmp;
+    }
   }
-  free(sizep);
-  free(offsetp);
   return max_offset;
 }
 
 /*@
-  @ requires type != 1 || \valid_read((const char *)val);
-  @ requires type != 3 || \valid_read((const char *)val + ( 0 .. 2));
-  @ requires type != 4 || \valid_read((const char *)val + ( 0 .. 4));
+  @ requires type == 1 ==> \valid_read((const char *)val);
+  @ requires type == 1 ==> \initialized((const char *)val);
+  @ requires type == 3 ==> \valid_read((const char *)val + ( 0 .. 2));
+  @ requires type == 3 ==> \initialized((const char *)val + ( 0 .. 2));
+  @ requires type == 4 ==> \valid_read((const char *)val + ( 0 .. 4));
+  @ requires type == 4 ==> \initialized((const char *)val + ( 0 .. 4));
   @ assigns \nothing;
   @*/
 static unsigned int tiff_be_read(const void *val, const unsigned int type)
@@ -269,11 +270,25 @@ static unsigned int tiff_be_read(const void *val, const unsigned int type)
   switch(type)
   {
     case 1:
-      return *((const uint8_t*)val);
+      {
+        const uint8_t *ptr=(const uint8_t *)val;
+        /*@ assert \valid_read(ptr); */
+        return *ptr;
+      }
     case 3:
-      return be16(*((const uint16_t*)val));
+      {
+        const uint16_t *ptr=(const uint16_t *)val;
+        /*@ assert \valid_read(ptr); */
+	const uint32_t val=*ptr;
+        return be16(val);
+      }
     case 4:
-      return be32(*((const uint32_t*)val));
+      {
+        const uint32_t *ptr=(const uint32_t *)val;
+        /*@ assert \valid_read(ptr); */
+	const uint32_t val=*ptr;
+        return be32(val);
+      }
     default:
       return 0;
   }
@@ -399,6 +414,8 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   @ ensures \valid(fr);
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
+  @ assigns *fr->handle, errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static uint64_t file_check_tiff_be_aux_next(file_recovery_t *fr, const unsigned int depth, const unsigned int count, const unsigned char *buffer, const unsigned int buffer_size, const unsigned int offset_ptr_offset)
 {
@@ -436,10 +453,13 @@ static uint64_t file_check_tiff_be_aux_next(file_recovery_t *fr, const unsigned 
   @ ensures \valid(fr);
   @ ensures \valid(fr->handle);
   @ ensures valid_read_string(fr->extension);
+  @ assigns *fr->handle, errno;
+  @ assigns Frama_C_entropy_source;
   @*/
 static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count)
 {
-  unsigned char buffer[8192];
+  char buffer[8192];
+  const unsigned char *ubuffer=(const unsigned char *)buffer;
   unsigned int i,n;
   int data_read;
   uint64_t alphabytecount=0;
@@ -478,12 +498,12 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 #if defined(__FRAMAC__)
   data_read = Frama_C_interval(0, sizeof(buffer));
   /*@ assert 0 <= data_read <= sizeof(buffer); */
-  Frama_C_make_unknown((char *)buffer, sizeof(buffer));
+  Frama_C_make_unknown(buffer, sizeof(buffer));
 #endif
   if(data_read<2)
     return TIFF_ERROR;
   /*@ assert 2 <= data_read <= sizeof(buffer); */
-  n=(buffer[0]<<8)+buffer[1];
+  n=(ubuffer[0]<<8)+ubuffer[1];
 #ifdef DEBUG_TIFF
   log_info("file_check_tiff_be_aux(fr, %lu, %u, %u) => %u entries\n", (long unsigned)tiff_diroff, depth, count, n);
 #endif
@@ -498,6 +518,24 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   /*@
     @ loop invariant valid_file_recovery(fr);
     @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+    @ loop assigns *fr->handle, errno;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns i, sorted_tag_error, tdir_tag_old;
+    @ loop assigns alphabytecount;
+    @ loop assigns alphaoffset;
+    @ loop assigns imagebytecount;
+    @ loop assigns imageoffset;
+    @ loop assigns jpegifbytecount;
+    @ loop assigns jpegifoffset;
+    @ loop assigns max_offset;
+    @ loop assigns strip_bytecounts;
+    @ loop assigns strip_offsets;
+    @ loop assigns tile_bytecounts;
+    @ loop assigns tile_offsets;
+    @ loop assigns entry_strip_offsets;
+    @ loop assigns entry_strip_bytecounts;
+    @ loop assigns entry_tile_offsets;
+    @ loop assigns entry_tile_bytecounts;
     @*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {
@@ -617,22 +655,27 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	  {
 	    const unsigned int nbr=(tdir_count<32?tdir_count:32);
 	    /*@ assert 2 <= nbr <= 32; */
-	    uint32_t subifd_offsetp[32];
+	    char subifd_offsetp_buf[32*sizeof(uint32_t)];
+	    const uint32_t *subifd_offsetp=(const uint32_t *)&subifd_offsetp_buf;
+	    /*@ assert \valid_read(subifd_offsetp + (0 .. 31)); */
 	    unsigned int j;
 	    if(fseek(fr->handle, be32(entry->tdir_offset), SEEK_SET) < 0)
 	    {
 	      return TIFF_ERROR;
 	    }
-	    if(fread(subifd_offsetp, sizeof(uint32_t), nbr, fr->handle) != nbr)
+	    if(fread(&subifd_offsetp_buf, sizeof(uint32_t), nbr, fr->handle) != nbr)
 	    {
 	      return TIFF_ERROR;
 	    }
 #if defined(__FRAMAC__)
-	    Frama_C_make_unknown((char *)&subifd_offsetp, sizeof(subifd_offsetp));
+	    Frama_C_make_unknown(&subifd_offsetp_buf, sizeof(subifd_offsetp_buf));
 #endif
 	    /*@
 	      @ loop invariant valid_file_recovery(fr);
 	      @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+	      @ loop assigns *fr->handle, errno;
+	      @ loop assigns Frama_C_entropy_source;
+	      @ loop assigns j, max_offset;
 	      @*/
 	    for(j=0; j<nbr; j++)
 	    {
@@ -700,7 +743,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   }
   {
     const unsigned int offset_ptr_offset=2+12*n;
-    const uint64_t new_offset=file_check_tiff_be_aux_next(fr, depth, count, buffer, data_read, offset_ptr_offset);
+    const uint64_t new_offset=file_check_tiff_be_aux_next(fr, depth, count, ubuffer, data_read, offset_ptr_offset);
     /*@ assert \valid(fr); */
     /*@ assert \valid(fr->handle); */
     /*@ assert \valid_read(&fr->extension); */
@@ -722,10 +765,9 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   @*/
 static void file_check_tiff_be(file_recovery_t *fr)
 {
-  static uint64_t calculated_file_size=0;
+  uint64_t calculated_file_size=0;
   char buffer[sizeof(TIFFHeader)];
   const TIFFHeader *header=(const TIFFHeader *)&buffer;
-  calculated_file_size = 0;
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(TIFFHeader), 1, fr->handle) != 1)
   {
