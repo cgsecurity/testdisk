@@ -98,10 +98,12 @@ static char InternalName[24]={
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires needle_len > 0;
+  @ requires 4096 >= needle_len > 0;
+  @ requires end <= 0xffff;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
   @ requires \separated(file_recovery, buffer+(..), needle+(..));
+  @ ensures \result <= 0xffff;
   @*/
 static int parse_String(file_recovery_t *file_recovery, const char*buffer, const unsigned int end, const char *needle, const unsigned int needle_len, const int force_ext)
 {
@@ -114,7 +116,9 @@ static int parse_String(file_recovery_t *file_recovery, const char*buffer, const
     return -1;
   }
   PE_index=(const struct PE_index*)buffer;
+  /*@ assert \valid_read(PE_index); */
   len=le16(PE_index->len);
+  /*@ assert len <= 0xffff; */
   val_len=le16(PE_index->val_len);
   type=le16(PE_index->type);
 #ifdef DEBUG_EXE
@@ -140,7 +144,8 @@ static int parse_String(file_recovery_t *file_recovery, const char*buffer, const
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires needle_len > 0;
+  @ requires 4096 >= needle_len > 0;
+  @ requires end <= 0xffff;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
   @ requires \separated(file_recovery, buffer+(..), needle+(..));
@@ -152,6 +157,8 @@ static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, 
   log_info("parse_StringArray end=%u\n", end);
 #endif
   /*@
+    @ loop invariant end <= 0xffff;
+    @ loop invariant pos <= 0x20000;
     @ loop variant end - pos;
     @*/
   while(pos<end)
@@ -159,7 +166,7 @@ static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, 
     const int res=parse_String(file_recovery, &buffer[pos], end - pos, needle, needle_len, force_ext);
     if(res <= 0)
       return -1;
-    /*@ assert res > 0; */
+    /*@ assert 0xffff >= res > 0; */
     pos+=res;
     /* Padding */
     if((pos & 0x03)!=0)
@@ -171,7 +178,7 @@ static int parse_StringArray(file_recovery_t *file_recovery, const char*buffer, 
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires needle_len > 0;
+  @ requires 4096 >= needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
   @ requires \separated(file_recovery, buffer+(..), needle+(..));
@@ -209,7 +216,7 @@ static int parse_StringTable(file_recovery_t *file_recovery, const char*buffer, 
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
-  @ requires needle_len > 0;
+  @ requires 4096 >= needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
   @ requires \separated(file_recovery, buffer+(..), needle+(..));
@@ -252,7 +259,7 @@ static int parse_StringFileInfo(file_recovery_t *file_recovery, const char*buffe
   @ requires \valid(file_recovery);
   @ requires valid_read_string((char*)&file_recovery->filename);
   @ requires end > 0;
-  @ requires needle_len > 0;
+  @ requires 4096 >= needle_len > 0;
   @ requires \valid_read(buffer+(0..end-1));
   @ requires \valid_read(needle+(0..needle_len-1));
   @ requires \separated(vs_version_info+(..), file_recovery, buffer+(..), needle+(..));
@@ -378,6 +385,7 @@ static int pe_resource_language_aux(FILE *file, const unsigned int base, const s
   for(j=0; j<nbr_sections; j++)
   {
     const struct pe_image_section_hdr *pe_section=&pe_sections[j];
+    /*@ assert \valid_read(pe_section); */
     const uint32_t virt_addr_start=le32(pe_section->VirtualAddress);
     const uint64_t virt_addr_end=(uint64_t)virt_addr_start + le32(pe_section->SizeOfRawData);
     if(virt_addr_end <= 0xffffffff && virt_addr_start <= off && off < virt_addr_end && (uint64_t)off - virt_addr_start + base <=0xffffffff)
@@ -574,6 +582,7 @@ static void pe_resource_type(FILE *file, const unsigned int base, const unsigned
   for(i=0; i<count; i++)
   {
     const struct rsrc_entries_s *rsrc_entry=&rsrc_entries[i];
+    /*@ assert \valid_read(rsrc_entry); */
     const unsigned int rsrcType=le32(rsrc_entry->Type);
 #ifdef DEBUG_EXE
     log_info("resource type=%u, %x, offset %u\n",
@@ -630,6 +639,7 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
     return ;
   }
   dos_hdr=(const struct dos_image_file_hdr*)buffer;
+  /*@ assert \valid_read(dos_hdr); */
   e_lfanew=le32(dos_hdr->e_lfanew);
   if((unsigned int)buffer_size < e_lfanew+sizeof(struct pe_image_file_hdr))
   {
@@ -643,6 +653,7 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
     return ;
   }
   pe_hdr=(const struct pe_image_file_hdr *)(buffer+e_lfanew);
+  /*@ assert \valid_read(pe_hdr); */
   if(le32(pe_hdr->Magic) != IMAGE_NT_SIGNATURE)
   {
     fclose(file);
