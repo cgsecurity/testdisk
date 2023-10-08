@@ -90,6 +90,7 @@ unsigned int get_crc32(const void*buf, const unsigned int len, const uint32_t se
   unsigned int i;
   register uint32_t crc32val;
   const unsigned char *s=(const unsigned char *)buf;
+  /*@ assert \valid_read(s + (0 .. len-1)); */
   crc32val = seed; 
   /*@ loop invariant 0 <= i <= len;
     @ loop assigns i, crc32val; */
