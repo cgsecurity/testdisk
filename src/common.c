@@ -55,7 +55,7 @@
 #include "common.h"
 #include "log.h"
 
-static int32_t secwest=0;
+static long secwest=0;
 
 /* coverity[+alloc] */
 void *MALLOC(size_t size)
@@ -124,17 +124,17 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap)
 #endif
 
 #ifndef HAVE_STRNCASECMP
-/** Case-insensitive, size-constrained, lexical comparison. 
+/** Case-insensitive, size-constrained, lexical comparison.
  *
- * Compares a specified maximum number of characters of two strings for 
+ * Compares a specified maximum number of characters of two strings for
  * lexical equivalence in a case-insensitive manner.
  *
  * @param[in] s1 - The first string to be compared.
  * @param[in] s2 - The second string to be compared.
  * @param[in] len - The maximum number of characters to compare.
- * 
+ *
  * @return Zero if at least @p len characters of @p s1 are the same as
- *    the corresponding characters in @p s2 within the ASCII printable 
+ *    the corresponding characters in @p s2 within the ASCII printable
  *    range; a value less than zero if @p s1 is lexically less than
  *    @p s2; or a value greater than zero if @p s1 is lexically greater
  *    than @p s2.
@@ -146,7 +146,7 @@ int strncasecmp(const char * s1, const char * s2, size_t len)
   while (*s1 && (*s1 == *s2 || tolower(*s1) == tolower(*s2)))
   {
     len--;
-    if (len == 0) 
+    if (len == 0)
       return 0;
     s1++;
     s2++;
@@ -273,14 +273,13 @@ char* strip_dup(char* str)
   @ ensures 0 <= \result <= 32;
   @ assigns \nothing;
   @*/
-static _date_get_leap_day(const unsigned long int year, const unsigned long int month)
+static unsigned int _date_get_leap_day(const unsigned long int year, const unsigned long int month)
 {
   unsigned long int leap_day;
   if (year > YEAR_2100)         /* 2100 isn't leap year */
   {
     /*@ assert YEAR_2100 < year <= 127; */
     leap_day = (year + 3) / 4;
-    /*@ assert (YEAR_2100 + 3)/4 == leap_day; */
     /*@ assert leap_day <= 32; */
     leap_day--;
     /*@ assert leap_day < 32; */
@@ -289,7 +288,6 @@ static _date_get_leap_day(const unsigned long int year, const unsigned long int 
   {
     /*@ assert year <= YEAR_2100; */
     leap_day = (year + 3) / 4;
-    /*@ assert (YEAR_2100 + 3)/4 == leap_day; */
     /*@ assert leap_day <= (YEAR_2100 + 3)/4; */
   }
   /*@ assert 0 <= leap_day < 32; */
@@ -352,7 +350,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
   static const unsigned int days_in_year[] = { 0, 0,31,59,90,120,151,181,212,243,273,304,334,0,0,0 };
   /* JanFebMarApr May Jun Jul Aug Sep Oct Nov Dec */
 
-  unsigned long int day,leap_day,month,year,days,tmp1,tmp2;
+  unsigned long int day,leap_day,month,year,days;
   unsigned long int secs;
   year  = f_date >> 9;
   /*@ assert 0 <= year <= 127; */
@@ -373,7 +371,7 @@ time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)
   secs += _date_hours_to_seconds(f_time >> 11);
   /*@ assert secs <= 0x3f * SECS_PER_HOUR + 0x3f * SECS_PER_MIN + 62; */
   secs += days * SECS_PER_DAY;
-  /*@ assert secs <= 334 * SECS_PER_DAY + 0x3f * SECS_PER_HOUR + 0x3f * SECS_PER_MIN + 62; */
+  /*@ assert secs <= (334 + 127 * 365 + 32 + 30 + DAYS_DELTA)* SECS_PER_DAY + 0x3f * SECS_PER_HOUR + 0x3f * SECS_PER_MIN + 62; */
 #if defined(__FRAMAC__)
   return secs;
 #else
@@ -403,6 +401,13 @@ void set_secwest(void)
 #else
   secwest = timezone;
 #endif
+#ifdef __FRAMAC__
+  if(secwest < -48*3600)
+  {
+    secwest=0;
+    return;
+  }
+#endif
   /* account for daylight savings */
   if (tmptr && tmptr->tm_isdst)
     secwest -= 3600;
@@ -431,25 +436,7 @@ int check_command(char **current_cmd, const char *cmd, const size_t n)
   const int res=strncmp(*current_cmd, cmd, n);
   if(res==0)
   {
-#ifdef DISABLED_FOR_FRAMAC
-    const char *src=*current_cmd;
-    unsigned int i;
-    /*@
-      @ loop invariant valid_read_string(src);
-      @ loop invariant 0 <= i <= n;
-      @ loop assigns i, src;
-      @*/
-    for(i=0; i<n && src[0]!='\0'; i++)
-    {
-      /*@ assert valid_read_string(src); */
-      /*@ assert src[0]!= '\0'; */
-      src++;
-      /*@ assert valid_read_string(src); */
-    }
-    *current_cmd=src;
-#else
     (*current_cmd)+=n;
-#endif
     /*@ assert valid_read_string(*current_cmd); */
     return 0;
   }
@@ -479,7 +466,18 @@ uint64_t get_int_from_command(char **current_cmd)
     */
   while(*current_cmd[0] >='0' && *current_cmd[0] <= '9')
   {
-    tmp = tmp * 10 + *current_cmd[0] - '0';
+#ifdef __FRAMAC__
+    const unsigned int v=*current_cmd[0] - '0';
+    /*@ assert 0 <= v <= 9; */
+    if(tmp >= UINT64_MAX / 10)
+      return tmp;
+    /** assert tmp < UINT64_MAX / 10; */
+    tmp *= 10;
+    /** assert tmp <= UINT64_MAX - 10; */
+    tmp += v;
+#else
+    tmp = tmp * 10 + (*current_cmd[0] - '0');
+#endif
     (*current_cmd)++;
   }
   return tmp;
