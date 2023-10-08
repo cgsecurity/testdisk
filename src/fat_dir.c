@@ -91,11 +91,11 @@ static void dir_partition_fat_close(dir_data_t *dir_data);
   @*/
 static inline void fat16_towchar(wchar_t *dst, const uint8_t *src, size_t len)
 {
-	/*@ loop assigns len, *dst, dst, src; */
-	while (len--) {
-		*dst++ = src[0] | (src[1] << 8);
-		src += 2;
-	}
+  /*@ loop assigns len, *dst, dst, src; */
+  while (len--) {
+    *dst++ = src[0] | (src[1] << 8);
+    src += 2;
+  }
 }
 
 int dir_fat_aux(const unsigned char*buffer, const unsigned int size, const unsigned int param, file_info_t *dir_list)
