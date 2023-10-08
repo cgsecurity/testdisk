@@ -253,19 +253,19 @@ extern const file_hint_t file_hint_djv;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dmp)
 extern const file_hint_t file_hint_dmp;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
 extern const file_hint_t file_hint_doc;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw2)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dovecot)
 extern const file_hint_t file_hint_dovecot;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_doc)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dpx)
 extern const file_hint_t file_hint_dpx;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dovecot)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw)
 extern const file_hint_t file_hint_drw;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dpx)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_drw2)
 extern const file_hint_t file_hint_drw2;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ds2)
@@ -421,8 +421,10 @@ extern const file_hint_t file_hint_fs;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fwd)
 extern const file_hint_t file_hint_fwd;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fxp)
 extern const file_hint_t file_hint_fxp;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
 extern const file_hint_t file_hint_gam;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
@@ -844,6 +846,9 @@ extern const file_hint_t file_hint_save;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sdsk)
 extern const file_hint_t file_hint_sdsk;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sdw)
+extern const file_hint_t file_hint_sdw;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ses)
 extern const file_hint_t file_hint_ses;
@@ -1469,8 +1474,10 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fwd)
   { .enable=0, .file_hint=&file_hint_fwd  },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_fxp)
   { .enable=0, .file_hint=&file_hint_fxp  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gam)
   { .enable=0, .file_hint=&file_hint_gam  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_gct)
@@ -1892,6 +1899,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sdsk)
   { .enable=0, .file_hint=&file_hint_sdsk  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sdw)
+  { .enable=0, .file_hint=&file_hint_sdw  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ses)
   { .enable=0, .file_hint=&file_hint_ses  },
