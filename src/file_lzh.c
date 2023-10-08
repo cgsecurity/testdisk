@@ -116,7 +116,7 @@ static void file_rename_level0(file_recovery_t *file_recovery)
   /*@ assert sizeof(struct lzh_level0) + hdr->filename_len <= buffer_size; */
   /*@
     @ loop invariant 0 <= i <= hdr->filename_len;
-    @ loop variant i;
+    @ loop assigns i;
     @*/
   for(i=0; i< hdr->filename_len && fn[i]!=0 && fn[i]!='.'; i++);
   /*@ assert 0 <= i <= hdr->filename_len; */
