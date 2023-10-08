@@ -92,6 +92,9 @@ static uint64_t get_be64(const void *buffer, const unsigned int offset)
   @*/
 static data_check_t psb_skip_image_data(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   file_recovery->calculated_file_size+=2;
   file_recovery->data_check=NULL;
   return DC_CONTINUE;
@@ -103,10 +106,13 @@ static data_check_t psb_skip_image_data(const unsigned char *buffer, const unsig
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check==&psb_skip_layer_info || file_recovery->data_check==\null;
   @ ensures  \result == DC_CONTINUE || \result == DC_STOP;
-  @ assigns file_recovery->data_check, file_recovery->file_check, file_recovery->calculated_file_size;
+  @ assigns file_recovery->data_check, file_recovery->calculated_file_size;
   @*/
 static data_check_t psb_skip_layer_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
   {
@@ -137,6 +143,9 @@ static data_check_t psb_skip_layer_info(const unsigned char *buffer, const unsig
   @*/
 static data_check_t psb_skip_image_resources(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
@@ -171,6 +180,9 @@ static data_check_t psb_skip_color_mode(const unsigned char *buffer, const unsig
   const unsigned int depth=be16(hdr->depth);
   const unsigned int height=be32(hdr->height);
   const unsigned int width=be32(hdr->width);
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(channels==0 || channels>56 ||
       height==0 || height>300000 ||
       width==0 || width>300000 ||
