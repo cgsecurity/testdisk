@@ -50,11 +50,13 @@ int log_close(void);
 int log_redirect(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
 /*@
+  @ requires lng <= 1<<30;
   @ requires \valid((char *)nom_dump + (0 .. lng-1));
   @*/
 void dump_log(const void *nom_dump, const unsigned int lng);
 
 /*@
+  @ requires lng <= 1<<30;
   @ requires \valid((char *)dump_1 + (0 .. lng-1));
   @ requires \valid((char *)dump_2 + (0 .. lng-1));
   @*/

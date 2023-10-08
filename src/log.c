@@ -97,7 +97,7 @@ int log_open(const char*default_filename, const int mode, int *errsv)
 /*@
   @ requires separation: \separated(default_filename, errsv, log_handle, &errno);
   @ assigns log_handle;
-  @ assigns \result,errno,*errsv;
+  @ assigns \result,errno,*errsv,__fc_heap_status;
   @*/
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 int log_open_default(const char*default_filename, const int mode, int *errsv)
@@ -130,23 +130,24 @@ int log_open_default(const char*default_filename, const int mode, int *errsv)
 #else
 int log_open_default(const char*default_filename, const int mode, int *errsv)
 {
-#ifdef DISABLED_FOR_FRAMAC
-  return log_open(default_filename, mode, errsv);
-#else
   char*filename;
   char *path;
   int result;
   path = getenv("HOME");
   if(path == NULL)
     return log_open(default_filename, mode, errsv);
+  /*@ assert strlen(path)+strlen(default_filename)+2 < UINT_MAX; */
   filename=(char*)MALLOC(strlen(path)+strlen(default_filename)+2);
+#if defined(__FRAMAC__)
+  result=0;
+#else
   strcpy(filename, path);
   strcat(filename, "/");
   strcat(filename, default_filename);
   result=log_open(filename, mode, errsv);
+#endif
   free(filename);
   return result;
-#endif
 }
 #endif
 
@@ -224,21 +225,31 @@ int log_redirect(const unsigned int level, const char *format, ...)
 
 void dump_log(const void *nom_dump, const unsigned int lng)
 {
-  unsigned int i,j;
-  unsigned int nbr_line;
-  unsigned char car;
-  /*@ assert lng < UINT_MAX - 0x10; */
-  nbr_line=(lng+0x10-1)/0x10;
+  const char *ptr=(const char*)nom_dump;
+  const unsigned int nbr_line=(lng+0x10-1)/0x10;
+  unsigned int i;
+  /*@ assert \valid_read(ptr + (0 .. lng-1)); */
   /* write dump to log file*/
-  for (i=0; (i<nbr_line); i++)
+  /*@
+    @ loop invariant 0 <= i <= nbr_line;
+    @ loop assigns *log_handle, f_status, i;
+    @*/
+  for (i=0; i<nbr_line; i++)
   {
+    unsigned int j;
     log_info("%04X ",i*0x10);
+    /*@
+      @ loop invariant 0 <= j <= 0x10;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j< 0x10;j++)
     {
-      if(i*0x10+j<lng)
+      const unsigned int o=i*0x10+j;
+      if(o<lng)
       {
-        car=*((const unsigned char *)nom_dump+i*0x10+j);
-        log_info("%02x", car);
+	/*@ assert o<lng; */
+        /*@ assert \valid_read(ptr + (0 .. lng-1)); */
+        log_info("%02x", ptr[o]);
       }
       else
         log_info("  ");
@@ -246,12 +257,17 @@ void dump_log(const void *nom_dump, const unsigned int lng)
         log_info(" ");
     }
     log_info("  ");
+    /*@
+      @ loop invariant 0 <= j <= 0x10;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j< 0x10;j++)
     {
-      if(i*0x10+j<lng)
+      const unsigned int o=i*0x10+j;
+      if(o<lng)
       {
-        car=*((const unsigned char*)nom_dump+i*0x10+j);
-        if ((car<32)||(car >= 127))
+        const char car=ptr[o];
+        if (car<32 || car >= 127)
           log_info(".");
         else
           log_info("%c",  car);
@@ -265,20 +281,28 @@ void dump_log(const void *nom_dump, const unsigned int lng)
 
 void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
 {
+  const char *ptr1=(const char*)dump_1;
+  const char *ptr2=(const char*)dump_2;
+  const unsigned int nbr_line=(lng+0x08-1)/0x08;
   unsigned int i,j;
-  unsigned int nbr_line;
-  /*@ requires lng < UINT_MAX - 0x08; */
-  nbr_line=(lng+0x08-1)/0x08;
   /* write dump to log file*/
-  for (i=0; (i<nbr_line); i++)
+  /*@
+    @ loop invariant 0 <= i <= nbr_line;
+    @ loop assigns *log_handle, f_status, i, j;
+    @*/
+  for (i=0; i<nbr_line; i++)
   {
     log_info("%04X ",i*0x08);
+    /*@
+      @ loop invariant 0 <= j <= 8;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j<0x08;j++)
     {
-      if(i*0x08+j<lng)
+      const unsigned int o=i*0x08+j;
+      if(o<lng)
       {
-        unsigned char car=*((const unsigned char *)dump_1+i*0x08+j);
-        log_info("%02x", car);
+        log_info("%02x", ptr1[o]);
       }
       else
         log_info("  ");
@@ -286,12 +310,17 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
         log_info(" ");
     }
     log_info("  ");
+    /*@
+      @ loop invariant 0 <= j <= 8;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j<0x08;j++)
     {
-      if(i*0x08+j<lng)
+      const unsigned int o=i*0x08+j;
+      if(o<lng)
       {
-        unsigned char car=*((const unsigned char*)dump_1+i*0x08+j);
-        if ((car<32)||(car >= 127))
+        const char car=ptr1[o];
+        if (car<32 || car >= 127)
           log_info(".");
         else
           log_info("%c",  car);
@@ -300,12 +329,16 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
         log_info(" ");
     }
     log_info("  ");
+    /*@
+      @ loop invariant 0 <= j <= 8;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j<0x08;j++)
     {
-      if(i*0x08+j<lng)
+      const unsigned int o=i*0x08+j;
+      if(o<lng)
       {
-        unsigned char car=*((const unsigned char *)dump_2+i*0x08+j);
-        log_info("%02x", car);
+        log_info("%02x", ptr2[o]);
       }
       else
         log_info("  ");
@@ -313,12 +346,17 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
         log_info(" ");
     }
     log_info("  ");
+    /*@
+      @ loop invariant 0 <= j <= 8;
+      @ loop assigns *log_handle, f_status, j;
+      @*/
     for(j=0; j<0x08;j++)
     {
-      if(i*0x08+j<lng)
+      const unsigned int o=i*0x08+j;
+      if(o<lng)
       {
-        unsigned char car=*((const unsigned char*)dump_2+i*0x08+j);
-        if ((car<32)||(car >= 127))
+        const char car=ptr2[o];
+        if (car<32 || car >= 127)
           log_info(".");
         else
           log_info("%c",  car);
