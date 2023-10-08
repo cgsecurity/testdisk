@@ -53,7 +53,7 @@ struct shp_header
 {
   int32_t magic;
   int32_t reserved[5];
-  int32_t size;
+  uint32_t size;
   int32_t version;
   int32_t shape_type;
 } __attribute__ ((gcc_struct, __packed__));
@@ -99,7 +99,7 @@ struct shp_header
 static int header_check_shp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const struct shp_header *shp=(const struct shp_header *)buffer;
-  const uint64_t size = 2 * be32(shp->size);
+  const uint64_t size = (uint64_t)2 * be32(shp->size);
 
   if(le32(shp->version) != 1000)
     return 0;
