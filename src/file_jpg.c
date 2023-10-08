@@ -94,6 +94,7 @@ const file_hint_t file_hint_jpg= {
 };
 
 /*@
+  @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size;
   @ requires \valid_read(buffer + (0 .. buffer_size-1));
   @ requires \valid(height);
   @ requires \valid(width);
@@ -103,18 +104,28 @@ const file_hint_t file_hint_jpg= {
 static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *height, unsigned int *width)
 {
   unsigned int i=2;
-  /*@ loop assigns i, *height, *width; */
+  /*@
+    @ loop invariant i< buffer_size + 2 + 0xffff;
+    @ loop assigns i, *height, *width;
+    @ */
   while(i+8<buffer_size)
   {
     if(buffer[i]==0xFF && buffer[i+1]==0xFF)
       i++;
     else if(buffer[i]==0xFF)
     {
-      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      /*@ assert 0<= (buffer[i+2]<<8) <= 0xff00; */
+      /*@ assert 0 <= ((buffer[i+2]<<8) | buffer[i+3]) <= 0xffff; */
+      const unsigned int size=((unsigned int)buffer[i+2]<<8)|buffer[i+3];
+      /*@ assert size <= 0xffff; */
       if(buffer[i+1]==0xc0)	/* SOF0 */
       {
-	*height=(buffer[i+5]<<8)+buffer[i+6];
-	*width=(buffer[i+7]<<8)+buffer[i+8];
+	/*@ assert 0<= (buffer[i+5]<<8) <= 0xff00; */
+	/*@ assert 0 <= ((buffer[i+5]<<8) | buffer[i+6]) <= 0xffff; */
+	*height=((unsigned int)buffer[i+5]<<8)|buffer[i+6];
+	/*@ assert 0<= (buffer[i+7]<<8) <= 0xff00; */
+        /*@ assert 0 <= ((buffer[i+7]<<8) | buffer[i+8]) <= 0xffff; */
+	*width=((unsigned int)buffer[i+7]<<8)|buffer[i+8];
 	return;
       }
       i+=2+size;
@@ -157,6 +168,7 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
   const uint16_t *tmp16;
   const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
   unsigned int offset=be32(*tmp32);
+  /*@ assert 0 <= offset <= 0xffffffff; */
   unsigned int i;
   unsigned int nbr;
   unsigned int NumberOfImages=0;
@@ -170,6 +182,7 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
   /*@ assert offset < size - 2; */
   tmp16=(const uint16_t*)(&mpo[offset]);
   nbr=be16(*tmp16);
+  /*@ assert 0 <= nbr < 65536; */
   offset+=2;
   /* @offset: MP Index Fields*/
   if(offset + nbr * 12 > size)
@@ -187,7 +200,9 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
     /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
     const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
     const unsigned int count=be32(field->count);
+    /*@ assert 0 <= count <= 0xffffffff; */
     const unsigned int type=be16(field->type);
+    /*@ assert 0 <= type < 65536; */
     switch(be16(field->tag))
     {
       case 0xb000:
@@ -202,6 +217,7 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  NumberOfImages=be32(*tmp);
+	  /*@ assert 0 <= NumberOfImages <= 0xffffffff; */
 	  if(NumberOfImages >= 0x100000)
 	    return 0;
 	  /*@ assert NumberOfImages < 0x100000; */
@@ -214,6 +230,7 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  MPEntry_offset=be32(*tmp);
+	  /*@ assert 0 <= MPEntry_offset <= 0xffffffff; */
 	}
 	break;
     }
@@ -242,6 +259,7 @@ static uint64_t file_check_mpo_be(FILE *handle, const unsigned char *mpo, const 
     const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
     /*@ assert \valid_read(MPEntry); */
     uint64_t tmp=be32(MPEntry->offset);
+    /*@ assert 0 <= tmp <= 0xffffffff; */
 #ifdef DEBUG_JPEG
     log_info("offset=%lu, size=%lu\n",
 	(long unsigned)be32(MPEntry->offset),
@@ -402,6 +420,7 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
   const uint16_t *tmp16;
   const uint32_t *tmp32=(const uint32_t *)(&mpo[4]);
   unsigned int offset=be32(*tmp32);
+  /*@ assert 0 <= offset <= 0xffffffff; */
   unsigned int i;
   unsigned int nbr;
   unsigned int NumberOfImages=0;
@@ -415,6 +434,7 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
   /*@ assert offset < size - 2; */
   tmp16=(const uint16_t*)(&mpo[offset]);
   nbr=be16(*tmp16);
+  /*@ assert 0 <= nbr < 65536; */
   offset+=2;
   /* @offset: MP Index Fields*/
   if(offset + nbr * 12 > size)
@@ -432,7 +452,9 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
     /*@ assert \valid_read(field_ptr + ( 0 .. sizeof(struct MP_IFD_Field)-1)); */
     const struct MP_IFD_Field *field=(const struct MP_IFD_Field *)field_ptr;
     const unsigned int count=be32(field->count);
+    /*@ assert 0 <= count <= 0xffffffff; */
     const unsigned int type=be16(field->type);
+    /*@ assert 0 <= type < 65536; */
     switch(be16(field->tag))
     {
       case 0xb000:
@@ -447,6 +469,7 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  NumberOfImages=be32(*tmp);
+	  /*@ assert 0 <= NumberOfImages <= 0xffffffff; */
 	  if(NumberOfImages >= 0x100000)
 	    return 0;
 	  /*@ assert NumberOfImages < 0x100000; */
@@ -459,6 +482,7 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
 	{
 	  const uint32_t *tmp=(const uint32_t *)&field->value[0];
 	  MPEntry_offset=be32(*tmp);
+	  /*@ assert 0 <= MPEntry_offset <= 0xffffffff; */
 	}
 	break;
     }
@@ -485,6 +509,7 @@ static uint64_t check_mpo_be(const unsigned char *mpo, const uint64_t mpo_offset
     /*@ assert \valid_read(MPEntry_ptr+ ( 0 .. sizeof(struct MP_Entry)-1)); */
     const struct MP_Entry *MPEntry=(const struct MP_Entry*)MPEntry_ptr;
     uint64_t tmp=be32(MPEntry->size);
+    /*@ assert 0 <= tmp <= 0xffffffff; */
 #ifdef DEBUG_JPEG
     log_info("offset=%lu, size=%lu\n",
 	(long unsigned)be32(MPEntry->offset),
@@ -727,7 +752,7 @@ static void file_check_mpo(file_recovery_t *fr)
       return ;
     }
     /*@ assert nbytes >= 8; */
-    size=(buffer[2]<<8)+buffer[3];
+    size=((unsigned int)buffer[2]<<8)+buffer[3];
   } while(!(buffer[1]==0xe2 &&
 	  buffer[4]=='M' && buffer[5]=='P' && buffer[6]=='F' && buffer[7]==0));
 #ifdef DEBUG_JPEG
@@ -834,7 +859,7 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
 
 
 /*@
-  @ requires buffer_size >= 10;
+  @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size >= 10;
   @ requires separation: \separated(&file_hint_jpg, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -855,7 +880,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   /*@ loop assigns i, jpg_time; */
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {
-    const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+    const unsigned int size=((unsigned int)buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i+1]==0xff)
       i++;
     else
@@ -867,7 +892,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       else if(buffer[i+1]==0xc4)
       {
 	/* DHT */
-	if(jpg_check_dht(buffer, buffer_size, i, 2+(buffer[i+2]<<8)+buffer[i+3])!=0)
+	if(jpg_check_dht(buffer, buffer_size, i, 2+((unsigned int)buffer[i+2]<<8)+buffer[i+3])!=0)
 	  return 0;
       }
       i+=2+size;
@@ -1895,6 +1920,7 @@ static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer
   {
     const struct sof_header *h=(const struct sof_header *)&buffer[i];
     const unsigned int length=be16(h->length);
+    /*@ assert 0 <= length < 65536; */
     if(length < sizeof(struct sof_header)-2)
       return 1;
   }
@@ -1903,6 +1929,7 @@ static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer
   {
     const struct sof_header *h=(const struct sof_header *)&buffer[i];
     const unsigned int length=be16(h->length);
+    /*@ assert 0 <= length < 65536; */
     if(h->precision!=8 || be16(h->width)==0 || h->nbr==0)
       return 1;
     if(length < 8+h->nbr*3)
@@ -2202,7 +2229,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       }
       else if(buffer[j+1]==0xc4)			/* DHT */
       {
-	if(jpg_check_dht(buffer, nbytes, j, 2+(buffer[j+2]<<8)+buffer[j+3])!=0)
+	if(jpg_check_dht(buffer, nbytes, j, 2+((unsigned int)buffer[j+2]<<8)+buffer[j+3])!=0)
 	{
 	  file_recovery->offset_error=j+2;
 	  return 0;
@@ -2233,7 +2260,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       j_old=j;
 #endif
       {
-	const unsigned int tmp=(buffer[j+2]<<8)+buffer[j+3];
+	const unsigned int tmp=((unsigned int)buffer[j+2]<<8)+buffer[j+3];
 	/*@ assert 0 <= tmp <= 65535; */
 	j+=2U+tmp;
       }
@@ -2317,7 +2344,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     /*@ assert i == offset ; */
     /*@ assert i + 4 < nbytes; */
     /*@ assert i < nbytes; */
-    const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+    const unsigned int size=((unsigned int)buffer[i+2]<<8)+buffer[i+3];
     if(buffer[i+1]==0xff)
     {
       /* See B.1.1.2 Markers in http://www.w3.org/Graphics/JPEG/itu-t81.pdf*/
@@ -2477,8 +2504,11 @@ static data_check_t data_check_continue(const unsigned char *buffer, const unsig
   @*/
 static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop invariant file_recovery->data_check == \null ==> file_recovery->calculated_file_size == 0;
+    @ loop invariant buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE;
     @ loop assigns file_recovery->calculated_file_size;
     @ loop assigns file_recovery->data_check;
     @ loop assigns file_recovery->offset_error;
@@ -2574,7 +2604,10 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->calculated_file_size >= 2; */
   /*@ assert file_recovery->data_check == &data_check_jpg; */
   /* Search SOS */
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
+    @ loop invariant buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE;
     @ loop assigns file_recovery->calculated_file_size;
     @ loop assigns file_recovery->data_check;
     @ loop assigns file_recovery->file_check;
@@ -2590,7 +2623,7 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
       file_recovery->calculated_file_size++;
     else if(buffer[i]==0xFF)
     {
-      const unsigned int size=(buffer[i+2]<<8)+buffer[i+3];
+      const unsigned int size=((unsigned int)buffer[i+2]<<8)+buffer[i+3];
       const uint64_t old_calculated_file_size=file_recovery->calculated_file_size;
 #ifdef DEBUG_JPEG
       log_info("data_check_jpg %02x%02x at %llu, next expected at %llu\n", buffer[i], buffer[i+1],
