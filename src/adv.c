@@ -460,6 +460,7 @@ void interface_adv(disk_t *disk_car, const int verbose,const int dump_ind, const
   assert(current_cmd!=NULL);
   log_info("\nInterface Advanced\n");
   list_part=disk_car->arch->read_part(disk_car,verbose,0);
+  /*@ assert valid_list_part(list_part); */
   current_element=list_part;
   log_all_partitions(disk_car, list_part);
   while(1)
