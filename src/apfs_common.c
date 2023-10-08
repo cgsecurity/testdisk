@@ -36,7 +36,7 @@
 #include "log.h"
 
 /*@
-  @ requires \valid_read((char *)data + (0 .. cnt-1));
+  @ requires \valid_read(data + (0 .. cnt-1));
   @ assigns  \nothing;
   @*/
 static uint64_t fletcher64(const uint32_t *data, const size_t cnt, const uint64_t init)
@@ -44,9 +44,13 @@ static uint64_t fletcher64(const uint32_t *data, const size_t cnt, const uint64_
   size_t k;
   uint64_t sum1 = init & 0xFFFFFFFFU;
   uint64_t sum2 = (init >> 32);
-  /*@ loop assigns k, sum1, sum2; */
+  /*@
+    @ loop invariant 0 <= k <= cnt;
+    @ loop assigns k, sum1, sum2;
+    @*/
   for (k = 0; k < cnt; k++)
   {
+    /* @assert k < cnt; */
     sum1 = (sum1 + le32(data[k]));
     sum2 = (sum2 + sum1);
   }
@@ -56,6 +60,7 @@ static uint64_t fletcher64(const uint32_t *data, const size_t cnt, const uint64_
 }
 
 /*@
+  @ requires size >= 8;
   @ requires \valid_read((char *)block+ (0 .. size-1));
   @ assigns  \nothing;
   @*/
