@@ -82,6 +82,9 @@ static uint32_t get_be32(const void *buffer, const unsigned int offset)
   @*/
 static data_check_t psd_skip_image_data(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   file_recovery->calculated_file_size+=2;
   file_recovery->data_check=NULL;
   return DC_CONTINUE;
@@ -97,6 +100,9 @@ static data_check_t psd_skip_image_data(const unsigned char *buffer, const unsig
   @*/
 static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
@@ -126,6 +132,9 @@ static data_check_t psd_skip_layer_info(const unsigned char *buffer, const unsig
   @*/
 static data_check_t psd_skip_image_resources(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
@@ -165,6 +174,9 @@ static data_check_t psd_skip_color_mode(const unsigned char *buffer, const unsig
       width==0 || width>30000 ||
       (depth!=1 && depth!=8 && depth!=16 && depth!=32))
     return DC_ERROR;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert buffer_size <= 2 * PHOTOREC_MAX_BLOCKSIZE; */
   if(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
   {
