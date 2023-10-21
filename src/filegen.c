@@ -696,11 +696,12 @@ static int _file_rename(char *filename, const void *buffer, const int buffer_siz
     *dst++ = '_';
     /*@
       @ loop invariant offset <= off <= buffer_size;
-      @ loop invariant valid_read_string(src);
       @*/
-    for(off=offset; off<buffer_size && *src!='\0'; off++)
+    for(off=offset; off<buffer_size; off++)
     {
       const char c=((const char *)buffer)[off];
+      if(c=='\0')
+	break;
       switch(c)
       {
 	case '/':
