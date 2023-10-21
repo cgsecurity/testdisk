@@ -68,6 +68,7 @@ static const char *extension_bbdoc="bbdoc";
 static const char *extension_celtx="celtx";
 static const char *extension_docx="docx";
 static const char *extension_epub="epub";
+static const char *extension_fcstd="FCStd";
 static const char *extension_jar="jar";
 static const char *extension_kmz="kmz";
 static const char *extension_kra="kra";
@@ -324,6 +325,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_fcstd ||
      *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
@@ -357,6 +359,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_fcstd ||
      *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
@@ -415,7 +418,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
     first_filename[len_tmp]='\0';
   }
 #ifdef DEBUG_ZIP
-  log_info("%s\n", filename);
+  log_info("%s (len=%lu)\n", filename, len);
 #endif
   if(*ext!=NULL)
     return 0;
@@ -471,6 +474,8 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
     /* Celtx, Screenwriting & Media Pre-production file */
     else if(len==9 && memcmp(filename, "local.rdf", 9)==0)
       *ext=extension_celtx;
+    else if(len==12 && memcmp(filename, "Document.xml", 12)==0)
+      *ext=extension_fcstd;
     else if(len==13 && memcmp(filename, "document.json", 13)==0)
       *ext=extension_sketch;
     else if(len > 16 && memcmp(filename,  "atlases/atlas_ID", 16)==0)
@@ -527,6 +532,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_fcstd ||
      *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
@@ -560,6 +566,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_celtx ||
      *ext == extension_docx ||
      *ext == extension_epub ||
+     *ext == extension_fcstd ||
      *ext == extension_indd ||
      *ext == extension_jar ||
      *ext == extension_kmz ||
