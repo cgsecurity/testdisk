@@ -95,6 +95,7 @@ static void file_check_indd(file_recovery_t *file_recovery)
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns offset;
+    @ loop variant file_size_org - offset;
     @*/
   do
   {
