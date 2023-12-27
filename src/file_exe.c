@@ -381,7 +381,10 @@ static int pe_resource_language_aux(FILE *file, const unsigned int base, const s
 #endif
   off=le32(buffer.off);
   len=le32(buffer.len);
-  /*TODO: loop invariant 0 <= j <= nbr_sections; */
+  /*@
+    @ loop invariant 0 <= j <= nbr_sections;
+    @ loop variant nbr_sections - j;
+    @*/
   for(j=0; j<nbr_sections; j++)
   {
     const struct pe_image_section_hdr *pe_section=&pe_sections[j];
@@ -689,6 +692,7 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
 #ifdef DEBUG_EXE
     /*@
       @ loop invariant 0 <= i <= nbr_sections;
+      @ loop variant nbr_sections - i;
       @*/
     for(i=0; i<nbr_sections; i++)
     {
@@ -704,6 +708,7 @@ static void file_rename_pe_exe(file_recovery_t *file_recovery)
 #endif
     /*@
       @ loop invariant 0 <= i <= nbr_sections;
+      @ loop variant nbr_sections - i;
       @*/
     for(i=0; i<nbr_sections; i++)
     {
@@ -806,6 +811,7 @@ static int header_check_exe(const unsigned char *buffer, const unsigned int buff
 	  ((const unsigned char*)pe_hdr + sizeof(struct pe_image_file_hdr) + le16(pe_hdr->SizeOfOptionalHeader));
 	/*@
 	  @ loop assigns i, pe_image_section, sum;
+	  @ loop variant le16(pe_hdr->NumberOfSections) - i;
 	  @*/
 	for(i=0;
 	    i<le16(pe_hdr->NumberOfSections) &&
