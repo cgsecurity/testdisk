@@ -46,6 +46,7 @@ const file_hint_t file_hint_icc= {
   @ requires buffer_size >= 128;
   @ requires separation: \separated(&file_hint_icc, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -56,7 +57,10 @@ static int header_check_icc(const unsigned char *buffer, const unsigned int buff
   unsigned int i;
   if(file_size<128 || buffer[10]!=0 || buffer[11]!=0)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 128 - i;
+    @*/
   for(i=100; i<128; i++)
     if(buffer[i]!=0)
       return 0;
