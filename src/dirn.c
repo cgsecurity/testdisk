@@ -609,6 +609,24 @@ static long int dir_aff_ncurses(disk_t *disk, const partition_t *partition, dir_
   return -1;
 }
 
+static int is_inode_valid(const unsigned long int new_inode, const unsigned long int inode_known[MAX_DIR_NBR], const unsigned int dir_nbr)
+{
+  unsigned int i;
+  if(new_inode<2)
+    return 0;
+  for(i=0; i<dir_nbr; i++)
+    if(new_inode == inode_known[i]) /* Avoid loop */
+      return 0;
+  return 1;
+}
+
+static int can_copy_dir(const file_info_t *current_file, const unsigned long int inode_known[MAX_DIR_NBR], const unsigned int dir_nbr)
+{
+  if(strcmp(current_file->name,"..")==0 || strcmp(current_file->name,".")==0)
+    return 0;
+  return is_inode_valid(current_file->st_ino, inode_known, dir_nbr);
+}
+
 static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const unsigned long int inode, const unsigned int depth, char**current_cmd)
 {
   static unsigned long int inode_known[MAX_DIR_NBR];
@@ -642,17 +660,9 @@ static int dir_partition_aux(disk_t *disk, const partition_t *partition, dir_dat
       delete_list_file(&dir_list);
       return new_inode;
     }
-    if(new_inode>=2)
+    if(is_inode_valid(new_inode, &inode_known[0], depth) > 0)
     {
-      unsigned int new_inode_ok=1;
-      unsigned int i;
-      for(i=0;i<=depth && new_inode_ok!=0;i++)
-	if((unsigned)new_inode==inode_known[i]) /* Avoid loop */
-	  new_inode_ok=0;
-      if(new_inode_ok>0)
-      {
-	dir_partition_aux(disk, partition, dir_data, (unsigned long int)new_inode, depth+1, current_cmd);
-      }
+      dir_partition_aux(disk, partition, dir_data, (unsigned long int)new_inode, depth+1, current_cmd);
     }
     /* restore current_directory name */
     dir_data->current_directory[current_directory_namelength]='\0';
@@ -665,28 +675,6 @@ int dir_partition_aff(disk_t *disk, const partition_t *partition, dir_data_t *di
   if(dir_data==NULL)
     return -1;
   return dir_partition_aux(disk, partition, dir_data, inode, 0, current_cmd);
-}
-
-/*
-Returns
--2: no file copied
--1: failed to copy some files
-0: all files has been copied
-*/
-#define MAX_DIR_NBR 256
-
-static int can_copy_dir(const file_info_t *current_file, const unsigned long int inode_known[MAX_DIR_NBR], const unsigned int dir_nbr)
-{
-  const unsigned long int new_inode=current_file->st_ino;
-  unsigned int i;
-  if(new_inode<2)
-    return 0;
-  if(strcmp(current_file->name,"..")==0 || strcmp(current_file->name,".")==0)
-    return 0;
-  for(i=0; i<dir_nbr; i++)
-    if(new_inode == inode_known[i]) /* Avoid loop */
-      return 0;
-  return 1;
 }
 
 static copy_dir_t copy_dir(WINDOW *window, disk_t *disk, const partition_t *partition, dir_data_t *dir_data, const file_info_t *dir, unsigned int *copy_ok, unsigned int *copy_bad)
