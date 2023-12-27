@@ -28,6 +28,7 @@ extern "C" {
 /*@
   @ requires file_recovery->data_check==&data_check_avi_stream;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/

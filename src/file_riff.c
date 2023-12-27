@@ -103,6 +103,7 @@ static void log_riff_chunk(const uint64_t offset, const unsigned int depth, cons
   @ requires \valid(fr->handle);
   @ requires \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
   @ requires end <= PHOTOREC_MAX_FILE_SIZE;
+  @ decreases 5 - depth;
   @ ensures  valid_file_recovery(fr);
   @ ensures  \valid(fr->handle);
   @ assigns  *fr->handle, errno;
@@ -121,6 +122,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
     @ loop assigns fr->offset_error;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns file_size;
+    @ loop variant end - file_size;
     @*/
   for(file_size=start; file_size < end;)
   {
@@ -142,6 +144,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
 #endif
     /*@ assert \initialized((char *)list_header+ (0 .. sizeof(riff_list_header_t)-1)); */
     next_fs=file_size + (uint64_t)8 + le32(list_header->dwSize);
+    /*@ assert next_fs > file_size; */
     if(next_fs > end)
     {
       fr->offset_error=file_size;
@@ -153,7 +156,7 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
 #ifdef DEBUG_RIFF
       log_riff_list(file_size, depth, list_header);
 #endif
-      check_riff_list(fr, depth+1, file_size + sizeof(riff_list_header_t), next_fs-1);
+      check_riff_list(fr, depth+1, file_size + sizeof(riff_list_header_t), next_fs);
     }
     else
     {
@@ -162,9 +165,13 @@ static void check_riff_list(file_recovery_t *fr, const unsigned int depth, const
       log_riff_chunk(file_size, depth, list_header);
 #endif
     }
-    file_size = next_fs;
     /* align to word boundary */
-    file_size = (file_size&1);
+#ifdef __FRAMAC__
+    file_size = (next_fs & 1 == 0 ? next_fs : next_fs + 1);
+#else
+    file_size = (next_fs+1) & ~(uint64_t)1;
+#endif
+    /*@ assert file_size >= next_fs; */
   }
 }
 
@@ -185,8 +192,9 @@ static void file_check_avi(file_recovery_t *fr)
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns fr->offset_error, fr->offset_ok;
     @ loop assigns Frama_C_entropy_source;
+    @ loop variant fr->calculated_file_size - fr->file_size;
     @*/
-  while(fr->file_size!=fr->calculated_file_size)
+  while(fr->file_size < fr->calculated_file_size)
   {
     const uint64_t file_size=fr->file_size;
     uint64_t calculated_file_size;
@@ -214,13 +222,15 @@ static void file_check_avi(file_recovery_t *fr)
       return;
     }
     calculated_file_size=file_size + 8 + le32(list_header->dwSize);
+    /*@ assert calculated_file_size > file_size; */
+    /*@ assert calculated_file_size > fr->file_size; */
     if(calculated_file_size > PHOTOREC_MAX_FILE_SIZE)
     {
       fr->file_size=0;
       return;
     }
     /*@ assert calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
-    check_riff_list(fr, 1, file_size + sizeof(riff_list_header_t), calculated_file_size - 1);
+    check_riff_list(fr, 1, file_size + sizeof(riff_list_header_t), calculated_file_size);
     if(fr->offset_error > 0)
     {
       fr->file_size=0;
@@ -240,7 +250,10 @@ static data_check_t data_check_avi(const unsigned char *buffer, const unsigned i
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 12);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 12 <= file_recovery->file_size + buffer_size/2)
   {
@@ -259,7 +272,10 @@ data_check_t data_check_avi_stream(const unsigned char *buffer, const unsigned i
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 8);
+    @ */
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
   {
