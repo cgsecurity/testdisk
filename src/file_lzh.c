@@ -117,6 +117,7 @@ static void file_rename_level0(file_recovery_t *file_recovery)
   /*@
     @ loop invariant 0 <= i <= hdr->filename_len;
     @ loop assigns i;
+    @ loop variant hdr->filename_len - i;
     @*/
   for(i=0; i< hdr->filename_len && fn[i]!=0 && fn[i]!='.'; i++);
   /*@ assert 0 <= i <= hdr->filename_len; */
@@ -128,6 +129,7 @@ static void file_rename_level0(file_recovery_t *file_recovery)
   @ requires buffer_size >= sizeof(struct lzh_level1);
   @ requires separation: \separated(&file_hint_lzh, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
