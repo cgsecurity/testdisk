@@ -82,6 +82,7 @@ struct ico_directory
   @ requires buffer_size >= sizeof(struct ico_header);
   @ requires separation: \separated(&file_hint_ico, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -98,6 +99,7 @@ static int header_check_ico(const unsigned char *buffer, const unsigned int buff
     return 0;
   /*@
     @ loop assigns ico_dir, i, fs;
+    @ loop variant le16(ico->count) - i;
     @*/
   for(i=0, ico_dir=(const struct ico_directory*)(ico+1);
       (const unsigned char *)(ico_dir+1) <= buffer+buffer_size && i<le16(ico->count);
