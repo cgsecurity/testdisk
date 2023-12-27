@@ -93,6 +93,7 @@ static int header_check_asf(const unsigned char *buffer, const unsigned int buff
     return 0;
   /*@
     @ loop assigns extension, i, size, time, offset_prop;
+    @ loop variant nbr_header_obj - i;
     @*/
   for(i=0;
       i < nbr_header_obj && offset_prop + 0x28 < buffer_size;
