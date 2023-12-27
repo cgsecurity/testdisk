@@ -282,6 +282,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 16);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
@@ -366,6 +367,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
     else if(buffer[i]=='A' && buffer[i+1]=='P' && buffer[i+2]=='E' && buffer[i+3]=='T' && buffer[i+4]=='A' && buffer[i+5]=='G' && buffer[i+6]=='E' && buffer[i+7]=='X')
     { /* APE Tagv2 (APE Tagv1 has no header) http://wiki.hydrogenaudio.org/index.php?title=APE_Tags_Header */
       const uint64_t ape_tag_size = (buffer[i+12] | (buffer[i+13]<<8) | (buffer[i+14]<<16) | ((uint64_t)buffer[i+15]<<24))+(uint64_t)32;
+      /*@ assert ape_tag_size > 0; */
       file_recovery->calculated_file_size+=ape_tag_size;
       /*@ assert file_recovery->calculated_file_size > 0; */
     }
@@ -381,6 +383,7 @@ static data_check_t data_check_mp3(const unsigned char *buffer, const unsigned i
 	potential_frame_offset = 10;
       potential_frame_offset+=((buffer[i+6]&0x7f)<<21) + ((buffer[i+7]&0x7f)<<14)
 	+ ((buffer[i+8]&0x7f)<<7) + (buffer[i+9]&0x7f)+ 10;
+      /*@ assert potential_frame_offset > 0; */
       file_recovery->calculated_file_size+=potential_frame_offset;
       /*@ assert file_recovery->calculated_file_size > 0; */
     }
@@ -415,6 +418,7 @@ static data_check_t data_check_id3(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->data_check, file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 1);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
@@ -442,6 +446,7 @@ static data_check_t data_check_id3(const unsigned char *buffer, const unsigned i
   @ requires buffer_size >= 10;
   @ requires separation: \separated(&file_hint_mp3, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_mp3.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
