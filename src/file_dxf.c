@@ -48,6 +48,7 @@ const file_hint_t file_hint_dxf= {
   @ requires buffer_size >= 6;
   @ requires file_recovery->data_check==&data_check_dxf;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -58,6 +59,7 @@ static data_check_t data_check_dxf(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns i, file_recovery->calculated_file_size;
+    @ loop variant buffer_size - (i+4);
     @*/
   for(i=(buffer_size/2)-3;i+4<buffer_size;i++)
   {
@@ -87,6 +89,7 @@ static void file_check_dxf(file_recovery_t *file_recovery)
 /*@
   @ requires separation: \separated(&file_hint_dxf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns *file_recovery_new;
   @*/
