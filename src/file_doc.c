@@ -157,6 +157,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
     unsigned long int i;
     /*@
       @ loop invariant 0 <= i <= num_extra_FAT_blocks;
+      @ loop variant num_extra_FAT_blocks - i;
       @*/
     for(i=0; i<num_extra_FAT_blocks; i++)
     {
@@ -206,6 +207,7 @@ static uint32_t *OLE_load_FAT(FILE *IN, const struct OLE_HDR *header, const uint
   @ requires \valid_read((const char *)fat + ( 0 .. (num_FAT_blocks<<uSectorShift)-1));
   @ requires \initialized((const char *)fat + (0 .. (num_FAT_blocks<<uSectorShift)-1));
   @ requires num_FAT_blocks <= 109+50*((1<<uSectorShift)/4-1);
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t fat2size(const unsigned int num_FAT_blocks, const unsigned int uSectorShift, const uint32_t *fat, const uint64_t offset)
@@ -238,6 +240,7 @@ static uint64_t fat2size(const unsigned int num_FAT_blocks, const unsigned int u
   @ requires \valid_read((const char *)dir_entries + (0 .. (1<<uSectorShift)-1));
   @ requires \initialized((const char *)dir_entries + (0 .. (1<<uSectorShift)-1));
   @ requires offset <= 4006;
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int doc_check_entries(const unsigned int uSectorShift, const struct OLE_DIR *dir_entries, const unsigned int miniSectorCutoff, const unsigned int fat_entries, const uint64_t doc_file_size, const uint64_t offset)
@@ -245,6 +248,7 @@ static int doc_check_entries(const unsigned int uSectorShift, const struct OLE_D
   unsigned int sid;
   /*@
     @ loop assigns sid;
+    @ loop variant (1<<uSectorShift)/sizeof(struct OLE_DIR) - sid;
     @*/
   for(sid=0;
       sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
@@ -340,6 +344,7 @@ void file_check_doc_aux(file_recovery_t *file_recovery, const uint64_t offset)
      * Use a loop count i to avoid endless loop */
     /*@
       @ loop invariant 9 == uSectorShift || 12 == uSectorShift;
+      @ loop variant fat_entries - i;
       @*/
     for(block=le32(header->root_start_block), i=0;
 	block!=0xFFFFFFFE && i<fat_entries;
@@ -552,6 +557,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
 #endif
   /*@
     @ loop assigns block, i;
+    @ loop variant fat_entries - i;
     @*/
   for(block=le32(header->root_start_block), i=0;
       block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
@@ -574,6 +580,7 @@ static const char *ole_get_file_extension(const struct OLE_HDR *header, const un
       /*@
 	@ loop invariant ext == \null || ext == extension_xls || ext == extension_psmodel || ext == extension_snt;
         @ loop assigns ext, is_db, sid;
+	@ loop variant 512/sizeof(struct OLE_DIR) - sid;
 	@*/
       for(sid=0;
 	  sid<512/sizeof(struct OLE_DIR);
@@ -779,6 +786,7 @@ static uint32_t *OLE_load_MiniFAT(FILE *IN, const struct OLE_HDR *header, const 
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 4 - 1));
   @ requires \initialized((char *)buffer + (offset .. offset + 4 - 1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint32_t get32u(const void *buffer, const unsigned int offset)
@@ -796,6 +804,7 @@ static uint32_t get32u(const void *buffer, const unsigned int offset)
 /*@
   @ requires \valid_read((char *)buffer + (offset .. offset + 8 - 1));
   @ requires \initialized((char *)buffer + (offset .. offset + 8 - 1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t get64u(const void *buffer, const unsigned int offset)
@@ -1420,6 +1429,7 @@ static void *OLE_read_ministream(const unsigned char *ministream,
     @ loop invariant 0 <= size_read < len + (1<<uMiniSectorShift);
     @ loop invariant size_read > 0 ==> \initialized(dataPt + size_read - (1<<uMiniSectorShift) + (0 .. (1<<uMiniSectorShift)- 1));
     @ loop invariant size_read > 0 ==> \initialized(dataPt + (0 .. size_read - 1));
+    @ loop variant len - size_read;
     @*/
   for(size_read=0;
       size_read < len;
@@ -1623,6 +1633,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     /*@
       @ loop invariant \valid_read(header);
       @ loop invariant valid_string(&title[0]);
+      @ loop variant fat_entries - i;
       */
     for(block=le32(header->root_start_block), i=0;
 	block<fat_entries && block!=0xFFFFFFFE && i<fat_entries;
@@ -1658,6 +1669,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	}
 	/*@
 	  @ loop invariant valid_string(&title[0]);
+	  @ loop variant (1<<uSectorShift)/sizeof(struct OLE_DIR) - sid;
 	  @*/
 	for(sid=0;
 	    sid<(1<<uSectorShift)/sizeof(struct OLE_DIR);
