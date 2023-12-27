@@ -71,7 +71,10 @@ static int header_check_dss(const unsigned char *buffer, const unsigned int buff
   const unsigned char *udate_asc = (const unsigned char *)&buffer[0x26];
   const char *date_asc = (const char *)&buffer[0x26];
   unsigned int i;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 24 - i;
+    @*/
   for(i = 0; i < 24; i++)
     if(!isdigit(udate_asc[i]))
       return 0;
