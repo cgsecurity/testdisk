@@ -55,22 +55,30 @@ const file_hint_t file_hint_fits= {
 
 /*@
   @ requires \valid_read(str + (0 .. 80-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t fits_get_val(const unsigned char *str)
 {
   unsigned int i;
   uint64_t val=0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 80 - i;
+    @*/
   for(i=0;i<80 && str[i]!='=';i++);
   i++;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 80 - i;
+    @*/
   for(;i<80 && str[i]==' ';i++);
   if(i<80 && str[i]=='-')
     i++;
   /*@
     @ loop invariant val < PHOTOREC_MAX_FILE_SIZE;
     @ loop assigns i,val;
+    @ loop variant 80 - i;
     @*/
   for(;i<80 && str[i]>='0' && str[i]<='9';i++)
   {
@@ -146,6 +154,7 @@ static uint64_t fits_info(const unsigned char *buffer, const unsigned int buffer
       unsigned int j;
       /*@
         @ loop assigns j;
+	@ loop variant 80 - j;
 	@*/
       for(j=0;j<80 && buffer[i+j]!='\'';j++);
       if(j<60 && buffer[i+j]=='\'')
@@ -171,6 +180,7 @@ static data_check_t data_check_fits(const unsigned char *buffer, const unsigned 
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->time;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 8);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 < file_recovery->file_size + buffer_size/2)
