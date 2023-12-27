@@ -72,6 +72,8 @@ static void file_check_che(file_recovery_t *file_recovery)
   /*@
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source;
+    @ loop assigns new_offset;
+    @ loop variant file_size_org - new_offset;
     @*/
   do
   {
@@ -101,6 +103,7 @@ static void file_check_che(file_recovery_t *file_recovery)
 /*@
   @ requires separation: \separated(&file_hint_che, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
