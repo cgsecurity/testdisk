@@ -70,6 +70,7 @@ static int header_check_ds2(const unsigned char *buffer, const unsigned int buff
   unsigned int i;
   /*@
     @ loop assigns i;
+    @ loop variant 24 - i;
     @ */
   for(i=0; i<24; i++)
     if(!isdigit(date_asc[i]))
