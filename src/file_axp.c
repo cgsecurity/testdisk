@@ -76,6 +76,7 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns j, file_recovery->calculated_file_size;
+    @ loop variant buffer_size - (j+sizeof(axp_footer));
     @*/
   for(j=buffer_size/2-sizeof(axp_footer);
       j+sizeof(axp_footer) <= buffer_size;
@@ -94,6 +95,7 @@ static data_check_t data_check_axp(const unsigned char *buffer, const unsigned i
 /*@
   @ requires separation: \separated(&file_hint_axp, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
