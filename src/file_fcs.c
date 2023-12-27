@@ -60,6 +60,7 @@ struct fcs_header
 
 /*@
   @ requires \valid_read(string + (0 .. max_length-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t ascii2int(const unsigned char *string, const unsigned int max_length)
@@ -69,6 +70,7 @@ static uint64_t ascii2int(const unsigned char *string, const unsigned int max_le
   /*@
     @ loop invariant res <= 0x1999999999999998;
     @ loop assigns res,i;
+    @ loop variant max_length - i;
     @*/
   for(i=0;i<max_length;i++)
   {
@@ -86,6 +88,7 @@ static uint64_t ascii2int(const unsigned char *string, const unsigned int max_le
 
 /*@
   @ requires \valid_read(string + (0 .. max_length-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t ascii2int2(const unsigned char *string, const unsigned int max_length, const unsigned int delimiter)
@@ -95,6 +98,7 @@ static uint64_t ascii2int2(const unsigned char *string, const unsigned int max_l
   /*@
     @ loop invariant res <= 0x1999999999999998;
     @ loop assigns res,i;
+    @ loop variant max_length - i;
     @*/
   for(i=0;i<max_length;i++)
   {
@@ -155,6 +159,7 @@ static int header_check_fcs(const unsigned char *buffer, const unsigned int buff
     const unsigned int smallest=(buffer_size < text_end ? buffer_size : text_end);
     /*@
       @ loop assigns i, data_end, stext_end, analysis_end;
+      @ loop variant smallest - i;
       @*/
     for(i=0; i<smallest; i++)
     {
