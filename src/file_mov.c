@@ -107,6 +107,7 @@ static void file_rename_mov(file_recovery_t *file_recovery)
 
 /*@
   @ requires \valid_read(atom + (0 .. 3));
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 static inline int is_known_atom(const unsigned char *atom)
@@ -137,6 +138,7 @@ static inline int is_known_atom(const unsigned char *atom)
   @ requires buffer_size >= 16;
   @ requires file_recovery->data_check==&data_check_mov;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -146,6 +148,7 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 8);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
@@ -243,6 +246,9 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
 static int header_check_mov_aux(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   uint64_t i=0;
+  /*@
+    @ loop variant buffer_size-16 - i;
+    @*/
   while(i <= buffer_size-16)
   {
     /*@ assert i <= buffer_size - 16; */
