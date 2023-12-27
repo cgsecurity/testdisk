@@ -54,6 +54,7 @@ struct block_header
 /*@
   @ requires file_recovery->data_check==&data_check_gsm;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -63,6 +64,7 @@ static data_check_t data_check_gsm(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + sizeof(struct block_header));
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + sizeof(struct block_header) < file_recovery->file_size + buffer_size/2)
@@ -80,13 +82,17 @@ static data_check_t data_check_gsm(const unsigned char *buffer, const unsigned i
 /*@
   @ requires separation: \separated(&file_hint_gsm, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @*/
 static int header_check_gsm(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   unsigned int i=0;
   /*@ assert file_recovery_new->blocksize <= buffer_size; */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant file_recovery_new->blocksize - (i+1) * sizeof(struct block_header);
+    @*/
   for(i=0;
       (i+1) * sizeof(struct block_header) <= file_recovery_new->blocksize;
       i++)
