@@ -141,6 +141,7 @@ static data_check_t data_check_aux(file_recovery_t *file_recovery, const unsigne
       @ loop assigns i, file_recovery->file_size;
       @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
       @ loop assigns file_recovery->data_check, file_recovery->file_check, file_recovery->offset_error, file_recovery->offset_ok, file_recovery->time, file_recovery->data_check_tmp;
+      @ loop variant lu - i;
       @*/
     for(i=0; i<lu; i+=blocksize)
     {
@@ -168,6 +169,7 @@ static data_check_t data_check_aux(file_recovery_t *file_recovery, const unsigne
       /*@ assert valid_file_recovery(file_recovery); */
       return DC_STOP;
     }
+    /*@ assert valid_file_recovery(file_recovery); */
     memcpy(buffer_start, &buffer_start[READ_SIZE], blocksize);
     /*@ assert valid_file_recovery(file_recovery); */
   }
