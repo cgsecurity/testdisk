@@ -62,6 +62,7 @@ static const unsigned char sdvs_header[4] = { 'S','D','V','S'};
 /*@
   @ requires file_recovery->data_check==&data_check_ts_192;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -69,7 +70,10 @@ static data_check_t data_check_ts_192(const unsigned char *buffer, const unsigne
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 5);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 5 < file_recovery->file_size + buffer_size/2)
   {
@@ -155,7 +159,10 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
   unsigned int i;
   /* BDAV MPEG-2 transport stream */
   /* Each frame is 192 byte long and begins by a TS_SYNC_BYTE */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant buffer_size - i;
+    @*/
   for(i=4; i<buffer_size; i+=192)
     if(buffer[i]!=0x47)
       return 0;
@@ -199,6 +206,7 @@ static int header_check_m2ts(const unsigned char *buffer, const unsigned int buf
 /*@
   @ requires file_recovery->data_check==&data_check_ts_188;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -206,7 +214,10 @@ static data_check_t data_check_ts_188(const unsigned char *buffer, const unsigne
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - file_recovery->calculated_file_size;
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size < file_recovery->file_size + buffer_size/2)
   {
@@ -234,7 +245,10 @@ static int header_check_m2t(const unsigned char *buffer, const unsigned int buff
       file_recovery->calculated_file_size == file_recovery->file_size)
     return 0;
   /* Each frame is 188 byte long and begins by a TS_SYNC_BYTE */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant buffer_size - i;
+    @*/
   for(i=0; i<buffer_size; i+=188)
     if(buffer[i]!=0x47)
       return 0;
