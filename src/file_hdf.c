@@ -116,6 +116,7 @@ static uint64_t file_check_hdf_aux(FILE *handle, char *dd_buf)
     /*@
       @ loop invariant 0 <= i <= size;
       @ loop assigns i, file_size;
+      @ loop variant size - i;
       @*/
     for(i=0; i < size; i++)
     {
@@ -162,6 +163,7 @@ static void file_check_hdf(file_recovery_t *file_recovery)
   @ requires buffer_size >= sizeof(struct ddh_struct);
   @ requires separation: \separated(&file_hint_hdf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
