@@ -73,12 +73,16 @@ typedef struct {
 
 /*@
   @ requires \valid_read(hdr->blockType + (0 .. 3));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int is_valid_type(const mlv_hdr_t *hdr)
 {
   unsigned int i;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 4 - i;
+    @*/
   for(i=0; i<4; i++)
   {
     const uint8_t c=hdr->blockType[i];
@@ -91,6 +95,7 @@ static int is_valid_type(const mlv_hdr_t *hdr)
 /*@
   @ requires fr->data_check==&data_check_mlv;
   @ requires valid_data_check_param(buffer, buffer_size, fr);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, fr);
   @ assigns fr->calculated_file_size;
   @*/
@@ -100,6 +105,7 @@ static data_check_t data_check_mlv(const unsigned char *buffer, const unsigned i
   /*@ assert fr->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns fr->calculated_file_size;
+    @ loop variant fr->file_size + buffer_size/2 - (fr->calculated_file_size + 8);
     @*/
   while(fr->calculated_file_size + buffer_size/2  >= fr->file_size &&
       fr->calculated_file_size + 8 < fr->file_size + buffer_size/2)
@@ -129,6 +135,7 @@ static void file_check_mlv(file_recovery_t *file_recovery)
   /*@
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source, fs;
+    @ loop variant 0x8000000000000000 - fs;
     @*/
   while(fs < 0x8000000000000000)
   {
@@ -167,6 +174,7 @@ static void file_rename_mlv(file_recovery_t *file_recovery)
   const mlv_file_hdr_t *hdr=(const mlv_file_hdr_t *)&buffer;
   char ext[16];
   const char *ext_ptr=(const char *)&ext;
+  /*@ assert \separated(file_recovery, ext_ptr); */
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
   if(my_fseek(file, 0, SEEK_SET) < 0 ||
@@ -188,6 +196,7 @@ static void file_rename_mlv(file_recovery_t *file_recovery)
   @ requires buffer_size >= sizeof(mlv_file_hdr_t);
   @ requires separation: \separated(&file_hint_mlv, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
