@@ -58,6 +58,7 @@ const file_hint_t file_hint_mkv= {
   @ requires \initialized(p + (0 .. p_size-1));
   @ requires \valid(uint64);
   @ requires \separated(p + (..), uint64);
+  @ terminates \true;
   @ ensures -1 == \result || (1 <= \result <= 8);
   @ ensures -1 != \result ==> \initialized(uint64);
   @ ensures -1 != \result ==> *uint64 <= 0xfeffffffffffffff;
@@ -79,6 +80,7 @@ static int EBML_read_unsigned(const unsigned char *p, const unsigned int p_size,
     @ loop invariant 1 <= bytes <= 8;
     @ loop assigns test_bit, bytes;
     @ loop unroll 8;
+    @ loop variant 8 - bytes;
     @*/
   while((c & test_bit) != test_bit)
   {
@@ -123,6 +125,7 @@ static int EBML_find(const unsigned char *buffer, const unsigned int buffer_size
   unsigned int offset=0;
   /*@
     @ loop assigns offset;
+    @ loop variant buffer_size - offset;
     @*/
   while(offset < buffer_size)
   {
