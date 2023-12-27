@@ -69,6 +69,34 @@ struct partition_pack_next
 #endif
 } __attribute__ ((gcc_struct, __packed__));
 
+
+/*@
+  @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ requires 0 <= i < buffer_size - 0x14;
+  @ terminates \true;
+  @ ensures \result > 0;
+  @ assigns \nothing;
+  @*/
+static uint64_t get_mxf_size(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i)
+{
+  switch(buffer[i+0x10])
+  {
+    case 0x81:
+      return (uint64_t)0x14+buffer[i+0x11];
+    case 0x82:
+      return (uint64_t)0x14+(buffer[i+0x11]<<8)+buffer[i+0x12];
+    case 0x83:
+      return (uint64_t)0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
+    case 0x84:
+      {
+	const uint32_t *p32=(const uint32_t*)&buffer[i+0x11];
+	return (uint64_t)0x14 + le32(*p32);
+      }
+    default:
+      return (uint64_t)0x14+buffer[i+0x10];
+  }
+}
+
 /*@
   @ requires file_recovery->data_check==&data_check_mxf;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
@@ -80,7 +108,10 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   static const unsigned char mxf_header[4]= { 0x06, 0x0e, 0x2b, 0x34 };
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 0x14);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 0x14 < file_recovery->file_size + buffer_size/2)
   {
@@ -92,27 +123,7 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
     log_info("data_check_mxf: header found 0x%02x\n", buffer[i+0x10]);
     log_info("fs=0x%llx\n", file_recovery->calculated_file_size);
 #endif
-    switch(buffer[i+0x10])
-    {
-      case 0x81:
-	file_recovery->calculated_file_size+=(uint64_t)0x14+buffer[i+0x11];
-	break;
-      case 0x82:
-	file_recovery->calculated_file_size+=(uint64_t)0x14+(buffer[i+0x11]<<8)+buffer[i+0x12];
-	break;
-      case 0x83:
-	file_recovery->calculated_file_size+=(uint64_t)0x14+(buffer[i+0x11]<<16)+(buffer[i+0x12]<<8)+buffer[i+0x13];
-	break;
-      case 0x84:
-	{
-	  const uint32_t *p32=(const uint32_t*)&buffer[i+0x11];
-	  file_recovery->calculated_file_size+=(uint64_t)0x14 + le32(*p32);
-	}
-	break;
-      default:
-	file_recovery->calculated_file_size+=(uint64_t)0x14+buffer[i+0x10];
-	break;
-    }
+    file_recovery->calculated_file_size+=get_mxf_size(buffer, buffer_size, i);
   }
   return DC_CONTINUE;
 }
@@ -121,6 +132,7 @@ static data_check_t data_check_mxf(const unsigned char *buffer, const unsigned i
   @ requires buffer_size >= 0x26;
   @ requires separation: \separated(&file_hint_mxf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
