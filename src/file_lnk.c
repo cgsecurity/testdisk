@@ -80,6 +80,7 @@ struct lnk_header_s {
 /*@
   @ requires buffer_size > 0x4c;
   @ requires \valid_read(buffer + (0 .. buffer_size-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int buffer_size)
@@ -197,6 +198,7 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
   /*@
     @ loop invariant i < buffer_size-2;
     @ loop assigns i;
+    @ loop variant buffer_size-2 - i;
     @*/
   while(1)
   {
