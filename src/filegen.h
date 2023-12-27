@@ -268,6 +268,7 @@ void file_search_footer(file_recovery_t *file_recovery, const void*footer, const
 /*@
   @ requires file_recovery->data_check == &data_check_size;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures  \result == DC_STOP || \result == DC_CONTINUE;
   @ ensures  file_recovery->data_check == &data_check_size;
@@ -278,6 +279,7 @@ data_check_t data_check_size(const unsigned char *buffer, const unsigned int buf
 /*@
   @ requires file_recovery->file_check == &file_check_size;
   @ requires valid_file_check_param(file_recovery);
+  @ terminates \true;
   @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
@@ -286,6 +288,7 @@ void file_check_size(file_recovery_t *file_recovery);
 /*@
   @ requires file_recovery->file_check == &file_check_size_min;
   @ requires valid_file_check_param(file_recovery);
+  @ terminates \true;
   @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
@@ -294,6 +297,7 @@ void file_check_size_min(file_recovery_t *file_recovery);
 /*@
   @ requires file_recovery->file_check == &file_check_size_max;
   @ requires valid_file_check_param(file_recovery);
+  @ terminates \true;
   @ ensures  valid_file_check_result(file_recovery);
   @ assigns  file_recovery->file_size;
   @*/
@@ -301,6 +305,7 @@ void file_check_size_max(file_recovery_t *file_recovery);
 
 /*@
   requires \valid(file_recovery);
+  terminates \true;
   ensures file_recovery->filename[0]=='\0';
   ensures file_recovery->time==0;
   ensures file_recovery->file_stat==\null;
@@ -374,6 +379,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable);
   @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
+  @ requires \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
@@ -384,6 +390,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   @ requires valid_file_recovery(file_recovery);
   @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
+  @ requires \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
@@ -392,6 +399,7 @@ void header_ignored_cond_reset(uint64_t start, uint64_t end);
 
 /*@
   @ requires file_recovery_new==\null || valid_file_recovery(file_recovery_new);
+  @ terminates \true;
   @*/
 void header_ignored(const file_recovery_t *file_recovery_new);
 

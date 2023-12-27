@@ -409,6 +409,7 @@ uint64_t file_rsearch(FILE *handle, uint64_t offset, const void*footer, const un
     /*@
       @ loop invariant -1 <= i < taille;
       @ loop assigns i;
+      @ loop variant i;
       @*/
     for(i=taille-1;i>=0;i--)
     {
@@ -523,6 +524,9 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   /*@ assert enable_count > 0; */
   file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
   i=0;
+  /*@
+    @ loop invariant 0 <= i <= enable_count;
+    @*/
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
@@ -547,6 +551,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @ requires valid_file_recovery(file_recovery);
   @ requires strlen(&file_recovery->filename[0]) > 0;
   @ requires valid_read_string(new_ext);
+  @ requires strlen(new_ext) < (1<<30);
   @ requires separation: \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
   @*/
@@ -556,19 +561,26 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   char new_filename[sizeof(file_recovery->filename)];
   char *dst;
   char *dst_dir_sep;
+  /*@ assert strlen((char *)&file_recovery->filename) < 2048; */
   const unsigned int len=strlen(file_recovery->filename)+1+strlen(new_ext)+1;
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
   if(len > sizeof(file_recovery->filename))
   {
     /*@ assert valid_string((char *)&file_recovery->filename); */
+    /*@ assert valid_file_recovery(file_recovery); */
     return -1;
   }
   /*@ assert len <= sizeof(file_recovery->filename); */
   /*@ assert valid_read_string((char*)&file_recovery->filename); */
   /*@ assert \initialized((char *)&file_recovery->filename +(0..strlen(&file_recovery->filename[0]))); */
+  /*@ assert valid_read_string(new_ext); */
+  /*@ assert strlen(new_ext) < (1<<30); */
+  /*@ assert \separated(file_recovery, new_ext); */
   memcpy(new_filename, (char *)&file_recovery->filename, sizeof(file_recovery->filename));
   /*@ assert valid_string(&new_filename[0]); */
   /*@ assert \initialized((char *)&new_filename[0] +(0..strlen(&new_filename[0]))); */
+  /*@ assert valid_read_string(new_ext); */
+  /*@ assert strlen(new_ext) < (1<<30); */
 #ifdef DISABLED_FOR_FRAMAC
   dst_dir_sep=new_filename;
 #else
@@ -589,6 +601,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
     @ loop invariant valid_string(dst);
     @ loop invariant \initialized(dst);
     @ loop invariant odst <= dst <= odst + strlen(odst);
+    @ loop invariant valid_read_string(new_ext);
+    @ loop invariant strlen(new_ext) < (1<<30);
     @ loop assigns dst;
     @ loop variant strlen(dst);
     @*/
@@ -605,6 +619,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   if(strlen(new_filename) >= sizeof(file_recovery->filename))
   {
     /*@ assert valid_read_string((const char *)&file_recovery->filename); */
+    /*@ assert valid_file_recovery(file_recovery); */
     return -1;
   }
   /*@ assert valid_read_string(&new_filename[0]); */
@@ -612,6 +627,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   {
     /* Rename has failed */
     /*@ assert valid_read_string((const char *)&file_recovery->filename); */
+    /*@ assert valid_file_recovery(file_recovery); */
     return -1;
   }
   /*@ assert valid_file_recovery(file_recovery); */
@@ -696,6 +712,7 @@ static int _file_rename(char *filename, const void *buffer, const int buffer_siz
     *dst++ = '_';
     /*@
       @ loop invariant offset <= off <= buffer_size;
+      @ loop variant buffer_size - off;
       @*/
     for(off=offset; off<buffer_size; off++)
     {
@@ -738,6 +755,7 @@ static int _file_rename(char *filename, const void *buffer, const int buffer_siz
       /*@
         @ loop invariant dst_old <= dst;
         @ loop assigns dst;
+	@ loop variant dst;
 	@*/
       while(dst > dst_old && *(dst-1)=='_')
 	dst--;
@@ -800,6 +818,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
+  @ requires \separated(file_recovery, new_ext);
   @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  valid_read_string((char*)&file_recovery->filename);
   @ ensures  valid_file_recovery(file_recovery);
@@ -984,7 +1003,6 @@ int header_ignored_adv(const file_recovery_t *file_recovery, const file_recovery
 }
 
 /*@
-  @ requires file_recovery_new == \null || \valid_read(file_recovery_new);
   @ requires \separated(file_recovery_new, &offset_skipped_header);
   @ assigns offset_skipped_header;
   @*/
