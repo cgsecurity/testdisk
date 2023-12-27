@@ -64,6 +64,7 @@ static void file_check_axx(file_recovery_t *fr)
   /*@
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns offset, Frama_C_entropy_source;
+    @ loop variant 0x8000000000000000 - offset;
     @ */
   while(offset < 0x8000000000000000)
   {
@@ -113,6 +114,7 @@ static void file_check_axx(file_recovery_t *fr)
   @ requires buffer_size > 0x25+sizeof(struct SHeader);
   @ requires separation: \separated(&file_hint_axx, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
