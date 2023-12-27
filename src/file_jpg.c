@@ -99,6 +99,7 @@ const file_hint_t file_hint_jpg= {
   @ requires \valid(height);
   @ requires \valid(width);
   @ requires \separated(buffer, height, width);
+  @ terminates \true;
   @ assigns *height, *width;
   @*/
 static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_size, unsigned int *height, unsigned int *width)
@@ -107,6 +108,7 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
   /*@
     @ loop invariant i< buffer_size + 2 + 0xffff;
     @ loop assigns i, *height, *width;
+    @ loop variant buffer_size - i;
     @ */
   while(i+8<buffer_size)
   {
@@ -724,6 +726,7 @@ static void file_check_mpo(file_recovery_t *fr)
   /*@
     @ loop assigns *fr->handle, Frama_C_entropy_source, errno;
     @ loop assigns sbuffer[0 .. 511], fr->file_size, offset, nbytes, size;
+    @ loop variant 0x8000000000000000 - offset;
     @*/
   do
   {
@@ -788,7 +791,10 @@ static void file_check_mpo(file_recovery_t *fr)
   }
 }
 
-/*@ assigns \nothing; */
+/*@
+  @ terminates \true;
+  @ assigns \nothing;
+  @*/
 static int is_marker_valid(const unsigned int marker)
 {
   switch(marker)
@@ -877,7 +883,10 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 {
   unsigned int i=2;
   time_t jpg_time=0;
-  /*@ loop assigns i, jpg_time; */
+  /*@
+    @ loop assigns i, jpg_time;
+    @ loop variant buffer_size - (i+4);
+    @*/
   while(i+4<buffer_size && buffer[i]==0xff && is_marker_valid(buffer[i+1]))
   {
     const unsigned int size=((unsigned int)buffer[i+2]<<8)+buffer[i+3];
@@ -1863,7 +1872,10 @@ static int jpg_check_dht(const unsigned char *buffer, const unsigned int buffer_
   /* DHT should not be longer than 1088 bytes, 4*(1+16+255) */
   if(size<18)
     return 2;
-  /*@ loop assigns j; */
+  /*@
+    @ loop assigns j;
+    @ loop variant buffer_size - j;
+    @*/
   while(j < buffer_size && j < i+size)
   {
     const unsigned int tc=buffer[j]>>4;
@@ -1911,6 +1923,7 @@ struct sof_header
 
 /*@
   @ requires \valid_read(buffer + (0..buffer_size-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int jpg_check_sof0(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int i)
@@ -1995,6 +2008,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
       @ loop invariant offset_test >= offset_error;
       @ loop invariant 0 <= i < nbytes + file_recovery->blocksize;
       @ loop assigns i,file_recovery->extra;
+      @ loop variant nbytes - (i+1);
       @*/
     while(i+1<nbytes)
     {
@@ -2200,6 +2214,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
       @ loop assigns file_recovery->offset_ok;
       @ loop assigns file_recovery->offset_error;
       @ loop assigns file_recovery->extra;
+      @ loop variant nbytes - (j+4);
       @*/
     while(j+4<nbytes && thumb_sos_found==0)
     {
@@ -2315,7 +2330,10 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     return 0;
   /*@ assert nbytes > 0; */
   file_recovery->offset_error=0;
-  /*@ loop assigns offset, file_recovery->offset_error; */
+  /*@
+    @ loop assigns offset, file_recovery->offset_error;
+    @ loop variant nbytes - (offset + 30);
+    @*/
   for(offset=file_recovery->blocksize; offset + 30 < nbytes && file_recovery->offset_error==0; offset+=file_recovery->blocksize)
   {
     if(buffer[offset]==0xff && buffer[offset+1]==0xd8 && buffer[offset+2]==0xff &&
@@ -2336,6 +2354,7 @@ static uint64_t jpg_check_structure(file_recovery_t *file_recovery, const unsign
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns offset;
     @ loop assigns thumb_offset;
+    @ loop variant nbytes - (offset + 4);
     @*/
   while(offset + 4 < nbytes && buffer[offset]==0xff && is_marker_valid(buffer[offset+1]) && (file_recovery->offset_error==0 || offset < file_recovery->offset_error))
   {
@@ -2512,6 +2531,7 @@ static data_check_t data_check_jpg2(const unsigned char *buffer, const unsigned 
     @ loop assigns file_recovery->calculated_file_size;
     @ loop assigns file_recovery->data_check;
     @ loop assigns file_recovery->offset_error;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 1);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  > file_recovery->file_size &&
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
@@ -2612,6 +2632,7 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
     @ loop assigns file_recovery->data_check;
     @ loop assigns file_recovery->file_check;
     @ loop assigns file_recovery->offset_error;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 4);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 4 < file_recovery->file_size + buffer_size/2)
