@@ -83,6 +83,7 @@ static int check_ace_crc(FILE *handle, const unsigned int len, const unsigned in
     @ loop assigns *handle, errno;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns buffer[0 .. BUF_SIZE-1], crc32, remaining;
+    @ loop variant remaining;
     @*/
   while (remaining>0)
   {
@@ -127,6 +128,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
   /*@
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size, file_recovery->offset_error;
     @ loop assigns Frama_C_entropy_source;
+    @ loop variant 0x8000000000000000-0x100000000 - file_recovery->file_size;
     @*/
   while (!feof(file_recovery->handle))
   {
@@ -200,6 +202,7 @@ static void file_check_ace(file_recovery_t *file_recovery)
   @ requires buffer_size >= sizeof(ace_header_t);
   @ requires separation: \separated(&file_hint_ace, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> file_recovery_new->file_size == 0;
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
