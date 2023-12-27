@@ -88,6 +88,7 @@ const file_hint_t file_hint_gpg= {
 static const unsigned char pgp_header[5]= {0xa8, 0x03, 'P', 'G', 'P'};
 
 /*@
+  @ terminates \true;
   @ ensures 0 <= \result <= 0x3f;
   @ assigns \nothing;
   @*/
@@ -103,6 +104,7 @@ static unsigned int openpgp_packet_tag(const unsigned char buf)
   @ requires \valid(length_type);
   @ requires \valid(indeterminate_length);
   @ requires \separated(buf+(..), indeterminate_length, length_type);
+  @ terminates \true;
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==3)|| (*length_type==5);
   @ assigns *length_type, *indeterminate_length;
  */
@@ -134,6 +136,7 @@ static unsigned int old_format_packet_length(const unsigned char *buf, unsigned 
   @ requires \valid(length_type);
   @ requires \valid(partial_body_length);
   @ requires separation: \separated(buf+(0..5), length_type, partial_body_length);
+  @ terminates \true;
   @ ensures (*length_type == 1) || (*length_type == 2) || (*length_type==5);
   @ ensures (*partial_body_length==0) || (*partial_body_length==1);
   @ assigns *length_type, *partial_body_length;
@@ -185,6 +188,7 @@ static unsigned int new_format_packet_length(const unsigned char *buf, unsigned 
 }
 
 /*@
+  @ terminates \true;
   @ ensures \result == -1 || 0 <= \result <= 2048;
   @ assigns \nothing;
   @*/
@@ -197,6 +201,7 @@ static int is_valid_mpi(const uint16_t size)
 }
 
 /*@
+  @ terminates \true;
   @ ensures \result == 0 || \result == 1;
   @ assigns \nothing;
   @*/
@@ -228,6 +233,7 @@ static int is_valid_pubkey_algo(const int algo)
 }
 
 /*@
+  @ terminates \true;
   @ ensures \result == 0 || \result == 1;
   @ assigns \nothing;
   @*/
@@ -265,6 +271,7 @@ static int is_valid_sym_algo(const int algo)
 }
 
 /*@
+  @ terminates \true;
   @ ensures \result == 0 || \result == 1;
   @ assigns \nothing;
   @*/
@@ -331,6 +338,7 @@ static void file_check_gpg(file_recovery_t *file_recovery)
     @ loop assigns *file_recovery->handle, errno, file_recovery->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns tag, nbr, partial_body_length, stop, offset;
+    @ loop variant 0x7000000000000000 - offset;
     @*/
   while(stop==0)
   {
@@ -541,6 +549,7 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
   /*@
     @ loop invariant 0 <= nbr <=16;
     @ loop assigns i, packet_tag[0..nbr], nbr, partial_body_length, stop;
+    @ loop variant buffer_size - 23 - i;
     @*/
   while(nbr<16 && i < buffer_size - 23 && stop==0)
   {
@@ -673,7 +682,11 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	 * Symmetric-Key Encrypted Session Key packet that precedes the
 	 * Symmetrically Encrypted Data packet.
 	 * PhotoRec assumes it must */
-	/*@ loop assigns j, ok; */
+	/*@
+	  @ loop invariant 0 <= j <= nbr;
+	  @ loop assigns j, ok;
+	  @ loop variant nbr - j;
+	  @*/
 	for(j=0; j<nbr; j++)
 	{
 	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
@@ -702,7 +715,11 @@ static int header_check_gpg(const unsigned char *buffer, const unsigned int buff
 	/* The symmetric cipher used MUST be specified in a Public-Key or
 	 * Symmetric-Key Encrypted Session Key packet that precedes the
 	 * Symmetrically Encrypted Data packet. */
-	/*@ loop assigns j, ok; */
+	/*@
+	  @ loop invariant 0 <= j <= nbr;
+	  @ loop assigns j, ok;
+	  @ loop variant nbr - j;
+	  @*/
 	for(j=0; j<nbr; j++)
 	{
 	  if(packet_tag[j]==OPENPGP_TAG_PUBKEY_ENC_SESSION_KEY ||
