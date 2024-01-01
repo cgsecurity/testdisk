@@ -91,6 +91,7 @@ unsigned int find_tag_from_tiff_header(const unsigned char *buffer, const unsign
   @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
   @ requires \separated(potential_error, buffer);
+  @ terminates \true;
   @ assigns *potential_error;
   @*/
 unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const unsigned int tiff_size, const unsigned int tag, const unsigned char**potential_error);

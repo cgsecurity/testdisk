@@ -55,6 +55,7 @@ static const char *extension_pef="pef";
 #ifndef MAIN_tiff_le
 /*@
   @ requires \valid_read(buffer+(0..tiff_size-1));
+  @ terminates \true;
   @ ensures \result <= 0xffff;
   @ assigns \nothing;
   @ */
@@ -79,6 +80,7 @@ static unsigned int get_nbr_fields_be(const unsigned char *buffer, const unsigne
   @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
   @ requires \separated(potential_error, buffer+(..));
+  @ terminates \true;
   @ assigns *potential_error;
   @
  */
@@ -191,7 +193,36 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char *buffer, const uns
   return 0;
 }
 
-#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg)
+#if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg)
+/*@
+  @ requires nbr <= 2048;
+  @ requires \valid_read(offsetp + (0 .. nbr-1));
+  @ requires \valid_read(sizep + (0 .. nbr-1));
+  @ requires \initialized(offsetp + (0 .. nbr-1));
+  @ requires \initialized(sizep + (0 .. nbr-1));
+  @ terminates \true;
+  @ assigns \nothing;
+  @*/
+static uint64_t parse_strip_be_aux(const uint32_t *offsetp, const uint32_t *sizep, const unsigned int nbr)
+{
+  unsigned int i;
+  uint64_t max_offset=0;
+  /*@
+    @ loop invariant \valid_read(offsetp + (0 .. nbr-1));
+    @ loop invariant \valid_read(sizep + (0 .. nbr-1));
+    @ loop assigns i, max_offset;
+    @ loop variant nbr - i;
+    @*/
+  for(i=0; i<nbr; i++)
+  {
+    /*@ assert 0 <= i < nbr; */
+    const uint64_t tmp=(uint64_t)be32(offsetp[i]) + be32(sizep[i]);
+    if(max_offset < tmp)
+      max_offset=tmp;
+  }
+  return max_offset;
+}
+
 /*@
   @ requires \valid(handle);
   @ requires \valid_read(entry_strip_offsets);
@@ -206,10 +237,8 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
       be32(entry_strip_offsets->tdir_count):
       2048);
   /*@ assert nbr <= 2048; */
-  unsigned int i;
   char offsetp_buf[2048*sizeof(uint32_t)];
   char sizep_buf[2048*sizeof(uint32_t)];
-  uint64_t max_offset=0;
   /* be32() isn't required to compare the 2 values */
   if(entry_strip_offsets->tdir_count != entry_strip_bytecounts->tdir_count)
     return TIFF_ERROR;
@@ -235,25 +264,7 @@ static uint64_t parse_strip_be(FILE *handle, const TIFFDirEntry *entry_strip_off
 #endif
   /*@ assert \initialized(offsetp_buf + (0 .. nbr*sizeof(uint32_t)-1)); */
   /*@ assert \initialized(sizep_buf + (0 .. nbr*sizeof(uint32_t)-1)); */
-  {
-    const uint32_t *offsetp=(const uint32_t *)&offsetp_buf;
-    const uint32_t *sizep=(const uint32_t *)&sizep_buf;
-    /*@ assert \initialized(offsetp + (0 .. nbr-1)); */
-    /*@ assert \initialized(sizep + (0 .. nbr-1)); */
-    /*@
-      @ loop invariant \valid_read(offsetp + (0 .. nbr-1));
-      @ loop invariant \valid_read(sizep + (0 .. nbr-1));
-      @ loop assigns i, max_offset;
-      @*/
-    for(i=0; i<nbr; i++)
-    {
-      /*@ assert 0 <= i < nbr; */
-      const uint64_t tmp=(uint64_t)be32(offsetp[i]) + be32(sizep[i]);
-      if(max_offset < tmp)
-	max_offset=tmp;
-    }
-  }
-  return max_offset;
+  return parse_strip_be_aux((const uint32_t *)&offsetp_buf, (const uint32_t *)&sizep_buf, nbr);
 }
 
 /*@
@@ -279,7 +290,7 @@ static unsigned int tiff_be_read(const void *val, const unsigned int type)
       {
         const uint16_t *ptr=(const uint16_t *)val;
         /*@ assert \valid_read(ptr); */
-	const uint32_t val=*ptr;
+	const uint16_t val=*ptr;
         return be16(val);
       }
     case 4:
@@ -513,7 +524,6 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
   /*@ assert sizeof(TIFFDirEntry)==12; */
   /*X
     X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
-    X loop variant n-i;
     X*/
   /*@
     @ loop invariant valid_file_recovery(fr);
@@ -536,6 +546,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
     @ loop assigns entry_strip_bytecounts;
     @ loop assigns entry_tile_offsets;
     @ loop assigns entry_tile_bytecounts;
+    @ loop variant n-i;
     @*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {

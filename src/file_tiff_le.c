@@ -59,6 +59,7 @@ static const char *extension_sr2="sr2";
 #ifndef MAIN_tiff_be
 /*@
   @ requires \valid_read(buffer+(0..tiff_size-1));
+  @ terminates \true;
   @ ensures \result <= 0xffff;
   @ assigns \nothing;
   @ */
@@ -83,6 +84,7 @@ static unsigned int get_nbr_fields_le(const unsigned char *buffer, const unsigne
   @ requires \valid_read(buffer+(0..tiff_size-1));
   @ requires \valid(potential_error);
   @ requires \separated(potential_error, buffer+(..));
+  @ terminates \true;
   @ assigns *potential_error;
   @
  */
@@ -202,6 +204,7 @@ unsigned int find_tag_from_tiff_header_le(const unsigned char *buffer, const uns
   @ requires \valid_read(sizep + (0 .. nbr-1));
   @ requires \initialized(offsetp + (0 .. nbr-1));
   @ requires \initialized(sizep + (0 .. nbr-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static uint64_t parse_strip_le_aux(const uint32_t *offsetp, const uint32_t *sizep, const unsigned int nbr)
@@ -212,6 +215,7 @@ static uint64_t parse_strip_le_aux(const uint32_t *offsetp, const uint32_t *size
     @ loop invariant \valid_read(offsetp + (0 .. nbr-1));
     @ loop invariant \valid_read(sizep + (0 .. nbr-1));
     @ loop assigns i, max_offset;
+    @ loop variant nbr - i;
     @*/
   for(i=0; i<nbr; i++)
   {
@@ -522,7 +526,6 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
   /*@ assert sizeof(TIFFDirEntry)==12; */
   /*X
     X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
-    X loop variant n-i;
     X*/
   /*@
     @ loop invariant valid_file_recovery(fr);
@@ -545,6 +548,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
     @ loop assigns entry_strip_bytecounts;
     @ loop assigns entry_tile_offsets;
     @ loop assigns entry_tile_bytecounts;
+    @ loop variant n-i;
     @*/
   for(i=0; i < n && i < (unsigned int)(data_read-2)/12; i++)
   {
@@ -693,6 +697,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	      @ loop assigns *fr->handle, errno;
 	      @ loop assigns Frama_C_entropy_source;
 	      @ loop assigns j, max_offset;
+	      @ loop variant nbr - j;
 	      @*/
 	    for(j=0; j<nbr; j++)
 	    {
