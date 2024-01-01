@@ -96,7 +96,10 @@ static void file_rename_qbb(file_recovery_t *file_recovery)
   Frama_C_make_unknown(buffer, sizeof(buffer));
 #endif
   /*@ assert \valid_read((char *)&buffer + (0 .. lu-1)); */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant lu - (i+sizeof(struct qbb_header02));
+    @*/
   while(i+sizeof(struct qbb_header02) <= lu)
   {
     /*@ assert i+sizeof(struct qbb_header02) <= lu; */
@@ -140,6 +143,7 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
     return 0;
   /*@
     @ loop assigns i, data_size;
+    @ loop variant buffer_size - (i+sizeof(struct qbb_header02));
     @*/
   while(i+sizeof(struct qbb_header02) < buffer_size)
   {
@@ -178,6 +182,7 @@ static int header_check_qbb(const unsigned char *buffer, const unsigned int buff
   @ requires buffer_size >= 0x64;
   @ requires separation: \separated(&file_hint_qbb, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

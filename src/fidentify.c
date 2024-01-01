@@ -122,6 +122,7 @@ static data_check_t data_check_aux(file_recovery_t *file_recovery, const unsigne
     char *buffer=buffer_start+blocksize;
     unsigned int i;
     size_t lu=0;
+    /*@ assert valid_file_recovery(file_recovery); */
     memset(buffer, 0, READ_SIZE);
     lu=fread(buffer, 1, READ_SIZE, file_recovery->handle);
     if(lu <= 0)

@@ -1247,6 +1247,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
       fclose(fr.handle);
       /*@
         @ loop assigns len;
+	@ loop variant 32 - len;
 	@*/
       for(len=0; len<32 &&
 	  first_filename[len]!='\0' &&

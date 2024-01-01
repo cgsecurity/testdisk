@@ -79,6 +79,7 @@ static void file_rename_fatdir(file_recovery_t *file_recovery)
   @ requires file_recovery->data_check == &data_check_fatdir;
   @ requires buffer_size >= 2;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures \result == DC_STOP;
   @ assigns file_recovery->calculated_file_size;

@@ -76,6 +76,7 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check_tmp;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 15);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 15 < file_recovery->file_size + buffer_size/2)
@@ -97,6 +98,7 @@ static data_check_t data_check_flv(const unsigned char *buffer, const unsigned i
 	file_recovery->calculated_file_size+=4;
 	return DC_STOP;
       }
+      /*@ assert file_recovery->data_check_tmp > 0; */
       /* 4+11=15*/
       file_recovery->calculated_file_size+=(uint64_t)15+file_recovery->data_check_tmp;
     }

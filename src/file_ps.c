@@ -63,6 +63,7 @@ static void file_check_ps(file_recovery_t *file_recovery)
   @ requires buffer_size > 8;
   @ requires file_recovery->data_check==&data_check_ps;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -73,6 +74,7 @@ static data_check_t data_check_ps(const unsigned char *buffer, const unsigned in
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns i, file_recovery->calculated_file_size;
+    @ loop variant buffer_size - (i+4);
     @*/
   for(i=(buffer_size/2)-4;i+4<buffer_size;i++)
   {
@@ -99,7 +101,10 @@ static int header_check_ps(const unsigned char *buffer, const unsigned int buffe
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=sizeof(ps_header);
   file_recovery_new->file_check=&file_check_ps;
-  /*@ loop assigns i, file_recovery_new->extension, file_recovery_new->data_check; */
+  /*@
+    @ loop assigns i, file_recovery_new->extension, file_recovery_new->data_check;
+    @ loop variant 20 - i;
+    @*/
   for(i=sizeof(ps_header); i < 20; i++)
   {
     switch(buffer[i])

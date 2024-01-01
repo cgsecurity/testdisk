@@ -70,6 +70,7 @@ static void file_check_x4a(file_recovery_t *fr)
 #endif
   /*@
     @ loop assigns i, fs;
+    @ loop variant 0x200 - i;
     @*/
   for(i = 0x80; i < 0x200; i += 8)
   {

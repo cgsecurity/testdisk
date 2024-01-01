@@ -59,7 +59,10 @@ static data_check_t data_check_tib2(const unsigned char *buffer, const unsigned 
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 512);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 512 <= file_recovery->file_size + buffer_size/2)
   {
@@ -109,6 +112,7 @@ static void file_check_tib2(file_recovery_t *file_recovery)
 /*@
   @ loop assigns *file_recovery->handle, errno, file_size;
   @ loop assigns Frama_C_entropy_source;
+  @ loop variant file_size;
   @*/
   for(; file_size>0; file_size-=512)
   {
@@ -120,7 +124,10 @@ static void file_check_tib2(file_recovery_t *file_recovery)
       file_recovery->file_size=0;
       return;
     }
-    /*@ loop assigns i; */
+    /*@
+      @ loop assigns i;
+      @ loop variant 512 - i;
+      @*/
     for(i=0; i<512 && buffer[i]==0; i++);
     if(i!=512)
     {
@@ -133,6 +140,7 @@ static void file_check_tib2(file_recovery_t *file_recovery)
 /*@
   @ requires separation: \separated(&file_hint_tib, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -146,6 +154,7 @@ static int header_check_tib(const unsigned char *buffer, const unsigned int buff
 /*@
   @ requires separation: \separated(&file_hint_tib, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

@@ -75,7 +75,10 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size / 2 - (file_recovery->calculated_file_size + 16);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size / 2 >= file_recovery->file_size && file_recovery->calculated_file_size + 16 <= file_recovery->file_size + buffer_size / 2)
   {
     const unsigned int i = file_recovery->calculated_file_size + buffer_size / 2 - file_recovery->file_size;
@@ -88,6 +91,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
     else if(buffer[i] == 'A' && buffer[i + 1] == 'P' && buffer[i + 2] == 'E' && buffer[i + 3] == 'T' && buffer[i + 4] == 'A' && buffer[i + 5] == 'G' && buffer[i + 6] == 'E' && buffer[i + 7] == 'X')
     { /* APE Tagv2 (APE Tagv1 has no header) http://wiki.hydrogenaudio.org/index.php?title=APE_Tags_Header */
       const uint64_t ape_tag_size = (buffer[i + 12] + (buffer[i + 13] << 8) + (buffer[i + 14] << 16) + ((uint64_t)buffer[i + 15] << 24)) + 32;
+      /*@ assert ape_tag_size > 0; */
       file_recovery->calculated_file_size += ape_tag_size;
     }
     else if(buffer[i] == 'T' && buffer[i + 1] == 'A' && buffer[i + 2] == 'G')
@@ -110,6 +114,7 @@ static data_check_t data_check_wv(const unsigned char *buffer, const unsigned in
   @ requires buffer_size >= sizeof(WavpackHeader);
   @ requires separation: \separated(&file_hint_wv, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

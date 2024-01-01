@@ -29,6 +29,8 @@ extern "C" {
   @ requires \valid(to + ( 0 .. len-1));
   @ requires \valid_read(from + ( 0 .. len-1));
   @ requires \separated(to + (..), from + (..));
+  @ terminates \true;
+  @ assigns to[0 .. len-1];
   @*/
 int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
 
@@ -36,6 +38,8 @@ int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
   @ requires \valid(to + ( 0 .. len-1));
   @ requires \valid_read(from + ( 0 .. len-1));
   @ requires \separated(to + (..), from + (..));
+  @ terminates \true;
+  @ assigns to[0 .. len-1];
   @*/
 int str2UCSle(uint16_t *to, const char *from, const unsigned int len);
 

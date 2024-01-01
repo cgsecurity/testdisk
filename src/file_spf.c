@@ -60,8 +60,11 @@ static void file_check_spf(file_recovery_t *file_recovery)
   {
     return;
   }
-  /*@ loop assigns *file_recovery->handle, file_recovery->file_size;
-    @ loop assigns Frama_C_entropy_source, errno; */
+  /*@
+    @ loop invariant valid_file_check_param(file_recovery);
+    @ loop assigns *file_recovery->handle, file_recovery->file_size;
+    @ loop assigns Frama_C_entropy_source, errno;
+    @*/
   while(1)
   {
     int i;
@@ -75,7 +78,11 @@ static void file_check_spf(file_recovery_t *file_recovery)
 #ifdef __FRAMAC__
     Frama_C_make_unknown(buffer, READ_SIZE);
 #endif
-    /*@ loop assigns i, file_recovery->file_size; */
+    /*@
+      @ loop invariant valid_file_check_param(file_recovery);
+      @ loop assigns i, file_recovery->file_size;
+      @ loop variant PHOTOREC_MAX_FILE_SIZE - file_recovery->file_size;
+      @*/
     for(i=0; i<taille; i+=512)
     {
       int j;
@@ -85,11 +92,17 @@ static void file_check_spf(file_recovery_t *file_recovery)
       {
 	return;
       }
-      /*@ loop assigns j, is_valid; */
+      /*@
+        @ loop assigns j, is_valid;
+	@ loop variant 8 - j;
+	@*/
       for(j=0; j<8; j++)
 	if(buffer[i+j]!=0)
 	  is_valid=1;
-      /*@ loop assigns j; */
+      /*@
+        @ loop assigns j;
+	@ loop variant 512 - j;
+	@*/
       for(j=8; j<512 && buffer[i+j]==0; j++);
       if(is_valid > 0 && j==512)
       {

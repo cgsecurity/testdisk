@@ -49,6 +49,7 @@ const file_hint_t file_hint_tar = {
 
 /*@
   @ requires \valid_read(h);
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int is_valid_checksum_format(const struct tar_posix_header *h)
@@ -59,6 +60,7 @@ static int is_valid_checksum_format(const struct tar_posix_header *h)
   /* No checksum ? */
   /*@
     @ loop assigns i,all_null;
+    @ loop variant 8 - i;
     @*/
   for(i = 0; i < 8; i++)
     if(h->chksum[i] != 0)
@@ -71,6 +73,7 @@ static int is_valid_checksum_format(const struct tar_posix_header *h)
    */
   /*@
     @ loop assigns i,space_allowed;
+    @ loop variant 6 - i;
     @*/
   for(i = 0; i < 6; i++)
   {

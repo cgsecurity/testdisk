@@ -348,6 +348,7 @@ static int filtre(unsigned int car)
 /*@
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \initialized(buffer+(0..buffer_size-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int has_newline(const char *buffer, const unsigned int buffer_size)
@@ -370,6 +371,7 @@ static int has_newline(const char *buffer, const unsigned int buffer_size)
 /*@
   @ requires buffer_size > 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static unsigned int is_csv(const char *buffer, const unsigned int buffer_size)
@@ -479,6 +481,7 @@ static int is_ini(const unsigned char *buffer)
   @ requires buffer_size >= 0;
   @ requires \valid_read(buffer+(0..buffer_size-1));
   @ requires \initialized(buffer+(0..buffer_size-1));
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 static double is_random(const unsigned char *buffer, const unsigned int buffer_size)
@@ -701,6 +704,7 @@ static data_check_t data_check_html(const unsigned char *buffer, const unsigned 
     unsigned int j;
     /*@
       @ loop assigns j, file_recovery->calculated_file_size;
+      @ loop variant buffer_size - (j+sizeof(sign_html_end)-1);
       @*/
     for(j=buffer_size/2-(sizeof(sign_html_end)-1);
 	j+sizeof(sign_html_end)-1 < buffer_size;
@@ -710,7 +714,10 @@ static data_check_t data_check_html(const unsigned char *buffer, const unsigned 
       {
 	j+=sizeof(sign_html_end)-1;
 	/*@ assert j >= buffer_size/2; */
-	/*@ loop assigns j; */
+	/*@
+	  @ loop assigns j;
+	  @ loop variant buffer_size - j;
+	  @*/
 	while(j < buffer_size && (buffer[j]=='\n' || buffer[j]=='\r'))
 	  j++;
 	file_recovery->calculated_file_size+=j-buffer_size/2;
@@ -734,6 +741,7 @@ static data_check_t data_check_html(const unsigned char *buffer, const unsigned 
 /*@
   @ requires file_recovery->data_check == &data_check_ttd;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -760,6 +768,7 @@ static data_check_t data_check_ttd(const unsigned char *buffer, const unsigned i
 /*@
   @ requires file_recovery->data_check == &data_check_txt;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size;
   @*/
@@ -780,6 +789,7 @@ static data_check_t data_check_txt(const unsigned char *buffer, const unsigned i
   @ requires file_recovery->data_check == &data_check_xml_utf8;
   @ requires buffer_size >= 10;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures \result == DC_CONTINUE ==> (file_recovery->data_check==&data_check_txt);
   @ assigns file_recovery->calculated_file_size,file_recovery->data_check;
@@ -1251,7 +1261,10 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       file_recovery->extension==extension_mbox)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 64 - i;
+    @*/
   for(i=0; i<64; i++)
     if(buffer[i]==0)
       return 0;
@@ -1259,7 +1272,10 @@ static int header_check_mbox(const unsigned char *buffer, const unsigned int buf
       memcmp(buffer, "From MAILER-DAEMON ", 19)!=0)
   {
     /* From someone@somewhere */
-    /*@ loop assigns i; */
+    /*@
+      @ loop assigns i;
+      @ loop variant 200 - i;
+      @*/
     for(i=5; i<200 && buffer[i]!=' ' && buffer[i]!='@'; i++);
     if(buffer[i]!='@')
       return 0;
@@ -1315,7 +1331,10 @@ static int header_check_perlm(const unsigned char *buffer, const unsigned int bu
   const unsigned int buffer_size_test=(buffer_size < 2048 ? buffer_size : 2048);
   if(buffer_size < 128)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 128 - i;
+    */
   for(i=0; i<128 && buffer[i]!=';' && buffer[i]!='\n'; i++);
   if(buffer[i]!=';')
     return 0;
@@ -1357,7 +1376,10 @@ static int header_check_rtf(const unsigned char *buffer, const unsigned int buff
   unsigned int i;
   if(buffer_size < 16)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 16 - i;
+    @*/
   for(i=0; i<16; i++)
     if(buffer[i]=='\0')
       return 0;
@@ -1509,7 +1531,10 @@ static int header_check_thunderbird(const unsigned char *buffer, const unsigned 
       file_recovery->file_stat->file_hint==&file_hint_fasttxt &&
       file_recovery->extension == extension_mbox)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 64 - i;
+    @*/
   for(i=0; i<64; i++)
     if(buffer[i]==0)
       return 0;
@@ -2245,9 +2270,15 @@ static void register_header_check_snz(file_stat_t *file_stat)
 static void register_header_check_txt(file_stat_t *file_stat)
 {
   unsigned int i;
-  /*@ loop assigns i, ascii_char[0 .. 255]; */
+  /*@
+    @ loop assigns i, ascii_char[0 .. 255];
+    @ loop variant 256 - i;
+    @*/
   for(i=0; i<256; i++)
     ascii_char[i]=i;
+  /*@
+    @ loop variant 256 - i;
+    @*/
   for(i=0; i<256; i++)
   {
     if(filtre(i) || i==0xE2 || i==0xC2 || i==0xC3 || i==0xC5 || i==0xC6 || i==0xCB)

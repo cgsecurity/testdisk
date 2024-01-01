@@ -270,6 +270,7 @@ char* strip_dup(char* str)
 
 /*@
   @ requires 0 <= year <= 127;
+  @ terminates \true;
   @ ensures 0 <= \result <= 32;
   @ assigns \nothing;
   @*/
@@ -302,6 +303,7 @@ static unsigned int _date_get_leap_day(const unsigned long int year, const unsig
   @ requires 0 <= year <= 127;
   @ requires 0 <= leap_day <= 32;
   @ requires 0 <= day <= 30;
+  @ terminates \true;
   @ ensures 0 <= \result <= 334 + 127 * 365 + 32 + 30 + DAYS_DELTA;
   @ assigns \nothing;
   @*/
@@ -311,6 +313,7 @@ static unsigned long int _date_get_days(const unsigned long int days, const unsi
 }
 /*@
   @ requires 0 <= seconds2 <= 31;
+  @ terminates \true;
   @ ensures 0 <= \result <= 62;
   @ assigns \nothing;
   @*/
@@ -321,6 +324,7 @@ static unsigned long int _date_get_seconds(const unsigned long int seconds2)
 
 /*@
   @ requires 0 <= m <= 0x3f;
+  @ terminates \true;
   @ ensures 0 <= \result <= 0x3f * SECS_PER_MIN;
   @ assigns \nothing;
   @*/
@@ -331,6 +335,7 @@ static unsigned long int _date_min_to_seconds(const unsigned long int m)
 
 /*@
   @ requires 0 <= h <= 0x3f;
+  @ terminates \true;
   @ ensures 0 <= \result <= 0x3f * SECS_PER_HOUR;
   @ assigns \nothing;
   @*/
@@ -343,6 +348,7 @@ static unsigned long int _date_hours_to_seconds(const unsigned long int h)
   @ requires -14*3600 <= secwest <= 12*3600;
   @ requires f_time <= 0xffffffff;
   @ requires f_date <= 0xffffffff;
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 time_t date_dos2unix(const unsigned short f_time, const unsigned short f_date)

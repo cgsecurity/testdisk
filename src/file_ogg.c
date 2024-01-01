@@ -60,6 +60,7 @@ static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 27 +255);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 27 +255 < file_recovery->file_size + buffer_size/2)
@@ -76,6 +77,7 @@ static data_check_t data_check_ogg(const unsigned char *buffer, const unsigned i
       /*@
         @ loop invariant page_size <= 255 + 27 + j * 255;
         @ loop assigns j, page_size;
+	@ loop variant number_page_segments - j;
 	@ */
       for(j=0; j<number_page_segments; j++)
         page_size+=buffer[i+27+j];

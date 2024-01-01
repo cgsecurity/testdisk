@@ -48,6 +48,7 @@ const file_hint_t file_hint_stl= {
   @ requires buffer_size >= 84;
   @ requires separation: \separated(&file_hint_stl, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -59,11 +60,17 @@ static int header_check_stl(const unsigned char *buffer, const unsigned int buff
   const uint32_t *fs_ptr=(const uint32_t *)&buffer[80];
   const uint64_t filesize=80+4+(uint64_t)le32(*fs_ptr)*50;
   /*@ assert filesize < PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 80 - i;
+    @*/
   for(i=0; i<80 && buffer[i]!='\0'; i++);
   if(i>64)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 80 - i;
+    @*/
   for(i++; i<80 && buffer[i]==' '; i++);
   if(i!=80)
     return 0;

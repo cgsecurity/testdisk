@@ -59,7 +59,10 @@ static data_check_t data_check_par2(const unsigned char *buffer, const unsigned 
 {
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns file_recovery->calculated_file_size; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 16);
+    @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 16 < file_recovery->file_size + buffer_size/2)
   {
@@ -86,7 +89,10 @@ static void file_rename_par2(file_recovery_t *file_recovery)
   uint64_t offset=0;
   if((file=fopen(file_recovery->filename, "rb"))==NULL)
     return;
-  /*@ loop invariant valid_file_rename_param(file_recovery); */
+  /*@
+    @ loop invariant valid_file_rename_param(file_recovery);
+    @ loop variant PHOTOREC_MAX_FILE_SIZE - offset;
+    @*/
   while(offset <= PHOTOREC_MAX_FILE_SIZE)
   {
     uint64_t length;
@@ -111,6 +117,7 @@ static void file_rename_par2(file_recovery_t *file_recovery)
       fclose(file);
       return;
     }
+    /*@ assert length >= 16; */
     if(memcmp(&buffer[0x30], "PAR 2.0\0FileDesc", 16)==0)
     {
       fclose(file);

@@ -59,6 +59,7 @@ static void file_rename_xml_aux(file_recovery_t *file_recovery, const char *titl
   /*@
     @ loop invariant j <= size;
     @ loop assigns j;
+    @ loop variant size - 1 - j;
     @*/
   for(j = 0; j < size-1; j += 2)
   {
@@ -100,6 +101,7 @@ static void file_rename_xml(file_recovery_t *file_recovery)
   /*@
     @ loop invariant 0 <= i <= lu - 20 + 1;
     @ loop assigns i;
+    @ loop variant lu - 20 - i;
     @*/
   for(i = 0; i < lu - 20 && !(buffer[i] == 0 && buffer[i + 1] == 0); i += 2)
   {
@@ -116,6 +118,7 @@ static void file_rename_xml(file_recovery_t *file_recovery)
 /*@
   @ requires separation: \separated(&file_hint_xml, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

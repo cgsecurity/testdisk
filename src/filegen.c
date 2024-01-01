@@ -516,6 +516,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   /*@ loop assigns enable_count, file_enable; */
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
+    /*@ assert \valid_read(file_enable); */
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       enable_count++;
@@ -526,15 +527,18 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   i=0;
   /*@
     @ loop invariant 0 <= i <= enable_count;
+    @ loop invariant \forall integer j; 0 <= j < i ==> valid_file_stat(&file_stats[j]);
     @*/
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
+    /*@ assert \valid_read(file_enable); */
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       file_stats[i].file_hint=file_enable->file_hint;
       file_stats[i].not_recovered=0;
       file_stats[i].recovered=0;
       file_enable->file_hint->register_header_check(&file_stats[i]);
+      /*@ assert valid_file_stat(&file_stats[i]); */
       i++;
     }
   }
@@ -562,6 +566,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   char *dst;
   char *dst_dir_sep;
   /*@ assert strlen((char *)&file_recovery->filename) < 2048; */
+  /*@ assert strlen(new_ext) < (1<<30); */
   const unsigned int len=strlen(file_recovery->filename)+1+strlen(new_ext)+1;
   /*@ assert valid_read_string(&file_recovery->filename[0]); */
   if(len > sizeof(file_recovery->filename))
@@ -610,6 +615,7 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
     dst++;
   /* Add extension */
   *dst++ = '.';
+  /*@ assert strlen(new_ext) < (1<<30); */
 #ifdef DISABLED_FOR_FRAMAC
   memcpy(dst, new_ext, strlen(new_ext)+1);
 #else

@@ -84,6 +84,7 @@ struct swfz_header
   @ requires 0 <= *offset_bit <= 7;
   @ requires 2 <= nbit <= 31;
   @ requires separation: \separated(data, offset_bit, *data + (0..(nbit+*offset_bit)/8));
+  @ terminates \true;
   @ ensures  0 <= *offset_bit <= 7;
   @ assigns *data, *offset_bit;
   @*/
@@ -119,6 +120,7 @@ static int read_SB(const unsigned char **data, unsigned int *offset_bit, unsigne
   @ requires buffer_size >= 512;
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size_max);
@@ -202,6 +204,7 @@ static int header_check_swfc(const unsigned char *buffer, const unsigned int buf
   @ requires buffer_size >= sizeof(struct swf_header);
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size);
@@ -246,6 +249,7 @@ static int header_check_swf(const unsigned char *buffer, const unsigned int buff
   @ requires buffer_size >= sizeof(struct swfz_header);
   @ requires separation: \separated(&file_hint_swf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->data_check == &data_check_size);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_size_max);

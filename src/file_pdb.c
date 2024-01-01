@@ -46,6 +46,7 @@ const file_hint_t file_hint_pdb= {
 /*@
   @ requires file_recovery->data_check==&data_check_pdb;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns  file_recovery->calculated_file_size;
   @*/
@@ -54,7 +55,10 @@ static data_check_t data_check_pdb(const unsigned char *buffer, const unsigned i
   unsigned int i;
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant buffer_size - i;
+    @*/
   for(i=buffer_size/2; i<buffer_size; i++)
     if(buffer[i]==0)
     {
@@ -93,6 +97,7 @@ static void file_check_pdb(file_recovery_t *file_recovery)
   @ requires buffer_size >= 70;
   @ requires separation: \separated(&file_hint_pdb, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

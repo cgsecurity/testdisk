@@ -78,6 +78,7 @@ struct png_ihdr
 /*@
   @ requires \valid_read(ihdr);
   @ requires \initialized(ihdr);
+  @ terminates \true;
   @ ensures  \result == 0 || \result == 1;
   @ assigns  \nothing;
   @ */
@@ -127,6 +128,7 @@ static void file_check_png(file_recovery_t *fr)
     @ loop invariant fr->file_size < 0x8000000000000000;
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns Frama_C_entropy_source;
+    @ loop variant 0x8000000000000000 - fr->file_size;
     @*/
   while(1)
   {
@@ -182,6 +184,7 @@ static data_check_t data_check_mng(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->offset_ok;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 8);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)
@@ -221,6 +224,7 @@ static data_check_t data_check_png(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size, file_recovery->offset_ok;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 8);
     @*/
   while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
       file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size/2)

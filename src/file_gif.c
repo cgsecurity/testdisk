@@ -80,6 +80,7 @@ static void file_check_gif(file_recovery_t *file_recovery)
   @ requires file_recovery->data_check==&data_check_gif;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
   @ ensures  valid_data_check_result(\result, file_recovery);
+  @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
   @*/
 static data_check_t data_check_gif(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -145,6 +146,7 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
   @ requires file_recovery->data_check==&data_check_gif2;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
   @ ensures  valid_data_check_result(\result, file_recovery);
+  @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
   @*/
 static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
@@ -152,6 +154,7 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
+    @ loop invariant file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
     @ loop assigns file_recovery->calculated_file_size, file_recovery->data_check;
     @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 1);
     @*/
@@ -159,6 +162,7 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
       file_recovery->calculated_file_size + 1 < file_recovery->file_size + buffer_size/2)
   {
     const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert file_recovery->data_check==&data_check_gif2; */
     /*@ assert 0 <= i < buffer_size - 1; */
 #ifdef DEBUG_GIF
     log_info("data_check_gif2 calculated_file_size=0x%llx\n",
@@ -173,7 +177,9 @@ static data_check_t data_check_gif2(const unsigned char *buffer, const unsigned 
       file_recovery->data_check=&data_check_gif;
       return data_check_gif(buffer, buffer_size, file_recovery);
     }
+    /*@ assert file_recovery->data_check==&data_check_gif2; */
   }
+  /*@ assert file_recovery->data_check==&data_check_gif2; */
   return DC_CONTINUE;
 }
 

@@ -55,6 +55,7 @@ struct atom_struct
 /*@
   @ requires file_recovery->data_check==&data_check_r3d;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
   @*/
@@ -64,6 +65,7 @@ static data_check_t data_check_r3d(const unsigned char *buffer, const unsigned i
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
     @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size / 2 - (file_recovery->calculated_file_size + 8);
     @*/
   while(file_recovery->calculated_file_size + buffer_size / 2 >= file_recovery->file_size && file_recovery->calculated_file_size + 8 <= file_recovery->file_size + buffer_size / 2)
   {
@@ -119,7 +121,10 @@ static void file_rename_r3d(file_recovery_t *file_recovery)
   fclose(file);
   if(buffer_size < 0x44)
     return;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant buffer_size - i;
+    @*/
   for(i = 0x43; i < buffer_size && buffer[i] != 0 && buffer[i] != '.'; i++)
   {
     if(!isalnum(buffer[i]) && buffer[i] != '_')
@@ -132,6 +137,7 @@ static void file_rename_r3d(file_recovery_t *file_recovery)
   @ requires buffer_size >= sizeof(struct atom_struct);
   @ requires separation: \separated(&file_hint_r3d, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -158,6 +164,7 @@ static int header_check_r3d(const unsigned char *buffer, const unsigned int buff
   @ requires buffer_size >= 0xc;
   @ requires separation: \separated(&file_hint_r3d, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/

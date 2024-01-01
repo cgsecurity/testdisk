@@ -66,6 +66,7 @@ struct ttf_table_directory
 };
 
 /*@
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static unsigned int td_ilog2(unsigned int v)
@@ -74,6 +75,7 @@ static unsigned int td_ilog2(unsigned int v)
   /*@
     @ loop assigns v,l;
     @ loop unroll 16;
+    @ loop variant v;
     @*/
   while(v >>= 1)
     l++;
@@ -84,6 +86,7 @@ static unsigned int td_ilog2(unsigned int v)
   @ requires buffer_size >= sizeof(struct ttf_offset_table);
   @ requires separation: \separated(&file_hint_ttf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
@@ -122,6 +125,7 @@ static int header_check_ttf(const unsigned char *buffer, const unsigned int buff
     /*@ assert \valid_read(ttf_dir + (0 .. numTables -1)); */
     /*@
       @ loop assigns i, max_offset;
+      @ loop variant numTables - i;
       @*/
     for(i=0; i<numTables; i++)
     {

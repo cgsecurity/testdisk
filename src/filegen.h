@@ -117,6 +117,10 @@ typedef struct
 } file_check_t;
 
 /*@
+   predicate valid_file_hint(file_hint_t *file_hint) = (\valid_read(file_hint) && valid_read_string(file_hint->description));
+
+   predicate valid_file_stat(file_stat_t *file_stat) = (\valid_read(file_stat) && valid_file_hint(file_stat->file_hint));
+
    predicate valid_file_check_node(file_check_t *node) = (\valid_read(node) &&
      \initialized(&node->offset) &&
      \initialized(&node->length) &&
@@ -125,7 +129,8 @@ typedef struct
      node->offset + node->length <= PHOTOREC_MAX_SIG_OFFSET &&
      \valid_read((const char *)node->value+(0..node->length-1)) &&
      \valid_function(node->header_check) &&
-     \valid(node->file_stat)
+     \valid(node->file_stat) &&
+     valid_file_stat(node->file_stat)
    );
    @*/
 
@@ -141,10 +146,6 @@ typedef struct
 #define NL_BARECR       (1 << 2)
 
 /*@
-   predicate valid_file_hint(file_hint_t *file_hint) = (\valid_read(file_hint) && valid_read_string(file_hint->description));
-
-   predicate valid_file_stat(file_stat_t *file_stat) = (\valid_read(file_stat) && valid_file_hint(file_stat->file_hint));
-
    predicate valid_file_recovery(file_recovery_t *file_recovery) = (\valid_read(file_recovery) &&
 	strlen((const char*)file_recovery->filename) < 1<<30 &&
         valid_read_string((const char *)file_recovery->filename) &&
@@ -224,7 +225,8 @@ typedef struct
     );
 
     predicate valid_register_header_check(file_stat_t *file_stat) = (
-	\valid(file_stat)
+	\valid(file_stat) &&
+	valid_file_stat(file_stat)
     );
   @*/
 void free_header_check(void);
@@ -361,6 +363,7 @@ void reset_file_recovery(file_recovery_t *file_recovery);
   @ requires \valid_read((const char *)value+(0..length-1));
   @ requires \valid_function(header_check);
   @ requires \valid(file_stat);
+  @ requires valid_file_stat(file_stat);
   @ ensures  \valid_read((const char *)value+(0..length-1));
   @*/
 void register_header_check(const unsigned int offset, const void *value, const unsigned int length,
@@ -370,6 +373,7 @@ void register_header_check(const unsigned int offset, const void *value, const u
 
 /*@
   @ requires \valid(files_enable);
+  @ ensures valid_file_stat(\result);
   @*/
 file_stat_t * init_file_stats(file_enable_t *files_enable);
 
@@ -395,6 +399,9 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   @*/
 int file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 
+/*@
+  @ terminates \true;
+  @*/
 void header_ignored_cond_reset(uint64_t start, uint64_t end);
 
 /*@

@@ -58,6 +58,7 @@ const file_hint_t file_hint_pdf= {
 };
 
 /*@
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static int is_hexa(const int c)
@@ -66,6 +67,7 @@ static int is_hexa(const int c)
 }
 
 /*@
+  @ terminates \true;
   @ assigns \nothing;
   @ ensures 0 <= \result <= 15;
   @*/
@@ -145,6 +147,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
   /*@
     @ loop invariant 0 <= i <= bsize;
     @ loop assigns i;
+    @ loop variant bsize - i;
     @ */
   for(i=0; i<bsize && buffer[i]==' '; i++);
   if(i + 2 >= bsize)
@@ -166,6 +169,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
       @ loop invariant j <= s;
       @ loop invariant j <  bsize;
       @ loop assigns s, j, buffer[0 .. 512-1];
+      @ loop variant bsize - (s+1);
       @ */
     for(s=i+1, j=i+1;
 	s+1<bsize && is_hexa(buffer[s]) && is_hexa(buffer[s+1]);
@@ -188,6 +192,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
         @ loop invariant l < i;
         @ loop invariant \initialized(title + (0 .. l-1));
         @ loop assigns i, l, title[0 .. 512-1];
+	@ loop variant bsize - i;
 	@*/
       while(i<bsize)
       {
@@ -209,6 +214,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
         @ loop invariant l < i;
         @ loop invariant \initialized(title + (0 .. l-1));
         @ loop assigns i, l, title[0 .. 512-1];
+	@ loop variant bsize - (i+1);
 	@*/
       while(i+1 < bsize)
       {
@@ -226,6 +232,7 @@ static void file_rename_pdf(file_recovery_t *file_recovery)
         @ loop invariant l < i;
         @ loop invariant \initialized(title + (0 .. l-1));
         @ loop assigns i, l, title[0 .. 512-1];
+	@ loop variant bsize - i;
 	@*/
       while(i<bsize && buffer[i]!=')')
 	title[l++]=sbuffer[i++];
@@ -277,6 +284,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
     @ loop assigns offset, j, *file_recovery->handle, file_recovery->time, buffer[0..4095];
     @ loop assigns errno;
     @ loop assigns Frama_C_entropy_source;
+    @ loop variant file_recovery->file_size - offset;
     @*/
   while(offset < file_recovery->file_size)
   {
@@ -295,6 +303,7 @@ static void file_date_pdf(file_recovery_t *file_recovery)
       @ loop invariant 0 <= i <= bsize;
       @ loop assigns i, j, *file_recovery->handle, file_recovery->time, buffer[0..21];
       @ loop assigns errno;
+      @ loop variant bsize - i;
       @*/
     for(i=0; i<bsize; i++)
     {
@@ -363,7 +372,8 @@ static void file_check_pdf_and_size(file_recovery_t *file_recovery)
     @ loop assigns *file_recovery->handle, file_recovery->time;
     @ loop assigns errno;
     @ loop assigns Frama_C_entropy_source;
-  @*/
+    @ loop variant i;
+    @*/
   for(i=taille-4;i>=0;i--)
   {
     if(buffer[i]=='%' && buffer[i+1]=='E' && buffer[i+2]=='O' && buffer[i+3]=='F')
@@ -397,13 +407,17 @@ static void file_check_pdf(file_recovery_t *file_recovery)
 static uint64_t read_pdf_file_aux(const unsigned char *buffer, unsigned int i)
 {
   uint64_t file_size=0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant 512 - i;
+    @*/
   while(i < 512 &&
       (buffer[i] ==' ' || buffer[i]=='\t' || buffer[i]=='\n' || buffer[i]=='\r'))
     i++;
   /*@
     @ loop invariant file_size <= PHOTOREC_MAX_FILE_SIZE;
     @ loop assigns i, file_size;
+    @ loop variant 512 - i;
     @ */
   for(;i<512 && buffer[i]>='0' && buffer[i]<='9'; i++)
   {

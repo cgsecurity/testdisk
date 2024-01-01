@@ -66,6 +66,7 @@ static int parse_patterns(file_recovery_t *fr, uint16_t patterns)
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns patterns;
+    @ loop variant patterns;
     @*/
   for(; patterns != 0; patterns--)
   {
@@ -123,6 +124,7 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
     @ loop assigns *fr->handle, errno, fr->file_size;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns instrs;
+    @ loop variant instrs;
     @*/
   for(; instrs != 0; instrs--)
   {
@@ -180,7 +182,10 @@ static int parse_instruments(file_recovery_t *fr, uint16_t instrs)
       if(fseek(fr->handle, 234, SEEK_CUR) == -1)
         return -1;
 
-      /*@ loop assigns samples, size, *fr->handle, errno, Frama_C_entropy_source, fr->file_size, buffer[0..3]; */
+      /*@
+        @ loop assigns samples, size, *fr->handle, errno, Frama_C_entropy_source, fr->file_size, buffer[0..3];
+	@ loop variant samples;
+	@*/
       for(; samples != 0; samples--)
       {
         if(fread(&buffer, sizeof(uint32_t), 1, fr->handle) != 1)
@@ -261,6 +266,7 @@ static void file_check_xm(file_recovery_t *fr)
 /*@
   @ requires separation: \separated(&file_hint_xm, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
