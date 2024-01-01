@@ -89,6 +89,105 @@ typedef struct {
 #define	PT_BINARY	0x0102
 
 /*@
+  @ requires valid_file_check_param(fr);
+  @ ensures  valid_file_check_result(fr);
+  @ assigns *fr->handle, errno, fr->file_size, fr->offset_error;
+  @ assigns Frama_C_entropy_source;
+  @*/
+static void file_check_nk2_aux(file_recovery_t *fr, const unsigned int entries_count)
+{
+  unsigned int j;
+  /*@
+    @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
+    @ loop assigns Frama_C_entropy_source;
+    @ loop assigns j;
+    @ loop variant entries_count - j;
+    @*/
+  for(j=0; j<entries_count; j++)
+  {
+    uint64_t size;
+    char buf_entryh[sizeof(entryHeader)];
+    const entryHeader *entryh=(const entryHeader *)&buf_entryh;
+    /*@ assert \valid_read(entryh); */
+    if (fread(&buf_entryh, sizeof(entryHeader), 1, fr->handle)!=1)
+    {
+      fr->offset_error=fr->file_size;
+      fr->file_size=0;
+      return;
+    }
+#if defined(__FRAMAC__)
+    Frama_C_make_unknown(&buf_entryh, sizeof(entryHeader));
+#endif
+    switch(le16(entryh->value_type))
+    {
+      case PT_LONG:
+      case PT_BOOLEAN:
+      case PT_ERROR:
+      case PT_NULL:
+	size=0;
+	break;
+      case PT_UNICODE:
+      case PT_BINARY:
+	{
+	  char buf_entry_size[sizeof(uint32_t)];
+	  const uint32_t *entry_size=(const uint32_t *)&buf_entry_size;
+	  /*@ assert \valid_read(entry_size); */
+	  if (fread(&buf_entry_size, sizeof(uint32_t), 1, fr->handle)!=1)
+	  {
+	    fr->offset_error=fr->file_size;
+	    fr->file_size=0;
+	    return;
+	  }
+#if defined(__FRAMAC__)
+	  Frama_C_make_unknown(&buf_entry_size, sizeof(uint32_t));
+#endif
+	  size=(uint64_t)4+le32(*entry_size);
+	}
+	break;
+      default:
+#ifndef DISABLED_FOR_FRAMAC
+	log_info("nk2   entry %04x size=? at 0x%llx\n",
+	    le16(entryh->value_type),
+	    (long long unsigned)fr->file_size);
+#endif
+	fr->offset_error=fr->file_size;
+	fr->file_size=0;
+	return;
+    }
+#ifdef DEBUG_NK2
+    {
+      log_info("nk2   entry %04x size=%u at 0x%llx\n",
+	  le16(entryh->value_type),
+	  (unsigned int)size,
+	  (long long unsigned)fr->file_size);
+      char buffer[2048];
+      unsigned int size_to_log=size;
+      if(size_to_log>2048)
+	size_to_log=2048;
+      fread(&buffer, size_to_log, 1, fr->handle);
+#if defined(__FRAMAC__)
+      Frama_C_make_unknown(buffer, 2048);
+#endif
+      dump_log(&buffer, size_to_log);
+    }
+#endif
+    fr->file_size+=sizeof(entryHeader);
+    if(fr->file_size >= NK2_MAX_FILESIZE)
+    {
+      fr->file_size=0;
+      return;
+    }
+    if (my_fseek(fr->handle, fr->file_size+size, SEEK_SET) < 0)
+    {
+      fr->offset_error=fr->file_size;
+      fr->file_size=0;
+      return;
+    }
+    fr->file_size+=size;
+  }
+}
+
+/*@
   @ requires fr->file_check == &file_check_nk2;
   @ requires valid_file_check_param(fr);
   @ ensures  valid_file_check_result(fr);
@@ -112,17 +211,18 @@ static void file_check_nk2(file_recovery_t *fr)
   Frama_C_make_unknown(&buf_nk2h, sizeof(nk2Header));
 #endif
   fr->file_size+=sizeof(nk2Header);
+  /*@ assert fr->file_size > 0; */
 #ifdef DEBUG_NK2
   log_info("nk2 item_count=%u\n", (unsigned int)le32(nk2h->items_count));
 #endif
   /*@
+    @ loop invariant valid_file_check_param(fr);
     @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns i;
     @*/
   for(i=0; i<le32(nk2h->items_count); i++)
   {
-    unsigned int j;
     char buf_itemh[sizeof(itemHeader)];
     const itemHeader *itemh=(const itemHeader *)&buf_itemh;
     /*@ assert \valid_read(itemh); */
@@ -145,93 +245,9 @@ static void file_check_nk2(file_recovery_t *fr)
 #ifdef DEBUG_NK2
     log_info("nk2  entries_count=%u\n", (unsigned int)le32(itemh->entries_count));
 #endif
-  /*@
-    @ loop assigns *fr->handle, errno, fr->file_size, fr->offset_error;
-    @ loop assigns Frama_C_entropy_source;
-    @ loop assigns j;
-    @*/
-    for(j=0; j<le32(itemh->entries_count); j++)
-    {
-      uint64_t size;
-      char buf_entryh[sizeof(entryHeader)];
-      const entryHeader *entryh=(const entryHeader *)&buf_entryh;
-      /*@ assert \valid_read(entryh); */
-      if (fread(&buf_entryh, sizeof(entryHeader), 1, fr->handle)!=1)
-      {
-	fr->offset_error=fr->file_size;
-	fr->file_size=0;
-	return;
-      }
-#if defined(__FRAMAC__)
-      Frama_C_make_unknown(&buf_entryh, sizeof(entryHeader));
-#endif
-      switch(le16(entryh->value_type))
-      {
-	case PT_LONG:
-	case PT_BOOLEAN:
-	case PT_ERROR:
-	case PT_NULL:
-	  size=0;
-	  break;
-	case PT_UNICODE:
-	case PT_BINARY:
-	  {
-	    char buf_entry_size[sizeof(uint32_t)];
-	    const uint32_t *entry_size=(const uint32_t *)&buf_entry_size;
-	    /*@ assert \valid_read(entry_size); */
-	    if (fread(&buf_entry_size, sizeof(uint32_t), 1, fr->handle)!=1)
-	    {
-	      fr->offset_error=fr->file_size;
-	      fr->file_size=0;
-	      return;
-	    }
-#if defined(__FRAMAC__)
-	    Frama_C_make_unknown(&buf_entry_size, sizeof(uint32_t));
-#endif
-	    size=(uint64_t)4+le32(*entry_size);
-	  }
-	  break;
-	default:
-#ifndef DISABLED_FOR_FRAMAC
-	  log_info("nk2   entry %04x size=? at 0x%llx\n",
-	      le16(entryh->value_type),
-	      (long long unsigned)fr->file_size);
-#endif
-	  fr->offset_error=fr->file_size;
-	  fr->file_size=0;
-	  return;
-      }
-#ifdef DEBUG_NK2
-      {
-	log_info("nk2   entry %04x size=%u at 0x%llx\n",
-	    le16(entryh->value_type),
-	    (unsigned int)size,
-	    (long long unsigned)fr->file_size);
-	char buffer[2048];
-	unsigned int size_to_log=size;
-	if(size_to_log>2048)
-	  size_to_log=2048;
-	fread(&buffer, size_to_log, 1, fr->handle);
-#if defined(__FRAMAC__)
-	Frama_C_make_unknown(buffer, 2048);
-#endif
-	dump_log(&buffer, size_to_log);
-      }
-#endif
-      fr->file_size+=sizeof(entryHeader);
-      if(fr->file_size >= NK2_MAX_FILESIZE)
-      {
-	fr->file_size=0;
-	return;
-      }
-      if (my_fseek(fr->handle, fr->file_size+size, SEEK_SET) < 0)
-      {
-	fr->offset_error=fr->file_size;
-	fr->file_size=0;
-	return;
-      }
-      fr->file_size+=size;
-    }
+    file_check_nk2_aux(fr, le32(itemh->entries_count));
+    if(fr->file_size==0)
+      return;
   }
   fr->file_size+=12;
 }
@@ -239,6 +255,7 @@ static void file_check_nk2(file_recovery_t *fr)
 /*@
   @ requires separation: \separated(&file_hint_nk2, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
+  @ terminates \true;
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
