@@ -66,7 +66,9 @@ struct ph_param
 
 /*@
    predicate valid_ph_param(struct ph_param *p) = (\valid_read(p) &&
-	(p->recup_dir == \null || valid_read_string(p->recup_dir))
+	(p->recup_dir == \null || valid_read_string(p->recup_dir)) &&
+	(p->disk == \null || valid_disk(p->disk)) &&
+	(p->cmd_run == \null || valid_read_string(p->cmd_run))
 	);
   @*/
 
@@ -87,6 +89,7 @@ int get_prev_file_header(const alloc_data_t *list_search_space, alloc_data_t **c
   @ requires valid_ph_param(params);
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(file_recovery, params, list_search_space);
+  @ requires valid_disk(params->disk);
   @*/
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params, 
     alloc_data_t *list_search_space);
@@ -108,6 +111,7 @@ void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *para
   @ requires valid_ph_param(params);
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(file_recovery, params, list_search_space);
+  @ requires valid_disk(params->disk);
   @ ensures  \result == PFSTATUS_BAD || \result == PFSTATUS_OK || \result == PFSTATUS_OK_TRUNCATED;
   @*/
 // ensures  valid_file_recovery(file_recovery);
@@ -119,6 +123,7 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
 void write_stats_log(const file_stat_t *file_stats);
 
 /*@
+  @ requires \valid(file_stats);
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(file_stats, list_search_space);
   @*/
@@ -179,6 +184,12 @@ unsigned int remove_used_space(disk_t *disk_car, const partition_t *partition, a
   @*/
 void free_list_search_space(alloc_data_t *list_search_space);
 
+/*@
+  @ requires \valid_read((const file_stat_t *)p1);
+  @ requires \valid_read((const file_stat_t *)p2);
+  @ terminates \true;
+  @ assigns \nothing;
+  @*/
 int sorfile_stat_ts(const void *p1, const void *p2);
 
 /*@
@@ -205,6 +216,7 @@ void free_search_space(alloc_data_t *list_search_space);
   @ requires \valid(params);
   @ requires valid_ph_param(params);
   @ requires \separated(file_recovery, params);
+  @ requires valid_disk(params->disk);
   @*/
 // ensures  valid_file_recovery(file_recovery);
 void set_filename(file_recovery_t *file_recovery, struct ph_param *params);
@@ -212,11 +224,13 @@ void set_filename(file_recovery_t *file_recovery, struct ph_param *params);
 /*@
   @ requires \valid(params);
   @ requires valid_ph_param(params);
+  @ requires valid_disk(params->disk);
   @ requires valid_list_search_space(list_search_space);
   @ requires \separated(params, new_current_search_space, list_search_space);
-  @ requires new_current_search_space==\null || (\valid(*new_current_search_space) && valid_list_search_space(*new_current_search_space));
+  @ requires \valid(*new_current_search_space);
+  @ requires valid_list_search_space(*new_current_search_space);
   @*/
-// ensures  new_current_search_space==\null || (\valid(*new_current_search_space) && valid_list_search_space(*new_current_search_space));
+// ensures  \valid(*new_current_search_space) && valid_list_search_space(*new_current_search_space);
 // ensures  valid_list_search_space(list_search_space);
 uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_search_space, alloc_data_t *list_search_space);
 
@@ -227,6 +241,7 @@ uint64_t set_search_start(struct ph_param *params, alloc_data_t **new_current_se
   @ requires \separated(params, options);
   @ requires params->disk->sector_size > 0;
   @ requires valid_read_string(params->recup_dir);
+  @ requires valid_file_enable_node(options->list_file_format);
   @ ensures  valid_ph_param(params);
   @ ensures  params->file_nbr == 0;
   @ ensures  params->status == STATUS_FIND_OFFSET;

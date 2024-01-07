@@ -132,6 +132,9 @@ typedef struct
      \valid(node->file_stat) &&
      valid_file_stat(node->file_stat)
    );
+
+   predicate valid_file_enable_node(file_enable_t *node) = (\valid_read(node) && (node->file_hint == \null || valid_file_hint(node->file_hint)));
+
    @*/
 
 typedef struct
@@ -372,7 +375,7 @@ void register_header_check(const unsigned int offset, const void *value, const u
     file_stat_t *file_stat);
 
 /*@
-  @ requires \valid(files_enable);
+  @ requires valid_file_enable_node(files_enable);
   @ ensures valid_file_stat(\result);
   @*/
 file_stat_t * init_file_stats(file_enable_t *files_enable);

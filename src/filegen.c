@@ -163,6 +163,7 @@ static void file_check_add_tail(file_check_t *file_check_new, file_check_list_t 
   unsigned int i;
   const unsigned int tmp=(file_check_new->length==0?0:((const unsigned char *)file_check_new->value)[0]);
   file_check_list_t *newe=(file_check_list_t *)MALLOC(sizeof(*newe));
+  /*@ assert \valid(newe); */
   newe->offset=file_check_new->offset;
   /*@
     @ loop unroll 256;
@@ -233,6 +234,9 @@ static void index_header_check_aux(file_check_t *file_check_new)
     /*@ assert file_check_new->offset < 0x80000000; */
     /*@ assert 0 < file_check_new->length <= 4096; */
     struct td_list_head *tmp;
+    /*@
+      @ loop invariant \valid(tmp);
+      @*/
     td_list_for_each(tmp, &file_check_list.list)
     {
       file_check_list_t *pos=td_list_entry(tmp, file_check_list_t, list);
@@ -264,7 +268,11 @@ static unsigned int index_header_check(void)
   struct td_list_head *tmp;
   struct td_list_head *next;
   unsigned int nbr=0;
- /* Initialize file_check_list from file_check_plist */
+  /* Initialize file_check_list from file_check_plist */
+  /*@
+    @ loop invariant \valid_read(tmp);
+    @ loop invariant \valid_read(next);
+    @*/
   td_list_for_each_prev_safe(tmp, next, &file_check_plist.list)
   {
     file_check_t *current_check;
@@ -513,10 +521,12 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   unsigned int enable_count=1;	/* Lists are terminated by NULL */
   unsigned int sign_nbr;
   unsigned int i;
-  /*@ loop assigns enable_count, file_enable; */
+  /*@
+    @ loop invariant valid_file_enable_node(file_enable);
+    @ loop assigns enable_count, file_enable;
+    @*/
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
-    /*@ assert \valid_read(file_enable); */
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       enable_count++;
@@ -524,25 +534,34 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   }
   /*@ assert enable_count > 0; */
   file_stats=(file_stat_t *)MALLOC(enable_count * sizeof(file_stat_t));
+  /*@ assert \valid(file_stats + (0 .. enable_count-1)); */
   i=0;
   /*@
-    @ loop invariant 0 <= i <= enable_count;
+    @ loop invariant \valid(file_stats + (0 .. enable_count-1));
+    @ loop invariant valid_file_enable_node(file_enable);
+    @ loop invariant 1 <= enable_count;
+    @ loop invariant 0 <= i < enable_count;
     @ loop invariant \forall integer j; 0 <= j < i ==> valid_file_stat(&file_stats[j]);
     @*/
   for(file_enable=files_enable;file_enable->file_hint!=NULL;file_enable++)
   {
+    /*@ assert i < enable_count; */
     /*@ assert \valid_read(file_enable); */
+    /*@ assert \valid_read(file_enable->file_hint); */
     if(file_enable->enable>0 && file_enable->file_hint->register_header_check!=NULL)
     {
       file_stats[i].file_hint=file_enable->file_hint;
       file_stats[i].not_recovered=0;
       file_stats[i].recovered=0;
+      /*@ assert \valid_function((file_enable->file_hint)->register_header_check); */
       file_enable->file_hint->register_header_check(&file_stats[i]);
       /*@ assert valid_file_stat(&file_stats[i]); */
       i++;
     }
   }
   sign_nbr=index_header_check();
+  /*@ assert \valid(file_stats + (0 .. enable_count-1)); */
+  /*@ assert 1 <= enable_count; */
   file_stats[enable_count-1].file_hint=NULL;
 #ifndef DISABLED_FOR_FRAMAC
   log_info("%u first-level signatures enabled\n", sign_nbr);
@@ -561,6 +580,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
+  /*@ assert valid_file_recovery(file_recovery); */
   /*@ assert valid_string((char *)&file_recovery->filename); */
   char new_filename[sizeof(file_recovery->filename)];
   char *dst;
@@ -671,6 +691,7 @@ static int _file_rename(char *filename, const void *buffer, const int buffer_siz
     len+=strlen(new_ext)+1;
 #ifndef DISABLED_FOR_FRAMAC
   new_filename=(char*)MALLOC(len);
+  /*@ assert \valid(new_filename); */
   dst=new_filename;
   directory_sep=dst;
   strcpy(dst, src);
@@ -799,6 +820,7 @@ static int _file_rename(char *filename, const void *buffer, const int buffer_siz
 /* The original filename begins at offset in buffer and is null terminated */
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {
+  /*@ assert valid_file_recovery(file_recovery); */
   if(file_recovery->filename[0] == 0)
     return 0;
   /*@ assert strlen((char *)&file_recovery->filename) > 0; */
@@ -843,6 +865,7 @@ static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buff
     len+=strlen(new_ext);
 #ifndef DISABLED_FOR_FRAMAC
   new_filename=(char*)MALLOC(len);
+  /*@ assert \valid(new_filename); */
   dst=new_filename;
   dst_dir_sep=dst;
   while(*src!='\0')
