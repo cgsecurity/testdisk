@@ -192,32 +192,42 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
 {
   unsigned int i;
   /*@
-    @ loop assigns i, partition->fsname[i];
+    @ loop invariant \separated(partition, src + (..));
     @ loop invariant 0 <= i < sizeof(partition->fsname);
     @ loop invariant 0 <= i <= max_size;
+    @ loop invariant \initialized(partition->fsname+(0 .. i-1));
+    @ loop assigns i, partition->fsname[0 .. i];
+    @ loop variant sizeof(partition->fsname)-1 - i;
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   partition->fsname[i]='\0';
+  /*@ assert valid_string((char *)&partition->fsname); */
 }
 
 void set_part_name_chomp(partition_t *partition, const char *src, const unsigned int max_size)
 {
   unsigned int i;
   /*@
-    @ loop assigns i, partition->fsname[i];
+    @ loop invariant \separated(partition, src + (..));
     @ loop invariant 0 <= i < sizeof(partition->fsname);
     @ loop invariant 0 <= i <= max_size;
+    @ loop invariant \initialized(partition->fsname+(0 .. i-1));
+    @ loop assigns i, partition->fsname[0 .. i];
+    @ loop variant sizeof(partition->fsname)-1 - i;
     @*/
   for(i=0; i<sizeof(partition->fsname)-1 && i<max_size && src[i]!='\0'; i++)
     partition->fsname[i]=src[i];
   /*@
-    @ loop assigns i;
     @ loop invariant 0 <= i < sizeof(partition->fsname);
+    @ loop invariant \initialized(partition->fsname+(0 .. i-1));
+    @ loop assigns i;
+    @ loop variant i;
     @*/
   while(i>0 && partition->fsname[i-1]==' ')
     i--;
   partition->fsname[i]='\0';
+  /*@ assert valid_string((char *)&partition->fsname); */
 }
 
 char* strip_dup(char* str)
@@ -453,8 +463,9 @@ int check_command(char **current_cmd, const char *cmd, const size_t n)
 void skip_comma_in_command(char **current_cmd)
 {
   /*@
-    loop invariant valid_read_string(*current_cmd);
-    loop assigns *current_cmd;
+    @ loop invariant valid_read_string(*current_cmd);
+    @ loop assigns *current_cmd;
+    @ loop variant strlen(*current_cmd);
     */
   while(*current_cmd[0]==',')
   {
@@ -467,9 +478,10 @@ uint64_t get_int_from_command(char **current_cmd)
 {
   uint64_t tmp=0;
   /*@
-    loop invariant valid_read_string(*current_cmd);
-    loop assigns *current_cmd, tmp;
-    */
+    @ loop invariant valid_read_string(*current_cmd);
+    @ loop assigns *current_cmd, tmp;
+    @ loop variant strlen(*current_cmd);
+    @*/
   while(*current_cmd[0] >='0' && *current_cmd[0] <= '9')
   {
 #ifdef __FRAMAC__

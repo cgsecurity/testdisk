@@ -529,7 +529,9 @@ void *MALLOC(size_t size);
   @ requires \valid(partition);
   @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
-  @ requires \separated(partition, src);
+  @ requires \separated(partition, src + (..));
+  @ terminates \true;
+  @ ensures valid_string((char *)&partition->fsname);
   @*/
 void set_part_name(partition_t *partition, const char *src, const unsigned int max_size);
 
@@ -538,11 +540,14 @@ void set_part_name(partition_t *partition, const char *src, const unsigned int m
   @ requires valid_partition(partition);
   @ requires \valid_read(src + (0 .. max_size-1));
   @ requires \separated(partition, src);
+  @ terminates \true;
+  @ ensures valid_string((char *)&partition->fsname);
   @*/
 void set_part_name_chomp(partition_t *partition, const char *src, const unsigned int max_size);
 
 /*@
   @ requires valid_read_string(str);
+  @ terminates \true;
   @ ensures \result == \null || valid_read_string(\result);
   @*/
 char* strip_dup(char* str);
@@ -556,7 +561,10 @@ time_t date_dos2unix(const unsigned short f_time,const unsigned short f_date);
 
 void set_secwest(void);
 
-/*@ assigns \nothing; */
+/*@
+  @ terminates \true;
+  @ assigns \nothing;
+  @*/
 time_t td_ntfs2utc (int64_t ntfstime);
 #ifndef BSD_MAXPARTITIONS
 #define	BSD_MAXPARTITIONS	8
@@ -649,6 +657,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result);
   @ requires valid_read_string(cmd);
   @ requires \separated(cmd+(..), current_cmd, *current_cmd);
   @ requires strlen(cmd) == n;
+  @ terminates \true;
   @ assigns  *current_cmd;
   @ ensures  valid_read_string(*current_cmd);
   @ ensures  \result != 0 ==> *current_cmd == \old(*current_cmd);
@@ -670,6 +679,7 @@ void skip_comma_in_command(char **current_cmd);
   @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
   @ requires \separated(current_cmd, *current_cmd);
+  @ terminates \true;
   @ assigns  *current_cmd;
   @ ensures  valid_read_string(*current_cmd);
   @*/
