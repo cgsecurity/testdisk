@@ -145,6 +145,7 @@ unsigned int find_tag_from_tiff_header(const unsigned char*buffer, const unsigne
     return 0;
   /*@ assert buffer_size >= sizeof(TIFFHeader); */
   /*@ assert buffer_size >= sizeof(struct ifd_header); */
+  /*@ assert \valid_read(tiff); */
 #ifndef MAIN_tiff_le
   if(tiff->tiff_magic==TIFF_BIGENDIAN)
     return find_tag_from_tiff_header_be(buffer, buffer_size, tag, potential_error);

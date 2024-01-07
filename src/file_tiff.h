@@ -112,7 +112,7 @@ void file_check_tiff_le(file_recovery_t *fr);
 
 #if !defined(MAIN_tiff_be) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
 /*@
-  @ requires buffer_size >= 15;
+  @ requires buffer_size >= 18;
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);
@@ -140,7 +140,7 @@ unsigned int find_tag_from_tiff_header_be(const unsigned char*buffer, const unsi
 
 #if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
 /*@
-  @ requires buffer_size >= 15;
+  @ requires buffer_size >= 20;
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->file_size == 0);

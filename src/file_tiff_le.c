@@ -105,8 +105,9 @@ static unsigned int find_tag_from_tiff_header_le_aux(const unsigned char *buffer
   hdr=(const struct ifd_header *)ptr_hdr;
   /*@ assert \valid_read(hdr); */
   nbr_fields=le16(hdr->nbr_fields);
-  /*@ assert \valid_read(buffer+(0..tiff_size-1)); */
   /*@
+    @ loop invariant \valid_read(buffer+(0..tiff_size-1));
+    @ loop invariant \valid(potential_error);
     @ loop assigns i, *potential_error;
     @ loop variant nbr_fields - i;
     @*/
@@ -278,6 +279,7 @@ static uint64_t parse_strip_le(FILE *handle, const TIFFDirEntry *entry_strip_off
   @ requires type == 3 ==> \initialized((const char *)val + ( 0 .. 2));
   @ requires type == 4 ==> \valid_read((const char *)val + ( 0 .. 4));
   @ requires type == 4 ==> \initialized((const char *)val + ( 0 .. 4));
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 static unsigned int tiff_le_read(const void *val, const unsigned int type)
@@ -473,6 +475,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 {
   char buffer[8192];
   const unsigned char *ubuffer=(const unsigned char *)buffer;
+  /*@ assert \valid_read(ubuffer + (0 .. sizeof(buffer)-1)); */
   unsigned int i,n;
   int data_read;
   uint64_t alphabytecount=0;
@@ -493,6 +496,7 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
   const TIFFDirEntry *entry_strip_bytecounts=NULL;
   const TIFFDirEntry *entry_tile_offsets=NULL;
   const TIFFDirEntry *entry_tile_bytecounts=NULL;
+  /*@ assert \valid(fr); */
   /*@ assert \valid(fr->handle); */
   /*@ assert \valid_read(&fr->extension); */
   /*@ assert valid_read_string(fr->extension); */
@@ -778,9 +782,11 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 
 void file_check_tiff_le(file_recovery_t *fr)
 {
+  /*@ assert \valid(fr); */
   uint64_t calculated_file_size=0;
   char buffer[sizeof(TIFFHeader)];
   const TIFFHeader *header=(const TIFFHeader *)&buffer;
+  /*@ assert \valid_read(header); */
   if(fseek(fr->handle, 0, SEEK_SET) < 0 ||
       fread(&buffer, sizeof(TIFFHeader), 1, fr->handle) != 1)
   {
@@ -828,9 +834,13 @@ void file_check_tiff_le(file_recovery_t *fr)
   @*/
 int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  /*@ assert buffer_size >= 18; */
+  /*@ assert \valid_read(buffer + (0 .. buffer_size-1)); */
+  /*@ assert \valid_read(file_recovery); */
   const unsigned char raf_fp[15]={0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00,  0x01, 0x00, 0x00, 0xf0, 0x0d, 0x00, 0x01};
   const unsigned char *potential_error=NULL;
   const TIFFHeader *header=(const TIFFHeader *)buffer;
+  /*@ assert \valid_read(header); */
   if((uint32_t)le32(header->tiff_diroff) < sizeof(TIFFHeader))
     return 0;
   /* Avoid a false positiv with some RAF files */
@@ -881,6 +891,12 @@ int header_check_tiff_le(const unsigned char *buffer, const unsigned int buffer_
   }
   file_recovery_new->time=get_date_from_tiff_header(buffer, buffer_size);
   file_recovery_new->file_check=&file_check_tiff_le;
+  /*@ assert file_recovery_new->extension == file_hint_tiff.extension ||
+				file_recovery_new->extension == extension_arw ||
+				file_recovery_new->extension == extension_cr2 ||
+				file_recovery_new->extension == extension_dng ||
+				file_recovery_new->extension == extension_nef ||
+				file_recovery_new->extension == extension_sr2; */
   return 1;
 }
 #endif
