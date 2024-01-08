@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.2-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="August 2023"
+TESTDISKDATE="January 2024"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -571,13 +571,16 @@ fi
 
 if test "x$use_ext2fs" != "xno"; then
 if test "x$with_ext2fs" != "xno"; then
+  ac_save_LIBS="$LIBS"
   AC_CHECK_LIB(com_err,com_err,[
       AC_DEFINE([HAVE_LIBCOMM_ERR],1,[Define to 1 if you have the com_err library (-lcom_err).])
       if test "${com_err_lib_a}" = ""; then
+	LIBS="-lcom_err $LIBS"
         photorec_LDADD="-lcom_err $photorec_LDADD"
         qphotorec_LDADD="-lcom_err $qphotorec_LDADD"
         testdisk_LDADD="-lcom_err $testdisk_LDADD"
       else
+	LIBS="${com_err_lib_a} $LIBS"
         photorec_LDADD="${com_err_lib_a} $photorec_LDADD"
         qphotorec_LDADD="${com_err_lib_a} $qphotorec_LDADD"
         testdisk_LDADD="${com_err_lib_a} $testdisk_LDADD"
@@ -588,18 +591,18 @@ if test "x$with_ext2fs" != "xno"; then
   AC_CHECK_LIB(ext2fs,ext2fs_open,[
       AC_DEFINE([HAVE_LIBEXT2FS],1,[Define to 1 if you have the ext2fs library (-lext2fs).])
       if test "${ext2fs_lib_a}" = ""; then
+	LIBS="-lext2fs $LIBS"
         photorec_LDADD="-lext2fs $photorec_LDADD"
         qphotorec_LDADD="-lext2fs $qphotorec_LDADD"
         testdisk_LDADD="-lext2fs $testdisk_LDADD"
       else
+	LIBS="${ext2fs_lib_a} $LIBS"
         photorec_LDADD="${ext2fs_lib_a} $photorec_LDADD"
         qphotorec_LDADD="${ext2fs_lib_a} $qphotorec_LDADD"
         testdisk_LDADD="${ext2fs_lib_a} $testdisk_LDADD"
       fi
       have_ext2fs=yes
       ],AC_MSG_WARN(No ext2fs library detected))
-  ac_save_LIBS="$LIBS"
-  LIBS="$LIBS $testdisk_LDADD"
   AC_CHECK_FUNCS([ext2fs_get_generic_bitmap_start])
   LIBS="$ac_save_LIBS"
 else
