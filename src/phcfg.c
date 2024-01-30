@@ -184,7 +184,12 @@ int file_options_save(const file_enable_t *files_enable)
   handle=file_options_save_aux();
   if(handle==NULL)
     return -1;
+  /*@
+    @ loop invariant \valid_read(files_enable);
+    @*/
   for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
+  {
+    /*@ assert \valid_read(file_enable); */
     if(file_enable->file_hint->extension!=NULL)
     {
       if(file_enable->enable==0)
@@ -192,6 +197,7 @@ int file_options_save(const file_enable_t *files_enable)
       else
 	fprintf(handle, "%s,enable\n", file_enable->file_hint->extension);
     }
+  }
   fclose(handle);
   return 0;
 }

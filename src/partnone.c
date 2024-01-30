@@ -36,7 +36,9 @@
 #include "types.h"
 #include "common.h"
 #include "fnctdsk.h"
+#if !defined(DISABLED_FOR_FRAMAC)
 #include "analyse.h"
+#endif
 #include "lang.h"
 #include "intrf.h"
 #include "fat_common.h"
@@ -118,7 +120,7 @@ static void set_next_status_none(const disk_t *disk_car, partition_t *partition)
 static int test_structure_none(const list_part_t *list_part);
 
 /*@
-  @ requires \valid_read(partition);
+  @ requires \valid(partition);
   @ assigns partition->upart_type;
   @*/
 static int set_part_type_none(partition_t *partition, unsigned int part_type);
@@ -238,6 +240,7 @@ static int get_geometry_from_nonembr(const unsigned char *buffer, const int verb
   {
     /* Ugly hack to get geometry from FAT and NTFS */
     const struct fat_boot_sector *fat_header=(const struct fat_boot_sector *)buffer;
+    /*@ assert \valid_read(fat_header); */
     if(le16(fat_header->marker)==0xAA55)
     {
       if(le16(fat_header->secs_track)>0 && le16(fat_header->secs_track)<=63 &&
@@ -399,6 +402,8 @@ static void init_structure_none(const disk_t *disk_car,list_part_t *list_part, c
   list_part_t *element;
   for(element=list_part;element!=NULL;element=element->next)
   {
+    /*@ assert \valid_read(element); */
+    /*@ assert \valid(element->part); */
     element->part->status=STATUS_PRIM;
   }
 }
@@ -549,11 +554,16 @@ static int check_part_none(disk_t *disk_car,const int verbose,partition_t *parti
   @*/
 static const char *get_partition_typename_none_aux(const unsigned int part_type_none)
 {
-  int i;
-  /*@ loop assigns i; */
+  unsigned int i;
+  /*@
+    @ loop assigns i;
+    @ loop variant sizeof(none_sys_types)/sizeof(struct systypes) - i;
+    @*/
   for (i=0; none_sys_types[i].name!=NULL; i++)
+  {
     if (none_sys_types[i].part_type == part_type_none)
       return none_sys_types[i].name;
+  }
   return NULL;
 }
 

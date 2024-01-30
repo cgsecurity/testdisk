@@ -27,7 +27,7 @@ extern "C" {
 #include "dir_common.h"
 
 /*@
-  @ requires \valid(datestr);
+  @ requires \valid(datestr + (0 .. 17));
   @*/
 int set_datestr(char *datestr, size_t n, const time_t timev);
 

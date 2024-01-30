@@ -40,10 +40,12 @@
 
 /*@
   @ requires \valid(part);
+  @ ensures \valid(\result);
   @*/
 static list_part_t *element_new(partition_t *part)
 {
   list_part_t *new_element=(list_part_t*)MALLOC(sizeof(*new_element));
+  /*@ assert \valid(new_element); */
   new_element->part=part;
   new_element->prev=new_element->next=NULL;
   new_element->to_be_removed=0;
@@ -143,7 +145,10 @@ list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **
   if(disk==NULL)
   {
     if(the_disk!=NULL)
+    {
+      /*@ assert \valid(the_disk); */
       *the_disk=NULL;
+    }
     /*@ assert valid_list_disk(list_disk); */
     return list_disk;
   }
@@ -153,7 +158,10 @@ list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **
   {
     disk->clean(disk);
     if(the_disk!=NULL)
+    {
+      /*@ assert \valid(the_disk); */
       *the_disk=found;
+    }
     /*@ assert valid_list_disk(list_disk); */
     return list_disk;
   }
@@ -161,12 +169,15 @@ list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **
   {
     list_disk_t *tmp;
     /*@
+      @ loop invariant valid_list_disk(list_disk);
+      @ loop invariant tmp==\null || \valid(tmp);
       @ loop assigns tmp,prev;
       @*/
     for(tmp=list_disk;tmp!=NULL;tmp=tmp->next)
       prev=tmp;
   }
   new_disk=(list_disk_t *)MALLOC(sizeof(*new_disk));
+  /*@ assert \valid(new_disk); */
   new_disk->disk=disk;
   new_disk->prev=prev;
   new_disk->next=NULL;
@@ -175,7 +186,10 @@ list_disk_t *insert_new_disk_aux(list_disk_t *list_disk, disk_t *disk, disk_t **
     prev->next=new_disk;
   }
   if(the_disk!=NULL)
+  {
+    /*@ assert \valid(the_disk); */
     *the_disk=disk;
+  }
   /*@ assert valid_list_disk(new_disk); */
   /*@ assert valid_list_disk(list_disk); */
   return (list_disk!=NULL?list_disk:new_disk);
@@ -191,8 +205,14 @@ list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, con
   list_part_t *prev=NULL;
   list_part_t *next;
   *insert_error=0;
+  /*@
+    @ loop invariant valid_list_part(list_part);
+    @ loop invariant valid_partition(part);
+    @ loop invariant \valid(insert_error);
+    @*/
   for(next=list_part;;next=next->next)
   { /* prev new next */
+    /*@ assert next == \null || (\valid(next) && valid_partition(next->part)); */
     if((next==NULL)||
       (part->part_offset<next->part->part_offset) ||
       (part->part_offset==next->part->part_offset &&
@@ -214,11 +234,13 @@ list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, con
 	  next->part->status=part->status;
 	}
 	*insert_error=1;
+	/*@ assert valid_list_part(list_part); */
 	return list_part;
       }
       { /* prev new_element next */
 	list_part_t *new_element;
 	new_element=element_new(part);
+	/*@ assert \valid(new_element); */
 	new_element->next=next;
 	new_element->prev=prev;
 	if(next!=NULL)
@@ -226,8 +248,10 @@ list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, con
 	if(prev!=NULL)
 	{
 	  prev->next=new_element;
+	  /*@ assert valid_list_part(list_part); */
 	  return list_part;
 	}
+	/*@ assert valid_list_part(new_element); */
 	return new_element;
       }
     }
@@ -239,10 +263,17 @@ int delete_list_disk(list_disk_t *list_disk)
 {
   list_disk_t *element_disk;
   int write_used=0;
+  /*@
+    @ loop invariant valid_list_disk(element_disk);
+    @*/
   for(element_disk=list_disk;element_disk!=NULL;)
   {
+    /*@ assert \valid_read(element_disk); */
     list_disk_t *element_disk_next=element_disk->next;
+    /*@ assert valid_disk(element_disk->disk); */
     write_used|=element_disk->disk->write_used;
+    /*@ assert \valid_read(element_disk->disk); */
+    /*@ assert \valid_function(element_disk->disk->clean); */
     element_disk->disk->clean(element_disk->disk);
     free(element_disk);
     element_disk=element_disk_next;
@@ -257,11 +288,13 @@ list_part_t *sort_partition_list(list_part_t *list_part)
   list_part_t *next;
   /*@ assert valid_list_part(new_list_part); */
   /*@
+    @ loop invariant valid_list_part(list_part);
     @ loop invariant valid_list_part(new_list_part);
     @*/
   for(element=list_part;element!=NULL;element=next)
   {
     int insert_error=0;
+    /*@ assert \valid(element); */
     next=element->next;
     new_list_part=insert_new_partition(new_list_part, element->part, 0, &insert_error);
     if(insert_error>0)
@@ -278,13 +311,17 @@ list_part_t *gen_sorted_partition_list(const list_part_t *list_part)
   const list_part_t *element;
   /*@ assert valid_list_part(new_list_part); */
   /*@
+    @ loop invariant valid_list_part(list_part);
     @ loop invariant valid_list_part(new_list_part);
     @*/
   for(element=list_part;element!=NULL;element=element->next)
   {
+    /*@ assert \valid_read(element); */
+    /*@ assert \valid_read(element->part); */
     int insert_error=0;
     if(element->part->status!=STATUS_DELETED)
       new_list_part=insert_new_partition(new_list_part, element->part, 1, &insert_error);
+    /*@ assert \valid_read(element); */
   }
   /*@ assert valid_list_part(new_list_part); */
   return new_list_part;
@@ -329,14 +366,17 @@ int is_part_overlapping(const list_part_t *list_part)
     return 0;
   element=list_part;
   /*@
+    @ loop invariant \valid_read(element);
     @ loop assigns element;
     @*/
   while(1)
   {
-    const list_part_t *next=element->next;
     const partition_t *partition=element->part;
+    const list_part_t *next=element->next;
     if(next==NULL)
       return 0;
+    /*@ assert \valid_read(partition); */
+    /*@ assert \valid_read(next->part); */
     if( (partition->part_offset + partition->part_size - 1 >= next->part->part_offset)		||
 	((partition->status==STATUS_PRIM ||
 	  partition->status==STATUS_PRIM_BOOT ||
@@ -360,7 +400,7 @@ void  partition_reset(partition_t *partition, const arch_fnct_t *arch)
   partition->part_type_sun=PSUN_UNK;
   partition->part_type_mac=PMAC_UNK;
   partition->part_type_xbox=PXBOX_UNK;
-  partition->part_type_gpt=GPT_ENT_TYPE_UNUSED;
+  partition->part_type_gpt=(const efi_guid_t)GPT_ENT_TYPE_UNUSED;
 #ifndef DISABLED_FOR_FRAMAC
   guid_cpy(&partition->part_uuid, &GPT_ENT_TYPE_UNUSED);
 #endif
@@ -377,7 +417,9 @@ void  partition_reset(partition_t *partition, const arch_fnct_t *arch)
 partition_t *partition_new(const arch_fnct_t *arch)
 {
   partition_t *partition=(partition_t *)MALLOC(sizeof(*partition));
+  /*@ assert \valid(partition); */
   partition_reset(partition, arch);
+  /*@ assert valid_partition(partition); */
   return partition;
 }
 
@@ -390,11 +432,16 @@ static unsigned int get_geometry_from_list_part_aux(const disk_t *disk_car, cons
 {
   const list_part_t *element;
   unsigned int nbr=0;
-  /*@ loop assigns element, nbr; */
+  /*@
+    @ loop assigns element, nbr;
+    @ loop invariant valid_list_part(element);
+    @*/
   for(element=list_part;element!=NULL;element=element->next)
   {
     CHS_t start;
     CHS_t end;
+    /*@ assert \valid_read(element); */
+    /*@ assert \valid_read(element->part); */
     offset2CHS(disk_car,element->part->part_offset,&start);
     offset2CHS(disk_car,element->part->part_offset+element->part->part_size-1,&end);
     if(start.sector==1 && start.head<=1)
@@ -481,6 +528,7 @@ void log_disk_list(list_disk_t *list_disk)
   log_info("Hard disk list\n");
   /*@
     @ loop invariant valid_list_disk(list_disk);
+    @ loop invariant valid_list_disk(element_disk);
     @*/
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
   {

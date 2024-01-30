@@ -32,7 +32,7 @@ extern "C" {
   @ terminates \true;
   @ assigns to[0 .. len-1];
   @*/
-int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
+unsigned int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
 
 /*@
   @ requires \valid(to + ( 0 .. len-1));
@@ -41,7 +41,7 @@ int UCSle2str(char *to, const uint16_t *from, const unsigned int len);
   @ terminates \true;
   @ assigns to[0 .. len-1];
   @*/
-int str2UCSle(uint16_t *to, const char *from, const unsigned int len);
+unsigned int str2UCSle(uint16_t *to, const char *from, const unsigned int len);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

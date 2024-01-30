@@ -225,6 +225,7 @@ int log_redirect(const unsigned int level, const char *format, ...)
 
 void dump_log(const void *nom_dump, const unsigned int lng)
 {
+#ifndef DISABLED_FOR_FRAMAC
   const char *ptr=(const char*)nom_dump;
   const unsigned int nbr_line=(lng+0x10-1)/0x10;
   unsigned int i;
@@ -233,6 +234,7 @@ void dump_log(const void *nom_dump, const unsigned int lng)
   /*@
     @ loop invariant 0 <= i <= nbr_line;
     @ loop assigns *log_handle, f_status, i;
+    @ loop variant nbr_line - i;
     @*/
   for (i=0; i<nbr_line; i++)
   {
@@ -241,6 +243,7 @@ void dump_log(const void *nom_dump, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 0x10;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x10 - j;
       @*/
     for(j=0; j< 0x10;j++)
     {
@@ -260,6 +263,7 @@ void dump_log(const void *nom_dump, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 0x10;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x10 - j;
       @*/
     for(j=0; j< 0x10;j++)
     {
@@ -277,10 +281,12 @@ void dump_log(const void *nom_dump, const unsigned int lng)
     }
     log_info("\n");
   }
+#endif
 }
 
 void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
 {
+#ifndef DISABLED_FOR_FRAMAC
   const char *ptr1=(const char*)dump_1;
   const char *ptr2=(const char*)dump_2;
   const unsigned int nbr_line=(lng+0x08-1)/0x08;
@@ -289,6 +295,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
   /*@
     @ loop invariant 0 <= i <= nbr_line;
     @ loop assigns *log_handle, f_status, i, j;
+    @ loop variant nbr_line - i;
     @*/
   for (i=0; i<nbr_line; i++)
   {
@@ -296,6 +303,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 8;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x8 - j;
       @*/
     for(j=0; j<0x08;j++)
     {
@@ -313,6 +321,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 8;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x8 - j;
       @*/
     for(j=0; j<0x08;j++)
     {
@@ -332,6 +341,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 8;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x8 - j;
       @*/
     for(j=0; j<0x08;j++)
     {
@@ -349,6 +359,7 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     /*@
       @ loop invariant 0 <= j <= 8;
       @ loop assigns *log_handle, f_status, j;
+      @ loop variant 0x8 - j;
       @*/
     for(j=0; j<0x08;j++)
     {
@@ -366,4 +377,5 @@ void dump2_log(const void *dump_1, const void *dump_2, const unsigned int lng)
     }
     log_info("\n");
   }
+#endif
 }

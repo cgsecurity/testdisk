@@ -64,30 +64,35 @@ int set_next_cluster(disk_t *disk, const partition_t *partition, const upart_typ
 
 /*@
   @ requires \valid_read(partition);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 int is_fat(const partition_t *partition);
 
 /*@
   @ requires \valid_read(partition);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 int is_part_fat(const partition_t *partition);
 
 /*@
   @ requires \valid_read(partition);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 int is_part_fat12(const partition_t *partition);
 
 /*@
   @ requires \valid_read(partition);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 int is_part_fat16(const partition_t *partition);
 
 /*@
   @ requires \valid_read(partition);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 int is_part_fat32(const partition_t *partition);
@@ -115,13 +120,15 @@ unsigned int fat32_get_prev_cluster(disk_t *disk, const partition_t *partition, 
 int fat32_free_info(disk_t *disk, const partition_t *partition, const unsigned int fat_offset, const unsigned int no_of_cluster, unsigned int *next_free, unsigned int *free_count);
 
 /*@
-  @ requires \valid_read(boot_fat32 + (0 .. sector_size-1));
+  @ requires \valid_read(boot_fat32 + (0 .. sector_size + 512 -1));
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 unsigned long int fat32_get_free_count(const unsigned char *boot_fat32, const unsigned int sector_size);
 
 /*@
-  @ requires \valid_read(boot_fat32 + (0 .. sector_size-1));
+  @ requires \valid_read(boot_fat32 + (0 .. sector_size + 512 -1));
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 unsigned long int fat32_get_next_free(const unsigned char *boot_fat32, const unsigned int sector_size);
@@ -178,6 +185,7 @@ int check_OS2MB(disk_t *disk, partition_t *partition, const int verbose);
 
 /*@
   @ requires \valid_read(name);
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 int check_VFAT_volume_name(const char *name, const unsigned int max_size);

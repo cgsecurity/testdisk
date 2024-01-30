@@ -88,7 +88,7 @@ void offset2CHS(const disk_t *disk_car,const uint64_t offset, CHS_t*CHS);
   @ requires \valid(disk);
   @ requires valid_disk(disk);
   @ requires disk==\null || \separated(disk, \union(list_disk, the_disk));
-  @ requires the_disk==\null || (\valid_read(the_disk) && valid_disk(*the_disk) && \separated(the_disk, \union(list_disk, disk)));
+  @ requires the_disk==\null || (\valid(the_disk) && valid_disk(*the_disk) && \separated(the_disk, \union(list_disk, disk)));
   @ decreases 0;
   @*/
 // ensures \result==\null || (\valid(\result) && valid_disk(\result->disk));
@@ -114,10 +114,9 @@ list_disk_t *insert_new_disk(list_disk_t *list_disk, disk_t *disk_car);
   @ requires valid_list_part(list_part);
   @ requires valid_partition(part);
   @ requires \valid(insert_error);
-  @ requires (list_part==\null && part==\null) || \separated(list_part, part);
-  @ requires insert_error==\null || \valid(insert_error);
+  @ requires (list_part==\null && part==\null) || \separated(list_part, part, insert_error);
+  @ ensures  valid_list_part(\result);
   @*/
-// ensures  valid_list_part(\result);
 list_part_t *insert_new_partition(list_part_t *list_part, partition_t *part, const int force_insert, int *insert_error);
 
 /*@

@@ -116,9 +116,11 @@ int is_valid_tar_header(const struct tar_posix_header *h)
   @*/
 static int header_check_tar(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
   const struct tar_posix_header *h = (const struct tar_posix_header *)buffer;
   if(is_valid_tar_header(h) == 0)
     return 0;
+  /*@ assert \valid_read(file_recovery); */
   if(file_recovery->file_stat != NULL && file_recovery->file_stat->file_hint == &file_hint_tar)
   {
     /* header_ignored(file_recovery_new); is useless as there is no file check */

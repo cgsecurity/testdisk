@@ -52,10 +52,13 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
+#ifndef DISABLED_FOR_FRAMAC
 #include "analyse.h"
+#endif
 #include "chgtype.h"
 #include "partgpt.h"
 #include "savehdr.h"
+#ifndef DISABLED_FOR_FRAMAC
 #include "apfs.h"
 #include "bfs.h"
 #include "exfat.h"
@@ -63,11 +66,12 @@
 #include "hfs.h"
 #include "hfsp.h"
 #include "lvm.h"
+#include "md.h"
 #include "ntfs.h"
 #include "refs.h"
+#endif
 #include "log.h"
 #include "log_part.h"
-#include "md.h"
 #include "guid_cmp.h"
 #include "guid_cpy.h"
 #include "unicode.h"

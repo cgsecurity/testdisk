@@ -45,6 +45,12 @@ static struct td_list_head *merge(
 {
   struct td_list_head head, *tail = &head;
 
+  /*@
+    @ loop invariant \valid_function(cmp);
+    @ loop invariant \valid(tail);
+    @ loop invariant \valid(a);
+    @ loop invariant \valid(b);
+    @*/
   while (a && b) {
     /* if equal, take 'a' -- important for sort stability */
     if ((*cmp)(a, b) <= 0) {
@@ -127,8 +133,8 @@ void td_list_sort(struct td_list_head *head,
 {
   struct td_list_head *part[MAX_LIST_LENGTH_BITS+1]; /* sorted partial lists
 							-- last slot is a sentinel */
-  int lev;  /* index into part[] */
-  int max_lev = 0;
+  unsigned int lev;  /* index into part[] */
+  unsigned int max_lev = 0;
   struct td_list_head *list;
 
   if (td_list_empty(head))
@@ -139,11 +145,17 @@ void td_list_sort(struct td_list_head *head,
   head->prev->next = NULL;
   list = head->next;
 
+  /*@
+    @ loop invariant \valid_function(cmp);
+    @*/
   while (list) {
     struct td_list_head *cur = list;
     list = list->next;
     cur->next = NULL;
 
+    /*@
+      @ loop invariant \valid_function(cmp);
+      @*/
     for (lev = 0; part[lev]; lev++) {
       cur = merge(cmp, part[lev], cur);
       part[lev] = NULL;
@@ -159,6 +171,9 @@ void td_list_sort(struct td_list_head *head,
     part[lev] = cur;
   }
 
+  /*@
+    @ loop invariant \valid_function(cmp);
+    @*/
   for (lev = 0; lev < max_lev; lev++)
     if (part[lev])
       list = merge(cmp, part[lev], list);

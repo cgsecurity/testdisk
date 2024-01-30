@@ -101,7 +101,10 @@ struct bmp_header
 // ensures (\result == 1) ==>  \separated(file_recovery_new, file_recovery_new->extension);
 static int header_check_bmp(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  /*@ assert \valid_read(buffer+(0..buffer_size-1)); */
+  /*@ assert \initialized(buffer+(0..buffer_size-1)); */
   const struct bmp_header *bm=(const struct bmp_header *)buffer;
+  /*@ assert \valid_read(bm); */
   if(buffer[0]!='B' || buffer[1]!='M')
     return 0;
   if(bm->reserved!=0)
@@ -116,6 +119,8 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
   {
     /* See http://en.wikipedia.org/wiki/BMP_file_format */
     reset_file_recovery(file_recovery_new);
+    /*@ assert file_recovery_new->file_stat == \null; */
+    /*@ assert file_recovery_new->handle == \null; */
     file_recovery_new->extension=file_hint_bmp.extension;
     file_recovery_new->min_filesize=65;
     file_recovery_new->calculated_file_size=(uint64_t)le32(bm->size);
@@ -129,6 +134,7 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
     /*@ assert file_recovery_new->file_check == &file_check_size; */
     /*@ assert valid_read_string(file_recovery_new->extension); */
     /*@ assert \initialized(&file_recovery_new->time); */
+    /*@ assert valid_file_recovery(file_recovery_new); */
     return 1;
   }
   return 0;

@@ -36,6 +36,7 @@
 #undef HAVE_SCSI_SG_H
 #undef HAVE_SYS_MOUNT_H
 #undef HAVE_SYS_PARAM_H
+#undef HAVE_SYS_SYSMACROS_H
 #endif
  
 #ifdef HAVE_SYS_STAT_H
@@ -315,6 +316,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
       list_disk=insert_new_disk(list_disk, file_test_availability(device, verbose, testdisk_mode));
     }
   }
+#elif defined(DISABLED_FOR_FRAMAC)
 #elif defined(TARGET_LINUX)
   {
     int j;
@@ -329,6 +331,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 8;
+      @ loop variant 8 - i;
       @*/
     for(i=0;i<8;i++)
     {
@@ -339,6 +342,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= j <= 8;
+      @ loop variant 8 - j;
       @*/
     for(j=0;j<8;j++)
     {
@@ -346,6 +350,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
       /*@
 	@ loop invariant valid_list_disk(list_disk);
 	@ loop invariant 0 <= i <= 8;
+	@ loop variant 8 - i;
 	@*/
       for(i=0;i<8;i++)
       {
@@ -356,6 +361,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 8;
+      @ loop variant 8 - i;
       @*/
     for(i=0;i<8;i++)
     {
@@ -366,6 +372,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 10;
+      @ loop variant 10 - i;
       @*/
     for(i=0;i<10;i++)
     {
@@ -376,6 +383,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 15;
+      @ loop variant 15 - i;
       @*/
     for(i=0;i<15;i++)
     {
@@ -386,6 +394,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 4;
+      @ loop variant 4 - i;
       @*/
     for(i=0;i<4;i++)
     {
@@ -396,6 +405,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 26;
+      @ loop variant 26 - i;
       @*/
     for(i=0;i<26;i++)
     {
@@ -406,6 +416,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
     /*@
       @ loop invariant valid_list_disk(list_disk);
       @ loop invariant 0 <= i <= 10;
+      @ loop variant 10 - i;
       @*/
     for(i=0;i<10;i++)
     {
@@ -971,12 +982,17 @@ void update_disk_car_fields(disk_t *disk_car)
 #ifdef TARGET_LINUX
 /*@
   @ requires valid_string(buf);
+  @ requires strlen(buf) < (1<<31);
   @ ensures  valid_string(buf);
   @*/
 static void rtrim(char *buf)
 {
   unsigned int i;
-  /*@ loop assigns i; */
+  /*@
+    @ loop invariant valid_string(&buf[i]);
+    @ loop assigns i;
+    @ loop variant i;
+    */
   for(i=strlen(buf); i>0 && buf[i] == ' '; i--);
   /*@ assert 0 <= i < strlen(buf); */
   buf[i]='\0';
@@ -2046,8 +2062,16 @@ void hd_update_all_geometry(const list_disk_t * list_disk, const int verbose)
   {
     log_trace("hd_update_all_geometry\n");
   }
+  /*@
+    @ loop invariant valid_list_disk(element_disk);
+    @*/
   for(element_disk=list_disk;element_disk!=NULL;element_disk=element_disk->next)
+  {
+    /*@ assert \valid(element_disk); */
+    /*@ assert valid_disk(element_disk->disk); */
     hd_update_geometry(element_disk->disk, verbose);
+    /*@ assert \valid(element_disk); */
+  }
 }
 
 void init_disk(disk_t *disk)

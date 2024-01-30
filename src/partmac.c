@@ -39,7 +39,9 @@
 #include "fnctdsk.h"
 #include "lang.h"
 #include "intrf.h"
+#ifndef DISABLED_FOR_FRAMAC
 #include "analyse.h"
+#endif
 #include "chgtype.h"
 #include "partmac.h"
 #include "savehdr.h"

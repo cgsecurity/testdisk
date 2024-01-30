@@ -421,6 +421,7 @@ static unsigned int str_uint(char **ptr)
 }
 
 /*@
+  @ terminates \true;
   @ assigns  \nothing;
   @ */
 static unsigned char escaped_char(const unsigned char c)
@@ -443,6 +444,7 @@ static unsigned char escaped_char(const unsigned char c)
 }
 
 /*@
+  @ terminates \true;
   @ ensures 0 <= \result <= 0x10;
   @ assigns \nothing;
   @*/
@@ -458,6 +460,7 @@ static unsigned int load_hex1(const unsigned char c)
 }
 
 /*@
+  @ terminates \true;
   @ ensures 0 <= \result <= 0x100;
   @ assigns \nothing;
   @*/

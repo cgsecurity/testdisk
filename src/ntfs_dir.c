@@ -76,7 +76,6 @@
 
 #include "common.h"
 #include "intrf.h"
-#include "ntfs.h"
 #include "list.h"
 #include "list_sort.h"
 #include "dir.h"

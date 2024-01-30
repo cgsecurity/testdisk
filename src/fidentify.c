@@ -79,8 +79,8 @@ static data_check_t data_check_wrapper(const unsigned char *buffer, const unsign
   data_check_t tmp;
   /*@ assert \valid(file_recovery); */
   /*@ assert valid_file_recovery(file_recovery); */
+  /*@ split file_recovery->data_check; */
   /*@ assert \valid_function(file_recovery->data_check); */
-  //@ split file_recovery->data_check;
   tmp=file_recovery->data_check(buffer, buffer_size, file_recovery);
   /*@ assert valid_file_recovery(file_recovery); */
   /*@ assert valid_data_check_result(tmp, file_recovery); */
@@ -109,7 +109,10 @@ static data_check_t data_check_aux(file_recovery_t *file_recovery, const unsigne
   /*@
     @ loop invariant valid_file_recovery(file_recovery);
     @ loop invariant file_recovery == \at(file_recovery, Pre);
+    @ loop invariant \valid_read(buffer_start + (0 .. blocksize + READ_SIZE - 1));
     @ loop invariant file_recovery->calculated_file_size < PHOTOREC_MAX_FILE_SIZE;
+    @ loop invariant file_recovery->file_size < PHOTOREC_MAX_FILE_SIZE;
+    @ loop invariant \valid_function(file_recovery->data_check);
     @ loop invariant \separated(file_recovery, &errno, buffer_start + (..));
     @ loop assigns *file_recovery->handle, errno;
     @ loop assigns buffer_start[0 .. blocksize + READ_SIZE -1];

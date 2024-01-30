@@ -89,6 +89,7 @@ void aff_part_buffer(const unsigned int newline, const disk_t *disk_car, const p
 uint64_t atouint64(const char *nptr);
 
 /*@
+  @ requires \valid(current_cmd);
   @ requires valid_read_string(*current_cmd);
   @ ensures  valid_read_string(*current_cmd);
   @ assigns  *current_cmd;
@@ -101,6 +102,7 @@ void screen_buffer_to_log(void);
 /*@
   @ requires \valid_read(partition);
   @ requires valid_partition(partition);
+  @ terminates \true;
   @ assigns \nothing;
   @*/
 int get_partition_status(const partition_t *partition);

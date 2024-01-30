@@ -60,6 +60,7 @@ static int test_ISO(const struct iso_primary_descriptor *iso)
 int check_ISO(disk_t *disk_car, partition_t *partition)
 {
   unsigned char *buffer=(unsigned char*)MALLOC(ISO_PD_SIZE);
+  /*@ assert \valid(buffer + (0 .. ISO_PD_SIZE-1)); */
   if(disk_car->pread(disk_car, buffer, ISO_PD_SIZE, partition->part_offset + 64 * 512) != ISO_PD_SIZE)
   {
     free(buffer);
@@ -98,6 +99,8 @@ int recover_ISO(const struct iso_primary_descriptor *iso, partition_t *partition
   if(test_ISO(iso)!=0)
     return 1;
   set_ISO_info(iso, partition);
+  /*@ assert \valid_read(iso); */
+  /*@ assert \valid(partition); */
   {
     const unsigned int volume_space_size_le=le32(iso->volume_space_size_le);
     const unsigned int volume_space_size_be=be32(iso->volume_space_size_be);

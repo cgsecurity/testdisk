@@ -58,6 +58,7 @@ const char *monstr[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 /*@
+  @ terminates \true;
   @ assigns \result;
   @*/
 static char ftypelet (unsigned int bits)
@@ -264,6 +265,7 @@ unsigned int delete_list_file(file_info_t *file_info)
   unsigned int nbr=0;
   struct td_list_head *file_walker = NULL;
   struct td_list_head *file_walker_next = NULL;
+#ifndef DISABLED_FOR_FRAMAC
   td_list_for_each_safe(file_walker,file_walker_next, &file_info->list)
   {
     file_info_t *tmp;
@@ -273,6 +275,7 @@ unsigned int delete_list_file(file_info_t *file_info)
     free(tmp);
     nbr++;
   }
+#endif
   return nbr;
 }
 
@@ -289,7 +292,10 @@ static int is_inode_valid(const file_info_t *current_file, const unsigned int di
     return 0;
   if(strcmp(current_file->name, "..")==0)
     return 0;
-  /*@ loop assigns i; */
+  /*@
+    @ loop assigns i;
+    @ loop variant dir_nbr - i;
+    @*/
   for(i=0; i<dir_nbr; i++)
     if(new_inode==inode_known[i]) /* Avoid loop */
       return 0;
@@ -425,17 +431,21 @@ void dir_whole_partition_copy(disk_t *disk, const partition_t *partition, dir_da
 int filesort(const struct td_list_head *a, const struct td_list_head *b)
 {
   const file_info_t *file_a=td_list_entry_const(a, const file_info_t, list);
+  /*@ assert \valid_read(file_a); */
   const file_info_t *file_b=td_list_entry_const(b, const file_info_t, list);
+  /*@ assert \valid_read(file_b); */
   /* Directories must be listed before files */
   const int res=((file_b->st_mode&LINUX_S_IFDIR)-(file_a->st_mode&LINUX_S_IFDIR));
   if(res)
     return res;
+  /*@ assert valid_read_string(file_a->name); */
   /* . and .. must listed before the other directories */
   if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, ".")==0)
     return -1;
   if((file_a->st_mode&LINUX_S_IFDIR) && strcmp(file_a->name, "..")==0 &&
       strcmp(file_b->name, ".")!=0)
     return -1;
+  /*@ assert valid_read_string(file_b->name); */
   if((file_b->st_mode&LINUX_S_IFDIR) && strcmp(file_b->name, ".")==0)
     return 1;
   if((file_b->st_mode&LINUX_S_IFDIR) && strcmp(file_b->name, "..")==0 &&
@@ -488,10 +498,14 @@ static struct {
   @*/
 static mode_t mode_xlate(unsigned int lmode)
 {
+  unsigned int i;
   mode_t  mode = 0;
-  int     i;
-  /*@ loop assigns i, mode; */
-  for (i=0; mode_table[i].lmask; i++) {
+  /*@
+    @ loop unroll 20;
+    @ loop assigns i, mode;
+    @*/
+  for (i=0; mode_table[i].lmask; i++)
+  {
     if (lmode & mode_table[i].lmask)
       mode |= mode_table[i].mask;
   }
@@ -523,7 +537,14 @@ int set_mode(const char *pathname, unsigned int mode)
 static void strip_fn(char *fn)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i;
+    @*/
   for(i=0;fn[i]!='\0';i++);
+  /*@
+    @ loop assigns i;
+    @ loop invariant i;
+    @*/
   while(i>0 && (fn[i-1]==' '||fn[i-1]=='.'))
     i--;
   if(i==0 && (fn[i]==' '||fn[i]=='.'))
@@ -591,8 +612,15 @@ static inline unsigned char convert_char_dos(unsigned char car)
 static unsigned int filename_convert(char *dst, const char*src, const unsigned int n)
 {
   unsigned int i;
+  /*@
+    @ loop assigns i, dst[0 .. i];
+    @ loop variant n - i;
+    @*/
   for(i=0;i<n && src[i]!='\0';i++)
     dst[i]=convert_char_dos(src[i]);
+  /*@
+    @ loop variant i;
+    @*/
   while(i>0 && (dst[i-1]==' '||dst[i-1]=='.'))
     i--;
   if(i==0 && (dst[i]==' '||dst[i]=='.'))
@@ -690,7 +718,8 @@ static unsigned int filename_convert(char *dst, const char*src, const unsigned i
 {
   unsigned int i;
   /*@
-    @ loop assigns i, dst[i];
+    @ loop assigns i, dst[0 .. i];
+    @ loop invariant n - i;
     @*/
   for(i=0;i<n && src[i]!='\0';i++)
     dst[i]=src[i];
@@ -713,6 +742,9 @@ char *gen_local_filename(const char *filename)
 
 char *mkdir_local(const char *localroot, const char *pathname)
 {
+#ifdef DISABLED_FOR_FRAMAC
+  return NULL;
+#else
   const int l1=(localroot==NULL?0:strlen(localroot));
   const int l2=strlen(pathname);
   char *localdir=(char *)MALLOC(l1+l2+1);
@@ -776,6 +808,7 @@ char *mkdir_local(const char *localroot, const char *pathname)
 #warning "You need a mkdir function!"
 #endif
   return localdir;
+#endif
 }
 
 void mkdir_local_for_file(const char *filename)
@@ -794,6 +827,9 @@ void mkdir_local_for_file(const char *filename)
 
 FILE *fopen_local(char **localfilename, const char *localroot, const char *filename)
 {
+#ifdef DISABLED_FOR_FRAMAC
+  return NULL;
+#else
   const int l1=strlen(localroot);
   const int l2=strlen(filename);
   const char *src;
@@ -858,4 +894,5 @@ FILE *fopen_local(char **localfilename, const char *localroot, const char *filen
     return f_out;
   filename_convert(dst_org, src_org, l2);
   return fopen(*localfilename,"wb");
+#endif
 }

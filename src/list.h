@@ -3,17 +3,17 @@
     File: list.h
 
     Copyright (C) 2006-2008 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -109,6 +109,7 @@ struct td_list_head {
   @ requires next->prev == prev;
   @ requires list_separated(prev, newe);
   @ requires list_separated(next, newe);
+  @ terminates \true;
   @ ensures prev->next == newe;
   @ ensures newe->prev == prev;
   @ ensures newe->next == next;
@@ -157,6 +158,7 @@ static inline void __td_list_add(struct td_list_head *newe,
   @ requires finite(head);
   @ requires finite(head->next);
   @ requires list_separated(head, newe);
+  @ terminates \true;
   @ ensures head->next == newe;
   @ ensures newe->prev == head;
   @ ensures newe->next == \old(head->next);
@@ -187,6 +189,7 @@ static inline void td_list_add(struct td_list_head *newe, struct td_list_head *h
   @ requires list_separated(head->prev, newe);
   @ requires list_separated(head, newe);
   @ requires finite(head);
+  @ terminates \true;
   @ ensures head->prev == newe;
   @ ensures newe->next == head;
   @ ensures newe->prev == \old(head->prev);
@@ -209,6 +212,7 @@ static inline void td_list_add_tail(struct td_list_head *newe, struct td_list_he
   @ requires \valid(prev);
   @ requires \valid(next);
   @ requires prev == next || \separated(prev,next);
+  @ terminates \true;
   @ ensures next->prev == prev;
   @ ensures prev->next == next;
   @ assigns next->prev,prev->next;
@@ -233,6 +237,7 @@ static inline void __td_list_del(struct td_list_head * prev, struct td_list_head
   @ requires \valid(entry->next);
   @ requires \separated(entry, \union(entry->prev,entry->next));
   @ requires entry->prev == entry->next || \separated(entry->prev,entry->next);
+  @ terminates \true;
   @ ensures  \old(entry->prev)->next == \old(entry->next);
   @ ensures  \old(entry->next)->prev == \old(entry->prev);
   @ assigns \old(entry->prev)->next, \old(entry->next)->prev, entry->next, entry->prev;
@@ -291,6 +296,7 @@ static inline void td_list_move_tail(struct td_list_head *list,
  */
 /*@
   @ requires \valid_read(head);
+  @ terminates \true;
   @ assigns  \nothing;
   @*/
 static inline int td_list_empty(const struct td_list_head *head)

@@ -42,6 +42,7 @@
 #include "intrf.h"
 #include "chgtype.h"
 #include "savehdr.h"
+#ifndef DISABLED_FOR_FRAMAC
 #include "analyse.h"
 #include "bfs.h"
 #include "bsd.h"
@@ -55,6 +56,7 @@
 #include "ntfs.h"
 #include "sun.h"
 #include "swap.h"
+#endif
 #include "log.h"
 #include "parti386.h"
 #include "partgpt.h"

@@ -881,9 +881,12 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
   @*/
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
   unsigned int i=2;
   time_t jpg_time=0;
   /*@
+    @ loop invariant \valid_read(buffer+(0..buffer_size-1));
+    @ loop invariant \initialized(buffer+(0..buffer_size-1));
     @ loop assigns i, jpg_time;
     @ loop variant buffer_size - (i+4);
     @*/
