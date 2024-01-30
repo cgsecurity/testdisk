@@ -530,7 +530,7 @@ static void search_NTFS_from_backup(disk_t *disk_car, list_part_t *list_part, co
   free(buffer_disk);
 }
 
-typedef enum { INDSTOP_CONTINUE=0, INDSTOP_STOP=1, INDSTOP_SKIP=2, INDSTOP_QUIT=3 } indstop_t;
+typedef enum { INDSTOP_CONTINUE=0, INDSTOP_STOP=1, INDSTOP_SKIP=2, INDSTOP_QUIT=3, INDSTOP_PLUS=4 } indstop_t;
 
 static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_org, const int verbose, const int dump_ind, const int fast_mode, char **current_cmd)
 {
@@ -628,6 +628,9 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
 	  break;
 	case 2:
 	  ind_stop=INDSTOP_SKIP;
+	  break;
+	case 3:
+	  ind_stop=INDSTOP_PLUS;
 	  break;
       }
     }
@@ -942,6 +945,11 @@ static list_part_t *search_part(disk_t *disk_car, const list_part_t *list_part_o
       ind_stop=INDSTOP_CONTINUE;
       if(try_offset_nbr>0 && search_location < try_offset[0])
 	search_location=try_offset[0];
+    }
+    else if(ind_stop==INDSTOP_PLUS)
+    {
+      ind_stop=INDSTOP_CONTINUE;
+      search_location += search_location_max / 20 / (1024 * 1024) * (1024 * 1014);
     }
     else if(ind_stop==INDSTOP_STOP)
     {
