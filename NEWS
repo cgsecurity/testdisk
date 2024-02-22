@@ -1,4 +1,33 @@
 Current news
+== 7.2 ==
+== General Improvements ==
+- Display disk serial number when selecting source disk
+- Add support for BeFS for EFI GPT and Mac partition table
+
+== TestDisk ==
+- When searching for partition, press '+' key to skip 5% of the disk.
+- exfat: Better utf-8 support when iconv is missing
+- APFS: Detect APFS partition
+
+== PhotoRec & QPhotoRec ==
+- Huge work to formally verify (Frama-C WP) the code using by the various parsers
+New file formats
+- bbdoc
+- clip - Clip Studio Paint
+- drw - micrografx designer format
+- exr - OpenEXR v2
+- fbx: Kaydara 3D file
+- FCStd
+- hdf: Hierarchical Data Format 5
+- lz: lzip compressed file
+- Microsoft Jet DB / Sage Simply Accounting database
+- mtcx - Mathcad
+- rvt - Revit
+- shp/shx - Shaefile support
+- wad - Doom
+
+New translations for QPhotoRec: Finnish, Polish, Greek (el), sv_SE and zh_CN
+
 == 7.1 ==
 == General Improvements ==
 * It should be possible to reproduce, byte for byte, every build of testdisk package in Debian https://wiki.debian.org/ReproducibleBuilds

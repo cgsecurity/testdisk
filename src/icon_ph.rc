@@ -22,7 +22,7 @@ BEGIN
       VALUE "Comments",		"Signature based file recovery utility"
       VALUE "FileVersion",	"7.2"
       VALUE "ProductVersion",	"7.2"
-      VALUE "LegalCopyright",	"Copyright (C) 1998-2023 Christophe GRENIER, et al."
+      VALUE "LegalCopyright",	"Copyright (C) 1998-2024 Christophe GRENIER, et al."
     END
   END
   BLOCK "VarFileInfo"
