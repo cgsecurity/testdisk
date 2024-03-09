@@ -24,38 +24,8 @@ It works with:
 lost pictures from digital camera memory or even hard disks.
 It has been extended to search also for non audio/video headers.
 
-It searches for:
-
-- Sun/NeXT audio data (.au)
-- RIFF audio/video (.avi/.wav)
-- BMP bitmap (.bmp)
-- bzip2 compressed data (.bz2)
-- Source code written in C (.c)
-- Canon Raw picture (.crw)
-- Canon catalog (.ctg)
-- FAT subdirectory
-- Microsoft Office Document (.doc)
-- Nikon dsc (.dsc)
-- HTML page (.html)
-- JPEG picture (.jpg)
-- MOV video (.mov)
-- MP3 audio (MPEG ADTS, layer III, v1) (.mp3)
-- Moving Picture Experts Group video (.mpg)
-- Minolta Raw picture (.mrw)
-- Olympus Raw Format picture (.orf)
-- Portable Document Format (.pdf)
-- Perl script (.pl)
-- Portable Network Graphics (.png)
-- Raw Fujifilm picture (.raf)
-- Contax picture (.raw)
-- Rollei picture (.rdc)
-- Rich Text Format (.rtf)
-- Shell script (.sh)
-- Tar archive (.tar)
-- Tag Image File Format (.tiff)
-- Microsoft ASF (.wma)
-- Sigma/Foveon X3 raw picture (.x3f)
-- Zip archive (.zip)
+The whole list of file formats recovered by PhotoRec contains
+[more than 480 file extensions](https://www.cgsecurity.org/wiki/File_Formats_Recovered_By_PhotoRec) (about 300 file families).
 
 TestDisk and PhotoRec run on:
 
