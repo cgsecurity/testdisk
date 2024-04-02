@@ -486,6 +486,11 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_STRUCT_ST_BLOCKS
 AC_STRUCT_TM
+AC_CHECK_TYPE(
+ [paddr_t],
+ [AC_DEFINE( [HAVE_PADDR_T], [1], [Define to 1 if paddr_t is available])],
+ [AC_DEFINE( [HAVE_PADDR_T], [0], [Define to 0 if paddr_t is not available])])
+
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_rdev])
 AC_CHECK_MEMBERS([dal_t.block_size],,,[#include <dal/dal.h>])

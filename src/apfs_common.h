@@ -34,7 +34,9 @@ extern "C"
   } __attribute__((gcc_struct, __packed__));
 
   typedef struct obj_phys obj_phys_t;
+#if HAVE_PADDR_T == 0
   typedef int64_t paddr_t;
+#endif
 
   struct prange {
     paddr_t pr_start_paddr;
