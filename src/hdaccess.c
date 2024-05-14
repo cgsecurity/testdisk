@@ -109,6 +109,9 @@
 #ifdef HAVE_GLOB_H
 #include <glob.h>
 #endif
+#ifdef HAVE_LIBGEN_H
+#include <libgen.h>
+#endif
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include "win32.h"
