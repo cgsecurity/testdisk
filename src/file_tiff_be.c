@@ -293,15 +293,15 @@ static unsigned int tiff_be_read(const void *val, const unsigned int type)
       {
         const uint16_t *ptr=(const uint16_t *)val;
         /*@ assert \valid_read(ptr); */
-	const uint16_t val=*ptr;
-        return be16(val);
+	const uint16_t tmp=*ptr;
+        return be16(tmp);
       }
     case 4:
       {
         const uint32_t *ptr=(const uint32_t *)val;
         /*@ assert \valid_read(ptr); */
-	const uint32_t val=*ptr;
-        return be32(val);
+	const uint32_t tmp=*ptr;
+        return be32(tmp);
       }
     default:
       return 0;
