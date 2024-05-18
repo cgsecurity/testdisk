@@ -61,7 +61,10 @@ static long secwest=0;
 void *MALLOC(size_t size)
 {
   void *res;
+  /*@ assert size > 0; */
+#ifdef DISABLED_FOR_FRAMAC
   assert(size>0);
+#endif
   /* Warning, memory leak checker must be posix_memalign/memalign aware, otherwise  *
    * reports may look strange. Aligned memory is required if the buffer is *
    * used for read/write operation with a file opened with O_DIRECT        */
@@ -235,6 +238,7 @@ char* strip_dup(char* str)
   /*@
     @ loop invariant valid_string(str);
     @ loop assigns str;
+    @ loop variant strlen(\at(str, Pre)) - strlen(str);
     @*/
   while(isspace(*str))
     str++;
@@ -244,7 +248,8 @@ char* strip_dup(char* str)
     @ loop invariant valid_string(tmp);
     @ loop invariant valid_string(end);
     @ loop invariant end == str || *end != '\0';
-    @ loop assigns end;
+    @ loop assigns tmp, end;
+    @ loop variant strlen(str) - strlen(tmp);
     @*/
   for(tmp = str; *tmp != 0; tmp++)
     if(!isspace(*tmp))
