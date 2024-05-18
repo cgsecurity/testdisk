@@ -1978,6 +1978,9 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
   /*@ assert offset_test == offset_error; */
   if(file_recovery->blocksize==0)
     return ;
+  if(offset_test > 0x80000000)
+    return ;
+  /*@ assert offset_test <= 0x80000000; */
   offset=offset_test / file_recovery->blocksize * file_recovery->blocksize;
   if(my_fseek(infile, offset, SEEK_SET) < 0)
     return ;
@@ -1989,6 +1992,7 @@ static void jpg_search_marker(file_recovery_t *file_recovery)
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns offset, offset_test;
     @ loop assigns file_recovery->extra;
+    @ loop variant 0x80000000 + sizeof(sbuffer) - offset_test;
     @*/
   while((nbytes=fread(&sbuffer, 1, sizeof(sbuffer), infile))>0)
   {
