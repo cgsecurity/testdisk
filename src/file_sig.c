@@ -49,9 +49,6 @@ static int signature_cmp(const struct td_list_head *a, const struct td_list_head
 
 #ifndef __FRAMAC__
 #include "list_add_sorted.h"
-/*@ requires compar == signature_cmp; */
-static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
-    int (*compar)(const struct td_list_head *a, const struct td_list_head *b));
 #else
 /*@
   @ requires \valid(newe);
