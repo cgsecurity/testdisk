@@ -273,7 +273,7 @@ static const txt_header_t fasttxt_headers[] = {
   /* Windows folder settings for file explorer */
   { "[.ShellClassInfo]",				17, "Desktop.ini" },
   /* Fotobook */
-  { "<fotobook ",					10, "mcf"}, 
+  { "<fotobook ",					10, "mcf"},
 #endif
   {NULL, 0, NULL}
 };
@@ -452,27 +452,36 @@ static unsigned int is_fortran(const char *buffer)
   @ requires valid_read_string((char *)buffer);
   @ assigns \nothing;
   @*/
-static int is_ini(const unsigned char *buffer)
+static int is_ini(const char *buffer)
 {
-  const unsigned char *src=buffer;
+  const char *src=buffer;
   if(*src!='[')
     return 0;
   src++;
+  /*@ assert strlen(buffer) == 1 + strlen(src); */
+  /*@ ghost unsigned int i = 1; */
   /*@
-    @ loop invariant valid_read_string((char *)src);
+    @ loop invariant strlen(buffer) > strlen(src);
+    @ loop invariant strlen(src) >= 0;
+    @ loop invariant valid_read_string(src);
+    @ loop invariant src == buffer + i;
+    @ loop invariant i <= strlen(buffer);
     @ loop assigns src;
+    @ loop assigns i;
+    @ loop variant strlen(buffer) - i;
     @*/
   while(*src!='\0')
   {
     if(*src==']')
     {
       if(src > buffer + 3)
-	return 1;
+        return 1;
       return 0;
     }
-    if(!isalnum(*src) && *src!=' ')
+    if(!isalnum(*(const unsigned char *)src) && *src!=' ')
       return 0;
     src++;
+    /*@ ghost i++; */
   }
   return 0;
 }
@@ -1091,9 +1100,14 @@ static int header_check_ers(const unsigned char *buffer, const unsigned int buff
 static int header_check_fasttxt(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   const txt_header_t *header=&fasttxt_headers[0];
+  /*@ ghost int i = 0; */
   /*@
     @ loop unroll 200;
+    @ loop invariant header == &fasttxt_headers[i];
+    @ loop invariant 0 <= i <= sizeof(fasttxt_headers)/sizeof(txt_header_t);
     @ loop assigns header;
+    @ loop assigns i;
+    @ loop variant sizeof(fasttxt_headers)/sizeof(txt_header_t) - i;
     @ */
   while(header->len > 0)
   {
@@ -1121,6 +1135,7 @@ static int header_check_fasttxt(const unsigned char *buffer, const unsigned int 
       return 1;
     }
     header++;
+    /*@ ghost i++; */
   }
   return 0;
 }
@@ -1575,6 +1590,41 @@ static int header_check_ttd(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
+  @ requires \valid_read(haystack + (0 .. ll-1));
+  @ assigns \nothing;
+  @ ensures \result == \null || valid_read_string(\result);
+  @*/
+static const char*she_bang_to_ext(const unsigned char *haystack, const unsigned int ll)
+{
+  if(td_memmem(haystack, ll, "groovy", 6) != NULL)
+  {
+    /* Groovy script */
+    return extension_groovy;
+  }
+  if(td_memmem(haystack, ll, "perl", 4) != NULL)
+  {
+    /* Perl script */
+    return extension_pl;
+  }
+  if(td_memmem(haystack, ll, "php", 3) != NULL)
+  {
+    /* PHP script */
+    return extension_php;
+  }
+  if(td_memmem(haystack, ll, "python", 6) != NULL)
+  {
+    /* Python script */
+    return extension_py;
+  }
+  if(td_memmem(haystack, ll, "ruby", 4) != NULL)
+  {
+    /* Ruby script */
+    return extension_rb;
+  }
+  return NULL;
+}
+
+/*@
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -1673,53 +1723,18 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
   {
     unsigned int ll=512-2;
     const unsigned char *haystack=(const unsigned char *)buffer+2;
+    const char*ext;
     const unsigned char *res;
     res=(const unsigned char *)memchr(haystack,'\n',ll);
     if(res!=NULL)
       ll=res-haystack;
-    if(td_memmem(haystack, ll, "groovy", 6) != NULL)
+    ext=she_bang_to_ext(haystack, ll);
+    if(ext)
     {
       reset_file_recovery(file_recovery_new);
       file_recovery_new->data_check=&data_check_txt;
       file_recovery_new->file_check=&file_check_size;
-      /* Groovy script */
-      file_recovery_new->extension=extension_groovy;
-      return 1;
-    }
-    if(td_memmem(haystack, ll, "perl", 4) != NULL)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->data_check=&data_check_txt;
-      file_recovery_new->file_check=&file_check_size;
-      /* Perl script */
-      file_recovery_new->extension=extension_pl;
-      return 1;
-    }
-    if(td_memmem(haystack, ll, "php", 3) != NULL)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->data_check=&data_check_txt;
-      file_recovery_new->file_check=&file_check_size;
-      /* PHP script */
-      file_recovery_new->extension=extension_php;
-      return 1;
-    }
-    if(td_memmem(haystack, ll, "python", 6) != NULL)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->data_check=&data_check_txt;
-      file_recovery_new->file_check=&file_check_size;
-      /* Python script */
-      file_recovery_new->extension=extension_py;
-      return 1;
-    }
-    if(td_memmem(haystack, ll, "ruby", 4) != NULL)
-    {
-      reset_file_recovery(file_recovery_new);
-      file_recovery_new->data_check=&data_check_txt;
-      file_recovery_new->file_check=&file_check_size;
-      /* Ruby script */
-      file_recovery_new->extension=extension_rb;
+      file_recovery_new->extension=ext;
       return 1;
     }
   }
@@ -1813,7 +1828,7 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
       log_info("ext=%s\n", ext);
     }
     /* Detect .ini */
-    else if(buffer[0]=='[' && l>50 && is_ini((const unsigned char *)buffer_lower))
+    else if(buffer[0]=='[' && l>50 && is_ini((const char *)buffer_lower))
       ext=extension_ini;
     /* php (Hypertext Preprocessor) script */
     else if(strstr(buffer_lower, "<?php")!=NULL)
@@ -1851,7 +1866,9 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 #endif
       /*@ assert valid_read_string(str); */
       /*@
+        @ loop invariant valid_read_string(str);
 	@ loop assigns str;
+	@ loop variant strlen(str);
 	@*/
       while(*str!='\0' && *str!='\n' && *str!=';')
 	str++;
@@ -1909,11 +1926,20 @@ static int header_check_txt(const unsigned char *buffer, const unsigned int buff
 	/* Unix: \n (0xA)
 	 * Dos: \r\n (0xD 0xA)
 	 * Doc: \r (0xD) */
+	/*@
+	  @ loop assigns i;
+	  @ loop variant l-i;
+	  @*/
 	for(i=0; i<l-1; i++)
 	{
 	  if(buffer_lower[i]=='\r' && buffer_lower[i+1]!='\n')
 	    return 0;
 	}
+	/*@
+	  @ loop assigns i;
+	  @ loop assigns txt_nl;
+	  @ loop variant 512-i;
+	  @*/
 	for(i=0; i<l && i<512; i++)
 	  if(buffer_lower[i]=='\n')
 	    txt_nl++;
@@ -1960,6 +1986,131 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
 }
 
 /*@
+  @ requires separation: \separated(buf+(..), file_recovery_new);
+  @ requires \valid_read(buf + (0 .. buffer_size));
+  @ requires buf[buffer_size] == '\x00';
+  @ requires valid_read_string(buf);
+  @ requires file_recovery_new->data_check == &data_check_txt;
+  @ requires file_recovery_new->file_check == &file_check_xml;
+  @ requires file_recovery_new->file_rename == \null;
+  @ requires valid_header_check_result((int)1, file_recovery_new);
+  @ assigns file_recovery_new->extension;
+  @ assigns file_recovery_new->data_check;
+  @ assigns file_recovery_new->file_check;
+  @ assigns file_recovery_new->file_rename;
+  @ ensures  file_recovery_new->data_check == \null ||
+				file_recovery_new->data_check == data_check_html ||
+				file_recovery_new->data_check == data_check_txt;
+  @ ensures  file_recovery_new->file_check == \null ||
+				file_recovery_new->file_check == &file_check_gpx ||
+				file_recovery_new->file_check == &file_check_svg ||
+				file_recovery_new->file_check == &file_check_xml;
+  @ ensures  file_recovery_new->file_rename == \null ||
+				file_recovery_new->file_rename == &file_rename_fods ||
+				file_recovery_new->file_rename == &file_rename_html;
+  @ ensures  valid_header_check_result((int)1, file_recovery_new);
+  @*/
+static void header_check_xml_aux(const char *buf, const unsigned int buffer_size, file_recovery_t *file_recovery_new)
+{
+  const char *tmp;
+  tmp=strchr(buf,'<');
+  if(tmp==NULL)
+    return;
+  /*@
+    @ loop invariant valid_file_recovery(file_recovery_new);
+    @ loop invariant valid_read_string(tmp);
+    @ loop assigns tmp;
+    @ loop variant strlen(tmp);
+    @*/
+  while(*tmp!='\x00')
+  {
+    if(strncasecmp(tmp, "<Grisbi>", 8)==0)
+    {
+      /* Grisbi - Personal Finance Manager XML data */
+      file_recovery_new->extension=extension_gsb;
+      return;
+    }
+    else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
+    {
+      /* GCstart, personal collections manager, http://www.gcstar.org/ */
+      file_recovery_new->extension=extension_gcs;
+      return;
+    }
+    else if(strncasecmp(tmp, "<html", 5)==0)
+    {
+      file_recovery_new->data_check=&data_check_html;
+      file_recovery_new->extension=extension_html;
+      file_recovery_new->file_rename=&file_rename_html;
+      return;
+    }
+    else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
+    {
+      /* QuickBook */
+      file_recovery_new->extension=extension_fst;
+      return;
+    }
+    else if(strncasecmp(tmp, "<svg", 4)==0)
+    {
+      /* Scalable Vector Graphics */
+      file_recovery_new->extension=extension_svg;
+      file_recovery_new->file_check=&file_check_svg;
+      return;
+    }
+    else if(strncasecmp(tmp, "<!DOCTYPE CDXML", 15)==0)
+    {
+      file_recovery_new->extension=extension_cdxml;
+      return;
+    }
+    else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
+    {
+      /* Mac OS X property list */
+      file_recovery_new->extension=extension_plist;
+      return;
+    }
+    else if(strncasecmp(tmp, "<gpx ", 5)==0)
+    {
+      /* GPS eXchange Format */
+      file_recovery_new->extension=extension_gpx;
+      file_recovery_new->file_check=&file_check_gpx;
+      return;
+    }
+    else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
+    {
+      /* Adobe Premiere project  */
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->extension=extension_prproj;
+      return;
+    }
+    else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
+    {
+      /* Scribus XML file */
+      file_recovery_new->extension=extension_sla;
+      return;
+    }
+    else if(strncasecmp(tmp, "<FictionBook", 12)==0)
+    {
+      /* FictionBook, see http://www.fictionbook.org */
+      file_recovery_new->extension=extension_fb2;
+      return;
+    }
+    else if(strncasecmp(tmp, "<office:document", 16)==0)
+    {
+      /* OpenDocument Flat XML Spreadsheet */
+      file_recovery_new->extension=extension_fods;
+      file_recovery_new->data_check=NULL;
+      file_recovery_new->file_rename=&file_rename_fods;
+      return;
+    }
+    tmp++;
+#ifndef DISABLED_FOR_FRAMAC
+    tmp=strchr(tmp,'<');
+    if(tmp==NULL)
+      return;
+#endif
+  }
+}
+
+/*@
   @ requires separation: \separated(&file_hint_fasttxt, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -1980,118 +2131,48 @@ static int header_check_vbm(const unsigned char *buffer, const unsigned int buff
   @*/
 static int header_check_xml(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char *tmp;
   /* buffer may not be null-terminated */
   char *buf=(char *)MALLOC(buffer_size+1);
   memcpy(buf, buffer, buffer_size);
   buf[buffer_size]='\0';
+  /*@ assert strlen(buf) <= buffer_size; */
   reset_file_recovery(file_recovery_new);
   file_recovery_new->data_check=&data_check_txt;
   file_recovery_new->file_check=&file_check_xml;
-  file_recovery_new->extension=NULL;
-  tmp=strchr(buf,'<');
-  /*@
-    @ loop invariant valid_file_recovery(file_recovery_new);
-    @ loop assigns tmp;
-    @*/
-  while(tmp!=NULL)
-  {
-    if(strncasecmp(tmp, "<Grisbi>", 8)==0)
-    {
-      /* Grisbi - Personal Finance Manager XML data */
-      file_recovery_new->extension=extension_gsb;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<collection type=\"GC", 20)==0)
-    {
-      /* GCstart, personal collections manager, http://www.gcstar.org/ */
-      file_recovery_new->extension=extension_gcs;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<html", 5)==0)
-    {
-      file_recovery_new->data_check=&data_check_html;
-      file_recovery_new->extension=extension_html;
-      file_recovery_new->file_rename=&file_rename_html;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<Version>QBFSD", 14)==0)
-    {
-      /* QuickBook */
-      file_recovery_new->extension=extension_fst;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<svg", 4)==0)
-    {
-      /* Scalable Vector Graphics */
-      file_recovery_new->extension=extension_svg;
-      file_recovery_new->file_check=&file_check_svg;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<!DOCTYPE CDXML", 15)==0)
-    {
-      file_recovery_new->extension=extension_cdxml;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<!DOCTYPE plist ", 16)==0)
-    {
-      /* Mac OS X property list */
-      file_recovery_new->extension=extension_plist;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<gpx ", 5)==0)
-    {
-      /* GPS eXchange Format */
-      file_recovery_new->extension=extension_gpx;
-      file_recovery_new->file_check=&file_check_gpx;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<PremiereData Version=", 22)==0)
-    {
-      /* Adobe Premiere project  */
-      file_recovery_new->data_check=NULL;
-      file_recovery_new->extension=extension_prproj;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<SCRIBUS", 8)==0)
-    {
-      /* Scribus XML file */
-      file_recovery_new->extension=extension_sla;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<FictionBook", 12)==0)
-    {
-      /* FictionBook, see http://www.fictionbook.org */
-      file_recovery_new->extension=extension_fb2;
-      free(buf);
-      return 1;
-    }
-    else if(strncasecmp(tmp, "<office:document", 16)==0)
-    {
-      /* OpenDocument Flat XML Spreadsheet */
-      file_recovery_new->extension=extension_fods;
-      file_recovery_new->data_check=NULL;
-      file_recovery_new->file_rename=&file_rename_fods;
-      free(buf);
-      return 1;
-    }
-    tmp++;
-    tmp=strchr(tmp,'<');
-  }
   /* XML Extensible Markup Language */
   file_recovery_new->extension=extension_xml;
+  header_check_xml_aux(buf, buffer_size, file_recovery_new);
   free(buf);
   return 1;
+}
+
+/*@
+  @ requires valid_read_string(buf);
+  @ assigns \nothing;
+  @ ensures \result == extension_ghx || \result == extension_xml;
+  @*/
+static const char *get_extension_from_xml_utf8(const char *buf)
+{
+  const char *tmp;
+  tmp=strchr(buf,'<');
+  if(tmp==NULL)
+    return extension_xml;
+  /*@ assert *tmp == '<'; */
+  /*@
+    @ loop invariant valid_read_string(tmp);
+    @ loop assigns tmp;
+    @ loop variant strlen(tmp);
+    @*/
+  while(*tmp)
+  {
+    if(*tmp == '<' && strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
+    {
+      /* Grasshopper archive */
+      return extension_ghx;
+    }
+    tmp++;
+  }
+  return extension_xml;
 }
 
 /*@
@@ -2109,7 +2190,6 @@ static int header_check_xml(const unsigned char *buffer, const unsigned int buff
   @*/
 static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  const char *tmp;
   /* buffer may not be null-terminated */
   char *buf=(char *)MALLOC(buffer_size+1);
   memcpy(buf, buffer, buffer_size);
@@ -2117,25 +2197,7 @@ static int header_check_xml_utf8(const unsigned char *buffer, const unsigned int
   reset_file_recovery(file_recovery_new);
   if(buffer_size >= 10)
     file_recovery_new->data_check=&data_check_xml_utf8;
-  file_recovery_new->extension=NULL;
-  tmp=strchr(buf,'<');
-  /*@
-    @ loop assigns tmp,file_recovery_new->extension;
-    @*/
-  while(tmp!=NULL && file_recovery_new->extension==NULL)
-  {
-    if(strncasecmp(tmp, "<Archive name=\"Root\">", 8)==0)
-    {
-      /* Grasshopper archive */
-      file_recovery_new->extension=extension_ghx;
-    }
-    tmp++;
-    tmp=strchr(tmp,'<');
-  }
-  if(file_recovery_new->extension==NULL)
-  {
-    file_recovery_new->extension=extension_xml;
-  }
+  file_recovery_new->extension=get_extension_from_xml_utf8(buf);
   file_recovery_new->file_check=&file_check_xml;
   free(buf);
   /*@ assert valid_read_string(file_recovery_new->extension); */
@@ -2214,14 +2276,19 @@ static void register_header_check_fasttxt(file_stat_t *file_stat)
   static const unsigned char header_xml_utf8[17]	= {0xef, 0xbb, 0xbf, '<', '?', 'x', 'm', 'l', ' ', 'v', 'e', 'r', 's', 'i', 'o', 'n', '='};
   static const unsigned char header_xml_utf16[30]	= {0xff, 0xfe, '<', 0, '?', 0, 'x', 0, 'm', 0, 'l', 0, ' ', 0, 'v', 0, 'e', 0, 'r', 0, 's', 0, 'i', 0, 'o', 0, 'n', 0, '=', 0};
   const txt_header_t *header=&fasttxt_headers[0];
+  /*@ ghost int i = 0; */
   /*@
     @ loop unroll 200;
-    @ */
+    @ loop invariant header == &fasttxt_headers[i];
+    @ loop invariant 0 <= i <= sizeof(fasttxt_headers)/sizeof(txt_header_t);
+    @ loop variant sizeof(fasttxt_headers)/sizeof(txt_header_t) - i;
+  @ */
   while(header->len > 0)
   {
     assert(strlen(header->string) == header->len);
     register_header_check(0, header->string, header->len, &header_check_fasttxt, file_stat);
     header++;
+    /*@ ghost i++; */
   }
   register_header_check(4, "SC V10",		6,  &header_check_dc, file_stat);
   register_header_check(0, "DatasetHeader Begin", 19, &header_check_ers, file_stat);
