@@ -52,6 +52,7 @@ static inline const void *td_memmem(const void *haystack, const unsigned int hay
     @ loop invariant \valid_read(begin);
     @ loop invariant \subset(begin, (char *)haystack+(0..haystack_len-needle_len+1));
     @ loop assigns begin;
+    @ loop variant last_possible - begin;
     @*/
   for (begin = (const char *) haystack; begin <= last_possible; ++begin)
   {
