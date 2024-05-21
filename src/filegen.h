@@ -195,8 +195,10 @@ typedef struct
     );
 
     predicate valid_file_check_result(file_recovery_t *file_recovery) = (
+      \valid(file_recovery) &&
+      \valid(file_recovery->handle) &&
       valid_file_recovery(file_recovery) &&
-      \valid(file_recovery->handle)
+      \separated(file_recovery, file_recovery->handle, file_recovery->extension, &errno, &Frama_C_entropy_source)
     );
 
     predicate valid_data_check_param(unsigned char *buffer, unsigned int buffer_size, file_recovery_t *file_recovery) = (
@@ -388,6 +390,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable);
   @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ requires \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
+  @ ensures file_recovery->file_size == \old(file_recovery->file_size);
   @*/
 int file_rename(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int force_ext);
 

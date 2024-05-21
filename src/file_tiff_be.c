@@ -415,57 +415,12 @@ static uint64_t tiff_be_makernote(FILE *in, const uint32_t tiff_diroff)
 #endif
 
 #if !defined(MAIN_tiff_le) && !defined(MAIN_jpg) && !defined(SINGLE_FORMAT_jpg) && !defined(SINGLE_FORMAT_rw2) && !defined(SINGLE_FORMAT_orf) && !defined(SINGLE_FORMAT_wdp)
-static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_diroff, const unsigned int depth, const unsigned int count);
-
 /*@
-  @ requires \valid(fr);
-  @ requires \valid(fr->handle);
-  @ requires valid_file_recovery(fr);
-  @ requires \valid_read(&fr->extension);
+  @ requires valid_file_check_param(fr);
   @ requires valid_read_string(fr->extension);
-  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ requires \valid_read(buffer + (0 .. buffer_size - 1));
-  @ ensures \valid(fr);
-  @ ensures \valid(fr->handle);
-  @ ensures valid_read_string(fr->extension);
-  @ assigns *fr->handle, errno;
-  @ assigns Frama_C_entropy_source;
-  @*/
-static uint64_t file_check_tiff_be_aux_next(file_recovery_t *fr, const unsigned int depth, const unsigned int count, const unsigned char *buffer, const unsigned int buffer_size, const unsigned int offset_ptr_offset)
-{
-  if(buffer_size < 4)
-    return 0;
-  /*@ assert buffer_size >= 4; */
-  if(offset_ptr_offset > buffer_size-4)
-    return 0;
-  {
-    /*@ assert offset_ptr_offset <= buffer_size - 4; */
-    /*@ assert offset_ptr_offset + 4 <= buffer_size; */
-    /*@ assert \valid_read(buffer + (0 .. offset_ptr_offset + 4 - 1)); */
-    const unsigned char *ptr_offset=&buffer[offset_ptr_offset];
-    /*@ assert \valid_read(ptr_offset + (0 .. 4 - 1)); */
-    const uint32_t *ptr32_offset=(const uint32_t *)ptr_offset;
-    /*@ assert \valid_read(ptr32_offset); */
-    const unsigned int next_diroff=be32(*ptr32_offset);
-    if(next_diroff == 0)
-      return 0;
-    /*@ assert \valid(fr); */
-    /*@ assert \valid(fr->handle); */
-    /*@ assert \valid_read(&fr->extension); */
-    /*@ assert valid_read_string(fr->extension); */
-    return file_check_tiff_be_aux(fr, next_diroff, depth+1, count+1);
-  }
-}
-
-/*@
-  @ requires \valid(fr);
-  @ requires \valid(fr->handle);
-  @ requires valid_file_recovery(fr);
-  @ requires \valid_read(&fr->extension);
-  @ requires valid_read_string(fr->extension);
-  @ requires separation: \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
-  @ ensures \valid(fr);
-  @ ensures \valid(fr->handle);
+  @ requires depth <= 5;
+  @ decreases 5 - depth;
+  @ ensures valid_file_check_param(fr);
   @ ensures valid_read_string(fr->extension);
   @ assigns *fr->handle, errno;
   @ assigns Frama_C_entropy_source;
@@ -504,8 +459,10 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 #endif
   if(depth>4)
     return TIFF_ERROR;
+  /*@ assert depth <= 4; */
   if(count>16)
     return TIFF_ERROR;
+  /*@ assert count <= 16; */
   if(tiff_diroff < sizeof(TIFFHeader))
     return TIFF_ERROR;
   if(fseek(fr->handle, tiff_diroff, SEEK_SET) < 0)
@@ -531,8 +488,7 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
     X loop invariant 0 <= i <=n && i <= (data_read-2)/12;
     X*/
   /*@
-    @ loop invariant valid_file_recovery(fr);
-    @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+    @ loop invariant valid_file_check_param(fr);
     @ loop assigns *fr->handle, errno;
     @ loop assigns Frama_C_entropy_source;
     @ loop assigns i, sorted_tag_error, tdir_tag_old;
@@ -612,15 +568,11 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	case TIFFTAG_EXIFIFD:
 	case TIFFTAG_KODAKIFD:
 	  {
-	    /*@ assert \valid(fr); */
-	    /*@ assert valid_file_recovery(fr); */
-	    /*@ assert \valid(fr->handle); */
-	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_file_check_param(fr); */
 	    /*@ assert valid_read_string(fr->extension); */
+	    /*@ assert depth <= 4; */
 	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
-	    /*@ assert \valid(fr); */
-	    /*@ assert \valid(fr->handle); */
-	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_file_check_param(fr); */
 	    /*@ assert valid_read_string(fr->extension); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
@@ -630,15 +582,11 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	  break;
 	case TIFFTAG_SUBIFD:
 	  {
-	    /*@ assert \valid(fr); */
-	    /*@ assert valid_file_recovery(fr); */
-	    /*@ assert \valid(fr->handle); */
-	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_file_check_param(fr); */
 	    /*@ assert valid_read_string(fr->extension); */
+	    /*@ assert depth <= 4; */
 	    const uint64_t new_offset=file_check_tiff_be_aux(fr, tmp, depth+1, 0);
-	    /*@ assert \valid(fr); */
-	    /*@ assert \valid(fr->handle); */
-	    /*@ assert \valid_read(&fr->extension); */
+	    /*@ assert valid_file_check_param(fr); */
 	    /*@ assert valid_read_string(fr->extension); */
 	    if(new_offset==TIFF_ERROR)
 	      return TIFF_ERROR;
@@ -687,22 +635,20 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
 	    Frama_C_make_unknown(&subifd_offsetp_buf, sizeof(subifd_offsetp_buf));
 #endif
 	    /*@
-	      @ loop invariant valid_file_recovery(fr);
-	      @ loop invariant \separated(fr, fr->handle, &errno, &Frama_C_entropy_source);
+	      @ loop invariant valid_file_check_param(fr);
+	      @ loop invariant \separated(fr, fr->handle, fr->extension, &errno, &Frama_C_entropy_source);
 	      @ loop assigns *fr->handle, errno;
 	      @ loop assigns Frama_C_entropy_source;
 	      @ loop assigns j, max_offset;
+	      @ loop variant nbr - j;
 	      @*/
 	    for(j=0; j<nbr; j++)
 	    {
-	      /*@ assert \valid(fr); */
-	      /*@ assert \valid(fr->handle); */
-	      /*@ assert \valid_read(&fr->extension); */
+	      /*@ assert valid_file_check_param(fr); */
 	      /*@ assert valid_read_string(fr->extension); */
+	      /*@ assert depth <= 4; */
 	      const uint64_t new_offset=file_check_tiff_be_aux(fr, be32(subifd_offsetp[j]), depth+1, 0);
-	      /*@ assert \valid(fr); */
-	      /*@ assert \valid(fr->handle); */
-	      /*@ assert \valid_read(&fr->extension); */
+	      /*@ assert valid_file_check_param(fr); */
 	      /*@ assert valid_read_string(fr->extension); */
 	      if(new_offset==TIFF_ERROR)
 	      {
@@ -757,13 +703,32 @@ static uint64_t file_check_tiff_be_aux(file_recovery_t *fr, const uint32_t tiff_
     if(max_offset < tmp)
       max_offset=tmp;
   }
+  if(data_read < 4)
+    return max_offset;
+  /*@ assert data_read >= 4; */
   {
     const unsigned int offset_ptr_offset=2+12*n;
-    const uint64_t new_offset=file_check_tiff_be_aux_next(fr, depth, count, ubuffer, data_read, offset_ptr_offset);
-    /*@ assert \valid(fr); */
-    /*@ assert \valid(fr->handle); */
-    /*@ assert \valid_read(&fr->extension); */
-    /*@ assert valid_read_string(fr->extension); */
+    uint64_t new_offset;
+    if(offset_ptr_offset > data_read-4)
+      return max_offset;
+    /*@ assert offset_ptr_offset <= data_read - 4; */
+    /*@ assert offset_ptr_offset + 4 <= data_read; */
+    {
+      /*@ assert \valid_read(ubuffer + (0 .. offset_ptr_offset + 4 - 1)); */
+      const unsigned char *ptr_offset=&ubuffer[offset_ptr_offset];
+      /*@ assert \valid_read(ptr_offset + (0 .. 4 - 1)); */
+      const uint32_t *ptr32_offset=(const uint32_t *)ptr_offset;
+      /*@ assert \valid_read(ptr32_offset); */
+      const unsigned int next_diroff=be32(*ptr32_offset);
+      if(next_diroff == 0)
+	return max_offset;
+      /*@ assert valid_file_check_param(fr); */
+      /*@ assert valid_read_string(fr->extension); */
+      /*@ assert depth <= 4; */
+      new_offset=file_check_tiff_be_aux(fr, next_diroff, depth+1, count+1);
+      /*@ assert valid_file_check_param(fr); */
+      /*@ assert valid_read_string(fr->extension); */
+    }
     if(new_offset != TIFF_ERROR && max_offset < new_offset)
       max_offset=new_offset;
   }
