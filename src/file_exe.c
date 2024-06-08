@@ -451,6 +451,9 @@ static void pe_resource_language(FILE *file, const unsigned int base, const unsi
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)rsrc_entries, count * sizeof(struct rsrc_entries_s));
 #endif
+  /*@
+    @ loop variant count - i;
+    @*/
   for(i=0; i<count; i++)
   {
     const struct rsrc_entries_s *rsrc_entry=&rsrc_entries[i];
@@ -512,6 +515,9 @@ static void pe_resource_id(FILE *file, const unsigned int base, const unsigned i
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)rsrc_entries, count * sizeof(struct rsrc_entries_s));
 #endif
+  /*@
+    @ loop variant count - i;
+    @*/
   for(i=0; i<count; i++)
   {
     const struct rsrc_entries_s *rsrc_entry=&rsrc_entries[i];
@@ -582,6 +588,9 @@ static void pe_resource_type(FILE *file, const unsigned int base, const unsigned
 #if defined(__FRAMAC__)
   Frama_C_make_unknown((char *)rsrc_entries, count * sizeof(struct rsrc_entries_s));
 #endif
+  /*@
+    @ loop variant count - i;
+    @*/
   for(i=0; i<count; i++)
   {
     const struct rsrc_entries_s *rsrc_entry=&rsrc_entries[i];
