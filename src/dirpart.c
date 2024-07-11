@@ -52,23 +52,25 @@
 
 static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *partition, const int verbose, const int expert, dir_data_t *dir_data)
 {
-  dir_partition_t res=DIR_PART_ENOIMP;
   if(is_part_fat(partition))
-    res=dir_partition_fat_init(disk, partition, dir_data, verbose);
+  {
+    if(dir_partition_fat_init(disk, partition, dir_data, verbose)==DIR_PART_OK)
+      return DIR_PART_OK;
+  }
   else if(is_part_ntfs(partition))
   {
-    res=dir_partition_ntfs_init(disk, partition, dir_data, verbose, expert);
-    if(res!=DIR_PART_OK)
-      res=dir_partition_exfat_init(disk, partition, dir_data, verbose);
+    if(dir_partition_ntfs_init(disk, partition, dir_data, verbose, expert)==DIR_PART_OK)
+      return DIR_PART_OK;
+    if(dir_partition_exfat_init(disk, partition, dir_data, verbose)==DIR_PART_OK)
+      return DIR_PART_OK;
   }
   else if(is_part_linux(partition))
   {
-    res=dir_partition_ext2_init(disk, partition, dir_data, verbose);
-    if(res!=DIR_PART_OK)
-      res=dir_partition_reiser_init(disk, partition, dir_data, verbose);
+    if(dir_partition_ext2_init(disk, partition, dir_data, verbose)==DIR_PART_OK)
+      return DIR_PART_OK;
+    if(dir_partition_reiser_init(disk, partition, dir_data, verbose)==DIR_PART_OK)
+      return DIR_PART_OK;
   }
-  if(res==DIR_PART_OK)
-    return DIR_PART_OK;
   switch(partition->upart_type)
   {
     case UP_FAT12:
@@ -88,7 +90,7 @@ static dir_partition_t dir_partition_init(disk_t *disk, const partition_t *parti
     case UP_EXFAT:
       return dir_partition_exfat_init(disk, partition, dir_data, verbose);
     default:
-      return res;
+      return DIR_PART_ENOIMP;
   }
 }
 
