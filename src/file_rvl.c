@@ -1,6 +1,6 @@
 /*
 
-    File: file_rlv.c
+    File: file_rvl.c
 
     Copyright (C) 2014 Christophe GRENIER <grenier@cgsecurity.org>
   
@@ -20,7 +20,7 @@
 
  */
 
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rlv)
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rvl)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -32,25 +32,25 @@
 #include "filegen.h"
 
 /*@ requires valid_register_header_check(file_stat); */
-static void register_header_check_rlv(file_stat_t *file_stat);
+static void register_header_check_rvl(file_stat_t *file_stat);
 
-const file_hint_t file_hint_rlv= {
-  .extension="rlv",
+const file_hint_t file_hint_rvl= {
+  .extension="rvl",
   .description="Revelation password",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
-  .register_header_check=&register_header_check_rlv
+  .register_header_check=&register_header_check_rvl
 };
 
 /*@
   @ requires buffer_size >= 12;
-  @ requires separation: \separated(&file_hint_rlv, buffer+(..), file_recovery, file_recovery_new);
+  @ requires separation: \separated(&file_hint_rvl, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
-static int header_check_rlv(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
+static int header_check_rvl(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if(buffer[5]!=0 || buffer[9]!=0 || buffer[10]!=0 || buffer[11]!=0)
     return 0;
@@ -58,14 +58,14 @@ static int header_check_rlv(const unsigned char *buffer, const unsigned int buff
   if(buffer[4]!=1 && buffer[4]!=2)
     return 0;
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_rlv.extension;
+  file_recovery_new->extension=file_hint_rvl.extension;
   file_recovery_new->min_filesize=12+16;
   return 1;
 }
 
-static void register_header_check_rlv(file_stat_t *file_stat)
+static void register_header_check_rvl(file_stat_t *file_stat)
 {
-  static const unsigned char rlv_header[4]=  { 'r' , 'v' , 'l' , 0x00 };
-  register_header_check(0, rlv_header, sizeof(rlv_header), &header_check_rlv, file_stat);
+  static const unsigned char rvl_header[4]=  { 'r' , 'v' , 'l' , 0x00 };
+  register_header_check(0, rvl_header, sizeof(rvl_header), &header_check_rvl, file_stat);
 }
 #endif

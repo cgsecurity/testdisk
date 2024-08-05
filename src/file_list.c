@@ -823,9 +823,6 @@ extern const file_hint_t file_hint_rfp;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_riff)
 extern const file_hint_t file_hint_riff;
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rlv)
-extern const file_hint_t file_hint_rlv;
-#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rm)
 extern const file_hint_t file_hint_rm;
 #endif
@@ -834,6 +831,9 @@ extern const file_hint_t file_hint_rns;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rpm)
 extern const file_hint_t file_hint_rpm;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rvl)
+extern const file_hint_t file_hint_rvl;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rw2)
 extern const file_hint_t file_hint_rw2;
@@ -1876,8 +1876,8 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_riff)
   { .enable=0, .file_hint=&file_hint_riff },
 #endif
-#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rlv)
-  { .enable=0, .file_hint=&file_hint_rlv  },
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rvl)
+  { .enable=0, .file_hint=&file_hint_rvl  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_rm)
   { .enable=0, .file_hint=&file_hint_rm   },

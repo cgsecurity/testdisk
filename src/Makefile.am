@@ -6,6 +6,7 @@ FRAMA_C_FLAGS=-machdep x86_64 \
 	  -warn-signed-overflow \
 	  -warn-unsigned-downcast \
 	  -warn-unsigned-overflow \
+	  -generated-spec-custom exits:skip  \
 	  -rte \
 	  -eva \
 	  -eva-slevel 6 \
@@ -312,10 +313,10 @@ file_C			= filegen.c \
 			  file_res.c \
 			  file_rfp.c \
 			  file_riff.c \
-			  file_rlv.c \
 			  file_rm.c \
 			  file_rns.c \
 			  file_rpm.c \
+			  file_rvl.c \
 			  file_rw2.c \
 			  file_rx2.c \
 			  file_save.c \
