@@ -378,7 +378,7 @@ static void adv_menu_image_selected(disk_t *disk, const partition_t *partition, 
     ask_location(dst_path, sizeof(dst_path), msg, "");
   }
 #else
-  td_getcwd(&dst_path, sizeof(dst_path));
+  td_getcwd(dst_path, sizeof(dst_path));
 #endif
   if(dst_path[0]!='\0')
   {
