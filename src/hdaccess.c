@@ -462,6 +462,7 @@ list_disk_t *hd_parse(list_disk_t *list_disk, const int verbose, const int testd
   {
 #ifdef HAVE_GLOB_H
     list_disk=hd_glob_parse("/dev/disk/*/*/*/raw", list_disk, verbose, testdisk_mode);
+    list_disk=hd_glob_parse("/dev/disk/*/*/*/*/raw", list_disk, verbose, testdisk_mode);
 #endif
   }
 #else
