@@ -232,6 +232,7 @@ file_C			= filegen.c \
 			  file_m2ts.c \
 			  file_mat.c \
 			  file_max.c \
+			  file_maxis.c \
 			  file_mb.c \
 			  file_mcd.c \
 			  file_mdb.c \

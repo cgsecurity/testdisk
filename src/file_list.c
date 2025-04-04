@@ -577,6 +577,9 @@ extern const file_hint_t file_hint_mat;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_max)
 extern const file_hint_t file_hint_max;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_maxis)
+extern const file_hint_t file_hint_maxis;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mb)
 extern const file_hint_t file_hint_mb;
 #endif
@@ -1629,6 +1632,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_max)
   { .enable=0, .file_hint=&file_hint_max  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_maxis)
+  { .enable=0, .file_hint=&file_hint_maxis  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_mb)
   { .enable=0, .file_hint=&file_hint_mb   },
