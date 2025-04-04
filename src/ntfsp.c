@@ -104,8 +104,9 @@ unsigned int ntfs_remove_used_space(disk_t *disk_car,const partition_t *partitio
 	dir_data.close(&dir_data);
 	return 0;
       }
-      no_of_cluster=(le64(ntfs_header->sectors_nbr) < partition->part_size ? le64(ntfs_header->sectors_nbr) : partition->part_size);
-      no_of_cluster/=ntfs_header->sectors_per_cluster;
+      no_of_cluster=le64(ntfs_header->sectors_nbr)/ntfs_header->sectors_per_cluster;
+      if(no_of_cluster > partition->part_size / cluster_size)
+	no_of_cluster = partition->part_size / cluster_size;
     }
     for(lcn=0;lcn<no_of_cluster;lcn++)
     {
