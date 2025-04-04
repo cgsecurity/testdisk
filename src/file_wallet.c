@@ -36,7 +36,7 @@ static void register_header_check_wallet(file_stat_t *file_stat);
 
 const file_hint_t file_hint_wallet = {
   .extension = "wallet",
-  .description = "Armory bitcoin wallet",
+  .description = "Armory and multibit wallets",
   .max_filesize = 10 * 1024 * 1024,
   .recover = 1,
   .enable_by_default = 1,
@@ -58,9 +58,13 @@ static int header_check_wallet(const unsigned char *buffer, const unsigned int b
 
 static void register_header_check_wallet(file_stat_t *file_stat)
 {
-  static const unsigned char wallet_header[8] = {
+  static const unsigned char armory_wallet[8] = {
     0xba, 'W', 'A', 'L', 'L', 'E', 'T', 0x00
   };
-  register_header_check(0, wallet_header, sizeof(wallet_header), &header_check_wallet, file_stat);
+  static const unsigned char multibit_bitcoin[2+0x16]  = { 0x0a, 0x16, 'o', 'r', 'g', '.', 'b', 'i', 't', 'c', 'o', 'i', 'n', '.', 'p', 'r', 'o', 'd', 'u', 'c', 't', 'i', 'o', 'n' };
+  static const unsigned char multibit_dogecoin[2+0x17] = { 0x0a, 0x17, 'o', 'r', 'g', '.', 'd', 'o', 'g', 'e', 'c', 'o', 'i', 'n', '.', 'p', 'r', 'o', 'd', 'u', 'c', 't', 'i', 'o', 'n' };
+  register_header_check(0, armory_wallet, sizeof(armory_wallet), &header_check_wallet, file_stat);
+  register_header_check(0, multibit_bitcoin, sizeof(multibit_bitcoin), &header_check_wallet, file_stat);
+  register_header_check(0, multibit_dogecoin, sizeof(multibit_dogecoin), &header_check_wallet, file_stat);
 }
 #endif

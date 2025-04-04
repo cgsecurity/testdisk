@@ -275,6 +275,17 @@ static const txt_header_t fasttxt_headers[] = {
   /* Fotobook */
   { "<fotobook ",					10, "mcf"},
 #endif
+  { "{\r\n    \"accounts\": {",				20, "wallet"},
+  { "{\r\n    \"keystore\": {",				20, "wallet"},
+  { "{\r\n    \"addresses\": {",			21, "wallet"},
+  { "{\r\n    \"addr_history\": {",			24, "wallet"},
+  { "{\r\n    \"accounts_expanded\": {",		29, "wallet"},
+  { "{\n    \"accounts\": {",				19, "wallet"},
+  { "{\n    \"keystore\": {",				19, "wallet"},
+  { "{\n    \"addresses\": {",				20, "wallet"},
+  { "{\n    \"addr_history\": {",			23, "wallet"},
+  { "{\n    \"accounts_expanded\": {",			28, "wallet"},
+  { "{\n  \"encrypted_seed\": ",			22, "wallet"},
   {NULL, 0, NULL}
 };
 
