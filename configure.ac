@@ -2,11 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([testdisk],[7.2],[grenier@cgsecurity.org])
+AC_INIT([testdisk],[7.3-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="February 2024"
+TESTDISKDATE="April 2025"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -332,81 +332,11 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h ddk/ntddstor.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h io.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h malloc.h ncurses.h ncurses/curses.h ncurses/ncurses.h ncursesw/curses.h ncursesw/ncurses.h ntfs/version.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h scsi/sg.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/sysmacros.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
 
-#--------------------------------------------------------------------
-# Check for iconv support (for Unicode conversion).
-#--------------------------------------------------------------------
-#
-# We need to find an iconv library that matches the installed iconv.h header
-# (if any). It is important to check header/library compatibility. It's
-# fairly common to have iconv support both in libc and from libiconv. In that
-# case, a naive check that iconv() is in libc will succeed, but if we use
-# libiconv's iconv.h, it will redefine iconv() to functions that exist
-# only in libiconv, and we'll get link errors.
-#
-# First, check if there's a working iconv in libc (ie. if the test program
-# compiles and links without any extra flags).
-if test "x$with_iconv" != "xno"; then
-AC_MSG_CHECKING(iconv support)
-AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
-int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
-,
-  # libc has a working iconv.
-  AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
-  AC_MSG_RESULT([[yes, in libc]])
-  have_iconv=yes
-)
-
-if test "x$have_iconv" != "xyes" ; then
-  # libc doesn't have a working iconv. Try adding -liconv and any user
-  # supplied directory.
-
-  old_LIBS="$LIBS"
-  if test "${iconv_lib_a}" = ""; then
-    LIBS="-liconv $LIBS"
-  else
-    LIBS="${iconv_lib_a} $LIBS"
-  fi
-  AC_LINK_IFELSE([AC_LANG_SOURCE([#include <iconv.h>
-  int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
-  ,
-    # -liconv works.
-    AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
-    AC_MSG_RESULT([[yes, -liconv]])
-    have_iconv=yes
-  ,
-    LIBS="$old_LIBS"
-  )
-fi
-
-if test "x$have_iconv" != "xyes" ; then
-  # -liconv didn't work. Try giconv.h and -lgiconv.
-  # BSDs install this lib as libgiconv.
-  old_LIBS="$LIBS"
-  if test "${giconv_lib_a}" = ""; then
-    LIBS="-lgiconv $LIBS"
-  else
-    LIBS="${giconv_lib_a} $LIBS"
-  fi
-  AC_LINK_IFELSE([AC_LANG_SOURCE([#include <giconv.h>
-  int main(int argc,char **argv) { iconv_open("foo","bar"); }])]
-  ,
-    AC_DEFINE(HAVE_ICONV,1, [Define if you have this function])
-    AC_DEFINE(HAVE_GICONV,1, [Define if you have this function])
-    AC_MSG_RESULT([[yes, -lgiconv]])
-  ,
-    AC_MSG_RESULT([[no]])
-    LIBS="$old_LIBS"
-  )
-fi
-else
-  AC_MSG_WARN(Use of iconv function disabled)
-fi
-
-if test "x$have_iconv" != "xyes"; then
-  if test "x$with_iconv" = "xyes"; then
-    AC_MSG_ERROR([iconv requested but not found])
-  fi
-fi
+dnl Check for ICONV support
+AM_ICONV
+photorec_LDADD="$LIBICONV $photorec_LDADD"
+qphotorec_LDADD="$LIBICONV $qphotorec_LDADD"
+testdisk_LDADD="$LIBICONV $testdisk_LDADD"
 
 AC_CHECK_HEADERS(sys/mount.h,,,
 [[
@@ -736,6 +666,56 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     [ac_cv_c_ntfs_mbstoucs_have_two_arguments=no])
 if test "${ac_cv_c_ntfs_mbstoucs_have_two_arguments}" != "no"; then
   AC_DEFINE([NTFS_MBSTOUCS_HAVE_TWO_ARGUMENTS], 1, [Define if ntfs_mbstoucs takes two parameters.])
+fi
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_LIBNTFS
+#include <ntfs/device.h>
+#endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/types.h>
+#include <ntfs-3g/device.h>
+#endif
+
+static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request, void *argp)
+{
+  return -1;
+}
+]],
+[[
+struct ntfs_device_operations ntfs_device_testdisk_io_ops = {
+        .ioctl          = &ntfs_device_testdisk_io_ioctl,
+};
+ ]])],
+    [ac_cv_c_ntfs_device_operations_ioctl_int=yes],
+    [ac_cv_c_ntfs_device_operations_ioctl_int=no])
+if test "${ac_cv_c_ntfs_device_operations_ioctl_int}" != "no"; then
+  AC_DEFINE([NTFS_DEVICE_OPERATIONS_IOCTL_INT], 1, [Define if request is an int.])
+fi
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_LIBNTFS
+#include <ntfs/device.h>
+#endif
+#ifdef HAVE_LIBNTFS3G
+#include <ntfs-3g/types.h>
+#include <ntfs-3g/device.h>
+#endif
+
+static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, unsigned long request, void *argp)
+{
+  return -1;
+}
+]],
+[[
+struct ntfs_device_operations ntfs_device_testdisk_io_ops = {
+        .ioctl          = &ntfs_device_testdisk_io_ioctl,
+};
+ ]])],
+    [ac_cv_c_ntfs_device_operations_ioctl_ul=yes],
+    [ac_cv_c_ntfs_device_operations_ioctl_ul=no])
+if test "${ac_cv_c_ntfs_device_operations_ioctl_ul}" != "no"; then
+  AC_DEFINE([NTFS_DEVICE_OPERATIONS_IOCTL_UL], 1, [Define if request is an unsigned long.])
 fi
 
 if test "x$use_reiserfs" != "xno"; then

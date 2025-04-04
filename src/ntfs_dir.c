@@ -108,7 +108,7 @@ extern struct ntfs_device_operations ntfs_device_testdisk_io_ops;
 
 extern int ntfs_readdir(ntfs_inode *dir_ni, s64 *pos,
                 void *dirent, ntfs_filldir_t filldir);
-static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
+static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, ntfschar *name,
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type);
 static int ntfs_dir(disk_t *disk_car, const partition_t *partition, dir_data_t *dir_data, const unsigned long int cluster, file_info_t *dir_list);
@@ -139,21 +139,21 @@ static int index_get_size(ntfs_inode *inode)
 }
 
 #ifdef HAVE_ICONV
-static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, const int ins_len, char **outs, const int outs_len)
+static int ntfs_ucstoutf8(iconv_t cd, char *ins, const int ins_len, char **outs, const int outs_len)
 {
-    const char *inp;
+    char *inp;
     char *outp;
     size_t inb_left, outb_left;
     if (cd == (iconv_t)(-1))
       return -1;
 
     outp = *outs;
-    inp = (const char *) ins;
+    inp = (char *) ins;
     inb_left = ins_len << 1;    // ntfschar is 16-bit
     outb_left = outs_len - 1;   // reserve 1 byte for NUL
 
     *outp = '\0';
-    if (iconv(cd, (char**)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
+    if (iconv(cd, (ICONV_CONST char**)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
     {
       // Regardless of the value of errno
       log_error("ntfs_ucstoutf8: iconv failed\n");
@@ -168,7 +168,7 @@ static int ntfs_ucstoutf8(iconv_t cd, const ntfschar *ins, const int ins_len, ch
  * ntfs_td_list_entry
  * FIXME: Should we print errors as we go along? (AIA)
  */
-static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name, 
+static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, ntfschar *name,
 		const int name_len, const int name_type, const s64 pos,
 		const MFT_REF mref, const unsigned dt_type)
 {
@@ -189,7 +189,7 @@ static int ntfs_td_list_entry(  struct ntfs_dir_struct *ls, const ntfschar *name
   }
 
 #ifdef HAVE_ICONV
-  if (ntfs_ucstoutf8(ls->cd, name, name_len, &filename, MAX_PATH) < 0 &&
+  if (ntfs_ucstoutf8(ls->cd, (char *)name, name_len, &filename, MAX_PATH) < 0 &&
       ntfs_ucstombs (name, name_len, &filename, MAX_PATH) < 0) {
     log_error("Cannot represent filename in current locale.\n");
     goto freefn;

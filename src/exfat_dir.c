@@ -90,7 +90,7 @@ static int exfat_ucstoutf8(iconv_t cd, const unsigned char *ins, const unsigned 
   inb_left = ins_len;
   outb_left = outs_len - 1;   // reserve 1 byte for NUL
 
-  if (iconv(cd, (char **)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
+  if (iconv(cd, (ICONV_CONST char **)&inp, &inb_left, &outp, &outb_left) == (size_t)(-1))
   {
     // Regardless of the value of errno
     log_error("exfat_ucstoutf8: iconv failed %s\n", strerror(errno));

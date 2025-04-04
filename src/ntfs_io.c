@@ -159,7 +159,7 @@ static int ntfs_device_testdisk_io_stat(struct ntfs_device *dev, struct stat *bu
 	return -1;
 }
 
-#ifdef HAVE_LIBNTFS
+#ifdef NTFS_DEVICE_OPERATIONS_IOCTL_INT
 static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
 		void *argp)
 {
@@ -169,7 +169,7 @@ static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, int request,
 #endif
 	return -1;
 }
-#else
+#elif defined(NTFS_DEVICE_OPERATIONS_IOCTL_UL)
 static int ntfs_device_testdisk_io_ioctl(struct ntfs_device *dev, unsigned long request,
 		void *argp)
 {
