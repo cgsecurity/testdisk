@@ -358,6 +358,12 @@ static int header_check_gz(const unsigned char *buffer, const unsigned int buffe
       file_recovery_new->extension="schematic";
       return 1;
     }
+    if(memcmp(buffer_uncompr, "<SCRIBUS", 8) == 0)
+    {
+      /* Scribus XML file */
+      file_recovery_new->extension="sla.gz";
+      return 1;
+    }
     {
       unsigned int i;
       for(i=0; i<d_stream.total_out && i< 256; i++)
