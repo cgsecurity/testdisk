@@ -105,39 +105,48 @@ static int header_check_bmp(const unsigned char *buffer, const unsigned int buff
   /*@ assert \initialized(buffer+(0..buffer_size-1)); */
   const struct bmp_header *bm=(const struct bmp_header *)buffer;
   /*@ assert \valid_read(bm); */
+  const unsigned int size=le32(bm->size);
+  const unsigned int hdr_size=le32(bm->hdr_size);
   if(buffer[0]!='B' || buffer[1]!='M')
     return 0;
+  switch(hdr_size)
+  {
+    case 12:
+    case 64:
+    case 40:
+    case 52:
+    case 56:
+    case 108:
+    case 124:
+      break;
+    default:
+      return 0;
+  }
   if(bm->reserved!=0)
     return 0;
-  if(
-      (buffer[14]==12 || buffer[14]==64 || buffer[14]==40 || buffer[14]==52 ||
-       buffer[14]==56 || buffer[14]==108 || buffer[14]==124) &&
-      buffer[15]==0 && buffer[16]==0 && buffer[17]==0 &&
-      le32(bm->offset) < le32(bm->size) &&
-      le32(bm->size) >= 65 &&
-      le32(bm->hdr_size) < le32(bm->size))
-  {
-    /* See http://en.wikipedia.org/wiki/BMP_file_format */
-    reset_file_recovery(file_recovery_new);
-    /*@ assert file_recovery_new->file_stat == \null; */
-    /*@ assert file_recovery_new->handle == \null; */
-    file_recovery_new->extension=file_hint_bmp.extension;
-    file_recovery_new->min_filesize=65;
-    file_recovery_new->calculated_file_size=(uint64_t)le32(bm->size);
-    file_recovery_new->data_check=&data_check_size;
-    file_recovery_new->file_check=&file_check_size;
-    /*@ assert file_recovery_new->extension == file_hint_bmp.extension; */
-    /*@ assert file_recovery_new->calculated_file_size >= 65; */
-    /*@ assert file_recovery_new->file_size == 0; */
-    /*@ assert file_recovery_new->min_filesize == 65; */
-    /*@ assert file_recovery_new->data_check == &data_check_size; */
-    /*@ assert file_recovery_new->file_check == &file_check_size; */
-    /*@ assert valid_read_string(file_recovery_new->extension); */
-    /*@ assert \initialized(&file_recovery_new->time); */
-    /*@ assert valid_file_recovery(file_recovery_new); */
-    return 1;
-  }
-  return 0;
+  if(le32(bm->offset) >= size ||
+    size < 65 ||
+    hdr_size >= size)
+    return 0;
+  /* See http://en.wikipedia.org/wiki/BMP_file_format */
+  reset_file_recovery(file_recovery_new);
+  /*@ assert file_recovery_new->file_stat == \null; */
+  /*@ assert file_recovery_new->handle == \null; */
+  file_recovery_new->extension=file_hint_bmp.extension;
+  file_recovery_new->min_filesize=65;
+  file_recovery_new->calculated_file_size=size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  /*@ assert file_recovery_new->extension == file_hint_bmp.extension; */
+  /*@ assert file_recovery_new->calculated_file_size >= 65; */
+  /*@ assert file_recovery_new->file_size == 0; */
+  /*@ assert file_recovery_new->min_filesize == 65; */
+  /*@ assert file_recovery_new->data_check == &data_check_size; */
+  /*@ assert file_recovery_new->file_check == &file_check_size; */
+  /*@ assert valid_read_string(file_recovery_new->extension); */
+  /*@ assert \initialized(&file_recovery_new->time); */
+  /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
 }
 
 static void register_header_check_bmp(file_stat_t *file_stat)
