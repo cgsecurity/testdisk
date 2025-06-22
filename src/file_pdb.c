@@ -44,53 +44,63 @@ const file_hint_t file_hint_pdb= {
 };
 
 /*@
-  @ requires file_recovery->data_check==&data_check_pdb;
+  @ requires file_recovery->data_check==&data_check_pdb81;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
   @ terminates \true;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ assigns  file_recovery->calculated_file_size;
   @*/
-static data_check_t data_check_pdb(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static data_check_t data_check_pdb81(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   unsigned int i;
   /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
   /*@
-    @ loop assigns i;
-    @ loop variant buffer_size - i;
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 81);
     @*/
-  for(i=buffer_size/2; i<buffer_size; i++)
-    if(buffer[i]==0)
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 81 <= file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i <= buffer_size - 81 ; */
+    if(buffer[i+80]!='\n')
     {
-      file_recovery->calculated_file_size+=i;
       return DC_STOP;
     }
-  file_recovery->calculated_file_size+=buffer_size/2;
+    file_recovery->calculated_file_size+=81;
+  }
   return DC_CONTINUE;
 }
 
 /*@
-  @ requires file_recovery->file_check == &file_check_pdb;
-  @ requires valid_file_check_param(file_recovery);
-  @ ensures  valid_file_check_result(file_recovery);
-  @ assigns  *file_recovery->handle, errno, file_recovery->file_size;
-  @ assigns  Frama_C_entropy_source;
+  @ requires file_recovery->data_check==&data_check_pdb82;
+  @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ terminates \true;
+  @ ensures  valid_data_check_result(\result, file_recovery);
+  @ assigns  file_recovery->calculated_file_size;
   @*/
-static void file_check_pdb(file_recovery_t *file_recovery)
+static data_check_t data_check_pdb82(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  char buffer[512];
-  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0 ||
-      fread(&buffer, 1, sizeof(buffer), file_recovery->handle) < 82)
-    return ;
-#if defined(__FRAMAC__)
-  Frama_C_make_unknown(buffer, sizeof(buffer));
-#endif
-  if(buffer[80]=='\r' && buffer[81]=='\n')
-    file_recovery->file_size=file_recovery->calculated_file_size/82*82;
-  else if(buffer[80]=='\n')
-    file_recovery->file_size=file_recovery->calculated_file_size/81*81;
-  else
-    file_recovery->file_size=0;
+  unsigned int i;
+  /*@ assert file_recovery->calculated_file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@ assert file_recovery->file_size <= PHOTOREC_MAX_FILE_SIZE; */
+  /*@
+    @ loop assigns file_recovery->calculated_file_size;
+    @ loop variant file_recovery->file_size + buffer_size/2 - (file_recovery->calculated_file_size + 82);
+    @*/
+  while(file_recovery->calculated_file_size + buffer_size/2  >= file_recovery->file_size &&
+      file_recovery->calculated_file_size + 82 <= file_recovery->file_size + buffer_size/2)
+  {
+    const unsigned int i=file_recovery->calculated_file_size + buffer_size/2 - file_recovery->file_size;
+    /*@ assert 0 <= i <= buffer_size - 82 ; */
+    if(buffer[i+80]!='\r' || buffer[i+81]!='\n')
+    {
+      return DC_STOP;
+    }
+    file_recovery->calculated_file_size+=82;
+  }
+  return DC_CONTINUE;
 }
 
 /*@
@@ -117,12 +127,23 @@ static int header_check_pdb(const unsigned char *buffer, const unsigned int buff
   /* Check space */
   if(buffer[59]!=' ' || buffer[60]!=' ' || buffer[61]!=' ' || buffer[66]!=' ' || buffer[67]!=' ' || buffer[68]!=' ' || buffer[69]!=' ')
     return 0;
-  reset_file_recovery(file_recovery_new);
-  file_recovery_new->extension=file_hint_pdb.extension;
-  file_recovery_new->data_check=&data_check_pdb;
-  file_recovery_new->file_check=&file_check_pdb;
-  file_recovery_new->min_filesize=80;
-  return 1;
+  if(buffer[80]=='\r' && buffer[81]=='\n')
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_pdb.extension;
+    file_recovery_new->data_check=&data_check_pdb82;
+    file_recovery_new->min_filesize=82;
+    return 1;
+  }
+  if(buffer[80]=='\n')
+  {
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_pdb.extension;
+    file_recovery_new->data_check=&data_check_pdb81;
+    file_recovery_new->min_filesize=81;
+    return 1;
+  }
+  return 0;
 }
 
 static void register_header_check_pdb(file_stat_t *file_stat)
