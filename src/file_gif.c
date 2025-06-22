@@ -79,6 +79,7 @@ static void file_check_gif(file_recovery_t *file_recovery)
 /*@
   @ requires file_recovery->data_check==&data_check_gif;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ decreases PHOTOREC_MAX_FILE_SIZE - file_recovery->calculated_file_size;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
@@ -145,6 +146,7 @@ static data_check_t data_check_gif(const unsigned char *buffer, const unsigned i
 /*@
   @ requires file_recovery->data_check==&data_check_gif2;
   @ requires valid_data_check_param(buffer, buffer_size, file_recovery);
+  @ decreases PHOTOREC_MAX_FILE_SIZE - file_recovery->calculated_file_size;
   @ ensures  valid_data_check_result(\result, file_recovery);
   @ ensures file_recovery->data_check == &data_check_gif || file_recovery->data_check == &data_check_gif2;
   @ assigns file_recovery->calculated_file_size, file_recovery->data_check;
