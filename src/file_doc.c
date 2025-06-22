@@ -63,6 +63,7 @@ static const char *extension_mdb="mdb";
 static const char *extension_mws="mws";
 static const char *extension_msg="msg";
 static const char *extension_p65="p65";
+static const char *extension_prt="prt";
 static const char *extension_ppt="ppt";
 static const char *extension_psmodel="psmodel";
 static const char *extension_pub="pub";
@@ -444,6 +445,10 @@ static const char *entry2ext(const struct OLE_DIR *dir_entry)
       /* Licom AlphaCAM */
       else if(memcmp(dir_entry->name,"L\0i\0c\0o\0m\0\0\0",12)==0)
 	return extension_amb;
+      break;
+    case 16:
+      if(memcmp(dir_entry->name, "U\0G\0_\0P\0A\0R\0T\0\0\0", 16)==0)
+	return extension_prt;
       break;
     case 18:
       /* Microsoft Works .wps */
@@ -1631,6 +1636,7 @@ static void file_rename_doc(file_recovery_t *file_recovery)
     log_info("file_rename_doc root_start_block=%u, fat_entries=%u\n", le32(header->root_start_block), fat_entries);
 #endif
     /*@
+      @ loop invariant \at(fat_entries, LoopEntry) == fat_entries;
       @ loop invariant \valid_read(header);
       @ loop invariant valid_string(&title[0]);
       @ loop variant fat_entries - i;
@@ -1669,6 +1675,8 @@ static void file_rename_doc(file_recovery_t *file_recovery)
 	}
 	/*@
 	  @ loop invariant valid_string(&title[0]);
+	  @ loop invariant \at(i, LoopEntry) == i;
+	  @ loop invariant \at(fat_entries, LoopEntry) == fat_entries;
 	  @ loop variant (1<<uSectorShift)/sizeof(struct OLE_DIR) - sid;
 	  @*/
 	for(sid=0;
