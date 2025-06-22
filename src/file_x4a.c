@@ -80,10 +80,7 @@ static void file_check_x4a(file_recovery_t *fr)
     if(tmp > fs)
       fs = tmp;
   }
-  {
-    const struct x4a_catalog *p = (const struct x4a_catalog *)buffer;
-    fr->file_size = (uint64_t)fs + be32(p->size);
-  }
+  fr->file_size = (uint64_t)fs + 32;
 }
 
 /*@
