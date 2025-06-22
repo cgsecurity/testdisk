@@ -59,7 +59,7 @@ const unsigned char axp_footer[34]= {
   @*/
 static void file_check_axp(file_recovery_t *file_recovery)
 {
-  file_search_footer(file_recovery, axp_footer, sizeof(axp_footer), 1);
+  file_search_footer(file_recovery, axp_footer, sizeof(axp_footer), 0);
 }
 
 /*@
