@@ -388,13 +388,14 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_xrns ||
      *ext == file_hint_zip.extension;
   @ ensures fr->file_size < 0x8000000000000000;
-  @ ensures \result == -1 || \result == 0;
+  @ ensures \result == -1 || \result == 0 || \result ==1;
   @ ensures \result == 0 ==> (fr->file_size > \old(fr->file_size));
   @ assigns *fr->handle, fr->file_size, *ext;
   @ assigns Frama_C_entropy_source, errno;
   @ assigns first_filename[0 .. 255];
   @ assigns msoffice, sh3d, ext_msoffice;
   @*/
+// Returns 1 if encrypted-package
 static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const unsigned int file_nbr, const zip_file_entry_t *file, const uint64_t len)
 {
   char filename[65535+1];
@@ -421,6 +422,10 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
 #ifdef DEBUG_ZIP
   log_info("%s (len=%lu)\n", filename, len);
 #endif
+  if(len==17 && memcmp(filename, "encrypted-package", 17)==0)
+  {
+    return 1;
+  }
   if(*ext!=NULL)
     return 0;
   if(file_nbr==0)
@@ -595,9 +600,11 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_xpi ||
      *ext == extension_xrns ||
      *ext == file_hint_zip.extension;
-  @ ensures \result == -1 || \result == 0;
+  @ ensures \result == -1 || \result == 0 || result == 1;
   @ ensures \result == 0 ==> fr->file_size < 0x8000000000000000;
   @ ensures \result == 0 ==> (fr->file_size > \old(fr->file_size));
+  @ ensures \result == 1 ==> fr->file_size < 0x8000000000000000;
+  @ ensures \result == 1 ==> (fr->file_size > \old(fr->file_size));
   @ assigns *fr->handle, fr->file_size, *ext;
   @ assigns fr->time;
   @ assigns Frama_C_entropy_source, errno;
@@ -614,6 +621,7 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   /*@ assert \valid_read(file); */
   /*@ assert \valid_read(extra); */
   uint64_t len;
+  int fn_status=0;
   if (fread(b_file, sizeof(b_file), 1, fr->handle) != 1)
   {
 #ifdef DEBUG_ZIP
@@ -650,7 +658,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
   if (len)
   {
     /*@ assert 0 < len <= 65535; */
-    if(zip_parse_file_entry_fn(fr, ext, file_nbr, file, len) < 0)
+    fn_status=zip_parse_file_entry_fn(fr, ext, file_nbr, file, len);
+    if(fn_status < 0)
       return -1;
     /*@ assert fr->file_size < 0x8000000000000000; */
   }
@@ -755,6 +764,8 @@ static int zip_parse_file_entry(file_recovery_t *fr, const char **ext, const uns
     }
   }
   /*@ assert fr->file_size < 0x8000000000000000; */
+  if(fn_status==1)
+    return 1;
   return 0;
 }
 
@@ -1038,6 +1049,7 @@ static int zip64_parse_end_central_dir_locator(file_recovery_t *fr)
 static void file_check_zip(file_recovery_t *fr)
 {
   const char *ext=NULL;
+  const uint64_t original_file_size=fr->file_size;
   unsigned int file_nbr=0;
   fr->file_size = 0;
   fr->offset_error=0;
@@ -1111,6 +1123,11 @@ static void file_check_zip(file_recovery_t *fr)
       case ZIP_FILE_ENTRY: /* File Entry */
         status = zip_parse_file_entry(fr, &ext, file_nbr);
 	/*@ assert (status >= 0) ==> (fr->file_size > file_size_old); */
+	if(status==1)
+	{
+	  fr->file_size = original_file_size;
+	  return;
+	}
 	file_nbr++;
         break;
       case ZIP_SIGNATURE: /* Signature */
