@@ -536,14 +536,8 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
 	(long unsigned)val);
 #endif
     if(tdir_tag_old > tdir_tag)
-    { /* Entries must be sorted by tag, some SR2 files don't respect this rule */
-      if(sorted_tag_error > 0)
-      {
-	if(fr->extension != extension_sr2)
-	  return TIFF_ERROR;
-      }
-      else
-	sorted_tag_error=1;
+    { /* Entries must be sorted by tag */
+      sorted_tag_error=1;
     }
     if(val>4)
     {
@@ -685,6 +679,13 @@ static uint64_t file_check_tiff_le_aux(file_recovery_t *fr, const uint32_t tiff_
     }
     tdir_tag_old=tdir_tag;
   }
+#ifdef DEBUG_TIFF
+  if(sorted_tag_error > 0)
+  {
+    /* Entries must be sorted by tag, some SR2 files don't respect this rule */
+    log_info("WARNING: Some TIFF entries are be sorted by tag\n");
+  }
+#endif
   if(alphabytecount > 0 && max_offset < alphaoffset + alphabytecount)
     max_offset = alphaoffset + alphabytecount;
   if(imagebytecount > 0 && max_offset < imageoffset + imagebytecount)
