@@ -950,7 +950,9 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	return 0;
     }
     if(file_recovery->file_stat->file_hint==&file_hint_doc &&
-	strstr(file_recovery->filename, ".albm")!=NULL)
+      (strstr(file_recovery->filename, ".albm")!=NULL ||
+       strstr(file_recovery->filename, ".prt")!=NULL)
+      )
     {
       if(header_ignored_adv(file_recovery, file_recovery_new)==0)
 	return 0;
