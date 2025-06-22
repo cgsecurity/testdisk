@@ -50,9 +50,6 @@ static int file_check_cmp(const struct td_list_head *a, const struct td_list_hea
 
 #ifndef __FRAMAC__
 #include "list_add_sorted.h"
-/*@ requires compar == file_check_cmp; */
-static inline void td_list_add_sorted(struct td_list_head *newe, struct td_list_head *head,
-    int (*compar)(const struct td_list_head *a, const struct td_list_head *b));
 #else
 
 /*@
@@ -72,6 +69,7 @@ static inline void td_list_add_sorted_fcc(struct td_list_head *newe, struct td_l
     @ loop invariant \valid(pos->prev);
     @ loop invariant \valid(pos->next);
     @ loop invariant pos == head || \separated(pos, head);
+    @ loop invariant finite(head);
     @ loop assigns pos;
     @*/
   td_list_for_each(pos, head)
@@ -201,7 +199,9 @@ void register_header_check(const unsigned int offset, const void *value, const u
   file_check_new->value=value;
   file_check_new->length=length;
   file_check_new->offset=offset;
+  /*@ assert header_check != \null; */
   file_check_new->header_check=header_check;
+  /*@ assert file_check_new->header_check != \null; */
   file_check_new->file_stat=file_stat;
 
   /*@ assert \valid_read(file_check_new); */
@@ -356,6 +356,7 @@ void file_allow_nl(file_recovery_t *file_recovery, const unsigned int nl_mode)
     /*@ assert valid_file_check_result(file_recovery); */
     return;
   }
+  /*@ assert \separated(file_recovery, buffer+(..)); */
   /*@ assert valid_file_recovery(file_recovery); */
   taille=fread(buffer,1, 4096,file_recovery->handle);
   /*@ assert valid_file_recovery(file_recovery); */
@@ -577,6 +578,7 @@ file_stat_t * init_file_stats(file_enable_t *files_enable)
   @ requires strlen(new_ext) < (1<<30);
   @ requires separation: \separated(file_recovery, new_ext);
   @ ensures  valid_file_recovery(file_recovery);
+  @ ensures file_recovery->file_size == \old(file_recovery->file_size);
   @*/
 static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
 {
@@ -628,6 +630,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
     @ loop invariant odst <= dst <= odst + strlen(odst);
     @ loop invariant valid_read_string(new_ext);
     @ loop invariant strlen(new_ext) < (1<<30);
+    @ loop invariant valid_file_recovery(file_recovery);
+    @ loop invariant valid_string(&new_filename[0]);
     @ loop assigns dst;
     @ loop variant strlen(dst);
     @*/
@@ -635,12 +639,14 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
     dst++;
   /* Add extension */
   *dst++ = '.';
+  /*@ assert valid_read_string(new_ext); */
   /*@ assert strlen(new_ext) < (1<<30); */
 #ifdef DISABLED_FOR_FRAMAC
   memcpy(dst, new_ext, strlen(new_ext)+1);
 #else
   strcpy(dst, new_ext);
 #endif
+  /*@ assert valid_string(dst); */
   /*@ assert valid_string(&new_filename[0]); */
   if(strlen(new_filename) >= sizeof(file_recovery->filename))
   {
@@ -672,6 +678,8 @@ static int file_rename_aux(file_recovery_t *file_recovery, const char *new_ext)
   @ requires buffer_size < 1<<30;
   @ requires \valid_read((char *)buffer+(0..buffer_size-1));
   @ requires new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
+  @ requires \separated(filename, (char *)buffer+(0..buffer_size-1));
+  @ requires \separated(filename, new_ext);
   @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  valid_string(filename);
   @ ensures 0 < strlen(filename) < 1<<30;
@@ -827,7 +835,11 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(buffer!=NULL && 0 <= offset && offset < buffer_size &&
       _file_rename(file_recovery->filename, buffer, buffer_size, offset, new_ext, append_original_ext)==0)
+  {
+    /*@ assert valid_file_recovery(file_recovery); */
     return 0;
+  }
+  /*@ assert valid_file_recovery(file_recovery); */
   /*@ assert valid_string((char *)(&file_recovery->filename)); */
   /*@ assert new_ext==\null || valid_read_string(new_ext); */
   if(new_ext==NULL)
@@ -850,6 +862,7 @@ int file_rename(file_recovery_t *file_recovery, const void *buffer, const int bu
   @ ensures  new_ext==\null || (valid_read_string(new_ext) && strlen(new_ext) < 1<<30);
   @ ensures  valid_read_string((char*)&file_recovery->filename);
   @ ensures  valid_file_recovery(file_recovery);
+  @ ensures file_recovery->file_size == \old(file_recovery->file_size);
   @*/
 static int _file_rename_unicode(file_recovery_t *file_recovery, const void *buffer, const int buffer_size, const int offset, const char *new_ext, const int append_original_ext)
 {

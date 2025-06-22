@@ -159,6 +159,7 @@ typedef struct
 	(file_recovery->file_check == \null || \valid_function(file_recovery->file_check)) &&
 	(file_recovery->file_rename == \null || \valid_function(file_recovery->file_rename)) &&
 	\separated(file_recovery, file_recovery->extension) &&
+	\separated(file_recovery, file_recovery->file_stat) &&
 	\separated(file_recovery, file_recovery->handle) &&
 	\initialized(&file_recovery->calculated_file_size) &&
 	\initialized(&file_recovery->file_check) &&
@@ -378,6 +379,7 @@ void register_header_check(const unsigned int offset, const void *value, const u
 
 /*@
   @ requires valid_file_enable_node(files_enable);
+  @ decreases 0;
   @ ensures valid_file_stat(\result);
   @*/
 file_stat_t * init_file_stats(file_enable_t *files_enable);
