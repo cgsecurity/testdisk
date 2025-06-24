@@ -2,7 +2,7 @@
 
     File: file_lnk.c
 
-    Copyright (C) 2008 Christophe GRENIER <grenier@cgsecurity.org>
+    Copyright (C) 2008-2025 Christophe GRENIER <grenier@cgsecurity.org>
   
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -193,33 +193,35 @@ static unsigned int lnk_get_size(const unsigned char *buffer, const unsigned int
     i+=len;
   }
   /* avoid out of bound read access */
-  if(i >= buffer_size - 2)
+  if(i >= buffer_size - 4)
     return 0;
   /*@
-    @ loop invariant i < buffer_size-2;
+    @ loop invariant i < buffer_size-4;
     @ loop assigns i;
-    @ loop variant buffer_size-2 - i;
+    @ loop variant buffer_size-4 - i;
     @*/
   while(1)
   {
     /* avoid out of bound read access */
-    const uint16_t *ptr;
+    const uint32_t *ptr;
     unsigned int len;
-    ptr=(const uint16_t *)&buffer[i];
+    ptr=(const uint32_t *)&buffer[i];
     /*@ assert \valid_read(ptr); */
-    len=le16(*ptr);
+    len=le32(*ptr);
 #ifdef DEBUG_LNK
     log_debug("LNK 0x%04x - %u bytes\n", i, len);
 #endif
-    if(len == 0)
+    if(len < 4)
     {
 #ifdef DEBUG_LNK
       log_debug("LNK size %u (0x%04x)\n", i, i);
 #endif
-      return i;
+      return i+4;
     }
-    i+=2;
-    if(i >= buffer_size - 2)
+    if(len >= buffer_size - 4)
+      return 0;
+    i+=len;
+    if(i >= buffer_size - 4)
       return 0;
   }
 }
