@@ -524,6 +524,7 @@ extern const file_hint_t file_hint_itunes;
 extern const file_hint_t file_hint_jks;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
+extern const file_hint_t file_hint_journal;
 extern const file_hint_t file_hint_jpg;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)
@@ -1580,6 +1581,7 @@ file_enable_t array_file_enable[]=
   { .enable=0, .file_hint=&file_hint_jks  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jpg)
+  { .enable=0, .file_hint=&file_hint_journal  },
   { .enable=0, .file_hint=&file_hint_jpg  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)

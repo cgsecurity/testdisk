@@ -214,6 +214,7 @@ file_C			= filegen.c \
 			  file_it.c \
 			  file_itu.c \
 			  file_jks.c \
+			  file_journal.c \
 			  file_jpg.c \
 			  file_jsonlz4.c \
 			  file_kdb.c \
