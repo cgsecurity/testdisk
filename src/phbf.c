@@ -494,7 +494,7 @@ static bf_status_t photorec_bf_frag_fast(struct ph_param *params, file_recovery_
     for(k=original_offset_ok/blocksize+1; k<original_offset_error/blocksize; k++)
     {
       params->disk->pread(params->disk, block_buffer, blocksize, *offset);
-      if(file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=DC_CONTINUE)
+      if(file_recovery->data_check!=NULL && file_recovery->data_check(buffer, 2*blocksize, file_recovery)!=DC_CONTINUE)
       {
 	/* TODO handle this problem */
       }
