@@ -232,11 +232,13 @@ void ask_location(char *dst_directory, const unsigned int dst_size, const char *
 	const struct dirent *dir_entrie=readdir(dir);
         if(dir_entrie==NULL)
 	  break;
+#if !defined(__CYGWIN__) && !defined(DJGPP) && !defined(__MINGW32__) && !defined(__OS2__) && !defined(WIN32)
 	/* hide filename beginning by '.' except '.' and '..' */
 	if(dir_entrie->d_name[0]=='.' &&
 	    !(dir_entrie->d_name[1]=='\0') &&
 	    !(dir_entrie->d_name[1]=='.' && dir_entrie->d_name[2]=='\0'))
 	  continue;
+#endif
         if(strlen(dst_directory) + 1 + strlen(dir_entrie->d_name) + 1 <= sizeof(current_file)
 #ifdef __CYGWIN__
 	    && (memcmp(dst_directory, "/cygdrive", 9)!=0 ||
