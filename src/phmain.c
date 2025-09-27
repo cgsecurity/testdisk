@@ -123,11 +123,12 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [/sigfile photorec.sig] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
       "/log          : create a photorec.log file\n" \
       "/debug        : add debug information\n" \
+      "/sigfile path : specify custom path to signature file\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
@@ -275,6 +276,11 @@ int main( int argc, char **argv )
         params.recup_dir=strdup(argv[i+1]);
 	/*@ assert params.recup_dir==\null || \freeable(params.recup_dir); */
       }
+      i++;
+    }
+    else if(i+1<argc && ((strcmp(argv[i],"/sigfile")==0)||(strcmp(argv[i],"-sigfile")==0)))
+    {
+      set_custom_signature_file(argv[i+1]);
       i++;
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
