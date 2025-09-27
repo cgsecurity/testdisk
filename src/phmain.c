@@ -243,7 +243,7 @@ int main( int argc, char **argv )
       {
 	display_help();
 	free(params.recup_dir);
-		return 1;
+	return 1;
       }
       /*@ assert valid_read_string(argv[i+1]); */
       logfile=argv[++i];
@@ -296,14 +296,14 @@ int main( int argc, char **argv )
     {
       display_help();
       free(params.recup_dir);
-            return 0;
+      return 0;
     }
     else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
       (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
     {
       display_version();
       free(params.recup_dir);
-            return 0;
+      return 0;
     }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
@@ -315,7 +315,7 @@ int main( int argc, char **argv )
       {
 	display_help();
 	free(params.recup_dir);
-		return 1;
+	return 1;
       }
 #ifndef DISABLED_FOR_FRAMAC
       if(strcmp(argv[i+1],"resume")==0)
@@ -357,7 +357,7 @@ int main( int argc, char **argv )
       {
         printf("\nUnable to open file or device %s: %s\n", argv[i], strerror(errno));
 	free(params.recup_dir);
-		return 1;
+	return 1;
       }
       list_disk=insert_new_disk(list_disk,disk_car);
       /*@ assert list_disk ==\null || (\valid(list_disk) && valid_disk(list_disk->disk)); */
@@ -392,7 +392,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
   {
     free(params.recup_dir);
-        log_close();
+    log_close();
     return 1;
   }
   {
@@ -507,7 +507,7 @@ int main( int argc, char **argv )
 #endif
   json_log_cleanup(&params);
   free(params.recup_dir);
-  #ifdef ENABLE_DFXML
+#ifdef ENABLE_DFXML
   xml_clear_command_line();
 #endif
   return 0;

@@ -48,12 +48,12 @@ static FILE *json_log_file = NULL;
 
 static void json_write_timestamp(FILE *file)
 {
+  if (!file)
+    return;
+
   time_t now;
   struct tm *tm_info;
   char buffer[64];
-
-  if (!file)
-    return;
 
   time(&now);
   tm_info = localtime(&now);
@@ -188,7 +188,7 @@ void json_log_cli_params(const struct ph_param *params, const char **argv, int a
   fprintf(json_log_file, ", \"params\": [");
 
   for (int i = 0; i < argc; i++) {
-    if (i > 0) fprintf(json_log_file, ", ");
+    if (i > 0) fprintf(json_log_file, ",");
     json_escape_string(json_log_file, argv[i]);
   }
 
@@ -254,7 +254,7 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
     int first = 1;
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
-        if (!first) fprintf(json_log_file, ", ");
+        if (!first) fprintf(json_log_file, ",");
         first = 0;
         fprintf(json_log_file, "\"%s\": %u",
             params->file_stats[i].file_hint->extension ? params->file_stats[i].file_hint->extension : "unknown",
@@ -292,7 +292,7 @@ void json_log_completion(const struct ph_param *params, const time_t final_time,
     int first = 1;
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
-        if (!first) fprintf(json_log_file, ", ");
+        if (!first) fprintf(json_log_file, ",");
         first = 0;
         fprintf(json_log_file, "\"%s\": %u",
             params->file_stats[i].file_hint->extension ? params->file_stats[i].file_hint->extension : "unknown",
