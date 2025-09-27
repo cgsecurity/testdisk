@@ -110,7 +110,7 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
     if(options->verbose > 1)
       log_trace("A known header has been found, recovery of the previous file is finished\n");
 #endif
-    *file_recovered=file_finish2(file_recovery, params, options->paranoid, list_search_space);
+    *file_recovered=file_finish2(file_recovery, params, options, list_search_space);
     if(*file_recovered==PFSTATUS_OK_TRUNCATED)
       return PSTATUS_OK;
   }

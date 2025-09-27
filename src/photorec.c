@@ -778,14 +778,20 @@ void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *para
   reset_file_recovery(file_recovery);
 }
 
-pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
+pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space)
 {
   int file_truncated;
   if(file_recovery->file_stat==NULL)
     return PFSTATUS_BAD;
   if(file_recovery->handle)
-    file_finish_aux(file_recovery, params, (paranoid==0?0:1));
+    file_finish_aux(file_recovery, params, (options->paranoid==0?0:1));
   if(file_recovery->file_size==0)
+  {
+    file_block_truncate_zero(file_recovery, list_search_space);
+    reset_file_recovery(file_recovery);
+    return PFSTATUS_BAD;
+  }
+  if(options->max_filesize > 0 && file_recovery->file_size > options->max_filesize)
   {
     file_block_truncate_zero(file_recovery, list_search_space);
     reset_file_recovery(file_recovery);

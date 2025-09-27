@@ -204,14 +204,25 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	}
 	if(ind_stop==PSTATUS_OK)
 	{
-	  /*@ assert valid_file_recovery(&file_recovery); */
-	  file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 1);
-	  /*@ assert valid_file_recovery(&file_recovery); */
-	  if(file_recovery.data_check!=NULL)
-	    data_check_status=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
+	  if(options->max_filesize > 0 && file_recovery.file_size + blocksize > options->max_filesize)
+	  {
+	    data_check_status=DC_STOP;
+#ifndef DISABLED_FOR_FRAMAC
+	    log_verbose("File should not be bigger than %llu, stop adding data\n",
+		(long long unsigned)options->max_filesize);
+#endif
+	  }
 	  else
-	    data_check_status=DC_CONTINUE;
-	  file_recovery.file_size+=blocksize;
+	  {
+	    /*@ assert valid_file_recovery(&file_recovery); */
+	    file_block_append(&file_recovery, list_search_space, &current_search_space, &offset, blocksize, 1);
+	    /*@ assert valid_file_recovery(&file_recovery); */
+	    if(file_recovery.data_check!=NULL)
+	      data_check_status=file_recovery.data_check(buffer_olddata,2*blocksize,&file_recovery);
+	    else
+	      data_check_status=DC_CONTINUE;
+	    file_recovery.file_size+=blocksize;
+	  }
 #ifndef DISABLED_FOR_FRAMAC
 	  if(data_check_status==DC_STOP)
 	  {
@@ -225,7 +236,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       {
 	data_check_status=DC_STOP;
 #ifndef DISABLED_FOR_FRAMAC
-	log_verbose("File should not be bigger than %llu, stopped adding data\n",
+	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
 #endif
       }
@@ -233,7 +244,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       {
 	data_check_status=DC_STOP;
 #ifndef DISABLED_FOR_FRAMAC
-	log_verbose("File should not be bigger than %llu, stopped adding data\n",
+	log_verbose("File should not be bigger than %llu, stop adding data\n",
 	    (long long unsigned)file_recovery.file_stat->file_hint->max_filesize);
 #endif
       }
@@ -241,7 +252,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       {
 	if(data_check_status==DC_ERROR)
 	  file_recovery.file_size=0;
-	file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
+	file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
 	if(options->lowmem > 0)
 	  forget(list_search_space,current_search_space);
       }
@@ -307,7 +318,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	  current_search_space, current_search_space->list.prev, current_search_space->list.next);
       log_trace("End of media\n");
 #endif
-      file_recovered=file_finish2(&file_recovery, params, options->paranoid, list_search_space);
+      file_recovered=file_finish2(&file_recovery, params, options, list_search_space);
       if(file_recovered!=PFSTATUS_BAD)
 	get_prev_location_smart(list_search_space, &current_search_space, &offset, file_recovery.location.start);
       if(options->lowmem > 0)

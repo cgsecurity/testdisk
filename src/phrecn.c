@@ -499,9 +499,47 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 }
 
 #ifdef HAVE_NCURSES
+extern uint64_t parse_file_size(const char *size_str);
+
+static void format_filesize_display(uint64_t size, char *buffer, size_t buffer_size)
+{
+  if(size == 0)
+  {
+    snprintf(buffer, buffer_size, "Max file size : No limit");
+  }
+  else if(size % (1024ULL*1024ULL*1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "Max file size : %lluT", size / (1024ULL*1024ULL*1024ULL*1024ULL));
+  else if(size % (1024ULL*1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "Max file size : %lluG", size / (1024ULL*1024ULL*1024ULL));
+  else if(size % (1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "Max file size : %lluM", size / (1024ULL*1024ULL));
+  else if(size % 1024ULL == 0)
+    snprintf(buffer, buffer_size, "Max file size : %lluK", size / 1024ULL);
+  else
+    snprintf(buffer, buffer_size, "Max file size : %llu bytes", size);
+}
+
+static void format_filesize_input(uint64_t size, char *buffer, size_t buffer_size)
+{
+  if(size == 0)
+  {
+    buffer[0] = '\0';
+  }
+  else if(size % (1024ULL*1024ULL*1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "%lluT", size / (1024ULL*1024ULL*1024ULL*1024ULL));
+  else if(size % (1024ULL*1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "%lluG", size / (1024ULL*1024ULL*1024ULL));
+  else if(size % (1024ULL*1024ULL) == 0)
+    snprintf(buffer, buffer_size, "%lluM", size / (1024ULL*1024ULL));
+  else if(size % 1024ULL == 0)
+    snprintf(buffer, buffer_size, "%lluK", size / 1024ULL);
+  else
+    snprintf(buffer, buffer_size, "%llu", size);
+}
+
 void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 5;
+  unsigned int menu = 6;
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
@@ -509,6 +547,7 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
     { 'L',NULL,"Low memory"},
+    { 'M',NULL,"Max file size"},
     { 'Q',"Quit","Return to main menu"},
     { 0, NULL, NULL }
   };
@@ -532,8 +571,13 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    {
+      static char max_filesize_str[64];
+      format_filesize_display(options->max_filesize, max_filesize_str, sizeof(max_filesize_str));
+      menuOptions[5].name=max_filesize_str;
+    }
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKEMLQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -558,6 +602,35 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case 'l':
       case 'L':
 	options->lowmem=!options->lowmem;
+	break;
+      case 'm':
+      case 'M':
+	{
+	  char response[64];
+	  char current_value[32];
+	  format_filesize_input(options->max_filesize, current_value, sizeof(current_value));
+	  mvwaddstr(stdscr, INTER_OPTION_Y+6, INTER_OPTION_X, "Enter max file size (e.g. 500M, 2G) or empty for no limit: ");
+	  if(get_string(stdscr, response, sizeof(response), current_value) > 0)
+	  {
+	    if(strlen(response) == 0)
+	    {
+	      options->max_filesize = 0;
+	    }
+	    else
+	    {
+	      uint64_t new_size = parse_file_size(response);
+	      if(new_size > 0)
+	      {
+		options->max_filesize = new_size;
+	      }
+	      else
+	      {
+		mvwaddstr(stdscr, INTER_OPTION_Y+7, INTER_OPTION_X, "Invalid size format! Press any key...");
+		wgetch(stdscr);
+	      }
+	    }
+	  }
+	}
 	break;
       case key_ESC:
       case 'q':

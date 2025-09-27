@@ -22,6 +22,7 @@
 
 #ifndef _TESTDISK_PHOTOREC_H
 #define _TESTDISK_PHOTOREC_H
+#include "types.h"
 #define MAX_FILES_PER_DIR	500
 #define DEFAULT_RECUP_DIR "recup_dir"
 #ifdef __cplusplus
@@ -43,6 +44,7 @@ struct ph_options
   unsigned int lowmem;
   int verbose;
   file_enable_t *list_file_format;
+  uint64_t max_filesize;
 };
 
 struct ph_param
@@ -115,7 +117,7 @@ void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *para
   @ ensures  \result == PFSTATUS_BAD || \result == PFSTATUS_OK || \result == PFSTATUS_OK_TRUNCATED;
   @*/
 // ensures  valid_file_recovery(file_recovery);
-pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space);
+pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const struct ph_options *options, alloc_data_t *list_search_space);
 
 /*@
   @ requires \valid_read(file_stats);

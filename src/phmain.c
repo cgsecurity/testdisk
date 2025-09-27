@@ -58,6 +58,7 @@
 #include <sys/stat.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include "types.h"
 #ifdef HAVE_LOCALE_H
 #include <locale.h>	/* setlocale */
 #endif
@@ -68,7 +69,6 @@
 #include <sys/wait.h>
 #endif
 #include <errno.h>
-#include "types.h"
 #include "common.h"
 #include "intrf.h"
 #include "fnctdsk.h"
@@ -123,11 +123,12 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [/maxsize size] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
       "/log          : create a photorec.log file\n" \
       "/debug        : add debug information\n" \
+      "/maxsize size : set maximum file size limit (e.g. 500M, 2G, 1024K)\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
@@ -152,6 +153,45 @@ static void display_version(void)
   printf("OS: %s\n" , get_os());
 }
 #endif
+
+uint64_t parse_file_size(const char *size_str)
+{
+  uint64_t size = 0;
+  char *endptr;
+  double value;
+
+  if(size_str == NULL || *size_str == '\0')
+    return 0;
+
+  value = strtod(size_str, &endptr);
+  if(value < 0)
+    return 0;
+
+  size = (uint64_t)value;
+
+  if(endptr != NULL && *endptr != '\0')
+  {
+    switch(tolower(*endptr))
+    {
+      case 'k':
+        size *= 1024ULL;
+        break;
+      case 'm':
+        size *= 1024ULL * 1024ULL;
+        break;
+      case 'g':
+        size *= 1024ULL * 1024ULL * 1024ULL;
+        break;
+      case 't':
+        size *= 1024ULL * 1024ULL * 1024ULL * 1024ULL;
+        break;
+      default:
+        return 0;
+    }
+  }
+
+  return size;
+}
 
 int main( int argc, char **argv )
 {
@@ -179,7 +219,8 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=array_file_enable
+    .list_file_format=array_file_enable,
+    .max_filesize=0
   };
   struct ph_param params;
   if(argc <= 0)
@@ -275,6 +316,19 @@ int main( int argc, char **argv )
         params.recup_dir=strdup(argv[i+1]);
 	/*@ assert params.recup_dir==\null || \freeable(params.recup_dir); */
       }
+      i++;
+    }
+    else if(i+1<argc && ((strcmp(argv[i],"/maxsize")==0)||(strcmp(argv[i],"-maxsize")==0)))
+    {
+      uint64_t max_size = parse_file_size(argv[i+1]);
+      if(max_size == 0)
+      {
+        log_error("Invalid file size: %s\n", argv[i+1]);
+        display_help();
+        free(params.recup_dir);
+        return 1;
+      }
+      options.max_filesize = max_size;
       i++;
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
