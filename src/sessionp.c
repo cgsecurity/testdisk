@@ -299,6 +299,8 @@ int session_save(const alloc_data_t *list_free_space, const struct ph_param *par
       fprintf(f_session, "expert,");
     if(options->lowmem>0)
       fprintf(f_session, "lowmem,");
+    if(options->max_filesize>0)
+      fprintf(f_session, "maxfile,%llu,", (unsigned long long)options->max_filesize);
     /* Save options - End */
     if(params->carve_free_space_only>0)
       fprintf(f_session,"freespace,");

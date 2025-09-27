@@ -87,6 +87,11 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     {
       options->lowmem=1;
     }
+    /* maxfile */
+    else if(check_command(current_cmd,"maxfile,",8)==0)
+    {
+      options->max_filesize=get_int_from_command(current_cmd);
+    }
     else
     {
 #ifndef DISABLED_FOR_FRAMAC
