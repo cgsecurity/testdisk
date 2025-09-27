@@ -27,7 +27,7 @@ extern "C" {
 
 unsigned int log_set_levels(const unsigned int levels);
 
-void log_set_json_handler(void (*handler)(const unsigned int level, const char *format, va_list ap));
+void log_set_json_handler(void (*handler)(const unsigned int level, const char *format, va_list ap), int verbose);
 
 /*@
   @ requires valid_read_string(default_filename);
@@ -51,6 +51,9 @@ int log_close(void);
   @*/
 int log_redirect(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
+/*@
+  @ requires valid_read_string(format);
+  @*/
 int log_redirect_nojson(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
 /*@

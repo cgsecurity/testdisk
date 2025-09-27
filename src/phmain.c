@@ -453,7 +453,7 @@ int main( int argc, char **argv )
   if(logfile_json != NULL)
   {
     json_log_open(logfile_json);
-    log_set_json_handler(json_log_handler);
+    log_set_json_handler(json_log_handler, options.verbose > 0);
     json_log_cli_params(&params, (const char **)argv, argc);
   }
 

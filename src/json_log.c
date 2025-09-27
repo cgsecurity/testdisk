@@ -47,6 +47,7 @@
 
 static FILE *json_log_file = NULL;
 
+
 static void json_write_timestamp(FILE *file)
 {
   if (!file)
@@ -328,22 +329,6 @@ static const char* log_level_to_string(const unsigned int level)
   }
 }
 
-static void json_write_log_entry(const char *level_str, const char *message)
-{
-  if (!json_log_file || !level_str || !message)
-    return;
-
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"log\"");
-  fprintf(json_log_file, ",\"level\":\"%s\"", level_str);
-  fprintf(json_log_file, ",\"message\":");
-  json_escape_string(json_log_file, message);
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
-}
-
-
 static void clean_log_message(char *message)
 {
   if (!message)
@@ -370,20 +355,39 @@ static void clean_log_message(char *message)
   }
 }
 
+static void json_write_log_entry(const char *level_str, const char *message)
+{
+  if (!json_log_file || !level_str || !message)
+    return;
+
+  char cleaned_message[2048];
+  strncpy(cleaned_message, message, sizeof(cleaned_message) - 1);
+  cleaned_message[sizeof(cleaned_message) - 1] = '\0';
+  clean_log_message(cleaned_message);
+
+  if (cleaned_message[0] == '\0')
+    return;
+
+  fprintf(json_log_file, "{");
+  json_write_timestamp(json_log_file);
+  fprintf(json_log_file, ",\"type\":\"log\"");
+  fprintf(json_log_file, ",\"level\":\"%s\"", level_str);
+  fprintf(json_log_file, ",\"message\":");
+  json_escape_string(json_log_file, cleaned_message);
+  fprintf(json_log_file, "}\n");
+  fflush(json_log_file);
+}
+
 void json_log_handler(const unsigned int level, const char *format, va_list ap)
 {
   if (!json_log_file || !format)
     return;
 
-  const char *level_str = log_level_to_string(level);
+  const unsigned int clean_level = level;
+  const char *level_str = log_level_to_string(clean_level);
 
   char message[2048];
   vsnprintf(message, sizeof(message), format, ap);
-
-  clean_log_message(message);
-
-  if (message[0] == '\0')
-    return;
 
   json_write_log_entry(level_str, message);
 }

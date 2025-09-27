@@ -51,6 +51,7 @@ void json_log_completion(const struct ph_param *params, const char *completion_m
 
 void json_log_handler(const unsigned int level, const char *format, va_list ap);
 
+
 void json_log_cleanup(const struct ph_param *params);
 
 #ifdef __cplusplus

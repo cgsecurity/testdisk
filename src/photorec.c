@@ -94,7 +94,7 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
   if(file_recovery->filename[0]=='\0')
     return;
 #ifndef DISABLED_FOR_FRAMAC
-  log_info_nojson("%s\t",file_recovery->filename);
+  log_info_nojson("%s\t", file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
   {
     const alloc_list_t *element=td_list_entry_const(tmp, const alloc_list_t, list);
@@ -822,7 +822,7 @@ void info_list_search_space(const alloc_data_t *list_search_space, const alloc_d
     {
       if(tmp==current_search_space)
         log_info("* ");
-      log_info("%lu-%lu: %s\n",(long unsigned)(tmp->start/sector_size),
+      log_info_nojson("%lu-%lu: %s\n",(long unsigned)(tmp->start/sector_size),
           (long unsigned)(tmp->end/sector_size),
           (tmp->file_stat!=NULL && tmp->file_stat->file_hint!=NULL?
            (tmp->file_stat->file_hint->extension?
