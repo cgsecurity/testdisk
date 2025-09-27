@@ -124,12 +124,12 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/logjson file.json] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/logjson log.jsonl] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
       "/log            : create a photorec.log file\n" \
+      "/logjson <file> : create a log in JSON format\n" \
       "/debug          : add debug information\n" \
-      "/logjson file   : create a JSON log file with progress information\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");

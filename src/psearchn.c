@@ -333,7 +333,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 	    (unsigned long long)((offset-params->partition->part_offset)/params->disk->sector_size),
 	    (unsigned long long)((params->partition->part_size-1)/params->disk->sector_size));
       }
-    #endif
+#endif
       if(params->disk->pread(params->disk, buffer, READ_SIZE, offset) != READ_SIZE)
       {
 #ifdef HAVE_NCURSES

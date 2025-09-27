@@ -37,13 +37,14 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
-#include <errno.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
 #include "photorec.h"
 #include "json_log.h"
 #include "log.h"
+
+#define JSON_LOG_BUFFER_SIZE 2048
 
 static FILE *json_log_handle = NULL;
 
@@ -117,8 +118,11 @@ static void json_escape_string(FILE *file, const char *str)
 
 int json_log_open(const char *filename)
 {
-  if (!filename || json_log_handle != NULL)
-    return 0;
+  if (!filename)
+    return -1;
+
+  if (json_log_handle != NULL)
+    return -1;
 
   json_log_handle = fopen(filename, "w");
   if (!json_log_handle) {
@@ -238,13 +242,13 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
   if (current_time > params->real_start_time) {
     const time_t elapsed_time = current_time - params->real_start_time;
     fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
-        (unsigned)(elapsed_time/60/60),
+        (unsigned)(elapsed_time/3600),
         (unsigned)(elapsed_time/60%60),
         (unsigned)(elapsed_time%60));
 
     if (offset > params->partition->part_offset && params->status != STATUS_EXT2_ON_BF && params->status != STATUS_EXT2_OFF_BF) {
       const time_t eta = (params->partition->part_offset + params->partition->part_size - 1 - offset) * elapsed_time / (offset - params->partition->part_offset);
-      fprintf(json_log_handle, ",\"estimated_time\":\"%uh%02um%02u\"",
+      fprintf(json_log_handle, ",\"estimated_time\":\"%uh%02um%02us\"",
           (unsigned)(eta/3600),
           (unsigned)((eta/60)%60),
           (unsigned)(eta%60));
@@ -283,7 +287,7 @@ void json_log_completion(const struct ph_param *params, const char *completion_m
   if (final_time > params->real_start_time) {
     const time_t elapsed_time = final_time - params->real_start_time;
     fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
-        (unsigned)(elapsed_time/60/60),
+        (unsigned)(elapsed_time/3600),
         (unsigned)(elapsed_time/60%60),
         (unsigned)(elapsed_time%60));
   }
@@ -359,7 +363,7 @@ static void json_write_log_entry(const char *level_str, const char *message)
   if (!json_log_handle || !level_str || !message)
     return;
 
-  char cleaned_message[2048];
+  char cleaned_message[JSON_LOG_BUFFER_SIZE];
   strncpy(cleaned_message, message, sizeof(cleaned_message) - 1);
   cleaned_message[sizeof(cleaned_message) - 1] = '\0';
   clean_log_message(cleaned_message);
@@ -385,7 +389,7 @@ void json_log_handler(const unsigned int level, const char *format, va_list ap)
   const unsigned int clean_level = level;
   const char *level_str = log_level_to_string(clean_level);
 
-  char message[2048];
+  char message[JSON_LOG_BUFFER_SIZE];
   vsnprintf(message, sizeof(message), format, ap);
 
   json_write_log_entry(level_str, message);

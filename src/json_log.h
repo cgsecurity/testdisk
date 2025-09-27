@@ -30,6 +30,7 @@ extern "C" {
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
+#include <stdarg.h>
 #include "types.h"
 #include "photorec.h"
 
