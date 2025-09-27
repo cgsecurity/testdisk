@@ -453,6 +453,7 @@ int main( int argc, char **argv )
   if(logfile_json != NULL)
   {
     json_log_open(logfile_json);
+    log_set_json_handler(json_log_handler);
     json_log_cli_params(&params, (const char **)argv, argc);
   }
 
@@ -475,7 +476,6 @@ int main( int argc, char **argv )
     log_info("perf: get_prev_file_header: %lu, get_prev_location_smart: %lu\n", (long unsigned)gpfh_nbr, (long unsigned)gpls_nbr);
   }
   log_info("PhotoRec exited normally.\n");
-  json_log_completion(&params, time(NULL), "PhotoRec exited normally");
 #endif
   if(log_close()!=0)
   {

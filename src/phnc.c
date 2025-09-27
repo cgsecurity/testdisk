@@ -127,7 +127,7 @@ pstatus_t photorec_progressbar(WINDOW *window, const unsigned int pass, const st
   }
   photorec_info(window, params->file_stats);
 
-  json_log_progress(params, pass, offset, current_time);
+  json_log_progress(params, pass, offset);
 
   wrefresh(window);
   return(check_enter_key_or_s(window)==0?PSTATUS_OK:PSTATUS_STOP);

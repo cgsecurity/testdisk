@@ -94,14 +94,14 @@ void file_block_log(const file_recovery_t *file_recovery, const unsigned int sec
   if(file_recovery->filename[0]=='\0')
     return;
 #ifndef DISABLED_FOR_FRAMAC
-  log_info("%s\t",file_recovery->filename);
+  log_info_nojson("%s\t",file_recovery->filename);
   td_list_for_each(tmp, &file_recovery->location.list)
   {
     const alloc_list_t *element=td_list_entry_const(tmp, const alloc_list_t, list);
     if(element->data>0)
-      log_info(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
+      log_info_nojson(" %lu-%lu", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
     else
-      log_info(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
+      log_info_nojson(" (%lu-%lu)", (unsigned long)(element->start/sector_size), (unsigned long)(element->end/sector_size));
   }
   log_info("\n");
 #endif

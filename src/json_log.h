@@ -45,9 +45,11 @@ void json_log_partition_info(const struct ph_param *params);
 
 void json_log_session_resume(const struct ph_param *params, const char *saved_device, const char *saved_cmd, int search_space_regions);
 
-void json_log_progress(const struct ph_param *params, const unsigned int pass, const uint64_t offset, const time_t current_time);
+void json_log_progress(const struct ph_param *params, const unsigned int pass, const uint64_t offset);
 
-void json_log_completion(const struct ph_param *params, const time_t final_time, const char *completion_message);
+void json_log_completion(const struct ph_param *params, const char *completion_message);
+
+void json_log_handler(const unsigned int level, const char *format, va_list ap);
 
 void json_log_cleanup(const struct ph_param *params);
 

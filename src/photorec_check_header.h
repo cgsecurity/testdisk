@@ -76,7 +76,7 @@ static void photorec_dir_fat(const unsigned char *buffer, const unsigned int rea
   if(!td_list_empty(&dir_list.list))
   {
 #ifndef __FRAMAC__
-    log_info("Sector %llu\n", sector);
+    log_info_nojson("Sector %llu\n", sector);
 #endif
     dir_aff_log(NULL, &dir_list);
     delete_list_file(&dir_list);
