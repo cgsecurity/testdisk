@@ -123,7 +123,7 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [/maxsize size] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/debug] [/maxsize size] [/d recup_dir] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
       "/log          : create a photorec.log file\n" \
