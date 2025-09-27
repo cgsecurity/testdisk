@@ -58,6 +58,7 @@
 #include <sys/stat.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include "types.h"
 #ifdef HAVE_LOCALE_H
 #include <locale.h>	/* setlocale */
 #endif
@@ -68,7 +69,6 @@
 #include <sys/wait.h>
 #endif
 #include <errno.h>
-#include "types.h"
 #include "common.h"
 #include "intrf.h"
 #include "fnctdsk.h"
@@ -89,6 +89,7 @@
 #include "ntfs_dir.h"
 #include "pdiskseln.h"
 #include "dfxml.h"
+#include "json_log.h"
 
 int need_to_stop=0;
 extern file_enable_t array_file_enable[];
@@ -123,11 +124,12 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/debug] [/logjson file.json] [/d recup_dir] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
-      "/log          : create a photorec.log file\n" \
-      "/debug        : add debug information\n" \
+      "/log            : create a photorec.log file\n" \
+      "/debug          : add debug information\n" \
+      "/logjson file   : create a JSON log file with progress information\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
@@ -153,6 +155,7 @@ static void display_version(void)
 }
 #endif
 
+
 int main( int argc, char **argv )
 {
   list_disk_t *list_disk=NULL;
@@ -170,6 +173,7 @@ int main( int argc, char **argv )
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   list_disk_t *element_disk;
   const char *logfile="photorec.log";
+  const char *logfile_json=NULL;
   int log_opened=0;
   int log_errno=0;
   struct ph_options options={
@@ -239,7 +243,7 @@ int main( int argc, char **argv )
       {
 	display_help();
 	free(params.recup_dir);
-	return 1;
+		return 1;
       }
       /*@ assert valid_read_string(argv[i+1]); */
       logfile=argv[++i];
@@ -259,6 +263,11 @@ int main( int argc, char **argv )
       options.verbose++;
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
+    }
+    else if(i+1<argc && ((strcmp(argv[i],"/logjson")==0)||(strcmp(argv[i],"-logjson")==0)))
+    {
+      logfile_json=argv[i+1];
+      i++;
     }
     else if(i+1<argc && ((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)))
     {
@@ -287,14 +296,14 @@ int main( int argc, char **argv )
     {
       display_help();
       free(params.recup_dir);
-      return 0;
+            return 0;
     }
     else if((strcmp(argv[i],"/version")==0) || (strcmp(argv[i],"-version")==0) || (strcmp(argv[i],"--version")==0) ||
       (strcmp(argv[i],"/v")==0) || (strcmp(argv[i],"-v")==0))
     {
       display_version();
       free(params.recup_dir);
-      return 0;
+            return 0;
     }
     else if((strcmp(argv[i],"/nosetlocale")==0) || (strcmp(argv[i],"-nosetlocale")==0))
       run_setlocale=0;
@@ -306,7 +315,7 @@ int main( int argc, char **argv )
       {
 	display_help();
 	free(params.recup_dir);
-	return 1;
+		return 1;
       }
 #ifndef DISABLED_FOR_FRAMAC
       if(strcmp(argv[i+1],"resume")==0)
@@ -348,7 +357,7 @@ int main( int argc, char **argv )
       {
         printf("\nUnable to open file or device %s: %s\n", argv[i], strerror(errno));
 	free(params.recup_dir);
-	return 1;
+		return 1;
       }
       list_disk=insert_new_disk(list_disk,disk_car);
       /*@ assert list_disk ==\null || (\valid(list_disk) && valid_disk(list_disk->disk)); */
@@ -383,7 +392,7 @@ int main( int argc, char **argv )
   if(start_ncurses("PhotoRec", argv[0]))
   {
     free(params.recup_dir);
-    log_close();
+        log_close();
     return 1;
   }
   {
@@ -441,6 +450,12 @@ int main( int argc, char **argv )
 #endif
   reset_array_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
+  if(logfile_json != NULL)
+  {
+    json_log_open(logfile_json);
+    json_log_cli_params(&params, (const char **)argv, argc);
+  }
+
 #ifdef SUDO_BIN
   if(list_disk==NULL && geteuid()!=0)
   {
@@ -460,6 +475,7 @@ int main( int argc, char **argv )
     log_info("perf: get_prev_file_header: %lu, get_prev_location_smart: %lu\n", (long unsigned)gpfh_nbr, (long unsigned)gpls_nbr);
   }
   log_info("PhotoRec exited normally.\n");
+  json_log_completion(&params, time(NULL), "PhotoRec exited normally");
 #endif
   if(log_close()!=0)
   {
@@ -489,8 +505,9 @@ int main( int argc, char **argv )
 #ifndef DISABLED_FOR_FRAMAC
   delete_list_disk(list_disk);
 #endif
+  json_log_cleanup(&params);
   free(params.recup_dir);
-#ifdef ENABLE_DFXML
+  #ifdef ENABLE_DFXML
   xml_clear_command_line();
 #endif
   return 0;

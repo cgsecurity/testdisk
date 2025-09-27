@@ -43,6 +43,7 @@ extern int need_to_stop;
 #include "poptions.h"
 #include "phcli.h"
 #include "list_add_sorted_uniq.h"
+#include "json_log.h"
 
 typedef enum { INIT_SPACE_WHOLE, INIT_SPACE_PREINIT, INIT_SPACE_EXT2_GROUP, INIT_SPACE_EXT2_INODE } init_mode_t;
 
@@ -148,6 +149,7 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
   unsigned int user_blocksize=0;
   init_mode_t mode_init_space=(td_list_empty(&list_search_space->list)?INIT_SPACE_WHOLE:INIT_SPACE_PREINIT);
   params->partition=(list_part->next!=NULL ? list_part->next->part : list_part->part);
+  json_log_partition_info(params);
   /*@ assert valid_partition(params->partition); */
   /*@
     @ loop invariant valid_read_string(params->cmd_run);
@@ -274,8 +276,10 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
       list_part_t *element;
       const unsigned int order=get_int_from_command(&params->cmd_run);
       for(element=list_part;element!=NULL && element->part->order!=order;element=element->next);
-      if(element!=NULL)
+      if(element!=NULL) {
 	params->partition=element->part;
+	json_log_partition_info(params);
+      }
     }
 #endif
     else

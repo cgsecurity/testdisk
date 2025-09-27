@@ -70,6 +70,7 @@
 #include "sessionp.h"
 #include "phrecn.h"
 #include "log.h"
+#include "json_log.h"
 #include "log_part.h"
 #include "file_tar.h"
 #include "phcfg.h"
@@ -436,8 +437,10 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     update_stats(params->file_stats, list_search_space);
     if(params->pass>0)
     {
+      const time_t current_time=time(NULL);
       log_info("Pass %u +%u file%s\n",params->pass,params->file_nbr-old_file_nbr,(params->file_nbr-old_file_nbr<=1?"":"s"));
       write_stats_log(params->file_stats);
+      json_log_progress(params, params->pass, params->offset, current_time);
     }
     log_flush();
 #endif
