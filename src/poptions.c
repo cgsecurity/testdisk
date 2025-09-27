@@ -33,6 +33,7 @@
 #include "photorec.h"
 #include "log.h"
 #include "poptions.h"
+#include "image_filter.h"
 
 void interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
 {

@@ -38,6 +38,7 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#include "image_filter.h"
 
 extern const file_hint_t file_hint_doc;
 
@@ -117,6 +118,14 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
   @*/
 static void file_check_png(file_recovery_t *fr)
 {
+  /* Check file size filter */
+  if(fr->calculated_file_size > 0 && should_skip_image_by_filesize(fr->calculated_file_size)) {
+    /* Mark as error - PhotoRec will handle file cleanup */
+    fr->file_size = 0;
+    fr->offset_error = 1;
+    return;
+  }
+
   if(fr->file_size<fr->calculated_file_size)
   {
     fr->file_size=0;
@@ -327,9 +336,20 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
 	(isupper(buffer[8+6]) || islower(buffer[8+6])) &&
 	(isupper(buffer[8+7]) || islower(buffer[8+7]))))
     return 0;
-  if(memcmp(&buffer[8+4], "IHDR", 4) == 0 &&
-      png_check_ihdr((const struct png_ihdr *)&buffer[16])==0)
-    return 0;
+  if(memcmp(&buffer[8+4], "IHDR", 4) == 0)
+  {
+    const struct png_ihdr *ihdr = (const struct png_ihdr *)&buffer[16];
+    if(png_check_ihdr(ihdr)==0)
+      return 0;
+
+    /* Check image dimensions filter */
+    uint32_t width = be32(ihdr->width);
+    uint32_t height = be32(ihdr->height);
+    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+      header_ignored(file_recovery_new);
+      return 0;
+    }
+  }
 #if !defined(SINGLE_FORMAT)
   /* SolidWorks files contain a png */
   if(file_recovery->file_stat!=NULL &&

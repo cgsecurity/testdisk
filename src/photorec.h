@@ -34,6 +34,21 @@ typedef enum photorec_status photorec_status_t;
 typedef enum { PSTATUS_OK=0, PSTATUS_STOP=1, PSTATUS_EACCES=2, PSTATUS_ENOSPC=3} pstatus_t;
 typedef enum { PFSTATUS_BAD=0, PFSTATUS_OK=1, PFSTATUS_OK_TRUNCATED=2} pfstatus_t;
 
+struct image_size_filter_struct
+{
+  uint64_t min_file_size;  /* 0 = no limit */
+  uint64_t max_file_size;  /* 0 = no limit */
+  uint32_t min_width;      /* 0 = no limit */
+  uint32_t max_width;      /* 0 = no limit */
+  uint32_t min_height;     /* 0 = no limit */
+  uint32_t max_height;     /* 0 = no limit */
+  uint64_t min_pixels;     /* 0 = no limit (width × height) */
+  uint64_t max_pixels;     /* 0 = no limit (width × height) */
+  int enabled;             /* 0 = disabled, 1 = enabled */
+};
+
+typedef struct image_size_filter_struct image_size_filter_t;
+
 struct ph_options
 {
   int paranoid;
@@ -43,6 +58,7 @@ struct ph_options
   unsigned int lowmem;
   int verbose;
   file_enable_t *list_file_format;
+  image_size_filter_t image_filter;
 };
 
 struct ph_param

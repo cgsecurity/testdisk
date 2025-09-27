@@ -90,6 +90,7 @@
 #include "pdiskseln.h"
 #include "dfxml.h"
 #include "json_log.h"
+#include "image_filter.h"
 
 int need_to_stop=0;
 extern file_enable_t array_file_enable[];
@@ -183,7 +184,8 @@ int main( int argc, char **argv )
     .expert=0,
     .lowmem=0,
     .verbose=0,
-    .list_file_format=array_file_enable
+    .list_file_format=array_file_enable,
+    .image_filter={0}
   };
   struct ph_param params;
   if(argc <= 0)
@@ -462,6 +464,9 @@ int main( int argc, char **argv )
   {
       use_sudo=2;
   }
+  /* Set image filter before any PhotoRec operation */
+  set_current_image_filter(&options.image_filter);
+
   if(use_sudo==0)
     use_sudo=do_curses_photorec(&params, &options, list_disk);
 #else

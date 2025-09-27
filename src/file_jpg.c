@@ -55,6 +55,7 @@
 #include "common.h"
 #include "log.h"
 #include "file_jpg.h"
+#include "image_filter.h"
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
 #include "file_riff.h"
 #endif
@@ -882,6 +883,18 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
+
+  /* Check image dimensions filter early */
+  {
+    unsigned int width=0, height=0;
+    jpg_get_size(buffer, buffer_size, &height, &width);
+    printf("DEBUG: header_check_jpg early check: %ux%u\n", width, height);
+    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+      printf("DEBUG: header_check_jpg EARLY REJECTION %ux%u\n", width, height);
+      return 0;
+    }
+  }
+
   unsigned int i=2;
   time_t jpg_time=0;
   /*@
@@ -2443,6 +2456,15 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 {
   uint64_t thumb_offset;
   static uint64_t thumb_error=0;
+
+  /* Check file size filter */
+  if(file_recovery->calculated_file_size > 0 && should_skip_image_by_filesize(file_recovery->calculated_file_size)) {
+    /* Mark as error - PhotoRec will handle file cleanup */
+    file_recovery->file_size = 0;
+    file_recovery->offset_error = 1;
+    return;
+  }
+
   if(file_recovery->calculated_file_size<=2)
     file_recovery->calculated_file_size=0;
   /* FIXME REMOVE ME */

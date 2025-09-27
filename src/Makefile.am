@@ -50,6 +50,7 @@ testdisk_ncurses_H	= addpart.h addpartn.h adv.h askloc.h chgarch.h chgarchn.h ch
 testdisk_SOURCES	= $(base_C) $(base_H) $(fs_C) $(fs_H) $(testdisk_ncurses_C) $(testdisk_ncurses_H) dir.c dir.h dir_common.h exfat_dir.c exfat_dir.h ext2_dir.c ext2_dir.h ext2_inc.h fat_dir.c fat_dir.h ntfs_dir.c ntfs_dir.h ntfs_inc.h partgptw.c rfs_dir.c rfs_dir.h $(ICON_TESTDISK) next.c next.h
 
 file_C			= filegen.c \
+			  image_filter.c \
 			  file_list.c \
 			  file_1cd.c \
 			  file_3dm.c \
@@ -402,7 +403,7 @@ file_C			= filegen.c \
 			  file_zpr.c \
 			  utfsize.c
 
-file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h xfs_struct.h
+file_H			= ext2.h hfsp_struct.h filegen.h image_filter.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h xfs_struct.h
 
 photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c json_log.c
 
