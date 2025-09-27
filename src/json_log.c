@@ -45,8 +45,7 @@
 #include "json_log.h"
 #include "log.h"
 
-static FILE *json_log_file = NULL;
-
+static FILE *json_log_handle = NULL;
 
 static void json_write_timestamp(FILE *file)
 {
@@ -118,11 +117,11 @@ static void json_escape_string(FILE *file, const char *str)
 
 int json_log_open(const char *filename)
 {
-  if (!filename || json_log_file != NULL)
+  if (!filename || json_log_handle != NULL)
     return 0;
 
-  json_log_file = fopen(filename, "w");
-  if (!json_log_file) {
+  json_log_handle = fopen(filename, "w");
+  if (!json_log_handle) {
     return -1;
   }
 
@@ -131,121 +130,121 @@ int json_log_open(const char *filename)
 
 void json_log_session_start(const struct ph_param *params, const char **argv, int argc)
 {
-  if (!json_log_file)
+  if (!json_log_handle)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"session_start\"");
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"session_start\"");
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_disk_info(const struct ph_param *params)
 {
-  if (!json_log_file)
+  if (!json_log_handle)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"disk_info\"");
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"disk_info\"");
 
   if (params->disk && params->disk->device) {
-    fprintf(json_log_file, ",\"path\":");
-    json_escape_string(json_log_file, params->disk->device);
-    fprintf(json_log_file, ",\"size_bytes\":%llu", (unsigned long long)params->disk->disk_size);
-    fprintf(json_log_file, ",\"sector_size\":%u", params->disk->sector_size);
-    fprintf(json_log_file, ",\"readonly\":%s", (params->disk->access_mode & TESTDISK_O_RDWR) ? "false" : "true");
+    fprintf(json_log_handle, ",\"path\":");
+    json_escape_string(json_log_handle, params->disk->device);
+    fprintf(json_log_handle, ",\"size_bytes\":%llu", (unsigned long long)params->disk->disk_size);
+    fprintf(json_log_handle, ",\"sector_size\":%u", params->disk->sector_size);
+    fprintf(json_log_handle, ",\"readonly\":%s", (params->disk->access_mode & TESTDISK_O_RDWR) ? "false" : "true");
   }
 
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_partition_info(const struct ph_param *params)
 {
-  if (!json_log_file || !params || !params->partition)
+  if (!json_log_handle || !params || !params->partition)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"partition_info\"");
-  fprintf(json_log_file, ",\"part_offset\":%llu", (unsigned long long)params->partition->part_offset);
-  fprintf(json_log_file, ",\"part_size\":%llu", (unsigned long long)params->partition->part_size);
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"partition_info\"");
+  fprintf(json_log_handle, ",\"part_offset\":%llu", (unsigned long long)params->partition->part_offset);
+  fprintf(json_log_handle, ",\"part_size\":%llu", (unsigned long long)params->partition->part_size);
   if (params->disk && params->disk->sector_size > 0) {
-    fprintf(json_log_file, ",\"sectors\":%llu", (unsigned long long)(params->partition->part_size / params->disk->sector_size));
+    fprintf(json_log_handle, ",\"sectors\":%llu", (unsigned long long)(params->partition->part_size / params->disk->sector_size));
   }
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_cli_params(const struct ph_param *params, const char **argv, int argc)
 {
-  if (!json_log_file)
+  if (!json_log_handle)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"cli_params\"");
-  fprintf(json_log_file, ",\"params\":[");
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"cli_params\"");
+  fprintf(json_log_handle, ",\"params\":[");
 
   for (int i = 0; i < argc; i++) {
-    if (i > 0) fprintf(json_log_file, ",");
-    json_escape_string(json_log_file, argv[i]);
+    if (i > 0) fprintf(json_log_handle, ",");
+    json_escape_string(json_log_handle, argv[i]);
   }
 
-  fprintf(json_log_file, "]");
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "]");
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_session_resume(const struct ph_param *params, const char *saved_device, const char *saved_cmd, int search_space_regions)
 {
-  if (!json_log_file)
+  if (!json_log_handle)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"session_resume\"");
-  fprintf(json_log_file, ",\"loaded_params\":{");
-  fprintf(json_log_file, "\"device\":");
-  json_escape_string(json_log_file, saved_device);
-  fprintf(json_log_file, ",\"cmd\":");
-  json_escape_string(json_log_file, saved_cmd);
-  fprintf(json_log_file, ",\"search_space_regions\":%d", search_space_regions);
-  fprintf(json_log_file, "}");
-  fprintf(json_log_file, ",\"resume_from\":{");
-  fprintf(json_log_file, "\"offset\":%llu", (unsigned long long)params->offset);
-  fprintf(json_log_file, ",\"files_already_found\":%u", params->file_nbr);
-  fprintf(json_log_file, "}");
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"session_resume\"");
+  fprintf(json_log_handle, ",\"loaded_params\":{");
+  fprintf(json_log_handle, "\"device\":");
+  json_escape_string(json_log_handle, saved_device);
+  fprintf(json_log_handle, ",\"cmd\":");
+  json_escape_string(json_log_handle, saved_cmd);
+  fprintf(json_log_handle, ",\"search_space_regions\":%d", search_space_regions);
+  fprintf(json_log_handle, "}");
+  fprintf(json_log_handle, ",\"resume_from\":{");
+  fprintf(json_log_handle, "\"offset\":%llu", (unsigned long long)params->offset);
+  fprintf(json_log_handle, ",\"files_already_found\":%u", params->file_nbr);
+  fprintf(json_log_handle, "}");
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_progress(const struct ph_param *params, const unsigned int pass, const uint64_t offset)
 {
-  if (!json_log_file || !params || !params->partition || !params->disk || params->disk->sector_size == 0)
+  if (!json_log_handle || !params || !params->partition || !params->disk || params->disk->sector_size == 0)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"progress\"");
-  fprintf(json_log_file, ",\"pass\":%u", pass);
-  fprintf(json_log_file, ",\"current_sector\":%llu", (unsigned long long)((offset - params->partition->part_offset) / params->disk->sector_size));
-  fprintf(json_log_file, ",\"total_sectors\":%llu", (unsigned long long)(params->partition->part_size / params->disk->sector_size));
-  fprintf(json_log_file, ",\"files_found\":%u", params->file_nbr);
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"progress\"");
+  fprintf(json_log_handle, ",\"pass\":%u", pass);
+  fprintf(json_log_handle, ",\"current_sector\":%llu", (unsigned long long)((offset - params->partition->part_offset) / params->disk->sector_size));
+  fprintf(json_log_handle, ",\"total_sectors\":%llu", (unsigned long long)(params->partition->part_size / params->disk->sector_size));
+  fprintf(json_log_handle, ",\"files_found\":%u", params->file_nbr);
 
   const time_t current_time = time(NULL);
   if (current_time > params->real_start_time) {
     const time_t elapsed_time = current_time - params->real_start_time;
-    fprintf(json_log_file, ",\"elapsed_time\":\"%uh%02um%02us\"",
+    fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
         (unsigned)(elapsed_time/60/60),
         (unsigned)(elapsed_time/60%60),
         (unsigned)(elapsed_time%60));
 
     if (offset > params->partition->part_offset && params->status != STATUS_EXT2_ON_BF && params->status != STATUS_EXT2_OFF_BF) {
       const time_t eta = (params->partition->part_offset + params->partition->part_size - 1 - offset) * elapsed_time / (offset - params->partition->part_offset);
-      fprintf(json_log_file, ",\"estimated_time\":\"%uh%02um%02u\"",
+      fprintf(json_log_handle, ",\"estimated_time\":\"%uh%02um%02u\"",
           (unsigned)(eta/3600),
           (unsigned)((eta/60)%60),
           (unsigned)(eta%60));
@@ -253,63 +252,63 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
   }
 
   if (params->file_stats) {
-    fprintf(json_log_file, ",\"file_stats\":{");
+    fprintf(json_log_handle, ",\"file_stats\":{");
     int first = 1;
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
-        if (!first) fprintf(json_log_file, ",");
+        if (!first) fprintf(json_log_handle, ",");
         first = 0;
-        fprintf(json_log_file, "\"%s\":%u",
+        fprintf(json_log_handle, "\"%s\":%u",
             params->file_stats[i].file_hint->extension ? params->file_stats[i].file_hint->extension : "unknown",
             params->file_stats[i].recovered);
       }
     }
-    fprintf(json_log_file, "}");
+    fprintf(json_log_handle, "}");
   }
 
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_completion(const struct ph_param *params, const char *completion_message)
 {
-  if (!json_log_file)
+  if (!json_log_handle)
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"completion\"");
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"completion\"");
 
   const time_t final_time = time(NULL);
   if (final_time > params->real_start_time) {
     const time_t elapsed_time = final_time - params->real_start_time;
-    fprintf(json_log_file, ",\"elapsed_time\":\"%uh%02um%02us\"",
+    fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
         (unsigned)(elapsed_time/60/60),
         (unsigned)(elapsed_time/60%60),
         (unsigned)(elapsed_time%60));
   }
 
-  fprintf(json_log_file, ",\"total_files\":%u", params->file_nbr);
+  fprintf(json_log_handle, ",\"total_files\":%u", params->file_nbr);
 
   if (params->file_stats) {
-    fprintf(json_log_file, ",\"final_stats\":{");
+    fprintf(json_log_handle, ",\"final_stats\":{");
     int first = 1;
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
-        if (!first) fprintf(json_log_file, ",");
+        if (!first) fprintf(json_log_handle, ",");
         first = 0;
-        fprintf(json_log_file, "\"%s\":%u",
+        fprintf(json_log_handle, "\"%s\":%u",
             params->file_stats[i].file_hint->extension ? params->file_stats[i].file_hint->extension : "unknown",
             params->file_stats[i].recovered);
       }
     }
-    fprintf(json_log_file, "}");
+    fprintf(json_log_handle, "}");
   }
 
-  fprintf(json_log_file, ",\"status\":");
-  json_escape_string(json_log_file, completion_message);
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, ",\"status\":");
+  json_escape_string(json_log_handle, completion_message);
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 static const char* log_level_to_string(const unsigned int level)
@@ -357,7 +356,7 @@ static void clean_log_message(char *message)
 
 static void json_write_log_entry(const char *level_str, const char *message)
 {
-  if (!json_log_file || !level_str || !message)
+  if (!json_log_handle || !level_str || !message)
     return;
 
   char cleaned_message[2048];
@@ -368,19 +367,19 @@ static void json_write_log_entry(const char *level_str, const char *message)
   if (cleaned_message[0] == '\0')
     return;
 
-  fprintf(json_log_file, "{");
-  json_write_timestamp(json_log_file);
-  fprintf(json_log_file, ",\"type\":\"log\"");
-  fprintf(json_log_file, ",\"level\":\"%s\"", level_str);
-  fprintf(json_log_file, ",\"message\":");
-  json_escape_string(json_log_file, cleaned_message);
-  fprintf(json_log_file, "}\n");
-  fflush(json_log_file);
+  fprintf(json_log_handle, "{");
+  json_write_timestamp(json_log_handle);
+  fprintf(json_log_handle, ",\"type\":\"log\"");
+  fprintf(json_log_handle, ",\"level\":\"%s\"", level_str);
+  fprintf(json_log_handle, ",\"message\":");
+  json_escape_string(json_log_handle, cleaned_message);
+  fprintf(json_log_handle, "}\n");
+  fflush(json_log_handle);
 }
 
 void json_log_handler(const unsigned int level, const char *format, va_list ap)
 {
-  if (!json_log_file || !format)
+  if (!json_log_handle || !format)
     return;
 
   const unsigned int clean_level = level;
@@ -394,8 +393,8 @@ void json_log_handler(const unsigned int level, const char *format, va_list ap)
 
 void json_log_cleanup(const struct ph_param *params)
 {
-  if (json_log_file) {
-    fclose(json_log_file);
-    json_log_file = NULL;
+  if (json_log_handle) {
+    fclose(json_log_handle);
+    json_log_handle = NULL;
   }
 }
