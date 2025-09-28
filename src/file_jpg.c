@@ -2537,11 +2537,11 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     return;
   }
 
-  unsigned int width = 0, height = 0;
   if(file_recovery->handle) {
     fseek(file_recovery->handle, 0, SEEK_SET);
-    char buffer[4096];
+    char buffer[512];
     if(fread(buffer, 1, sizeof(buffer), file_recovery->handle) > 0) {
+      unsigned int width = 0, height = 0;
       jpg_get_size((unsigned char*)buffer, sizeof(buffer), &height, &width);
       if (should_skip_image_by_dimensions(width, height)) {
         file_recovery->file_size = 0;
