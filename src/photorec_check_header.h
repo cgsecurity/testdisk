@@ -24,7 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "image_filter.h"
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_tar)
 extern const file_hint_t file_hint_tar;
 #endif
@@ -127,11 +126,11 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 	(unsigned long)(file_recovery->location.start/params->disk->sector_size));
   }
 #endif
-  const unsigned int blocksize=params->blocksize;
-  const unsigned int read_size=(blocksize>65536?blocksize:65536);
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_dir)
   if(file_recovery->file_stat->file_hint==&file_hint_dir && options->verbose > 0)
   { /* FAT directory found, list the file */
+    const unsigned int blocksize=params->blocksize;
+    const unsigned int read_size=(blocksize>65536?blocksize:65536);
     photorec_dir_fat(buffer, read_size, file_recovery->location.start/params->disk->sector_size);
   }
 #endif

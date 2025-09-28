@@ -46,7 +46,6 @@ extern const file_hint_t file_hint_doc;
 
 /*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_png(file_stat_t *file_stat);
-int get_image_dimensions_png(const unsigned char *buffer, const unsigned int buffer_size, uint32_t *width, uint32_t *height);
 
 const file_hint_t file_hint_png= {
   .extension="png",
@@ -115,32 +114,6 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
       return 0;
   }
   return 1;
-}
-
-int get_image_dimensions_png(const unsigned char *buffer, const unsigned int buffer_size, uint32_t *width, uint32_t *height)
-{
-  *width = 0;
-  *height = 0;
-
-  if(buffer == NULL || buffer_size < 33)
-    return 0;
-
-  if(memcmp(buffer, "\x89PNG\x0d\x0a\x1a\x0a", 8) != 0)
-    return 0;
-
-  const struct png_ihdr *ihdr = (const struct png_ihdr *)(buffer + 16);
-  if(memcmp(buffer + 12, "IHDR", 4) != 0)
-    return 0;
-
-  uint32_t w = be32(ihdr->width);
-  uint32_t h = be32(ihdr->height);
-
-  if(w > 0 && h > 0) {
-    *width = w;
-    *height = h;
-    return 1;
-  }
-  return 0;
 }
 
 /*@
@@ -380,11 +353,6 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
-// static data_check_t presave_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-// {
-  
-// }
-
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if( !((isupper(buffer[8+4]) || islower(buffer[8+4])) &&

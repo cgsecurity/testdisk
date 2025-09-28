@@ -243,11 +243,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 
   /* Set image filter before any recovery operation - this is the main entry point for both CLI and GUI */
   if (has_any_filters(&options->image_filter)) {
-    printf("DEBUG PHOTOREC: Setting current_image_filter from options\n");
-    fflush(stdout);
     set_current_image_filter(&options->image_filter);
-    printf("DEBUG PHOTOREC: current_image_filter set successfully\n");
-    fflush(stdout);
   }
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
@@ -821,17 +817,6 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
     wmove(stdscr, 5, 0);
     wprintw(stdscr, "Note: These filters apply only to JPG and PNG files\n");
 
-    /* Debug view of image_size_filter_struct */
-    wmove(stdscr, 6, 0);
-    wprintw(stdscr, "DEBUG: min_file_size=%lu max_file_size=%lu min_width=%u max_width=%u min_height=%u max_height=%u min_pixels=%lu max_pixels=%lu\n",
-            (unsigned long)options->image_filter.min_file_size,
-            (unsigned long)options->image_filter.max_file_size,
-            options->image_filter.min_width,
-            options->image_filter.max_width,
-            options->image_filter.min_height,
-            options->image_filter.max_height,
-            (unsigned long)options->image_filter.min_pixels,
-            (unsigned long)options->image_filter.max_pixels);
 
     /* Empty line */
     wmove(stdscr, 7, 0);

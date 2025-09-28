@@ -951,7 +951,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if(i+1 < buffer_size && buffer[i+1]!=0xda)
       return 0;
   }
-
   if(file_recovery->file_stat!=NULL &&
      file_recovery->file_check!=NULL)
   {
