@@ -360,13 +360,9 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
 	(isupper(buffer[8+6]) || islower(buffer[8+6])) &&
 	(isupper(buffer[8+7]) || islower(buffer[8+7]))))
     return 0;
-  if(memcmp(&buffer[8+4], "IHDR", 4) == 0)
-  {
-    const struct png_ihdr *ihdr = (const struct png_ihdr *)&buffer[16];
-    if(png_check_ihdr(ihdr)==0)
-      return 0;
-
-  }
+  if(memcmp(&buffer[8+4], "IHDR", 4) == 0 &&
+      png_check_ihdr((const struct png_ihdr *)&buffer[16])==0)
+    return 0;
 #if !defined(SINGLE_FORMAT)
   /* SolidWorks files contain a png */
   if(file_recovery->file_stat!=NULL &&
