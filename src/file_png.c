@@ -86,10 +86,13 @@ struct png_ihdr
   @ */
 static int png_check_ihdr(const struct png_ihdr *ihdr)
 {
-  if(be32(ihdr->width)==0 || be32(ihdr->height)==0)
+  uint32_t width = be32(ihdr->width);
+  uint32_t height = be32(ihdr->height);
+
+  if(width == 0 || height == 0)
     return 0;
 
-  if (should_skip_image_by_dimensions(be32(ihdr->width), be32(ihdr->height))) {
+  if (should_skip_image_by_dimensions(width, height)) {
     return 0;
   }
 
