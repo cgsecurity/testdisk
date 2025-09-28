@@ -332,13 +332,6 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
 
   *cmd = ptr;
 
-  /* Debug: check final pointer position and parsed values */
-  log_info("DEBUG: parse_imagesize_command finished, remaining: '%s'\n", ptr);
-  log_info("DEBUG: parsed values - enabled:%d, filesize:%lu-%lu, width:%u-%u, height:%u-%u, pixels:%lu-%lu\n",
-         filter->enabled, filter->min_file_size, filter->max_file_size,
-         filter->min_width, filter->max_width, filter->min_height, filter->max_height,
-         filter->min_pixels, filter->max_pixels);
-
   /* Validate configuration */
   if(!validate_image_filter(filter))
   {
@@ -353,19 +346,15 @@ void set_current_image_filter(const image_size_filter_t *filter)
 
 int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
 {
-  printf("DEBUG: should_skip_image_by_dimensions called with %ux%u\n", width, height);
   if(!current_image_filter || !current_image_filter->enabled) {
-    printf("DEBUG: filter disabled or null\n");
     return 0; /* don't skip */
   }
 
   /* Check dimensions (pixels vs width/height) */
   if(!check_image_dimensions(width, height, current_image_filter)) {
-    printf("DEBUG: dimensions check failed - SKIPPING %ux%u\n", width, height);
     return 1; /* skip */
   }
 
-  printf("DEBUG: dimensions check passed - keeping %ux%u\n", width, height);
   return 0; /* don't skip */
 }
 
