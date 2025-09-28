@@ -38,7 +38,6 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-#include "log.h"
 #include "photorec.h"
 #include "image_filter.h"
 

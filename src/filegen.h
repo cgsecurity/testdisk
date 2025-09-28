@@ -58,7 +58,6 @@ struct file_hint_struct
   const int recover;
   const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
-  const int is_image;
 };
 
 typedef struct
