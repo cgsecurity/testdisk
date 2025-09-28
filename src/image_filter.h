@@ -42,6 +42,8 @@ extern const image_size_filter_t *current_image_filter;
   @*/
 int check_image_dimensions(uint32_t width, uint32_t height, const image_size_filter_t *filter);
 
+int has_any_filters(const image_size_filter_t *filter);
+int has_dimension_filters(void);
 int should_skip_image_by_dimensions(uint32_t width, uint32_t height);
 int should_skip_image_by_filesize(uint64_t file_size);
 

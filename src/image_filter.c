@@ -47,7 +47,7 @@ const image_size_filter_t *current_image_filter = NULL;
   @*/
 int check_image_dimensions(uint32_t width, uint32_t height, const image_size_filter_t *filter)
 {
-  if (!filter->enabled)
+  if (!filter)
     return 1;
 
   /* Check pixels first (has priority over width/height) */
@@ -79,7 +79,7 @@ int check_image_dimensions(uint32_t width, uint32_t height, const image_size_fil
   @*/
 int check_image_filesize(uint64_t file_size, const image_size_filter_t *filter)
 {
-  if (!filter->enabled)
+  if (!filter)
     return 1;
 
   if (filter->min_file_size > 0 && file_size < filter->min_file_size)
@@ -96,35 +96,40 @@ int check_image_filesize(uint64_t file_size, const image_size_filter_t *filter)
   @*/
 uint64_t parse_size_with_units(char **cmd)
 {
-  uint64_t val = 0;
   char *ptr = *cmd;
+  double val = 0.0;
 
-  /* Parse number */
-  while(*ptr && isdigit(*ptr))
-  {
-    val = val * 10 + (*ptr - '0');
-    ptr++;
+  /* Parse number with decimal support */
+  char *endptr;
+  val = strtod(ptr, &endptr);
+
+  if (endptr == ptr) {
+    /* No valid number found */
+    return 0;
   }
 
-  /* Parse unit suffix */
+  ptr = endptr;
+
+  /* Parse unit suffix and convert to bytes */
+  uint64_t multiplier = 1;
   if(*ptr == 'k' || *ptr == 'K')
   {
-    val *= 1024;
+    multiplier = 1024;
     ptr++;
   }
   else if(*ptr == 'm' || *ptr == 'M')
   {
-    val *= 1024 * 1024;
+    multiplier = 1024 * 1024;
     ptr++;
   }
   else if(*ptr == 'g' || *ptr == 'G')
   {
-    val *= 1024 * 1024 * 1024;
+    multiplier = 1024 * 1024 * 1024;
     ptr++;
   }
 
   *cmd = ptr;
-  return val;
+  return (uint64_t)(val * multiplier);
 }
 
 /*@
@@ -250,7 +255,6 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
 
   /* Initialize filter */
   memset(filter, 0, sizeof(*filter));
-  filter->enabled = 1;
 
   /* Note: "imagesize," prefix already consumed by check_command */
 
@@ -333,10 +337,23 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
   *cmd = ptr;
 
   /* Validate configuration */
-  if(!validate_image_filter(filter))
-  {
-    filter->enabled = 0;
-  }
+  validate_image_filter(filter);
+}
+
+/*@
+  @ requires \valid_read(filter);
+  @ ensures \result == 0 || \result == 1;
+  @ assigns \nothing;
+  @*/
+int has_any_filters(const image_size_filter_t *filter)
+{
+  if (!filter)
+    return 0;
+
+  return (filter->min_file_size > 0 || filter->max_file_size > 0 ||
+          filter->min_width > 0 || filter->max_width > 0 ||
+          filter->min_height > 0 || filter->max_height > 0 ||
+          filter->min_pixels > 0 || filter->max_pixels > 0);
 }
 
 void set_current_image_filter(const image_size_filter_t *filter)
@@ -346,21 +363,43 @@ void set_current_image_filter(const image_size_filter_t *filter)
 
 int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
 {
-  if(!current_image_filter || !current_image_filter->enabled) {
+  if(!current_image_filter) {
     return 0; /* don't skip */
+  }
+
+  static unsigned long dim_calls = 0;
+  static unsigned long dim_skips = 0;
+  dim_calls++;
+
+  if(dim_calls % 5000 == 0) {
+    fprintf(stderr, "DIM_DEBUG: %lu calls, %lu skips\n", dim_calls, dim_skips);
   }
 
   /* Check dimensions (pixels vs width/height) */
   if(!check_image_dimensions(width, height, current_image_filter)) {
+    dim_skips++;
     return 1; /* skip */
   }
 
   return 0; /* don't skip */
 }
 
+int has_dimension_filters(void)
+{
+  if(!current_image_filter) {
+    return 0;
+  }
+  return (current_image_filter->min_width > 0 ||
+          current_image_filter->max_width > 0 ||
+          current_image_filter->min_height > 0 ||
+          current_image_filter->max_height > 0 ||
+          current_image_filter->min_pixels > 0 ||
+          current_image_filter->max_pixels > 0);
+}
+
 int should_skip_image_by_filesize(uint64_t file_size)
 {
-  if(!current_image_filter || !current_image_filter->enabled)
+  if(!current_image_filter)
     return 0; /* don't skip */
 
   /* Check file size if provided */

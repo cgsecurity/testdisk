@@ -42,6 +42,9 @@
 #endif
 #include <stdio.h>
 #include <errno.h>
+#ifdef DEBUG_JPEG_FILTER
+#include <sys/time.h>
+#endif
 #include "types.h"
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
@@ -930,11 +933,19 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 
   unsigned int width=0;
   unsigned int height=0;
-  jpg_get_size(buffer, buffer_size, &height, &width);
+  /* Limit buffer size for jpg_get_size to avoid performance issues with large files */
+  const unsigned int limited_buffer_size = (buffer_size > 512) ? 512 : buffer_size;
+
+  static unsigned long jpg_calls = 0;
+  jpg_calls++;
+  if(jpg_calls % 100 == 0) {
+    fprintf(stderr, "JPG_DEBUG: %lu calls\n", jpg_calls);
+  }
+
+  jpg_get_size(buffer, limited_buffer_size, &height, &width);
+
   if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-#ifdef DEBUG_JPEG
-    log_info("header_check_jpg dimensions rejection %ux%u", width, height);
-#endif
+    fprintf(stderr, "JPG_DEBUG: SKIP %ux%u\n", width, height);
     return 0;
   }
 
@@ -2086,6 +2097,26 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
 #endif
     )
   {
+    /* Check file size filter for thumbnail */
+    if(should_skip_image_by_filesize(thumb_size)) {
+#ifdef DEBUG_JPEG
+      log_info("jpg_save_thumbnail filesize rejection %u", thumb_size);
+#endif
+      return;
+    }
+
+    /* Check dimensions filter for thumbnail */
+    {
+      unsigned int thumb_width = 0, thumb_height = 0;
+      jpg_get_size(&buffer[thumb_offset], thumb_size, &thumb_height, &thumb_width);
+      if(should_skip_image_by_dimensions(thumb_width, thumb_height)) {
+#ifdef DEBUG_JPEG
+        log_info("jpg_save_thumbnail dimensions rejection %ux%u", thumb_width, thumb_height);
+#endif
+        return;
+      }
+    }
+
     FILE *out;
 #ifndef DISABLED_FOR_FRAMAC
     *(sep+1)='t';

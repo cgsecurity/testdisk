@@ -471,7 +471,11 @@ int main( int argc, char **argv )
       use_sudo=2;
   }
   /* Set image filter before any PhotoRec operation */
-  set_current_image_filter(&options.image_filter);
+  if (has_any_filters(&options.image_filter)) {
+    set_current_image_filter(&options.image_filter);
+  } else {
+    set_current_image_filter(NULL);
+  }
 
   if(use_sudo==0)
     use_sudo=do_curses_photorec(&params, &options, list_disk);

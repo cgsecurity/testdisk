@@ -212,7 +212,11 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
     else if(check_command(&params->cmd_run,"imagesize,",10)==0)
     {
       parse_imagesize_command(&params->cmd_run, &options->image_filter);
-      set_current_image_filter(&options->image_filter);
+      if (has_any_filters(&options->image_filter)) {
+        set_current_image_filter(&options->image_filter);
+      } else {
+        set_current_image_filter(NULL);
+      }
     }
     else if(check_command(&params->cmd_run,"blocksize,",10)==0)
     {

@@ -38,6 +38,7 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#include "log.h"
 #include "image_filter.h"
 
 extern const file_hint_t file_hint_doc;
@@ -175,6 +176,19 @@ static void file_check_png(file_recovery_t *fr)
       {
 	fr->file_size=0;
 	return ;
+      }
+
+      /* Check image dimensions filter for validated PNG */
+      if(has_dimension_filters()) {
+        uint32_t width = be32(ihdr->width);
+        uint32_t height = be32(ihdr->height);
+
+        if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+          /* Mark as error - PhotoRec will handle file cleanup */
+          fr->file_size = 0;
+          fr->offset_error = 1;
+          return;
+        }
       }
     }
   }
@@ -342,13 +356,6 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
     if(png_check_ihdr(ihdr)==0)
       return 0;
 
-    /* Check image dimensions filter */
-    uint32_t width = be32(ihdr->width);
-    uint32_t height = be32(ihdr->height);
-    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-      header_ignored(file_recovery_new);
-      return 0;
-    }
   }
 #if !defined(SINGLE_FORMAT)
   /* SolidWorks files contain a png */

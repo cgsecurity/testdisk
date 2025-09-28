@@ -44,7 +44,6 @@ struct image_size_filter_struct
   uint32_t max_height;     /* 0 = no limit */
   uint64_t min_pixels;     /* 0 = no limit (width × height) */
   uint64_t max_pixels;     /* 0 = no limit (width × height) */
-  int enabled;             /* 0 = disabled, 1 = enabled */
 };
 
 typedef struct image_size_filter_struct image_size_filter_t;
