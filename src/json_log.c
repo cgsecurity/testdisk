@@ -50,12 +50,11 @@ static FILE *json_log_handle = NULL;
 
 static void json_write_timestamp(FILE *file)
 {
-  if (!file)
-    return;
-
   time_t now;
   struct tm *tm_info;
   char buffer[64];
+  if (!file)
+    return;
 
   time(&now);
   tm_info = localtime(&now);
@@ -182,7 +181,7 @@ void json_log_partition_info(const struct ph_param *params)
   fflush(json_log_handle);
 }
 
-void json_log_cli_params(const struct ph_param *params, const char **argv, int argc)
+void json_log_cli_params(const struct ph_param *params, char *const*argv, int argc)
 {
   if (!json_log_handle)
     return;
@@ -227,6 +226,7 @@ void json_log_session_resume(const struct ph_param *params, const char *saved_de
 
 void json_log_progress(const struct ph_param *params, const unsigned int pass, const uint64_t offset)
 {
+  const time_t current_time = time(NULL);
   if (!json_log_handle || !params || !params->partition || !params->disk || params->disk->sector_size == 0)
     return;
 
@@ -238,7 +238,6 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
   fprintf(json_log_handle, ",\"total_sectors\":%llu", (unsigned long long)(params->partition->part_size / params->disk->sector_size));
   fprintf(json_log_handle, ",\"files_found\":%u", params->file_nbr);
 
-  const time_t current_time = time(NULL);
   if (current_time > params->real_start_time) {
     const time_t elapsed_time = current_time - params->real_start_time;
     fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
@@ -256,8 +255,8 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
   }
 
   if (params->file_stats) {
-    fprintf(json_log_handle, ",\"file_stats\":{");
     int first = 1;
+    fprintf(json_log_handle, ",\"file_stats\":{");
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
         if (!first) fprintf(json_log_handle, ",");
@@ -276,6 +275,7 @@ void json_log_progress(const struct ph_param *params, const unsigned int pass, c
 
 void json_log_completion(const struct ph_param *params, const char *completion_message)
 {
+  const time_t final_time = time(NULL);
   if (!json_log_handle)
     return;
 
@@ -283,7 +283,6 @@ void json_log_completion(const struct ph_param *params, const char *completion_m
   json_write_timestamp(json_log_handle);
   fprintf(json_log_handle, ",\"type\":\"completion\"");
 
-  const time_t final_time = time(NULL);
   if (final_time > params->real_start_time) {
     const time_t elapsed_time = final_time - params->real_start_time;
     fprintf(json_log_handle, ",\"elapsed_time\":\"%uh%02um%02us\"",
@@ -295,8 +294,8 @@ void json_log_completion(const struct ph_param *params, const char *completion_m
   fprintf(json_log_handle, ",\"total_files\":%u", params->file_nbr);
 
   if (params->file_stats) {
-    fprintf(json_log_handle, ",\"final_stats\":{");
     int first = 1;
+    fprintf(json_log_handle, ",\"final_stats\":{");
     for (unsigned int i = 0; params->file_stats[i].file_hint != NULL; i++) {
       if (params->file_stats[i].recovered > 0) {
         if (!first) fprintf(json_log_handle, ",");
@@ -334,11 +333,13 @@ static const char* log_level_to_string(const unsigned int level)
 
 static void clean_log_message(char *message)
 {
+  char *src;
+  char *dst;
   if (!message)
     return;
 
-  char *src = message;
-  char *dst = message;
+  src = message;
+  dst = message;
 
   while (*src == ' ' || *src == '\t')
     src++;
@@ -360,10 +361,10 @@ static void clean_log_message(char *message)
 
 static void json_write_log_entry(const char *level_str, const char *message)
 {
+  char cleaned_message[JSON_LOG_BUFFER_SIZE];
   if (!json_log_handle || !level_str || !message)
     return;
 
-  char cleaned_message[JSON_LOG_BUFFER_SIZE];
   strncpy(cleaned_message, message, sizeof(cleaned_message) - 1);
   cleaned_message[sizeof(cleaned_message) - 1] = '\0';
   clean_log_message(cleaned_message);
@@ -383,13 +384,14 @@ static void json_write_log_entry(const char *level_str, const char *message)
 
 void json_log_handler(const unsigned int level, const char *format, va_list ap)
 {
+  char message[JSON_LOG_BUFFER_SIZE];
+  const unsigned int clean_level = level;
+  const char *level_str;
   if (!json_log_handle || !format)
     return;
 
-  const unsigned int clean_level = level;
-  const char *level_str = log_level_to_string(clean_level);
+  level_str = log_level_to_string(clean_level);
 
-  char message[JSON_LOG_BUFFER_SIZE];
   vsnprintf(message, sizeof(message), format, ap);
 
   json_write_log_entry(level_str, message);

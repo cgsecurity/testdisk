@@ -38,7 +38,7 @@ int json_log_open(const char *filename);
 
 void json_log_session_start(const struct ph_param *params, const char **argv, int argc);
 
-void json_log_cli_params(const struct ph_param *params, const char **argv, int argc);
+void json_log_cli_params(const struct ph_param *params, char * const*argv, int argc);
 
 void json_log_disk_info(const struct ph_param *params);
 

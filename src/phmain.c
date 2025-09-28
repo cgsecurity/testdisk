@@ -454,7 +454,7 @@ int main( int argc, char **argv )
   {
     json_log_open(logfile_json);
     log_set_json_handler(json_log_handler, options.verbose > 0);
-    json_log_cli_params(&params, (const char **)argv, argc);
+    json_log_cli_params(&params, (char * const*)argv, argc);
   }
 
 #ifdef SUDO_BIN
