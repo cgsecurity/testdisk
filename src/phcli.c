@@ -214,6 +214,8 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
       printf("DEBUG CLI: Parsing imagesize command\n");
       fflush(stdout);
       parse_imagesize_command(&params->cmd_run, &options->image_filter);
+      /* Set global image filter variables for presave_check functions */
+      current_image_filter = &options->image_filter;
       printf("DEBUG CLI: Parsed filter - min_file_size=%llu, max_file_size=%llu\n",
              (long long unsigned)options->image_filter.min_file_size,
              (long long unsigned)options->image_filter.max_file_size);

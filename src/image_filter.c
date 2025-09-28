@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/time.h>
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
@@ -51,21 +52,163 @@ struct image_size_filter_struct
 
 
 
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
-int check_image_filesize(uint64_t file_size, const image_size_filter_t *filter)
+void print_image_filter(const image_size_filter_t *filter)
 {
-  if (!filter)
+  if(!filter) {
+    printf("Image filter: NULL (no filtering)\n");
+    return;
+  }
+
+  printf("=== Image Filter Settings ===\n");
+
+  /* File size filters */
+  if(filter->min_file_size > 0 || filter->max_file_size > 0) {
+    printf("File size: ");
+    if(filter->min_file_size > 0) {
+      if(filter->min_file_size >= 1024*1024*1024) {
+        printf("min=%.1fGB", (double)filter->min_file_size / (1024*1024*1024));
+      } else if(filter->min_file_size >= 1024*1024) {
+        printf("min=%.1fMB", (double)filter->min_file_size / (1024*1024));
+      } else if(filter->min_file_size >= 1024) {
+        printf("min=%.1fKB", (double)filter->min_file_size / 1024);
+      } else {
+        printf("min=%llu bytes", (unsigned long long)filter->min_file_size);
+      }
+    } else {
+      printf("min=none");
+    }
+
+    printf(", ");
+
+    if(filter->max_file_size > 0) {
+      if(filter->max_file_size >= 1024*1024*1024) {
+        printf("max=%.1fGB", (double)filter->max_file_size / (1024*1024*1024));
+      } else if(filter->max_file_size >= 1024*1024) {
+        printf("max=%.1fMB", (double)filter->max_file_size / (1024*1024));
+      } else if(filter->max_file_size >= 1024) {
+        printf("max=%.1fKB", (double)filter->max_file_size / 1024);
+      } else {
+        printf("max=%llu bytes", (unsigned long long)filter->max_file_size);
+      }
+    } else {
+      printf("max=none");
+    }
+    printf("\n");
+  } else {
+    printf("File size: no limits\n");
+  }
+
+  /* Width filters */
+  if(filter->min_width > 0 || filter->max_width > 0) {
+    printf("Width: ");
+    if(filter->min_width > 0) {
+      printf("min=%u", filter->min_width);
+    } else {
+      printf("min=none");
+    }
+    printf(", ");
+    if(filter->max_width > 0) {
+      printf("max=%u", filter->max_width);
+    } else {
+      printf("max=none");
+    }
+    printf(" pixels\n");
+  } else {
+    printf("Width: no limits\n");
+  }
+
+  /* Height filters */
+  if(filter->min_height > 0 || filter->max_height > 0) {
+    printf("Height: ");
+    if(filter->min_height > 0) {
+      printf("min=%u", filter->min_height);
+    } else {
+      printf("min=none");
+    }
+    printf(", ");
+    if(filter->max_height > 0) {
+      printf("max=%u", filter->max_height);
+    } else {
+      printf("max=none");
+    }
+    printf(" pixels\n");
+  } else {
+    printf("Height: no limits\n");
+  }
+
+  /* Pixel count filters */
+  if(filter->min_pixels > 0 || filter->max_pixels > 0) {
+    printf("Total pixels: ");
+    if(filter->min_pixels > 0) {
+      if(filter->min_pixels >= 1000000) {
+        printf("min=%.1fM", (double)filter->min_pixels / 1000000);
+      } else if(filter->min_pixels >= 1000) {
+        printf("min=%.1fK", (double)filter->min_pixels / 1000);
+      } else {
+        printf("min=%llu", (unsigned long long)filter->min_pixels);
+      }
+    } else {
+      printf("min=none");
+    }
+    printf(", ");
+    if(filter->max_pixels > 0) {
+      if(filter->max_pixels >= 1000000) {
+        printf("max=%.1fM", (double)filter->max_pixels / 1000000);
+      } else if(filter->max_pixels >= 1000) {
+        printf("max=%.1fK", (double)filter->max_pixels / 1000);
+      } else {
+        printf("max=%llu", (unsigned long long)filter->max_pixels);
+      }
+    } else {
+      printf("max=none");
+    }
+    printf(" pixels\n");
+  } else {
+    printf("Total pixels: no limits\n");
+  }
+
+  printf("=============================\n");
+}
+
+int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
+{
+  if(!current_image_filter)
+    return 0;
+
+  if(current_image_filter->min_pixels > 0 || current_image_filter->max_pixels > 0)
+  {
+    uint64_t pixels = (uint64_t)width * height;
+    if (current_image_filter->min_pixels > 0 && pixels < current_image_filter->min_pixels)
+      return 1;
+    if (current_image_filter->max_pixels > 0 && pixels > current_image_filter->max_pixels)
+      return 1;
+
+    return 0;
+  }
+
+  if(current_image_filter->min_width > 0 && width < current_image_filter->min_width)
+    return 1;
+  if(current_image_filter->max_width > 0 && width > current_image_filter->max_width)
+    return 1;
+  if(current_image_filter->min_height > 0 && height < current_image_filter->min_height)
+    return 1;
+  if(current_image_filter->max_height > 0 && height > current_image_filter->max_height)
     return 1;
 
-  if (filter->min_file_size > 0 && file_size < filter->min_file_size)
+  return 0;
+}
+
+int should_skip_image_by_filesize(uint64_t file_size)
+{
+  if(!current_image_filter)
     return 0;
-  if (filter->max_file_size > 0 && file_size > filter->max_file_size)
-    return 0;
-  return 1;
+
+  if (current_image_filter->min_file_size > 0 && file_size < current_image_filter->min_file_size)
+    return 1;
+  if (current_image_filter->max_file_size > 0 && file_size > current_image_filter->max_file_size)
+    return 1;
+
+  return 0;
 }
 
 /*@
@@ -232,7 +375,6 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
 {
   char *ptr = *cmd;
 
-  /* Initialize filter */
   memset(filter, 0, sizeof(*filter));
 
   /* Note: "imagesize," prefix already consumed by check_command */
@@ -240,9 +382,9 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
   /* Parse parameters in format: param,value,param,value */
   while(*ptr)
   {
-    if(strncmp(ptr, "filesize,", 9) == 0)
+    if(strncmp(ptr, "size,", 5) == 0)
     {
-      ptr += 9;
+      ptr += 5;
       if(*ptr == '-')
       {
         ptr++;
@@ -334,6 +476,7 @@ int has_any_filters(const image_size_filter_t *filter)
           filter->min_height > 0 || filter->max_height > 0 ||
           filter->min_pixels > 0 || filter->max_pixels > 0);
 }
+<<<<<<< HEAD
 
 
 
@@ -459,3 +602,5 @@ int should_skip_image_by_filesize(uint64_t file_size)
   return 0; /* don't skip */
 }
 
+=======
+>>>>>>> f22d3244 (working;)

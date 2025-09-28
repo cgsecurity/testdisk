@@ -89,7 +89,6 @@ const file_hint_t file_hint_jpg= {
   .extension="jpg",
   .description="JPG picture",
   .max_filesize=50*1024*1024,
-  .supports_image_filters=1,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_jpg
@@ -951,15 +950,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       return 0;
     if(i+1 < buffer_size && buffer[i+1]!=0xda)
       return 0;
-  }
-  /* Check image dimensions filter */
-  if(has_dimension_filters()) {
-    unsigned int width = 0, height = 0;
-    jpg_get_size(buffer, buffer_size, &height, &width);
-
-    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-      return 0;
-    }
   }
 
   if(file_recovery->file_stat!=NULL &&
@@ -2332,9 +2322,6 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
   }
   if(extract_thumb==0)
     return 1;
-  /* Skip thumbnail extraction if image size filters are active - let thumbnails be processed as regular files */
-  if(current_image_filter && has_any_filters(current_image_filter))
-    return 1;
   /* APP1 must be followed by a valid marker, this avoids many corrupted thumbnails */
   if(offset >= nbytes || buffer[offset]!=0xff)
     return 1;
@@ -2545,6 +2532,24 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;
 #endif
+
+  if (should_skip_image_by_filesize(file_recovery->file_size)) {
+    file_recovery->file_size = 0;
+    return;
+  }
+
+  unsigned int width = 0, height = 0;
+  if(file_recovery->handle) {
+    fseek(file_recovery->handle, 0, SEEK_SET);
+    char buffer[4096];
+    if(fread(buffer, 1, sizeof(buffer), file_recovery->handle) > 0) {
+      jpg_get_size((unsigned char*)buffer, sizeof(buffer), &height, &width);
+      if (should_skip_image_by_dimensions(width, height)) {
+        file_recovery->file_size = 0;
+        return;
+      }
+    }
+  }
 #if 0
     /* FIXME REMOVE ME */
   if(file_recovery->offset_error!=0)

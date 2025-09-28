@@ -55,10 +55,10 @@ struct file_hint_struct
   const char *extension;
   const char *description;
   const uint64_t max_filesize;
-  const int supports_image_filters;
   const int recover;
   const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
+  const int is_image;
 };
 
 typedef struct

@@ -34,17 +34,9 @@ typedef struct image_size_filter_struct image_size_filter_t;
 
 /* Global image filter - extern pattern following PhotoRec convention */
 extern const image_size_filter_t *current_image_filter;
-extern int global_filter_active;
 
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
-int check_image_dimensions(uint32_t width, uint32_t height, const image_size_filter_t *filter);
 
 int has_any_filters(const image_size_filter_t *filter);
-int has_dimension_filters(void);
 int should_skip_image_by_dimensions(uint32_t width, uint32_t height);
 int should_skip_image_by_filesize(uint64_t file_size);
 
@@ -53,12 +45,6 @@ int should_skip_image_by_filesize(uint64_t file_size);
   @*/
 void set_current_image_filter(const image_size_filter_t *filter);
 
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
-int check_image_filesize(uint64_t file_size, const image_size_filter_t *filter);
 
 /*@
   @ requires \valid(cmd);
@@ -87,6 +73,12 @@ uint64_t parse_size_with_units(char **cmd);
   @ assigns *cmd;
   @*/
 uint64_t parse_pixels_value(char **cmd);
+
+/*@
+  @ requires \valid_read(filter);
+  @ assigns \nothing;
+  @*/
+void print_image_filter(const image_size_filter_t *filter);
 
 /*@
   @ requires \valid(cmd);

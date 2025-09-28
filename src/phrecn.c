@@ -1534,6 +1534,8 @@ static void interface_ask_file_size(image_size_filter_t *filter)
 
     /* Parse using existing function (skip "imagesize," prefix) */
     parse_imagesize_command(&cmd_ptr, filter);
+    /* Set global image filter variables for presave_check functions */
+    current_image_filter = filter;
   }
 }
 
@@ -1581,6 +1583,8 @@ static void interface_ask_image_size(image_size_filter_t *filter)
 
     /* Parse using existing function (skip "imagesize," prefix) */
     parse_imagesize_command(&cmd_ptr, filter);
+    /* Set global image filter variables for presave_check functions */
+    current_image_filter = filter;
   }
 }
 

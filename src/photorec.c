@@ -740,24 +740,6 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
   if(file_recovery->file_stat==NULL)
     return 0;
 
-  /* Check image filesize filter for supported formats BEFORE file completion */
-  if(file_recovery->file_stat->file_hint->supports_image_filters)
-  {
-    if(should_skip_image_by_filesize(file_recovery->file_size))
-    {
-      /* Skip this file - close handle and reset recovery */
-      if(file_recovery->handle!=NULL)
-      {
-        fclose(file_recovery->handle);
-        file_recovery->handle = NULL;
-        unlink(file_recovery->filename);
-      }
-      file_block_truncate_zero(file_recovery, list_search_space);
-      reset_file_recovery(file_recovery);
-      return 0;
-    }
-  }
-
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, 2);
   if(file_recovery->file_size==0)
@@ -824,19 +806,6 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
 #ifdef ENABLE_DFXML
   xml_log_file_recovered(file_recovery);
 #endif
-
-  /* Check image filesize filter for supported formats AFTER file completion and truncation */
-  if(file_recovery->file_stat->file_hint->supports_image_filters)
-  {
-    if(should_skip_image_by_filesize(file_recovery->file_size))
-    {
-      /* Skip this file - delete it and mark as bad */
-      unlink(file_recovery->filename);
-      file_block_free(&file_recovery->location);
-      reset_file_recovery(file_recovery);
-      return PFSTATUS_BAD;
-    }
-  }
 
   file_block_free(&file_recovery->location);
   reset_file_recovery(file_recovery);

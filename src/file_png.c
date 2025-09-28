@@ -39,18 +39,19 @@
 #include "common.h"
 #include "filegen.h"
 #include "log.h"
+#include "photorec.h"
 #include "image_filter.h"
 
 extern const file_hint_t file_hint_doc;
 
 /*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_png(file_stat_t *file_stat);
+int get_image_dimensions_png(const unsigned char *buffer, const unsigned int buffer_size, uint32_t *width, uint32_t *height);
 
 const file_hint_t file_hint_png= {
   .extension="png",
   .description="Portable/JPEG/Multiple-Image Network Graphics",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
-  .supports_image_filters=1,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_png
@@ -89,6 +90,11 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
 {
   if(be32(ihdr->width)==0 || be32(ihdr->height)==0)
     return 0;
+
+  if (should_skip_image_by_dimensions(be32(ihdr->width), be32(ihdr->height))) {
+    return 0;
+  }
+
   switch(ihdr->color_type)
   {
     case 0:	/* Greyscale */
@@ -109,6 +115,32 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
       return 0;
   }
   return 1;
+}
+
+int get_image_dimensions_png(const unsigned char *buffer, const unsigned int buffer_size, uint32_t *width, uint32_t *height)
+{
+  *width = 0;
+  *height = 0;
+
+  if(buffer == NULL || buffer_size < 33)
+    return 0;
+
+  if(memcmp(buffer, "\x89PNG\x0d\x0a\x1a\x0a", 8) != 0)
+    return 0;
+
+  const struct png_ihdr *ihdr = (const struct png_ihdr *)(buffer + 16);
+  if(memcmp(buffer + 12, "IHDR", 4) != 0)
+    return 0;
+
+  uint32_t w = be32(ihdr->width);
+  uint32_t h = be32(ihdr->height);
+
+  if(w > 0 && h > 0) {
+    *width = w;
+    *height = h;
+    return 1;
+  }
+  return 0;
 }
 
 /*@
@@ -152,7 +184,13 @@ static void file_check_png(file_recovery_t *fr)
     if(fr->file_size >= 0x8000000000000000)
       return ;
     if(memcmp(&buffer[4], "IEND", 4)==0)
+    {
+      if (should_skip_image_by_filesize(fr->file_size)) {
+        fr->file_size = 0;
+        return ;
+      }
       return ;
+    }
     if(memcmp(&buffer[4], "IHDR", 4) == 0)
     {
       char buf_ihdr[sizeof(struct png_ihdr)];
@@ -169,19 +207,6 @@ static void file_check_png(file_recovery_t *fr)
       {
 	fr->file_size=0;
 	return ;
-      }
-
-      /* Check image dimensions filter for validated PNG */
-      if(has_dimension_filters()) {
-        uint32_t width = be32(ihdr->width);
-        uint32_t height = be32(ihdr->height);
-
-        if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-          /* Mark as error - PhotoRec will handle file cleanup */
-          fr->file_size = 0;
-          fr->offset_error = 1;
-          return;
-        }
       }
     }
   }
@@ -355,6 +380,11 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ assigns  *file_recovery_new;
   @*/
+// static data_check_t presave_check_png(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+// {
+  
+// }
+
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   if( !((isupper(buffer[8+4]) || islower(buffer[8+4])) &&
