@@ -53,6 +53,8 @@
 
 static FILE *log_handle=NULL;
 static int f_status=0;
+static void (*json_log_callback)(const unsigned int level, const char *format, va_list ap) = NULL;
+static int json_verbose = 0;
 
 /* static unsigned int log_levels=LOG_LEVEL_DEBUG|LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL; */
 static unsigned int log_levels=LOG_LEVEL_TRACE|LOG_LEVEL_QUIET|LOG_LEVEL_INFO|LOG_LEVEL_VERBOSE|LOG_LEVEL_PROGRESS|LOG_LEVEL_WARNING|LOG_LEVEL_ERROR|LOG_LEVEL_PERROR|LOG_LEVEL_CRITICAL;
@@ -63,6 +65,12 @@ unsigned int log_set_levels(const unsigned int levels)
   const unsigned int old_levels=log_levels;
   log_levels=levels;
   return old_levels;
+}
+
+void log_set_json_handler(void (*handler)(const unsigned int level, const char *format, va_list ap), int verbose)
+{
+  json_log_callback = handler;
+  json_verbose = verbose;
 }
 
 /*@
@@ -215,8 +223,45 @@ int log_redirect(const unsigned int level, const char *format, ...)
     return 0;
   {
     int res;
-    va_list ap;
+    va_list ap, ap_copy;
     va_start(ap, format);
+
+    if(json_log_callback != NULL)
+    {
+      va_copy(ap_copy, ap);
+      json_log_callback(level, format, ap_copy);
+      va_end(ap_copy);
+    }
+
+    res=log_handler(format, ap);
+    va_end(ap);
+    return res;
+  }
+}
+
+/*@
+  @ requires log_handle == \null || \valid(log_handle);
+  @ assigns *log_handle;
+  @ assigns f_status;
+  @*/
+int log_redirect_nojson(const unsigned int level, const char *format, ...)
+{
+  if((log_levels & level)==0)
+    return 0;
+  if(log_handle==NULL)
+    return 0;
+  {
+    int res;
+    va_list ap, ap_copy;
+    va_start(ap, format);
+
+    if(json_log_callback != NULL && json_verbose)
+    {
+      va_copy(ap_copy, ap);
+      json_log_callback(level, format, ap_copy);
+      va_end(ap_copy);
+    }
+
     res=log_handler(format, ap);
     va_end(ap);
     return res;

@@ -64,6 +64,7 @@
 #include "chgarch.h"
 #include "chgarchn.h"
 #include "autoset.h"
+#include "json_log.h"
 
 #if defined(HAVE_NCURSES)
 #define NBR_DISK_MAX 		(LINES-6-8)
@@ -219,6 +220,8 @@ static int photorec_disk_selection_ncurses(struct ph_param *params, struct ph_op
 	  autodetect_arch(disk, &arch_none);
 	  autoset_unit(disk);
 	  params->disk=disk;
+	  json_log_session_start(params, NULL, 0);
+	  json_log_disk_info(params);
 	  if((hpa_dco==0 || interface_check_hidden_ncurses(disk, hpa_dco)==0) &&
 	      (options->expert == 0 ||
 	       change_arch_type_ncurses(disk, options->verbose)==0))
@@ -258,6 +261,13 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
 #endif
       )
     {
+      int search_space_regions = 0;
+      struct td_list_head *search_walker = NULL;
+      td_list_for_each(search_walker, &list_search_space.list)
+      {
+        search_space_regions++;
+      }
+      json_log_session_resume(params, saved_device, saved_cmd, search_space_regions);
 #if defined(HAVE_NCURSES)
       {
 	WINDOW *window=newwin(LINES, COLS, 0, 0);	/* full screen */
@@ -288,6 +298,10 @@ int do_curses_photorec(struct ph_param *params, struct ph_options *options, cons
     /*@ assert valid_read_string(params->cmd_run); */
     params->disk=photorec_disk_selection_cli(params->cmd_device, list_disk, &list_search_space);
     /*@ assert params->disk == \null || valid_disk(params->disk); */
+    if(params->disk != NULL) {
+      json_log_session_start(params, NULL, 0);
+      json_log_disk_info(params);
+    }
 #if defined(HAVE_NCURSES)
     if(params->disk==NULL)
     {

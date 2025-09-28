@@ -27,6 +27,8 @@ extern "C" {
 
 unsigned int log_set_levels(const unsigned int levels);
 
+void log_set_json_handler(void (*handler)(const unsigned int level, const char *format, va_list ap), int verbose);
+
 /*@
   @ requires valid_read_string(default_filename);
   @ requires \valid(errsv);
@@ -48,6 +50,11 @@ int log_close(void);
   @ requires valid_read_string(format);
   @*/
 int log_redirect(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
+
+/*@
+  @ requires valid_read_string(format);
+  @*/
+int log_redirect_nojson(const unsigned int level, const char *format, ...) __attribute__((format(printf, 2, 3)));
 
 /*@
   @ requires lng <= 1<<30;
@@ -82,6 +89,7 @@ void dump2_log(const void *dump_1, const void *dump_2,const unsigned int lng);
 #define log_trace(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_TRACE,FORMAT,##ARGS)
 #define log_quiet(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_QUIET,FORMAT,##ARGS)
 #define log_info(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_INFO,FORMAT,##ARGS)
+#define log_info_nojson(FORMAT, ARGS...)	log_redirect_nojson(LOG_LEVEL_INFO,FORMAT,##ARGS)
 #define log_verbose(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_VERBOSE,FORMAT,##ARGS)
 #define log_progress(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_PROGRESS,FORMAT,##ARGS)
 #define log_warning(FORMAT, ARGS...)	log_redirect(LOG_LEVEL_WARNING,FORMAT,##ARGS)
