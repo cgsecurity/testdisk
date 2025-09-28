@@ -884,17 +884,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 {
   /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
 
-  /* Check image dimensions filter early */
-  {
-    unsigned int width=0, height=0;
-    jpg_get_size(buffer, buffer_size, &height, &width);
-    printf("DEBUG: header_check_jpg early check: %ux%u\n", width, height);
-    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-      printf("DEBUG: header_check_jpg EARLY REJECTION %ux%u\n", width, height);
-      return 0;
-    }
-  }
-
   unsigned int i=2;
   time_t jpg_time=0;
   /*@
@@ -938,6 +927,17 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if(i+1 < buffer_size && buffer[i+1]!=0xda)
       return 0;
   }
+
+  unsigned int width=0;
+  unsigned int height=0;
+  jpg_get_size(buffer, buffer_size, &height, &width);
+  if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+#ifdef DEBUG_JPEG
+    log_info("header_check_jpg dimensions rejection %ux%u", width, height);
+#endif
+    return 0;
+  }
+
   if(file_recovery->file_stat!=NULL &&
      file_recovery->file_check!=NULL)
   {
@@ -952,10 +952,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
       0x00, 0x48, 0x00, 0x00, 0xff, 0xfe, 0x00
     };
-
-    unsigned int width=0;
-    unsigned int height=0;
-    jpg_get_size(buffer, buffer_size, &height, &width);
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
@@ -2459,7 +2455,9 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 
   /* Check file size filter */
   if(file_recovery->calculated_file_size > 0 && should_skip_image_by_filesize(file_recovery->calculated_file_size)) {
-    /* Mark as error - PhotoRec will handle file cleanup */
+#ifdef DEBUG_JPEG
+    log_info("file_check_jpg filesize rejection %llu", (long long unsigned)file_recovery->calculated_file_size);
+#endif
     file_recovery->file_size = 0;
     file_recovery->offset_error = 1;
     return;
