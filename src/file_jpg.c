@@ -42,9 +42,6 @@
 #endif
 #include <stdio.h>
 #include <errno.h>
-#ifdef DEBUG_JPEG_FILTER
-#include <sys/time.h>
-#endif
 #include "types.h"
 #ifdef HAVE_SETJMP_H
 #include <setjmp.h>
@@ -58,12 +55,12 @@
 #include "common.h"
 #include "log.h"
 #include "file_jpg.h"
-#include "image_filter.h"
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
 #include "file_riff.h"
 #endif
 #include "file_tiff.h"
 #include "setdate.h"
+#include "image_filter.h"
 #if defined(__FRAMAC__)
 #include "__fc_builtin.h"
 #endif
@@ -886,7 +883,6 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
 static int header_check_jpg(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
   /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
-
   unsigned int i=2;
   time_t jpg_time=0;
   /*@
@@ -930,23 +926,14 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if(i+1 < buffer_size && buffer[i+1]!=0xda)
       return 0;
   }
+  /* Check image dimensions filter */
+  if(has_dimension_filters()) {
+    unsigned int width = 0, height = 0;
+    jpg_get_size(buffer, buffer_size, &height, &width);
 
-  unsigned int width=0;
-  unsigned int height=0;
-  /* Limit buffer size for jpg_get_size to avoid performance issues with large files */
-  const unsigned int limited_buffer_size = (buffer_size > 512) ? 512 : buffer_size;
-
-  static unsigned long jpg_calls = 0;
-  jpg_calls++;
-  if(jpg_calls % 100 == 0) {
-    fprintf(stderr, "JPG_DEBUG: %lu calls\n", jpg_calls);
-  }
-
-  jpg_get_size(buffer, limited_buffer_size, &height, &width);
-
-  if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-    fprintf(stderr, "JPG_DEBUG: SKIP %ux%u\n", width, height);
-    return 0;
+    if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+      return 0;
+    }
   }
 
   if(file_recovery->file_stat!=NULL &&
@@ -963,6 +950,10 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01, 0x01, 0x01, 0x00, 0x48,
       0x00, 0x48, 0x00, 0x00, 0xff, 0xfe, 0x00
     };
+
+    unsigned int width=0;
+    unsigned int height=0;
+    jpg_get_size(buffer, buffer_size, &height, &width);
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
@@ -2097,26 +2088,6 @@ static void jpg_save_thumbnail(const file_recovery_t *file_recovery, const char 
 #endif
     )
   {
-    /* Check file size filter for thumbnail */
-    if(should_skip_image_by_filesize(thumb_size)) {
-#ifdef DEBUG_JPEG
-      log_info("jpg_save_thumbnail filesize rejection %u", thumb_size);
-#endif
-      return;
-    }
-
-    /* Check dimensions filter for thumbnail */
-    {
-      unsigned int thumb_width = 0, thumb_height = 0;
-      jpg_get_size(&buffer[thumb_offset], thumb_size, &thumb_height, &thumb_width);
-      if(should_skip_image_by_dimensions(thumb_width, thumb_height)) {
-#ifdef DEBUG_JPEG
-        log_info("jpg_save_thumbnail dimensions rejection %ux%u", thumb_width, thumb_height);
-#endif
-        return;
-      }
-    }
-
     FILE *out;
 #ifndef DISABLED_FOR_FRAMAC
     *(sep+1)='t';
@@ -2334,6 +2305,9 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
   }
   if(extract_thumb==0)
     return 1;
+  /* Skip thumbnail extraction if image size filters are active - let thumbnails be processed as regular files */
+  if(current_image_filter && has_any_filters(current_image_filter))
+    return 1;
   /* APP1 must be followed by a valid marker, this avoids many corrupted thumbnails */
   if(offset >= nbytes || buffer[offset]!=0xff)
     return 1;
@@ -2483,17 +2457,6 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 {
   uint64_t thumb_offset;
   static uint64_t thumb_error=0;
-
-  /* Check file size filter */
-  if(file_recovery->calculated_file_size > 0 && should_skip_image_by_filesize(file_recovery->calculated_file_size)) {
-#ifdef DEBUG_JPEG
-    log_info("file_check_jpg filesize rejection %llu", (long long unsigned)file_recovery->calculated_file_size);
-#endif
-    file_recovery->file_size = 0;
-    file_recovery->offset_error = 1;
-    return;
-  }
-
   if(file_recovery->calculated_file_size<=2)
     file_recovery->calculated_file_size=0;
   /* FIXME REMOVE ME */
@@ -2540,6 +2503,15 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
+
+  /* Check file size filter */
+  if(file_recovery->calculated_file_size > 0 && should_skip_image_by_filesize(file_recovery->calculated_file_size)) {
+    /* Mark as error - PhotoRec will handle file cleanup */
+    file_recovery->file_size = 0;
+    file_recovery->offset_error = 1;
+    return;
+  }
+
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   jpg_check_picture(file_recovery);
 #else
