@@ -506,6 +506,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->data_check=NULL;
   file_recovery->file_check=NULL;
   file_recovery->file_rename=NULL;
+  file_recovery->image_presave_check=NULL;
   file_recovery->offset_error=0;
   file_recovery->offset_ok=0;
   file_recovery->checkpoint_status=0;

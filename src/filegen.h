@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 #include "list.h"
+#include "image_filter.h"
 
 #if defined(DJGPP)
 #define PHOTOREC_MAX_FILE_SIZE (((uint64_t)1<<31)-1)
@@ -47,12 +48,14 @@ typedef struct file_hint_struct file_hint_t;
 typedef struct file_stat_struct file_stat_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
+typedef struct image_size_filter_struct image_size_filter_t;
 
 struct file_hint_struct
 {
   const char *extension;
   const char *description;
   const uint64_t max_filesize;
+  const int supports_image_filters;
   const int recover;
   const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
@@ -98,6 +101,8 @@ struct file_recovery_struct
   /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time, data_check_tmp */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
+  int (*image_presave_check)(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+  const image_size_filter_t *image_filter;
   uint64_t checkpoint_offset;
   int checkpoint_status;	/* 0=suspend at offset_checkpoint if offset_checkpoint>0, 1=resume at offset_checkpoint */
   unsigned int blocksize;

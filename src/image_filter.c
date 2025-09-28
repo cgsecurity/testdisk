@@ -37,40 +37,19 @@
 #include "image_filter.h"
 #include "log.h"
 
-/* Global image filter following PhotoRec's extern pattern */
-const image_size_filter_t *current_image_filter = NULL;
-
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
-int check_image_dimensions(uint32_t width, uint32_t height, const image_size_filter_t *filter)
+struct image_size_filter_struct
 {
-  if (!filter)
-    return 1;
+  uint64_t min_file_size;  /* 0 = no limit */
+  uint64_t max_file_size;  /* 0 = no limit */
+  uint32_t min_width;      /* 0 = no limit */
+  uint32_t max_width;      /* 0 = no limit */
+  uint32_t min_height;     /* 0 = no limit */
+  uint32_t max_height;     /* 0 = no limit */
+  uint64_t min_pixels;     /* 0 = no limit (width × height) */
+  uint64_t max_pixels;     /* 0 = no limit (width × height) */
+};
 
-  /* Check pixels first (has priority over width/height) */
-  if (filter->min_pixels > 0 || filter->max_pixels > 0) {
-    uint64_t pixels = (uint64_t)width * height;
-    if (filter->min_pixels > 0 && pixels < filter->min_pixels)
-      return 0;
-    if (filter->max_pixels > 0 && pixels > filter->max_pixels)
-      return 0;
-  }
-  /* Check width/height only if pixels is not set */
-  else {
-    if (filter->min_width > 0 && width < filter->min_width)
-      return 0;
-    if (filter->max_width > 0 && width > filter->max_width)
-      return 0;
-    if (filter->min_height > 0 && height < filter->min_height)
-      return 0;
-    if (filter->max_height > 0 && height > filter->max_height)
-      return 0;
-  }
-  return 1;
-}
+
 
 /*@
   @ requires \valid_read(filter);
@@ -356,14 +335,58 @@ int has_any_filters(const image_size_filter_t *filter)
           filter->min_pixels > 0 || filter->max_pixels > 0);
 }
 
+
+
 void set_current_image_filter(const image_size_filter_t *filter)
 {
-  current_image_filter = filter;
+  FILE *debug_file = fopen("/tmp/filter_debug.log", "a");
+  if(debug_file) {
+    if(filter) {
+      fprintf(debug_file, "SET_FILTER: Copying filter with min_file_size=%llu, max_file_size=%llu to global storage\n",
+              (long long unsigned)filter->min_file_size, (long long unsigned)filter->max_file_size);
+      fprintf(debug_file, "SET_FILTER: Source address: %p, global address: %p\n", filter, &global_image_filter);
+    } else {
+      fprintf(debug_file, "SET_FILTER: Setting filter to NULL\n");
+    }
+    fclose(debug_file);
+  }
+
+  if(filter) {
+    /* Copy filter to global storage to avoid stack pointer issues */
+    global_image_filter = *filter;
+    global_filter_active = 1;
+    current_image_filter = &global_image_filter;
+
+    /* Also save to environment variables for cross-process communication */
+    char env_val[64];
+    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->min_file_size);
+    setenv("PHOTOREC_MIN_FILE_SIZE", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->max_file_size);
+    setenv("PHOTOREC_MAX_FILE_SIZE", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%u", filter->min_width);
+    setenv("PHOTOREC_MIN_WIDTH", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%u", filter->max_width);
+    setenv("PHOTOREC_MAX_WIDTH", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%u", filter->min_height);
+    setenv("PHOTOREC_MIN_HEIGHT", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%u", filter->max_height);
+    setenv("PHOTOREC_MAX_HEIGHT", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->min_pixels);
+    setenv("PHOTOREC_MIN_PIXELS", env_val, 1);
+    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->max_pixels);
+    setenv("PHOTOREC_MAX_PIXELS", env_val, 1);
+    setenv("PHOTOREC_FILTER_ACTIVE", "1", 1);
+  } else {
+    global_filter_active = 0;
+    current_image_filter = NULL;
+    unsetenv("PHOTOREC_FILTER_ACTIVE");
+  }
+
 }
 
-int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
+int should_skip_image_by_dimensions(const image_size_filter_t *filter, uint32_t width, uint32_t height)
 {
-  if(!current_image_filter) {
+  if(!filter) {
     return 0; /* don't skip */
   }
 
@@ -375,10 +398,36 @@ int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
     fprintf(stderr, "DIM_DEBUG: %lu calls, %lu skips\n", dim_calls, dim_skips);
   }
 
-  /* Check dimensions (pixels vs width/height) */
-  if(!check_image_dimensions(width, height, current_image_filter)) {
-    dim_skips++;
-    return 1; /* skip */
+  /* Check pixels first (has priority over width/height) */
+  if (filter->min_pixels > 0 || filter->max_pixels > 0) {
+    uint64_t pixels = (uint64_t)width * height;
+    if (filter->min_pixels > 0 && pixels < filter->min_pixels) {
+      dim_skips++;
+      return 1; /* skip */
+    }
+    if (filter->max_pixels > 0 && pixels > filter->max_pixels) {
+      dim_skips++;
+      return 1; /* skip */
+    }
+  }
+  /* Check width/height only if pixels is not set */
+  else {
+    if (filter->min_width > 0 && width < filter->min_width) {
+      dim_skips++;
+      return 1; /* skip */
+    }
+    if (filter->max_width > 0 && width > filter->max_width) {
+      dim_skips++;
+      return 1; /* skip */
+    }
+    if (filter->min_height > 0 && height < filter->min_height) {
+      dim_skips++;
+      return 1; /* skip */
+    }
+    if (filter->max_height > 0 && height > filter->max_height) {
+      dim_skips++;
+      return 1; /* skip */
+    }
   }
 
   return 0; /* don't skip */
@@ -403,8 +452,9 @@ int should_skip_image_by_filesize(uint64_t file_size)
     return 0; /* don't skip */
 
   /* Check file size if provided */
-  if(file_size > 0 && !check_image_filesize(file_size, current_image_filter))
+  if(file_size > 0 && !check_image_filesize(file_size, current_image_filter)) {
     return 1; /* skip */
+  }
 
   return 0; /* don't skip */
 }

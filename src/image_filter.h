@@ -34,6 +34,7 @@ typedef struct image_size_filter_struct image_size_filter_t;
 
 /* Global image filter - extern pattern following PhotoRec convention */
 extern const image_size_filter_t *current_image_filter;
+extern int global_filter_active;
 
 /*@
   @ requires \valid_read(filter);

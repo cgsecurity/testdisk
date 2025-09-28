@@ -67,6 +67,7 @@
 #include "log_part.h"
 #include "file_tar.h"
 #include "phcfg.h"
+#include "image_filter.h"
 #include "pblocksize.h"
 #include "pnext.h"
 #include "phbf.h"

@@ -50,6 +50,7 @@ const file_hint_t file_hint_png= {
   .extension="png",
   .description="Portable/JPEG/Multiple-Image Network Graphics",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
+  .supports_image_filters=1,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_png
@@ -119,14 +120,6 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
   @*/
 static void file_check_png(file_recovery_t *fr)
 {
-  /* Check file size filter */
-  if(fr->calculated_file_size > 0 && should_skip_image_by_filesize(fr->calculated_file_size)) {
-    /* Mark as error - PhotoRec will handle file cleanup */
-    fr->file_size = 0;
-    fr->offset_error = 1;
-    return;
-  }
-
   if(fr->file_size<fr->calculated_file_size)
   {
     fr->file_size=0;
@@ -333,6 +326,25 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_mng;
   file_recovery_new->file_check=&file_check_size;
   /*@ assert valid_file_recovery(file_recovery_new); */
+  return 1;
+}
+
+static int png_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(buffer_size < 24)
+    return 1;
+  if(!(buffer[0] == 0x89 && buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G'))
+    return 1;
+  if(!has_dimension_filters())
+    return 1;
+  if(buffer_size >= 16 + sizeof(struct png_ihdr))
+  {
+    const struct png_ihdr *ihdr = (const struct png_ihdr *)&buffer[16];
+    const unsigned int width = be32(ihdr->width);
+    const unsigned int height = be32(ihdr->height);
+    if(should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
+      return 0;
+  }
   return 1;
 }
 

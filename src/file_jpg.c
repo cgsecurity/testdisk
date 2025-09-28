@@ -89,6 +89,7 @@ const file_hint_t file_hint_jpg= {
   .extension="jpg",
   .description="JPG picture",
   .max_filesize=50*1024*1024,
+  .supports_image_filters=1,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_jpg
@@ -864,6 +865,31 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
+static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(buffer_size < 20)
+    return 1;
+  if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
+    return 1;
+  if(!file_recovery->image_filter)
+    return 1;
+  for(unsigned int i = 0; i < buffer_size - 10; i++)
+  {
+    if(buffer[i] == 0xff && buffer[i+1] == 0xc0)
+    {
+      if(i + 10 < buffer_size)
+      {
+        const struct sof_header *sof = (const struct sof_header *)&buffer[i];
+        const unsigned int width = be16(sof->width);
+        const unsigned int height = be16(sof->height);
+        if(should_skip_image_by_dimensions(width, height))
+          return 0;
+      }
+      break;
+    }
+  }
+  return 1;
+}
 
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size >= 10;
@@ -1063,6 +1089,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->time=jpg_time;
   file_recovery_new->extension=file_hint_jpg.extension;
   file_recovery_new->file_check=&file_check_jpg;
+  file_recovery_new->image_presave_check=&jpg_presave_check;
   if(buffer_size >= 4)
     file_recovery_new->data_check=&data_check_jpg;
   /*@ assert valid_read_string(file_recovery_new->extension); */
@@ -2313,6 +2340,15 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
     return 1;
   if(thumb_offset+thumb_size > nbytes)
     return 1;
+
+//   if (file_recovery->image)
+//     unsigned int width = 0, height = 0;
+//     jpg_get_size(buffer, buffer_size, &height, &width);
+
+//     if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
+//       return 0;
+//     }
+
   /*@ assert thumb_offset + thumb_size <= nbytes; */
   /*@ assert 0 < thumb_size; */
   /*@ assert thumb_offset < nbytes; */
@@ -2503,14 +2539,6 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
-
-  /* Check file size filter */
-  if(file_recovery->calculated_file_size > 0 && should_skip_image_by_filesize(file_recovery->calculated_file_size)) {
-    /* Mark as error - PhotoRec will handle file cleanup */
-    file_recovery->file_size = 0;
-    file_recovery->offset_error = 1;
-    return;
-  }
 
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   jpg_check_picture(file_recovery);

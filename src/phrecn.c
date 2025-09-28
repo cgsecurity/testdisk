@@ -240,6 +240,15 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   /*@ assert valid_read_string(params->recup_dir); */
   params_reset(params, options);
   /*@ assert valid_read_string(params->recup_dir); */
+
+  /* Set image filter before any recovery operation - this is the main entry point for both CLI and GUI */
+  if (has_any_filters(&options->image_filter)) {
+    printf("DEBUG PHOTOREC: Setting current_image_filter from options\n");
+    fflush(stdout);
+    set_current_image_filter(&options->image_filter);
+    printf("DEBUG PHOTOREC: current_image_filter set successfully\n");
+    fflush(stdout);
+  }
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     skip_comma_in_command(&params->cmd_run);
