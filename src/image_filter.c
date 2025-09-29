@@ -38,19 +38,6 @@
 #include "image_filter.h"
 #include "log.h"
 
-struct image_size_filter_struct
-{
-  uint64_t min_file_size;  /* 0 = no limit */
-  uint64_t max_file_size;  /* 0 = no limit */
-  uint32_t min_width;      /* 0 = no limit */
-  uint32_t max_width;      /* 0 = no limit */
-  uint32_t min_height;     /* 0 = no limit */
-  uint32_t max_height;     /* 0 = no limit */
-  uint64_t min_pixels;     /* 0 = no limit (width × height) */
-  uint64_t max_pixels;     /* 0 = no limit (width × height) */
-};
-
-
 
 void print_image_filter(const image_size_filter_t *filter)
 {

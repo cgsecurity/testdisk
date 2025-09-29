@@ -327,7 +327,7 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
     return 1;
   if(!(buffer[0] == 0x89 && buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G'))
     return 1;
-  if(!has_dimension_filters())
+  if(!file_recovery->image_filter)
     return 1;
   if(buffer_size >= 16 + sizeof(struct png_ihdr))
   {
@@ -377,6 +377,9 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=8;
   file_recovery_new->data_check=&data_check_png;
   file_recovery_new->file_check=&file_check_png;
+  file_recovery_new->image_presave_check=&png_presave_check;
+  file_recovery_new->image_filtering_active=file_recovery->image_filtering_active;
+  file_recovery_new->image_filter=file_recovery->image_filter;
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }

@@ -865,31 +865,7 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
-static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
-{
-  if(buffer_size < 20)
-    return 1;
-  if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
-    return 1;
-  if(!file_recovery->image_filter)
-    return 1;
-  for(unsigned int i = 0; i < buffer_size - 10; i++)
-  {
-    if(buffer[i] == 0xff && buffer[i+1] == 0xc0)
-    {
-      if(i + 10 < buffer_size)
-      {
-        const struct sof_header *sof = (const struct sof_header *)&buffer[i];
-        const unsigned int width = be16(sof->width);
-        const unsigned int height = be16(sof->height);
-        if(should_skip_image_by_dimensions(width, height))
-          return 0;
-      }
-      break;
-    }
-  }
-  return 1;
-}
+static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size >= 10;
@@ -1080,6 +1056,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->extension=file_hint_jpg.extension;
   file_recovery_new->file_check=&file_check_jpg;
   file_recovery_new->image_presave_check=&jpg_presave_check;
+  file_recovery_new->image_filtering_active=file_recovery->image_filtering_active;
+  file_recovery_new->image_filter=file_recovery->image_filter;
   if(buffer_size >= 4)
     file_recovery_new->data_check=&data_check_jpg;
   /*@ assert valid_read_string(file_recovery_new->extension); */
@@ -1954,6 +1932,32 @@ struct sof_header
 #endif
 } __attribute__ ((gcc_struct, __packed__));
 
+static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(buffer_size < 20)
+    return 1;
+  if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
+    return 1;
+  if(!file_recovery->image_filtering_active)
+    return 1;
+  for(unsigned int i = 0; i < buffer_size - 10; i++)
+  {
+    if(buffer[i] == 0xff && buffer[i+1] == 0xc0)
+    {
+      if(i + 10 < buffer_size)
+      {
+        const struct sof_header *sof = (const struct sof_header *)&buffer[i];
+        const unsigned int width = be16(sof->width);
+        const unsigned int height = be16(sof->height);
+        if(file_recovery->image_filter && should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
+          return 0;
+      }
+      break;
+    }
+  }
+  return 1;
+}
+
 /*@
   @ requires \valid_read(buffer + (0..buffer_size-1));
   @ terminates \true;
@@ -2336,6 +2340,10 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
 //       return 0;
 //     }
 
+  if (!jpg_presave_check((const char *)buffer, nbytes, file_recovery)) {
+    return 1;
+  }
+
   /*@ assert thumb_offset + thumb_size <= nbytes; */
   /*@ assert 0 < thumb_size; */
   /*@ assert thumb_offset < nbytes; */
@@ -2496,7 +2504,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     return ;
   const unsigned int extract_thumb = file_recovery->image_filtering_active ? 0 : 1;
 #ifdef DEBUG_JPEG
-  if(file_recovery->image_filtering_active > 0)
+  if(file_recovery->image_filtering_active > 0)|
     log_info("skipping thumbnail extraction because image filtering is enabled\n");
 #endif
   thumb_offset=jpg_check_structure(file_recovery, extract_thumb);

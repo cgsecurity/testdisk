@@ -135,6 +135,15 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
   }
 #endif
   set_filename(file_recovery, params);
+
+  if(file_recovery->image_presave_check) {
+    const unsigned int blocksize=params->blocksize;
+    const unsigned int read_size=(blocksize>65536?blocksize:65536);
+    if(!file_recovery->image_presave_check(buffer, read_size, file_recovery)) {
+      return PSTATUS_OK;
+    }
+  }
+
   if(file_recovery->file_stat->file_hint->recover==1)
   {
 #if defined(__CYGWIN__) || defined(__MINGW32__)

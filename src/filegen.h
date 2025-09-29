@@ -48,7 +48,6 @@ typedef struct file_hint_struct file_hint_t;
 typedef struct file_stat_struct file_stat_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
-typedef struct image_size_filter_struct image_size_filter_t;
 
 struct file_hint_struct
 {
