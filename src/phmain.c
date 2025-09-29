@@ -86,6 +86,7 @@
 #include "ext2_dir.h"
 #include "file_jpg.h"
 #include "file_gz.h"
+#include "file_sig.h"
 #include "ntfs_dir.h"
 #include "pdiskseln.h"
 #include "dfxml.h"

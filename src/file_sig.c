@@ -42,6 +42,7 @@
 #endif
 #include "types.h"
 #include "filegen.h"
+#include "file_sig.h"
 #include "common.h"
 #include "log.h"
 
