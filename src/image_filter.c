@@ -254,11 +254,6 @@ uint64_t parse_size_with_units(char **cmd)
   return (uint64_t)(val * multiplier);
 }
 
-/*@
-  @ requires \valid(cmd);
-  @ ensures \result >= 0;
-  @ assigns *cmd;
-  @*/
 uint64_t parse_pixels_value(char **cmd)
 {
   char *ptr = *cmd;
@@ -303,12 +298,6 @@ uint64_t parse_pixels_value(char **cmd)
   return val;
 }
 
-/*@
-  @ requires \valid(cmd);
-  @ requires \valid(min_pixels);
-  @ requires \valid(max_pixels);
-  @ assigns *cmd, *min_pixels, *max_pixels;
-  @*/
 void parse_pixels_range(char **cmd, uint64_t *min_pixels, uint64_t *max_pixels)
 {
   char *ptr = *cmd;
@@ -342,11 +331,6 @@ void parse_pixels_range(char **cmd, uint64_t *min_pixels, uint64_t *max_pixels)
   *cmd = ptr;
 }
 
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
 int validate_image_filter(const image_size_filter_t *filter)
 {
   /* Check for conflicting parameters: pixels vs width/height */
@@ -366,11 +350,6 @@ int validate_image_filter(const image_size_filter_t *filter)
   return 1;
 }
 
-/*@
-  @ requires \valid(cmd);
-  @ requires \valid(filter);
-  @ assigns *cmd, *filter;
-  @*/
 void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
 {
   char *ptr = *cmd;
@@ -461,11 +440,6 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
   validate_image_filter(filter);
 }
 
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
 int has_any_filters(const image_size_filter_t *filter)
 {
   if (!filter)

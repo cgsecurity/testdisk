@@ -52,6 +52,7 @@ const file_hint_t file_hint_png= {
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
+  .is_image=1,
   .register_header_check=&register_header_check_png
 };
 
@@ -86,15 +87,8 @@ struct png_ihdr
   @ */
 static int png_check_ihdr(const struct png_ihdr *ihdr)
 {
-  uint32_t width = be32(ihdr->width);
-  uint32_t height = be32(ihdr->height);
-
-  if(width == 0 || height == 0)
+  if(ihdr->width == 0 || ihdr->height == 0)
     return 0;
-
-  if (should_skip_image_by_dimensions(width, height)) {
-    return 0;
-  }
 
   switch(ihdr->color_type)
   {
@@ -183,6 +177,9 @@ static void file_check_png(file_recovery_t *fr)
 	fr->file_size=0;
 	return ;
       }
+      fr->image_data.is_image = 1;
+      fr->image_data.width = be32(ihdr->width);
+      fr->image_data.height = be32(ihdr->height);
     }
   }
 }

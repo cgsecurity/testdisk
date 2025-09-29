@@ -91,6 +91,7 @@ const file_hint_t file_hint_jpg= {
   .max_filesize=50*1024*1024,
   .recover=1,
   .enable_by_default=1,
+  .is_image=1,
   .register_header_check=&register_header_check_jpg
 };
 
@@ -2532,10 +2533,10 @@ static void file_check_jpg(file_recovery_t *file_recovery)
   file_recovery->file_size=file_recovery->calculated_file_size;
 #endif
 
-  if (should_skip_image_by_filesize(file_recovery->file_size)) {
-    file_recovery->file_size = 0;
-    return;
-  }
+//   if (should_skip_image_by_filesize(file_recovery->file_size)) {
+//     file_recovery->file_size = 0;
+//     return;
+//   }
 
   if(file_recovery->handle) {
     fseek(file_recovery->handle, 0, SEEK_SET);
@@ -2543,10 +2544,9 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     if(fread(buffer, 1, sizeof(buffer), file_recovery->handle) > 0) {
       unsigned int width = 0, height = 0;
       jpg_get_size((unsigned char*)buffer, sizeof(buffer), &height, &width);
-      if (should_skip_image_by_dimensions(width, height)) {
-        file_recovery->file_size = 0;
-        return;
-      }
+      file_recovery->image_data.is_image = 1;
+      file_recovery->image_data.width = width;
+      file_recovery->image_data.height = height;
     }
   }
 #if 0

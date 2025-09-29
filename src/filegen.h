@@ -56,6 +56,7 @@ struct file_hint_struct
   const char *description;
   const uint64_t max_filesize;
   const int recover;
+  const unsigned int is_image;
   const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
 };
@@ -82,11 +83,20 @@ struct file_stat_struct
   const file_hint_t *file_hint;
 };
 
+struct image_data_struct
+{
+  uint32_t width;
+  uint32_t height;
+};
+
+typedef struct image_data_struct image_data_t;
+
 struct file_recovery_struct
 {
   char filename[2048];
   alloc_list_t location;
   file_stat_t *file_stat;
+  image_data_t image_data;
   FILE *handle;
   time_t time;
   uint64_t file_size;

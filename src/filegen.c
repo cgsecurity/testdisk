@@ -514,6 +514,8 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->flags=0;
   file_recovery->extra=0;
   file_recovery->data_check_tmp=0;
+  file_recovery->image_data.width=0;
+  file_recovery->image_data.height=0;
 }
 
 file_stat_t * init_file_stats(file_enable_t *files_enable)

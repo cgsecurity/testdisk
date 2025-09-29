@@ -682,6 +682,28 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
 #endif
     file_recovery->file_size=0;
   }
+  if(current_image_filter && file_recovery->file_stat->file_hint->is_image ) {
+#ifdef DEBUG_FILE_FINISH
+    log_trace("Image filter check: file=%s, size=%llu, width=%u, height=%u\n",
+           file_recovery->filename,
+           (unsigned long long)file_recovery->file_size,
+           file_recovery->image_data.width,
+           file_recovery->image_data.height);
+#endif
+
+    if(should_skip_image_by_filesize(file_recovery->file_size)) {
+#ifdef DEBUG_FILE_FINISH
+        log_trace("Skipping by filesize: %s\n", file_recovery->filename);
+#endif
+        file_recovery->file_size=0;
+    }
+    else if(should_skip_image_by_dimensions(file_recovery->image_data.width, file_recovery->image_data.height)) {
+#ifdef DEBUG_FILE_FINISH
+        log_trace("Skipping by dimensions: %s\n", file_recovery->filename);
+#endif
+        file_recovery->file_size=0;
+    }
+  }
   if(file_recovery->file_size==0)
   {
     if(paranoid==2)
