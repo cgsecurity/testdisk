@@ -192,6 +192,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
   const unsigned int blocksize=params->blocksize;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery_new;
+  memset(&file_recovery_new, 0, sizeof(file_recovery_new));
   /*@ assert valid_file_recovery(file_recovery); */
   file_recovery_new.blocksize=blocksize;
   file_recovery_new.location.start=offset;

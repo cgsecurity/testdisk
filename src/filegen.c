@@ -492,6 +492,8 @@ void file_check_size_max(file_recovery_t *file_recovery)
 
 void reset_file_recovery(file_recovery_t *file_recovery)
 {
+  // Save image_filter - it's session config, not per-file state
+  const image_size_filter_t *saved_filter = file_recovery->image_filter;
   file_recovery->filename[0]='\0';
   file_recovery->time=0;
   file_recovery->file_stat=NULL;
@@ -515,10 +517,10 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->flags=0;
   file_recovery->extra=0;
   file_recovery->data_check_tmp=0;
-//   file_recovery->image_filter=NULL;
   file_recovery->image_data.width=0;
   file_recovery->image_data.height=0;
   free_memory_buffer(file_recovery);
+  file_recovery->image_filter=saved_filter;
 }
 
 file_stat_t * init_file_stats(file_enable_t *files_enable)
