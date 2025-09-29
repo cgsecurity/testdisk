@@ -1965,22 +1965,21 @@ static int jpg_maches_image_filtering(const unsigned char *buffer, const unsigne
   if(check_size > 10)
   {
     for(unsigned int i = 0; i < check_size - 10; i++)
-  {
-    if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xc0)
     {
-      if(i + 10 < check_size)
+      if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xc0)
       {
-        const struct sof_header *sof = (const struct sof_header *)&check_buffer[i];
-        const unsigned int width = be16(sof->width);
-        const unsigned int height = be16(sof->height);
-        if(file_recovery->image_filter && should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
-          return 0;
+        if(i + 10 < check_size)
+        {
+          const struct sof_header *sof = (const struct sof_header *)&check_buffer[i];
+          const unsigned int width = be16(sof->width);
+          const unsigned int height = be16(sof->height);
+          if(file_recovery->image_filter && should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
+            return 0;
+        }
+        break;
       }
-      break;
     }
   }
-  }
-
   return 1;
 }
 
@@ -2519,6 +2518,8 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
+// we could simply disable jpg thumb extraction when image filtering is active
+// but for now they're passed through jpg_maches_image_filtering like normal photos
 //   const unsigned int extract_thumb = file_recovery->image_filter ? 0 : 1;
 // #ifdef DEBUG_JPEG
 //   if(file_recovery->image_filter)

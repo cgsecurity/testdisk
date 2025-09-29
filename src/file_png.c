@@ -38,7 +38,6 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
-#include "photorec.h"
 #include "image_filter.h"
 
 extern const file_hint_t file_hint_doc;
