@@ -102,15 +102,9 @@ extern uint64_t gpls_nbr;
 #ifdef HAVE_SIGACTION
 static struct sigaction action;
 static void sighup_hdlr(int sig);
-#ifdef HAVE_NCURSES
-extern int end_ncurses(void);
-#endif
 
 static void sighup_hdlr(int sig)
 {
-#ifdef HAVE_NCURSES
-  end_ncurses();
-#endif
   if(sig == SIGINT)
     log_critical("SIGINT detected! PhotoRec has been killed.\n");
   else if(sig == SIGHUP)
