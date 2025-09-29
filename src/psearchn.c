@@ -73,6 +73,7 @@
 #endif
 #include "psearchn.h"
 #include "photorec_check_header.h"
+#include "json_log.h"
 #define READ_SIZE 1024*512
 extern int need_to_stop;
 
@@ -351,6 +352,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
 #ifdef HAVE_NCURSES
           ind_stop=photorec_progressbar(stdscr, params->pass, params, offset, current_time);
 #endif
+          json_log_progress(params, params->pass, offset);
 	  params->offset=offset;
 	  if(need_to_stop!=0 || ind_stop!=PSTATUS_OK)
 	  {

@@ -59,6 +59,7 @@ extern int need_to_stop;
 #include "geometryn.h"
 #include "addpartn.h"
 #include "intrfn.h"
+#include "json_log.h"
 
 extern const arch_fnct_t arch_none;
 
@@ -218,6 +219,7 @@ void menu_photorec(struct ph_param *params, struct ph_options *options, alloc_da
       case 'S':
 	{
 	  params->partition=current_element->part;
+	  json_log_partition_info(params);
 	  ask_mode_ext2(params->disk, params->partition, &options->mode_ext2, &params->carve_free_space_only);
 	  menu=0;
 	  if(params->recup_dir==NULL)

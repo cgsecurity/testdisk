@@ -58,6 +58,7 @@
 #include <sys/stat.h>
 #endif
 #include <ctype.h>      /* tolower */
+#include "types.h"
 #ifdef HAVE_LOCALE_H
 #include <locale.h>	/* setlocale */
 #endif
@@ -68,7 +69,6 @@
 #include <sys/wait.h>
 #endif
 #include <errno.h>
-#include "types.h"
 #include "common.h"
 #include "intrf.h"
 #include "fnctdsk.h"
@@ -90,6 +90,7 @@
 #include "ntfs_dir.h"
 #include "pdiskseln.h"
 #include "dfxml.h"
+#include "json_log.h"
 
 int need_to_stop=0;
 extern file_enable_t array_file_enable[];
@@ -124,12 +125,13 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/debug] [/sigfile photorec.sig] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/logjson log.jsonl] [/debug] [/sigfile photorec.sig] [/d recup_dir] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
-      "/log          : create a photorec.log file\n" \
-      "/debug        : add debug information\n" \
-      "/sigfile path : specify custom path to signature file\n" \
+      "/log            : create a photorec.log file\n" \
+      "/logjson <file> : create a log in JSON format\n" \
+      "/debug          : add debug information\n" \
+      "/sigfile <file> : specify a custom signature file\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
@@ -155,6 +157,7 @@ static void display_version(void)
 }
 #endif
 
+
 int main( int argc, char **argv )
 {
   list_disk_t *list_disk=NULL;
@@ -172,6 +175,7 @@ int main( int argc, char **argv )
   int testdisk_mode=TESTDISK_O_RDONLY|TESTDISK_O_READAHEAD_32K;
   list_disk_t *element_disk;
   const char *logfile="photorec.log";
+  const char *logfile_json=NULL;
   int log_opened=0;
   int log_errno=0;
   struct ph_options options={
@@ -261,6 +265,11 @@ int main( int argc, char **argv )
       options.verbose++;
       if(create_log==TD_LOG_NONE)
         create_log=TD_LOG_APPEND;
+    }
+    else if(i+1<argc && ((strcmp(argv[i],"/logjson")==0)||(strcmp(argv[i],"-logjson")==0)))
+    {
+      logfile_json=argv[i+1];
+      i++;
     }
     else if(i+1<argc && ((strcmp(argv[i],"/d")==0)||(strcmp(argv[i],"-d")==0)))
     {
@@ -448,6 +457,13 @@ int main( int argc, char **argv )
 #endif
   reset_array_file_enable(options.list_file_format);
   file_options_load(options.list_file_format);
+  if(logfile_json != NULL)
+  {
+    json_log_open(logfile_json);
+    log_set_json_handler(json_log_handler, options.verbose > 0);
+    json_log_cli_params(&params, (char * const*)argv, argc);
+  }
+
 #ifdef SUDO_BIN
   if(list_disk==NULL && geteuid()!=0)
   {
@@ -496,6 +512,7 @@ int main( int argc, char **argv )
 #ifndef DISABLED_FOR_FRAMAC
   delete_list_disk(list_disk);
 #endif
+  json_log_cleanup(&params);
   free(params.recup_dir);
 #ifdef ENABLE_DFXML
   xml_clear_command_line();

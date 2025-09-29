@@ -70,6 +70,7 @@
 #include "sessionp.h"
 #include "phrecn.h"
 #include "log.h"
+#include "json_log.h"
 #include "log_part.h"
 #include "file_tar.h"
 #include "phcfg.h"
@@ -438,6 +439,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
     {
       log_info("Pass %u +%u file%s\n",params->pass,params->file_nbr-old_file_nbr,(params->file_nbr-old_file_nbr<=1?"":"s"));
       write_stats_log(params->file_stats);
+      json_log_progress(params, params->pass, params->offset);
     }
     log_flush();
 #endif
@@ -488,6 +490,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   if(params->cmd_run==NULL)
     recovery_finished(params->disk, params->partition, params->file_nbr, params->recup_dir, ind_stop);
 #endif
+  json_log_completion(params, "PhotoRec completed recovery");
   free(params->file_stats);
   params->file_stats=NULL;
   free_header_check();

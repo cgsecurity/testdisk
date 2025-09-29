@@ -404,9 +404,9 @@ file_C			= filegen.c \
 
 file_H			= ext2.h hfsp_struct.h filegen.h file_doc.h file_jpg.h file_gz.h file_riff.h file_sp3.h file_tar.h file_tiff.h luks_struct.h ntfs_struct.h ole.h pe.h suspend.h utfsize.h xfs_struct.h
 
-photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c
+photorec_C		= photorec.c phcfg.c addpart.c chgarch.c chgtype.c dir.c exfatp.c ext2grp.c ext2_dir.c ext2p.c fat_dir.c fatp.c file_found.c geometry.c ntfs_dir.c ntfsp.c pdisksel.c poptions.c sessionp.c dfxml.c partgptro.c json_log.c
 
-photorec_H		= photorec.h phcfg.h addpart.h chgarch.h chgtype.h dfxml.h dir_common.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h photorec_check_header.h poptions.h psearch.h sessionp.h
+photorec_H		= photorec.h phcfg.h addpart.h chgarch.h chgtype.h dfxml.h dir_common.h dir.h exfatp.h ext2grp.h ext2p.h ext2_dir.h ext2_inc.h fat_dir.h fatp.h file_found.h geometry.h memmem.h ntfs_dir.h ntfsp.h ntfs_inc.h pdisksel.h photorec_check_header.h poptions.h psearch.h sessionp.h json_log.h
 
 photorec_ncurses_C	= phmain.c addpartn.c askloc.c chgarchn.c chgtypen.c fat_cluster.c fat_unformat.c geometryn.c hiddenn.c intrfn.c nodisk.c parti386n.c partgptn.c partmacn.c partsunn.c partxboxn.c pbanner.c pblocksize.c pdiskseln.c pfree_whole.c phbf.c phbs.c phcli.c phnc.c phrecn.c ppartseln.c psearchn.c
 photorec_ncurses_H	= addpartn.h askloc.h chgarchn.h chgtypen.h fat_cluster.h fat_unformat.h geometryn.h hiddenn.h intrfn.h nodisk.h parti386n.h partgptn.h partmacn.h partsunn.h partxboxn.h pblocksize.h pdiskseln.h pfree_whole.h pnext.h phbf.h phbs.h phcli.h phnc.h phrecn.h ppartseln.h psearchn.h
