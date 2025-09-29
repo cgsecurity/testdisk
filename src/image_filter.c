@@ -170,52 +170,64 @@ void print_image_filter(const image_size_filter_t *filter)
   printf("=============================\n");
 }
 
-int should_skip_image_by_dimensions(uint32_t width, uint32_t height)
+int should_skip_image_by_dimensions(const image_size_filter_t *filter, uint32_t width, uint32_t height)
 {
-  if(!current_image_filter)
+  if(!filter)
     return 0;
 
-  if(current_image_filter->min_pixels > 0 || current_image_filter->max_pixels > 0)
+  if(filter->min_pixels > 0 || filter->max_pixels > 0)
   {
     uint64_t pixels = (uint64_t)width * height;
-    if (current_image_filter->min_pixels > 0 && pixels < current_image_filter->min_pixels)
+    if(filter->min_pixels > 0 && pixels < filter->min_pixels)
       return 1;
-    if (current_image_filter->max_pixels > 0 && pixels > current_image_filter->max_pixels)
+    if(filter->max_pixels > 0 && pixels > filter->max_pixels)
       return 1;
 
     return 0;
   }
 
-  if(current_image_filter->min_width > 0 && width < current_image_filter->min_width)
+  if(filter->min_width > 0 && width < filter->min_width)
     return 1;
-  if(current_image_filter->max_width > 0 && width > current_image_filter->max_width)
+  if(filter->max_width > 0 && width > filter->max_width)
     return 1;
-  if(current_image_filter->min_height > 0 && height < current_image_filter->min_height)
+  if(filter->min_height > 0 && height < filter->min_height)
     return 1;
-  if(current_image_filter->max_height > 0 && height > current_image_filter->max_height)
+  if(filter->max_height > 0 && height > filter->max_height)
     return 1;
 
   return 0;
 }
 
-int should_skip_image_by_filesize(uint64_t file_size)
+int should_skip_image_by_filesize(const image_size_filter_t *filter, uint64_t file_size)
 {
-  if(!current_image_filter)
+  if(!filter)
     return 0;
 
-  if (current_image_filter->min_file_size > 0 && file_size < current_image_filter->min_file_size)
+  if(filter->min_file_size > 0 && file_size < filter->min_file_size)
     return 1;
-  if (current_image_filter->max_file_size > 0 && file_size > current_image_filter->max_file_size)
+  if(filter->max_file_size > 0 && file_size > filter->max_file_size)
     return 1;
 
   return 0;
 }
 
-/*@
-  @ requires \valid(cmd);
-  @ ensures \result >= 0;
-  @ assigns *cmd;
-  @*/
+
+int has_any_image_size_filter(const image_size_filter_t *filter)
+{
+  return (filter->min_file_size | filter->max_file_size |
+          filter->min_width | filter->max_width |
+          filter->min_height | filter->max_height |
+          filter->min_pixels | filter->max_pixels) > 0;
+}
+
+/* Parse file size with unit suffixes. Valid formats:
+ * - "1000"    : exact size in bytes (1000)
+ * - "10k"     : size in kilobytes (10240 bytes)
+ * - "1.5m"    : size in megabytes with decimal (1572864 bytes)
+ * - "2g"      : size in gigabytes (2147483648 bytes)
+ * - Units: k/K (kilobytes), m/M (megabytes), g/G (gigabytes)
+ * - Decimal values supported (e.g., "1.5k", "0.5m")
+ */
 uint64_t parse_size_with_units(char **cmd)
 {
   char *ptr = *cmd;
@@ -225,10 +237,8 @@ uint64_t parse_size_with_units(char **cmd)
   char *endptr;
   val = strtod(ptr, &endptr);
 
-  if (endptr == ptr) {
-    /* No valid number found */
+  if(endptr == ptr)
     return 0;
-  }
 
   ptr = endptr;
 
@@ -254,6 +264,12 @@ uint64_t parse_size_with_units(char **cmd)
   return (uint64_t)(val * multiplier);
 }
 
+/* Parse pixel value in numeric or WIDTHxHEIGHT format. Valid formats:
+ * - "1000"     : exact pixel count (1000)
+ * - "800x600"  : resolution format (calculates 800*600 = 480000 pixels)
+ * - "1920x1080": HD resolution (calculates 1920*1080 = 2073600 pixels)
+ * - Width and height must be positive integers
+ */
 uint64_t parse_pixels_value(char **cmd)
 {
   char *ptr = *cmd;
@@ -298,6 +314,16 @@ uint64_t parse_pixels_value(char **cmd)
   return val;
 }
 
+/* Parse pixel range specification. Valid formats:
+ * - "1000"       : exact pixel count (1000)
+ * - "800x600"    : exact resolution (480000 pixels)
+ * - "1000-"      : minimum 1000 pixels, no maximum
+ * - "-5000"      : maximum 5000 pixels, no minimum
+ * - "1000-5000"  : range from 1000 to 5000 pixels
+ * - "800x600-1920x1080" : resolution range (480000 to 2073600 pixels)
+ * - "800x600-"   : minimum 800x600 resolution, no maximum
+ * - "-1920x1080" : maximum 1920x1080 resolution, no minimum
+ */
 void parse_pixels_range(char **cmd, uint64_t *min_pixels, uint64_t *max_pixels)
 {
   char *ptr = *cmd;
@@ -350,15 +376,11 @@ int validate_image_filter(const image_size_filter_t *filter)
   return 1;
 }
 
-void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
+void change_imagesize_cli(char **cmd, image_size_filter_t *filter)
 {
   char *ptr = *cmd;
-
   memset(filter, 0, sizeof(*filter));
 
-  /* Note: "imagesize," prefix already consumed by check_command */
-
-  /* Parse parameters in format: param,value,param,value */
   while(*ptr)
   {
     if(strncmp(ptr, "size,", 5) == 0)
@@ -440,19 +462,28 @@ void parse_imagesize_command(char **cmd, image_size_filter_t *filter)
   validate_image_filter(filter);
 }
 
-int has_any_filters(const image_size_filter_t *filter)
+/* Format file size for display in user interface.
+ * Converts bytes to human-readable format:
+ * - Values < 1024: shows exact bytes (e.g., "55", "1023")
+ * - Values >= 1024 < 1MB: shows with 'k' suffix (e.g., "1k", "500k")
+ * - Values >= 1MB: shows with 'm' suffix (e.g., "1m", "10m")
+ * - Size 0: returns empty string
+ */
+void format_file_size_string(uint64_t size, char *buffer, size_t buffer_size)
 {
-  if (!filter)
-    return 0;
+  if (size == 0) {
+    buffer[0] = '\0';
+    return;
+  }
 
-  return (filter->min_file_size > 0 || filter->max_file_size > 0 ||
-          filter->min_width > 0 || filter->max_width > 0 ||
-          filter->min_height > 0 || filter->max_height > 0 ||
-          filter->min_pixels > 0 || filter->max_pixels > 0);
+  if (size >= 1024*1024) {
+    snprintf(buffer, buffer_size, "%lum", (unsigned long)(size/(1024*1024)));
+  } else if (size >= 1024) {
+    snprintf(buffer, buffer_size, "%luk", (unsigned long)(size/1024));
+  } else {
+    snprintf(buffer, buffer_size, "%lu", (unsigned long)size);
+  }
 }
-<<<<<<< HEAD
-
-
 
 void set_current_image_filter(const image_size_filter_t *filter)
 {
@@ -576,5 +607,3 @@ int should_skip_image_by_filesize(uint64_t file_size)
   return 0; /* don't skip */
 }
 
-=======
->>>>>>> f22d3244 (working;)

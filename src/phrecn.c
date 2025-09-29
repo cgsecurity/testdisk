@@ -241,10 +241,6 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   params_reset(params, options);
   /*@ assert valid_read_string(params->recup_dir); */
 
-  /* Set image filter before any recovery operation - this is the main entry point for both CLI and GUI */
-  if (has_any_filters(&options->image_filter)) {
-    set_current_image_filter(&options->image_filter);
-  }
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     skip_comma_in_command(&params->cmd_run);
@@ -552,7 +548,7 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
-    menuOptions[5].name=has_any_filters(&options->image_filter)?"Image size filters : Enabled":"Image size filters : Disabled";
+    menuOptions[5].name=has_any_image_size_filter(&options->image_filter)?"Image size filters : Enabled":"Image size filters : Disabled";
     aff_copy(stdscr);
     car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELIQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
@@ -760,21 +756,8 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
     char pixels_max_str[32] = "";
 
     /* Format current values as strings */
-    if (options->image_filter.min_file_size > 0) {
-      if (options->image_filter.min_file_size >= 1024*1024) {
-        snprintf(file_min_str, sizeof(file_min_str), "%lum", (unsigned long)(options->image_filter.min_file_size/(1024*1024)));
-      } else {
-        snprintf(file_min_str, sizeof(file_min_str), "%luk", (unsigned long)(options->image_filter.min_file_size/1024));
-      }
-    }
-
-    if (options->image_filter.max_file_size > 0) {
-      if (options->image_filter.max_file_size >= 1024*1024) {
-        snprintf(file_max_str, sizeof(file_max_str), "%lum", (unsigned long)(options->image_filter.max_file_size/(1024*1024)));
-      } else {
-        snprintf(file_max_str, sizeof(file_max_str), "%luk", (unsigned long)(options->image_filter.max_file_size/1024));
-      }
-    }
+    format_file_size_string(options->image_filter.min_file_size, file_min_str, sizeof(file_min_str));
+    format_file_size_string(options->image_filter.max_file_size, file_max_str, sizeof(file_max_str));
 
     /* Width strings */
     if (options->image_filter.min_width > 0) {
@@ -813,7 +796,7 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
     /* Display interface */
     aff_copy(stdscr);
     wmove(stdscr, 4, 0);
-    wprintw(stdscr, "Image size filters : %s\n", has_any_filters(&options->image_filter) ? "Enabled" : "Disabled");
+    wprintw(stdscr, "Image size filters : %s\n", has_any_image_size_filter(&options->image_filter) ? "Enabled" : "Disabled");
     wmove(stdscr, 5, 0);
     wprintw(stdscr, "Note: These filters apply only to JPG and PNG files\n");
 
@@ -911,12 +894,6 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
       case key_ESC:
       case 'q':
       case 'Q':
-        /* Update current filter before returning */
-        if (has_any_filters(&options->image_filter)) {
-          set_current_image_filter(&options->image_filter);
-        } else {
-          set_current_image_filter(NULL);
-        }
         return;
     }
   }
@@ -931,24 +908,12 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
   /* Prepare current value and prompt */
   switch(field_num) {
     case 1: /* file size min */
-      if (filter->min_file_size > 0) {
-        if (filter->min_file_size >= 1024*1024) {
-          snprintf(current_value, sizeof(current_value), "%lum", (unsigned long)(filter->min_file_size/(1024*1024)));
-        } else {
-          snprintf(current_value, sizeof(current_value), "%luk", (unsigned long)(filter->min_file_size/1024));
-        }
-      }
-      snprintf(prompt, sizeof(prompt), "Min file size (e.g. 100k, 2m, 500k): ");
+      format_file_size_string(filter->min_file_size, current_value, sizeof(current_value));
+      snprintf(prompt, sizeof(prompt), "Min file size (e.g. 5000, 100k, 2m): ");
       break;
     case 2: /* file size max */
-      if (filter->max_file_size > 0) {
-        if (filter->max_file_size >= 1024*1024) {
-          snprintf(current_value, sizeof(current_value), "%lum", (unsigned long)(filter->max_file_size/(1024*1024)));
-        } else {
-          snprintf(current_value, sizeof(current_value), "%luk", (unsigned long)(filter->max_file_size/1024));
-        }
-      }
-      snprintf(prompt, sizeof(prompt), "Max file size (e.g. 2m, 10m, 1000k): ");
+      format_file_size_string(filter->max_file_size, current_value, sizeof(current_value));
+      snprintf(prompt, sizeof(prompt), "Max file size (e.g. 5000, 2m, 1000k): ");
       break;
     case 3: /* width min */
       if (filter->min_width > 0) {
@@ -1005,12 +970,51 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
   wmove(stdscr, LINES/2, 0);
   wprintw(stdscr, "Current: %s", strlen(current_value) > 0 ? current_value : "none");
   wmove(stdscr, LINES/2+1, 0);
-  wprintw(stdscr, "New value (Enter to cancel): ");
+  wprintw(stdscr, "New value (empty to clear, Esc to cancel): ");
   wrefresh(stdscr);
 
-  /* Get input */
+  /* Get input with Escape support */
+  int ch;
+  int input_pos = 0;
+  int prompt_len = 44; /* Length of "New value (empty to clear, Esc to cancel): " */
+  input[0] = '\0';
+
+  /* Position cursor right after the prompt */
+  wmove(stdscr, LINES/2+1, prompt_len);
+  wrefresh(stdscr);
+
   echo();
-  wgetnstr(stdscr, input, sizeof(input)-1);
+  while (1) {
+    ch = wgetch(stdscr);
+
+    if (ch == key_ESC) {
+      noecho();
+      return; /* Cancel - don't change anything */
+    }
+    else if (ch == '\n' || ch == '\r') {
+      break; /* Enter pressed - accept input (even if empty) */
+    }
+    else if (ch == KEY_BACKSPACE || ch == 127 || ch == 8) {
+      if (input_pos > 0) {
+        input_pos--;
+        input[input_pos] = '\0';
+        /* Move cursor back and clear character */
+        wmove(stdscr, LINES/2+1, prompt_len + input_pos);
+        waddch(stdscr, ' ');
+        wmove(stdscr, LINES/2+1, prompt_len + input_pos);
+        wrefresh(stdscr);
+      }
+    }
+    else if (ch >= 32 && ch <= 126 && input_pos < sizeof(input)-2) { /* Printable characters */
+      input[input_pos] = ch;
+      input_pos++;
+      input[input_pos] = '\0';
+      /* Position cursor and add character */
+      wmove(stdscr, LINES/2+1, prompt_len + input_pos - 1);
+      waddch(stdscr, ch);
+      wrefresh(stdscr);
+    }
+  }
   noecho();
 
   /* Parse and apply input */
@@ -1519,8 +1523,6 @@ static void interface_ask_file_size(image_size_filter_t *filter)
 
     /* Parse using existing function (skip "imagesize," prefix) */
     parse_imagesize_command(&cmd_ptr, filter);
-    /* Set global image filter variables for presave_check functions */
-    current_image_filter = filter;
   }
 }
 
@@ -1568,8 +1570,6 @@ static void interface_ask_image_size(image_size_filter_t *filter)
 
     /* Parse using existing function (skip "imagesize," prefix) */
     parse_imagesize_command(&cmd_ptr, filter);
-    /* Set global image filter variables for presave_check functions */
-    current_image_filter = filter;
   }
 }
 

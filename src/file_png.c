@@ -87,7 +87,7 @@ struct png_ihdr
   @ */
 static int png_check_ihdr(const struct png_ihdr *ihdr)
 {
-  if(ihdr->width == 0 || ihdr->height == 0)
+  if(be32(ihdr->width)==0 || be32(ihdr->height)==0)
     return 0;
 
   switch(ihdr->color_type)
@@ -153,13 +153,7 @@ static void file_check_png(file_recovery_t *fr)
     if(fr->file_size >= 0x8000000000000000)
       return ;
     if(memcmp(&buffer[4], "IEND", 4)==0)
-    {
-      if (should_skip_image_by_filesize(fr->file_size)) {
-        fr->file_size = 0;
-        return ;
-      }
       return ;
-    }
     if(memcmp(&buffer[4], "IHDR", 4) == 0)
     {
       char buf_ihdr[sizeof(struct png_ihdr)];
@@ -177,9 +171,10 @@ static void file_check_png(file_recovery_t *fr)
 	fr->file_size=0;
 	return ;
       }
-      fr->image_data.is_image = 1;
-      fr->image_data.width = be32(ihdr->width);
-      fr->image_data.height = be32(ihdr->height);
+      if(fr->image_filtering_active > 0) {
+        fr->image_data.width = be32(ihdr->width);
+        fr->image_data.height = be32(ihdr->height);
+      }
     }
   }
 }

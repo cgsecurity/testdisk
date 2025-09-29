@@ -28,65 +28,26 @@ extern "C" {
 #endif
 
 #include "types.h"
-
-/* Forward declaration to avoid circular dependencies */
-typedef struct image_size_filter_struct image_size_filter_t;
-
-/* Global image filter - extern pattern following PhotoRec convention */
-extern const image_size_filter_t *current_image_filter;
+#include "photorec.h"
 
 
-int has_any_filters(const image_size_filter_t *filter);
-int should_skip_image_by_dimensions(uint32_t width, uint32_t height);
-int should_skip_image_by_filesize(uint64_t file_size);
+int has_any_image_size_filter(const image_size_filter_t *filter);
+int should_skip_image_by_dimensions(const image_size_filter_t *filter, uint32_t width, uint32_t height);
+int should_skip_image_by_filesize(const image_size_filter_t *filter, uint64_t file_size);
 
-/*@
-  @ assigns current_image_filter;
-  @*/
-void set_current_image_filter(const image_size_filter_t *filter);
+void change_imagesize_cli(char **cmd, image_size_filter_t *filter);
 
-
-/*@
-  @ requires \valid(cmd);
-  @ requires \valid(filter);
-  @ assigns *cmd, *filter;
-  @*/
-void parse_imagesize_command(char **cmd, image_size_filter_t *filter);
-
-/*@
-  @ requires \valid_read(filter);
-  @ ensures \result == 0 || \result == 1;
-  @ assigns \nothing;
-  @*/
 int validate_image_filter(const image_size_filter_t *filter);
 
-/*@
-  @ requires \valid(cmd);
-  @ ensures \result >= 0;
-  @ assigns *cmd;
-  @*/
 uint64_t parse_size_with_units(char **cmd);
 
-/*@
-  @ requires \valid(cmd);
-  @ ensures \result >= 0;
-  @ assigns *cmd;
-  @*/
 uint64_t parse_pixels_value(char **cmd);
 
-/*@
-  @ requires \valid_read(filter);
-  @ assigns \nothing;
-  @*/
 void print_image_filter(const image_size_filter_t *filter);
 
-/*@
-  @ requires \valid(cmd);
-  @ requires \valid(min_pixels);
-  @ requires \valid(max_pixels);
-  @ assigns *cmd, *min_pixels, *max_pixels;
-  @*/
 void parse_pixels_range(char **cmd, uint64_t *min_pixels, uint64_t *max_pixels);
+
+void format_file_size_string(uint64_t size, char *buffer, size_t buffer_size);
 
 #ifdef __cplusplus
 }

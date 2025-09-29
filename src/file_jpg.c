@@ -2494,7 +2494,12 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
-  thumb_offset=jpg_check_structure(file_recovery, 1);
+  const unsigned int extract_thumb = file_recovery->image_filtering_active ? 0 : 1;
+#ifdef DEBUG_JPEG
+  if(file_recovery->image_filtering_active > 0)|
+    log_info("skipping thumbnail extraction because image filtering is enabled\n");
+#endif
+  thumb_offset=jpg_check_structure(file_recovery, extract_thumb);
 #ifdef DEBUG_JPEG
   log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
 #endif
@@ -2532,19 +2537,12 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;
 #endif
-
-//   if (should_skip_image_by_filesize(file_recovery->file_size)) {
-//     file_recovery->file_size = 0;
-//     return;
-//   }
-
-  if(file_recovery->handle) {
+  if(file_recovery->image_filtering_active && file_recovery->handle) {
     fseek(file_recovery->handle, 0, SEEK_SET);
     char buffer[512];
     if(fread(buffer, 1, sizeof(buffer), file_recovery->handle) > 0) {
       unsigned int width = 0, height = 0;
       jpg_get_size((unsigned char*)buffer, sizeof(buffer), &height, &width);
-      file_recovery->image_data.is_image = 1;
       file_recovery->image_data.width = width;
       file_recovery->image_data.height = height;
     }

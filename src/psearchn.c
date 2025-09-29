@@ -74,6 +74,7 @@
 #include "psearchn.h"
 #include "photorec_check_header.h"
 #include "json_log.h"
+#include "image_filter.h"
 #define READ_SIZE 1024*512
 extern int need_to_stop;
 
@@ -105,6 +106,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   memset(&file_recovery, 0, sizeof(file_recovery));
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
+  file_recovery.image_filtering_active = (options && has_any_image_size_filter(&options->image_filter)) ? 1 : 0;
   /*@ assert valid_file_recovery(&file_recovery); */
 #ifndef DISABLED_FOR_FRAMAC
   buffer_start=(unsigned char *)MALLOC(buffer_size);

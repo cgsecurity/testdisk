@@ -64,6 +64,7 @@ struct ph_param
   unsigned int file_nbr;
   file_stat_t *file_stats;
   uint64_t offset;
+  const image_size_filter_t *image_filter;
 };
 
 /*@
