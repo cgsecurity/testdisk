@@ -60,6 +60,7 @@
 #endif
 #include "file_tiff.h"
 #include "setdate.h"
+#include "image_filter.h"
 #if defined(__FRAMAC__)
 #include "__fc_builtin.h"
 #endif
@@ -90,6 +91,7 @@ const file_hint_t file_hint_jpg= {
   .max_filesize=50*1024*1024,
   .recover=1,
   .enable_by_default=1,
+  .is_image=1,
   .register_header_check=&register_header_check_jpg
 };
 
@@ -863,6 +865,7 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
+static int jpg_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size >= 10;
@@ -1052,6 +1055,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->time=jpg_time;
   file_recovery_new->extension=file_hint_jpg.extension;
   file_recovery_new->file_check=&file_check_jpg;
+  file_recovery_new->file_check_presave=&jpg_maches_image_filtering;
+  file_recovery_new->image_filter=file_recovery->image_filter;
   if(buffer_size >= 4)
     file_recovery_new->data_check=&data_check_jpg;
   /*@ assert valid_read_string(file_recovery_new->extension); */
@@ -1926,6 +1931,58 @@ struct sof_header
 #endif
 } __attribute__ ((gcc_struct, __packed__));
 
+static int jpg_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(!file_recovery->image_filter)
+    return 1;
+
+  if(buffer_size < 20)
+    return 1;
+
+  if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
+    return 1;
+
+  const unsigned char *check_buffer = buffer;
+  unsigned int check_size = buffer_size;
+
+  uint64_t estimated_file_size = 0;
+  if(check_size > 2) {
+    for(unsigned int i = check_size - 2; i > 2; i--)
+    {
+      if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xd9)
+      {
+        estimated_file_size = i + 2;
+        break;
+      }
+    }
+  }
+
+  // Apply file size filter if we found end marker
+  if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
+    return 0;
+
+  // Check dimensions in the buffer we're examining
+  if(check_size > 10)
+  {
+    for(unsigned int i = 0; i < check_size - 10; i++)
+    {
+      if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xc0)
+      {
+        if(i + 10 < check_size)
+        {
+          const struct sof_header *sof = (const struct sof_header *)&check_buffer[i];
+          const unsigned int width = be16(sof->width);
+          const unsigned int height = be16(sof->height);
+          if(file_recovery->image_filter && should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
+            return 0;
+        }
+        break;
+      }
+    }
+  }
+  return 1;
+}
+
 /*@
   @ requires \valid_read(buffer + (0..buffer_size-1));
   @ terminates \true;
@@ -2299,6 +2356,10 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
     return 1;
   if(thumb_offset+thumb_size > nbytes)
     return 1;
+
+  if (file_recovery->image_filter && !jpg_maches_image_filtering((const unsigned char *)(buffer + thumb_offset), thumb_size, file_recovery))
+    return 1;
+
   /*@ assert thumb_offset + thumb_size <= nbytes; */
   /*@ assert 0 < thumb_size; */
   /*@ assert thumb_offset < nbytes; */
@@ -2457,6 +2518,14 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
+// we could simply disable jpg thumb extraction when image filtering is active
+// but for now they're passed through jpg_maches_image_filtering like normal photos
+//   const unsigned int extract_thumb = file_recovery->image_filter ? 0 : 1;
+// #ifdef DEBUG_JPEG
+//   if(file_recovery->image_filter)
+//     log_info("skipping thumbnail extraction because image filtering is enabled\n");
+// #endif
+//   thumb_offset=jpg_check_structure(file_recovery, extract_thumb);
   thumb_offset=jpg_check_structure(file_recovery, 1);
 #ifdef DEBUG_JPEG
   log_info("jpg_check_structure error at %llu\n", (long long unsigned)file_recovery->offset_error);
@@ -2489,11 +2558,22 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #endif
   if(file_recovery->offset_error!=0)
     return ;
+
 #if defined(HAVE_LIBJPEG) && defined(HAVE_JPEGLIB_H)
   jpg_check_picture(file_recovery);
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;
 #endif
+  if(file_recovery->image_filter && file_recovery->handle) {
+    fseek(file_recovery->handle, 0, SEEK_SET);
+    char buffer[512];
+    if(fread(buffer, 1, sizeof(buffer), file_recovery->handle) > 0) {
+      unsigned int width = 0, height = 0;
+      jpg_get_size((unsigned char*)buffer, sizeof(buffer), &height, &width);
+      file_recovery->image_data.width = width;
+      file_recovery->image_data.height = height;
+    }
+  }
 #if 0
     /* FIXME REMOVE ME */
   if(file_recovery->offset_error!=0)
@@ -2630,6 +2710,10 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
   /* Skip the SOI */
   if(file_recovery->calculated_file_size<2)
     file_recovery->calculated_file_size=2;
+
+  if (file_recovery->image_filter && !jpg_maches_image_filtering(buffer, buffer_size, file_recovery))
+    return DC_STOP;
+
   /*@ assert file_recovery->calculated_file_size >= 2; */
   /*@ assert file_recovery->data_check == &data_check_jpg; */
   /* Search SOS */

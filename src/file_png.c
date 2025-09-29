@@ -38,6 +38,7 @@
 #include "types.h"
 #include "common.h"
 #include "filegen.h"
+#include "image_filter.h"
 
 extern const file_hint_t file_hint_doc;
 
@@ -50,6 +51,7 @@ const file_hint_t file_hint_png= {
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
+  .is_image=1,
   .register_header_check=&register_header_check_png
 };
 
@@ -166,6 +168,10 @@ static void file_check_png(file_recovery_t *fr)
       {
 	fr->file_size=0;
 	return ;
+      }
+      if(fr->image_filter) {
+        fr->image_data.width = be32(ihdr->width);
+        fr->image_data.height = be32(ihdr->height);
       }
     }
   }
@@ -313,6 +319,49 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
+static int png_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+{
+  if(!file_recovery->image_filter)
+    return 1;
+
+  if(buffer_size < 24)
+    return 1;
+
+  if(!(buffer[0] == 0x89 && buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G'))
+    return 1;
+
+  const unsigned char *check_buffer = buffer;
+  unsigned int check_size = buffer_size;
+
+  // Estimate file size by finding PNG IEND chunk
+  uint64_t estimated_file_size = 0;
+  if(check_size > 12) {
+    for(unsigned int i = check_size - 12; i > 8; i--)
+    {
+      if(check_buffer[i] == 'I' && check_buffer[i+1] == 'E' && check_buffer[i+2] == 'N' && check_buffer[i+3] == 'D')
+      {
+        estimated_file_size = i + 8; // IEND chunk + 4-byte CRC
+        break;
+      }
+    }
+  }
+
+  // Apply file size filter if we found IEND
+  if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
+    return 0;
+
+  if(check_size >= 16 + sizeof(struct png_ihdr))
+  {
+    const struct png_ihdr *ihdr = (const struct png_ihdr *)&check_buffer[16];
+    const unsigned int width = be32(ihdr->width);
+    const unsigned int height = be32(ihdr->height);
+    if(should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
+      return 0;
+  }
+
+  return 1;
+}
+
 /*@
   @ requires buffer_size >= 16 + sizeof(struct png_ihdr);
   @ requires separation: \separated(&file_hint_png, buffer+(..), file_recovery, file_recovery_new);
@@ -350,6 +399,8 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=8;
   file_recovery_new->data_check=&data_check_png;
   file_recovery_new->file_check=&file_check_png;
+  file_recovery_new->file_check_presave=&png_maches_image_filtering;
+  file_recovery_new->image_filter=file_recovery->image_filter;
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;
 }

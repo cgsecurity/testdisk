@@ -50,6 +50,7 @@
 #include "intrf.h"
 #include "filegen.h"
 #include "photorec.h"
+#include "image_filter.h"
 #include "sessionp.h"
 #include "log.h"
 
@@ -280,6 +281,13 @@ int session_save(const alloc_data_t *list_free_space, const struct ph_param *par
 	  fprintf(f_session,"%s,enable,", files_enable[i].file_hint->extension);
 	}
       }
+    }
+    /* Save image filter settings */
+    if(has_any_image_size_filter(&options->image_filter))
+    {
+      char filter_buffer[512];
+      image_size_2_cli(&options->image_filter, filter_buffer, sizeof(filter_buffer));
+      fprintf(f_session, "%s", filter_buffer);
     }
     /* Save options */
     fprintf(f_session, "options,");

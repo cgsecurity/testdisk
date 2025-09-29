@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 #include "list.h"
+#include "image_filter.h"
 
 #if defined(DJGPP)
 #define PHOTOREC_MAX_FILE_SIZE (((uint64_t)1<<31)-1)
@@ -54,6 +55,7 @@ struct file_hint_struct
   const char *description;
   const uint64_t max_filesize;
   const int recover;
+  const unsigned int is_image;
   const unsigned int enable_by_default;
   void (*register_header_check)(file_stat_t *file_stat);
 };
@@ -80,11 +82,20 @@ struct file_stat_struct
   const file_hint_t *file_hint;
 };
 
+struct image_data_struct
+{
+  uint32_t width;
+  uint32_t height;
+};
+
+typedef struct image_data_struct image_data_t;
+
 struct file_recovery_struct
 {
   char filename[2048];
   alloc_list_t location;
   file_stat_t *file_stat;
+  image_data_t image_data;
   FILE *handle;
   time_t time;
   uint64_t file_size;
@@ -98,11 +109,17 @@ struct file_recovery_struct
   /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time, data_check_tmp */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
+  int (*file_check_presave)(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+  const image_size_filter_t *image_filter;
   uint64_t checkpoint_offset;
   int checkpoint_status;	/* 0=suspend at offset_checkpoint if offset_checkpoint>0, 1=resume at offset_checkpoint */
   unsigned int blocksize;
   unsigned int flags;
   unsigned int data_check_tmp;
+  unsigned char *memory_buffer;
+  uint64_t buffer_size;
+  uint64_t buffer_max_size;
+  int use_memory_buffering;
 };
 
 typedef struct
@@ -361,6 +378,11 @@ void file_check_size_max(file_recovery_t *file_recovery);
 */
 //  ensures valid_file_recovery(file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
+
+int init_memory_buffer(file_recovery_t *file_recovery);
+int append_to_memory_buffer(file_recovery_t *file_recovery, const unsigned char *data, size_t size);
+int flush_memory_buffer_to_file(file_recovery_t *file_recovery);
+void free_memory_buffer(file_recovery_t *file_recovery);
 
 /*@
   @ requires offset <= PHOTOREC_MAX_SIG_OFFSET;

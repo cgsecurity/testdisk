@@ -135,8 +135,25 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
   }
 #endif
   set_filename(file_recovery, params);
+
+  if(file_recovery->image_filter && (file_recovery->file_stat->file_hint->is_image)) {
+    file_recovery->use_memory_buffering = 1;
+    if(init_memory_buffer(file_recovery) < 0) {
+      file_recovery->use_memory_buffering = 0;
+    }
+  }
+
+  if(file_recovery->image_filter && file_recovery->file_check_presave) {
+    const unsigned int blocksize=params->blocksize;
+    const unsigned int read_size=(blocksize>65536?blocksize:65536);
+    if(!file_recovery->file_check_presave(buffer, read_size, file_recovery)) {
+      return PSTATUS_OK;
+    }
+  }
+
   if(file_recovery->file_stat->file_hint->recover==1)
   {
+    if(!file_recovery->use_memory_buffering) {
 #if defined(__CYGWIN__) || defined(__MINGW32__)
     file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
 #else
@@ -149,6 +166,7 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 #endif
       params->offset=offset;
       return PSTATUS_EACCES;
+    }
     }
   }
   return PSTATUS_OK;
@@ -174,6 +192,7 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
   const unsigned int blocksize=params->blocksize;
   const unsigned int read_size=(blocksize>65536?blocksize:65536);
   file_recovery_t file_recovery_new;
+  memset(&file_recovery_new, 0, sizeof(file_recovery_new));
   /*@ assert valid_file_recovery(file_recovery); */
   file_recovery_new.blocksize=blocksize;
   file_recovery_new.location.start=offset;
