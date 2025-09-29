@@ -89,7 +89,6 @@ static int png_check_ihdr(const struct png_ihdr *ihdr)
 {
   if(be32(ihdr->width)==0 || be32(ihdr->height)==0)
     return 0;
-
   switch(ihdr->color_type)
   {
     case 0:	/* Greyscale */

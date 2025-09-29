@@ -34,7 +34,6 @@ typedef enum photorec_status photorec_status_t;
 typedef enum { PSTATUS_OK=0, PSTATUS_STOP=1, PSTATUS_EACCES=2, PSTATUS_ENOSPC=3} pstatus_t;
 typedef enum { PFSTATUS_BAD=0, PFSTATUS_OK=1, PFSTATUS_OK_TRUNCATED=2} pfstatus_t;
 
-
 struct ph_options
 {
   int paranoid;

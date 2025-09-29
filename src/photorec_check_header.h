@@ -155,18 +155,18 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
   {
     if(!file_recovery->use_memory_buffering) {
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-      file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
+    file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
 #else
-      file_recovery->handle=fopen(file_recovery->filename,"w+b");
+    file_recovery->handle=fopen(file_recovery->filename,"w+b");
 #endif
-      if(!file_recovery->handle)
-      {
+    if(!file_recovery->handle)
+    {
 #ifndef __FRAMAC__
-        log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
+      log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
 #endif
-        params->offset=offset;
-        return PSTATUS_EACCES;
-      }
+      params->offset=offset;
+      return PSTATUS_EACCES;
+    }
     }
   }
   return PSTATUS_OK;

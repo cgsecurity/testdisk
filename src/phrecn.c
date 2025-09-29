@@ -240,7 +240,6 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
   /*@ assert valid_read_string(params->recup_dir); */
   params_reset(params, options);
   /*@ assert valid_read_string(params->recup_dir); */
-
   if(params->cmd_run!=NULL && params->cmd_run[0]!='\0')
   {
     skip_comma_in_command(&params->cmd_run);
