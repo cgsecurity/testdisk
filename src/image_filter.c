@@ -475,10 +475,15 @@ void format_file_size_string(uint64_t size, char *buffer, size_t buffer_size)
     return;
   }
 
-  if (size >= 1024*1024) {
-    snprintf(buffer, buffer_size, "%lum", (unsigned long)(size/(1024*1024)));
+  if (size >= 1024*1024*1024) {
+    double gb = (double)size / (1024*1024*1024);
+    snprintf(buffer, buffer_size, "%.2fg", gb);
+  } else if (size >= 1024*1024) {
+    double mb = (double)size / (1024*1024);
+    snprintf(buffer, buffer_size, "%.2fm", mb);
   } else if (size >= 1024) {
-    snprintf(buffer, buffer_size, "%luk", (unsigned long)(size/1024));
+    double kb = (double)size / 1024.0;
+    snprintf(buffer, buffer_size, "%.2fk", kb);
   } else {
     snprintf(buffer, buffer_size, "%lu", (unsigned long)size);
   }

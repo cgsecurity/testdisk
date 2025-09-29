@@ -755,6 +755,12 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
     char pixels_min_str[32] = "";
     char pixels_max_str[32] = "";
 
+    /* Check which fields should be disabled based on specific values set */
+    int pixels_min_active = (options->image_filter.min_pixels > 0);
+    int pixels_max_active = (options->image_filter.max_pixels > 0);
+    int dimensions_min_active = (options->image_filter.min_width > 0 || options->image_filter.min_height > 0);
+    int dimensions_max_active = (options->image_filter.max_width > 0 || options->image_filter.max_height > 0);
+
     /* Format current values as strings */
     format_file_size_string(options->image_filter.min_file_size, file_min_str, sizeof(file_min_str));
     format_file_size_string(options->image_filter.max_file_size, file_max_str, sizeof(file_max_str));
@@ -803,7 +809,7 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
 
     /* Empty line */
     wmove(stdscr, 7, 0);
-    wprintw(stdscr, "");
+    wprintw(stdscr, "\n");
 
     /* Header row */
     wmove(stdscr, 8, 0);
@@ -823,40 +829,54 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
     /* Width row */
     wmove(stdscr, 10, 0);
     wprintw(stdscr, "Width (pixels):            ");
+    if (pixels_min_active) wattron(stdscr, A_DIM);
     if (field_selected == 3) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(width_min_str) > 0 ? width_min_str : " disabled");
     if (field_selected == 3) wattroff(stdscr, A_REVERSE);
+    if (pixels_min_active) wattroff(stdscr, A_DIM);
     wprintw(stdscr, " - ");
+    if (pixels_max_active) wattron(stdscr, A_DIM);
     if (field_selected == 4) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(width_max_str) > 0 ? width_max_str : " disabled");
     if (field_selected == 4) wattroff(stdscr, A_REVERSE);
+    if (pixels_max_active) wattroff(stdscr, A_DIM);
 
     /* Height row */
     wmove(stdscr, 11, 0);
     wprintw(stdscr, "Height (pixels):           ");
+    if (pixels_min_active) wattron(stdscr, A_DIM);
     if (field_selected == 5) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(height_min_str) > 0 ? height_min_str : " disabled");
     if (field_selected == 5) wattroff(stdscr, A_REVERSE);
+    if (pixels_min_active) wattroff(stdscr, A_DIM);
     wprintw(stdscr, " - ");
+    if (pixels_max_active) wattron(stdscr, A_DIM);
     if (field_selected == 6) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(height_max_str) > 0 ? height_max_str : " disabled");
     if (field_selected == 6) wattroff(stdscr, A_REVERSE);
+    if (pixels_max_active) wattroff(stdscr, A_DIM);
 
     /* Resolution row */
     wmove(stdscr, 12, 0);
     wprintw(stdscr, "Resolution (WIDTHxHEIGHT): ");
+    if (dimensions_min_active) wattron(stdscr, A_DIM);
     if (field_selected == 7) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(pixels_min_str) > 0 ? pixels_min_str : " disabled");
     if (field_selected == 7) wattroff(stdscr, A_REVERSE);
+    if (dimensions_min_active) wattroff(stdscr, A_DIM);
     wprintw(stdscr, " - ");
+    if (dimensions_max_active) wattron(stdscr, A_DIM);
     if (field_selected == 8) wattron(stdscr, A_REVERSE);
     wprintw(stdscr, "[%-10s]", strlen(pixels_max_str) > 0 ? pixels_max_str : " disabled");
     if (field_selected == 8) wattroff(stdscr, A_REVERSE);
+    if (dimensions_max_active) wattroff(stdscr, A_DIM);
 
     wmove(stdscr, 15, 0);
     wprintw(stdscr, "Use Arrow keys to select field, Enter to edit, 'c' to clear, 'q' to quit");
 
     wrefresh(stdscr);
+
+    /* Helper variables to check field availability */
 
     /* Handle input */
     key = wgetch(stdscr);
@@ -882,7 +902,16 @@ void interface_imagesize_photorec_ncurses(struct ph_options *options)
       case '\r':
       case KEY_ENTER:
         if (field_selected >= 1 && field_selected <= 8) {
-          interface_edit_image_filter_field(&options->image_filter, field_selected);
+          /* Check if field is disabled before allowing edit */
+          int can_edit = 1;
+          if ((field_selected == 3 || field_selected == 5) && pixels_min_active) can_edit = 0;
+          if ((field_selected == 4 || field_selected == 6) && pixels_max_active) can_edit = 0;
+          if (field_selected == 7 && dimensions_min_active) can_edit = 0;
+          if (field_selected == 8 && dimensions_max_active) can_edit = 0;
+
+          if (can_edit) {
+            interface_edit_image_filter_field(&options->image_filter, field_selected);
+          }
         }
         break;
       case 'c':
@@ -1075,12 +1104,10 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           }
           filter->min_width = (uint32_t)val;
         }
-        /* Clear pixels when setting width/height */
+        /* Clear pixels min when setting width min */
         filter->min_pixels = 0;
-        filter->max_pixels = 0;
-        /* Clear saved formats */
+        /* Clear saved format */
         pixels_min_format[0] = '\0';
-        pixels_max_format[0] = '\0';
         break;
       case 4: /* width max */
         {
@@ -1096,11 +1123,9 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           }
           filter->max_width = (uint32_t)val;
         }
-        /* Clear pixels when setting width/height */
-        filter->min_pixels = 0;
+        /* Clear pixels max when setting width max */
         filter->max_pixels = 0;
-        /* Clear saved formats */
-        pixels_min_format[0] = '\0';
+        /* Clear saved format */
         pixels_max_format[0] = '\0';
         break;
       case 5: /* height min */
@@ -1117,12 +1142,10 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           }
           filter->min_height = (uint32_t)val;
         }
-        /* Clear pixels when setting width/height */
+        /* Clear pixels min when setting height min */
         filter->min_pixels = 0;
-        filter->max_pixels = 0;
-        /* Clear saved formats */
+        /* Clear saved format */
         pixels_min_format[0] = '\0';
-        pixels_max_format[0] = '\0';
         break;
       case 6: /* height max */
         {
@@ -1138,11 +1161,9 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           }
           filter->max_height = (uint32_t)val;
         }
-        /* Clear pixels when setting width/height */
-        filter->min_pixels = 0;
+        /* Clear pixels max when setting height max */
         filter->max_pixels = 0;
-        /* Clear saved formats */
-        pixels_min_format[0] = '\0';
+        /* Clear saved format */
         pixels_max_format[0] = '\0';
         break;
       case 7: /* pixels min */
@@ -1287,11 +1308,9 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           /* Save the original format user entered */
           snprintf(pixels_min_format, sizeof(pixels_min_format), "%s", input);
         }
-        /* Clear width/height when setting pixels */
+        /* Clear width/height min when setting pixels min */
         filter->min_width = 0;
-        filter->max_width = 0;
         filter->min_height = 0;
-        filter->max_height = 0;
         break;
       case 8: /* pixels max */
         /* Check string length first to prevent buffer overflows */
@@ -1443,10 +1462,8 @@ static void interface_edit_image_filter_field(image_size_filter_t *filter, int f
           /* Save the original format user entered */
           snprintf(pixels_max_format, sizeof(pixels_max_format), "%s", input);
         }
-        /* Clear width/height when setting pixels */
-        filter->min_width = 0;
+        /* Clear width/height max when setting pixels max */
         filter->max_width = 0;
-        filter->min_height = 0;
         filter->max_height = 0;
         break;
     }
