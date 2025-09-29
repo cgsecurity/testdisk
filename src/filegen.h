@@ -116,7 +116,6 @@ struct file_recovery_struct
   unsigned int blocksize;
   unsigned int flags;
   unsigned int data_check_tmp;
-  unsigned int image_filtering_active;
   unsigned char *memory_buffer;
   uint64_t buffer_size;
   uint64_t buffer_max_size;
@@ -354,7 +353,6 @@ void file_check_size_max(file_recovery_t *file_recovery);
   ensures file_recovery->flags==0;
   ensures file_recovery->extra==0;
   ensures file_recovery->data_check_tmp==0;
-  ensures file_recovery->image_filtering_active==0;
   assigns file_recovery->filename[0];
   assigns file_recovery->time;
   assigns file_recovery->file_stat;
@@ -377,7 +375,6 @@ void file_check_size_max(file_recovery_t *file_recovery);
   assigns file_recovery->flags;
   assigns file_recovery->extra;
   assigns file_recovery->data_check_tmp;
-  assigns file_recovery->image_filtering_active;
 */
 //  ensures valid_file_recovery(file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);

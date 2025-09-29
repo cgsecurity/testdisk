@@ -136,14 +136,14 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 #endif
   set_filename(file_recovery, params);
 
-  if(file_recovery->image_filtering_active && (file_recovery->file_stat->file_hint->is_image)) {
+  if(file_recovery->image_filter && (file_recovery->file_stat->file_hint->is_image)) {
     file_recovery->use_memory_buffering = 1;
     if(init_memory_buffer(file_recovery) < 0) {
       file_recovery->use_memory_buffering = 0;
     }
   }
 
-  if(file_recovery->image_filtering_active && file_recovery->file_check_presave) {
+  if(file_recovery->image_filter && file_recovery->file_check_presave) {
     const unsigned int blocksize=params->blocksize;
     const unsigned int read_size=(blocksize>65536?blocksize:65536);
     if(!file_recovery->file_check_presave(buffer, read_size, file_recovery)) {

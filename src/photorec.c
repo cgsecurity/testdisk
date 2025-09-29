@@ -759,7 +759,7 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
 
   // Handle memory buffering for images with filtering
   if(file_recovery->use_memory_buffering) {
-    if(file_recovery->image_filtering_active && file_recovery->file_check_presave) {
+    if(file_recovery->image_filter && file_recovery->file_check_presave) {
       if(!file_recovery->file_check_presave(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
         // File rejected by filters - don't create it at all
         reset_file_recovery(file_recovery);
@@ -825,7 +825,7 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
 
   // Handle memory buffering for images with filtering
   if(file_recovery->use_memory_buffering) {
-    if(file_recovery->image_filtering_active && file_recovery->file_check_presave) {
+    if(file_recovery->image_filter && file_recovery->file_check_presave) {
       if(!file_recovery->file_check_presave(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
         // File rejected by filters - don't create it at all
         reset_file_recovery(file_recovery);

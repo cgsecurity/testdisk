@@ -515,7 +515,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
   file_recovery->flags=0;
   file_recovery->extra=0;
   file_recovery->data_check_tmp=0;
-//   file_recovery->image_filtering_active=0;
+//   file_recovery->image_filter=NULL;
   file_recovery->image_data.width=0;
   file_recovery->image_data.height=0;
   free_memory_buffer(file_recovery);

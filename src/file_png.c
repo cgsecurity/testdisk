@@ -170,7 +170,7 @@ static void file_check_png(file_recovery_t *fr)
 	fr->file_size=0;
 	return ;
       }
-      if(fr->image_filtering_active > 0) {
+      if(fr->image_filter) {
         fr->image_data.width = be32(ihdr->width);
         fr->image_data.height = be32(ihdr->height);
       }
@@ -322,11 +322,13 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
 
 static int png_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  if(!file_recovery->image_filter)
+    return 1;
+
   if(buffer_size < 24)
     return 1;
+
   if(!(buffer[0] == 0x89 && buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G'))
-    return 1;
-  if(!file_recovery->image_filtering_active)
     return 1;
 
   const unsigned char *check_buffer = buffer;
@@ -399,7 +401,6 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->data_check=&data_check_png;
   file_recovery_new->file_check=&file_check_png;
   file_recovery_new->file_check_presave=&png_maches_image_filtering;
-  file_recovery_new->image_filtering_active=file_recovery->image_filtering_active;
   file_recovery_new->image_filter=file_recovery->image_filter;
   /*@ assert valid_file_recovery(file_recovery_new); */
   return 1;

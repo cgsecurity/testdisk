@@ -106,8 +106,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   memset(&file_recovery, 0, sizeof(file_recovery));
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
-  file_recovery.image_filtering_active = (options && has_any_image_size_filter(&options->image_filter)) ? 1 : 0;
-  file_recovery.image_filter = (options && file_recovery.image_filtering_active) ? &options->image_filter : NULL;
+  file_recovery.image_filter = (options && has_any_image_size_filter(&options->image_filter)) ? &options->image_filter : NULL;
   /*@ assert valid_file_recovery(&file_recovery); */
 #ifndef DISABLED_FOR_FRAMAC
   buffer_start=(unsigned char *)MALLOC(buffer_size);
