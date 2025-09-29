@@ -865,7 +865,7 @@ static time_t jpg_get_date(const unsigned char *buffer, const unsigned int buffe
   return 0;
 }
 
-static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+static int jpg_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
 
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size >= 10;
@@ -1055,7 +1055,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->time=jpg_time;
   file_recovery_new->extension=file_hint_jpg.extension;
   file_recovery_new->file_check=&file_check_jpg;
-  file_recovery_new->image_presave_check=&jpg_presave_check;
+  file_recovery_new->file_check_presave=&jpg_maches_image_filtering;
   file_recovery_new->image_filtering_active=file_recovery->image_filtering_active;
   file_recovery_new->image_filter=file_recovery->image_filter;
   if(buffer_size >= 4)
@@ -1932,7 +1932,7 @@ struct sof_header
 #endif
 } __attribute__ ((gcc_struct, __packed__));
 
-static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static int jpg_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size < 20)
     return 1;
@@ -2357,17 +2357,8 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
   if(thumb_offset+thumb_size > nbytes)
     return 1;
 
-//   if (file_recovery->image)
-//     unsigned int width = 0, height = 0;
-//     jpg_get_size(buffer, buffer_size, &height, &width);
-
-//     if(width > 0 && height > 0 && should_skip_image_by_dimensions(width, height)) {
-//       return 0;
-//     }
-
-  if (file_recovery->image_filtering_active && !jpg_presave_check((const char *)buffer, nbytes, file_recovery)) {
+  if (file_recovery->image_filtering_active && !jpg_maches_image_filtering((const char *)buffer, nbytes, file_recovery))
     return 1;
-  }
 
   /*@ assert thumb_offset + thumb_size <= nbytes; */
   /*@ assert 0 < thumb_size; */
@@ -2716,6 +2707,10 @@ static data_check_t data_check_jpg(const unsigned char *buffer, const unsigned i
   /* Skip the SOI */
   if(file_recovery->calculated_file_size<2)
     file_recovery->calculated_file_size=2;
+
+  if (file_recovery->image_filtering_active && !jpg_maches_image_filtering(buffer, buffer_size, file_recovery))
+    return DC_STOP;
+
   /*@ assert file_recovery->calculated_file_size >= 2; */
   /*@ assert file_recovery->data_check == &data_check_jpg; */
   /* Search SOS */

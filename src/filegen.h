@@ -109,7 +109,7 @@ struct file_recovery_struct
   /* data_check modifies file_recovery->calculated_file_size, it can also update data_check, file_check, offset_error, offset_ok, time, data_check_tmp */
   void (*file_check)(file_recovery_t *file_recovery);
   void (*file_rename)(file_recovery_t *file_recovery);
-  int (*image_presave_check)(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
+  int (*file_check_presave)(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery);
   const image_size_filter_t *image_filter;
   uint64_t checkpoint_offset;
   int checkpoint_status;	/* 0=suspend at offset_checkpoint if offset_checkpoint>0, 1=resume at offset_checkpoint */

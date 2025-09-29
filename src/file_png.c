@@ -321,7 +321,7 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   return 1;
 }
 
-static int png_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
+static int png_maches_image_filtering(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
   if(buffer_size < 24)
     return 1;
@@ -399,7 +399,7 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   file_recovery_new->calculated_file_size=8;
   file_recovery_new->data_check=&data_check_png;
   file_recovery_new->file_check=&file_check_png;
-  file_recovery_new->image_presave_check=&png_presave_check;
+  file_recovery_new->file_check_presave=&png_maches_image_filtering;
   file_recovery_new->image_filtering_active=file_recovery->image_filtering_active;
   file_recovery_new->image_filter=file_recovery->image_filter;
   /*@ assert valid_file_recovery(file_recovery_new); */
