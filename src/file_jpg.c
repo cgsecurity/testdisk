@@ -1934,9 +1934,6 @@ struct sof_header
 
 static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
-  printf("DEBUG: jpg_presave_check\n");
-  fflush(stdout);
-
   if(buffer_size < 20)
     return 1;
   if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
@@ -1944,14 +1941,18 @@ static int jpg_presave_check(const unsigned char *buffer, const unsigned int buf
   if(!file_recovery->image_filtering_active)
     return 1;
 
-  // Estimate file size by finding JPEG end marker (0xFF 0xD9)
+  const unsigned char *check_buffer = buffer;
+  unsigned int check_size = buffer_size;
+
   uint64_t estimated_file_size = 0;
-  for(unsigned int i = buffer_size - 2; i >= 2; i--)
-  {
-    if(buffer[i] == 0xff && buffer[i+1] == 0xd9)
+  if(check_size > 2) {
+    for(unsigned int i = check_size - 2; i > 2; i--)
     {
-      estimated_file_size = i + 2;
-      break;
+      if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xd9)
+      {
+        estimated_file_size = i + 2;
+        break;
+      }
     }
   }
 
@@ -1959,13 +1960,16 @@ static int jpg_presave_check(const unsigned char *buffer, const unsigned int buf
   if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
     return 0;
 
-  for(unsigned int i = 0; i < buffer_size - 10; i++)
+  // Check dimensions in the buffer we're examining
+  if(check_size > 10)
   {
-    if(buffer[i] == 0xff && buffer[i+1] == 0xc0)
+    for(unsigned int i = 0; i < check_size - 10; i++)
+  {
+    if(check_buffer[i] == 0xff && check_buffer[i+1] == 0xc0)
     {
-      if(i + 10 < buffer_size)
+      if(i + 10 < check_size)
       {
-        const struct sof_header *sof = (const struct sof_header *)&buffer[i];
+        const struct sof_header *sof = (const struct sof_header *)&check_buffer[i];
         const unsigned int width = be16(sof->width);
         const unsigned int height = be16(sof->height);
         if(file_recovery->image_filter && should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
@@ -1974,6 +1978,8 @@ static int jpg_presave_check(const unsigned char *buffer, const unsigned int buf
       break;
     }
   }
+  }
+
   return 1;
 }
 

@@ -327,17 +327,22 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
     return 1;
   if(!(buffer[0] == 0x89 && buffer[1] == 'P' && buffer[2] == 'N' && buffer[3] == 'G'))
     return 1;
-  if(!file_recovery->image_filter)
+  if(!file_recovery->image_filtering_active)
     return 1;
+
+  const unsigned char *check_buffer = buffer;
+  unsigned int check_size = buffer_size;
 
   // Estimate file size by finding PNG IEND chunk
   uint64_t estimated_file_size = 0;
-  for(unsigned int i = buffer_size - 12; i >= 8; i--)
-  {
-    if(buffer[i] == 'I' && buffer[i+1] == 'E' && buffer[i+2] == 'N' && buffer[i+3] == 'D')
+  if(check_size > 12) {
+    for(unsigned int i = check_size - 12; i > 8; i--)
     {
-      estimated_file_size = i + 8; // IEND chunk + 4-byte CRC
-      break;
+      if(check_buffer[i] == 'I' && check_buffer[i+1] == 'E' && check_buffer[i+2] == 'N' && check_buffer[i+3] == 'D')
+      {
+        estimated_file_size = i + 8; // IEND chunk + 4-byte CRC
+        break;
+      }
     }
   }
 
@@ -345,14 +350,15 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
   if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
     return 0;
 
-  if(buffer_size >= 16 + sizeof(struct png_ihdr))
+  if(check_size >= 16 + sizeof(struct png_ihdr))
   {
-    const struct png_ihdr *ihdr = (const struct png_ihdr *)&buffer[16];
+    const struct png_ihdr *ihdr = (const struct png_ihdr *)&check_buffer[16];
     const unsigned int width = be32(ihdr->width);
     const unsigned int height = be32(ihdr->height);
     if(should_skip_image_by_dimensions(file_recovery->image_filter, width, height))
       return 0;
   }
+
   return 1;
 }
 

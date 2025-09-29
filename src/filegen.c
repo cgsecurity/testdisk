@@ -37,6 +37,7 @@
 #endif
 #include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
 #include <assert.h>
 #ifdef HAVE_TIME_H
 #include <time.h>
@@ -517,6 +518,7 @@ void reset_file_recovery(file_recovery_t *file_recovery)
 //   file_recovery->image_filtering_active=0;
   file_recovery->image_data.width=0;
   file_recovery->image_data.height=0;
+  free_memory_buffer(file_recovery);
 }
 
 file_stat_t * init_file_stats(file_enable_t *files_enable)
@@ -1204,4 +1206,112 @@ time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc)
     (date_asc[2]-'0')*10+(date_asc[3]-'0')-1900;		/* year */
   tm_time.tm_isdst = -1;		/* unknown daylight saving time */
   return mktime(&tm_time);
+}
+
+static uint64_t calculate_max_buffer_size(file_recovery_t *file_recovery)
+{
+  uint64_t max_size = 0;
+
+  if(file_recovery->file_stat && file_recovery->file_stat->file_hint &&
+     file_recovery->file_stat->file_hint->max_filesize > 0) {
+    max_size = file_recovery->file_stat->file_hint->max_filesize;
+  }
+
+  if(file_recovery->image_filter && file_recovery->image_filter->max_file_size > 0) {
+    if(max_size == 0 || file_recovery->image_filter->max_file_size < max_size) {
+      max_size = file_recovery->image_filter->max_file_size;
+    }
+  }
+
+  // Limit memory buffer to reasonable size (100MB) to avoid allocation failures
+  const uint64_t MAX_MEMORY_BUFFER = 100 * 1024 * 1024; // 100MB
+  if(max_size > MAX_MEMORY_BUFFER) {
+    max_size = MAX_MEMORY_BUFFER;
+  }
+
+  return max_size;
+}
+
+int init_memory_buffer(file_recovery_t *file_recovery)
+{
+  if(!file_recovery->use_memory_buffering) {
+    return 0;
+  }
+
+  file_recovery->buffer_max_size = calculate_max_buffer_size(file_recovery);
+  if(file_recovery->buffer_max_size == 0) {
+    return 0;
+  }
+
+  file_recovery->memory_buffer = (unsigned char*)calloc(file_recovery->buffer_max_size, 1);
+  if(file_recovery->memory_buffer == NULL) {
+    file_recovery->use_memory_buffering = 0;
+    return -1;
+  }
+
+  file_recovery->buffer_size = 0;
+  return 0;
+}
+
+int append_to_memory_buffer(file_recovery_t *file_recovery, const unsigned char *data, size_t size)
+{
+  if(!file_recovery->use_memory_buffering || !file_recovery->memory_buffer) {
+    return -1;
+  }
+
+  if(file_recovery->buffer_size + size > file_recovery->buffer_max_size) {
+    free_memory_buffer(file_recovery);
+    return -2;
+  }
+
+  memcpy(file_recovery->memory_buffer + file_recovery->buffer_size, data, size);
+  file_recovery->buffer_size += size;
+  return 0;
+}
+
+int flush_memory_buffer_to_file(file_recovery_t *file_recovery)
+{
+  if(!file_recovery->memory_buffer || file_recovery->buffer_size == 0) {
+    return 0;
+  }
+
+  if(file_recovery->handle == NULL) {
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+    file_recovery->handle = fopen(file_recovery->filename, "w+b");
+#else
+    file_recovery->handle = fopen(file_recovery->filename, "w+b");
+#endif
+    if(file_recovery->handle == NULL) {
+      return -1;
+    }
+  }
+
+  if(fwrite(file_recovery->memory_buffer, file_recovery->buffer_size, 1, file_recovery->handle) < 1) {
+    return -1;
+  }
+
+  if(fflush(file_recovery->handle) != 0) {
+    return -1;
+  }
+
+  // Don't close the file handle - let PhotoRec handle that later
+  // PhotoRec needs handle to be non-NULL to call file_finish_aux() which registers files as recovered
+
+  file_recovery->file_size = file_recovery->buffer_size;
+  free_memory_buffer(file_recovery);
+  return 0;
+}
+
+void free_memory_buffer(file_recovery_t *file_recovery)
+{
+  if(file_recovery) {
+    // Only free if use_memory_buffering was actually set (not garbage)
+    if(file_recovery->use_memory_buffering == 1 && file_recovery->memory_buffer) {
+      free(file_recovery->memory_buffer);
+    }
+    file_recovery->memory_buffer = NULL;
+    file_recovery->buffer_size = 0;
+    file_recovery->buffer_max_size = 0;
+    file_recovery->use_memory_buffering = 0;
+  }
 }

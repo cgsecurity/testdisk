@@ -693,15 +693,9 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
 #endif
 
     if(should_skip_image_by_filesize(params->image_filter, file_recovery->file_size)) {
-#ifdef DEBUG_FILE_FINISH
-        log_trace("Skipping by filesize: %s\n", file_recovery->filename);
-#endif
         file_recovery->file_size=0;
     }
     else if(should_skip_image_by_dimensions(params->image_filter, file_recovery->image_data.width, file_recovery->image_data.height)) {
-#ifdef DEBUG_FILE_FINISH
-        log_trace("Skipping by dimensions: %s\n", file_recovery->filename);
-#endif
         file_recovery->file_size=0;
     }
   }
@@ -763,6 +757,22 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
   if(file_recovery->file_stat==NULL)
     return 0;
 
+  // Handle memory buffering for images with filtering
+  if(file_recovery->use_memory_buffering) {
+    if(file_recovery->image_filtering_active && file_recovery->image_presave_check) {
+      if(!file_recovery->image_presave_check(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
+        // File rejected by filters - don't create it at all
+        reset_file_recovery(file_recovery);
+        return 0;
+      }
+    }
+    // File passed filters - flush to disk
+    if(flush_memory_buffer_to_file(file_recovery) < 0) {
+      reset_file_recovery(file_recovery);
+      return -1;
+    }
+  }
+
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, 2);
   if(file_recovery->file_size==0)
@@ -814,6 +824,22 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
     return PFSTATUS_BAD;
 
   /* Note: Image filesize filter moved to end of function after all truncations */
+
+  // Handle memory buffering for images with filtering
+  if(file_recovery->use_memory_buffering) {
+    if(file_recovery->image_filtering_active && file_recovery->image_presave_check) {
+      if(!file_recovery->image_presave_check(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
+        // File rejected by filters - don't create it at all
+        reset_file_recovery(file_recovery);
+        return PFSTATUS_BAD;
+      }
+    }
+    // File passed filters - flush to disk
+    if(flush_memory_buffer_to_file(file_recovery) < 0) {
+      reset_file_recovery(file_recovery);
+      return PFSTATUS_BAD;
+    }
+  }
 
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, (paranoid==0?0:1));

@@ -117,6 +117,10 @@ struct file_recovery_struct
   unsigned int flags;
   unsigned int data_check_tmp;
   unsigned int image_filtering_active;
+  unsigned char *memory_buffer;
+  uint64_t buffer_size;
+  uint64_t buffer_max_size;
+  int use_memory_buffering;
 };
 
 typedef struct
@@ -377,6 +381,11 @@ void file_check_size_max(file_recovery_t *file_recovery);
 */
 //  ensures valid_file_recovery(file_recovery);
 void reset_file_recovery(file_recovery_t *file_recovery);
+
+int init_memory_buffer(file_recovery_t *file_recovery);
+int append_to_memory_buffer(file_recovery_t *file_recovery, const unsigned char *data, size_t size);
+int flush_memory_buffer_to_file(file_recovery_t *file_recovery);
+void free_memory_buffer(file_recovery_t *file_recovery);
 
 /*@
   @ requires offset <= PHOTOREC_MAX_SIG_OFFSET;

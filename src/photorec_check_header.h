@@ -136,6 +136,13 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 #endif
   set_filename(file_recovery, params);
 
+  if(file_recovery->image_filtering_active && (file_recovery->file_stat->file_hint->is_image)) {
+    file_recovery->use_memory_buffering = 1;
+    if(init_memory_buffer(file_recovery) < 0) {
+      file_recovery->use_memory_buffering = 0;
+    }
+  }
+
   if(file_recovery->image_filtering_active && file_recovery->image_presave_check) {
     const unsigned int blocksize=params->blocksize;
     const unsigned int read_size=(blocksize>65536?blocksize:65536);
@@ -146,18 +153,20 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
 
   if(file_recovery->file_stat->file_hint->recover==1)
   {
+    if(!file_recovery->use_memory_buffering) {
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-    file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
+      file_recovery->handle=fopen_with_retry(file_recovery->filename,"w+b");
 #else
-    file_recovery->handle=fopen(file_recovery->filename,"w+b");
+      file_recovery->handle=fopen(file_recovery->filename,"w+b");
 #endif
-    if(!file_recovery->handle)
-    {
+      if(!file_recovery->handle)
+      {
 #ifndef __FRAMAC__
-      log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
+        log_critical("Cannot create file %s: %s\n", file_recovery->filename, strerror(errno));
 #endif
-      params->offset=offset;
-      return PSTATUS_EACCES;
+        params->offset=offset;
+        return PSTATUS_EACCES;
+      }
     }
   }
   return PSTATUS_OK;

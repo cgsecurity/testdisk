@@ -107,6 +107,7 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
   reset_file_recovery(&file_recovery);
   file_recovery.blocksize=blocksize;
   file_recovery.image_filtering_active = (options && has_any_image_size_filter(&options->image_filter)) ? 1 : 0;
+  file_recovery.image_filter = (options && file_recovery.image_filtering_active) ? &options->image_filter : NULL;
   /*@ assert valid_file_recovery(&file_recovery); */
 #ifndef DISABLED_FOR_FRAMAC
   buffer_start=(unsigned char *)MALLOC(buffer_size);
@@ -185,10 +186,21 @@ pstatus_t photorec_aux(struct ph_param *params, const struct ph_options *options
       }
       else
       {
-	if(file_recovery.handle!=NULL)
+	// Handle memory buffering for images
+	if(file_recovery.use_memory_buffering)
+	{
+	  if(append_to_memory_buffer(&file_recovery, buffer, blocksize) < 0)
+	  {
+#ifndef DISABLED_FOR_FRAMAC
+	    log_critical("Cannot append to memory buffer for %s: buffer full\n", file_recovery.filename);
+#endif
+	    data_check_status=DC_STOP;
+	  }
+	}
+	else if(file_recovery.handle!=NULL)
 	{
 	  if(fwrite(buffer,blocksize,1,file_recovery.handle)<1)
-	  { 
+	  {
 #ifndef DISABLED_FOR_FRAMAC
 	    log_critical("Cannot write to file %s after %llu bytes: %s\n", file_recovery.filename, (long long unsigned)file_recovery.file_size, strerror(errno));
 #endif

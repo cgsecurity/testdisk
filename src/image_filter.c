@@ -190,9 +190,6 @@ int should_skip_image_by_filesize(const image_size_filter_t *filter, uint64_t fi
   if(!filter)
     return 0;
 
-  printf("DEBUG: should_skip_image_by_filesize\n");
-  fflush(stdout);
-
   if(filter->min_file_size > 0 && file_size < filter->min_file_size)
     return 1;
   if(filter->max_file_size > 0 && file_size > filter->max_file_size)
