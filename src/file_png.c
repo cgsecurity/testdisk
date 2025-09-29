@@ -329,6 +329,22 @@ static int png_presave_check(const unsigned char *buffer, const unsigned int buf
     return 1;
   if(!file_recovery->image_filter)
     return 1;
+
+  // Estimate file size by finding PNG IEND chunk
+  uint64_t estimated_file_size = 0;
+  for(unsigned int i = buffer_size - 12; i >= 8; i--)
+  {
+    if(buffer[i] == 'I' && buffer[i+1] == 'E' && buffer[i+2] == 'N' && buffer[i+3] == 'D')
+    {
+      estimated_file_size = i + 8; // IEND chunk + 4-byte CRC
+      break;
+    }
+  }
+
+  // Apply file size filter if we found IEND
+  if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
+    return 0;
+
   if(buffer_size >= 16 + sizeof(struct png_ihdr))
   {
     const struct png_ihdr *ihdr = (const struct png_ihdr *)&buffer[16];

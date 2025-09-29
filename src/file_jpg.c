@@ -1934,12 +1934,31 @@ struct sof_header
 
 static int jpg_presave_check(const unsigned char *buffer, const unsigned int buffer_size, file_recovery_t *file_recovery)
 {
+  printf("DEBUG: jpg_presave_check\n");
+  fflush(stdout);
+
   if(buffer_size < 20)
     return 1;
   if(!(buffer[0] == 0xff && buffer[1] == 0xd8 && buffer[2] == 0xff))
     return 1;
   if(!file_recovery->image_filtering_active)
     return 1;
+
+  // Estimate file size by finding JPEG end marker (0xFF 0xD9)
+  uint64_t estimated_file_size = 0;
+  for(unsigned int i = buffer_size - 2; i >= 2; i--)
+  {
+    if(buffer[i] == 0xff && buffer[i+1] == 0xd9)
+    {
+      estimated_file_size = i + 2;
+      break;
+    }
+  }
+
+  // Apply file size filter if we found end marker
+  if(estimated_file_size > 0 && file_recovery->image_filter && should_skip_image_by_filesize(file_recovery->image_filter, estimated_file_size))
+    return 0;
+
   for(unsigned int i = 0; i < buffer_size - 10; i++)
   {
     if(buffer[i] == 0xff && buffer[i+1] == 0xc0)
@@ -2340,7 +2359,7 @@ static int jpg_check_app1(file_recovery_t *file_recovery, const unsigned int ext
 //       return 0;
 //     }
 
-  if (!jpg_presave_check((const char *)buffer, nbytes, file_recovery)) {
+  if (file_recovery->image_filtering_active && !jpg_presave_check((const char *)buffer, nbytes, file_recovery)) {
     return 1;
   }
 
