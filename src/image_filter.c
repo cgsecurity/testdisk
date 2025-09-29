@@ -498,14 +498,14 @@ void image_size_2_cli(const image_size_filter_t *filter, char *buffer, size_t bu
 
   /* File size filters */
   if (filter->min_file_size > 0 && filter->max_file_size > 0) {
-    written += snprintf(buffer + written, buffer_size - written, "filesize,%luk-%luk,",
+    written += snprintf(buffer + written, buffer_size - written, "size,%luk-%luk,",
                        (unsigned long)(filter->min_file_size / 1024),
                        (unsigned long)(filter->max_file_size / 1024));
   } else if (filter->min_file_size > 0) {
-    written += snprintf(buffer + written, buffer_size - written, "filesize,%luk-,",
+    written += snprintf(buffer + written, buffer_size - written, "size,%luk-,",
                        (unsigned long)(filter->min_file_size / 1024));
   } else if (filter->max_file_size > 0) {
-    written += snprintf(buffer + written, buffer_size - written, "filesize,-%luk,",
+    written += snprintf(buffer + written, buffer_size - written, "size,-%luk,",
                        (unsigned long)(filter->max_file_size / 1024));
   }
 

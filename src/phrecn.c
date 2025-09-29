@@ -1514,7 +1514,7 @@ static void interface_ask_file_size(image_size_filter_t *filter)
   if (strlen(input) > 0) {
     char temp_cmd[128];
     char *cmd_ptr;
-    snprintf(temp_cmd, sizeof(temp_cmd), "filesize,%s", input);
+    snprintf(temp_cmd, sizeof(temp_cmd), "size,%s", input);
     cmd_ptr = temp_cmd;
 
     /* Clear current file size settings */

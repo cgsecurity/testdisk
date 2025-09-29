@@ -2496,7 +2496,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
     return ;
   const unsigned int extract_thumb = file_recovery->image_filtering_active ? 0 : 1;
 #ifdef DEBUG_JPEG
-  if(file_recovery->image_filtering_active > 0)|
+  if(file_recovery->image_filtering_active > 0)
     log_info("skipping thumbnail extraction because image filtering is enabled\n");
 #endif
   thumb_offset=jpg_check_structure(file_recovery, extract_thumb);
