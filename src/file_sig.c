@@ -42,6 +42,7 @@
 #endif
 #include "types.h"
 #include "filegen.h"
+#include "file_sig.h"
 #include "common.h"
 #include "log.h"
 
@@ -148,6 +149,17 @@ struct signature_s
 static signature_t signatures={
   .list = TD_LIST_HEAD_INIT(signatures.list)
 };
+
+static char *custom_sig_file = NULL;
+
+void set_custom_signature_file(const char *path)
+{
+  if(custom_sig_file != NULL)
+  {
+    free(custom_sig_file);
+  }
+  custom_sig_file = (path != NULL) ? strdup(path) : NULL;
+}
 
 /*@
   @ assigns \nothing;
@@ -261,6 +273,20 @@ static int header_check_sig(const unsigned char *buffer, const unsigned int buff
 
 static FILE *open_signature_file(void)
 {
+  if(custom_sig_file != NULL)
+  {
+    FILE *handle = fopen(custom_sig_file, "rb");
+    if(handle != NULL)
+    {
+#ifndef DISABLED_FOR_FRAMAC
+      log_info("Open signature file %s\n", custom_sig_file);
+#endif
+      return handle;
+    }
+#ifndef DISABLED_FOR_FRAMAC
+    log_error("Failed to open signature file %s\n", custom_sig_file);
+#endif
+  }
 #if defined(__CYGWIN__) || defined(__MINGW32__)
   {
     char *path;
