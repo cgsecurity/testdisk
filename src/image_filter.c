@@ -211,7 +211,6 @@ int should_skip_image_by_filesize(const image_size_filter_t *filter, uint64_t fi
   return 0;
 }
 
-
 int has_any_image_size_filter(const image_size_filter_t *filter)
 {
   return (filter->min_file_size | filter->max_file_size |
@@ -485,125 +484,64 @@ void format_file_size_string(uint64_t size, char *buffer, size_t buffer_size)
   }
 }
 
-void set_current_image_filter(const image_size_filter_t *filter)
+/* Convert image_size_filter_t to CLI format string for session saving */
+void image_size_2_cli(const image_size_filter_t *filter, char *buffer, size_t buffer_size)
 {
-  FILE *debug_file = fopen("/tmp/filter_debug.log", "a");
-  if(debug_file) {
-    if(filter) {
-      fprintf(debug_file, "SET_FILTER: Copying filter with min_file_size=%llu, max_file_size=%llu to global storage\n",
-              (long long unsigned)filter->min_file_size, (long long unsigned)filter->max_file_size);
-      fprintf(debug_file, "SET_FILTER: Source address: %p, global address: %p\n", filter, &global_image_filter);
-    } else {
-      fprintf(debug_file, "SET_FILTER: Setting filter to NULL\n");
-    }
-    fclose(debug_file);
+  int written = 0;
+
+  if (!has_any_image_size_filter(filter)) {
+    buffer[0] = '\0';
+    return;
   }
 
-  if(filter) {
-    /* Copy filter to global storage to avoid stack pointer issues */
-    global_image_filter = *filter;
-    global_filter_active = 1;
-    current_image_filter = &global_image_filter;
+  written += snprintf(buffer + written, buffer_size - written, "imagesize,");
 
-    /* Also save to environment variables for cross-process communication */
-    char env_val[64];
-    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->min_file_size);
-    setenv("PHOTOREC_MIN_FILE_SIZE", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->max_file_size);
-    setenv("PHOTOREC_MAX_FILE_SIZE", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%u", filter->min_width);
-    setenv("PHOTOREC_MIN_WIDTH", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%u", filter->max_width);
-    setenv("PHOTOREC_MAX_WIDTH", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%u", filter->min_height);
-    setenv("PHOTOREC_MIN_HEIGHT", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%u", filter->max_height);
-    setenv("PHOTOREC_MAX_HEIGHT", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->min_pixels);
-    setenv("PHOTOREC_MIN_PIXELS", env_val, 1);
-    snprintf(env_val, sizeof(env_val), "%llu", (long long unsigned)filter->max_pixels);
-    setenv("PHOTOREC_MAX_PIXELS", env_val, 1);
-    setenv("PHOTOREC_FILTER_ACTIVE", "1", 1);
-  } else {
-    global_filter_active = 0;
-    current_image_filter = NULL;
-    unsetenv("PHOTOREC_FILTER_ACTIVE");
+  /* File size filters */
+  if (filter->min_file_size > 0 && filter->max_file_size > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "filesize,%luk-%luk,",
+                       (unsigned long)(filter->min_file_size / 1024),
+                       (unsigned long)(filter->max_file_size / 1024));
+  } else if (filter->min_file_size > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "filesize,%luk-,",
+                       (unsigned long)(filter->min_file_size / 1024));
+  } else if (filter->max_file_size > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "filesize,-%luk,",
+                       (unsigned long)(filter->max_file_size / 1024));
   }
 
+  /* Width filters */
+  if (filter->min_width > 0 && filter->max_width > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "width,%u-%u,",
+                       filter->min_width, filter->max_width);
+  } else if (filter->min_width > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "width,%u-,",
+                       filter->min_width);
+  } else if (filter->max_width > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "width,-%u,",
+                       filter->max_width);
+  }
+
+  /* Height filters */
+  if (filter->min_height > 0 && filter->max_height > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "height,%u-%u,",
+                       filter->min_height, filter->max_height);
+  } else if (filter->min_height > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "height,%u-,",
+                       filter->min_height);
+  } else if (filter->max_height > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "height,-%u,",
+                       filter->max_height);
+  }
+
+  /* Pixels filters */
+  if (filter->min_pixels > 0 && filter->max_pixels > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "pixels,%llu-%llu,",
+                       (unsigned long long)filter->min_pixels, (unsigned long long)filter->max_pixels);
+  } else if (filter->min_pixels > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "pixels,%llu-,",
+                       (unsigned long long)filter->min_pixels);
+  } else if (filter->max_pixels > 0) {
+    written += snprintf(buffer + written, buffer_size - written, "pixels,-%llu,",
+                       (unsigned long long)filter->max_pixels);
+  }
 }
-
-int should_skip_image_by_dimensions(const image_size_filter_t *filter, uint32_t width, uint32_t height)
-{
-  if(!filter) {
-    return 0; /* don't skip */
-  }
-
-  static unsigned long dim_calls = 0;
-  static unsigned long dim_skips = 0;
-  dim_calls++;
-
-  if(dim_calls % 5000 == 0) {
-    fprintf(stderr, "DIM_DEBUG: %lu calls, %lu skips\n", dim_calls, dim_skips);
-  }
-
-  /* Check pixels first (has priority over width/height) */
-  if (filter->min_pixels > 0 || filter->max_pixels > 0) {
-    uint64_t pixels = (uint64_t)width * height;
-    if (filter->min_pixels > 0 && pixels < filter->min_pixels) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-    if (filter->max_pixels > 0 && pixels > filter->max_pixels) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-  }
-  /* Check width/height only if pixels is not set */
-  else {
-    if (filter->min_width > 0 && width < filter->min_width) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-    if (filter->max_width > 0 && width > filter->max_width) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-    if (filter->min_height > 0 && height < filter->min_height) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-    if (filter->max_height > 0 && height > filter->max_height) {
-      dim_skips++;
-      return 1; /* skip */
-    }
-  }
-
-  return 0; /* don't skip */
-}
-
-int has_dimension_filters(void)
-{
-  if(!current_image_filter) {
-    return 0;
-  }
-  return (current_image_filter->min_width > 0 ||
-          current_image_filter->max_width > 0 ||
-          current_image_filter->min_height > 0 ||
-          current_image_filter->max_height > 0 ||
-          current_image_filter->min_pixels > 0 ||
-          current_image_filter->max_pixels > 0);
-}
-
-int should_skip_image_by_filesize(uint64_t file_size)
-{
-  if(!current_image_filter)
-    return 0; /* don't skip */
-
-  /* Check file size if provided */
-  if(file_size > 0 && !check_image_filesize(file_size, current_image_filter)) {
-    return 1; /* skip */
-  }
-
-  return 0; /* don't skip */
-}
-

@@ -49,6 +49,8 @@ void parse_pixels_range(char **cmd, uint64_t *min_pixels, uint64_t *max_pixels);
 
 void format_file_size_string(uint64_t size, char *buffer, size_t buffer_size);
 
+void image_size_2_cli(const image_size_filter_t *filter, char *buffer, size_t buffer_size);
+
 #ifdef __cplusplus
 }
 #endif
