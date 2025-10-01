@@ -575,6 +575,120 @@ void interface_options_photorec_ncurses(struct ph_options *options)
 #define INTER_FSELECT_Y	(LINES-2)
 #define INTER_FSELECT	(LINES-10)
 
+typedef struct {
+  const char *name;
+  const char *keywords[20];
+} file_category_t;
+
+static const file_category_t file_categories[] = {
+  {"Images", {"picture", "image", "photo", "icon", "bitmap", "graphics", NULL}},
+  {"RAW Images", {"raw", NULL}},
+  {"Videos", {"video", "movie", "film", NULL}},
+  {"Audio", {"audio", "sound", "music", "midi", NULL}},
+  {"Documents", {"document", "spreadsheet", "presentation", "text", "word", "excel", "powerpoint", NULL}},
+  {"Archives", {"archive", "compressed", "compression", "zip", NULL}},
+  {"Databases", {"database", NULL}},
+  {NULL, {NULL}}
+};
+
+static int is_file_in_category(const file_hint_t *file_hint, const file_category_t *category)
+{
+  int i;
+  if(file_hint == NULL || category == NULL || file_hint->description == NULL)
+    return 0;
+
+  /* Special case: if category is "RAW Images", exclude files with "video" or "audio" in description */
+  if(strcmp(category->name, "RAW Images") == 0)
+  {
+    if(strcasestr(file_hint->description, "video") != NULL ||
+       strcasestr(file_hint->description, "audio") != NULL ||
+       strcasestr(file_hint->description, "movie") != NULL)
+      return 0;
+  }
+
+  /* Convert description to lowercase for case-insensitive comparison */
+  for(i = 0; category->keywords[i] != NULL; i++)
+  {
+    if(strcasestr(file_hint->description, category->keywords[i]) != NULL)
+      return 1;
+  }
+  return 0;
+}
+
+static void select_file_category_ncurses(file_enable_t *files_enable)
+{
+  int current = 0;
+  int done = 0;
+
+  while(!done)
+  {
+    int i, command;
+    int category_count = 0;
+
+    /* Count categories */
+    for(i = 0; file_categories[i].name != NULL; i++)
+      category_count++;
+
+    aff_copy(stdscr);
+    wmove(stdscr, 4, 0);
+    wprintw(stdscr, "Select file type category to enable:");
+
+    /* Display categories */
+    for(i = 0; file_categories[i].name != NULL; i++)
+    {
+      wmove(stdscr, 6 + i, 0);
+      if(i == current)
+        wattrset(stdscr, A_REVERSE);
+      wprintw(stdscr, " %s ", file_categories[i].name);
+      if(i == current)
+        wattroff(stdscr, A_REVERSE);
+    }
+
+    /* Display help */
+    wmove(stdscr, 6 + category_count + 1, 0);
+    wprintw(stdscr, "Press Enter to select category, q to quit");
+
+    wrefresh(stdscr);
+    command = wgetch(stdscr);
+
+    switch(command)
+    {
+      case KEY_UP:
+      case '8':
+        if(current > 0)
+          current--;
+        break;
+      case KEY_DOWN:
+      case '2':
+        if(current < category_count - 1)
+          current++;
+        break;
+      case '\r':
+      case '\n':
+      case KEY_ENTER:
+        {
+          file_enable_t *file_enable;
+          const file_category_t *selected_category = &file_categories[current];
+          /* Enable all files in selected category */
+          for(file_enable = &files_enable[0]; file_enable->file_hint != NULL; file_enable++)
+          {
+            if(is_file_in_category(file_enable->file_hint, selected_category))
+            {
+              file_enable->enable = 1;
+            }
+          }
+          done = 1;
+        }
+        break;
+      case 'q':
+      case 'Q':
+      case 27: /* ESC */
+        done = 1;
+        break;
+    }
+  }
+}
+
 void interface_file_select_ncurses(file_enable_t *files_enable)
 {
   int current_element_num=0;
@@ -582,6 +696,9 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
   int old_LINES=0;	/* Screen will be cleared */
   unsigned int menu=0;
   int enable_status=files_enable[0].enable;
+  char search_filter[256]="";
+  int search_mode=0;
+  int can_restore=file_options_exists();
   static const struct MenuItem menuAdv[]=
   {
     {'q',"Quit","Return to main menu"},
@@ -592,86 +709,501 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
   {
     int i;
     int command;
+    int total_count=0;
+    int selected_count=0;
+    int filtered_count=0;
+    int items_before=0;
+    int items_after=0;
+    int display_idx;
+    int current_display_idx=-1;
+    int first_visible_line=6;
+    int displayed_count=0;
+
+    /* Count total, selected, and filtered items */
+    for(i=0; files_enable[i].file_hint!=NULL; i++)
+    {
+      int matches=1;
+      total_count++;
+      if(files_enable[i].enable)
+        selected_count++;
+
+      if(search_filter[0]!='\0')
+      {
+        const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+        const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+        char combined[512];
+        snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+        matches = (strcasestr(combined, search_filter) != NULL);
+      }
+
+      if(matches)
+        filtered_count++;
+    }
+
     if(old_LINES!=LINES)
     {
       aff_copy(stdscr);
-      wmove(stdscr,4,0);
-      wprintw(stdscr,"PhotoRec will try to locate the following files");
       current_element_num=0;
       offset=0;
       old_LINES=LINES;
     }
+
+    /* Display header with counts */
+    wmove(stdscr,4,0);
+    wclrtoeol(stdscr);
+    wprintw(stdscr,"PhotoRec will try to locate the following files [%d/%d selected]", selected_count, total_count);
+
+    /* Display search info if active */
     wmove(stdscr,5,0);
     wclrtoeol(stdscr);
-    wmove(stdscr,5,4);
-    if(offset>0)
-      wprintw(stdscr,"Previous");
-    for(i=offset; i<offset+INTER_FSELECT && files_enable[i].file_hint!=NULL; i++)
+    if(search_filter[0]!='\0')
     {
-      wmove(stdscr,6+i-offset,0);
-      wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
-      if(i==current_element_num)
+      wprintw(stdscr,"Filter: %s [%d/%d matches]", search_filter, filtered_count, total_count);
+    }
+    else if(search_mode)
+    {
+      wprintw(stdscr,"Filter: ");
+    }
+
+    /* Clear line 6 - will be used for "above" message or first file entry */
+    wmove(stdscr,6,0);
+    wclrtoeol(stdscr);
+
+    /* Display file list with filter applied */
+    display_idx=0;
+    current_display_idx=-1;
+    first_visible_line=6;
+
+    /* Count items before viewport for "above" message */
+    for(i=0; files_enable[i].file_hint!=NULL; i++)
+    {
+      int matches=1;
+      if(search_filter[0]!='\0')
       {
-	wattrset(stdscr, A_REVERSE);
-	wprintw(stdscr,">[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
-	    (files_enable[i].file_hint->extension!=NULL?
-	     files_enable[i].file_hint->extension:""),
-	    files_enable[i].file_hint->description);
-	wattroff(stdscr, A_REVERSE);
+        const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+        const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+        char combined[512];
+        snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+        matches = (strcasestr(combined, search_filter) != NULL);
       }
-      else
+      if(!matches)
+        continue;
+      if(display_idx < offset)
+        items_before++;
+      display_idx++;
+    }
+
+    /* Calculate current_display_idx and adjust offset BEFORE displaying */
+    current_display_idx=-1;
+    display_idx=0;
+    for(i=0; files_enable[i].file_hint!=NULL; i++)
+    {
+      int matches=1;
+      if(search_filter[0]!='\0')
       {
-	wprintw(stdscr," [%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
-	    (files_enable[i].file_hint->extension!=NULL?
-	     files_enable[i].file_hint->extension:""),
-	    files_enable[i].file_hint->description);
+        const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+        const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+        char combined[512];
+        snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+        matches = (strcasestr(combined, search_filter) != NULL);
+      }
+      if(!matches)
+        continue;
+      if(i==current_element_num)
+        current_display_idx=display_idx;
+      display_idx++;
+    }
+
+    /* Adjust offset to keep current element visible */
+    /* Strategy: scroll by INTER_FSELECT-1 so that when "above" message appears, it fits */
+    if(current_display_idx>=0)
+    {
+      if(current_display_idx<offset)
+        offset=current_display_idx;
+      if(current_display_idx>=offset+INTER_FSELECT-1)
+        offset=current_display_idx-(INTER_FSELECT-1)+1;
+    }
+
+    /* Recalculate items_before after offset adjustment */
+    items_before=0;
+    display_idx=0;
+    for(i=0; files_enable[i].file_hint!=NULL; i++)
+    {
+      int matches=1;
+      if(search_filter[0]!='\0')
+      {
+        const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+        const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+        char combined[512];
+        snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+        matches = (strcasestr(combined, search_filter) != NULL);
+      }
+      if(!matches)
+        continue;
+      if(display_idx < offset)
+        items_before++;
+      display_idx++;
+    }
+
+    /* Display "above" message if needed */
+    if(items_before>0)
+    {
+      wmove(stdscr,6,0);
+      wattrset(stdscr, A_DIM);
+      wprintw(stdscr,"%d more item%s above", items_before, items_before>1?"s":"");
+      wattroff(stdscr, A_DIM);
+      first_visible_line=7;
+    }
+
+    /* Now display the actual list */
+    display_idx=0;
+    items_before=0;
+    items_after=0;
+    displayed_count=0;
+    {
+      int max_visible = INTER_FSELECT;
+      if(first_visible_line==7)
+        max_visible = INTER_FSELECT - 1;
+
+      for(i=0; files_enable[i].file_hint!=NULL; i++)
+      {
+        int matches=1;
+
+        if(search_filter[0]!='\0')
+        {
+          const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+          const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+          char combined[512];
+          snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+          matches = (strcasestr(combined, search_filter) != NULL);
+        }
+
+        if(!matches)
+          continue;
+
+        if(i==current_element_num)
+          current_display_idx=display_idx;
+
+        if(display_idx < offset)
+        {
+          display_idx++;
+          continue;
+        }
+
+        if(displayed_count >= max_visible)
+        {
+          items_after++;
+          display_idx++;
+          continue;
+        }
+
+        wmove(stdscr,first_visible_line+displayed_count,0);
+        wclrtoeol(stdscr);
+        if(i==current_element_num)
+        {
+          wattrset(stdscr, A_REVERSE);
+          wprintw(stdscr,">[%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+              (files_enable[i].file_hint->extension!=NULL?
+               files_enable[i].file_hint->extension:""),
+              files_enable[i].file_hint->description);
+          wattroff(stdscr, A_REVERSE);
+        }
+        else
+        {
+          wprintw(stdscr," [%c] %-4s %s", (files_enable[i].enable==0?' ':'X'),
+              (files_enable[i].file_hint->extension!=NULL?
+               files_enable[i].file_hint->extension:""),
+              files_enable[i].file_hint->description);
+        }
+        displayed_count++;
+        display_idx++;
       }
     }
-    wmove(stdscr,6+INTER_FSELECT,4);
-    wclrtoeol(stdscr);	/* before addstr for BSD compatibility */
-    if(files_enable[i].file_hint!=NULL)
-      wprintw(stdscr,"Next");
+
+    /* Clear remaining lines in display area */
+    {
+      int max_visible = INTER_FSELECT;
+      if(first_visible_line==7)
+        max_visible = INTER_FSELECT - 1;
+      for(i=displayed_count; i<max_visible; i++)
+      {
+        wmove(stdscr,first_visible_line+i,0);
+        wclrtoeol(stdscr);
+      }
+    }
+
+    /* Clear and display count of items outside viewport at bottom */
+    /* "below" message always on line 6+INTER_FSELECT, menu always on 6+INTER_FSELECT+1 */
+    wmove(stdscr,6+INTER_FSELECT,0);
+    wclrtoeol(stdscr);
+    if(items_after>0)
+    {
+      wattrset(stdscr, A_DIM);
+      wprintw(stdscr,"%d more item%s below", items_after, items_after>1?"s":"");
+      wattroff(stdscr, A_DIM);
+    }
+
     wmove(stdscr,6+INTER_FSELECT+1,0);
     wclrtoeol(stdscr);
     wprintw(stdscr,"Press ");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+    wprintw(stdscr,"f");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+    wprintw(stdscr," filter, ");
     if(has_colors())
       wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
     wprintw(stdscr,"s");
     if(has_colors())
       wbkgdset(stdscr,' ' | COLOR_PAIR(0));
     if(enable_status==0)
-      wprintw(stdscr," for default selection, ");
+      wprintw(stdscr," select all, ");
     else
-      wprintw(stdscr," to disable all file families, ");
+      wprintw(stdscr," clear all, ");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+    wprintw(stdscr,"i");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+    wprintw(stdscr," invert, ");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+    wprintw(stdscr,"t");
+    if(has_colors())
+      wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+    wprintw(stdscr," select type, ");
+    if(can_restore)
+    {
+      if(has_colors())
+        wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
+      wprintw(stdscr,"r");
+      if(has_colors())
+        wbkgdset(stdscr,' ' | COLOR_PAIR(0));
+      wprintw(stdscr," restore, ");
+    }
+    else
+    {
+      wattrset(stdscr, A_DIM);
+      wprintw(stdscr,"r restore, ");
+      wattroff(stdscr, A_DIM);
+    }
     if(has_colors())
       wbkgdset(stdscr,' ' | A_BOLD | COLOR_PAIR(0));
     wprintw(stdscr,"b");
     if(has_colors())
       wbkgdset(stdscr,' ' | COLOR_PAIR(0));
-    wprintw(stdscr," to save the settings");
+    wprintw(stdscr," save");
+
+    if(search_mode)
+    {
+      int ch;
+      wmove(stdscr,5,8+strlen(search_filter));
+      wrefresh(stdscr);
+      ch = wgetch(stdscr);
+      if(ch=='\n' || ch=='\r' || ch==KEY_ENTER)
+      {
+        search_mode=0;
+        /* Find first matching element after exiting search mode */
+        if(search_filter[0]!='\0')
+        {
+          int found=0;
+          for(i=0; files_enable[i].file_hint!=NULL && !found; i++)
+          {
+            const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+            const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+            char combined[512];
+            snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+            if(strcasestr(combined, search_filter) != NULL)
+            {
+              current_element_num=i;
+              offset=0;
+              found=1;
+            }
+          }
+        }
+      }
+      else if(ch==27) /* ESC */
+      {
+        search_filter[0]='\0';
+        search_mode=0;
+        current_element_num=0;
+      }
+      else if(ch==KEY_BACKSPACE || ch==127 || ch==8)
+      {
+        int len=strlen(search_filter);
+        if(len>0)
+        {
+          search_filter[len-1]='\0';
+          /* After removing character, find first matching element */
+          if(search_filter[0]!='\0')
+          {
+            int found=0;
+            for(i=0; files_enable[i].file_hint!=NULL && !found; i++)
+            {
+              const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+              const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+              char combined[512];
+              snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+              if(strcasestr(combined, search_filter) != NULL)
+              {
+                current_element_num=i;
+                offset=0;
+                found=1;
+              }
+            }
+          }
+          else
+          {
+            current_element_num=0;
+            offset=0;
+          }
+        }
+      }
+      else if(((ch>='a' && ch<='z') || (ch>='A' && ch<='Z') || (ch>='0' && ch<='9')) && strlen(search_filter)<sizeof(search_filter)-1)
+      {
+        int len=strlen(search_filter);
+        search_filter[len]=ch;
+        search_filter[len+1]='\0';
+        /* After adding character, find first matching element */
+        if(search_filter[0]!='\0')
+        {
+          int found=0;
+          for(i=0; files_enable[i].file_hint!=NULL && !found; i++)
+          {
+            const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+            const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+            char combined[512];
+            snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+            if(strcasestr(combined, search_filter) != NULL)
+            {
+              current_element_num=i;
+              offset=0;
+              found=1;
+            }
+          }
+        }
+      }
+      continue;
+    }
+
+    wrefresh(stdscr);
     command = wmenuSelect(stdscr, LINES-1, INTER_FSELECT_Y, INTER_FSELECT_X, menuAdv, 8,
 	"q", MENU_BUTTON | MENU_ACCEPT_OTHERS, menu);
+
     switch(command)
     {
+      case 27: /* ESC - clear filter */
+        if(search_filter[0]!='\0')
+        {
+          search_filter[0]='\0';
+          current_element_num=0;
+          offset=0;
+        }
+        break;
+      case 'f':
+      case 'F':
+        search_mode=1;
+        break;
       case KEY_UP:
       case '8':
-	if(current_element_num>0)
-	  current_element_num--;
+	{
+	  int found=0;
+	  for(i=current_element_num-1; i>=0 && !found; i--)
+	  {
+	    int matches=1;
+	    if(search_filter[0]!='\0')
+	    {
+	      const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+	      const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+	      char combined[512];
+	      snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+	      matches = (strcasestr(combined, search_filter) != NULL);
+	    }
+	    if(matches)
+	    {
+	      current_element_num=i;
+	      found=1;
+	    }
+	  }
+	}
 	break;
       case KEY_PPAGE:
       case '9':
-	for(i=0; i<INTER_FSELECT-1 && current_element_num>0; i++)
-	  current_element_num--;
+	for(i=0; i<INTER_FSELECT-1; i++)
+	{
+	  int found=0;
+	  int j;
+	  for(j=current_element_num-1; j>=0 && !found; j--)
+	  {
+	    int matches=1;
+	    if(search_filter[0]!='\0')
+	    {
+	      const char *ext = files_enable[j].file_hint->extension ? files_enable[j].file_hint->extension : "";
+	      const char *desc = files_enable[j].file_hint->description ? files_enable[j].file_hint->description : "";
+	      char combined[512];
+	      snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+	      matches = (strcasestr(combined, search_filter) != NULL);
+	    }
+	    if(matches)
+	    {
+	      current_element_num=j;
+	      found=1;
+	    }
+	  }
+	  if(!found)
+	    break;
+	}
 	break;
       case KEY_DOWN:
       case '2':
-	if(files_enable[current_element_num+1].file_hint!=NULL)
-	  current_element_num++;
+	{
+	  int found=0;
+	  for(i=current_element_num+1; files_enable[i].file_hint!=NULL && !found; i++)
+	  {
+	    int matches=1;
+	    if(search_filter[0]!='\0')
+	    {
+	      const char *ext = files_enable[i].file_hint->extension ? files_enable[i].file_hint->extension : "";
+	      const char *desc = files_enable[i].file_hint->description ? files_enable[i].file_hint->description : "";
+	      char combined[512];
+	      snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+	      matches = (strcasestr(combined, search_filter) != NULL);
+	    }
+	    if(matches)
+	    {
+	      current_element_num=i;
+	      found=1;
+	    }
+	  }
+	}
 	break;
       case KEY_NPAGE:
       case '3':
-	for(i=0; i<INTER_FSELECT-1 && files_enable[current_element_num+1].file_hint!=NULL; i++)
-	  current_element_num++;
+	for(i=0; i<INTER_FSELECT-1; i++)
+	{
+	  int found=0;
+	  int j;
+	  for(j=current_element_num+1; files_enable[j].file_hint!=NULL && !found; j++)
+	  {
+	    int matches=1;
+	    if(search_filter[0]!='\0')
+	    {
+	      const char *ext = files_enable[j].file_hint->extension ? files_enable[j].file_hint->extension : "";
+	      const char *desc = files_enable[j].file_hint->description ? files_enable[j].file_hint->description : "";
+	      char combined[512];
+	      snprintf(combined, sizeof(combined), "%s %s", ext, desc);
+	      matches = (strcasestr(combined, search_filter) != NULL);
+	    }
+	    if(matches)
+	    {
+	      current_element_num=j;
+	      found=1;
+	    }
+	  }
+	  if(!found)
+	    break;
+	}
 	break;
       case KEY_RIGHT:
       case '+':
@@ -688,36 +1220,76 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       case 's':
       case 'S':
 	{
-	  enable_status=1-enable_status;
+	  file_enable_t *file_enable;
 	  if(enable_status==0)
 	  {
-	    file_enable_t *file_enable;
+	    /* Currently showing "select all", so select all files */
+	    for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
+	      file_enable->enable=1;
+	  }
+	  else
+	  {
+	    /* Currently showing "clear all", so clear all files */
 	    for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
 	      file_enable->enable=0;
 	  }
+	  enable_status=1-enable_status;
+	}
+	break;
+      case 'i':
+      case 'I':
+	{
+	  file_enable_t *file_enable;
+	  for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
+	    file_enable->enable=1-file_enable->enable;
+	}
+	break;
+      case 't':
+      case 'T':
+	select_file_category_ncurses(files_enable);
+	break;
+      case 'r':
+      case 'R':
+	if(can_restore)
+	{
+	  if(file_options_load(files_enable)<0)
+	  {
+	    display_message("Failed to restore the settings.");
+	  }
 	  else
-	    reset_array_file_enable(files_enable);
+	  {
+	    display_message("Settings restored successfully.");
+	    can_restore=file_options_exists();
+	  }
 	}
 	break;
       case 'b':
       case 'B':
-	if(file_options_save(files_enable)<0)
+	if(selected_count==0)
+	{
+	  display_message("Please select at least one file type before saving.");
+	}
+	else if(file_options_save(files_enable)<0)
 	{
 	  display_message("Failed to save the settings.");
 	}
 	else
 	{
 	  display_message("Settings recorded successfully.");
+	  can_restore=1;
 	}
 	break;
       case 'q':
       case 'Q':
-	return;
+	if(selected_count==0)
+	{
+	  display_message("Please select at least one file type before continuing.");
+	}
+	else
+	{
+	  return;
+	}
     }
-    if(current_element_num<offset)
-      offset=current_element_num;
-    if(current_element_num>=offset+INTER_FSELECT)
-      offset=current_element_num-INTER_FSELECT+1;
   }
 }
 #endif
