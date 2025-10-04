@@ -99,13 +99,20 @@ static int header_check_journal(const unsigned char *buffer, const unsigned int 
 {
   const struct header_journal *h=(const struct header_journal *)buffer;
   const uint64_t header_size=le64(h->header_size);
-  if(header_size < 272)
+  const uint64_t arena_size=le64(h->arena_size);
+  if(header_size < 272 || header_size > PHOTOREC_MAX_FILE_SIZE)
+    return 0;
+  if(arena_size > PHOTOREC_MAX_FILE_SIZE)
     return 0;
   if(buffer[9]!=0 || buffer[10]!=0 || buffer[11]!=0)
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_journal.extension;
   file_recovery_new->min_filesize=header_size;
+  file_recovery_new->calculated_file_size=header_size + arena_size;
+  file_recovery_new->data_check=&data_check_size;
+  file_recovery_new->file_check=&file_check_size;
+  file_recovery_new->time=le64(h->head_entry_realtime/1000000);
   return 1;
 }
 
