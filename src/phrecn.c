@@ -597,7 +597,6 @@ static int is_file_in_category(const file_hint_t *file_hint, const file_category
   if(file_hint == NULL || category == NULL || file_hint->description == NULL)
     return 0;
 
-  /* Special case: if category is "RAW Images", exclude files with "video" or "audio" in description */
   if(strcmp(category->name, "RAW Images") == 0)
   {
     if(strcasestr(file_hint->description, "video") != NULL ||
@@ -606,7 +605,6 @@ static int is_file_in_category(const file_hint_t *file_hint, const file_category
       return 0;
   }
 
-  /* Convert description to lowercase for case-insensitive comparison */
   for(i = 0; category->keywords[i] != NULL; i++)
   {
     if(strcasestr(file_hint->description, category->keywords[i]) != NULL)
@@ -625,7 +623,6 @@ static void select_file_category_ncurses(file_enable_t *files_enable)
     int i, command;
     int category_count = 0;
 
-    /* Count categories */
     for(i = 0; file_categories[i].name != NULL; i++)
       category_count++;
 
@@ -633,7 +630,6 @@ static void select_file_category_ncurses(file_enable_t *files_enable)
     wmove(stdscr, 4, 0);
     wprintw(stdscr, "Select file type category to enable:");
 
-    /* Display categories */
     for(i = 0; file_categories[i].name != NULL; i++)
     {
       wmove(stdscr, 6 + i, 0);
@@ -644,7 +640,6 @@ static void select_file_category_ncurses(file_enable_t *files_enable)
         wattroff(stdscr, A_REVERSE);
     }
 
-    /* Display help */
     wmove(stdscr, 6 + category_count + 1, 0);
     wprintw(stdscr, "Press Enter to select category, q to quit");
 
@@ -669,7 +664,6 @@ static void select_file_category_ncurses(file_enable_t *files_enable)
         {
           file_enable_t *file_enable;
           const file_category_t *selected_category = &file_categories[current];
-          /* Enable all files in selected category */
           for(file_enable = &files_enable[0]; file_enable->file_hint != NULL; file_enable++)
           {
             if(is_file_in_category(file_enable->file_hint, selected_category))
@@ -693,7 +687,7 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
 {
   int current_element_num=0;
   int offset=0;
-  int old_LINES=0;	/* Screen will be cleared */
+  int old_LINES=0;
   unsigned int menu=0;
   int enable_status=files_enable[0].enable;
   char search_filter[256]="";
@@ -719,7 +713,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
     int first_visible_line=6;
     int displayed_count=0;
 
-    /* Count total, selected, and filtered items */
     for(i=0; files_enable[i].file_hint!=NULL; i++)
     {
       int matches=1;
@@ -748,12 +741,10 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       old_LINES=LINES;
     }
 
-    /* Display header with counts */
     wmove(stdscr,4,0);
     wclrtoeol(stdscr);
     wprintw(stdscr,"PhotoRec will try to locate the following files [%d/%d selected]", selected_count, total_count);
 
-    /* Display search info if active */
     wmove(stdscr,5,0);
     wclrtoeol(stdscr);
     if(search_filter[0]!='\0')
@@ -765,16 +756,13 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       wprintw(stdscr,"Filter: ");
     }
 
-    /* Clear line 6 - will be used for "above" message or first file entry */
     wmove(stdscr,6,0);
     wclrtoeol(stdscr);
 
-    /* Display file list with filter applied */
     display_idx=0;
     current_display_idx=-1;
     first_visible_line=6;
 
-    /* Count items before viewport for "above" message */
     for(i=0; files_enable[i].file_hint!=NULL; i++)
     {
       int matches=1;
@@ -793,7 +781,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       display_idx++;
     }
 
-    /* Calculate current_display_idx and adjust offset BEFORE displaying */
     current_display_idx=-1;
     display_idx=0;
     for(i=0; files_enable[i].file_hint!=NULL; i++)
@@ -814,8 +801,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       display_idx++;
     }
 
-    /* Adjust offset to keep current element visible */
-    /* Strategy: scroll by INTER_FSELECT-1 so that when "above" message appears, it fits */
     if(current_display_idx>=0)
     {
       if(current_display_idx<offset)
@@ -824,7 +809,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
         offset=current_display_idx-(INTER_FSELECT-1)+1;
     }
 
-    /* Recalculate items_before after offset adjustment */
     items_before=0;
     display_idx=0;
     for(i=0; files_enable[i].file_hint!=NULL; i++)
@@ -845,7 +829,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       display_idx++;
     }
 
-    /* Display "above" message if needed */
     if(items_before>0)
     {
       wmove(stdscr,6,0);
@@ -855,7 +838,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       first_visible_line=7;
     }
 
-    /* Now display the actual list */
     display_idx=0;
     items_before=0;
     items_after=0;
@@ -920,7 +902,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       }
     }
 
-    /* Clear remaining lines in display area */
     {
       int max_visible = INTER_FSELECT;
       if(first_visible_line==7)
@@ -932,8 +913,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       }
     }
 
-    /* Clear and display count of items outside viewport at bottom */
-    /* "below" message always on line 6+INTER_FSELECT, menu always on 6+INTER_FSELECT+1 */
     wmove(stdscr,6+INTER_FSELECT,0);
     wclrtoeol(stdscr);
     if(items_after>0)
@@ -1004,7 +983,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
       if(ch=='\n' || ch=='\r' || ch==KEY_ENTER)
       {
         search_mode=0;
-        /* Find first matching element after exiting search mode */
         if(search_filter[0]!='\0')
         {
           int found=0;
@@ -1023,7 +1001,7 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
           }
         }
       }
-      else if(ch==27) /* ESC */
+      else if(ch==27)
       {
         search_filter[0]='\0';
         search_mode=0;
@@ -1035,7 +1013,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
         if(len>0)
         {
           search_filter[len-1]='\0';
-          /* After removing character, find first matching element */
           if(search_filter[0]!='\0')
           {
             int found=0;
@@ -1065,7 +1042,6 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
         int len=strlen(search_filter);
         search_filter[len]=ch;
         search_filter[len+1]='\0';
-        /* After adding character, find first matching element */
         if(search_filter[0]!='\0')
         {
           int found=0;
@@ -1223,13 +1199,11 @@ void interface_file_select_ncurses(file_enable_t *files_enable)
 	  file_enable_t *file_enable;
 	  if(enable_status==0)
 	  {
-	    /* Currently showing "select all", so select all files */
 	    for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
 	      file_enable->enable=1;
 	  }
 	  else
 	  {
-	    /* Currently showing "clear all", so clear all files */
 	    for(file_enable=&files_enable[0];file_enable->file_hint!=NULL;file_enable++)
 	      file_enable->enable=0;
 	  }
