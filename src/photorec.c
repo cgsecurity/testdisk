@@ -66,6 +66,7 @@
 #include "log.h"
 #include "setdate.h"
 #include "dfxml.h"
+#include "image_filter.h"
 
 /* #define DEBUG_FILE_FINISH */
 /* #define DEBUG_UPDATE_SEARCH_SPACE */
@@ -681,6 +682,23 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
 #endif
     file_recovery->file_size=0;
   }
+  if(params->image_filter && has_any_image_size_filter(params->image_filter) &&
+     file_recovery->file_stat->file_hint->is_image ) {
+#ifdef DEBUG_FILE_FINISH
+    log_trace("Image filter check: file=%s, size=%llu, width=%u, height=%u\n",
+           file_recovery->filename,
+           (unsigned long long)file_recovery->file_size,
+           file_recovery->image_data.width,
+           file_recovery->image_data.height);
+#endif
+
+    if(should_skip_image_by_filesize(params->image_filter, file_recovery->file_size)) {
+        file_recovery->file_size=0;
+    }
+    else if(should_skip_image_by_dimensions(params->image_filter, file_recovery->image_data.width, file_recovery->image_data.height)) {
+        file_recovery->file_size=0;
+    }
+  }
   if(file_recovery->file_size==0)
   {
     if(paranoid==2)
@@ -735,8 +753,26 @@ static void file_finish_aux(file_recovery_t *file_recovery, struct ph_param *par
 int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
     alloc_data_t *list_search_space)
 {
+
   if(file_recovery->file_stat==NULL)
     return 0;
+
+  // Handle memory buffering for images with filtering
+  if(file_recovery->use_memory_buffering) {
+    if(file_recovery->image_filter && file_recovery->file_check_presave) {
+      if(!file_recovery->file_check_presave(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
+        // File rejected by filters - don't create it at all
+        reset_file_recovery(file_recovery);
+        return 0;
+      }
+    }
+    // File passed filters - flush to disk
+    if(flush_memory_buffer_to_file(file_recovery) < 0) {
+      reset_file_recovery(file_recovery);
+      return -1;
+    }
+  }
+
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, 2);
   if(file_recovery->file_size==0)
@@ -752,6 +788,7 @@ int file_finish_bf(file_recovery_t *file_recovery, struct ph_param *params,
     reset_file_recovery(file_recovery);
     return 0;
   }
+
   file_block_truncate(file_recovery, list_search_space, params->blocksize);
   file_block_log(file_recovery, params->disk->sector_size);
 #ifdef ENABLE_DFXML
@@ -781,8 +818,27 @@ void file_recovery_aborted(file_recovery_t *file_recovery, struct ph_param *para
 pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params, const int paranoid, alloc_data_t *list_search_space)
 {
   int file_truncated;
+
+
   if(file_recovery->file_stat==NULL)
     return PFSTATUS_BAD;
+
+  // Handle memory buffering for images with filtering
+  if(file_recovery->use_memory_buffering) {
+    if(file_recovery->image_filter && file_recovery->file_check_presave) {
+      if(!file_recovery->file_check_presave(file_recovery->memory_buffer, file_recovery->buffer_size, file_recovery)) {
+        // File rejected by filters - don't create it at all
+        reset_file_recovery(file_recovery);
+        return PFSTATUS_BAD;
+      }
+    }
+    // File passed filters - flush to disk
+    if(flush_memory_buffer_to_file(file_recovery) < 0) {
+      reset_file_recovery(file_recovery);
+      return PFSTATUS_BAD;
+    }
+  }
+
   if(file_recovery->handle)
     file_finish_aux(file_recovery, params, (paranoid==0?0:1));
   if(file_recovery->file_size==0)
@@ -791,11 +847,13 @@ pfstatus_t file_finish2(file_recovery_t *file_recovery, struct ph_param *params,
     reset_file_recovery(file_recovery);
     return PFSTATUS_BAD;
   }
+
   file_truncated=file_block_truncate(file_recovery, list_search_space, params->blocksize);
   file_block_log(file_recovery, params->disk->sector_size);
 #ifdef ENABLE_DFXML
   xml_log_file_recovered(file_recovery);
 #endif
+
   file_block_free(&file_recovery->location);
   reset_file_recovery(file_recovery);
   return (file_truncated>0?PFSTATUS_OK_TRUNCATED:PFSTATUS_OK);
@@ -965,6 +1023,7 @@ void params_reset(struct ph_param *params, const struct ph_options *options)
 {
   /*@ assert valid_ph_param(params); */
   params->file_stats=init_file_stats(options->list_file_format);
+  params->image_filter=&options->image_filter;
   /*@ assert valid_ph_param(params); */
   params_reset_aux(params);
 }

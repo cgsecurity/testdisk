@@ -38,6 +38,7 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #ifdef HAVE_NCURSES
 void interface_file_select_ncurses(file_enable_t *files_enable);
 void interface_options_photorec_ncurses(struct ph_options *options);
+void interface_imagesize_photorec_ncurses(struct ph_options *options);
 #endif
 
 #ifdef __cplusplus

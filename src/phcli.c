@@ -38,6 +38,7 @@ extern int need_to_stop;
 #include "filegen.h"
 #include "log.h"
 #include "photorec.h"
+#include "image_filter.h"
 #include "ext2grp.h"
 #include "geometry.h"
 #include "poptions.h"
@@ -207,6 +208,10 @@ int menu_photorec_cli(list_part_t *list_part, struct ph_param *params, struct ph
     {
       if(file_select_cli(options->list_file_format, &params->cmd_run) < 0)
 	return -1;
+    }
+    else if(check_command(&params->cmd_run,"imagesize,",10)==0)
+    {
+      change_imagesize_cli(&params->cmd_run, &options->image_filter);
     }
     else if(check_command(&params->cmd_run,"blocksize,",10)==0)
     {
