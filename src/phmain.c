@@ -86,6 +86,7 @@
 #include "ext2_dir.h"
 #include "file_jpg.h"
 #include "file_gz.h"
+#include "file_sig.h"
 #include "ntfs_dir.h"
 #include "pdiskseln.h"
 #include "dfxml.h"
@@ -124,12 +125,13 @@ static void sighup_hdlr(int sig)
 
 static void display_help(void)
 {
-  printf("\nUsage: photorec [/log] [/logjson log.jsonl] [/debug] [/d recup_dir] [file.dd|file.e01|device]\n"\
+  printf("\nUsage: photorec [/log] [/logjson log.jsonl] [/debug] [/sigfile photorec.sig] [/d recup_dir] [file.dd|file.e01|device]\n"\
       "       photorec /version\n" \
       "\n" \
       "/log            : create a photorec.log file\n" \
       "/logjson <file> : create a log in JSON format\n" \
       "/debug          : add debug information\n" \
+      "/sigfile <file> : specify a custom signature file\n" \
       "\n" \
       "PhotoRec searches for various file formats (JPEG, Office...). It stores files\n" \
       "in the recup_dir directory.\n");
@@ -284,6 +286,11 @@ int main( int argc, char **argv )
         params.recup_dir=strdup(argv[i+1]);
 	/*@ assert params.recup_dir==\null || \freeable(params.recup_dir); */
       }
+      i++;
+    }
+    else if(i+1<argc && ((strcmp(argv[i],"/sigfile")==0)||(strcmp(argv[i],"-sigfile")==0)))
+    {
+      set_custom_signature_file(argv[i+1]);
       i++;
     }
     else if((strcmp(argv[i],"/all")==0) || (strcmp(argv[i],"-all")==0))
