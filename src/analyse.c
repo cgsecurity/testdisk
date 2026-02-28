@@ -34,6 +34,7 @@
 #include "exfat.h"
 #if !defined(DISABLED_FOR_FRAMAC)
 #include "apfs.h"
+#include "bcachefs.h"
 #include "bfs.h"
 #include "bsd.h"
 #include "btrfs.h"
@@ -318,6 +319,11 @@ int search_type_8(unsigned char *buffer, disk_t *disk,partition_t *partition,con
   if(disk->pread(disk, buffer, 4096, partition->part_offset + 4096) != 4096)
     return -1;
 #if !defined(DISABLED_FOR_FRAMAC)
+  { /* bcachefs: superblock at offset 4096 */
+    const struct bcachefs_super_block *bcsb=(const struct bcachefs_super_block *)buffer;
+    if(recover_bcachefs(disk, bcsb, partition, verbose, dump_ind)==0)
+      return 1;
+  }
   { /* MD 1.2 */
     const struct mdp_superblock_1 *sb1=(const struct mdp_superblock_1 *)buffer;
     if(le32(sb1->major_version)==1 &&
@@ -449,6 +455,8 @@ int check_linux(disk_t *disk, partition_t *partition, const int verbose)
       check_xfs(disk, partition, verbose)==0 ||
       check_LUKS(disk, partition)==0 ||
       check_btrfs(disk, partition)==0 ||
+      check_btrfs_mirror(disk, partition)==0 ||
+      check_bcachefs(disk, partition)==0 ||
       check_f2fs(disk, partition)==0 ||
       check_gfs2(disk, partition)==0 ||
       check_ZFS(disk, partition)==0)

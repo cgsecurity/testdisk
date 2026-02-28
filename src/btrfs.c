@@ -71,6 +71,41 @@ int check_btrfs(disk_t *disk_car,partition_t *partition)
 }
 
 /*
+ * btrfs mirror superblock offsets (bytes from start of device).
+ * Primary:  64 KiB   (BTRFS_SUPER_INFO_OFFSET)
+ * Mirror 1: 64 MiB
+ * Mirror 2: 256 GiB
+ * Mirror 3: 1 PiB
+ * See linux/fs/btrfs/disk-io.h: btrfs_sb_offset()
+ */
+static const uint64_t btrfs_mirror_offsets[BTRFS_SUPER_MIRROR_MAX] = {
+  (uint64_t)64 * 1024 * 1024,
+  (uint64_t)256 * 1024 * 1024 * 1024,
+  (uint64_t)1024 * 1024 * 1024 * 1024 * 1024
+};
+
+int check_btrfs_mirror(disk_t *disk_car, partition_t *partition)
+{
+  int i;
+  unsigned char *buffer=(unsigned char*)MALLOC(BTRFS_SUPER_INFO_SIZE);
+  for(i=0; i<BTRFS_SUPER_MIRROR_MAX; i++)
+  {
+    if(disk_car->pread(disk_car, buffer, BTRFS_SUPER_INFO_SIZE,
+        partition->part_offset + btrfs_mirror_offsets[i]) != BTRFS_SUPER_INFO_SIZE)
+      continue;
+    if(test_btrfs((struct btrfs_super_block*)buffer)!=0)
+      continue;
+    set_btrfs_info((struct btrfs_super_block*)buffer, partition);
+    log_info("btrfs: primary superblock damaged; recovered from mirror %d at offset %llu\n",
+        i+1, (unsigned long long)btrfs_mirror_offsets[i]);
+    free(buffer);
+    return 0;
+  }
+  free(buffer);
+  return 1;
+}
+
+/*
 Primary superblock is at 1024 (SUPERBLOCK_OFFSET)
 Group 0 begin at s_first_data_block
 */

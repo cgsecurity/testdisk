@@ -40,7 +40,18 @@
 
 static void set_APFS_info(const nx_superblock_t *sb, partition_t *partition)
 {
+  unsigned int vol_count = 0;
+  unsigned int i;
   partition->upart_type=UP_APFS;
+  /* Count active volume OIDs in the nx_fs_oid array */
+  for(i=0; i < NX_MAX_FILE_SYSTEMS; i++)
+  {
+    if(le64(sb->nx_fs_oid[i]) != 0)
+      vol_count++;
+  }
+  snprintf(partition->info, sizeof(partition->info),
+      "APFS blocksize=%u volumes=%u",
+      le32(sb->nx_block_size), vol_count);
 }
 
 int check_APFS(disk_t *disk_car, partition_t *partition)

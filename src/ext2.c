@@ -93,6 +93,21 @@ static void set_EXT2_info(const struct ext2_super_block *sb, partition_t *partit
     strcat(partition->info," Recover");
   if(EXT2_HAS_INCOMPAT_FEATURE(sb,EXT3_FEATURE_INCOMPAT_JOURNAL_DEV)!=0)
     strcat(partition->info," Journal_dev");
+  /* ext4 extent tree: inode-level flag EXT4_EXTENTS_FL (0x80000) is per-inode;
+   * the filesystem-level capability is indicated by EXT3_FEATURE_INCOMPAT_EXTENTS. */
+  if(EXT2_HAS_INCOMPAT_FEATURE(sb,EXT3_FEATURE_INCOMPAT_EXTENTS)!=0)
+  {
+    strcat(partition->info," Extents");
+    if(verbose>0)
+      log_info("ext4: extent tree enabled (EXT3_FEATURE_INCOMPAT_EXTENTS)\n");
+  }
+  /* ext4 inline data: small files/directories stored in inode body */
+  if(EXT2_HAS_INCOMPAT_FEATURE(sb,EXT4_FEATURE_INCOMPAT_INLINE_DATA)!=0)
+  {
+    strcat(partition->info," Inline_data");
+    if(verbose>0)
+      log_info("ext4: inline data enabled (EXT4_FEATURE_INCOMPAT_INLINE_DATA)\n");
+  }
   if(le16(sb->s_block_group_nr)!=0)
   {
     strcat(partition->info," Backup_SB");

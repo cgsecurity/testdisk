@@ -153,6 +153,15 @@ int check_btrfs(disk_t *disk_car, partition_t *partition);
   @ requires \valid(disk_car);
   @ requires valid_disk(disk_car);
   @ requires \valid(partition);
+  @ requires \separated(disk_car, partition);
+  @ decreases 0;
+  @*/
+int check_btrfs_mirror(disk_t *disk_car, partition_t *partition);
+
+/*@
+  @ requires \valid(disk_car);
+  @ requires valid_disk(disk_car);
+  @ requires \valid(partition);
   @ requires \separated(disk_car, sb, partition);
   @*/
 int recover_btrfs(const disk_t *disk_car, const struct btrfs_super_block *sb,partition_t *partition,const int verbose, const int dump_ind);
