@@ -263,6 +263,7 @@ file_C			= filegen.c \
 			  file_mysql.c \
 			  file_nd2.c \
 			  file_nds.c \
+			  file_ndf.c \
 			  file_nes.c \
 			  file_njx.c \
 			  file_nk2.c \

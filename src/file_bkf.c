@@ -3,17 +3,17 @@
     File: file_bkf.c
 
     Copyright (C) 2006-2007 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -47,6 +47,9 @@ const file_hint_t file_hint_bkf= {
   .register_header_check=&register_header_check_bkf
 };
 
+/* SQL Server BAK extension (not registered as separate hint) */
+static const char *extension_bak = "bak";
+
 struct mtf_db_hdr
 {
   uint32_t	type;		/* DBLK type */
@@ -65,6 +68,49 @@ struct mtf_db_hdr
   uint8_t	rsv3;		/* reserved for future use */
   uint16_t	check;		/* header checksum */
 } __attribute__ ((gcc_struct, __packed__));
+
+/* "Microsoft SQL Server" in UTF-16LE (first 14 chars: "Microsof") */
+static const unsigned char sql_server_sig[16] = {
+  'M',0,'i',0,'c',0,'r',0,'o',0,'s',0,'o',0,'f',0
+};
+
+/*@
+  @ requires buffer_size > 0;
+  @ requires \valid_read(buffer+(0..buffer_size-1));
+  @ assigns \nothing;
+  @*/
+static int is_sql_server_backup(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int tape_off)
+{
+  unsigned int pos;
+  /* Scan for SSET DBLK after TAPE header, then look for SQL Server string */
+  /*@
+    @ loop assigns pos;
+    @ loop variant buffer_size - 4 - pos;
+    @*/
+  for(pos = tape_off; pos + 4 <= buffer_size; pos += 4)
+  {
+    if(buffer[pos]=='S' && buffer[pos+1]=='S' &&
+       buffer[pos+2]=='E' && buffer[pos+3]=='T')
+    {
+      /* Found SSET DBLK; scan region after it for SQL Server Unicode string */
+      unsigned int j;
+      const unsigned int search_end = (pos + 1024 < buffer_size) ? pos + 1024 : buffer_size;
+      if(search_end < sizeof(sql_server_sig))
+        return 0;
+      /*@
+        @ loop assigns j;
+        @ loop variant search_end - sizeof(sql_server_sig) - j;
+        @*/
+      for(j = pos + 4; j + sizeof(sql_server_sig) <= search_end; j++)
+      {
+        if(memcmp(&buffer[j], sql_server_sig, sizeof(sql_server_sig)) == 0)
+          return 1;
+      }
+      return 0;
+    }
+  }
+  return 0;
+}
 
 /*@
   @ requires file_recovery->file_check == &file_check_bkf;
@@ -88,7 +134,6 @@ static void file_check_bkf(file_recovery_t *file_recovery)
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->calculated_file_size == 0);
   @ ensures (\result == 1) ==> (file_recovery_new->min_filesize == 52);
-  @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_bkf.extension);
   @ ensures (\result == 1) ==> (file_recovery_new->file_check == &file_check_bkf);
   @ assigns  *file_recovery_new;
   @*/
@@ -96,7 +141,7 @@ static int header_check_bkf(const unsigned char *buffer, const unsigned int buff
 {
   const struct mtf_db_hdr *hdr=(const struct mtf_db_hdr *)buffer;
   /* Microsoft Tape Format
-   * The DBLK Type field is set to ‘TAPE’.
+   * The DBLK Type field is set to 'TAPE'.
    * The Format Logical Address field is set to zero.
    * The Control Block ID field is set to zero.
    */
@@ -108,8 +153,12 @@ static int header_check_bkf(const unsigned char *buffer, const unsigned int buff
 #endif
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=52;
-  file_recovery_new->extension=file_hint_bkf.extension;
   file_recovery_new->file_check=&file_check_bkf;
+  /* Detect SQL Server backup vs Windows NTBackup */
+  if(is_sql_server_backup(buffer, buffer_size, le16(hdr->off)))
+    file_recovery_new->extension=extension_bak;
+  else
+    file_recovery_new->extension=file_hint_bkf.extension;
   return 1;
 }
 

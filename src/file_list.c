@@ -671,6 +671,9 @@ extern const file_hint_t file_hint_nd2;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nds)
 extern const file_hint_t file_hint_nds;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ndf)
+extern const file_hint_t file_hint_ndf;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nes)
 extern const file_hint_t file_hint_nes;
 #endif
@@ -1745,6 +1748,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nds)
   { .enable=0, .file_hint=&file_hint_nds  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ndf)
+  { .enable=0, .file_hint=&file_hint_ndf  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_nes)
   { .enable=0, .file_hint=&file_hint_nes  },

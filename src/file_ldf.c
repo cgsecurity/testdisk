@@ -3,17 +3,17 @@
     File: file_ldf.c
 
     Copyright (C) 2009 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include "types.h"
 #include "filegen.h"
+#include "common.h"
 
 /*@ requires valid_register_header_check(file_stat); */
 static void register_header_check_ldf(file_stat_t *file_stat);
@@ -43,8 +44,23 @@ const file_hint_t file_hint_ldf= {
   .register_header_check=&register_header_check_ldf
 };
 
+/* SQL Server file header page (first 22 bytes) */
+struct mssql_file_hdr {
+  uint8_t   m_headerVersion;  /* must be 0x01 */
+  uint8_t   m_type;           /* must be 0x0F for file header */
+  uint8_t   m_typeFlagBits;
+  uint8_t   m_level;
+  uint16_t  m_flagBits;
+  uint16_t  m_indexId;
+  uint32_t  m_pageId;         /* must be 0 for page 0 */
+  uint16_t  m_fileId;
+  uint16_t  m_reservedInt;
+  uint32_t  m_prevPage;
+  uint16_t  m_pminlen;        /* low byte: 0x02 for log file */
+} __attribute__ ((gcc_struct, __packed__));
+
 /*@
-  @ requires buffer_size >= 0x1c;
+  @ requires buffer_size >= sizeof(struct mssql_file_hdr);
   @ requires separation: \separated(&file_hint_ldf, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
@@ -52,18 +68,21 @@ const file_hint_t file_hint_ldf= {
   @*/
 static int header_check_ldf(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-  if(buffer[0x00]==0x01 && buffer[0x01]==0x0f && buffer[0x02]==0x00 && buffer[0x03]==0x00 &&
-      buffer[0x08]==0x00 && buffer[0x09]==0x00 && buffer[0x0a]==0x00 && buffer[0x0b]==0x00 &&
-      buffer[0x0c]==0x00 && buffer[0x0d]==0x00 && buffer[0x0e]==0x00 && buffer[0x0f]==0x00 &&
-      buffer[0x10]==0x00 && buffer[0x11]==0x00 && buffer[0x12]==0x00 && buffer[0x13]==0x00 &&
-      buffer[0x14]==0x00 && buffer[0x15]==0x00 && buffer[0x16]==0x02 && buffer[0x17]==0x00 &&
-      buffer[0x18]==0x63 && buffer[0x19]==0x00 && buffer[0x1A]==0x00 && buffer[0x1B]==0x00)
-  {
-    reset_file_recovery(file_recovery_new);
-    file_recovery_new->extension=file_hint_ldf.extension;
-    return 1;
-  }
-  return 0;
+  const struct mssql_file_hdr *hdr=(const struct mssql_file_hdr *)buffer;
+  if(hdr->m_headerVersion != 0x01 || hdr->m_type != 0x0F)
+    return 0;
+  if(le32(hdr->m_pageId) != 0)
+    return 0;
+  if(le16(hdr->m_prevPage) != 0 || le16(hdr->m_reservedInt) != 0)
+    return 0;
+  /* Log file type: m_pminlen low byte must be 0x02 */
+  if((le16(hdr->m_pminlen) & 0xFF) != 0x02)
+    return 0;
+  reset_file_recovery(file_recovery_new);
+  file_recovery_new->extension=file_hint_ldf.extension;
+  file_recovery_new->min_filesize=2 * 8192;
+  /* No data_check: LDF VLF boundaries are irregular, not fixed 8KB pages */
+  return 1;
 }
 
 static void register_header_check_ldf(file_stat_t *file_stat)
