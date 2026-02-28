@@ -62,6 +62,7 @@ file_C			= filegen.c \
 			  file_acb.c \
 			  file_ace.c \
 			  file_ado.c \
+			  file_age.c \
 			  file_afdesign.c \
 			  file_ahn.c \
 			  file_aif.c \
@@ -74,6 +75,7 @@ file_C			= filegen.c \
 			  file_apple.c \
 			  file_ari.c \
 			  file_arj.c \
+			  file_arrow.c \
 			  file_asf.c \
 			  file_asl.c \
 			  file_asm.c \
@@ -217,6 +219,7 @@ file_C			= filegen.c \
 			  file_journal.c \
 			  file_jpg.c \
 			  file_jsonlz4.c \
+			  file_jxl.c \
 			  file_kdb.c \
 			  file_kdbx.c \
 			  file_key.c \
@@ -267,11 +270,13 @@ file_C			= filegen.c \
 			  file_oci.c \
 			  file_ogg.c \
 			  file_one.c \
+			  file_opensshkey.c \
 			  file_orf.c \
 			  file_pa.c \
 			  file_paf.c \
 			  file_pap.c \
 			  file_par2.c \
+			  file_parquet.c \
 			  file_pcap.c \
 			  file_pcb.c \
 			  file_pct.c \
@@ -339,6 +344,7 @@ file_C			= filegen.c \
 			  file_spf.c \
 			  file_spss.c \
 			  file_sql.c \
+			  file_sqlitewal.c \
 			  file_sqm.c \
 			  file_steuer2014.c \
 			  file_stl.c \

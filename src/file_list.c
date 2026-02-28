@@ -61,6 +61,9 @@ extern const file_hint_t file_hint_ace;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_addressbook)
 extern const file_hint_t file_hint_addressbook;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_age)
+extern const file_hint_t file_hint_age;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ado)
 extern const file_hint_t file_hint_ado;
 #endif
@@ -99,6 +102,9 @@ extern const file_hint_t file_hint_ari;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arj)
 extern const file_hint_t file_hint_arj;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arrow)
+extern const file_hint_t file_hint_arrow;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asf)
 extern const file_hint_t file_hint_asf;
@@ -530,6 +536,9 @@ extern const file_hint_t file_hint_jpg;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)
 extern const file_hint_t file_hint_jsonlz4;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jxl)
+extern const file_hint_t file_hint_jxl;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_kdb)
 extern const file_hint_t file_hint_kdb;
 #endif
@@ -683,6 +692,9 @@ extern const file_hint_t file_hint_ogg;
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_one)
 extern const file_hint_t file_hint_one;
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_opensshkey)
+extern const file_hint_t file_hint_opensshkey;
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
 extern const file_hint_t file_hint_orf;
 #endif
@@ -697,6 +709,9 @@ extern const file_hint_t file_hint_pap;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_par2)
 extern const file_hint_t file_hint_par2;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_parquet)
+extern const file_hint_t file_hint_parquet;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcap)
 extern const file_hint_t file_hint_pcap;
@@ -901,6 +916,9 @@ extern const file_hint_t file_hint_spss;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlite)
 extern const file_hint_t file_hint_sqlite;
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlitewal)
+extern const file_hint_t file_hint_sqlitewal;
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqm)
 extern const file_hint_t file_hint_sqm;
@@ -1121,6 +1139,9 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_addressbook)
   { .enable=0, .file_hint=&file_hint_addressbook},
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_age)
+  { .enable=0, .file_hint=&file_hint_age  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_ado)
   { .enable=0, .file_hint=&file_hint_ado  },
 #endif
@@ -1159,6 +1180,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arj)
   { .enable=0, .file_hint=&file_hint_arj  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_arrow)
+  { .enable=0, .file_hint=&file_hint_arrow  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_asf)
   { .enable=0, .file_hint=&file_hint_asf  },
@@ -1587,6 +1611,9 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jsonlz4)
   { .enable=0, .file_hint=&file_hint_jsonlz4  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_jxl)
+  { .enable=0, .file_hint=&file_hint_jxl  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_kdb)
   { .enable=0, .file_hint=&file_hint_kdb  },
 #endif
@@ -1740,6 +1767,9 @@ file_enable_t array_file_enable[]=
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_one)
   { .enable=0, .file_hint=&file_hint_one  },
 #endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_opensshkey)
+  { .enable=0, .file_hint=&file_hint_opensshkey  },
+#endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_orf)
   { .enable=0, .file_hint=&file_hint_orf  },
 #endif
@@ -1754,6 +1784,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_par2)
   { .enable=0, .file_hint=&file_hint_par2  },
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_parquet)
+  { .enable=0, .file_hint=&file_hint_parquet  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_pcap)
   { .enable=0, .file_hint=&file_hint_pcap },
@@ -1955,6 +1988,9 @@ file_enable_t array_file_enable[]=
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlite)
   { .enable=0, .file_hint=&file_hint_sqlite	},
+#endif
+#if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqlitewal)
+  { .enable=0, .file_hint=&file_hint_sqlitewal  },
 #endif
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_sqm)
   { .enable=0, .file_hint=&file_hint_sqm  },

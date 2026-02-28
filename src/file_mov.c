@@ -44,7 +44,7 @@ static void register_header_check_mov_mdat(file_stat_t *file_stat);
 
 const file_hint_t file_hint_mov= {
   .extension="mov",
-  .description="mov/mp4/3gp/3g2/jp2",
+  .description="mov/mp4/3gp/3g2/jp2/avif",
   .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
@@ -67,6 +67,7 @@ static const char *extension_3g2="3g2";
 static const char *extension_heic="heic";
 static const char *extension_jp2="jp2";
 static const char *extension_cr3="cr3";
+static const char *extension_avif="avif";
 
 struct atom_struct
 {
@@ -227,13 +228,14 @@ static data_check_t data_check_mov(const unsigned char *buffer, const unsigned i
   @ ensures (\result == 1) ==> (file_recovery_new->file_stat == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->handle == \null);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_mov.extension ||
-				file_recovery_new->extension == extension_3g2 ||
-				file_recovery_new->extension == extension_3gp ||
-				file_recovery_new->extension == extension_cr3 ||
-				file_recovery_new->extension == extension_heic ||
-				file_recovery_new->extension == extension_jp2 ||
-				file_recovery_new->extension == extension_m4a ||
-				file_recovery_new->extension == extension_mp4);
+			file_recovery_new->extension == extension_3g2 ||
+			file_recovery_new->extension == extension_3gp ||
+			file_recovery_new->extension == extension_avif ||
+			file_recovery_new->extension == extension_cr3 ||
+			file_recovery_new->extension == extension_heic ||
+			file_recovery_new->extension == extension_jp2 ||
+			file_recovery_new->extension == extension_m4a ||
+			file_recovery_new->extension == extension_mp4);
   @ ensures (\result == 1) ==> (file_recovery_new->time == 0);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_mov || file_recovery_new->file_rename == \null);
@@ -402,6 +404,23 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
 	file_recovery_new->calculated_file_size=calculated_file_size;
 	return 1;
       }
+      else if(memcmp(&buffer[i+8], "avif", 4)==0 ||
+	  memcmp(&buffer[i+8], "avis", 4)==0 ||
+	  memcmp(&buffer[i+8], "mif1", 4)==0)
+      {
+	/* AVIF image (AV1 Image File Format, ISO/IEC 23008-12) */
+	reset_file_recovery(file_recovery_new);
+	file_recovery_new->extension=extension_avif;
+	if(file_recovery->blocksize < 16)
+	{
+	  file_recovery_new->min_filesize=calculated_file_size;
+	  return 1;
+	}
+	file_recovery_new->data_check=&data_check_mov;
+	file_recovery_new->file_check=&file_check_size;
+	file_recovery_new->calculated_file_size=calculated_file_size;
+	return 1;
+      }
       else if(memcmp(&buffer[i+8], "heic", 4)==0)
       {
 	reset_file_recovery(file_recovery_new);
@@ -491,13 +510,14 @@ static int header_check_mov_aux(const unsigned char *buffer, const unsigned int 
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
   @ ensures  valid_header_check_result(\result, file_recovery_new);
   @ ensures (\result == 1) ==> (file_recovery_new->extension == file_hint_mov.extension ||
-				file_recovery_new->extension == extension_3g2 ||
-				file_recovery_new->extension == extension_3gp ||
-				file_recovery_new->extension == extension_cr3 ||
-				file_recovery_new->extension == extension_heic ||
-				file_recovery_new->extension == extension_jp2 ||
-				file_recovery_new->extension == extension_m4a ||
-				file_recovery_new->extension == extension_mp4);
+			file_recovery_new->extension == extension_3g2 ||
+			file_recovery_new->extension == extension_3gp ||
+			file_recovery_new->extension == extension_avif ||
+			file_recovery_new->extension == extension_cr3 ||
+			file_recovery_new->extension == extension_heic ||
+			file_recovery_new->extension == extension_jp2 ||
+			file_recovery_new->extension == extension_m4a ||
+			file_recovery_new->extension == extension_mp4);
   @ ensures (\result == 1) ==> (valid_read_string(file_recovery_new->extension));
   @ ensures (\result == 1) ==> (file_recovery_new->file_rename == &file_rename_mov || file_recovery_new->file_rename == \null);
   @ ensures (\result == 1 && file_recovery_new->extension == file_hint_mov.extension) ==> (file_recovery_new->file_rename == file_rename_mov);
