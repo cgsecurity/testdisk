@@ -135,6 +135,7 @@
 #include "hdaccess.h"
 #include "alignio.h"
 #include "hpa_dco.h"
+#include "ssd_detect.h"
 
 #if defined(HAVE_PREAD) && defined(TARGET_LINUX)
 //#define HDCLONE 1
@@ -1913,6 +1914,27 @@ disk_t *file_test_availability(const char *device, const int verbose, int testdi
 #endif
     disk_get_model(hd_h, disk_car, verbose);
     disk_get_hpa_dco(hd_h, disk_car);
+#ifndef DISABLED_FOR_FRAMAC
+    {
+      device_info_t dev_info;
+      if(detect_device_type(device, &dev_info) == 0)
+      {
+	log_info("Device %s: type=%s rotational=%d trim=%d"
+		" phys_block=%u log_block=%u",
+		device,
+		device_type_name(dev_info.type),
+		dev_info.rotational,
+		dev_info.trim_supported,
+		dev_info.block_size,
+		dev_info.logical_block);
+	if(dev_info.model[0] != '\0')
+	  log_info(" model=\"%s\"", dev_info.model);
+	if(dev_info.serial[0] != '\0')
+	  log_info(" serial=\"%s\"", dev_info.serial);
+	log_info("\n");
+      }
+    }
+#endif
   }
   else
 #endif
