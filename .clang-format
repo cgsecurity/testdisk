@@ -1,0 +1,51 @@
+# .clang-format — code style matching existing testdisk/photorec conventions
+# Based on observed style in src/*.c: K&R-derived, 2-space indent, 80 cols
+---
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# Indentation — existing code uses 2 spaces
+IndentWidth:     2
+TabWidth:        2
+UseTab:          Never
+ContinuationIndentWidth: 4
+
+# Column limit
+ColumnLimit:     80
+
+# Brace style — existing code uses K&R (opening brace on same line for functions too)
+BreakBeforeBraces: Linux
+
+# Pointer alignment — existing code: "int *ptr" (right-aligned)
+PointerAlignment: Right
+
+# Spacing
+SpaceBeforeParens:          ControlStatements
+SpacesInParentheses:        false
+SpacesInSquareBrackets:     false
+SpaceAfterCStyleCast:       false
+SpaceBeforeAssignmentOperators: true
+
+# Include sorting — keep existing grouping, don't reorder
+SortIncludes:    false
+
+# Short constructs — match existing style (no collapsing)
+AllowShortIfStatementsOnASingleLine:    false
+AllowShortLoopsOnASingleLine:           false
+AllowShortFunctionsOnASingleLine:       None
+AllowShortCaseLabelsOnASingleLine:      false
+AllowShortBlocksOnASingleLine:          false
+
+# Alignment
+AlignConsecutiveAssignments:  false
+AlignConsecutiveDeclarations: false
+AlignTrailingComments:        true
+
+# Breaking
+BinPackArguments:   true
+BinPackParameters:  true
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 100
+
+# C-specific
+DerivePointerAlignment: false

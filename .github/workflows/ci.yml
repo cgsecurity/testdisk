@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [master, develop, 'feature/*']
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool
+          sudo apt-get install -y libncurses-dev libext2fs-dev libjpeg-dev
+          sudo apt-get install -y libntfs-3g-dev uuid-dev zlib1g-dev
+          sudo apt-get install -y qtbase5-dev qttools5-dev-tools
+
+      - name: Configure (Autotools)
+        run: |
+          autoreconf --install
+          CC=${{ matrix.compiler }} ./configure \
+            --disable-stack-protector \
+            --enable-missing-uuid-ok
+        env:
+          CFLAGS: '-Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-missing-field-initializers'
+
+      - name: Build
+        run: make -j$(nproc)
+
+      - name: Verify binaries
+        run: |
+          ./src/testdisk --version || true
+          ./src/photorec --version || true
+          ./src/fidentify --version || true
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install autoconf automake libtool
+          brew install jpeg libewf || true
+          brew install ossp-uuid || true
+
+      - name: Configure
+        run: |
+          autoreconf --install
+          ./configure --enable-missing-uuid-ok || \
+          ./configure --without-ntfs3g --enable-missing-uuid-ok
+
+      - name: Build
+        run: make -j$(sysctl -n hw.ncpu)
+
+  static-analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool cppcheck
+          sudo apt-get install -y libncurses-dev libext2fs-dev libjpeg-dev
+          sudo apt-get install -y libntfs-3g-dev uuid-dev zlib1g-dev
+
+      - name: Configure
+        run: |
+          autoreconf --install
+          ./configure --enable-missing-uuid-ok
+
+      - name: cppcheck
+        run: |
+          cppcheck --enable=warning,performance --error-exitcode=1 \
+            --suppress=variableScope --suppress=uninitMemberVar \
+            --suppress=useStlAlgorithm --suppress=missingIncludeSystem \
+            --suppress=missingInclude \
+            -I src/ src/*.c --std=c11 2>&1 | head -100
