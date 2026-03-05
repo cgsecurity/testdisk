@@ -19,7 +19,7 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-
+ 
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -74,43 +74,57 @@ struct hdf5_superblock
   @*/
 static void file_check_hdf5(file_recovery_t *file_recovery)
 {
-#ifdef DEBUG_HDF5
-  log_info("HDF5: file_check_hdf5\n");
-#endif
   FILE *handle = file_recovery->handle;
-
   uint8_t sb_version_offset = 8;
-  uint8_t sb_offset_size_offset = 0x0D;
-  uint8_t sb_meta_base_address_offset = 0x1C;
-  /* Get superblock version */
-  my_fseek(handle, sb_version_offset, SEEK_SET);
+  uint8_t sb_offsets_size_offset = 0x0D;
+  uint8_t sb_meta_base_address_offset = 0x18;
   uint8_t sb_version = 0;
-  fread(&sb_version, 1, 1, handle);
+  uint8_t sb_offsets_size = 0;
+  uint8_t eof_address_offset;
+  uint64_t eof_address = 0;
+  /* Get superblock version */
+  if (my_fseek(handle, sb_version_offset, SEEK_SET) < 0 ||
+      fread(&sb_version, 1, 1, handle) != 1)
+  {
 #ifdef DEBUG_HDF5
-  log_info("HDF5: file_check_hdf5: superblock version = %u\n", sb_version);
+    log_error("HDF5: Couldn't read superblock version");
 #endif
-  /* Adjust sb_meta_base_address_offset if necessary */
-  if (!sb_version)
-    sb_meta_base_address_offset = 0x18;
+    return;
+  }
 #ifdef DEBUG_HDF5
-  log_info("HDF5: file_check_hdf5: dec sb_meta_base_address_offset = %u\n", sb_meta_base_address_offset);
-  log_info("HDF5: file_check_hdf5: hex sb_meta_base_address_offset = 0x%02X\n", sb_meta_base_address_offset);
+  log_info("HDF5: superblock version = %u\n", sb_version);
+#endif
+  /* Adjust sb_meta_base_address_offset if hdf5 version is >0 */
+  if (sb_version)
+    sb_meta_base_address_offset = 0x1C;
+#ifdef DEBUG_HDF5
+  log_info("HDF5: sb_meta_base_address_offset = 0x%02X\n", sb_meta_base_address_offset);
 #endif
   /* Get size of offsets */
-  my_fseek(handle, sb_offset_size_offset, SEEK_SET);
-  uint8_t sb_offset_size = 0;
-  fread(&sb_offset_size, 1, 1, handle);
+  if (my_fseek(handle, sb_offsets_size_offset, SEEK_SET) < 0 ||
+      fread(&sb_offsets_size, 1, 1, handle) != 1)
+  {
 #ifdef DEBUG_HDF5
-  log_info("HDF5: file_check_hdf5: sb_offset_size = %u\n", sb_offset_size);
+    log_error("HDF5: Couldn't read HDF Size of Offsets");
+#endif
+    return;
+  }
+#ifdef DEBUG_HDF5
+  log_info("HDF5: sb_offsets_size = %u\n", sb_offsets_size);
 #endif
   /* Get EOF Address */
-  uint8_t eof_address_offset = sb_meta_base_address_offset + 2*sb_offset_size;
-  my_fseek(handle, eof_address_offset, SEEK_SET);
-  uint64_t eof_address = 0;
-  fread(&eof_address, sb_offset_size, 1, handle);
+  eof_address_offset = sb_meta_base_address_offset + 2*sb_offsets_size;
+  if (my_fseek(handle, eof_address_offset, SEEK_SET) < 0 ||
+      fread(&eof_address, sb_offsets_size, 1, handle) != 1)
+  {
 #ifdef DEBUG_HDF5
-  log_info("HDF5: file_check_hdf5: dec eof_address = %lu\n", (long unsigned)eof_address);
-  log_info("HDF5: file_check_hdf5: hex eof_address = 0x%02lX\n", eof_address);
+    log_error("HDF5: Couldn't read HDF End of File Address");
+#endif
+    return;
+  }
+#ifdef DEBUG_HDF5
+  log_info("HDF5: dec eof_address = %lu\n", (long unsigned)eof_address);
+  log_info("HDF5: hex eof_address = 0x%02lX\n", eof_address);
 #endif
   file_recovery->file_size=eof_address;
 }
@@ -124,29 +138,16 @@ static void file_check_hdf5(file_recovery_t *file_recovery)
   @*/
 static int header_check_hdf5(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
-#ifdef DEBUG_HDF5
-  log_info("HDF5: header_check_hdf5\n");
-#endif
   const struct hdf5_superblock *sb=(const struct hdf5_superblock*)&buffer[0];
   const uint8_t sb_version=sb->version;
-  const uint8_t offsets_size=sb->offsets_size;
-#ifdef DEBUG_HDF5
-  log_info("HDF5: header_check_hdf5: size of offsets = %i\n", (int)offsets_size);
-  log_info("HDF5: header_check_hdf5: superblock version = %i\n", (int)sb_version);
-#endif
-  uint8_t meta_base = 24;
-  if (sb_version)
-    meta_base = 28;
-  const uint8_t eof_address_offset = meta_base + 2*offsets_size;
-#ifdef DEBUG_HDF5
-  log_info("HDF5: header_check_hdf5: eof_address_offset = 0x%02X\n", (int)eof_address_offset);
-#endif
+  if (sb_version > 1) {
+    return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hdf5.extension;
   file_recovery_new->file_check=&file_check_hdf5;
   return 1;
 }
-
 
 static void register_header_check_hdf5(file_stat_t *file_stat)
 {
