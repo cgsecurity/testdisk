@@ -34,7 +34,7 @@
 #include "types.h"
 #include "filegen.h"
 #include "common.h"
-#ifdef DEBUG_HDF
+#ifdef DEBUG_HDF5
 #include "log.h"
 #endif
 
@@ -42,9 +42,9 @@
 static void register_header_check_hdf5(file_stat_t *file_stat);
 
 const file_hint_t file_hint_hdf5= {
-  .extension="hdf",
+  .extension="h5",
   .description="Hierarchical Data Format 5",
-  .max_filesize=PHOTOREC_MAX_SIZE_32,
+  .max_filesize=PHOTOREC_MAX_FILE_SIZE,
   .recover=1,
   .enable_by_default=1,
   .register_header_check=&register_header_check_hdf5
@@ -54,7 +54,79 @@ struct hdf5_superblock
 {
   uint8_t signature[8];
   uint8_t version;
-};
+  uint8_t version_global_free_space_storage;
+  uint8_t version_root_group_symbol_table_entry;
+  uint8_t reserved;
+  uint8_t version_shared_header_message_format;
+  uint8_t offsets_size;
+  uint8_t lengths_size;
+} __attribute__ ((gcc_struct, __packed__));
+
+/*@
+  @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source, &__fc_heap_status);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
+  @*/
+static void file_check_hdf5_0(file_recovery_t *file_recovery)
+{
+  const uint8_t eof_address_offset = 0x18 + 2*8;
+  FILE *handle = file_recovery->handle;
+  uint64_t eof_address = 0;
+  /* Get EOF Address */
+  if (my_fseek(handle, eof_address_offset, SEEK_SET) < 0 ||
+      fread(&eof_address, sizeof(eof_address), 1, handle) != 1)
+  {
+#ifdef DEBUG_HDF5
+    log_error("file_check_hdf5_0: Couldn't read HDF End of File Address");
+#endif
+    file_recovery->file_size=0;
+    return;
+  }
+  eof_address = le64(eof_address);
+#ifdef DEBUG_HDF5
+  log_info("file_check_hdf5_0: dec eof_address = %lu\n", (long unsigned)eof_address);
+  log_info("file_check_hdf5_0: hex eof_address = 0x%02lX\n", eof_address);
+#endif
+  if(eof_address < eof_address_offset || eof_address < file_recovery->file_size)
+  {
+    file_recovery->file_size=0;
+    return;
+  }
+  file_recovery->file_size=eof_address;
+}
+
+/*@
+  @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source, &__fc_heap_status);
+  @ requires valid_file_check_param(file_recovery);
+  @ ensures  valid_file_check_result(file_recovery);
+  @*/
+static void file_check_hdf5_1(file_recovery_t *file_recovery)
+{
+  const uint8_t eof_address_offset = 0x1C + 2*0x8;
+  FILE *handle = file_recovery->handle;
+  uint64_t eof_address = 0;
+  /* Get EOF Address */
+  if (my_fseek(handle, eof_address_offset, SEEK_SET) < 0 ||
+      fread(&eof_address, sizeof(eof_address), 1, handle) != 1)
+  {
+#ifdef DEBUG_HDF5
+    log_error("file_check_hdf5_1: Couldn't read HDF End of File Address");
+#endif
+    file_recovery->file_size=0;
+    return;
+  }
+  eof_address = le64(eof_address);
+#ifdef DEBUG_HDF5
+  log_info("file_check_hdf5_1: dec eof_address = %lu\n", (long unsigned)eof_address);
+  log_info("file_check_hdf5_1: hex eof_address = 0x%02lX\n", eof_address);
+#endif
+  if(eof_address < eof_address_offset || eof_address < file_recovery->file_size)
+  {
+    file_recovery->file_size=0;
+    return;
+  }
+  file_recovery->file_size=eof_address;
+}
 
 /*@
   @ requires buffer_size >= sizeof(struct hdf5_superblock);
@@ -71,6 +143,13 @@ static int header_check_hdf5(const unsigned char *buffer, const unsigned int buf
     return 0;
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hdf5.extension;
+  if(sb->offsets_size != 8)
+    return 1;
+  /* Currently only handle 64-bits offsets */
+  if(sb->version == 0)
+    file_recovery_new->file_check=&file_check_hdf5_0;
+  else
+    file_recovery_new->file_check=&file_check_hdf5_1;
   return 1;
 }
 
