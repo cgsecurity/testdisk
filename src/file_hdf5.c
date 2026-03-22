@@ -19,7 +19,6 @@
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
  */
-
 #if !defined(SINGLE_FORMAT) || defined(SINGLE_FORMAT_hdf5)
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -63,72 +62,6 @@ struct hdf5_superblock
 } __attribute__ ((gcc_struct, __packed__));
 
 /*@
-  @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source, &__fc_heap_status);
-  @ requires valid_file_check_param(file_recovery);
-  @ ensures  valid_file_check_result(file_recovery);
-  @*/
-static void file_check_hdf5_0(file_recovery_t *file_recovery)
-{
-  const uint8_t eof_address_offset = 0x18 + 2*8;
-  FILE *handle = file_recovery->handle;
-  uint64_t eof_address = 0;
-  /* Get EOF Address */
-  if (my_fseek(handle, eof_address_offset, SEEK_SET) < 0 ||
-      fread(&eof_address, sizeof(eof_address), 1, handle) != 1)
-  {
-#ifdef DEBUG_HDF5
-    log_error("file_check_hdf5_0: Couldn't read HDF End of File Address");
-#endif
-    file_recovery->file_size=0;
-    return;
-  }
-  eof_address = le64(eof_address);
-#ifdef DEBUG_HDF5
-  log_info("file_check_hdf5_0: dec eof_address = %lu\n", (long unsigned)eof_address);
-  log_info("file_check_hdf5_0: hex eof_address = 0x%02lX\n", eof_address);
-#endif
-  if(eof_address < eof_address_offset || eof_address < file_recovery->file_size)
-  {
-    file_recovery->file_size=0;
-    return;
-  }
-  file_recovery->file_size=eof_address;
-}
-
-/*@
-  @ requires \separated(file_recovery, file_recovery->handle, &errno, &Frama_C_entropy_source, &__fc_heap_status);
-  @ requires valid_file_check_param(file_recovery);
-  @ ensures  valid_file_check_result(file_recovery);
-  @*/
-static void file_check_hdf5_1(file_recovery_t *file_recovery)
-{
-  const uint8_t eof_address_offset = 0x1C + 2*0x8;
-  FILE *handle = file_recovery->handle;
-  uint64_t eof_address = 0;
-  /* Get EOF Address */
-  if (my_fseek(handle, eof_address_offset, SEEK_SET) < 0 ||
-      fread(&eof_address, sizeof(eof_address), 1, handle) != 1)
-  {
-#ifdef DEBUG_HDF5
-    log_error("file_check_hdf5_1: Couldn't read HDF End of File Address");
-#endif
-    file_recovery->file_size=0;
-    return;
-  }
-  eof_address = le64(eof_address);
-#ifdef DEBUG_HDF5
-  log_info("file_check_hdf5_1: dec eof_address = %lu\n", (long unsigned)eof_address);
-  log_info("file_check_hdf5_1: hex eof_address = 0x%02lX\n", eof_address);
-#endif
-  if(eof_address < eof_address_offset || eof_address < file_recovery->file_size)
-  {
-    file_recovery->file_size=0;
-    return;
-  }
-  file_recovery->file_size=eof_address;
-}
-
-/*@
   @ requires buffer_size >= sizeof(struct hdf5_superblock);
   @ requires separation: \separated(&file_hint_hdf5, buffer+(..), file_recovery, file_recovery_new);
   @ requires valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new);
@@ -141,15 +74,30 @@ static int header_check_hdf5(const unsigned char *buffer, const unsigned int buf
   /*@ assert \valid_read(sb); */
   if(sb->version > 2)
     return 0;
+  if(sb->offsets_size < 1)
+    return 0;
+  if(sb->offsets_size == 8)
+  {
+    uint64_t calculated_file_size;
+    /* Currently only handle 64-bits offsets */
+    if(sb->version == 0)
+      calculated_file_size = le64(*(const uint64_t *)(&buffer[0x18 + 2*8]));
+    else
+      calculated_file_size = le64(*(const uint64_t *)(&buffer[0x1C + 2*8]));
+    if(calculated_file_size < 0x1C + 3*8)
+      return 0;
+    reset_file_recovery(file_recovery_new);
+    file_recovery_new->extension=file_hint_hdf5.extension;
+    file_recovery_new->calculated_file_size = calculated_file_size;
+#ifdef DEBUG_HDF5
+    log_info("calculated_file_size %llu\n", (long long unsigned)calculated_file_size);
+#endif
+    file_recovery_new->data_check=&data_check_size;
+    file_recovery_new->file_check=&file_check_size;
+    return 1;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_hdf5.extension;
-  if(sb->offsets_size != 8)
-    return 1;
-  /* Currently only handle 64-bits offsets */
-  if(sb->version == 0)
-    file_recovery_new->file_check=&file_check_hdf5_0;
-  else
-    file_recovery_new->file_check=&file_check_hdf5_1;
   return 1;
 }
 
