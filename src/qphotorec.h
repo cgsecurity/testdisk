@@ -52,6 +52,7 @@ class QPhotorec: public QWidget
 		/* Formats */
 		void formats_reset();
 		void formats_restore();
+		void formats_search(const QString &format);
 	protected:
                 void setupUI();
 		void clearWidgets();

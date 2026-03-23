@@ -955,6 +955,11 @@ void QPhotorec::qphotorec_formats()
 
   QDialog fenetre3;
   fenetre3.setWindowTitle("QPhotoRec: "+tr("File Formats"));
+
+  QLineEdit *ed_search = new QLineEdit();
+  ed_search->setPlaceholderText(tr("Search formats"));
+  ed_search->setClearButtonEnabled(true);
+
   QDialogButtonBox buttonBox(Qt::Horizontal);
 
   QPushButton *bt_reset= new QPushButton(tr("&Reset"));
@@ -963,14 +968,18 @@ void QPhotorec::qphotorec_formats()
   buttonBox.addButton(bt_reset, QDialogButtonBox::ResetRole);
   buttonBox.addButton(bt_restore, QDialogButtonBox::ResetRole);
   buttonBox.addButton(QDialogButtonBox::Ok);
+
   QVBoxLayout vbox;
+  vbox.addWidget(ed_search);
   vbox.addWidget(formats);
   vbox.addWidget(&buttonBox);
   fenetre3.setLayout(&vbox);
+  connect(ed_search, SIGNAL(textChanged(QString)), this, SLOT(formats_search(QString)));
   connect(&buttonBox, SIGNAL(accepted()), &fenetre3, SLOT(accept()));
   connect(bt_reset, SIGNAL(clicked()), this, SLOT(formats_reset()));
   connect(bt_restore, SIGNAL(clicked()), this, SLOT(formats_restore()));
   fenetre3.exec();
+
   int i;
   for (i = 0, file_enable=array_file_enable;
       i < formats->count() && file_enable->file_hint!=NULL;
@@ -1002,5 +1011,20 @@ void QPhotorec::formats_restore()
       item->setCheckState (Qt::Checked);
     else
       item->setCheckState (Qt::Unchecked);
+  }
+}
+
+void QPhotorec::formats_search(const QString &format)
+{
+  file_enable_t *file_enable;
+  int i;
+  for (i = 0, file_enable=array_file_enable;
+      i < formats->count() && file_enable->file_hint!=NULL;
+      i++, file_enable++)
+  {
+    QListWidgetItem *item = formats->item(i);
+    QString descr = item->text();
+    bool hide = descr.contains(format, Qt::CaseInsensitive)?false:true;
+    item->setHidden(hide);
   }
 }
