@@ -128,7 +128,7 @@ void screen_buffer_to_log(void)
     log_info("%s\n",intr_buffer_screen[i]);
 }
 
-int get_partition_status(const partition_t *partition)
+char get_partition_status(const partition_t *partition)
 {
   switch(partition->status)
   {

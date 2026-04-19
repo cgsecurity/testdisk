@@ -284,13 +284,11 @@ void QPhotorec::PartListWidget_updateUI()
 	QString partname="";
 	if(partition->partname[0]!='\0')
 	{
-	  partname.sprintf("[%s]", partition->partname);
+	  QTextStream(&partname) << "[" << partition->partname << "]";
 	}
 	if(partition->fsname[0]!='\0')
 	{
-	  QString fsname;
-	  fsname.sprintf(" [%s]", partition->fsname);
-	  partname.append(fsname);
+	  QTextStream(&partname) << " [" << partition->fsname << "]";
 	}
 	PartListWidget->setItem(currentRow, 5, new QTableWidgetItem(partname));
       }
