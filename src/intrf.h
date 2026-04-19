@@ -105,7 +105,7 @@ void screen_buffer_to_log(void);
   @ terminates \true;
   @ assigns \nothing;
   @*/
-int get_partition_status(const partition_t *partition);
+char get_partition_status(const partition_t *partition);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */
