@@ -91,6 +91,9 @@ static void sighup_hdlr(int sig)
     action.sa_handler=SIG_DFL;
     sigaction(sig,&action,NULL);
     kill(0, sig);
+#ifdef HAVE_NCURSES
+    end_ncurses();
+#endif
     return ;
   }
   need_to_stop=1;

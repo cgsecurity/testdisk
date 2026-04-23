@@ -113,6 +113,9 @@ static void sighup_hdlr(int sig)
   log_flush();
   if(need_to_stop==1)
   {
+#ifdef HAVE_NCURSES
+    end_ncurses();
+#endif
     action.sa_handler=SIG_DFL;
     sigaction(sig,&action,NULL);
     kill(0, sig);
