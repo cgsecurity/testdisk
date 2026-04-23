@@ -6,7 +6,7 @@ AC_INIT([testdisk],[7.3-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="April 2025"
+TESTDISKDATE="April 2026"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -918,13 +918,16 @@ AC_CHECK_FUNCS([reiserfs_fs_open_fast])
 LIBS="$OLDLIBS"
 AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
-export QT_SELECT=qt5
+export QT_SELECT=qt6
 if test "$use_qt" = "true";
 then
-  PKG_CHECK_MODULES(QT5GUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
-  PKG_CHECK_MODULES(QT5WIDGETS, [Qt5Widgets  >= 5.0.0],,use_qt=false)
-  AC_MSG_CHECKING([whether Qt5 is using --std=c++14])
-  qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++14"`
+  PKG_CHECK_MODULES(QT6CORE, [Qt6Core  >= 6.0.0],,use_qt=false)
+  PKG_CHECK_MODULES(QT6GUI, [Qt6Gui  >= 6.0.0],,use_qt=false)
+  PKG_CHECK_MODULES(QT6WIDGETS, [Qt6Widgets  >= 6.0.0],,use_qt=false)
+
+
+  AC_MSG_CHECKING([whether Qt6 is using --std=c++14])
+  qt_config=`$PKG_CONFIG --variable=qt_config Qt6Core | grep "c++14"`
   if test "x$qt_config" != "x" ;
   then
     AC_MSG_RESULT([[yes]])
@@ -943,8 +946,8 @@ then
     AC_LANG_POP([C++])
   else
     AC_MSG_RESULT([[no]])
-    AC_MSG_CHECKING([whether Qt5 is using --std=c++11])
-    qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++11"`
+    AC_MSG_CHECKING([whether QT6 is using --std=c++11])
+    qt_config=`$PKG_CONFIG --variable=qt_config Qt6Core | grep "c++11"`
     if test "x$qt_config" != "x" ;
     then
       AC_MSG_RESULT([[yes]])
@@ -966,23 +969,95 @@ then
     fi
   fi
 
-  AC_CHECK_TOOLS(MOC,[moc-qt5 moc],)
+
+  PKG_CHECK_VAR([QT_LIBEXECDIR], [Qt6Core >= 6.0.0], [libexecdir])
+  PKG_CHECK_VAR([QT_BINDIR], [Qt6Core >= 6.0.0], [bindir])
+
+  AC_PATH_PROGS([MOC],[moc-qt6 moc],[],["$QT_LIBEXECDIR:$QT_BINDIR:$PATH"])
   if test x$MOC = x ; then
-	AC_MSG_WARN(Could not find a moc-qt5 or moc tool in your PATH.)
+	AC_MSG_WARN(Could not find a moc-qt6 or moc tool in your PATH.)
 	use_qt=false
   fi
-  AC_CHECK_TOOLS(RCC,[rcc-qt5 rcc],)
+  AC_PATH_PROGS([RCC],[rcc-qt6 rcc],[],["$QT_LIBEXECDIR:$QT_BINDIR:$PATH"])
   if test x$RCC = x ; then
-	AC_MSG_WARN(Could not find a rcc-qt5 or rcc tool in your PATH.)
+	AC_MSG_WARN(Could not find a rcc-qt6 or rcc tool in your PATH.)
 	use_qt=false
   fi
-  AC_CHECK_TOOLS(LRELEASE,[lrelease-qt5 lrelease],)
+  AC_PATH_PROGS([LRELEASE],[lrelease-qt6 lrelease],[],["$QT_LIBEXECDIR:$QT_BINDIR:$PATH"])
   if test x$LRELEASE = x ; then
-	AC_MSG_WARN(Could not find a lrelease-qt5 or lrelease tool in your PATH.)
+	AC_MSG_WARN(Could not find a lrelease-qt6 or lrelease tool in your PATH.)
 	use_qt=false
   fi
-  qphotorec_LDADD="$qphotorec_LDADD $QT5GUI_LIBS $QT5WIDGETS_LIBS"
-  qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT5GUI_CFLAGS $QT5WIDGETS_CFLAGS"
+  if test "$use_qt" = "true";
+  then
+    qphotorec_LDADD="$qphotorec_LDADD $QT6GUI_LIBS $QT6WIDGETS_LIBS"
+    qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT6GUI_CFLAGS $QT6WIDGETS_CFLAGS"
+  else
+    use_qt=true
+    export QT_SELECT=qt5
+    PKG_CHECK_MODULES(QT5GUI, [Qt5Gui  >= 5.0.0],,use_qt=false)
+    PKG_CHECK_MODULES(QT5WIDGETS, [Qt5Widgets  >= 5.0.0],,use_qt=false)
+    AC_MSG_CHECKING([whether Qt5 is using --std=c++14])
+    qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++14"`
+    if test "x$qt_config" != "x" ;
+    then
+      AC_MSG_RESULT([[yes]])
+      AC_LANG_PUSH([C++])
+      option="--std=c++14"
+      SAVE_CXXFLAGS="$CXXFLAGS"
+      CXXFLAGS="$CXXFLAGS $option"
+      AC_MSG_CHECKING([whether g++ understands $option])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	  [has_option=yes],
+	  [has_option=no; CXXFLAGS="$SAVE_CXXFLAGS"])
+      AC_MSG_RESULT($has_option)
+      unset has_option
+      unset SAVE_CXXFLAGS
+      unset option
+      AC_LANG_POP([C++])
+    else
+      AC_MSG_RESULT([[no]])
+      AC_MSG_CHECKING([whether Qt5 is using --std=c++11])
+      qt_config=`$PKG_CONFIG --variable=qt_config Qt5Core | grep "c++11"`
+      if test "x$qt_config" != "x" ;
+      then
+	AC_MSG_RESULT([[yes]])
+	AC_LANG_PUSH([C++])
+	option="--std=c++11"
+	SAVE_CXXFLAGS="$CXXFLAGS"
+	CXXFLAGS="$CXXFLAGS $option"
+	AC_MSG_CHECKING([whether g++ understands $option])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+	    [has_option=yes],
+	    [has_option=no; CXXFLAGS="$SAVE_CXXFLAGS"])
+	AC_MSG_RESULT($has_option)
+	unset has_option
+	unset SAVE_CXXFLAGS
+	unset option
+	AC_LANG_POP([C++])
+      else
+	AC_MSG_RESULT([[no]])
+      fi
+    fi
+
+    AC_CHECK_TOOLS(MOC,[moc-qt5 moc],)
+    if test x$MOC = x ; then
+	  AC_MSG_WARN(Could not find a moc-qt5 or moc tool in your PATH.)
+	  use_qt=false
+    fi
+    AC_CHECK_TOOLS(RCC,[rcc-qt5 rcc],)
+    if test x$RCC = x ; then
+	  AC_MSG_WARN(Could not find a rcc-qt5 or rcc tool in your PATH.)
+	  use_qt=false
+    fi
+    AC_CHECK_TOOLS(LRELEASE,[lrelease-qt5 lrelease],)
+    if test x$LRELEASE = x ; then
+	  AC_MSG_WARN(Could not find a lrelease-qt5 or lrelease tool in your PATH.)
+	  use_qt=false
+    fi
+    qphotorec_LDADD="$qphotorec_LDADD $QT5GUI_LIBS $QT5WIDGETS_LIBS"
+    qphotorec_CXXFLAGS="$qphotorec_CXXFLAGS $QT5GUI_CFLAGS $QT5WIDGETS_CFLAGS"
+  fi
 fi
 AM_CONDITIONAL(USEQT, test "$use_qt" = true)
 if test "$win_target" = yes;
