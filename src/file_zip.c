@@ -84,6 +84,7 @@ static const char *extension_odt="odt";
 static const char *extension_ora="ora";
 static const char *extension_pages="pages";
 static const char *extension_pptx="pptx";
+static const char *extension_sb3="sb3";
 static const char *extension_sh3d="sh3d";
 static const char *extension_sketch="sketch";
 static const char *extension_sxc="sxc";
@@ -375,6 +376,7 @@ static const char *zip_parse_parse_entry_mimetype(const char *mime, const unsign
      *ext == extension_ora ||
      *ext == extension_pages ||
      *ext == extension_pptx ||
+     *ext == extension_sb3 ||
      *ext == extension_sh3d ||
      *ext == extension_sketch ||
      *ext == extension_sxc ||
@@ -482,6 +484,8 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
       *ext=extension_celtx;
     else if(len==12 && memcmp(filename, "Document.xml", 12)==0)
       *ext=extension_fcstd;
+    else if(len==12 && memcmp(filename, "project.json", 12)==0)
+      *ext=extension_sb3;
     else if(len==13 && memcmp(filename, "document.json", 13)==0)
       *ext=extension_sketch;
     else if(len > 16 && memcmp(filename,  "atlases/atlas_ID", 16)==0)
@@ -554,6 +558,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_ora ||
      *ext == extension_pages ||
      *ext == extension_pptx ||
+     *ext == extension_sb3||
      *ext == extension_sh3d ||
      *ext == extension_sketch ||
      *ext == extension_sxc ||
@@ -588,6 +593,7 @@ static int zip_parse_file_entry_fn(file_recovery_t *fr, const char **ext, const 
      *ext == extension_ora ||
      *ext == extension_pages ||
      *ext == extension_pptx ||
+     *ext == extension_sb3 ||
      *ext == extension_sh3d ||
      *ext == extension_sketch ||
      *ext == extension_sxc ||
@@ -1336,6 +1342,7 @@ static void file_rename_zip(file_recovery_t *file_recovery)
       file_recovery_new->extension == extension_odt ||
       file_recovery_new->extension == extension_ora ||
       file_recovery_new->extension == extension_pptx ||
+      file_recovery_new->extension == extension_sb3 ||
       file_recovery_new->extension == extension_sh3d ||
       file_recovery_new->extension == extension_sxc ||
       file_recovery_new->extension == extension_sxd ||
@@ -1404,6 +1411,8 @@ static int header_check_zip(const unsigned char *buffer, const unsigned int buff
     file_recovery_new->extension=extension_xrns;
   else if(len==4 && memcmp(&buffer[30], "Home", 4)==0)
     file_recovery_new->extension=extension_sh3d;
+  else if(len==12 && memcmp(&buffer[30], "project.json", 12)==0)
+    file_recovery_new->extension=extension_sb3;
   /* Apple Numbers */
   else if(len==18 && memcmp(&buffer[30], "Index/Document.iwa", 18)==0)
     file_recovery_new->extension=extension_numbers;
