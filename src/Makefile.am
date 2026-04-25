@@ -74,6 +74,7 @@ file_C			= filegen.c \
 			  file_apple.c \
 			  file_ari.c \
 			  file_arj.c \
+			  file_aseprite.c \
 			  file_asf.c \
 			  file_asl.c \
 			  file_asm.c \
