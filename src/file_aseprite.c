@@ -3,17 +3,17 @@
     File: file_aseprite.c
 
     Copyright (C) 2006-2009,2021 Christophe GRENIER <grenier@cgsecurity.org>
-  
+
     This software is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
-  
+
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-  
+
     You should have received a copy of the GNU General Public License along
     with this program; if not, write the Free Software Foundation, Inc., 51
     Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -59,14 +59,14 @@ struct aseprite_file_header
   uint16_t height;	/* Height in pixels */
   uint16_t color_depth;	/* Bits per pixel (32 bpp = RGBA; 16 bpp GRAYSCALE; 8 bpp INDEXED;) */
   uint32_t flags; /* flags */
-  uint16_t speed; /* speed (miliseconds between frames) 
+  uint16_t speed; /* speed (miliseconds between frames)
     DEPRECATED: frame's frame duration field used instead. */
   uint32_t reserved1; /* must be 0 */
   uint32_t reserved2; /* must be 0 */
   uint8_t pallete; /* Pallete entry (index). Only for indexed sprites. */
   uint8_t reserved3[3]; /* must be 0 */
   uint16_t ncolors; /* Number of colors (0 means 256 for old sprites) */
-  uint8_t pixel_width; /* Pixel ratio = pixel_width/pixel_height; 
+  uint8_t pixel_width; /* Pixel ratio = pixel_width/pixel_height;
     If this or pixel_height equals to 0, pixel ratio = 1:1 */
   uint8_t pixel_height; /* Pixel Height */
   int16_t x_grid; /* X position on grid. */
@@ -103,23 +103,20 @@ static int header_check_aseprite(const unsigned char *buffer, const unsigned int
   log_info("depth  %u\n", color_depth);
 #endif
 
-  if (file_size < sizeof(struct aseprite_file_header) || 
-      frames==0 || frames > 65535 || 
-      width==0 || width > 65535 || 
-      height==0 || height > 65535 || 
-      reserved1!=0 || reserved2!=0 || 
-      (color_depth!=8 && color_depth!=16 && color_depth!=32)  
-  ) 
+  if (file_size < sizeof(struct aseprite_file_header) ||
+      frames==0 || frames > 65535 ||
+      width==0 || width > 65535 ||
+      height==0 || height > 65535 ||
+      reserved1!=0 || reserved2!=0 ||
+      (color_depth!=8 && color_depth!=16 && color_depth!=32)
+  )
     return 0;
 
   reset_file_recovery(file_recovery_new);
-  file_recovery_new->min_filesize=sizeof(struct aseprite_file_header);
   file_recovery_new->extension=file_hint_aseprite.extension;
-  if (file_recovery_new->blocksize < 16) 
-    return 1;
   file_recovery_new->calculated_file_size=file_size;
   file_recovery_new->data_check=&data_check_size;
-  file_recovery_new->file_check=&file_check_size_min;
+  file_recovery_new->file_check=&file_check_size;
   return 1;
 }
 
