@@ -27,7 +27,8 @@ jobs:
           sudo apt-get install -y \
             autoconf automake libtool pkg-config build-essential \
             gettext autopoint \
-            libncurses-dev zlib1g-dev libjpeg-dev libuuid1 uuid-dev
+            libncurses-dev zlib1g-dev libjpeg-dev libuuid1 uuid-dev \
+            e2fsprogs libext2fs-dev
 
       - name: Build Linux binaries
         run: |
@@ -103,16 +104,13 @@ jobs:
           make -j2
 
       - name: Package Windows binaries
-        shell: msys2 {0}
+        shell: pwsh
         run: |
-          mkdir -p dist/windows
-          for exe in testdisk.exe photorec.exe fidentify.exe; do
-            if [ -f "src/$exe" ]; then
-              cp "src/$exe" dist/windows/
-            fi
-          done
-          cd dist/windows
-          7z a ../../testdisk-windows-x86_64.zip .
+          New-Item -ItemType Directory -Force dist\windows | Out-Null
+          foreach ($exe in @("testdisk.exe","photorec.exe","fidentify.exe")) {
+            if (Test-Path "src\$exe") { Copy-Item "src\$exe" dist\windows\ }
+          }
+          Compress-Archive -Path dist\windows\* -DestinationPath testdisk-windows-x86_64.zip
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
