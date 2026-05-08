@@ -30,6 +30,16 @@ jobs:
             libncurses-dev zlib1g-dev libjpeg-dev libuuid1 uuid-dev \
             e2fsprogs libext2fs-dev
 
+      - name: Clone latest TrID definitions
+        run: |
+          git clone --depth 1 https://github.com/digipres/digipres.github.io.git /tmp/digipres.github.io
+
+      - name: Generate photorec.sig from latest TrID XML
+        run: |
+          python3 trid_to_photorec.py \
+            /tmp/digipres.github.io/_sources/registries/trid/triddefs_xml \
+            -o photorec.sig
+
       - name: Build Linux binaries
         run: |
           if [ ! -x ./configure ]; then
@@ -46,17 +56,9 @@ jobs:
               cp "src/$bin" dist/linux/
             fi
           done
+          # Bundle photorec.sig so PhotoRec finds signatures at ./photorec.sig
+          cp photorec.sig dist/linux/
           tar -czf testdisk-linux-x86_64.tar.gz -C dist/linux .
-
-      - name: Clone latest TrID definitions
-        run: |
-          git clone --depth 1 https://github.com/digipres/digipres.github.io.git /tmp/digipres.github.io
-
-      - name: Generate photorec.sig from latest TrID XML
-        run: |
-          python3 trid_to_photorec.py \
-            /tmp/digipres.github.io/_sources/registries/trid/triddefs_xml \
-            -o photorec.sig
 
       - name: Upload Linux package
         uses: actions/upload-artifact@v4
@@ -110,6 +112,8 @@ jobs:
           foreach ($exe in @("testdisk.exe","photorec.exe","fidentify.exe")) {
             if (Test-Path "src\$exe") { Copy-Item "src\$exe" dist\windows\ }
           }
+          # Bundle photorec.sig so PhotoRec finds signatures at ./photorec.sig
+          if (Test-Path "photorec.sig") { Copy-Item "photorec.sig" dist\windows\ }
           Compress-Archive -Path dist\windows\* -DestinationPath testdisk-windows-x86_64.zip
 
       - name: Upload Windows package
