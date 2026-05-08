@@ -1,3 +1,3 @@
 #!/bin/sh
-mkdir config
+mkdir -p config
 autoreconf --install -W all -I config

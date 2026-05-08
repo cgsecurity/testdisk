@@ -1,0 +1,158 @@
+name: Build and Package
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config build-essential \
+            gettext autopoint \
+            libncurses-dev zlib1g-dev libjpeg-dev libuuid1 uuid-dev \
+            e2fsprogs libext2fs-dev
+
+      - name: Clone latest TrID definitions
+        run: |
+          git clone --depth 1 https://github.com/digipres/digipres.github.io.git /tmp/digipres.github.io
+
+      - name: Generate photorec.sig from latest TrID XML
+        run: |
+          python3 trid_to_photorec.py \
+            /tmp/digipres.github.io/_sources/registries/trid/triddefs_xml \
+            -o photorec.sig
+
+      - name: Build Linux binaries
+        run: |
+          if [ ! -x ./configure ]; then
+            ./autogen.sh
+          fi
+          ./configure --disable-qt
+          make -j"$(nproc)"
+
+      - name: Package Linux binaries
+        run: |
+          mkdir -p dist/linux
+          for bin in testdisk photorec fidentify; do
+            if [ -x "src/$bin" ]; then
+              cp "src/$bin" dist/linux/
+            fi
+          done
+          # Bundle photorec.sig so PhotoRec finds signatures at ./photorec.sig
+          cp photorec.sig dist/linux/
+          tar -czf testdisk-linux-x86_64.tar.gz -C dist/linux .
+
+      - name: Upload Linux package
+        uses: actions/upload-artifact@v4
+        with:
+          name: testdisk-linux-x86_64
+          path: testdisk-linux-x86_64.tar.gz
+
+      - name: Upload photorec.sig
+        uses: actions/upload-artifact@v4
+        with:
+          name: photorec-sig
+          path: photorec.sig
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            autoconf
+            automake
+            libtool
+            make
+            pkgconf
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-ncurses
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-libjpeg-turbo
+
+      - name: Build Windows binaries
+        shell: msys2 {0}
+        run: |
+          if [ ! -x ./configure ]; then
+            ./autogen.sh
+          fi
+          ./configure --host=x86_64-w64-mingw32 --disable-qt
+          make -j2
+
+      - name: Package Windows binaries
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist\windows | Out-Null
+          foreach ($exe in @("testdisk.exe","photorec.exe","fidentify.exe")) {
+            if (Test-Path "src\$exe") { Copy-Item "src\$exe" dist\windows\ }
+          }
+          # Bundle photorec.sig so PhotoRec finds signatures at ./photorec.sig
+          if (Test-Path "photorec.sig") { Copy-Item "photorec.sig" dist\windows\ }
+          Compress-Archive -Path dist\windows\* -DestinationPath testdisk-windows-x86_64.zip
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: testdisk-windows-x86_64
+          path: testdisk-windows-x86_64.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-linux
+      - build-windows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testdisk-linux-x86_64
+          path: release
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: testdisk-windows-x86_64
+          path: release
+
+      - name: Download photorec.sig artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: photorec-sig
+          path: release
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/testdisk-linux-x86_64.tar.gz
+            release/testdisk-windows-x86_64.zip
+            release/photorec.sig
+          generate_release_notes: true
