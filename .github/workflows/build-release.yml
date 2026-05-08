@@ -26,6 +26,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             autoconf automake libtool pkg-config build-essential \
+            gettext autopoint \
             libncurses-dev zlib1g-dev libjpeg-dev libuuid1 uuid-dev
 
       - name: Build Linux binaries
