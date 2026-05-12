@@ -154,6 +154,36 @@ static pstatus_t photorec_header_found(const file_recovery_t *file_recovery_new,
   return PSTATUS_OK;
 }
 
+inline static int photorec_image_filter(file_recovery_t *file_recovery_new, const struct ph_options *options)
+{
+  const int filter_dimensions=(options->image_min_width > 0 || options->image_min_height > 0 || options->image_min_pixels > 0);
+  const int filter_filesize=(options->image_min_filesize > 0);
+  int is_filtered_image=0;
+  if(filter_dimensions==0 && filter_filesize==0)
+    return 1;
+  if(file_recovery_new->extension==NULL)
+    return 1;
+  if(strcmp(file_recovery_new->extension, "jpg")==0 || strcmp(file_recovery_new->extension, "png")==0)
+    is_filtered_image=1;
+  if(is_filtered_image==0 && (file_recovery_new->image_width==0 || file_recovery_new->image_height==0))
+    return 1;
+  if(filter_dimensions!=0)
+  {
+    const uint64_t pixels=(uint64_t)file_recovery_new->image_width * (uint64_t)file_recovery_new->image_height;
+    if(file_recovery_new->image_width==0 || file_recovery_new->image_height==0)
+      return 0;
+    if(options->image_min_width > 0 && file_recovery_new->image_width < options->image_min_width)
+      return 0;
+    if(options->image_min_height > 0 && file_recovery_new->image_height < options->image_min_height)
+      return 0;
+    if(options->image_min_pixels > 0 && pixels < options->image_min_pixels)
+      return 0;
+  }
+  if(filter_filesize!=0 && file_recovery_new->min_filesize < options->image_min_filesize)
+    file_recovery_new->min_filesize=options->image_min_filesize;
+  return 1;
+}
+
 /*@
   @ requires \valid(file_recovery);
   @ requires valid_file_recovery(file_recovery);
@@ -208,6 +238,13 @@ inline static pstatus_t photorec_check_header(file_recovery_t *file_recovery, st
 	  file_check->header_check(buffer, read_size, 0, file_recovery, &file_recovery_new)!=0)
       {
 	file_recovery_new.file_stat=file_check->file_stat;
+	if(photorec_image_filter(&file_recovery_new, options)==0)
+	{
+	  file_recovery_new.file_stat=NULL;
+	  file_recovery_new.blocksize=blocksize;
+	  file_recovery_new.location.start=offset;
+	  continue;
+	}
 	/*@ assert valid_file_recovery(&file_recovery_new); */
 	return photorec_header_found(&file_recovery_new, file_recovery, params, options, list_search_space, buffer, file_recovered, offset);
       }

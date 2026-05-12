@@ -322,14 +322,22 @@ static int header_check_mng(const unsigned char *buffer, const unsigned int buff
   @*/
 static int header_check_png(const unsigned char *buffer, const unsigned int buffer_size, const unsigned int safe_header_only, const file_recovery_t *file_recovery, file_recovery_t *file_recovery_new)
 {
+  const struct png_ihdr *ihdr=(const struct png_ihdr *)&buffer[16];
+  unsigned int width=0;
+  unsigned int height=0;
   if( !((isupper(buffer[8+4]) || islower(buffer[8+4])) &&
 	(isupper(buffer[8+5]) || islower(buffer[8+5])) &&
 	(isupper(buffer[8+6]) || islower(buffer[8+6])) &&
 	(isupper(buffer[8+7]) || islower(buffer[8+7]))))
     return 0;
   if(memcmp(&buffer[8+4], "IHDR", 4) == 0 &&
-      png_check_ihdr((const struct png_ihdr *)&buffer[16])==0)
+      png_check_ihdr(ihdr)==0)
     return 0;
+  if(memcmp(&buffer[8+4], "IHDR", 4) == 0)
+  {
+    width=be32(ihdr->width);
+    height=be32(ihdr->height);
+  }
 #if !defined(SINGLE_FORMAT)
   /* SolidWorks files contain a png */
   if(file_recovery->file_stat!=NULL &&
@@ -340,6 +348,8 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   }
 #endif
   reset_file_recovery(file_recovery_new);
+  file_recovery_new->image_width=width;
+  file_recovery_new->image_height=height;
   file_recovery_new->extension=file_hint_png.extension;
   file_recovery_new->min_filesize=16;
   if(file_recovery_new->blocksize < 8)

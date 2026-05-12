@@ -117,6 +117,10 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   options->expert=0;
   options->lowmem=0;
   options->verbose=0;
+  options->image_min_width=0;
+  options->image_min_height=0;
+  options->image_min_pixels=0;
+  options->image_min_filesize=0;
   options->list_file_format=array_file_enable;
   reset_array_file_enable(options->list_file_format);
 
