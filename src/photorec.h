@@ -41,6 +41,10 @@ struct ph_options
   unsigned int mode_ext2;
   unsigned int expert;
   unsigned int lowmem;
+  uint64_t image_min_filesize;
+  unsigned int image_min_width;
+  unsigned int image_min_height;
+  uint64_t image_min_pixels;
   int verbose;
   file_enable_t *list_file_format;
 };

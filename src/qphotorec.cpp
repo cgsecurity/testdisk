@@ -67,7 +67,9 @@
 #include <QDialogButtonBox>
 #include <QSortFilterProxyModel>
 #include <QGroupBox>
+#include <QGridLayout>
 #include <QRadioButton>
+#include <QSpinBox>
 #include <QFileDialog>
 #include <QComboBox>
 #include <QTimer>
@@ -116,6 +118,10 @@ QPhotorec::QPhotorec(QWidget *my_parent) : QWidget(my_parent)
   options->mode_ext2=0;
   options->expert=0;
   options->lowmem=0;
+  options->image_min_filesize=0;
+  options->image_min_width=0;
+  options->image_min_height=0;
+  options->image_min_pixels=0;
   options->verbose=0;
   options->list_file_format=array_file_enable;
   reset_array_file_enable(options->list_file_format);
@@ -486,6 +492,7 @@ void QPhotorec::setupUI()
 
   QGroupBox *groupBox1;
   QGroupBox *groupBox2;
+  QGroupBox *groupBox3;
 
   groupBox1 = new QGroupBox(tr("File System type"));
   qextRadioButton = new QRadioButton(tr("ext2/ext3/ext4 filesystem"));
@@ -510,10 +517,35 @@ void QPhotorec::setupUI()
   groupBox2Layout->addWidget(qwholeRadioButton);
   groupBox2->setLayout(groupBox2Layout);
 
+  groupBox3 = new QGroupBox(tr("Image minimums"));
+  imageMinFilesizeSpinBox = new QSpinBox();
+  imageMinWidthSpinBox = new QSpinBox();
+  imageMinHeightSpinBox = new QSpinBox();
+  imageMinPixelsSpinBox = new QSpinBox();
+  imageMinFilesizeSpinBox->setRange(0, 2147483647);
+  imageMinWidthSpinBox->setRange(0, 65535);
+  imageMinHeightSpinBox->setRange(0, 65535);
+  imageMinPixelsSpinBox->setRange(0, 2147483647);
+  imageMinFilesizeSpinBox->setSuffix(tr(" bytes"));
+  imageMinWidthSpinBox->setSuffix(tr(" px"));
+  imageMinHeightSpinBox->setSuffix(tr(" px"));
+  imageMinPixelsSpinBox->setSuffix(tr(" pixels"));
+  QGridLayout *groupBox3Layout = new QGridLayout;
+  groupBox3Layout->addWidget(new QLabel(tr("File size")), 0, 0);
+  groupBox3Layout->addWidget(imageMinFilesizeSpinBox, 0, 1);
+  groupBox3Layout->addWidget(new QLabel(tr("Width")), 1, 0);
+  groupBox3Layout->addWidget(imageMinWidthSpinBox, 1, 1);
+  groupBox3Layout->addWidget(new QLabel(tr("Height")), 2, 0);
+  groupBox3Layout->addWidget(imageMinHeightSpinBox, 2, 1);
+  groupBox3Layout->addWidget(new QLabel(tr("Area")), 3, 0);
+  groupBox3Layout->addWidget(imageMinPixelsSpinBox, 3, 1);
+  groupBox3->setLayout(groupBox3Layout);
+
   QWidget *groupBox= new QWidget();
   QHBoxLayout *groupBoxLayout = new QHBoxLayout;
   groupBoxLayout->addWidget(groupBox1);
   groupBoxLayout->addWidget(groupBox2);
+  groupBoxLayout->addWidget(groupBox3);
   groupBox->setLayout(groupBoxLayout);
 
 
@@ -904,6 +936,10 @@ void QPhotorec::qphotorec_search()
   log_partition(selected_disk, selected_partition);
 
   options->mode_ext2=qextRadioButton->isChecked();
+  options->image_min_filesize=(uint64_t)imageMinFilesizeSpinBox->value();
+  options->image_min_width=(unsigned int)imageMinWidthSpinBox->value();
+  options->image_min_height=(unsigned int)imageMinHeightSpinBox->value();
+  options->image_min_pixels=(uint64_t)imageMinPixelsSpinBox->value();
 
   qphotorec_search_setupUI();
   if(td_list_empty(&list_search_space.list))

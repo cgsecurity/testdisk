@@ -16,6 +16,9 @@ create a photorec.log file
 .TP
 .B /debug
 add debug information
+.TP
+.BI "/cmd device options,image_min_width,n,image_min_height,n,image_min_pixels,n,image_min_filesize,n,search"
+recover files from a device or image with optional JPEG/PNG minimum image filters. Width and height are in pixels, pixels is width multiplied by height, and filesize is in bytes.
 .SH SEE ALSO
 .BR testdisk (8),
 .BR fdisk (8).

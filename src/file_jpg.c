@@ -93,6 +93,14 @@ const file_hint_t file_hint_jpg= {
   .register_header_check=&register_header_check_jpg
 };
 
+static int jpg_marker_is_sof(const unsigned char marker)
+{
+  return marker==0xc0 || marker==0xc1 || marker==0xc2 || marker==0xc3 ||
+    marker==0xc5 || marker==0xc6 || marker==0xc7 ||
+    marker==0xc9 || marker==0xca || marker==0xcb ||
+    marker==0xcd || marker==0xce || marker==0xcf;
+}
+
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size;
   @ requires \valid_read(buffer + (0 .. buffer_size-1));
@@ -120,7 +128,7 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
       /*@ assert 0 <= ((buffer[i+2]<<8) | buffer[i+3]) <= 0xffff; */
       const unsigned int size=((unsigned int)buffer[i+2]<<8)|buffer[i+3];
       /*@ assert size <= 0xffff; */
-      if(buffer[i+1]==0xc0)	/* SOF0 */
+      if(jpg_marker_is_sof(buffer[i+1])!=0)
       {
 	/*@ assert 0<= (buffer[i+5]<<8) <= 0xff00; */
 	/*@ assert 0 <= ((buffer[i+5]<<8) | buffer[i+6]) <= 0xffff; */
@@ -137,6 +145,33 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
       return;
     }
   }
+}
+
+static void file_check_jpg_min_dimensions(file_recovery_t *file_recovery)
+{
+  unsigned int buffer_size;
+  size_t read_size;
+  unsigned char *buffer;
+  unsigned int width=0;
+  unsigned int height=0;
+  if(photorec_image_min_dimension_filter_enabled()==0 ||
+      file_recovery->file_size==0 ||
+      file_recovery->handle==NULL)
+    return;
+  buffer_size=(file_recovery->file_size < 262144 ? (unsigned int)file_recovery->file_size : 262144);
+  if(buffer_size < 16)
+    return;
+  buffer=(unsigned char *)MALLOC(buffer_size);
+  if(my_fseek(file_recovery->handle, 0, SEEK_SET) < 0)
+  {
+    free(buffer);
+    return;
+  }
+  read_size=fread(buffer, 1, buffer_size, file_recovery->handle);
+  jpg_get_size(buffer, (unsigned int)read_size, &height, &width);
+  free(buffer);
+  if(photorec_image_min_dimensions_reject(file_hint_jpg.extension, width, height)!=0)
+    file_recovery->file_size=0;
 }
 
 struct MP_IFD_Field
@@ -1046,8 +1081,18 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
 	return 0;
     }
   }
+  if(photorec_image_min_dimension_filter_enabled()!=0)
+  {
+    unsigned int width=0;
+    unsigned int height=0;
+    jpg_get_size(buffer, buffer_size, &height, &width);
+    if(photorec_image_min_dimensions_reject(file_hint_jpg.extension, width, height)!=0)
+      return 0;
+  }
   reset_file_recovery(file_recovery_new);
   file_recovery_new->min_filesize=i;
+  if(file_recovery_new->min_filesize < photorec_image_min_filesize())
+    file_recovery_new->min_filesize=photorec_image_min_filesize();
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->time=jpg_time;
   file_recovery_new->extension=file_hint_jpg.extension;
@@ -2494,6 +2539,7 @@ static void file_check_jpg(file_recovery_t *file_recovery)
 #else
   file_recovery->file_size=file_recovery->calculated_file_size;
 #endif
+  file_check_jpg_min_dimensions(file_recovery);
 #if 0
     /* FIXME REMOVE ME */
   if(file_recovery->offset_error!=0)

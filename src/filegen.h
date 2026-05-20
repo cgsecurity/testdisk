@@ -48,6 +48,14 @@ typedef struct file_stat_struct file_stat_t;
 typedef struct file_recovery_struct file_recovery_t;
 typedef struct file_enable_struct file_enable_t;
 
+typedef struct
+{
+  uint64_t min_filesize;
+  unsigned int min_width;
+  unsigned int min_height;
+  uint64_t min_pixels;
+} photorec_image_min_filter_t;
+
 struct file_hint_struct
 {
   const char *extension;
@@ -475,6 +483,11 @@ time_t get_time_from_YYYYMMDD_HHMMSS(const char *date_asc);
   @ requires \separated(list_search_space, current_search_space, offset);
   @*/
 void get_prev_location_smart(const alloc_data_t *list_search_space, alloc_data_t **current_search_space, uint64_t *offset, const uint64_t prev_location);
+
+void photorec_set_image_min_filter(const photorec_image_min_filter_t *filter);
+uint64_t photorec_image_min_filesize(void);
+int photorec_image_min_dimension_filter_enabled(void);
+int photorec_image_min_dimensions_reject(const char *extension, const uint64_t width, const uint64_t height);
 
 #ifdef __cplusplus
 } /* closing brace for extern "C" */

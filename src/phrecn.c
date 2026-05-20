@@ -504,7 +504,11 @@ int photorec(struct ph_param *params, const struct ph_options *options, alloc_da
 #ifdef HAVE_NCURSES
 void interface_options_photorec_ncurses(struct ph_options *options)
 {
-  unsigned int menu = 5;
+  unsigned int menu = 9;
+  char options_msg[80];
+  char options_msg2[80];
+  char options_msg3[80];
+  char options_msg4[80];
   struct MenuItem menuOptions[]=
   {
     { 'P', NULL, "Check JPG files" },
@@ -512,6 +516,10 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     { 'S',NULL,"Try to skip indirect block"},
     { 'E',NULL,"Provide additional controls"},
     { 'L',NULL,"Low memory"},
+    { 'B',NULL,"Minimum image file size"},
+    { 'W',NULL,"Minimum image width"},
+    { 'H',NULL,"Minimum image height"},
+    { 'A',NULL,"Minimum image area"},
     { 'Q',"Quit","Return to main menu"},
     { 0, NULL, NULL }
   };
@@ -535,8 +543,20 @@ void interface_options_photorec_ncurses(struct ph_options *options)
     menuOptions[2].name=options->mode_ext2?"ext2/ext3 mode: Yes":"ext2/ext3 mode : No";
     menuOptions[3].name=options->expert?"Expert mode : Yes":"Expert mode : No";
     menuOptions[4].name=options->lowmem?"Low memory: Yes":"Low memory: No";
+    snprintf(options_msg, sizeof(options_msg), "Min image file size: %llu bytes",
+	(long long unsigned)options->image_min_filesize);
+    menuOptions[5].name=options_msg;
+    snprintf(options_msg2, sizeof(options_msg2), "Min image width: %u px",
+	options->image_min_width);
+    menuOptions[6].name=options_msg2;
+    snprintf(options_msg3, sizeof(options_msg3), "Min image height: %u px",
+	options->image_min_height);
+    menuOptions[7].name=options_msg3;
+    snprintf(options_msg4, sizeof(options_msg4), "Min image area: %llu pixels",
+	(long long unsigned)options->image_min_pixels);
+    menuOptions[8].name=options_msg4;
     aff_copy(stdscr);
-    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKELQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
+    car=wmenuSelect_ext(stdscr, 23, INTER_OPTION_Y, INTER_OPTION_X, menuOptions, 0, "PKSELWBHAQ", MENU_VERT|MENU_VERT_ARROW2VALID, &menu,&real_key);
     switch(car)
     {
       case 'p':
@@ -561,6 +581,22 @@ void interface_options_photorec_ncurses(struct ph_options *options)
       case 'l':
       case 'L':
 	options->lowmem=!options->lowmem;
+	break;
+      case 'b':
+      case 'B':
+	options->image_min_filesize=ask_number(options->image_min_filesize, 0, PHOTOREC_MAX_FILE_SIZE, "Minimum image file size in bytes ");
+	break;
+      case 'w':
+      case 'W':
+	options->image_min_width=(unsigned int)ask_number(options->image_min_width, 0, 4294967295ULL, "Minimum image width in pixels ");
+	break;
+      case 'h':
+      case 'H':
+	options->image_min_height=(unsigned int)ask_number(options->image_min_height, 0, 4294967295ULL, "Minimum image height in pixels ");
+	break;
+      case 'a':
+      case 'A':
+	options->image_min_pixels=ask_number(options->image_min_pixels, 0, PHOTOREC_MAX_FILE_SIZE, "Minimum image area in pixels ");
 	break;
       case key_ESC:
       case 'q':

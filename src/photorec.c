@@ -963,7 +963,14 @@ static void params_reset_aux(struct ph_param *params)
 
 void params_reset(struct ph_param *params, const struct ph_options *options)
 {
+  const photorec_image_min_filter_t image_min_filter={
+    .min_filesize=options->image_min_filesize,
+    .min_width=options->image_min_width,
+    .min_height=options->image_min_height,
+    .min_pixels=options->image_min_pixels
+  };
   /*@ assert valid_ph_param(params); */
+  photorec_set_image_min_filter(&image_min_filter);
   params->file_stats=init_file_stats(options->list_file_format);
   /*@ assert valid_ph_param(params); */
   params_reset_aux(params);

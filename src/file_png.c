@@ -330,6 +330,12 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   if(memcmp(&buffer[8+4], "IHDR", 4) == 0 &&
       png_check_ihdr((const struct png_ihdr *)&buffer[16])==0)
     return 0;
+  if(memcmp(&buffer[8+4], "IHDR", 4) == 0)
+  {
+    const struct png_ihdr *ihdr=(const struct png_ihdr *)&buffer[16];
+    if(photorec_image_min_dimensions_reject(file_hint_png.extension, be32(ihdr->width), be32(ihdr->height))!=0)
+      return 0;
+  }
 #if !defined(SINGLE_FORMAT)
   /* SolidWorks files contain a png */
   if(file_recovery->file_stat!=NULL &&
@@ -342,6 +348,8 @@ static int header_check_png(const unsigned char *buffer, const unsigned int buff
   reset_file_recovery(file_recovery_new);
   file_recovery_new->extension=file_hint_png.extension;
   file_recovery_new->min_filesize=16;
+  if(file_recovery_new->min_filesize < photorec_image_min_filesize())
+    file_recovery_new->min_filesize=photorec_image_min_filesize();
   if(file_recovery_new->blocksize < 8)
   {
     /*@ assert valid_file_recovery(file_recovery_new); */

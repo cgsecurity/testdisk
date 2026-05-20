@@ -23,6 +23,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QRadioButton>
+#include <QSpinBox>
 #include <QProgressBar>
 #include "types.h"
 #include "common.h"
@@ -86,6 +87,10 @@ class QPhotorec: public QWidget
 		QRadioButton 		*qfatRadioButton;
 		QRadioButton 		*qfreeRadioButton;
 		QRadioButton 		*qwholeRadioButton;
+		QSpinBox		*imageMinFilesizeSpinBox;
+		QSpinBox		*imageMinWidthSpinBox;
+		QSpinBox		*imageMinHeightSpinBox;
+		QSpinBox		*imageMinPixelsSpinBox;
 		/* Recovery UI */
 		QLabel			*folder_txt;
 		QLabel 			*progress_info;

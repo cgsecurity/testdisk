@@ -47,6 +47,76 @@
 #include "log.h"
 
 static int file_check_cmp(const struct td_list_head *a, const struct td_list_head *b);
+static photorec_image_min_filter_t photorec_image_min_filter={
+  .min_filesize=0,
+  .min_width=0,
+  .min_height=0,
+  .min_pixels=0
+};
+
+void photorec_set_image_min_filter(const photorec_image_min_filter_t *filter)
+{
+  if(filter==NULL)
+  {
+    photorec_image_min_filter.min_filesize=0;
+    photorec_image_min_filter.min_width=0;
+    photorec_image_min_filter.min_height=0;
+    photorec_image_min_filter.min_pixels=0;
+    return;
+  }
+  photorec_image_min_filter=*filter;
+}
+
+uint64_t photorec_image_min_filesize(void)
+{
+  return photorec_image_min_filter.min_filesize;
+}
+
+int photorec_image_min_dimension_filter_enabled(void)
+{
+  return photorec_image_min_filter.min_width!=0 ||
+    photorec_image_min_filter.min_height!=0 ||
+    photorec_image_min_filter.min_pixels!=0;
+}
+
+int photorec_image_min_dimensions_reject(const char *extension, const uint64_t width, const uint64_t height)
+{
+  uint64_t pixels;
+  if(width==0 || height==0)
+    return 0;
+  if(photorec_image_min_filter.min_width!=0 &&
+      width < photorec_image_min_filter.min_width)
+  {
+    log_info("%s image too narrow (%llu < %u), reject it\n",
+	(extension!=NULL?extension:"image"),
+	(long long unsigned)width,
+	photorec_image_min_filter.min_width);
+    return 1;
+  }
+  if(photorec_image_min_filter.min_height!=0 &&
+      height < photorec_image_min_filter.min_height)
+  {
+    log_info("%s image too short (%llu < %u), reject it\n",
+	(extension!=NULL?extension:"image"),
+	(long long unsigned)height,
+	photorec_image_min_filter.min_height);
+    return 1;
+  }
+  if(height!=0 && width > UINT64_MAX / height)
+    pixels=UINT64_MAX;
+  else
+    pixels=width * height;
+  if(photorec_image_min_filter.min_pixels!=0 &&
+      pixels < photorec_image_min_filter.min_pixels)
+  {
+    log_info("%s image has too few pixels (%llu < %llu), reject it\n",
+	(extension!=NULL?extension:"image"),
+	(long long unsigned)pixels,
+	(long long unsigned)photorec_image_min_filter.min_pixels);
+    return 1;
+  }
+  return 0;
+}
 
 #ifndef __FRAMAC__
 #include "list_add_sorted.h"

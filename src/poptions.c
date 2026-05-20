@@ -34,6 +34,13 @@
 #include "log.h"
 #include "poptions.h"
 
+static unsigned int uint64_to_uint_clamp(const uint64_t val)
+{
+  if(val > (uint64_t)(~0u))
+    return ~0u;
+  return (unsigned int)val;
+}
+
 void interface_options_photorec_cli(struct ph_options *options, char **current_cmd)
 {
   if(*current_cmd==NULL)
@@ -87,6 +94,22 @@ void interface_options_photorec_cli(struct ph_options *options, char **current_c
     {
       options->lowmem=1;
     }
+    else if(check_command(current_cmd,"image_min_filesize,",19)==0)
+    {
+      options->image_min_filesize=get_int_from_command(current_cmd);
+    }
+    else if(check_command(current_cmd,"image_min_width,",16)==0)
+    {
+      options->image_min_width=uint64_to_uint_clamp(get_int_from_command(current_cmd));
+    }
+    else if(check_command(current_cmd,"image_min_height,",17)==0)
+    {
+      options->image_min_height=uint64_to_uint_clamp(get_int_from_command(current_cmd));
+    }
+    else if(check_command(current_cmd,"image_min_pixels,",17)==0)
+    {
+      options->image_min_pixels=get_int_from_command(current_cmd);
+    }
     else
     {
 #ifndef DISABLED_FOR_FRAMAC
@@ -108,4 +131,9 @@ void interface_options_photorec_log(const struct ph_options *options)
       options->mode_ext2?"Yes":"No",
       options->expert?"Yes":"No",
       options->lowmem?"Yes":"No");
+  log_info(" Image minimum filesize : %llu\n Image minimum width : %u\n Image minimum height : %u\n Image minimum pixels : %llu\n",
+      (long long unsigned)options->image_min_filesize,
+      options->image_min_width,
+      options->image_min_height,
+      (long long unsigned)options->image_min_pixels);
 }
