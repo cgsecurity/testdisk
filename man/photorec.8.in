@@ -3,7 +3,7 @@
 .SH NAME
 photorec \- Recover lost files from harddisk, digital camera and cdrom
 .SH SYNOPSIS
-.BI "photorec [/log] [/debug] [/d recup_dir] [device|image.dd|image.e01]
+.BI "photorec [/log] [/debug] [/sigfile signature_file] [/d recup_dir] [device|image.dd|image.e01]
 .sp
 .BI "photorec /version
 .SH DESCRIPTION
@@ -16,6 +16,9 @@ create a photorec.log file
 .TP
 .B /debug
 add debug information
+.TP
+.BI /sigfile " signature_file"
+specify a custom signature file; if it cannot be opened, PhotoRec falls back to the default signature file locations
 .SH SEE ALSO
 .BR testdisk (8),
 .BR fdisk (8).
