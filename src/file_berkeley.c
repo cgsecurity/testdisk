@@ -1,6 +1,6 @@
 /*
 
-    File: file_db.c
+    File: file_berkeley.c
 
     Copyright (C) 2013 Christophe GRENIER <grenier@cgsecurity.org>
   
