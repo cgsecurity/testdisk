@@ -93,6 +93,29 @@ const file_hint_t file_hint_jpg= {
   .register_header_check=&register_header_check_jpg
 };
 
+static int jpg_marker_is_sof(const unsigned char marker)
+{
+  switch(marker)
+  {
+    case 0xc0:
+    case 0xc1:
+    case 0xc2:
+    case 0xc3:
+    case 0xc5:
+    case 0xc6:
+    case 0xc7:
+    case 0xc9:
+    case 0xca:
+    case 0xcb:
+    case 0xcd:
+    case 0xce:
+    case 0xcf:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 /*@
   @ requires PHOTOREC_MAX_BLOCKSIZE >= buffer_size;
   @ requires \valid_read(buffer + (0 .. buffer_size-1));
@@ -120,7 +143,7 @@ static void jpg_get_size(const unsigned char *buffer, const unsigned int buffer_
       /*@ assert 0 <= ((buffer[i+2]<<8) | buffer[i+3]) <= 0xffff; */
       const unsigned int size=((unsigned int)buffer[i+2]<<8)|buffer[i+3];
       /*@ assert size <= 0xffff; */
-      if(buffer[i+1]==0xc0)	/* SOF0 */
+      if(jpg_marker_is_sof(buffer[i+1])!=0)
       {
 	/*@ assert 0<= (buffer[i+5]<<8) <= 0xff00; */
 	/*@ assert 0 <= ((buffer[i+5]<<8) | buffer[i+6]) <= 0xffff; */
@@ -884,6 +907,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
   /*@ assert valid_header_check_param(buffer, buffer_size, safe_header_only, file_recovery, file_recovery_new); */
   unsigned int i=2;
   time_t jpg_time=0;
+  unsigned int width=0;
+  unsigned int height=0;
   /*@
     @ loop invariant \valid_read(buffer+(0..buffer_size-1));
     @ loop invariant \initialized(buffer+(0..buffer_size-1));
@@ -925,6 +950,7 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     if(i+1 < buffer_size && buffer[i+1]!=0xda)
       return 0;
   }
+  jpg_get_size(buffer, buffer_size, &height, &width);
   if(file_recovery->file_stat!=NULL &&
      file_recovery->file_check!=NULL)
   {
@@ -940,9 +966,6 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
       0x00, 0x48, 0x00, 0x00, 0xff, 0xfe, 0x00
     };
 
-    unsigned int width=0;
-    unsigned int height=0;
-    jpg_get_size(buffer, buffer_size, &height, &width);
 #if !defined(MAIN_jpg) && !defined(SINGLE_FORMAT)
     if(file_recovery->file_stat->file_hint==&file_hint_indd)
     {
@@ -1047,6 +1070,8 @@ static int header_check_jpg(const unsigned char *buffer, const unsigned int buff
     }
   }
   reset_file_recovery(file_recovery_new);
+  file_recovery_new->image_width=width;
+  file_recovery_new->image_height=height;
   file_recovery_new->min_filesize=i;
   file_recovery_new->calculated_file_size=0;
   file_recovery_new->time=jpg_time;
