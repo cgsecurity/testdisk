@@ -257,11 +257,16 @@ Hauríeu d&apos;haver rebut una còpia de la Llicència Pública General GNU jun
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="960"/>
+        <source>Search formats</source>
+        <translation>Cerca formats</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="965"/>
         <source>&amp;Reset</source>
         <translation>&amp;Reinicialitzar</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="961"/>
+        <location filename="src/qphotorec.cpp" line="966"/>
         <source>Res&amp;tore</source>
         <translation>
 Res&amp;taura</translation>

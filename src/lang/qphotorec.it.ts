@@ -258,11 +258,16 @@ Una copia della GNU General Public License è distribuita con QPhotoRec. In caso
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="960"/>
+        <source>Search formats</source>
+        <translation>Cerca formati</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="965"/>
         <source>&amp;Reset</source>
         <translation>&amp;Resettare</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="961"/>
+        <location filename="src/qphotorec.cpp" line="966"/>
         <source>Res&amp;tore</source>
         <translation>Ripri&amp;stinare</translation>
     </message>

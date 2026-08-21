@@ -257,11 +257,16 @@ Você deve receber uma cópia do licença GNU durante o uso de QPhotoRec. Se nã
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="960"/>
+        <source>Search formats</source>
+        <translation>Pesquisar formatos</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="965"/>
         <source>&amp;Reset</source>
         <translation>&amp;Reconfigurar</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="961"/>
+        <location filename="src/qphotorec.cpp" line="966"/>
         <source>Res&amp;tore</source>
         <translation>&amp;Restaurar</translation>
     </message>

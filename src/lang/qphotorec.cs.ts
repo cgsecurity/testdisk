@@ -256,11 +256,16 @@ Společně s QPhotoRec byste měli obdržet text znění GNU General Public Lice
     </message>
     <message>
         <location filename="src/qphotorec.cpp" line="960"/>
+        <source>Search formats</source>
+        <translation>Hledat formáty</translation>
+    </message>
+    <message>
+        <location filename="src/qphotorec.cpp" line="965"/>
         <source>&amp;Reset</source>
         <translation>V&amp;rátit na výchozí</translation>
     </message>
     <message>
-        <location filename="src/qphotorec.cpp" line="961"/>
+        <location filename="src/qphotorec.cpp" line="966"/>
         <source>Res&amp;tore</source>
         <translation>Obnovi&amp;t</translation>
     </message>
