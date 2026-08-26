@@ -6,7 +6,8 @@ AC_INIT([testdisk],[7.3-WIP],[grenier@cgsecurity.org])
 AC_LANG(C)
 sinclude(acx_pthread.m4)
 sinclude(mkdir.m4)
-TESTDISKDATE="April 2026"
+AC_CONFIG_MACRO_DIR([m4])
+TESTDISKDATE="August 2026"
 AC_SUBST(TESTDISKDATE)
 AC_DEFINE_UNQUOTED([TESTDISKDATE],"$TESTDISKDATE",[Date of release])
 AC_CONFIG_AUX_DIR(config)
@@ -137,7 +138,8 @@ AC_ARG_WITH(ewf-includes,
     [CPPFLAGS="${CPPFLAGS} -I${withval}"])
 
 AC_ARG_WITH([iconv],
-    AS_HELP_STRING([--without-iconv],[disabled use of the iconv library (default is NO)]))
+    AS_HELP_STRING([--without-iconv],[disabled use of the iconv library (default is NO)]),
+    [use_libiconv=$enableval], [use_libiconv=yes])
 
 AC_ARG_WITH(iconv-lib,
     AS_HELP_STRING([--with-iconv-lib=DIR],[location of the iconv library]),
@@ -333,10 +335,12 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([byteswap.h curses.h cygwin/fs.h cygwin/version.h dal/file_dal.h dal/file.h ddk/ntddstor.h dirent.h endian.h errno.h fcntl.h features.h giconv.h glob.h iconv.h io.h libgen.h limits.h linux/fs.h linux/hdreg.h linux/types.h locale.h machine/endian.h malloc.h ncurses.h ncurses/curses.h ncurses/ncurses.h ncursesw/curses.h ncursesw/ncurses.h ntfs/version.h pwd.h scsi/scsi.h scsi/scsi_ioctl.h scsi/sg.h setjmp.h signal.h stdarg.h sys/cygwin.h sys/disk.h sys/disklabel.h sys/dkio.h sys/endian.h sys/ioctl.h sys/sysmacros.h sys/param.h sys/select.h sys/time.h sys/utsname.h sys/vtoc.h time.h utime.h w32api/ddk/ntdddisk.h windef.h windows.h zlib.h])
 
 dnl Check for ICONV support
-AM_ICONV
-photorec_LDADD="$LIBICONV $photorec_LDADD"
-qphotorec_LDADD="$LIBICONV $qphotorec_LDADD"
-testdisk_LDADD="$LIBICONV $testdisk_LDADD"
+if test "$use_libiconv" = "yes" ; then
+	AM_ICONV
+	photorec_LDADD="$LIBICONV $photorec_LDADD"
+	qphotorec_LDADD="$LIBICONV $qphotorec_LDADD"
+	testdisk_LDADD="$LIBICONV $testdisk_LDADD"
+fi
 
 AC_CHECK_HEADERS(sys/mount.h,,,
 [[
@@ -892,7 +896,7 @@ case "$target" in
   ;;
 esac
 
-AC_CHECK_FUNCS([ atexit atoll chdir chmod delscreen dirname dup2 execv fdatasync fseeko fsync ftello ftruncate getcwd geteuid getpwuid libewf_handle_read_buffer_at_offset libewf_handle_write_buffer_at_offset localtime_r lstat memalign memchr memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strcasecmp strcasestr strchr strdup strerror strncasecmp strptime strrchr strstr strtol strtoul strtoull touchwin uname utime vsnprintf wctomb ])
+AC_CHECK_FUNCS([ atexit atoll chdir chmod delscreen dirname dup2 execv fdatasync fseeko fsync ftello ftruncate getcwd geteuid getpwuid localtime_r lstat memalign memchr memset mkdir posix_fadvise posix_memalign pwrite readlink setenv setlocale sigaction signal sleep snprintf strcasecmp strcasestr strchr strdup strerror strncasecmp strptime strrchr strstr strtol strtoul strtoull touchwin uname utime vsnprintf wctomb ])
 if test "$ac_cv_func_mkdir" = "no"; then
   AC_MSG_ERROR(No mkdir function detected)
 fi
@@ -915,6 +919,8 @@ fi
 OLDLIBS="$LIBS"
 LIBS="$OLDLIBS $testdisk_LDADD -ldal"
 AC_CHECK_FUNCS([reiserfs_fs_open_fast])
+LIBS="$OLDLIBS $testdisk_LDADD"
+AC_CHECK_FUNCS([libewf_handle_read_buffer_at_offset libewf_handle_write_buffer_at_offset])
 LIBS="$OLDLIBS"
 AC_CHECK_FUNCS([ntfs_libntfs_version ntfs_volume_startup])
 
